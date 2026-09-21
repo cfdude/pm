@@ -9,6 +9,8 @@ import { epicReferences } from "./links.mjs";
 import { tombstoneArtifacts } from "./source-artifacts.mjs";
 import { render } from "./render.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** Render a short (id, title, summary) table for human review — used when a removal is
  *  blocked by children, so the operator sees exactly what's in play without a raw dump. */
@@ -27,17 +29,17 @@ export function epicSummaryTable(epics) {
  *  worse than a silently smaller graph. The one exception is a detour-stack frame, which is
  *  control state rather than a record and blocks the removal instead. */
 export function removeEpic() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs remove-epic <id> [--cascade]\n"); process.exit(1); }
+  if (!id) { die("usage: conductor.mjs remove-epic <id> [--cascade]\n"); }
   const f = parseFlags(argv.slice(1));
   requireFlagValues("remove-epic", f);
   const cascade = f.cascade === true || f.cascade === "true";
 
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
+  if (!epic) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
 
   // Walk the FULL descendant tree (BFS), not just direct children — the block-path preview
   // and the --cascade removal must agree on blast radius, or a human approving --cascade off
@@ -54,13 +56,12 @@ export function removeEpic() {
   }
 
   if (descendants.length && !cascade) {
-    process.stderr.write(
+    die(
       `conductor: cannot remove '${escapeControls(id)}' — it has ${directChildren.length} direct child epic(s) ` +
       `and ${descendants.length} descendant(s) total:\n` +
       `${epicSummaryTable([epic, ...descendants])}\n` +
       `Reassign or remove the descendants first, or re-run with --cascade to remove '${escapeControls(id)}' ` +
       `and all ${descendants.length} descendant(s) together.\n`);
-    process.exit(1);
   }
 
   const toRemove = new Set([id]);
@@ -100,7 +101,7 @@ export function removeEpic() {
       ? " Or, where it is not coming back, end the pause: " +
         dropTargets.map(p => orNoRemedy(() => `\`drop-detour ${printedId(p)} --reason "<why>"\``)).join(", ") + "."
       : "";
-    process.stderr.write(
+    die(
       `conductor: cannot remove ${[...toRemove].map(i => `'${escapeControls(i)}'`).join(", ")} — still held by ` +
       `${blocking.length} reference(s) that cannot be stripped.\n` +
       (frames.length
@@ -112,7 +113,6 @@ export function removeEpic() {
           [...new Set(owed.map(r => orNoRemedy(() => `\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\``)))].join(", ") +
           " — then remove.\n"
         : ""));
-    process.exit(1);
   }
 
   const affected = [];
@@ -141,7 +141,7 @@ export function removeEpic() {
     unchanged: `conductor: nothing matched for removal — ${STATE_UNCHANGED}`,
   });
   if (affected.length) {
-    process.stderr.write(
+    errStream().write(
       `conductor: stripped ${affected.length} dangling reference(s) to removed epic(s), held by: ` +
       `${escapeControls([...new Set(affected)].join(", "))}\n`);
   }
@@ -152,7 +152,7 @@ export function removeEpic() {
     // plan points an epic's progress source at a file with no checkboxes.
     const how = [...new Set(tombstoned.map(t => t.flag))]
       .map(flag => `\`update-epic <id> --${flag} <path>\``).join(" or ");
-    process.stderr.write(
+    errStream().write(
       `conductor: recorded ${tombstoned.length} sync-ignore tombstone(s) so sync will not ` +
       `re-register the removed epic(s)' source artifact(s): ` +
       `${escapeControls(tombstoned.map(t => t.path).join(", "))}. ` +

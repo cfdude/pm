@@ -51,6 +51,8 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { escapeControls } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 /** `reorder <id> <id> …` — set the manual rank of one whole priority band, atomically.
  *
@@ -58,19 +60,17 @@ import { escapeControls } from "./constants.mjs";
  *  one: it leaves a numbering nobody asked for, in a field whose entire value is that a human
  *  chose it. */
 export function reorder() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const ids = process.argv.slice(3).filter(a => !a.startsWith("--"));
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const ids = currentArgv().slice(3).filter(a => !a.startsWith("--"));
   const fail = (msg) => {
-    process.stderr.write(`conductor: ${msg}\n`);
-    process.exit(1);
+    die(`conductor: ${msg}\n`);
   };
   if (!ids.length) {
     // Not a no-op and not "clear the band": an empty invocation is far likelier to be a shell
     // expansion that produced nothing than a deliberate request, and the destructive reading of
     // what looks like a typo is exactly how `--link` with no value used to wipe an epic's links.
-    process.stderr.write("usage: conductor.mjs reorder <id> <id> … " +
+    die("usage: conductor.mjs reorder <id> <id> … " +
       "(every non-archived epic in ONE priority band, in the order you want them)\n");
-    process.exit(1);
   }
 
   const state = loadState();
@@ -109,7 +109,7 @@ export function reorder() {
   ids.forEach((id, i) => { byId.get(id).rank = i + 1; });
   const saved = saveState(state, { verb: "reorder" });
   reportSave(saved, {
-    stream: process.stdout,
+    stream: outStream(),
     changed: `conductor: ${escapeControls(band)} reordered — ${escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join("  "))}`,
     unchanged: `conductor: ${escapeControls(band)} was already in that order — ${STATE_UNCHANGED}`,
   });

@@ -35,13 +35,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ROOT, escapeControls } from "./constants.mjs";
+import { engineRoot, escapeControls } from "./constants.mjs";
 import { cmpVer } from "./plugin-meta.mjs";
 import { activeChangeIds } from "./epic-progress.mjs";
+import { currentEnv, gitOps } from "./invocation.mjs";
 
 const SEMVER = /(\d+\.\d+\.\d+)/;
-const OPENSPEC_DIR = path.join(ROOT, "openspec");
-const SKILLS_DIR = path.join(ROOT, ".claude", "skills");
+// PER CALL, NOT AT MODULE LOAD — the same defect 3.2 fixed for the twelve constants in
+// constants.mjs, in a module that sweep never looked at. Frozen here, both paths came from
+// whichever root was current when this module was FIRST imported, so an in-process invocation
+// checked ANOTHER tree for `openspec/` and for the installed skills.
+const openspecDir = () => path.join(engineRoot(), "openspec");
+const skillsDir = () => path.join(engineRoot(), ".claude", "skills");
 
 /** The paths `openspec update` regenerates for the `claude` host tool, repo-relative and in the
  *  form the user is told to look at. Named once so the nudge text and the tracked-ness probe
@@ -63,14 +68,14 @@ export const OPENSPEC_GENERATED_PATHS = [".claude/skills/openspec-*", ".claude/c
  *  see this file's header. The timeout matters: this runs on the SessionStart hook, and a child
  *  that hangs there hangs every session start. */
 export function installedOpenspecVersion() {
-  const override = process.env.PM_OPENSPEC_VERSION;
+  const override = currentEnv().PM_OPENSPEC_VERSION;
   if (override !== undefined) {
     const m = String(override).match(SEMVER);
     return m ? m[1] : null;
   }
   try {
     const out = execFileSync("openspec", ["--version"], {
-      cwd: ROOT, encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"],
+      cwd: engineRoot(), encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"],
     });
     const m = String(out).match(SEMVER);
     return m ? m[1] : null;
@@ -110,11 +115,11 @@ function generatedByOf(file) {
  *  this reader does not understand. */
 export function projectOpenspecVersion() {
   let dirs;
-  try { dirs = fs.readdirSync(SKILLS_DIR, { withFileTypes: true }); } catch { return null; }
+  try { dirs = fs.readdirSync(skillsDir(), { withFileTypes: true }); } catch { return null; }
   let oldest = null;
   for (const d of dirs) {
     if (!d.isDirectory() || !d.name.startsWith("openspec-")) continue;
-    const v = generatedByOf(path.join(SKILLS_DIR, d.name, "SKILL.md"));
+    const v = generatedByOf(path.join(skillsDir(), d.name, "SKILL.md"));
     if (v && (oldest === null || cmpVer(v, oldest) < 0)) oldest = v;
   }
   return oldest;
@@ -145,9 +150,11 @@ export function projectOpenspecVersion() {
  *  Local git plumbing only — `ls-files` reads the index and contacts nothing. */
 export function generatedArtifactsTracked() {
   try {
-    const out = execFileSync("git", ["ls-files", "--", ".claude/skills", ".claude/commands/opsx"], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    });
+    // THROUGH THE GATEWAY, while this module's OTHER exec site — the `openspec --version` probe
+    // above — deliberately is not: the gateway is over GIT, and that call is the only non-git spawn
+    // in the engine. It is listed here rather than left implicit so the call-site sweep's omission
+    // is a named decision and not a miss (required task item 1).
+    const out = gitOps().lsFiles([".claude/skills", ".claude/commands/opsx"]);
     return out.split("\n").some(l => /^\.claude\/(skills\/openspec-|commands\/opsx\/)/.test(l.trim()));
   } catch { return null; }
 }
@@ -162,7 +169,7 @@ export function generatedArtifactsTracked() {
  *  reading is a stale reading or a downgraded CLI, and `openspec update` would move the project
  *  BACKWARDS. There is no instruction to give. */
 export function openspecCurrency() {
-  if (!fs.existsSync(OPENSPEC_DIR)) return null;      // not initialized — a different message
+  if (!fs.existsSync(openspecDir())) return null;      // not initialized — a different message
   const project = projectOpenspecVersion();
   if (project === null) return null;                  // cannot tell
   const installed = installedOpenspecVersion();

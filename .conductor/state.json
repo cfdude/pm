@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "functional-assertion-test-split",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -9682,7 +9682,7 @@
       "id": "functional-assertion-test-split",
       "title": "Split the suite: one-process assertion tests over an injected git fake; functional git tests only when the seam changes",
       "priority": "P1",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9693,20 +9693,188 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c213ac0353f893ec2ce1a2901cad74b467149541",
+        "3714df712e10782c2023452ef863d15ec5b8ffa6",
+        "f56e9649cfe2f4093320ab20610853c0488a9e72",
+        "d4dddd39898ac045544c742d170ddc3536c5d499",
+        "0880677d8e1da6a940e1f3693ffc2460750a45ce",
+        "db1fbfd829a5ae014f0b59380a0a6ea806281e9f",
+        "8572e777fcccd9203f3692ad5893e3fb9b6bbad7",
+        "54c1945ca940a2f1e5ff2f29c6aed5aa2071fcd4",
+        "1e3a3858ae49bbdf23c981a912f8172acc122a9c",
+        "a610209b18027f278bb7bdc3e274f35f746ca038",
+        "208b606f91c58c86c5766fb54541f2ceeeacd4e4",
+        "866488cce8dc8262fbbe8961684d944f3f6b85b8",
+        "0d407970f0dc0f534acc54685c5ddc721111e404",
+        "83fb2ff3902b1c03b4baacd48aedff14a146ea0c",
+        "919d4fdfc74fffd0199d008a9c5380e7be2f87f7",
+        "9e3429624d0af5b21a2bae16cac0fe6d1ef24de3",
+        "87cf5067dc55289eacd681f483b1e1478091744c",
+        "57d2b4bd6bd4302fce3ab56c0195b1799300b44d",
+        "17896bcceb30674edc63bf9b612e86fee1eba32c",
+        "22213ae60599889e681f2c690563edcf16471d74",
+        "4297f46513b48571ee82b35604d2a7e85da72884",
+        "9b0e9779b30707477d93c51b20ed0174554dd39b",
+        "c4aad79855e5ef90bc4eb5388ba6f9efe89db31e",
+        "c4aad79855e5ef90bc4eb5388ba6f9efe89db31e",
+        "9b0e9779b30707477d93c51b20ed0174554dd39b",
+        "4297f46513b48571ee82b35604d2a7e85da72884",
+        "22213ae60599889e681f2c690563edcf16471d74",
+        "17896bcceb30674edc63bf9b612e86fee1eba32c",
+        "57d2b4bd6bd4302fce3ab56c0195b1799300b44d",
+        "87cf5067dc55289eacd681f483b1e1478091744c",
+        "9e3429624d0af5b21a2bae16cac0fe6d1ef24de3",
+        "919d4fdfc74fffd0199d008a9c5380e7be2f87f7",
+        "83fb2ff3902b1c03b4baacd48aedff14a146ea0c",
+        "0d407970f0dc0f534acc54685c5ddc721111e404",
+        "866488cce8dc8262fbbe8961684d944f3f6b85b8",
+        "208b606f91c58c86c5766fb54541f2ceeeacd4e4",
+        "a610209b18027f278bb7bdc3e274f35f746ca038",
+        "1e3a3858ae49bbdf23c981a912f8172acc122a9c",
+        "54c1945ca940a2f1e5ff2f29c6aed5aa2071fcd4",
+        "8572e777fcccd9203f3692ad5893e3fb9b6bbad7",
+        "db1fbfd829a5ae014f0b59380a0a6ea806281e9f",
+        "0880677d8e1da6a940e1f3693ffc2460750a45ce",
+        "d4dddd39898ac045544c742d170ddc3536c5d499",
+        "f56e9649cfe2f4093320ab20610853c0488a9e72",
+        "3714df712e10782c2023452ef863d15ec5b8ffa6",
+        "c213ac0353f893ec2ce1a2901cad74b467149541",
+        "dfb246d365a9c89349ae468baf5c92e26f3c46d6",
+        "ffe3cfff358f954ef088c6b3b5ea1c418825a864",
+        "1e79bb40b22f3a5f8bce2626e3e5705cbf2bddb5",
+        "419ac0e929d9055f20d32950ce2d9bee6c3c7b2f",
+        "24973d1606757163349b015c123eb78693394087",
+        "cfd01ffe011f862ad9881f0166b03d90e25f60bd",
+        "04c850b6f4b63f102431098e59c7ce5ccb93b47d",
+        "1caaf7419332b0434df3326f1cb208c38c3f602a",
+        "31710fe3f8a5f6eb46cb5d6dae3b7e0e6b0ac1c8",
+        "94fa55b2528107713b0c5130404cc3cbc834f783",
+        "ec981f4c48c90b41d9966abed08f3c5cb6d30c2c",
+        "8fe0a3b79621b7e251b47f053febc2a42d9e61ca"
+      ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-18T14:41:37.084Z"
+      "touchedAt": "2026-09-21T15:19:53.532Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-21T03:55:40.782Z",
+          "artifacts": [
+            "openspec/changes/functional-assertion-test-split/design.md",
+            "openspec/changes/functional-assertion-test-split/proposal.md",
+            "openspec/changes/functional-assertion-test-split/specs/engine-invocation/spec.md",
+            "openspec/changes/functional-assertion-test-split/specs/suite-certification/spec.md",
+            "openspec/changes/functional-assertion-test-split/tasks.md"
+          ],
+          "reviewer": "two fresh-context lenses (A correctness/testability incl. hook-floor reproduction; B absent edits — all 23 git sites, every process.exit, every consumer of the suite command): round 1 fail (3 C: a silent-pass window between the file move and the hook re-point, twin set-equality contradicting the migration dispositions, a module-scope showPrefix cache breaking under per-call roots; 8 I); fixes applied; confirmation round fail (C1's replacement floor unsatisfiable — declared counted both halves while the runner runs one; 3 I incl. five module-load side effects not four, and a re-measurement: ~0.22-0.24 s/spawn, ~9-10 min serial floor, not 15.7); fixes applied (floor compares what the runner ran against what it was given; every test file has an explicit home; the sweep has a producer and a record); 2026-09-20"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-21T15:19:53.528Z",
+          "baseSha": "77c2a71ed8d05fa42ff328b59b2619c4e34b6678",
+          "headSha": "8fe0a3b79621b7e251b47f053febc2a42d9e61ca",
+          "reviewer": "two fresh-context lenses (spec conformance via mutation battery incl. 43-case binary-vs-main equivalence, 22-check cross-contamination probe; end-to-end real binary + real hook): round 1 fail (1 C: CI's piped steps could not go red on a failing suite; 7 I: floor/hook/refresh guards untestable in the firing direction, the assert half could spawn real git, gateway guard failed open, item-2 record incomplete) + 22 missing attributions backfilled; fixes dfb246d..8fe0a3b, every mutant proven dead; 2026-09-21"
+        }
+      },
+      "startedAt": "2026-09-21T03:55:42.343Z",
+      "release": "0.47.0"
+    },
+    {
+      "id": "alpha",
+      "title": "alpha",
+      "priority": "P?",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-21T06:48:22.397Z",
+      "touchedAt": "2026-09-21T06:48:22.400Z"
+    },
+    {
+      "id": "from-caller",
+      "title": "from-caller",
+      "priority": "P?",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-21T06:48:23.229Z",
+      "touchedAt": "2026-09-21T06:48:23.230Z"
+    },
+    {
+      "id": "suite-twin-and-certification-discipline",
+      "title": "The twin-link and certification discipline: a functional test has an assertion twin, and a triggered run is certified by CONTENT",
+      "priority": "P2",
+      "status": "later",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "functional-assertion-test-split",
+          "reason": "this epic is the practice that change earned"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "PRACTICE ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. The two disciplines that change earned, with the evidence that made them necessary. (1) TWIN LINK, one direction: every functional id has an assertion file of the same id, enforced by scripts/test/drift.mjs in the pre-commit hook. Evidence: the functional half is the half that can go months unrun, and before 0.47.0 nothing connected the two halves at all -- a change could loosen a functional test and the per-commit gate would never learn it. The 44 twins written by 5.3 are what makes the fast half carry the slow half's behaviour. (2) CERTIFICATION BY CONTENT: a triggered run writes a record under $(git rev-parse --git-common-dir) keyed by contentHash per module, and the hook refuses a certified module's changed content until a fresh run exists. Evidence: docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md -- 0.44.0's one-off sweep checked argv shape once, was archived with its change, and the NEXT release found four remedies the engine printed and then refused. The record is the mechanism that lesson lacked: it is a claim about a pass over NAMED CONTENT, checked on every commit, and it goes stale the moment the content moves rather than the moment the change archives. Cost of the check: the drift script spawns nothing but four git index reads and runs in under a second, so the per-commit gate pays nothing for it. Candidate for promotion into the pm-fleet discipline if a second repo adopts the split.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-21T13:06:51.158Z",
+      "touchedAt": "2026-09-21T13:06:51.162Z"
+    },
+    {
+      "id": "guards-that-read-engine-source-drift-silently",
+      "title": "Source-reading guards drift silently when the engine's shape moves, and a comment can satisfy one",
+      "priority": "P2",
+      "status": "later",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "functional-assertion-test-split",
+          "reason": "found by 5.6"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well: this is a product observation about pm's own test suite, not just this repo's history. EVIDENCE, all measured in 5.6 by mutating a copy of the repository. (1) A guard a COMMENT could satisfy: scripts/test/assert/conductor-13.test.mjs asserted /archiveGate\\(/ against the RAW source of lib/update-epic.mjs, and the verb's own prose calls the gate by name -- 'one level down from archiveGate()'s refusal ...' at :561. Aliasing the import and its call site away left the guard GREEN, so the call it claims to watch could be deleted with nothing to say so. Repaired by dropping comment-only lines before matching; the repair is mutation-verified (20/20 unmutated, 19/1 mutated). (2) The repair is not mechanical to make: the FIRST attempt used the same character-level stripper assert-half-has-no-spawn.test.mjs carries, and it DESYNCS on a regex literal holding a quote -- every comment after that point passes through VERBATIM, a false NEGATIVE, which is the opposite of the direction that helper's own docstring claims is the only one it can fail in. (3) 5.6's list is itself evidence of a class: conductor-25's dispatch readers, verb-surface's dispatch-table regex, save-report-surface's call-site scan, conductor-13, emitted-invocations, output-interpolations and conductor-12's cache-busting imports ALL read engine source and ALL had to be re-pointed by hand as 0.47.0 moved the engine's shape (dispatch table indented into main(), frozen constants becoming functions). A product opportunity: a shared, sound source-stripping helper in the test tree, and a lint that flags an assert.match against raw engine source.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-21T13:07:20.220Z",
+      "touchedAt": "2026-09-21T13:07:20.223Z"
+    },
+    {
+      "id": "hook-fixtures-couple-to-every-hook-step",
+      "title": "A fixture that copies the real pre-commit hook breaks on every new hook step",
+      "priority": "P3",
+      "status": "later",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "functional-assertion-test-split",
+          "reason": "found by 6.4/6.6"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well. EVIDENCE: runHookAgainstFixture (scripts/test/fixtures/helpers.mjs) builds a scratch git repository, copies the REAL .githooks/pre-commit into it, and runs it -- deliberately, so the hook is exercised rather than a stub. 6.4 added a step to that hook (the drift script), and the three fixtures that run it went red for a reason that had nothing to do with what they test: the fixture held a hook but not the script, and the script but not the minimum tree it reads (scripts/lib/, conductor.mjs, the two bucket directories). The fix was to have the fixture construct that skeleton -- which means every future hook step has to be mirrored into a fixture builder, and nothing enforces the mirror. Measured cost: half an hour of diagnosis for a one-line hook insertion, and the failure mode is the worst kind -- three unrelated tests red, all pointing at the hook rather than at themselves. Candidate fix: derive the fixture tree from the hook's own invocations, or give the hook a single well-known entry point so a fixture can stub it by contract.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-21T13:07:20.863Z",
+      "touchedAt": "2026-09-21T13:07:20.867Z"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.45.0",
+  "pmVersion": "0.46.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1150,
+  "revision": 1221,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10074,6 +10242,26 @@
           }
         ],
         "reviewer": "two fresh-context lenses over both changes' spec sets, combined with Gate 1 fix confirmation: round 1 lens A pass (5 POLISH), lens B fail (2 BLOCKS: an engine-invocation exemption that could not fail, a multi-digit fd redirect evading the shape minimum); fixed; narrow confirmation round pass — MODIFIED delta fidelity diffed against the main spec, 117-case regex diff, mutation proofs both ways, drop-detour reachability verified on 0.45.0; 2026-09-17"
+      }
+    },
+    {
+      "id": "0.47.0",
+      "intent": "Split the test suite into a per-commit in-process assertion half and a triggered functional half: every git call behind one injected gateway, every refusal a caught value, every functional result certified by content hash.",
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-21T04:38:47.624Z",
+        "specs": [
+          {
+            "key": "functional-assertion-test-split/specs/engine-invocation/spec.md",
+            "sha256": "4e2da4d03d5a00b9e189928aef5008ad1d3ce4a91e36ab3889eeb7e4ec4c00fc"
+          },
+          {
+            "key": "functional-assertion-test-split/specs/suite-certification/spec.md",
+            "sha256": "7755076c65b77878222459ace9578e59876385dfa2bc5b5ede4abba52d90b46a"
+          }
+        ],
+        "reviewer": "INLINE review by the applying agent, NOT fresh-context lenses — this run's discipline forbids subagent dispatch, and that limitation is recorded here rather than papered over. Six questions over the release's two spec files (engine-invocation, suite-certification): (1) contradiction — none; the near-miss (one-process assertion half vs two-independent-invocations) is mutual dependency, not conflict. (2) double ownership — none; conductor.mjs's covers referencing the conformance set is a reference, and engine-invocation explicitly declines to restate verb-surface's refusal classes. (3) unmeetable — none in the specs. (4) gaps against proposal What-Changes — one: ci.yml's non-descending syntax loop has no requirement; declined as POLISH. (5) vocabulary forks — two, change-internal: \"double\" vs \"fake\", \"change-triggered bucket\" vs \"sweeps bucket\"; declined, renaming churns a passed Gate 1 contract for no behaviour change. (6) shared chokepoint — the single-process assertion half with injected streams is load-bearing for BOTH specs; guarded on each side (1.2 exits, 3.5 roots, 5.2 spawns). FINDING raised against the TASK LIST, not the specs: git.mjs's resolvedCommitCache is keyed by VALUE ONLY (unreachedCache by head+commits), so two invocations in one process against two roots share it and a hex abbreviation resolving in one repository and not the other gets the first repository's answer — engine-invocation forbids observing another invocation's values, and no task keys those caches; handled in the gateway work (4.2) rather than by amending a spec that is already correct. Verdict pass: no BLOCK found in either spec file; one BLOCK-level finding against tasks.md, acted on. 2026-09-20"
       }
     }
   ],

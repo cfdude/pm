@@ -20,10 +20,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized } from "./state.mjs";
+import { die } from "./command-exit.mjs";
 import { activityDir, segments } from "./activity-log.mjs";
 import { segmentStart } from "./activity-report.mjs";
 import { PURGE_KINDS, escapeControls } from "./constants.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { currentArgv, currentCwd, currentEnv, outStream } from "./invocation.mjs";
 
 // Re-exported from its DECLARATION in constants.mjs: `VERB_FLAGS`' `--kind` row names these
 // kinds in its own refusal phrase, so the list has to live where constants.mjs can read it
@@ -31,7 +33,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 export { PURGE_KINDS };
 
 function conductorDir() {
-  return path.join(process.env.CLAUDE_PROJECT_DIR || process.cwd(), ".conductor");
+  return path.join(currentEnv().CLAUDE_PROJECT_DIR || currentCwd(), ".conductor");
 }
 
 /** `100`, `4K`, `10M`, `1G` → bytes; null when unparseable. */
@@ -99,13 +101,17 @@ export function selectForRemoval(files, { keep = null, over = null, olderThanDay
   return files.filter(f => marked.has(f.path));
 }
 
-function die(msg) { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); }
+// This module's own spelling of the ONE exit path (command-exit.mjs): the call sites name the
+// refusal as a FRAGMENT and this adds the `conductor: ` prefix and the newline they have always
+// carried. Deliberately not called `die` — the shared function takes a whole message, and a local
+// `die` would shadow it for every call the 2.2 sweep inserted.
+const refuse = (msg) => die(`conductor: ${msg}\n`);
 
 /** `purge-logs [--kind activity|conflicts|detours|all] [--keep <n>] [--over <size>]
  *              [--older-than <days>] [--dry-run] [--yes]` */
 export function purgeLogs() {
-  if (!isInitialized()) die("run /pm:init first");
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) refuse("run /pm:init first");
+  const argv = currentArgv().slice(3);
   // Never the `KNOWN = ["kind", "keep", …]` literal and hand-written loop this verb used to carry —
   // the enumeration defect #152 reports. "Is this flag known on this verb" is answered before
   // dispatch by the command-line check (lib/argv-surface.mjs) from the registry;
@@ -129,22 +135,22 @@ export function purgeLogs() {
   };
 
   const kind = val("kind") || "all";
-  if (!PURGE_KINDS.includes(kind)) die(`--kind must be one of ${PURGE_KINDS.join("|")}`);
+  if (!PURGE_KINDS.includes(kind)) refuse(`--kind must be one of ${PURGE_KINDS.join("|")}`);
 
   const keepRaw = val("keep");
   const overRaw = val("over");
   const olderRaw = val("older-than");
   const keep = keepRaw === null ? null : Number(keepRaw);
-  if (keepRaw !== null && (!Number.isInteger(keep) || keep < 0)) die("--keep requires a non-negative whole number");
+  if (keepRaw !== null && (!Number.isInteger(keep) || keep < 0)) refuse("--keep requires a non-negative whole number");
   const over = overRaw === null ? null : parseSize(overRaw);
-  if (overRaw !== null && over === null) die("--over requires a size like 500K, 10M or 1G");
+  if (overRaw !== null && over === null) refuse("--over requires a size like 500K, 10M or 1G");
   const olderThanDays = olderRaw === null ? null : Number(olderRaw);
   if (olderRaw !== null && (!Number.isFinite(olderThanDays) || olderThanDays < 0)) {
-    die("--older-than requires a non-negative number of days");
+    refuse("--older-than requires a non-negative number of days");
   }
 
   if (keep === null && over === null && olderThanDays === null) {
-    die("purge-logs removes nothing without a selector. Say which: --keep <n>, --over <size>, " +
+    refuse("purge-logs removes nothing without a selector. Say which: --keep <n>, --over <size>, " +
       "or --older-than <days>. \"Purge the logs\" has no safe default, and defaulting it to " +
       "everything is how a tool deletes a record somebody wanted.");
   }
@@ -156,7 +162,7 @@ export function purgeLogs() {
   const confirmed = flags.yes === true && !dryRun;
 
   if (!doomed.length) {
-    process.stdout.write(
+    outStream().write(
       `purge-logs: nothing matches (${files.length} candidate file(s) under --kind ${kind}).\n`);
     return;
   }
@@ -169,7 +175,7 @@ export function purgeLogs() {
       ? "--dry-run: nothing was removed."
       : "Nothing was removed. This is the plan; re-run with --yes to apply it.");
   }
-  process.stdout.write(L.join("\n") + "\n");
+  outStream().write(L.join("\n") + "\n");
   if (!confirmed) return;
   for (const f of doomed) {
     try { fs.rmSync(f.path, { force: true }); } catch { /* best effort */ }

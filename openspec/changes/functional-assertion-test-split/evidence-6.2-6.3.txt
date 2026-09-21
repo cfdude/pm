@@ -1,0 +1,69 @@
+0.47.0 tasks 6.2 / 6.3 — END-TO-END EVIDENCE, in a COPY of the repository
+(scratchpad/apply-47/run-5x/mutate/pm), so the working tree is never touched.
+
+== 1. a fresh clone has NO record; a recorded sweeps run satisfies the engine-source demand ==
+$ node scripts/test/drift.mjs
+drift: ok — 133 tracked test files, 45 functional ids, 0 staged paths
+exit=0
+
+$ node scripts/test/certify.mjs sweeps
+certify: sweeps bucket passed (25/25); recorded the 'engine-source' entry over 61 engine-source files
+exit=
+
+$ node scripts/test/drift.mjs
+drift: ok — 133 tracked test files, 45 functional ids, 0 staged paths
+exit=0
+
+== 2. an UNRELATED commit is not refused ==
+$ node scripts/test/drift.mjs
+drift: ok — 133 tracked test files, 45 functional ids, 1 staged paths
+exit=0
+
+== 3. a one-line LIBRARY-module edit is refused, and the refusal NAMES the sweep run ==
+$ node scripts/test/drift.mjs
+drift: ABORT — the suite's two halves have drifted apart
+
+the certified module 'engine-source' changed (scripts/lib/rank.mjs), and the record covers DIFFERENT content — it was written before this change. Run `node scripts/test/certify.mjs sweeps` to certify the new content.
+
+drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+exit=1
+
+== 4. the same edit, satisfied by a fresh sweeps run ==
+$ node scripts/test/certify.mjs sweeps
+certify: sweeps bucket passed (25/25); recorded the 'engine-source' entry over 61 engine-source files
+exit=
+
+$ node scripts/test/drift.mjs
+drift: ok — 133 tracked test files, 45 functional ids, 1 staged paths
+exit=0
+
+== 5. a one-line conductor.mjs edit demands BOTH entries; sweeps satisfies only its half ==
+$ node scripts/test/drift.mjs
+drift: ABORT — the suite's two halves have drifted apart
+
+the certified module 'scripts/conductor.mjs' changed (scripts/conductor.mjs), and no record entry covers this content. Run `node scripts/test/certify.mjs functional` to certify the new content.
+the certified module 'engine-source' changed (scripts/conductor.mjs), and the record covers DIFFERENT content — it was written before this change. Run `node scripts/test/certify.mjs sweeps` to certify the new content.
+
+drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+exit=1
+
+$ node scripts/test/certify.mjs sweeps
+certify: sweeps bucket passed (25/25); recorded the 'engine-source' entry over 61 engine-source files
+exit=
+
+$ node scripts/test/drift.mjs
+drift: ABORT — the suite's two halves have drifted apart
+
+the certified module 'scripts/conductor.mjs' changed (scripts/conductor.mjs), and no record entry covers this content. Run `node scripts/test/certify.mjs functional` to certify the new content.
+
+drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+exit=1
+
+== 6. restored: the unrelated state is accepted again ==
+$ node scripts/test/drift.mjs
+drift: ok — 133 tracked test files, 45 functional ids, 0 staged paths
+exit=0
+

@@ -9,6 +9,8 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { ownedDetours } from "./links.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** Enforce the single-active invariant: `id` becomes the one active epic AND the
  *  top-level `.active` pointer. Any OTHER epic left at status "active" is demoted to
@@ -62,7 +64,7 @@ export function owedReconcileNotice(state, previousActiveId) {
   const e = (state.epics || []).find(x => x && x.id === previousActiveId);
   if (!e || e.reconcileNeeded !== true) return;
   const owed = ownedDetours(e);
-  process.stderr.write(
+  errStream().write(
     `conductor: '${escapeControls(e.id)}' is no longer the active epic and still owes a reconcile` +
     (owed.length ? ` against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "") +
     " — the obligation is kept, and gate-guard blocks edits again when it is active. Answer it with " +
@@ -89,15 +91,15 @@ export function staleMarker(epic) {
 
 /** `set-active <id>` — the CLI verb for the top-level active pointer (positional id). */
 export function setActive() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs set-active <id>\n"); process.exit(1); }
+  if (!id) { die("usage: conductor.mjs set-active <id>\n"); }
   const state = loadState();
   const t = state.epics.find(e => e.id === id);
-  if (!t) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
+  if (!t) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
   if (t.status === "archived" || isArchived(id)) {
-    process.stderr.write(`conductor: epic '${escapeControls(id)}' is archived — cannot make it active\n`); process.exit(1);
+    die(`conductor: epic '${escapeControls(id)}' is archived — cannot make it active\n`);
   }
   const previous = state.active;
   activate(state, id);
@@ -112,7 +114,7 @@ export function setActive() {
 
 /** `clear-active` — drop the active pointer and demote the epic it pointed at. */
 export function clearActive() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
   const previous = state.active;
   if (state.active) {

@@ -3,11 +3,11 @@
 // lib/constants.mjs.
 
 import fs from "node:fs";
-import { execFileSync, execSync } from "node:child_process";
-import { ROOT, CONDUCTOR_DIR, DETOURS_LOG, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
+import { engineRoot, conductorDir, detoursLog, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
+import { gitOps } from "./invocation.mjs";
 
 export function gitShortSha() {
-  try { return execSync("git rev-parse --short HEAD", { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); }
+  try { return gitOps().shortHead(); }
   catch { return "-"; }
 }
 
@@ -36,10 +36,11 @@ export function gitShortSha() {
  *  visible and removable, a false suppression silently disables the trail. Same shape as
  *  `isAncestor()` below, deliberately.
  *
- *  TAKES THE ROOT IT IS ASKED ABOUT, defaulting to `ROOT`. gh#175 Gate 2 C-A: a caller must be
- *  able to ask about THE TREE IT IS WRITING TO, and one of them derives that per call. `ROOT` is
- *  frozen at constants.mjs load, while `activityDir()` re-derives from CLAUDE_PROJECT_DIR every
- *  time — deliberately, so tests can move it. Guarding one tree while writing to another is
+ *  TAKES THE ROOT IT IS ASKED ABOUT, defaulting to the INVOCATION's (`engineRoot()`). gh#175 Gate 2
+ *  C-A: a caller must be able to ask about THE TREE IT IS WRITING TO, and one of them derives that
+ *  per call. Before 0.47.0 that default was a `ROOT` frozen at constants.mjs load, while
+ *  `activityDir()` re-derived from CLAUDE_PROJECT_DIR every time — deliberately, so tests could move
+ *  it, and the two disagreeing IS the gh#175 defect. Guarding one tree while writing to another is
  *  silently wrong in-process, and it broke this repository's own suite under a detached ROOT,
  *  which is EVERY CI run: `actions/checkout` leaves HEAD detached at the sha. The CLI never
  *  diverges (one root, fixed at startup), which is exactly why a local run could not see it.
@@ -48,12 +49,11 @@ export function gitShortSha() {
  *  again, and HEAD does not move under a running invocation. Keyed by root so asking about a
  *  second tree is answered, not served a stale answer about the first. */
 const headAttachmentCache = new Map();
-export function headAttachment(root = ROOT) {
+export function headAttachment(root = engineRoot()) {
   if (headAttachmentCache.has(root)) return headAttachmentCache.get(root);
   let answer;
   try {
-    execFileSync("git", ["symbolic-ref", "--quiet", "HEAD"],
-      { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+    gitOps().headRef(root);
     answer = "attached";
   } catch (e) {
     answer = e && e.status === 1 ? "detached" : "unknown";
@@ -64,7 +64,27 @@ export function headAttachment(root = ROOT) {
 
 /** `true` only where git SAID the tree is detached. An unanswerable probe is not detachment, which
  *  is why every caller asks this rather than `!== "attached"`. */
-export const isDetachedTree = (root = ROOT) => headAttachment(root) === "detached";
+export const isDetachedTree = (root = engineRoot()) => headAttachment(root) === "detached";
+
+/** CLEAR THE THREE PER-PROCESS CACHES. Call it once at the START of every invocation.
+ *
+ *  These three Maps are keyed by root or by value and were written for a process that serves ONE
+ *  invocation, where the key is enough: `headAttachment`'s own comment reasons that "HEAD does not
+ *  move under a running invocation". Under 0.47.0's assertion half that reasoning is FALSE in the
+ *  same way it is false for `subcommands.mjs`'s `showPrefix` — one process serves many invocations,
+ *  and a test that detaches a tree, commits, or makes a commit unreachable BETWEEN two invocations
+ *  gets the first invocation's answer served to the second. Measured: every `detached-warning` and
+ *  `detached-suppression` case in the functional half, twelve tests, because the tree is attached
+ *  when the fixture is built and detached before the invocation under test.
+ *
+ *  THE INVARIANT THAT HOLDS is the narrower one: an answer is good for the invocation that asked
+ *  it. Clearing is the whole fix; nothing else about the caching changes, so the per-invocation
+ *  spawn count it exists to save is still saved. */
+export function resetGitCaches() {
+  headAttachmentCache.clear();
+  resolvedCommitCache.clear();
+  unreachedCache.clear();
+}
 
 /** Kinds whose IDENTITY is the commit they describe, so a second row for the same sha is a
  *  duplicate by definition rather than a second event (gh#81: one repo held 8 rows for 4 distinct
@@ -79,7 +99,7 @@ export const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
 /** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable. */
 export function readDetourRows() {
   let body;
-  try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return []; }
+  try { body = fs.readFileSync(detoursLog(), "utf8"); } catch { return []; }
   return body.split("\n").filter(Boolean).map((raw) => {
     const [when, sha, kind, epic, note] = raw.split("\t");
     return { raw, when, sha, kind, epic, note };
@@ -107,27 +127,25 @@ export function visibleDetourRows(rows = readDetourRows()) {
  *  detached tree like the row it retracts (gh#175); returns whether it was written. */
 export function appendRetraction(sha, epic, reason) {
   if (isDetachedTree()) return false;
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.mkdirSync(conductorDir(), { recursive: true });
   // One line per row whatever the values hold: whitespace collapses, then every remaining control
   // character (NEL, a legacy epic id's newline) is escaped (user-text-never-forges-output 8.1).
   const line = [new Date().toISOString(), sha, "RETRACTED", escapeControls(epic || "-"), escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
-  fs.appendFileSync(DETOURS_LOG, line + "\n");
+  fs.appendFileSync(detoursLog(), line + "\n");
   return true;
 }
 
 /** The abbreviated name git gives a commit here, or `-` when git cannot answer. */
 export function shortSha(rev) {
   try {
-    return execFileSync("git", ["rev-parse", "--short", String(rev)],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || "-";
+    return gitOps().abbreviateCommit(rev).trim() || "-";
   } catch { return "-"; }
 }
 
 /** The full object name of a commit, or null when it resolves to none. */
 export function fullSha(rev) {
   try {
-    return execFileSync("git", ["rev-parse", "--verify", "--quiet", `${String(rev)}^{commit}`],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+    return gitOps().verifyCommitName(rev).trim() || null;
   } catch { return null; }
 }
 
@@ -143,7 +161,7 @@ export const rowMatches = (rowSha, full) =>
  *  reads it whole on every render, so this adds no new order of cost. */
 function alreadyLogged(kind, sha, full) {
   let body;
-  try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return false; }
+  try { body = fs.readFileSync(detoursLog(), "utf8"); } catch { return false; }
   for (const line of body.split("\n")) {
     if (!line) continue;
     const [, s, k] = line.split("\t");
@@ -165,14 +183,14 @@ export function appendDetourLog(kind, epic, note, rev) {
   // gh#175: a detour is BY DEFINITION an interruption of active work, and a detached tree is one
   // nobody is working in. Suppressed silently, like every other session-bookkeeping write.
   if (isDetachedTree()) return false;
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.mkdirSync(conductorDir(), { recursive: true });
   const sha = rev === undefined ? gitShortSha() : shortSha(rev);
   // sha "-" is "cannot tell" (no git, no repository, no commits yet), NOT a commit identity.
   // Collapsing on it would fold every unrelated row in a git-less repo into one.
   if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha, fullSha(rev === undefined ? "HEAD" : rev))) return false;
   // One line per row whatever the values hold (see appendRetraction()).
   const line = [new Date().toISOString(), sha, kind, escapeControls(epic || "-"), escapeControls((note || "").replace(/\s+/g, " ").trim())].join("\t");
-  fs.appendFileSync(DETOURS_LOG, line + "\n");
+  fs.appendFileSync(detoursLog(), line + "\n");
   return true;
 }
 
@@ -200,8 +218,7 @@ export function appendDetourLog(kind, epic, note, rev) {
 export function isAncestor(a, b) {
   if (!isCommitNameShaped(a) || !isCommitNameShaped(b)) return null;
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", a, b],
-      { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
+    gitOps().mergeBaseIsAncestor(a, b);
     return true;
   } catch (e) {
     return e && e.status === 1 ? false : null;
@@ -226,8 +243,7 @@ export function commitDate(sha) {
   // Shape-gated, as isAncestor() above: a hex value is never an option, so no `--end-of-options`.
   if (!isCommitNameShaped(sha)) return null;
   try {
-    const out = execFileSync("git", ["show", "-s", "--format=%cI", sha],
-      { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    const out = gitOps().committerDate(sha);
     return out || null;
   } catch { return null; }
 }
@@ -251,8 +267,7 @@ export function objectExists(sha) {
   // Shape-gated, as isAncestor() above: a hex value is never an option, so no `--end-of-options`.
   if (!isCommitNameShaped(sha)) return false;
   try {
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`],
-      { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
+    gitOps().commitExists(sha);
     return true;
   } catch { return false; }
 }
@@ -271,9 +286,7 @@ export function reachableFromAnyRef(sha) {
   // Shape-gated, and the value rides inside its own `--contains=` token: never a separate argument.
   if (!isCommitNameShaped(sha)) return false;
   try {
-    const out = execFileSync("git",
-      ["for-each-ref", `--contains=${sha}`, "--count=1", "--format=%(refname)"],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const out = gitOps().refsContaining(sha);
     return out.length > 0;
   } catch { return false; }
 }
@@ -317,9 +330,7 @@ export function differsFromHead(paths) {
     // `-z`: unquoted. git quotes a root-relative path holding a non-ASCII byte, so in a project nested
     // under such a directory no line ended with `/<path>` and the nudge went silent (Gate 2 G2-I1's
     // sibling of changedFiles()).
-    const out = execFileSync("git", ["diff", "-z", "--name-only", "HEAD", "--", ...paths], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    });
+    const out = gitOps().diffNamesAgainstHead(paths);
     const changed = out.split("\0").filter(Boolean);
     return paths.filter(p => changed.some(l => l === p || l.endsWith(`/${p}`)));
   } catch { return []; }
@@ -389,10 +400,7 @@ export function resolveCommits(values) {
   if (!asked.length) return { resolved, unresolved };
   let lines = [];
   try {
-    lines = execFileSync("git", ["cat-file", "--batch-check"], {
-      cwd: ROOT, encoding: "utf8", input: asked.map(v => `${v}^{commit}\n`).join(""),
-      stdio: ["pipe", "pipe", "ignore"], env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
-    }).split("\n");
+    lines = gitOps().batchCheckCommits(asked.map(v => `${v}^{commit}\n`).join("")).split("\n");
   } catch { lines = []; }
   asked.forEach((v, i) => {
     const m = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) commit \d+$/.exec(lines[i] || "");
@@ -433,10 +441,7 @@ export function commitsNotReachedBy(commits, head) {
   if (unreachedCache.has(key)) return unreachedCache.get(key);
   let answer;
   try {
-    const out = execFileSync("git", ["rev-list", ...list, "^" + head], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024,
-      env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
-    });
+    const out = gitOps().revListNotReached(list, head);
     const listed = new Set(out.split("\n").map(l => l.trim()).filter(Boolean));
     answer = new Set(list.filter(c => listed.has(c)));
   } catch { answer = null; }

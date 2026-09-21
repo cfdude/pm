@@ -3,8 +3,10 @@ name: Security Scans
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'openspec/**', '.conductor/**']
   pull_request:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'openspec/**', '.conductor/**']
   schedule:
     # Weekly, so newly-disclosed CVEs are caught even when no code changes.
     - cron: "0 6 * * 1"
@@ -12,6 +14,10 @@ on:
 permissions:
   contents: read
   security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   semgrep:

@@ -24,8 +24,13 @@
   (`package.json` `devDependencies`, `node_modules` gitignored, never shipped or committed) may exist —
   the distinction is WHO pays: a user installing the plugin pays nothing; a contributor runs `npm i`.
   Anything added here must earn its place against a measured problem, not preference.
-- **Tests:** `node --test scripts/test/*.test.mjs`. All tests pass before any commit — no
-  exceptions, no `--no-verify`.
+- **Tests:** three buckets, each on its own trigger. Every commit: the drift script
+  (`node scripts/test/drift.mjs`) then the assertion half
+  (`node --test --test-isolation=none scripts/test/assert/*.test.mjs`), which spawns nothing and
+  runs no git — it is driven by the git double in `scripts/test/fixtures/`. On a trigger (CI, and
+  `node scripts/test/certify.mjs functional|sweeps`): the functional half, which runs the real git
+  through the real gateway, and the sweep bucket. All tests pass before any commit — no exceptions,
+  no `--no-verify`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
   instructions for the interactive Claude agent to act on (the managed `CLAUDE.md` rules block,
   the SessionStart/PreCompact brief, command-doc markdown). It must **never** open a network
@@ -57,7 +62,9 @@
   values; a port adds itself and fills its column as it goes. See
   `docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md`.
 - Engine subcommands are dispatched at the bottom of `conductor.mjs`; every new subcommand needs
-  a matching command doc under `commands/` and coverage in `scripts/test/*.test.mjs`.
+  a matching command doc under `commands/` and coverage under `scripts/test/` — `assert/` for a test
+  that needs no repository, `functional/` for one whose subject is git's or the process boundary's,
+  with an assertion twin of the same id (the drift script refuses a functional id without one).
 - **State-transition flags are not pure functions of current state.** `reconcileNeeded` in
   particular is set at detour-POP time and must survive until reconciliation completes — POP
   protocol removes the detour-stack frame *before* reconciliation runs, so deriving the flag
@@ -115,6 +122,12 @@ plan, or a manual list). Follow these rules:
    the judgment only ever living in conversation. It is accepted only for a detour pushed
    `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is
    left unanswered; `pop-detour` names every detour owed.
+   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a
+   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,
+   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those
+   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an
+   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing
+   the check is not permission; this line is the obligation and the check is only its backstop.
 4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho
    ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside
    this repo. `push-detour` prints the PUSH line for you and logs it to
@@ -188,9 +201,11 @@ measured across one audited repository, a rule carried by a mandatory task secti
    diligence: enumerating the callers of a thing that is written never leads to the
    question of whether it can be unwritten. Measured here, six instances shipped past both
    gates while the call-site obligation was already in force, and the most consequential
-   is a safety surface — pre-authorization grants accumulate with no revoke, so turning
-   autonomy off leaves every prior grant intact and turning it back on silently restores
-   all of them.
+   was a safety surface: pre-authorization grants accumulated with no revoke, so turning
+   autonomy off left every prior grant intact and turning it back on silently restored
+   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and
+   the evidence is kept rather than deleted, because a practice recorded without what went
+   wrong to earn it reads as a preference.
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
    `git show --stat <that task's sha>` and assert that
@@ -405,7 +420,11 @@ shared branch); those are out of scope regardless of autonomy level.
    order, before treating it as a stop:
    a. Already pre-authorized in the preflight — either an exact `action` match or the
       action falls under a granted `category` (per the category heuristic)? → proceed,
-      record via `--notify`.
+      record via `--notify`. A REVOKED grant covers NOTHING, and neither does a grant that
+      names nothing — an empty action or category, which a state file written before the
+      revoke shipped can still hold and which no `--revoke` can name. Both authorise nothing
+      whatever the level says, and `set-autonomy <id> --level autonomous` prints the live
+      grants it is arming so you can read what is actually in force.
    b. No backup/restore path exists? → STOP regardless of autonomy level.
    c. Destructive but restorable (backed up first)? → WARN — `--notify` it immediately, proceed.
    d. No context to act on? → STOP — a real gap, not a false stall.

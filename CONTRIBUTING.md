@@ -5,8 +5,10 @@
 `main` is protected on GitHub (`cfdude/pm`):
 
 - No direct pushes to `main` — all changes land via pull request.
-- Required status check: the `test` job in `.github/workflows/ci.yml`
-  (`node --test scripts/test/*.test.mjs` plus a syntax check).
+- Required status check: the `test` job in `.github/workflows/ci.yml` — a syntax check, then
+  all THREE buckets, each with its own count floor: `node --test scripts/test/assert/*.test.mjs`
+  (the per-commit half), `… functional/*.test.mjs` (real git), `… sweeps/*.test.mjs` (the
+  change-triggered bucket).
 - 0 required approving reviews — this is a solo-maintainer repo, so PRs merge once CI is
   green, without waiting on a second reviewer.
 - Merge method is squash-only (`allow_squash_merge: true`, `allow_merge_commit: false`,
@@ -44,8 +46,17 @@ prose reminder alone wasn't enough). One-time setup per clone:
 git config core.hooksPath .githooks
 ```
 
-After that, `git commit` runs `.githooks/pre-commit` automatically, which runs
-`node --test scripts/test/*.test.mjs` and blocks the commit on any failure.
+After that, `git commit` runs `.githooks/pre-commit` automatically, which runs the DRIFT SCRIPT
+(`node scripts/test/drift.mjs`, four checks over the index — enrolment, twin coverage, diff
+coupling, record freshness) and then the ASSERTION HALF,
+`node --test --test-isolation=none scripts/test/assert/*.test.mjs`, and blocks the commit on any
+failure. The drift script refuses, naming the file: a tracked test file in NEITHER half
+(no test runs it — enrol it), a functional test with no assertion twin of the same id, a
+functional test or its twin changed without a fresh certification record, or a certified
+module whose staged content no longer matches the record. The functional half and the sweep
+bucket are triggered, not per-commit: CI runs them, and
+`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when
+you ran one locally. To satisfy a refusal, run the command it names.
 
 ## Developing pm with pm (required one-time setup)
 
@@ -123,7 +134,9 @@ conflicts, resolve them the normal way (`git status` shows the conflicting files
 
 ## Running the EDD evaluation corpus (optional)
 
-pm's engine is covered by `node --test scripts/test/*.test.mjs`. That suite cannot cover
+pm's engine is covered by `node --test scripts/test/assert/*.test.mjs` (per commit),
+`… scripts/test/functional/*.test.mjs` (real git, on the trigger) and
+`… scripts/test/sweeps/*.test.mjs` (the output sweep). That suite cannot cover
 pm's *agent-facing* artifacts — command docs, skills, the rules block, hooks — because their
 correctness is a non-deterministic judgment made by an agent, not an assertable return value.
 Those are covered by an evaluation corpus under `evals/`, built on

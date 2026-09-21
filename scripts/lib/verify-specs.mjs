@@ -37,10 +37,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
+import { EPIC_ID_FORMAT, engineRoot, specsDir, escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 /** How far into a document the leading metadata block may start. Generous — a title, a blank
  *  line and a couple of badges — and bounded so a document with no header never has its BODY
@@ -108,7 +110,7 @@ export const SPEC_INDEX_FILES = new Set(["readme.md", "index.md", "contributing.
 /** Repo-relative, forward-slashed, in the SAME normal form artifact paths are compared in.
  *  A document enumerated one way and claimed the other would read as uncovered-and-dangling —
  *  one document reported twice, as both halves of the difference it is on neither side of. */
-const relToRoot = (abs) => normalizeArtifactPath(path.relative(ROOT, abs).split(path.sep).join("/"));
+const relToRoot = (abs) => normalizeArtifactPath(path.relative(engineRoot(), abs).split(path.sep).join("/"));
 
 /** Every design document under `absRoot`, recursively, as repo-relative normalized paths. */
 export function specDocuments(absRoot) {
@@ -156,7 +158,7 @@ export function specCoverage(state, absRoot) {
     if (!e || typeof e !== "object") continue;
     const p = normalizeArtifactPath(e.specPath);
     if (!p) continue;
-    if (!fs.existsSync(path.join(ROOT, p))) dangling.push({ epic: e.id, path: p });
+    if (!fs.existsSync(path.join(engineRoot(), p))) dangling.push({ epic: e.id, path: p });
   }
 
   return { root: relToRoot(absRoot) || absRoot, rootExists, documents, dangling };
@@ -228,7 +230,7 @@ export function headerCandidates(state, absRoot) {
   const proposals = [], unknown = [];
   for (const rel of specDocuments(absRoot)) {
     let text;
-    try { text = fs.readFileSync(path.join(ROOT, rel), "utf8"); } catch { continue; }
+    try { text = fs.readFileSync(path.join(engineRoot(), rel), "utf8"); } catch { continue; }
     const found = headerEpicIds(text);
     if (!found.length) continue;
     const covered = (claims.get(rel) || []).length > 0;
@@ -303,27 +305,27 @@ function danglingBlock(dangling) {
  *  heal and SAVES, so a read-only report that rendered would write state on the way to saying it
  *  writes none. Read-only here means state.json is byte-identical afterwards. */
 export function verifySpecs() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const f = parseFlags(process.argv.slice(3));
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("verify-specs", f);
   // An unregistered flag is refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs); without it the flag would
   // parse, be ignored, and exit 0 having checked the default root instead of the one named.
   if (f.root !== undefined && typeof f.root !== "string") {
     // A valueless `--root` parses as boolean true. Falling back to the default would check a
     // root the caller did not ask about and report on it as though they had.
-    process.stderr.write("conductor: --root requires a value\n"); process.exit(1);
+    die("conductor: --root requires a value\n");
   }
   // `--headers` is a BOOLEAN arm: it carries no value, and a stray argument after it must not be
   // read as one. parseFlags would consume the next non-flag token, so `--headers docs/x` would
   // silently look like `headers: "docs/x"` and check the default root while looking answered.
   if (f.headers !== undefined && f.headers !== true) {
-    process.stderr.write("conductor: --headers takes no value (did you mean --root?)\n"); process.exit(1);
+    die("conductor: --headers takes no value (did you mean --root?)\n");
   }
-  const absRoot = f.root ? path.resolve(ROOT, f.root) : SPECS_DIR;
+  const absRoot = f.root ? path.resolve(engineRoot(), f.root) : specsDir();
   const state = loadState();
   if (f.headers) {
-    process.stdout.write(formatHeaderCandidates(headerCandidates(state, absRoot)) + "\n");
+    outStream().write(formatHeaderCandidates(headerCandidates(state, absRoot)) + "\n");
     return;
   }
-  process.stdout.write(formatSpecCoverage(specCoverage(state, absRoot)) + "\n");
+  outStream().write(formatSpecCoverage(specCoverage(state, absRoot)) + "\n");
 }

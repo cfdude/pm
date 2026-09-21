@@ -17,6 +17,7 @@
 
 import { EPIC_ID_FORMAT, escapeControls, findRelease, orNoRemedy, printedId, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { die } from "./command-exit.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -25,6 +26,7 @@ import {
   CROSS_SPEC_MIN_SPECS, KNOWN_CROSS_SPEC_VERDICTS, crossSpecLine, crossSpecRequired,
   releaseSpecFiles, specDigest,
 } from "./cross-spec-review.mjs";
+import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 const str = (v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined);
 
@@ -39,7 +41,11 @@ const lastStr = (v) => {
   return all.length ? str(all[all.length - 1]) : undefined;
 };
 
-const die = (msg) => { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); };
+// This module's own spelling of the ONE exit path (command-exit.mjs): the call sites name the
+// refusal as a FRAGMENT and this adds the `conductor: ` prefix and the newline they have always
+// carried. Deliberately not called `die` — the shared function takes a whole message, and a local
+// `die` would shadow it for every call the 2.2 sweep inserted.
+const refuse = (msg) => die(`conductor: ${msg}\n`);
 
 /** The positional that names the READ form rather than a release. RESERVED as an id, and the
  *  write path refuses it by name: a keyword resolved by guesswork ("is `show` an id or a verb
@@ -59,11 +65,11 @@ const SHOW = "show";
  *  one of two things a caller wrote deliberately, and the record it writes is the reason. */
 function epicReasonPair(flagName, raw, outOfBand) {
   const value = str(raw);
-  if (value === undefined) die(`--${flagName} requires an epic id`);
+  if (value === undefined) refuse(`--${flagName} requires an epic id`);
   const at = value.indexOf(":");
   if (at === -1) return { epic: value, reason: outOfBand };
   if (outOfBand !== undefined) {
-    die(`--${flagName} ${escapeControls(JSON.stringify(value))} carries its reason inline AND --reason ${escapeControls(JSON.stringify(outOfBand))} was ` +
+    refuse(`--${flagName} ${escapeControls(JSON.stringify(value))} carries its reason inline AND --reason ${escapeControls(JSON.stringify(outOfBand))} was ` +
       "given — two reasons for one record. Say which: drop --reason, or drop the inline half. " +
       "Nothing was written.");
   }
@@ -87,17 +93,16 @@ const amend = (rel, entry) => {
  *  associate epics with it, record an exclusion with its required reason, and UNDO either of the
  *  last two. `release show [<id>]` is the read form and lives in releaseShow() below. */
 export function release() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const argv = currentArgv().slice(3);
   // THE READ FORM, dispatched before anything else parses. `show` is a reserved positional (see
   // SHOW above), so this branch is unambiguous and the write path below can never see that id.
   if (argv[0] === SHOW) { releaseShow(argv.slice(1)); return; }
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
-    process.stderr.write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    process.stderr.write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"]\n");
-    process.stderr.write("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
-    process.exit(1);
+    errStream().write("conductor: release requires a release id as its first POSITIONAL argument\n");
+    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"]\n");
+    die("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
@@ -117,19 +122,17 @@ export function release() {
     // prints a runnable `release <id> --intent …`, and before any write. The update branch above is
     // untouched, so a legacy release id stays addressable. No invocation carrying the id is printed.
     if (!EPIC_ID_FORMAT.test(id)) {
-      process.stderr.write(
+      die(
         `conductor: release '${escapeControls(id)}' cannot be created — a new release id must match ` +
         `${EPIC_ID_FORMAT.source} (lowercase letters, digits, \`.\`, \`_\`, \`-\`). Nothing was written.\n`);
-      process.exit(1);
     }
     // A release with no intent prose is an id nobody can read six months later, which is the
     // failure this whole capability exists to end. So creation DEMANDS it, and the same refusal
     // covers "you named a release that does not exist" — those are one condition, not two.
     if (intent === undefined) {
-      process.stderr.write(
+      die(
         `conductor: release '${escapeControls(id)}' does not exist — create it first with ` +
         `${orNoRemedy(() => `\`release ${printedId(id, "release")} --intent "<what this release is for>"\``)}. Nothing was written.\n`);
-      process.exit(1);
     }
     rel = { id, intent, deferred: [] };
     if (target !== undefined) rel.target = target;
@@ -146,12 +149,11 @@ export function release() {
   // pointer to an id that does not exist renders as a member of nothing and is unfindable.
   const members = [].concat(f.member === undefined ? [] : f.member).filter(v => typeof v === "string");
   if (f.member !== undefined && !members.length) {
-    process.stderr.write("conductor: --member requires an epic id\n"); process.exit(1);
+    die("conductor: --member requires an epic id\n");
   }
   for (const epicId of members) {
     if (!knownEpic(epicId)) {
-      process.stderr.write(`conductor: --member '${escapeControls(epicId)}' is not a known epic id. Nothing was written.\n`);
-      process.exit(1);
+      die(`conductor: --member '${escapeControls(epicId)}' is not a known epic id. Nothing was written.\n`);
     }
   }
 
@@ -166,11 +168,10 @@ export function release() {
   // silently attached to a record nobody wrote it for is the exact defect that keeps `--defer`
   // non-repeatable.
   if (reasonFlags.length > 1 && outOfBand !== undefined) {
-    process.stderr.write(
+    die(
       `conductor: --reason cannot serve --${reasonFlags.join(" and --")} in one invocation — ` +
       "one reason, one record. Give each its own inline reason: " +
       `--${reasonFlags[0]} "<epicId>:<why>". Nothing was written.\n`);
-    process.exit(1);
   }
 
   const deferred = f.defer !== undefined ? epicReasonPair("defer", f.defer, outOfBand) : undefined;
@@ -189,20 +190,18 @@ export function release() {
   for (const one of named) {
     const others = named.filter(o => o.epic === one.epic && o.flag !== one.flag);
     if (others.length) {
-      process.stderr.write(
+      die(
         `conductor: '${escapeControls(one.epic)}' cannot be both --${one.flag} and --${others[0].flag} of ` +
         `'${escapeControls(id)}' in one invocation — say which one it is. Nothing was written.\n`);
-      process.exit(1);
     }
   }
 
   if (deferred) {
     if (!knownEpic(deferred.epic)) {
-      process.stderr.write(`conductor: --defer '${escapeControls(deferred.epic)}' is not a known epic id. Nothing was written.\n`);
-      process.exit(1);
+      die(`conductor: --defer '${escapeControls(deferred.epic)}' is not a known epic id. Nothing was written.\n`);
     }
     const derr = releaseDeferralError({ epic: deferred.epic, reason: deferred.reason });
-    if (derr) { process.stderr.write(`conductor: ${derr}\n`); process.exit(1); }
+    if (derr) { die(`conductor: ${derr}\n`); }
   }
 
   // --unmember: the inverse of --member. It is NOT --defer wearing another name: --defer records
@@ -212,25 +211,22 @@ export function release() {
   if (unmember) {
     const epic = knownEpic(unmember.epic);
     if (!epic) {
-      process.stderr.write(`conductor: --unmember '${escapeControls(unmember.epic)}' is not a known epic id. Nothing was written.\n`);
-      process.exit(1);
+      die(`conductor: --unmember '${escapeControls(unmember.epic)}' is not a known epic id. Nothing was written.\n`);
     }
     if (unmember.reason === undefined) {
-      process.stderr.write(
+      die(
         `conductor: --unmember requires a reason — why '${escapeControls(unmember.epic)}' does not belong to ` +
         `'${escapeControls(id)}': ${orNoRemedy(() => `--unmember "${printedId(unmember.epic) && unmember.epic}:<why>"`)} (or --reason "<why>"). A membership removed ` +
         "with no reason is indistinguishable from one nobody decided. Nothing was written.\n");
-      process.exit(1);
     }
     // The SIBLING GUARD, and the one a removal path most needs: without it `--unmember` on an
     // epic that belongs to a DIFFERENT release deletes that release's pointer while reporting
     // success against this one.
     if (epic.release !== id) {
-      process.stderr.write(
+      die(
         `conductor: '${escapeControls(unmember.epic)}' is not a member of '${escapeControls(id)}' — ` +
         `${epic.release ? `it belongs to '${escapeControls(epic.release)}'` : "it belongs to no release"}. ` +
         "Nothing was written.\n");
-      process.exit(1);
     }
   }
 
@@ -239,20 +235,17 @@ export function release() {
   // does NOT make the epic a member — that is `--member`, a separate decision.
   if (undefer) {
     if (!knownEpic(undefer.epic)) {
-      process.stderr.write(`conductor: --undefer '${escapeControls(undefer.epic)}' is not a known epic id. Nothing was written.\n`);
-      process.exit(1);
+      die(`conductor: --undefer '${escapeControls(undefer.epic)}' is not a known epic id. Nothing was written.\n`);
     }
     if (undefer.reason === undefined) {
-      process.stderr.write(
+      die(
         `conductor: --undefer requires a reason — why '${escapeControls(undefer.epic)}' is back in scope for ` +
         `'${escapeControls(id)}': ${orNoRemedy(() => `--undefer "${printedId(undefer.epic) && undefer.epic}:<why>"`)} (or --reason "<why>"). Nothing was written.\n`);
-      process.exit(1);
     }
     if (!rel.deferred.some(d => d && d.epic === undefer.epic)) {
-      process.stderr.write(
+      die(
         `conductor: '${escapeControls(undefer.epic)}' is not deferred from '${escapeControls(id)}' — there is no exclusion to ` +
         "remove. Nothing was written.\n");
-      process.exit(1);
     }
   }
 
@@ -262,7 +255,7 @@ export function release() {
     const wasDeferred = rel.deferred.find(d => d && d.epic === epicId);
     if (wasDeferred) {
       rel.deferred = rel.deferred.filter(d => !d || d.epic !== epicId);
-      process.stderr.write(
+      errStream().write(
         `conductor: '${escapeControls(epicId)}' was deferred from '${escapeControls(id)}' — that record is now removed ` +
         `(it read: ${escapeControls(wasDeferred.reason)})\n`);
       // THE SIBLING CALL SITE. `--member` has been performing an implicit undefer since the verb
@@ -290,7 +283,7 @@ export function release() {
   if (unmember) {
     delete knownEpic(unmember.epic).release;
     amend(rel, { op: "unmember", epic: unmember.epic, reason: unmember.reason });
-    process.stderr.write(
+    errStream().write(
       `conductor: '${escapeControls(unmember.epic)}' is no longer a member of '${escapeControls(id)}' — ${escapeControls(unmember.reason)}. ` +
       "It keeps its place in the backlog; nothing about the epic itself changed.\n");
   }
@@ -299,7 +292,7 @@ export function release() {
     const was = rel.deferred.find(d => d && d.epic === undefer.epic);
     rel.deferred = rel.deferred.filter(d => !d || d.epic !== undefer.epic);
     amend(rel, { op: "undefer", epic: undefer.epic, reason: undefer.reason, was: was && was.reason });
-    process.stderr.write(
+    errStream().write(
       `conductor: '${escapeControls(undefer.epic)}' is no longer deferred from '${escapeControls(id)}' — ${escapeControls(undefer.reason)} ` +
       `(the exclusion read: ${escapeControls(was && was.reason)}). It is NOT a member: say so with --member.\n`);
   }
@@ -331,16 +324,16 @@ export function release() {
  *  the second would make `PROJECT.md`'s mtime a function of who looked at what.
  */
 export function releaseShow(rest) {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const flags = rest.filter(t => typeof t === "string" && t.startsWith("--"));
   if (flags.length) {
-    die(`release show is the READ form and takes no flags (got ${escapeControls(flags.join(", "))}). ` +
+    refuse(`release show is the READ form and takes no flags (got ${escapeControls(flags.join(", "))}). ` +
       `\`${SHOW}\` is RESERVED as the read keyword, so it cannot also name a release — which is ` +
       "the point: a positional that means one thing here and another there is resolved by " +
       "guesswork, and this engine resolves nothing by guesswork. Name the release something else.");
   }
   if (rest.length > 1) {
-    die(`release show takes at most one release id (got ${rest.length}: ${escapeControls(rest.join(", "))})`);
+    refuse(`release show takes at most one release id (got ${rest.length}: ${escapeControls(rest.join(", "))})`);
   }
   const state = loadState();
   const epics = Array.isArray(state.epics) ? state.epics : [];
@@ -351,7 +344,7 @@ export function releaseShow(rest) {
   // cannot disagree about how many epics a release holds.
   if (id === undefined) {
     if (!releases.length) {
-      process.stdout.write(
+      outStream().write(
         "conductor: no releases are declared in this repo. Declare one with " +
         "`release <id> --intent \"<what this release is for>\"`.\n");
       return;
@@ -363,7 +356,7 @@ export function releaseShow(rest) {
     }
     out.push("  Read one back with `release show <id>`.");
     // One entry per line: escaping each is what keeps a stored id, intent or target on its line.
-    process.stdout.write(out.map(escapeControls).join("\n") + "\n");
+    outStream().write(out.map(escapeControls).join("\n") + "\n");
     return;
   }
 
@@ -371,7 +364,7 @@ export function releaseShow(rest) {
   if (!rel) {
     // A release that does not exist is NOT a release with nothing in it, and rendering an empty
     // object for one would be the same confusion this verb exists to end.
-    die(`release '${escapeControls(id)}' does not exist. ` +
+    refuse(`release '${escapeControls(id)}' does not exist. ` +
       (releases.length
         ? `Declared here: ${releases.map(r => `'${escapeControls(r.id)}'`).join(", ")}.`
         : "No releases are declared in this repo yet."));
@@ -413,7 +406,7 @@ export function releaseShow(rest) {
         `${a.at ? ` (${a.at})` : ""}`);
     }
   }
-  process.stdout.write(out.map(escapeControls).join("\n") + "\n");
+  outStream().write(out.map(escapeControls).join("\n") + "\n");
 }
 
 // ─────────────────── the RELEASE-scope review gate (gh#126) ───────────────────
@@ -435,8 +428,8 @@ export function releaseShow(rest) {
  * reader can check.
  */
 export function recordCrossSpecReview() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs), reading this verb's two
@@ -447,23 +440,20 @@ export function recordCrossSpecReview() {
   const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
   const reviewer = typeof f.reviewer === "string" ? f.reviewer : undefined;
   if (!id || !verdict) {
-    process.stderr.write(
+    die(
       "usage: conductor.mjs record-cross-spec-review <releaseId> --verdict pass|fail " +
       "[--reviewer \"<identity>\"]\n");
-    process.exit(1);
   }
   if (!KNOWN_CROSS_SPEC_VERDICTS.includes(verdict)) {
-    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_CROSS_SPEC_VERDICTS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --verdict must be one of ${KNOWN_CROSS_SPEC_VERDICTS.join("|")}\n`);
   }
 
   const state = loadState();
   const rel = findRelease(state, id);
   if (!rel) {
-    process.stderr.write(
+    die(
       `conductor: release '${escapeControls(id)}' does not exist — create it first with ` +
       `${orNoRemedy(() => `\`release ${printedId(id, "release")} --intent "<what this release is for>"\``)}. Nothing was written.\n`);
-    process.exit(1);
   }
 
   const specs = releaseSpecFiles(state, state.epics, id);
@@ -471,11 +461,10 @@ export function recordCrossSpecReview() {
   // ask is a record that reads as coverage. Refused rather than stored: Gate 1 covers a single
   // spec completely.
   if (!crossSpecRequired(specs)) {
-    process.stderr.write(
+    die(
       `conductor: release '${escapeControls(id)}' has ${specs.length} spec file(s) — the cross-spec gate applies ` +
       `at ${CROSS_SPEC_MIN_SPECS} or more, and Gate 1 covers a single spec completely. ` +
       `Nothing was written.\n`);
-    process.exit(1);
   }
 
   const recorded = [];
@@ -489,10 +478,9 @@ export function recordCrossSpecReview() {
   // amendment would be undetectable, so the pass it licenses is unfalsifiable. A `fail` may be
   // recorded regardless: there is nothing for it to have covered.
   if (verdict === "pass" && unreadable.length) {
-    process.stderr.write(
+    die(
       `conductor: cannot record a 'pass' for '${escapeControls(id)}' — these spec file(s) could not be read, so ` +
       `no digest covers them and a later amendment would be undetectable: ${escapeControls(unreadable.join(", "))}\n`);
-    process.exit(1);
   }
 
   const entry = { verdict, reviewedAt: new Date().toISOString(), specs: recorded };

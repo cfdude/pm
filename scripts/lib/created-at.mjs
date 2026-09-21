@@ -23,11 +23,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
-import { ROOT } from "./constants.mjs";
+import { engineRoot } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { die } from "./command-exit.mjs";
+import { errStream, gitOps } from "./invocation.mjs";
 
 /** The state file as a git PATHSPEC — CWD-relative, for the reason differsFromHead()'s is: git
  *  walks UP to find a repository, so a pm-managed project nested inside a larger repo has to be
@@ -57,18 +58,16 @@ function idNeedle(epicId) {
  *  true root commit is also parentless and is a perfectly good introduction. */
 function shallowBoundaries() {
   try {
-    const isShallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const isShallow = gitOps().isShallowRepository();
     if (isShallow !== "true") return new Set();
-    const p = execFileSync("git", ["rev-parse", "--git-path", "shallow"],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const p = gitOps().gitPath("shallow");
     // RESOLVED AGAINST ROOT, not left to process.cwd(). `--git-path` answers relative to the
     // directory git ran in, which is ROOT — and readFileSync would resolve it against the
     // PROCESS's cwd instead. Those are the same directory in the common case and diverge for a
     // pm-managed project nested inside a larger repository, which is the layout differsFromHead()
     // carries the same warning for. The catch below would swallow that as an empty set, so the
     // guard would go silently inert in exactly the checkout shape it exists for.
-    const body = fs.readFileSync(path.resolve(ROOT, p), "utf8");
+    const body = fs.readFileSync(path.resolve(engineRoot(), p), "utf8");
     return new Set(body.split("\n").map(l => l.trim()).filter(Boolean));
   } catch { return new Set(); }
 }
@@ -94,9 +93,7 @@ function shallowBoundaries() {
 export function introducedAt(epicId, grafted = shallowBoundaries()) {
   if (typeof epicId !== "string" || !epicId) return null;
   try {
-    const out = execFileSync(
-      "git", ["log", `-S${idNeedle(epicId)}`, "--reverse", "--format=%H %cI", "--", STATE_PATHSPEC],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const out = gitOps().logPickaxe(idNeedle(epicId), STATE_PATHSPEC);
     const first = out.split("\n").map(l => l.trim()).filter(Boolean)[0];
     if (!first) return null;
     const [sha, date] = first.split(" ");
@@ -142,7 +139,7 @@ export function recoverCreatedAtDates(state) {
  *  and every one of those is a judgment about what happened to the work. This transforms a
  *  malformed record exactly as it transforms a well-formed one and leaves the judgment alone. */
 export function recoverCreatedAt() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
   const { missing, recovered, unrecoverable } = recoverCreatedAtDates(state);
   // The save is guarded on nothing: with no recovery the state is identical to disk and
@@ -165,7 +162,7 @@ export function recoverCreatedAt() {
     unchanged: `${summary} — ${STATE_UNCHANGED}`,
   });
   if (unrecoverable) {
-    process.stderr.write(
+    errStream().write(
       "   Unrecoverable means UNKNOWN, not unknowable: no commit in THIS checkout introduces " +
       "those ids into .conductor/state.json. Re-run after fetching more history.\n");
   }

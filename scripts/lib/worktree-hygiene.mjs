@@ -5,9 +5,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
-import { ROOT, RENDER_STAMP_PATH, STATE_PATH, jsonText } from "./constants.mjs";
+import { engineRoot, renderStampPath, statePath, jsonText } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
+import { errStream, gitOps, outStream } from "./invocation.mjs";
 
 /** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
  *  the `df-verify-worktrees-merged-not-just-archived` fix, actual merge state) to catch a
@@ -27,14 +28,14 @@ import { ROOT, RENDER_STAMP_PATH, STATE_PATH, jsonText } from "./constants.mjs";
  *  --porcelain` and `git merge-base --is-ancestor` only; gracefully returns no orphans if
  *  listing worktrees fails (e.g. this isn't a git repo at all). */
 export function verifyWorktrees() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
   const byId = new Map(state.epics.map(e => [e.id, e]));
   let out;
   try {
-    out = execSync("git worktree list --porcelain", { cwd: ROOT, encoding: "utf8" });
+    out = gitOps().worktreeList();
   } catch {
-    process.stdout.write(jsonText({ orphaned: [] }) + "\n");
+    outStream().write(jsonText({ orphaned: [] }) + "\n");
     return;
   }
   const orphaned = [];
@@ -60,7 +61,7 @@ export function verifyWorktrees() {
       currentHead = null;
     }
   }
-  process.stdout.write(jsonText({ orphaned }) + "\n");
+  outStream().write(jsonText({ orphaned }) + "\n");
 }
 
 /** True if `sha` is an ancestor of the current branch's HEAD (i.e. already merged in) —
@@ -72,7 +73,7 @@ export function isAncestorOfCurrentHead(sha) {
     // A worktree head read from `git worktree list`, not a stored value — but never interpolated into
     // a shell line, and never read as an option either (hex-gated; no `--end-of-options`, see git.mjs).
     if (typeof sha !== "string" || !/^[0-9a-fA-F]{4,64}$/.test(sha)) return false;
-    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: ROOT, stdio: "ignore" });
+    gitOps().mergeBaseIsAncestorOfHead(sha);
     return true;
   } catch {
     return false;
@@ -88,13 +89,13 @@ export function isAncestorOfCurrentHead(sha) {
  *  consumed files). Returns `{ changesets: [{ id, path, body }] }` sorted by id, `[]` if
  *  `.changesets/` doesn't exist or is empty — never errors on a missing directory. */
 export function changesets() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const dir = path.join(ROOT, ".changesets");
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const dir = path.join(engineRoot(), ".changesets");
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    process.stdout.write(jsonText({ changesets: [] }) + "\n");
+    outStream().write(jsonText({ changesets: [] }) + "\n");
     return;
   }
   const out = [];
@@ -105,7 +106,7 @@ export function changesets() {
     out.push({ id, path: p, body: fs.readFileSync(p, "utf8") });
   }
   out.sort((a, b) => a.id.localeCompare(b.id));
-  process.stdout.write(jsonText({ changesets: out }) + "\n");
+  outStream().write(jsonText({ changesets: out }) + "\n");
 }
 
 /** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md
@@ -115,25 +116,23 @@ export function changesets() {
  *  is evidence something wrote to it outside `/pm:status`/the engine's subcommands. Pure
  *  read — never modifies state.json or PROJECT.md itself. */
 export function verifyState() {
-  if (!isInitialized()) { process.stderr.write("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); process.exit(1); }
-  const stamp = readJSON(RENDER_STAMP_PATH, null);
+  if (!isInitialized()) { die("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); }
+  const stamp = readJSON(renderStampPath(), null);
   if (!stamp || typeof stamp.stateMtimeMs !== "number") {
-    process.stderr.write(
+    die(
       "conductor: no render stamp found (.conductor/render-stamp.json) — state.json has never " +
       "been rendered, so an accidental hand-edit can't be ruled out. Run `/pm:status` to render " +
       "and establish a baseline.\n"
     );
-    process.exit(1);
   }
-  const currentMtimeMs = fs.statSync(STATE_PATH).mtimeMs;
+  const currentMtimeMs = fs.statSync(statePath()).mtimeMs;
   if (currentMtimeMs > stamp.stateMtimeMs) {
-    process.stderr.write(
+    die(
       "conductor: state.json was modified AFTER the last render — this looks like an " +
       "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
       "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
       "review the diff, and reconcile before trusting PROJECT.md again.\n"
     );
-    process.exit(1);
   }
-  process.stderr.write("conductor: state.json matches the last render — no hand-edit detected.\n");
+  errStream().write("conductor: state.json matches the last render — no hand-edit detected.\n");
 }

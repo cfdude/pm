@@ -8,15 +8,20 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
-import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
+import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, STORABLE_EPIC_ID, conductorDir, engineRoot, escapeControls, statePath } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
+import { currentArgv, currentCwd, currentEnv, stdinSource } from "./invocation.mjs";
 
-// Re-evaluate paths each time they're accessed to support cache-busting tests
+// Re-evaluate paths each time they're accessed — and 0.47.0 (task 3.2) makes that the ONLY shape
+// that can work: the root is the INVOCATION's, so freezing these into captured values would pin
+// whichever of two in-process roots happened to load the module first. The shape is preserved
+// deliberately (it is what lets a test move the record under a running engine); what changed is
+// where the root comes FROM — `engineRoot()` reads the invocation, not this process's environment.
 function getPaths() {
-  const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
-  const STATE_PATH = path.join(CONDUCTOR_DIR, "state.json");
+  const root = engineRoot();
+  const CONDUCTOR_DIR = conductorDir(root);
+  const STATE_PATH = statePath(root);
   return { STATE_PATH, CONDUCTOR_DIR };
 }
 
@@ -25,8 +30,16 @@ export function readJSON(p, fallback) {
   catch { return fallback; }
 }
 
+/** Drain the INVOCATION's standard input.
+ *
+ *  It read fd 0 directly until 0.47.0 (task 3.4). The four callers are all hook payloads —
+ *  gate-guard, lesson-advice, the refused-hook-line drain in conductor.mjs and add-many's `--from -`
+ *  — and a caller that supplied its own input has to see its payload used rather than whatever is
+ *  on the process's fd 0. The default (`stdinSource()` over the real process) keeps reading fd 0,
+ *  and keeps doing it SYNCHRONOUSLY: touching `process.stdin` to read instead opens a stream on
+ *  fd 0 that makes the drain read nothing and leaves the hook writer holding an EPIPE. */
 export function readStdin() {
-  try { return fs.readFileSync(0, "utf8"); } catch { return ""; }
+  try { return stdinSource().read(); } catch { return ""; }
 }
 
 export function isInitialized() {
@@ -498,12 +511,12 @@ function tryBreakStaleLock(judged, at = null) {
  *  path (or a trailing `*` on it), never on a longer literal filename beneath it, and this message
  *  always prints the LITERAL lock path rather than a glob. */
 function lockRefusalMessage(lock, expected) {
-  const shown = path.relative(process.env.CLAUDE_PROJECT_DIR || process.cwd(), lock.path) || lock.path;
+  const shown = path.relative(currentEnv().CLAUDE_PROJECT_DIR || currentCwd(), lock.path) || lock.path;
   const directory = lock.directory || (lock.holder && lock.holder.kind === "directory");
   const rm = `${directory ? "rm -r" : "rm"} ${shown}`;
   const stale = STATE_LOCK_STALE_MS / 1000;
   if (lock.breakHeld) {
-    const bShown = path.relative(process.env.CLAUDE_PROJECT_DIR || process.cwd(), lock.breakHeld.path) || lock.breakHeld.path;
+    const bShown = path.relative(currentEnv().CLAUDE_PROJECT_DIR || currentCwd(), lock.breakHeld.path) || lock.breakHeld.path;
     return `state.json's lock at ${shown} is stale, but it could not be broken within ${STATE_LOCK_WAIT_MS} ms ` +
       `because ${bShown} is held — by another save breaking it, or by one that died; nothing was written ` +
       `(read revision ${expected}). A break file older than ${stale} s is recovered automatically; if no pm ` +
@@ -647,7 +660,7 @@ export function saveState(state, opts = {}) {
     // than threaded through 24 call sites, which is the same shape as platformFlag() in
     // conductor.mjs. Without an escape hatch people learn to hand-edit state.json to get around
     // the guard, which is strictly worse than a documented override.
-    const forced = process.argv.includes("--force");
+    const forced = currentArgv().includes("--force");
     if (found !== expected && !forced) {
       if (onConflict === "skip") {
         recordConflict({ verb, expected, found });

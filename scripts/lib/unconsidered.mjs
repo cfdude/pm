@@ -20,15 +20,17 @@ import { unconsideredOutcomes } from "./archive-gate.mjs";
 import { recordedByOf } from "./disposition.mjs";
 import { jsonText } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
+import { die } from "./command-exit.mjs";
+import { outStream } from "./invocation.mjs";
 
 /** READ-ONLY. Prints the archived epics whose outcome nobody considered, each with the exact
  *  invocation that would record one — machine-readable, because the caller is an agent that is
  *  about to run those invocations. */
 export function unconsideredOutcomesReport() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
   const rows = unconsideredOutcomes(state.epics || []);
-  process.stdout.write(jsonText({
+  outStream().write(jsonText({
     count: rows.length,
     unconsidered: rows.map(({ epic, invocation, deliveredBlockedBy }) => ({
       id: epic.id,

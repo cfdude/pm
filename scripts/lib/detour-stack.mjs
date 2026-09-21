@@ -36,8 +36,14 @@ import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { deferralHistory, deferralNote, isArmed, liveReconcileFrame, ownedDetours } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
-const die = (msg) => { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); };
+// This module's own spelling of the ONE exit path (command-exit.mjs): the call sites name the
+// refusal as a FRAGMENT and this adds the `conductor: ` prefix and the newline they have always
+// carried. Deliberately not called `die` — the shared function takes a whole message, and a local
+// `die` would shadow it for every call the 2.2 sweep inserted.
+const refuse = (msg) => die(`conductor: ${msg}\n`);
 
 const PUSH_USAGE =
   "usage: conductor.mjs push-detour <pausedEpicId> --detour <detourEpicId> --reason \"<why>\" " +
@@ -88,8 +94,8 @@ function linkOnce(epic, type, otherId, reason, { arm } = {}) {
  *  that it must survive until reconciliation completes. A mistaken `--no-reconcile` is at least
  *  attributable; a forgotten default is not. */
 export function pushDetour() {
-  if (!isInitialized()) die("run /pm:init first");
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) refuse("run /pm:init first");
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Before loadState(), so a refusal can never leave a partial write behind — the same position
@@ -98,12 +104,12 @@ export function pushDetour() {
 
   const detourId = typeof f.detour === "string" ? f.detour : undefined;
   const reason = typeof f.reason === "string" ? f.reason.trim() : "";
-  if (!id || !detourId || !reason) { process.stderr.write(PUSH_USAGE); process.exit(1); }
+  if (!id || !detourId || !reason) { die(PUSH_USAGE); }
 
   const yes = f.reconcile === true;
   const no = f["no-reconcile"] === true;
   if (yes === no) {
-    die("push-detour requires exactly one of --reconcile or --no-reconcile — whether the detour " +
+    refuse("push-detour requires exactly one of --reconcile or --no-reconcile — whether the detour " +
       "can invalidate the paused epic's plan is a judgment, and a default would make an absent " +
       "decision look like a considered one. Say --reconcile unless you are certain the detour " +
       "touches nothing the paused epic depends on");
@@ -112,20 +118,20 @@ export function pushDetour() {
 
   const state = loadState();
   const paused = state.epics.find(e => e.id === id);
-  if (!paused) die(`epic '${escapeControls(id)}' not found`);
+  if (!paused) refuse(`epic '${escapeControls(id)}' not found`);
   if (paused.status === "archived") {
-    die(`epic '${escapeControls(id)}' is archived — an epic that has ended cannot be paused for a detour, and a ` +
+    refuse(`epic '${escapeControls(id)}' is archived — an epic that has ended cannot be paused for a detour, and a ` +
       "frame naming it would never be resumable");
   }
   const detour = state.epics.find(e => e.id === detourId);
   if (!detour) {
-    die(`detour epic '${escapeControls(detourId)}' not found — register it first (` + orNoRemedy(() => `\`add-epic --id ${printedId(detourId)} ` +
+    refuse(`detour epic '${escapeControls(detourId)}' not found — register it first (` + orNoRemedy(() => `\`add-epic --id ${printedId(detourId)} ` +
       "…\`") + "), so the frame cannot name work that does not exist");
   }
-  if (detour.status === "archived") die(`detour epic '${escapeControls(detourId)}' is archived — there is nothing left to build`);
-  if (id === detourId) die("the paused epic and the detour cannot be the same epic");
+  if (detour.status === "archived") refuse(`detour epic '${escapeControls(detourId)}' is archived — there is nothing left to build`);
+  if (id === detourId) refuse("the paused epic and the detour cannot be the same epic");
   if ((state.detourStack || []).some(fr => fr && fr.pausedEpic === id)) {
-    die(`epic '${escapeControls(id)}' is already on the detour stack — resume it before pausing it again, or the ` +
+    refuse(`epic '${escapeControls(id)}' is already on the detour stack — resume it before pausing it again, or the ` +
       "stack holds two frames whose pops would contradict each other");
   }
 
@@ -186,7 +192,7 @@ export function pushDetour() {
   // Computed from the POST-push state so the push being made is counted; silent on a first
   // deferral, because the first detour is the mechanism working.
   const note = deferralNote(deferralHistory(state, id));
-  if (note) process.stderr.write(`conductor: \`${escapeControls(id)}\` — ${note}\n`);
+  if (note) errStream().write(`conductor: \`${escapeControls(id)}\` — ${note}\n`);
   // Step 3 of the old protocol, no longer a step: the ready-to-copy Honcho line is emitted here
   // and logged durably, so the pivot survives outside this repo without a second invocation the
   // agent has to remember. stdout, because it is a line the agent pastes verbatim.
@@ -204,31 +210,31 @@ export function pushDetour() {
  *  leave a stack whose detour epic was removed or renamed with no CLI way out, which re-creates
  *  the hand-edit this verb exists to remove. It warns, which is the honest shape. */
 export function popDetour() {
-  if (!isInitialized()) die("run /pm:init first");
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) refuse("run /pm:init first");
+  const argv = currentArgv().slice(3);
   const expected = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
 
   const state = loadState();
   const stack = Array.isArray(state.detourStack) ? state.detourStack : [];
-  if (!stack.length) die("the detour stack is empty — there is nothing paused to resume");
+  if (!stack.length) refuse("the detour stack is empty — there is nothing paused to resume");
   const frame = stack[stack.length - 1];
   const pausedEpic = frame && typeof frame.pausedEpic === "string" ? frame.pausedEpic : undefined;
   if (!pausedEpic) {
-    die("the top detour-stack frame names no paused epic — it cannot be resumed, and popping it " +
+    refuse("the top detour-stack frame names no paused epic — it cannot be resumed, and popping it " +
       "would discard the only record that something was parked");
   }
   if (expected && expected !== pausedEpic) {
-    die(`the top of the detour stack is '${escapeControls(pausedEpic)}', not '${escapeControls(expected)}' — the stack is LIFO, ` +
+    refuse(`the top of the detour stack is '${escapeControls(pausedEpic)}', not '${escapeControls(expected)}' — the stack is LIFO, ` +
       `so resume '${escapeControls(pausedEpic)}' first`);
   }
   const epic = state.epics.find(e => e.id === pausedEpic);
-  if (!epic) die(`paused epic '${escapeControls(pausedEpic)}' is not in the record — it cannot be resumed`);
+  if (!epic) refuse(`paused epic '${escapeControls(pausedEpic)}' is not in the record — it cannot be resumed`);
   if (epic.status === "archived") {
     // THE REMEDY NAMES THE VERB. This message is one of the two the proposal quotes as proof that
     // "no verb does that", and shipping the verb without rewording them would leave the engine
     // asserting the defect this change removed. `drop-detour` takes the PAUSED epic, which is the
     // epic this refusal is already about.
-    die(`paused epic '${escapeControls(pausedEpic)}' is archived — it ended while parked, so there is nothing to ` +
+    refuse(`paused epic '${escapeControls(pausedEpic)}' is archived — it ended while parked, so there is nothing to ` +
       "resume. End the frame deliberately rather than by popping it: " +
       orNoRemedy(() => `\`drop-detour ${printedId(pausedEpic)} --reason "<why>"\``));
   }
@@ -250,7 +256,7 @@ export function popDetour() {
   const detourId = typeof frame.spawnedDetour === "string" ? frame.spawnedDetour : null;
   const detour = detourId ? state.epics.find(e => e.id === detourId) : null;
   if (detour && detour.status !== "archived") {
-    process.stderr.write(
+    errStream().write(
       `conductor: detour '${escapeControls(detourId)}' is still ${escapeControls(detour.status)}, not archived — resuming anyway, ` +
       "but confirm its work is finished and committed before building on the resumed epic\n");
   }
@@ -274,7 +280,7 @@ export function popDetour() {
     // is named — not only the one just popped.
     const owed = ownedDetours(resumed);
     const targets = owed.length ? owed : [detourId || "<detourId>"];
-    process.stderr.write(
+    errStream().write(
       `conductor: RECONCILE GATE — '${escapeControls(pausedEpic)}' carries reconcileNeeded` +
       (owed.length ? ` and owes a verdict against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "") +
       ". Run the reconciler BEFORE writing code, then " +
@@ -329,20 +335,20 @@ export function dropDetour() {
   // rejects, one level down. Their LINK handling does not overlap either: the pop touches no link at
   // all, it re-raises `reconcileNeeded` from the frame it popped. The one rule they genuinely share —
   // "is anything still owed" — is already factored, in links.mjs, and both read it from there.
-  if (!isInitialized()) die("run /pm:init first");
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) refuse("run /pm:init first");
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Before loadState(), the position every other write surface here calls it from.
   requireFlagValues("drop-detour", f);
   const reason = typeof f.reason === "string" ? f.reason.trim() : "";
-  if (!id || !reason) { process.stderr.write(DROP_USAGE); process.exit(1); }
+  if (!id || !reason) { die(DROP_USAGE); }
 
   const state = loadState();
   const frames = Array.isArray(state.detourStack) ? state.detourStack : [];
   const at = frames.findIndex(fr => fr && fr.pausedEpic === id);
   if (at === -1) {
-    die(`no live detour-stack frame pauses '${escapeControls(id)}' — there is no pause to end. ` +
+    refuse(`no live detour-stack frame pauses '${escapeControls(id)}' — there is no pause to end. ` +
       orNoRemedy(() => "`pop-detour`") + " resumes the epic at the top of the stack; this verb ends a " +
       "frame for an epic that is not coming back");
   }

@@ -1,0 +1,76 @@
+0.47.0 task 7.6 — ROUTE WHAT THE WORK TAUGHT YOU (required task item 7).
+
+Three destinations, one per kind. Routed BEFORE the change closes, while the evidence is still
+recoverable — a practice registered without what went wrong to make it necessary reads as a
+preference, and the evidence is the strongest part of the eventual spec.
+
+=====================================================================
+A PRACTICE — registered as an epic, in this repo's conductor:
+
+  `suite-twin-and-certification-discipline` (superpowers, P2, later)
+
+  The two disciplines this change earned, with the measurements that made them necessary:
+  the twin link (one direction: every functional id has an assertion twin, enforced every commit)
+  and certification by CONTENT (a triggered run records a hash per module; the hook refuses a
+  certified module's changed content until a fresh run exists, and names it). The evidence is
+  attached to the epic rather than summarized: the functional half can go months unrun, and before
+  this change nothing connected the halves at all — with the certification mechanism's own origin
+  recorded as the falsified 0.44.0 one-off sweep
+  (docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md).
+
+=====================================================================
+FRICTION — routed as epics in this repo's conductor. `/pm:feedback` is the outward half for #1
+and #2 (they are product observations about pm's own suite, not just this repo's history);
+NOT FILED BY THIS RUN, because a public GitHub issue is an external write the scope granted here
+does not cover. The exact invocations, ready to run:
+
+  /pm:feedback feature \
+    "A guard asserting against raw engine source is satisfied by a comment, and hand-rolling a \
+     source stripper is unsound in the false-NEGATIVE direction"
+
+  /pm:feedback feature \
+    "runHookAgainstFixture copies the real pre-commit hook, so every new hook step has to be \
+     mirrored into the fixture's skeleton tree by hand"
+
+  #1 is registered as `guards-that-read-engine-source-drift-silently` (claude-code, P2).
+    EVIDENCE: conductor-13's guard matched /archiveGate\(/ against RAW source and the verb's own
+    prose calls the gate by name at lib/update-epic.mjs:561 — aliasing the import and its call site
+    away left it GREEN. Measured, in a copy. And the first repair attempt used the character-level
+    stripper already in the suite, which DESYNCS on a regex literal holding a quote and lets every
+    later comment through verbatim — a false negative, the opposite of the direction that helper's
+    docstring claims is the only one it can fail in.
+  #2 is registered as `hook-fixtures-couple-to-every-hook-step` (claude-code, P3).
+    EVIDENCE: 6.4 added one step to the hook and three unrelated conductor-09 tests went red, all
+    pointing at the hook rather than at themselves; the fix was to have the fixture construct the
+    minimum tree the drift script reads, which nothing enforces for the NEXT step.
+
+  A THIRD, found while working and routed here rather than filed: the `covers` field's resolver in
+  check 4 looked only in the functional half, so the engine-source entry — whose own member,
+  `output-interpolations`, lives in the sweep bucket — was refused as dangling by a refusal naming
+  the very command that had produced it. Unsatisfiable-by-construction, and found only by RUNNING
+  the gate against a record `certify sweeps` had just written, not by reading it. Fixed in 6.2/6.3
+  and pinned by a test; recorded here because the shape (a refusal that names its own satisfier) is
+  the thing to watch for in the next trigger added.
+
+=====================================================================
+A PROCESS FAILURE — a lesson file, `docs/lessons/`:
+
+  docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md — UPDATED, not duplicated. This
+  change INSTANTIATES that lesson, and the task asks the question explicitly: "if the work shows the
+  certification record is the mechanism that lesson lacked, say so there rather than only in this
+  change".
+
+  IT IS, AND THE FILE NOW SAYS SO, with the three properties that make it different from the
+  one-off it replaces: machine-readable rather than remembered, keyed on CONTENT rather than on a
+  date or a commit (so it goes stale when the swept subject moves, not when the change archives —
+  which is exactly how the 0.44.0 sentence became a fossil), and CHECKED ON EVERY COMMIT by a script
+  that spawns nothing but four git index reads. The lesson's `enforced_in` line is updated from
+  "a habit; no mechanism" to name `scripts/test/drift.mjs` check 4 and `scripts/test/certify.mjs`,
+  and its new closing section names the trigger boundary explicitly: CI is where the triggered
+  buckets actually run, with no record present and none substitutable, so the record is a
+  convenience for the developer and never the only thing between a change and an unrun sweep.
+
+  No new lesson file is written for this change, and here is why rather than an omission: every
+  failure it hit is an instance of a lesson that already exists — a guard a comment could satisfy is
+  `a-guard-can-check-the-wrong-half`, and a sweep with no future is the lesson above. A second file
+  restating either would be a fossil of its own.

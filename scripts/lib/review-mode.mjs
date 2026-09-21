@@ -9,6 +9,8 @@ import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_REVIEW_MODES, escapeControls } from "./constants.mjs";
 import { resolvePlatform } from "./platform.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 /** `set-review-mode --mode off|standard|thorough` — the repo-level dial, mirroring Comet's
  *  review_mode: bounds how many fresh-context reviewer passes run and when, replacing an
@@ -16,13 +18,12 @@ import { resolvePlatform } from "./platform.mjs";
  *  external calls. A single epic can escalate ABOVE this dial via
  *  `update-epic <id> --review-mode <mode>` (never below it) — see currentReviewMode(epicId). */
 export function setReviewMode() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const f = parseFlags(process.argv.slice(3));
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("set-review-mode", f);
   const mode = typeof f.mode === "string" ? f.mode : undefined;
   if (!mode || !KNOWN_REVIEW_MODES.includes(mode)) {
-    process.stderr.write(`conductor: set-review-mode requires --mode, one of ${KNOWN_REVIEW_MODES.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: set-review-mode requires --mode, one of ${KNOWN_REVIEW_MODES.join("|")}\n`);
   }
   const state = loadState();
   state.reviewMode = mode;

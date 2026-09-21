@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync, execSync } from "node:child_process";
+import { currentArgv, errStream, gitOps, invocation, outStream } from "./invocation.mjs";
 import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
@@ -21,12 +21,13 @@ import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
-import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
+import { engineRoot, conductorDir, briefPath, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
 import { platformFlag, resolveAndRecordPlatform, resolvePlatform } from "./platform.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 // The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
 import { checkedPositionals } from "./argv-surface.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
  *
@@ -78,7 +79,7 @@ export function ensureGitignore() {
     // engine-written, per-checkout, and useless to anyone but this working tree.
     ".conductor/activity/",
   ];
-  const giPath = path.join(ROOT, ".gitignore");
+  const giPath = path.join(engineRoot(), ".gitignore");
   let existing = "";
   try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
   const have = new Set(existing.split("\n").map(l => l.trim()));
@@ -98,14 +99,14 @@ export function init() {
   // THEN the rules-block preflight, still before the first write (state.json on a fresh repo,
   // .gitignore otherwise): an ambiguous marker arrangement refuses with nothing created. The target
   // is resolved with the platform this init would use, WITHOUT recording it.
-  assertRulesBlockWritable(resolvePlatform({ platform: platformFlag(process.argv.slice(3)) }, recorded));
+  assertRulesBlockWritable(resolvePlatform({ platform: platformFlag(currentArgv().slice(3)) }, recorded));
   if (isInitialized()) {
-    process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
+    errStream().write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
     // save-report: exempt — the file does not exist on this branch (isInitialized() is false), so
     // the first write of defaultState() cannot compare equal to a disk pre-image there is none of.
     saveState(defaultState());
-    process.stderr.write("conductor: created .conductor/state.json\n");
+    errStream().write("conductor: created .conductor/state.json\n");
   }
   ensureGitignore();
   sync(true);                 // pull in existing openspec changes + plans
@@ -115,7 +116,7 @@ export function init() {
   const { platform } = resolveAndRecordPlatform();
   writeRules(platform);
   render();
-  process.stderr.write(
+  errStream().write(
     // Verbs, never a hand-edit of the state of record (conductor-record): a hand-edit skips the
     // validation, the write lock and the read-back every verb supplies. Code spans, so the
     // emitted-invocation sweep reads them as invocations.
@@ -130,7 +131,7 @@ export function brief() {
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
   const context = buildBrief(loadState(), { consume: true });
-  process.stdout.write(jsonText({
+  outStream().write(jsonText({
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
   }));
 }
@@ -142,7 +143,7 @@ export function snapshot() {
   // written. Never exit 2 on this hook — on PreCompact that blocks compaction (lib/refusal.mjs).
   const state = loadState();
   render();
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.mkdirSync(conductorDir(), { recursive: true });
   // NO consume — the opposite of brief(). This briefing is written to .conductor/brief.txt,
   // which NOTHING reads back, so consuming here retired the contention warning against a reader
   // who never existed: a PreCompact landing between the threshold crossing and the next
@@ -152,8 +153,8 @@ export function snapshot() {
   // gh#175: a snapshot is for the NEXT session in this tree, and a deployed checkout has none —
   // the next thing to touch it is a `git checkout --force` that discards the file.
   const detached = isDetachedTree();
-  if (!detached) fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
-  process.stderr.write(detached
+  if (!detached) fs.writeFileSync(briefPath(), buildBrief(state) + "\n");
+  errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
       "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"
     : "conductor: snapshot written before compaction\n");
@@ -175,19 +176,34 @@ export function headChangedFiles() {
  *  equal a conductor-relative path — a git-root `PROJECT.md` in a monorepo is not this conductor's.
  *  `--relative` is rejected: it DROPS out-of-root paths and turns a mixed commit into a
  *  bookkeeping-only one. */
-let showPrefix = null;   // invariant for one process: ROOT does not move under a running invocation
+/** The `git rev-parse --show-prefix` answer for ONE INVOCATION.
+ *
+ *  It used to be `let showPrefix = null` at module scope, under a comment stating the invariant
+ *  "ROOT does not move under a running invocation". task 3.2 is precisely the decision that makes
+ *  that invariant FALSE, so the cache moves to the invocation it was always implicitly about: a
+ *  second invocation against a SUBDIRECTORY of the first would otherwise reuse invocation 1's
+ *  prefix, mis-strip every path, and corrupt each CONDUCTOR_OWN_FILES comparison the
+ *  root-divergence and bookkeeping-commit logic rests on. */
+function prefixCache() {
+  const ctx = invocation();
+  if (!ctx.__changedFilesPrefix) ctx.__changedFilesPrefix = { resolved: false, value: "" };
+  return ctx.__changedFilesPrefix;
+}
 export function changedFiles(sha) {
   try {
-    const opts = { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
     // `-z`: NUL-terminated and UNQUOTED. Without it git quotes any path holding a non-ASCII byte
     // (`"projects/s\303\274b/PROJECT.md"`, core.quotePath), so no path under a non-ASCII conductor
     // root matched the prefix and every bookkeeping commit there was logged (Gate 2 G2-I1). `-z` also
     // survives a tab or newline in a path, which `core.quotePath=false` does not.
-    const out = execFileSync("git", ["diff-tree", "-z", "--no-commit-id", "--name-only", "-r", "--root", sha], opts);
+    const out = gitOps().diffTreeNames(sha);
     // --show-prefix prints the prefix raw today; quotePath=false keeps it comparable with the -z paths
     // should that ever change.
-    if (showPrefix === null) showPrefix = execFileSync("git", ["-c", "core.quotePath=false", "rev-parse", "--show-prefix"], opts).replace(/\n$/, "");
-    const prefix = showPrefix;
+    const cache = prefixCache();
+    if (!cache.resolved) {
+      cache.value = gitOps().showPrefix().replace(/\n$/, "");
+      cache.resolved = true;
+    }
+    const prefix = cache.value;
     return out.split("\0").filter(Boolean).map(p => !prefix ? p : p.startsWith(prefix) ? p.slice(prefix.length) : `:/${p}`);
   } catch { return null; }
 }
@@ -208,9 +224,7 @@ export const withinOwnArtifacts = (file, artifacts) =>
 /** Subject line of one commit, or null when git cannot answer. */
 export function commitSubject(sha) {
   try {
-    return execFileSync("git", ["log", "-1", "--format=%s", sha], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
+    return gitOps().commitSubject(sha);
   } catch { return null; }
 }
 
@@ -219,9 +233,7 @@ export function commitSubject(sha) {
  *  deliberately NOT the same answer as "no commit landed" — see commitNudge's guard. */
 export function headSubject() {
   try {
-    return execSync("git log -1 --format=%s", {
-      cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
-    }).toString().trim();
+    return gitOps().headSubject();
   } catch { return null; }
 }
 
@@ -670,7 +682,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
   // above are about the DETOUR record and are decided by different inputs, so splicing the two
   // obligations into one sentence would make each harder to act on than either alone.
-  process.stdout.write(jsonText({
+  outStream().write(jsonText({
     hookSpecificOutput: {
       hookEventName: event,
       // The amend paragraph sits BEFORE the attribution one: a withdrawal of the replaced commit is
@@ -745,7 +757,7 @@ export function sync(quiet = false) {
   for (const e of state.epics) {
     if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
       e.status = "untriaged";
-      if (!quiet) process.stderr.write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
+      if (!quiet) errStream().write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
     }
   }
   const known = new Set(state.epics.map(e => e.id));
@@ -754,7 +766,7 @@ export function sync(quiet = false) {
     if (!known.has(id)) {
       // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
       // silent skip would read as a clean sync (design D4).
-      if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("change", id)); continue; }
+      if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
@@ -781,20 +793,20 @@ export function sync(quiet = false) {
     //    done-signal #69 asks for without inferring completion from anything.
     const claim = claimed.get(norm);
     if (claim) {
-      if (!quiet) process.stderr.write(
+      if (!quiet) errStream().write(
         `conductor: sync skipped ${claim.label} '${escapeControls(fname)}' — already claimed by epic '${escapeControls(claim.epic)}'\n`);
       continue;
     }
 
     // 2. The pre-existing id guard, unchanged in behavior and in wording.
     if (known.has(id)) {
-      if (!quiet) process.stderr.write(`conductor: sync skipped plan '${escapeControls(id)}' — id already exists\n`);
+      if (!quiet) errStream().write(`conductor: sync skipped plan '${escapeControls(id)}' — id already exists\n`);
       continue;
     }
 
     // 3. TOMBSTONED — `remove-epic` said no. Removal used to buy you only until the next sync.
     if (ignored.has(norm)) {
-      if (!quiet) process.stderr.write(
+      if (!quiet) errStream().write(
         `conductor: sync skipped plan '${escapeControls(fname)}' — sync-ignore tombstone (removed epic); ` +
         `attach it to an epic with \`update-epic <id> --plan ${commandValue(planPath, "<plan path>")}\` to un-ignore it\n`);
       continue;
@@ -817,7 +829,7 @@ export function sync(quiet = false) {
     const near = state.epics.find(e =>
       e.id !== id && strippedChangeId(e.id) === strippedChangeId(id) && !epicSourceArtifacts(e).length);
     if (near) {
-      if (!quiet) process.stderr.write(
+      if (!quiet) errStream().write(
         `conductor: sync skipped plan '${escapeControls(fname)}' — epic '${escapeControls(near.id)}' has the same name without ` +
         `the date prefix and claims no plan. If it IS that epic's plan: ` +
         `${orNoRemedy(() => `\`update-epic ${printedId(near.id)} --plan ${commandValue(planPath, "<plan path>")}\``)}. If it is genuinely different work: ` +
@@ -827,8 +839,8 @@ export function sync(quiet = false) {
 
     // 5. Real backlog — the final registration step, so only an entry no rung above matched is
     //    tested: a name no epic id can carry is skipped and named on every run (design D4).
-    if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("plan", fname)); continue; }
-    const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
+    if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("plan", fname)); continue; }
+    const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
   }
@@ -843,7 +855,7 @@ export function sync(quiet = false) {
   const firstBackfill = !("archiveBackfilledAt" in state);
   const skippedArchives = [];
   const backfilled = backfillArchive(state, skippedArchives);
-  for (const dir of skippedArchives) process.stderr.write(unstorableSkipLine("archive directory", dir));
+  for (const dir of skippedArchives) errStream().write(unstorableSkipLine("archive directory", dir));
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
   const saved = saveState(state);
@@ -853,7 +865,7 @@ export function sync(quiet = false) {
   // conductor state. A count that moved with nobody told is the silent side effect this
   // capability is defined against.
   if (backfilled.length) {
-    process.stderr.write(firstBackfill
+    errStream().write(firstBackfill
       ? `conductor: archive backfill — registered ${backfilled.length} historical archived ` +
         `change(s) the conductor never held: ${backfilled.join(", ")}\n`
       : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
@@ -873,14 +885,14 @@ export function sync(quiet = false) {
     const tracker = state.tracker && state.tracker.system ? state.tracker : null;
     const secondaries = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
     if (anyInwardProcedureEmittable(tracker, secondaries)) {
-      process.stderr.write(
+      errStream().write(
         "conductor: inward tracker sync is YOURS — follow the inward sync section in the rules " +
         "block: list open items, register the unmirrored ones (matching on `externalUrl`, never " +
         "on a bare item number — the same number in two trackers is two different items), then " +
         "compare each linked epic's `externalUpdatedAt` watermark against its item's updated " +
         "timestamp and read the movers\n");
     } else if (tracker || secondaries.length) {
-      process.stderr.write(
+      errStream().write(
         "conductor: no inward procedure is configured — registered local OpenSpec/Superpowers " +
         "sources only; nothing was read from your tracker(s), and nothing should be\n");
     }
@@ -888,9 +900,9 @@ export function sync(quiet = false) {
 }
 
 export function logDetour() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const reason = checkedPositionals("log-detour").join(" ").trim();
-  if (!reason) { process.stderr.write("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); process.exit(1); }
+  if (!reason) { die("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); }
   const state = loadState();
   // gh#175 Gate 2 C2: HONOUR THE RETURN. appendDetourLog()'s docstring says the boolean exists
   // "so a caller never announces 'logged to detours.log' for a row that was suppressed" — the two
@@ -899,7 +911,7 @@ export function logDetour() {
   // the change that ships the rule against it.
   const logged = appendDetourLog("MINIMAL", state.active || "-", reason);
   render();
-  process.stderr.write(logged
+  errStream().write(logged
     ? "conductor: logged minimal detour\n"
     : "conductor: NOT logged — this tree is detached, so nothing was written to .conductor/detours.log\n");
 }
@@ -918,10 +930,10 @@ export function logDetour() {
  *  declared them. There is no un-retract; re-declare with `log-detour`. Every refusal names its own
  *  reason and happens before any write. */
 export function retractDetour() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const refuse = (msg) => { process.stderr.write(`conductor: retract-detour refused — ${msg}\n`); process.exit(1); };
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const refuse = (msg) => { die(`conductor: retract-detour refused — ${msg}\n`); };
   const [arg] = checkedPositionals("retract-detour");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const f = parseFlags(argv[0] && !argv[0].startsWith("--") ? argv.slice(1) : argv);
   requireFlagValues("retract-detour", f);
   if (!arg) refuse("usage: retract-detour <sha> --reason \"<why>\"");
@@ -980,15 +992,23 @@ export function retractDetour() {
   }
   if (!full && !derived.some(r => r.sha === label)) label = derived[0].sha;
   if (!appendRetraction(label, derived[0].epic, reason)) {
-    process.stderr.write("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
-    process.exit(1);
+    die("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
   }
   render();
-  process.stderr.write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
+  errStream().write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
     "kept in .conductor/detours.log, hidden from PROJECT.md\n");
 }
 
-const HONCHO_MEMORIES_LOG = path.join(CONDUCTOR_DIR, "honcho-memories.log");
+// PER CALL, NOT AT MODULE LOAD. This was `const HONCHO_MEMORIES_LOG = path.join(conductorDir(),
+// "honcho-memories.log")` — a THIRTEENTH frozen path constant, and the only one that lived outside
+// constants.mjs, which is why the 3.2 sweep (derived from `path.join((ROOT|CONDUCTOR_DIR|
+// CHANGES_DIR)` in THAT module) did not reach it. Spawned, it was accidentally right: one process
+// meant one root. In-process it is gh#175 exactly — the invocation guards one tree and appends the
+// memory line to whichever tree was current when this module was FIRST imported. Measured: with the
+// assertion half running in one process, every invocation's line landed in the REPOSITORY's own
+// .conductor/honcho-memories.log and the fixture's file was never written, which is what made
+// reconcile-obligation's gh-8.3 guard fail.
+const honchoMemoriesLog = () => path.join(conductorDir(), "honcho-memories.log");
 
 /** Format the exact one-line Honcho memory string for a detour-stack PUSH or POP, per
  *  CLAUDE.md rule 4 ("on every PUSH and POP, also write a one-line memory to Honcho").
@@ -1013,9 +1033,9 @@ export function honchoMemoryLine(action, epicId, reason) {
  *  purpose: two writers appending to one file must not each carry their own copy of where it is. */
 export function appendHonchoMemory(action, epicId, reason) {
   const line = honchoMemoryLine(action, epicId, reason);
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
-  process.stdout.write(line + "\n");
+  fs.mkdirSync(conductorDir(), { recursive: true });
+  fs.appendFileSync(honchoMemoriesLog(), `${new Date().toISOString()}\t${line}\n`);
+  outStream().write(line + "\n");
   return line;
 }
 
@@ -1024,18 +1044,16 @@ export function appendHonchoMemory(action, epicId, reason) {
  *  appends a timestamped copy to `.conductor/honcho-memories.log`, so there's a durable local
  *  record of what was emitted even if the agent forgets to actually send it. */
 export function honchoMemory() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const [action, epicId, ...rest] = checkedPositionals("honcho-memory");
   const reason = rest.join(" ").trim();
   if (!action || !epicId || !reason) {
-    process.stderr.write("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");
-    process.exit(1);
+    die("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");
   }
   try {
     appendHonchoMemory(action, epicId, reason);
   } catch (e) {
-    process.stderr.write(`conductor: ${escapeControls(e.message)}\n`);
-    process.exit(1);
+    die(`conductor: ${escapeControls(e.message)}\n`);
   }
 
   // gh#94's disclosure. `push-detour` (lib/detour-stack.mjs) now emits this at the moment of the
@@ -1046,6 +1064,6 @@ export function honchoMemory() {
   // a line the agent pastes into Honcho verbatim.
   if (action === "push") {
     const note = deferralNote(deferralHistory(loadState(), epicId));
-    if (note) process.stderr.write(`conductor: \`${escapeControls(epicId)}\` — ${note}\n`);
+    if (note) errStream().write(`conductor: \`${escapeControls(epicId)}\` — ${note}\n`);
   }
 }

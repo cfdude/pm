@@ -5,13 +5,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { die } from "./command-exit.mjs";
 import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -19,16 +21,16 @@ import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
  *  exit non-zero. One saveState at the end — atomic, and race-free. JSON only
  *  (zero-dep engine). `--from -` reads stdin. */
 export function addMany() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const f = parseFlags(process.argv.slice(3));
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("add-many", f);
   const from = typeof f.from === "string" ? f.from : undefined;
-  if (!from) { process.stderr.write("usage: conductor.mjs add-many --from <path|->\n"); process.exit(1); }
+  if (!from) { die("usage: conductor.mjs add-many --from <path|->\n"); }
   let raw;
-  try { raw = from === "-" ? readStdin() : fs.readFileSync(path.resolve(ROOT, from), "utf8"); }
-  catch { process.stderr.write(`conductor: cannot read '${escapeControls(from)}'\n`); process.exit(1); }
+  try { raw = from === "-" ? readStdin() : fs.readFileSync(path.resolve(engineRoot(), from), "utf8"); }
+  catch { die(`conductor: cannot read '${escapeControls(from)}'\n`); }
   let doc;
-  try { doc = JSON.parse(raw); } catch { process.stderr.write("conductor: --from is not valid JSON\n"); process.exit(1); }
+  try { doc = JSON.parse(raw); } catch { die("conductor: --from is not valid JSON\n"); }
 
   const state = loadState();
   const parentId = doc.parent && typeof doc.parent.id === "string" ? doc.parent.id : undefined;
@@ -39,9 +41,11 @@ export function addMany() {
     if (parentId && entry.parent === undefined) entry.parent = parentId;
     incoming.push(entry);
   }
-  if (!incoming.length) { process.stderr.write("conductor: add-many: nothing to add (need `parent` and/or `epics`)\n"); process.exit(1); }
+  if (!incoming.length) { die("conductor: add-many: nothing to add (need `parent` and/or `epics`)\n"); }
 
-  const die = (msg) => { process.stderr.write(`conductor: add-many: ${msg}\n`); process.exit(1); };
+  // This module's own spelling of the ONE exit path (command-exit.mjs), carrying the verb name
+  // add-many's refusals have always had. See the import for why it is not called `die`.
+  const refuse = (msg) => die(`conductor: add-many: ${msg}\n`);
 
   // The keys a batch entry may carry, derived from the shared EPIC_FLAGS registry rather than
   // restated here. add-many used to copy a fixed key set and drop every other key without a
@@ -58,12 +62,12 @@ export function addMany() {
   const batchIds = new Set();
   for (const e of incoming) {
     const id = e.id;
-    if (typeof id !== "string" || !EPIC_ID_FORMAT.test(id)) die(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
-    if (existingIds.has(id)) die(`epic '${escapeControls(id)}' already exists`);
-    if (batchIds.has(id)) die(`duplicate id '${escapeControls(id)}' within the batch`);
+    if (typeof id !== "string" || !EPIC_ID_FORMAT.test(id)) refuse(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
+    if (existingIds.has(id)) refuse(`epic '${escapeControls(id)}' already exists`);
+    if (batchIds.has(id)) refuse(`duplicate id '${escapeControls(id)}' within the batch`);
     const unknownKeys = Object.keys(e).filter(k => !allowedKeys.includes(k));
     if (unknownKeys.length) {
-      die(`epic '${escapeControls(id)}': unsupported key(s) ${escapeControls(unknownKeys.join(", "))} ` +
+      refuse(`epic '${escapeControls(id)}': unsupported key(s) ${escapeControls(unknownKeys.join(", "))} ` +
         `(supported: ${allowedKeys.join(", ")})`);
     }
     // `stories` is the first ARRAY-valued batch key that is not `links`, and the copy loop below
@@ -74,14 +78,14 @@ export function addMany() {
     // Two accepted element shapes, because a plan being registered may already have milestones
     // behind it: a plain title string, or `{title, done?}`. Anything else is refused by name.
     if (e.stories !== undefined) {
-      if (!Array.isArray(e.stories)) die(`epic '${escapeControls(id)}': stories must be an array of titles or {title, done} objects`);
+      if (!Array.isArray(e.stories)) refuse(`epic '${escapeControls(id)}': stories must be an array of titles or {title, done} objects`);
       for (const s of e.stories) {
         const title = typeof s === "string" ? s : (s && typeof s.title === "string" ? s.title : undefined);
         if (title === undefined || !title.trim()) {
-          die(`epic '${escapeControls(id)}': every entry in stories needs a non-empty title (got ${escapeControls(JSON.stringify(s))})`);
+          refuse(`epic '${escapeControls(id)}': every entry in stories needs a non-empty title (got ${escapeControls(JSON.stringify(s))})`);
         }
         if (s && typeof s === "object" && s.done !== undefined && typeof s.done !== "boolean") {
-          die(`epic '${escapeControls(id)}': story '${escapeControls(title)}' has a non-boolean done`);
+          refuse(`epic '${escapeControls(id)}': story '${escapeControls(title)}' has a non-boolean done`);
         }
       }
     }
@@ -100,12 +104,12 @@ export function addMany() {
     for (const k of Object.keys(e)) {
       if (!allowedKeys.includes(k) || k === "links" || k === "stories") continue;
       if (typeof e[k] !== "string" || !e[k].trim()) {
-        die(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
+        refuse(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
       }
     }
-    if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
+    if (!e.lane || !KNOWN_LANES.includes(e.lane)) refuse(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
-    if (!KNOWN_STATUSES.includes(status)) die(`epic '${escapeControls(id)}': status must be one of ${KNOWN_STATUSES.join("|")}`);
+    if (!KNOWN_STATUSES.includes(status)) refuse(`epic '${escapeControls(id)}': status must be one of ${KNOWN_STATUSES.join("|")}`);
     // The SIBLING write path. `--link` reaches the store through parseLinkFlags for add-epic and
     // update-epic; a batch entry's `links` is a JSON array copied verbatim by the registry loop
     // below, so a rule added only at parseLinkFlags would hold at two of three write paths and
@@ -115,7 +119,7 @@ export function addMany() {
     // its own issue rather than something to widen here.
     for (const l of Array.isArray(e.links) ? e.links : []) {
       if (l && typeof l.type === "string" && !isKnownLinkType(l.type)) {
-        die(`epic '${escapeControls(id)}': link type '${escapeControls(l.type)}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
+        refuse(`epic '${escapeControls(id)}': link type '${escapeControls(l.type)}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
       }
     }
     batchIds.add(id);
@@ -124,7 +128,7 @@ export function addMany() {
   for (const e of incoming) {
     if (e.parent !== undefined && e.parent !== null) {
       const perr = parentError(projected, e.id, e.parent);
-      if (perr) die(perr);
+      if (perr) refuse(perr);
     }
   }
   for (const e of incoming) {

@@ -15,9 +15,10 @@ import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateTableRows } from "./archive-gate.mjs";
 import { visibleDetourRows } from "./git.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, escapeControls, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
+import { detoursLog, projectMd, statePath, renderStampPath, conductorDir, escapeControls, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
+import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 /** THE builder of every PROJECT.md table DATA row (user-text-never-forges-output D1). Each cell is
  *  passed through escapeTableCell() exactly once — here and nowhere else, because that escaper is not
@@ -272,7 +273,7 @@ export function render() {
   try {
     // Retracted commit-derived rows and the RETRACTED rows themselves are filtered BEFORE the
     // eight-row slice, so the table always shows the last eight rows a reader should see.
-    fs.accessSync(DETOURS_LOG);
+    fs.accessSync(detoursLog());
     const lines = visibleDetourRows().slice(-8);
     if (lines.length) {
       md.push("| When | SHA | Kind | Epic | Note |");
@@ -302,10 +303,10 @@ export function render() {
   const content = md.map(escapeControls).join("\n");
   const STAMP_RE = /^> Last rendered: .*$/m;
   let existing = "";
-  try { existing = fs.readFileSync(PROJECT_MD, "utf8"); } catch { /* no file yet */ }
+  try { existing = fs.readFileSync(projectMd(), "utf8"); } catch { /* no file yet */ }
   writeRenderStamp();
 
-  const flags = parseFlags(process.argv.slice(3));
+  const flags = parseFlags(currentArgv().slice(3));
   if (flags["diff-summary"]) {
     // df-project-md-diff-triviality-not-mechanically-checkable: the "Last rendered" timestamp
     // and the "Recent detours" table rotate on nearly every render even when nothing
@@ -314,15 +315,15 @@ export function render() {
     // (nothing to compare against); otherwise strip both known-trivial sources of diff noise
     // before comparing.
     const epicRelevant = !existing || normalizeForDiffSummary(existing) !== normalizeForDiffSummary(content);
-    process.stdout.write(`epic-relevant: ${epicRelevant ? "yes" : "no"}\n`);
+    outStream().write(`epic-relevant: ${epicRelevant ? "yes" : "no"}\n`);
   }
 
   if (existing && existing.replace(STAMP_RE, "") === content.replace(STAMP_RE, "")) {
-    process.stderr.write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
+    errStream().write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
     return;
   }
-  fs.writeFileSync(PROJECT_MD, content);
-  process.stderr.write(`conductor: rendered ${escapeControls(PROJECT_MD)}\n`);
+  fs.writeFileSync(projectMd(), content);
+  errStream().write(`conductor: rendered ${escapeControls(projectMd())}\n`);
 }
 
 /** Normalizes the two sources of PROJECT.md diff noise that are never "epic-relevant" on
@@ -352,15 +353,15 @@ export function normalizeForDiffSummary(content) {
  *  (not a state.json field) so stamping never itself perturbs the content being verified. */
 export function writeRenderStamp() {
   let stateMtimeMs = null;
-  try { stateMtimeMs = fs.statSync(STATE_PATH).mtimeMs; } catch { /* no state.json yet */ }
+  try { stateMtimeMs = fs.statSync(statePath()).mtimeMs; } catch { /* no state.json yet */ }
   // verify-state only ever compares stateMtimeMs (see verifyState() below) — renderedAt is
   // informational only, nothing reads it back for correctness. So if state.json's mtime
   // hasn't moved since the last stamp, rewriting the file would only bump renderedAt and
   // produce a spurious byte-for-byte diff on every render() call even though nothing that
   // matters changed. Skip the rewrite in that case.
-  const existing = readJSON(RENDER_STAMP_PATH, null);
+  const existing = readJSON(renderStampPath(), null);
   if (existing && existing.stateMtimeMs === stateMtimeMs) return;
   const stamp = { renderedAt: new Date().toISOString(), stateMtimeMs };
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  fs.writeFileSync(RENDER_STAMP_PATH, JSON.stringify(stamp, null, 2) + "\n");
+  fs.mkdirSync(conductorDir(), { recursive: true });
+  fs.writeFileSync(renderStampPath(), JSON.stringify(stamp, null, 2) + "\n");
 }

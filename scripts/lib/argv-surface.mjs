@@ -15,6 +15,7 @@
 
 import { EPIC_FLAGS, VERB_FLAGS, VERB_POSITIONALS, cliFlagsFor, escapeControls, flagInValuePositionMessage, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 export const isHelpToken = (t) => t === "--help" || t === "-h";
 
@@ -173,7 +174,7 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
  *  tail), and `set-gate-guard --force` printed usage where bare `set-gate-guard` reads the guard,
  *  because with no positional the canonical rewrite leaves the argv-level flag at `argv[3]`. Read
  *  from the canonical argv conductor.mjs installed, which classifies identically. */
-export const checkedPositionals = (verb, argv = process.argv) => checkCommandLine(verb, argv).positionals || [];
+export const checkedPositionals = (verb, argv = currentArgv()) => checkCommandLine(verb, argv).positionals || [];
 
 /** D4's surplus-positional refusal: the form the verb takes and the first token it does not read,
  *  plus the likeliest cause where one is visible — a value given to a valueless flag, or an

@@ -8,6 +8,8 @@ import { render } from "./render.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { escapeControls } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
+import { outStream } from "./invocation.mjs";
 
 /** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
  *  source writes while the active epic still owes a reconcile. Off by default. This is
@@ -15,7 +17,7 @@ import { escapeControls } from "./constants.mjs";
  *  protects the single highest-stakes skip (writing code before the reconcile gate runs
  *  on a detour POP) — opt-in, reversible, never silent. */
 export function setGateGuard() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   // The check's classified positional, never `process.argv[3]`: with no positional the canonical
   // argv leaves `--force` there, and `set-gate-guard --force` printed usage instead of reading.
   const [val] = checkedPositionals("set-gate-guard");
@@ -59,11 +61,11 @@ export function setGateGuard() {
     out.push("  epic that owes one of those two things.");
     out.push("");
     out.push("  Change it with `set-gate-guard on|off`.");
-    process.stdout.write(out.join("\n") + "\n");
+    outStream().write(out.join("\n") + "\n");
     return;
   }
   if (val !== "on" && val !== "off") {
-    process.stderr.write("usage: conductor.mjs set-gate-guard <on|off>\n"); process.exit(1);
+    die("usage: conductor.mjs set-gate-guard <on|off>\n");
   }
   const state = loadState();
   state.gateGuard = (val === "on");
@@ -385,15 +387,13 @@ export function gateGuardCheck() {
   // reconcile gate runs on a detour POP is the single highest-stakes skip, and the opt-in was
   // never actually turned on in real usage.
   if (active.reconcileNeeded) {
-    process.stderr.write(reconcileBlockMessage(active, shape));
-    process.exit(2);
+    die(reconcileBlockMessage(active, shape), 2);
   }
   // OPT-OUT, under the repo-level `gateGuard` flag — the generalization this hook's own source
   // pre-authorized. The escape hatch is not optional here: an agent that is offline,
   // unauthenticated, or facing a deleted upstream item must be able to proceed honestly, and a
   // `--verdict unchanged` recorded blind is a worse outcome than an honest bypass.
   if (state.gateGuard === true && active.trackerRefreshNeeded) {
-    process.stderr.write(trackerBlockMessage(active, shape));
-    process.exit(2);
+    die(trackerBlockMessage(active, shape), 2);
   }
 }

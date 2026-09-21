@@ -9,6 +9,8 @@ import path from "node:path";
 
 import { KNOWN_PLATFORMS, PLATFORM_RULES_CHAIN, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 /** Extract just `--platform <value>` from an argv slice.
  *
@@ -67,8 +69,7 @@ export function resolvePlatform(flags = {}, state = null) {
  *  treats an unknown --lane. Called only for an EXPLICIT flag value. */
 export function assertKnownPlatform(platform) {
   if (!KNOWN_PLATFORMS.includes(platform)) {
-    process.stderr.write(`conductor: --platform must be one of ${KNOWN_PLATFORMS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --platform must be one of ${KNOWN_PLATFORMS.join("|")}\n`);
   }
 }
 
@@ -97,7 +98,7 @@ export function recordPlatform(state, platform) {
  *  each entry point must read argv itself -- duplicating that logic is exactly how one of
  *  them silently stops honouring the flag. Returns { platform, switched }. */
 export function resolveAndRecordPlatform() {
-  const declared = platformFlag(process.argv.slice(3));
+  const declared = platformFlag(currentArgv().slice(3));
   if (declared) assertKnownPlatform(declared);
   const state = loadState();
   const platform = resolvePlatform({ platform: declared }, state);

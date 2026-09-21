@@ -22,10 +22,13 @@ skip straight to the branch dance at the bottom.
 
 ## The checklist
 
-1. **Engine + tests.** `node --test scripts/test/*.test.mjs` green, including any new tests
-   for the change. No `--no-verify`, ever — the pre-commit hook already enforces this, but
-   re-run explicitly before touching version/changelog files so a failure is caught here, not
-   mid-release.
+1. **Engine + tests.** All THREE buckets green, including any new tests for the change:
+   `node --test --test-isolation=none scripts/test/assert/*.test.mjs` (what the hook runs),
+   `node --test scripts/test/functional/*.test.mjs` (real git) and
+   `node --test scripts/test/sweeps/*.test.mjs`. The two triggered buckets are also recorded by
+   `node scripts/test/certify.mjs functional` and `… sweeps`. No `--no-verify`, ever — the
+   pre-commit hook already enforces the assertion half, but re-run explicitly before touching
+   version/changelog files so a failure is caught here, not mid-release.
 
 2. **Version + CHANGELOG.md.** Bump `.claude-plugin/plugin.json`. Add a `## [x.y.z] — <date>`
    entry (`Added`/`Changed`/`Fixed` sections as needed). Get the date from the `datetimeday` MCP
@@ -54,7 +57,9 @@ skip straight to the branch dance at the bottom.
      rg -c '^## \[[0-9]' CHANGELOG.md                                 # releases shipped
      # NOT `grep -c '^## \['` — that counts the [Unreleased] placeholder as a release, and
      # did, publishing a number one too high on every release up to 0.39.0 before anyone checked.
-     node --test scripts/test/*.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
+     # tests in the engine: all three buckets, one invocation, one total
+     node --test scripts/test/assert/*.test.mjs scripts/test/functional/*.test.mjs \
+       scripts/test/sweeps/*.test.mjs 2>&1 | grep '^ℹ tests'
      wc -l scripts/conductor.mjs scripts/lib/*.mjs | tail -1         # engine LOC — the dispatcher is ~360
      # lines since the module split; the site's row counts the dispatcher plus scripts/lib (0.43.0).
      # external dependencies is always 0 — enforced by the zero-dependency hard constraint

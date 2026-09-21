@@ -8,6 +8,8 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES, escapeControls, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 export function laneMatchTest(match, text) {
   const hay = String(text).toLowerCase();
@@ -30,18 +32,17 @@ export function laneMatchTest(match, text) {
  *  code path to intercept — add-epic always takes an explicit --lane); suggest-lane just
  *  surfaces the match so the interactive agent can act on it. */
 export function setLaneRouting() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const f = parseFlags(process.argv.slice(3));
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("set-lane-routing", f);
   // every-verb-refuses-what-it-does-not-read D8: with NONE of the three operations this used to write
   // `laneRouting: {overrides: []}` where no block existed and report success — a write nobody asked
   // for. Refused before loadState(). A read form (set-gate-guard's #159 precedent) was considered and
   // declined: it is new behaviour with its own output contract, and the defect is only the write.
   if (f.add === undefined && f.remove === undefined && f.clear === undefined) {
-    process.stderr.write(
+    die(
       "conductor: set-lane-routing needs an operation — --add \"<match>:<lane>\", --remove \"<match>\" " +
       "or --clear. Nothing was written.\n");
-    process.exit(1);
   }
   const state = loadState();
   const lr = { overrides: [...((state.laneRouting || {}).overrides || [])] };
@@ -59,12 +60,12 @@ export function setLaneRouting() {
       if (typeof raw !== "string") continue;
       const i = raw.lastIndexOf(":");
       if (i <= 0 || i === raw.length - 1) {
-        process.stderr.write(`conductor: bad --add '${escapeControls(raw)}': expected "<match>:<lane>"\n`); process.exit(1);
+        die(`conductor: bad --add '${escapeControls(raw)}': expected "<match>:<lane>"\n`);
       }
       const match = raw.slice(0, i).trim();
       const lane = raw.slice(i + 1).trim();
       if (!KNOWN_LANES.includes(lane)) {
-        process.stderr.write(`conductor: bad --add '${escapeControls(raw)}': lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+        die(`conductor: bad --add '${escapeControls(raw)}': lane must be one of ${KNOWN_LANES.join("|")}\n`);
       }
       lr.overrides = lr.overrides.filter(o => o.match !== match);   // last --add for a match wins
       lr.overrides.push({ match, lane });
@@ -98,24 +99,23 @@ export function laneSuggestion(state, text) {
  *  override matched and the agent should fall back to the documented generic heuristic
  *  (>8h/cross-system -> openspec; 2-8h -> superpowers; <2h -> claude-code; etc). */
 export function suggestLane() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   // The check's classified positional, never `process.argv[3]`: that slot holds the first flag when
   // the line carries no text. Read-only today, so `--force` is refused before it could get here —
   // bound to the classification anyway, so a later argv-level row cannot reopen it.
   const [positional] = checkedPositionals("suggest-lane");
   // `--ask=<text>` carries the text as a flag VALUE, so a title shaped like a flag routes like any
   // other. One verb, one text: both at once is a surplus argument, never a silent pick of one.
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("suggest-lane", f);
   const ask = typeof f.ask === "string" ? f.ask : undefined;
   if (ask !== undefined && typeof positional === "string") {
-    process.stderr.write(`conductor: suggest-lane takes ONE text — '${escapeControls(positional)}' is an extra argument ` +
+    die(`conductor: suggest-lane takes ONE text — '${escapeControls(positional)}' is an extra argument ` +
       "it does not read, because --ask already gave the text. Nothing was written.\n");
-    process.exit(1);
   }
   const text = ask !== undefined ? ask : positional;
   if (typeof text !== "string" || !text.length) {
-    process.stderr.write("usage: conductor.mjs suggest-lane \"<free text>\" | --ask=<text>\n"); process.exit(1);
+    die("usage: conductor.mjs suggest-lane \"<free text>\" | --ask=<text>\n");
   }
-  process.stdout.write(jsonText(laneSuggestion(loadState(), text)) + "\n");
+  outStream().write(jsonText(laneSuggestion(loadState(), text)) + "\n");
 }

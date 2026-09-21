@@ -3,8 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'openspec/**', '.conductor/**']
   pull_request:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'openspec/**', '.conductor/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -26,10 +32,99 @@ jobs:
         with:
           node-version: "18"
 
+      # ─────────── THE THREE BUCKETS (6.5) ───────────
+      #
+      # THIS IS THE ONE PLACE THE FUNCTIONAL HALF AND THE SWEEP BUCKET RUN. The pre-commit hook runs
+      # the assertion half and the drift script and deliberately does NOT run either triggered bucket;
+      # CI is the other half of that answer, and it is where the certification record is ABSENT and
+      # cannot be substituted for a run (a fresh clone has no record — that is correct behaviour, and
+      # the reason the drift script's refusal names this run instead of starting it).
+      #
+      # EACH BUCKET'S FLOOR IS ENUMERATED FROM THAT BUCKET'S OWN TRACKED FILES, which is the one
+      # invariant the floor holds (design D8): what it compares is what the runner RAN against what
+      # the runner was GIVEN, never against a superset. Enumerating both halves at once here is the
+      # shape the invariant forbids — it aborts on every commit that has a functional half at all.
+      # `git ls-files` rather than the shell's expansion of the runner's own pattern, so a glob that
+      # stopped matching a file reports FEWER tests than the half declares and fires.
+      #
+      # EACH STEP'S STATUS IS THE RUNNER'S STATUS (Gate 2, G-C1), and it is written that way rather
+      # than left to a pipeline's. Every bucket step used to be
+      # `total=$(node --test … 2>&1 | tee /tmp/x.out | grep -m1 … | awk …)`: the step's status was
+      # `awk`'s, so a FAILING suite reported `ran N, declared N-1`, satisfied the floor, and exited 0.
+      # `set -e` does not trap it — `set -e` reads the status of the whole PIPELINE, which is its last
+      # command. Proven: one deliberately failing assert file → `assertion half: ran 1238, declared
+      # 1237`, `STEP EXIT=0`. The runner therefore writes to a file and its status is gated on
+      # EXPLICITLY, before any count is parsed: a bucket that ran and failed cannot be read as one
+      # that ran and passed. `set -o pipefail` would also work; the explicit gate is used because it
+      # also puts the failing output in the log, and because `grep -m1` closing the pipe early would
+      # otherwise make a PASSING suite's `tee` a status source too.
+
       - name: Syntax check
+        # RE-POINTED WITH THE SPLIT (5.3), in the same commit as the first file that leaves
+        # `scripts/test/*.test.mjs`. The `for` loop does NOT descend a directory, so the moment a
+        # file moved under `scripts/test/assert/` or `scripts/test/functional/` it stopped being
+        # syntax-checked entirely — a class of error that reaches a green suite as a runtime throw.
+        # `scripts/test/*.mjs` and `scripts/test/fixtures/*.mjs` are named too: the drift script, the
+        # certify runner, the shared machinery, the fixtures and the two harnesses are not tests and
+        # were never in the old glob, but a syntax error in any of them breaks a half (6.5).
         run: |
           node -c scripts/conductor.mjs
-          for f in scripts/lib/*.mjs scripts/test/*.mjs; do node -c "$f"; done
+          for f in scripts/lib/*.mjs scripts/test/*.mjs scripts/test/assert/*.mjs scripts/test/functional/*.mjs scripts/test/sweeps/*.mjs scripts/test/fixtures/*.mjs; do node -c "$f"; done
 
-      - name: Run test suite
-        run: node --test scripts/test/*.test.mjs
+      - name: Assertion half
+        # NO `--test-isolation=none` HERE, AND THAT IS A DECISION RATHER THAN AN OVERSIGHT (6.5).
+        # The flag makes the half ONE process, which is the whole point of the split and is how the
+        # pre-commit hook runs it — the developer's per-commit gate, where the saving matters, keeps
+        # the flag. It is VERIFIED PRESENT on the machine this was developed on (Node v26.9.0) and
+        # UNVERIFIED on the version pinned above: `node-version: "18"` has no binary here to probe and
+        # the registry fetch of one failed. Rather than bump the pinned version on an unverified
+        # claim, CI falls back to per-file isolation, which is strictly slower and strictly correct on
+        # every version this repository has ever run on. Bump `node-version` and add the flag in the
+        # same commit once it has been probed on that version.
+        run: |
+          set -e
+          node --test scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+            cat /tmp/assert.out
+            echo "::error::the assertion half FAILED — the runner's output is above"
+            exit 1
+          }
+          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')
+          declared=$(git ls-files 'scripts/test/assert/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
+          echo "assertion half: ran ${total}, declared ${declared}"
+          if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
+            echo "::error::the assertion half ran ${total} tests but ${declared} are declared in scripts/test/assert/"; exit 1
+          fi
+
+      - name: Functional half
+        # REAL git, through the real gateway — the half the pre-commit hook does not run. No record is
+        # present in CI and none can be exchanged for this run.
+        run: |
+          set -e
+          node --test scripts/test/functional/*.test.mjs > /tmp/functional.out 2>&1 || {
+            cat /tmp/functional.out
+            echo "::error::the functional half FAILED — the runner's output is above"
+            exit 1
+          }
+          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')
+          declared=$(git ls-files 'scripts/test/functional/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
+          echo "functional half: ran ${total}, declared ${declared}"
+          if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
+            echo "::error::the functional half ran ${total} tests but ${declared} are declared in scripts/test/functional/"; exit 1
+          fi
+
+      - name: Sweep bucket
+        # The change-triggered bucket: runs no git and starts no engine, and is too slow for the
+        # per-commit half. Its own floor, from its own tracked files.
+        run: |
+          set -e
+          node --test scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+            cat /tmp/sweeps.out
+            echo "::error::the sweep bucket FAILED — the runner's output is above"
+            exit 1
+          }
+          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')
+          declared=$(git ls-files 'scripts/test/sweeps/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
+          echo "sweep bucket: ran ${total}, declared ${declared}"
+          if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
+            echo "::error::the sweep bucket ran ${total} tests but ${declared} are declared in scripts/test/sweeps/"; exit 1
+          fi

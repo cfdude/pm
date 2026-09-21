@@ -8,6 +8,8 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
+import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
  *  than transcribing it, and deliberately NOT the same list as constants.mjs's
@@ -17,8 +19,8 @@ import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 export const KNOWN_GATE_VERDICTS = ["pass", "fail"];
 
 export function recordGateReview() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Without an allowlist this command read the flags it happened to name and dropped every other
@@ -47,18 +49,15 @@ export function recordGateReview() {
   const artifacts = [].concat(f.artifact === undefined ? [] : f.artifact)
     .filter(v => typeof v === "string" && v.trim() !== "").map(v => v.trim());
   if (!id || !gate || !verdict) {
-    process.stderr.write(
+    die(
       "usage: conductor.mjs record-gate-review <epicId> --gate 1|2 --verdict pass|fail " +
       "[--artifact <path>]... [--base-sha <sha>] [--head-sha <sha>] [--reviewer \"<identity>\"]\n");
-    process.exit(1);
   }
   if (!KNOWN_GATE_NUMBERS.includes(gate)) {
-    process.stderr.write(`conductor: --gate must be one of ${KNOWN_GATE_NUMBERS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --gate must be one of ${KNOWN_GATE_NUMBERS.join("|")}\n`);
   }
   if (!KNOWN_GATE_VERDICTS.includes(verdict)) {
-    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_GATE_VERDICTS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --verdict must be one of ${KNOWN_GATE_VERDICTS.join("|")}\n`);
   }
   // A `pass` MUST carry the range it covered. Without it, `record-gate-review <id> --gate 2
   // --verdict pass` is one command with no evidence requirement at all, and a review of `a..b`
@@ -83,19 +82,17 @@ export function recordGateReview() {
       const missingEvidence = [];
       if (baseSha === undefined) missingEvidence.push("--base-sha");
       if (headSha === undefined) missingEvidence.push("--head-sha");
-      process.stderr.write(
+      die(
         `conductor: a gate 2 'pass' requires the commit range it covered — missing ` +
         `${missingEvidence.join(" and ")}. Record the range the reviewer actually read ` +
         `(a 'fail' may omit it).\n`);
-      process.exit(1);
     }
     if (gate === "1" && !hasRange && !artifacts.length) {
-      process.stderr.write(
+      die(
         "conductor: a gate 1 'pass' requires the artifacts it reviewed — missing --artifact " +
         "<path> (repeatable). Gate 1 is the SPEC review and runs before any code exists, so its " +
         "evidence is the proposal, design, specs and tasks the reviewer actually read " +
         "(a 'fail' may omit it).\n");
-      process.exit(1);
     }
     // RECORDED, then said out loud. A range on a gate 1 verdict is not refused — refusing it
     // would break every invocation that predates this change, and the record would be lost
@@ -111,21 +108,20 @@ export function recordGateReview() {
   if (bounds.length) {
     const { resolved, unresolved } = resolveCommits(bounds);
     if (unresolved.length) {
-      process.stderr.write(unresolvedCommitsMessage(unresolved, "--base-sha/--head-sha"));
-      process.exit(1);
+      die(unresolvedCommitsMessage(unresolved, "--base-sha/--head-sha"));
     }
     if (typedBase !== undefined) baseSha = resolved.get(typedBase);
     if (typedHead !== undefined) headSha = resolved.get(typedHead);
   }
   if (rangeOnGate1) {
-    process.stderr.write(
+    errStream().write(
       `conductor: recorded — but ${baseSha}..${headSha} is an IMPLEMENTATION range on a gate 1 ` +
       "verdict, and every consumer that reads that field treats it as one. Gate 1 reviews " +
       "artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.\n");
   }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
+  if (!epic) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
   // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and
   // refusing it a verdict here would leave it permanently unable to satisfy the archive
   // gate that (also normalizing) binds it.

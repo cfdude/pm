@@ -42,12 +42,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { die } from "./command-exit.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { CLAIM_DEFAULT_TTL_MINUTES, jsonText, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
 import { claimExpiry, isLiveClaim, validTtlMinutes } from "./claim-shape.mjs";
+import { currentArgv, currentCwd, currentEnv, errStream, outStream } from "./invocation.mjs";
 
 export { claimExpiry, isLiveClaim };
 
@@ -69,7 +71,7 @@ export function repoClaimPath() {
  *  process whose import-time root differs from CLAUDE_PROJECT_DIR (a test, a delegated engine, CI's
  *  detached pull_request checkout) answered about the wrong tree — the 0.42.0 frozen-ROOT defect. */
 function repoClaimRoot() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return currentEnv().CLAUDE_PROJECT_DIR || currentCwd();
 }
 
 /** A claim record, or null. Shape: {session, claimedAt, ttlMinutes}. */
@@ -108,15 +110,16 @@ function clearRepoClaim() {
   try { fs.rmSync(repoClaimPath(), { force: true }); } catch { /* best effort */ }
 }
 
-function die(msg) {
-  process.stderr.write(`conductor: ${msg}\n`);
-  process.exit(1);
-}
+// This module's own spelling of the ONE exit path (command-exit.mjs): the call sites name the
+// refusal as a FRAGMENT and this adds the `conductor: ` prefix and the newline they have always
+// carried. Deliberately not called `die` — the shared function takes a whole message, and a local
+// `die` would shadow it for every call the 2.2 sweep inserted.
+const refuse = (msg) => die(`conductor: ${msg}\n`);
 
 /** The shared refusal when someone else holds a LIVE claim. One phrasing, both verbs, so the
  *  two surfaces cannot describe the same situation differently. */
 function refuseHeld(what, claim, verb) {
-  die(`${what} is claimed by session '${escapeControls(claim.session)}' since ${escapeControls(claim.claimedAt)} ` +
+  refuse(`${what} is claimed by session '${escapeControls(claim.session)}' since ${escapeControls(claim.claimedAt)} ` +
     `(live until ${claimExpiry(claim)}). Nothing was written. ` +
     `Wait for it, or take it deliberately with \`${verb} … --steal\`.`);
 }
@@ -130,7 +133,7 @@ function ttlFrom(f, fallback) {
   // Bounded by the same predicate the reader judges with, so nothing this writes can be a claim
   // no reader can read (state-file-refuses-to-guess D5).
   if (!validTtlMinutes(n)) {
-    die(`--ttl requires a positive number of minutes, at most ${CLAIM_MAX_TTL_MINUTES} (7 days). Nothing was written.`);
+    refuse(`--ttl requires a positive number of minutes, at most ${CLAIM_MAX_TTL_MINUTES} (7 days). Nothing was written.`);
   }
   return n;
 }
@@ -143,20 +146,20 @@ function ttlFrom(f, fallback) {
 /** `claim <epicId> --session <name> [--ttl <minutes>] [--steal]`
  *  `claim --repo --session <name> [--ttl <minutes>] [--steal]` */
 export function claim() {
-  if (!isInitialized()) die("run /pm:init first");
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) refuse("run /pm:init first");
+  const argv = currentArgv().slice(3);
   const f = parseFlags(argv);
   requireFlagValues("claim", f);
 
   const session = resolveSession(f);
-  if (!session) die(`claim requires a session identity — ${SESSION_HINT}`);
+  if (!session) refuse(`claim requires a session identity — ${SESSION_HINT}`);
   const steal = f.steal === true;
   // The epic id is a POSITIONAL, scanned rather than read off argv[0]: `claim --repo --session x`
   // has none at all, and `claim --session x e1` legitimately has one after two flags.
   const positional = positionalArgs(argv);
 
   if (f.repo === true) {
-    if (positional.length) die("claim --repo takes no epic id — it marks the whole repository");
+    if (positional.length) refuse("claim --repo takes no epic id — it marks the whole repository");
     const ttl = ttlFrom(f, REPO_CLAIM_DEFAULT_TTL_MINUTES);
     const held = readRepoClaim();
     if (held && held.session !== session && isLiveClaim(held) && !steal) {
@@ -166,41 +169,41 @@ export function claim() {
     // the marker, and in a detached tree the marker does not change.
     const stolenFrom = held && held.session !== session ? held : null;
     if (!writeRepoClaim(makeClaim(session, ttl))) {
-      process.stderr.write(
+      errStream().write(
         "conductor: NOT recorded — this tree is detached, so no repository marker was written " +
         "and nothing was taken over. Run this in the checkout that is on a branch.\n");
       return;
     }
     if (stolenFrom) {
-      process.stderr.write(
+      errStream().write(
         `conductor: took over the repository marker from session '${escapeControls(stolenFrom.session)}' ` +
         `(${isLiveClaim(stolenFrom) ? "STOLEN while live" : "its claim had expired"})\n`);
     }
-    process.stderr.write(
+    errStream().write(
       `conductor: repository marked busy by '${escapeControls(session)}' until ${claimExpiry(readRepoClaim())}\n`);
     return;
   }
 
   if (positional.length !== 1) {
-    die("usage: conductor.mjs claim <epic-id> --session <name> [--ttl <minutes>] [--steal]\n" +
+    refuse("usage: conductor.mjs claim <epic-id> --session <name> [--ttl <minutes>] [--steal]\n" +
       "       conductor.mjs claim --repo --session <name> [--ttl <minutes>] [--steal]");
   }
   const epicId = positional[0];
   const ttl = ttlFrom(f, CLAIM_DEFAULT_TTL_MINUTES);
   const state = loadState();
   const epic = state.epics.find(e => e.id === epicId);
-  if (!epic) die(`epic '${escapeControls(epicId)}' not found`);
+  if (!epic) refuse(`epic '${escapeControls(epicId)}' not found`);
   // An ARCHIVED epic has ENDED. Claiming one would record ownership of work that is over, which
   // is the same dangling shape `integrity` reports below — refused at the source rather than
   // only audited after the fact.
-  if (epic.status === "archived") die(`epic '${escapeControls(epicId)}' is archived — there is no work to claim`);
+  if (epic.status === "archived") refuse(`epic '${escapeControls(epicId)}' is archived — there is no work to claim`);
 
   const held = epic.claim;
   if (held && held.session !== session && isLiveClaim(held) && !steal) {
     refuseHeld(`epic '${escapeControls(epicId)}'`, held, "claim");
   }
   if (held && held.session !== session) {
-    process.stderr.write(
+    errStream().write(
       `conductor: took over '${escapeControls(epicId)}' from session '${escapeControls(held.session)}' ` +
       `(${isLiveClaim(held) ? "STOLEN while live" : "its claim had expired"})\n`);
   }
@@ -227,46 +230,46 @@ export function claim() {
  *  purpose: the natural caller is a session cleaning up on its way out, and a cleanup path that
  *  fails when there is nothing to clean up is a cleanup path people stop running. */
 export function unclaim() {
-  if (!isInitialized()) die("run /pm:init first");
-  const argv = process.argv.slice(3);
+  if (!isInitialized()) refuse("run /pm:init first");
+  const argv = currentArgv().slice(3);
   const f = parseFlags(argv);
   requireFlagValues("unclaim", f);
 
   const session = resolveSession(f);
-  if (!session) die(`unclaim requires a session identity — ${SESSION_HINT}`);
+  if (!session) refuse(`unclaim requires a session identity — ${SESSION_HINT}`);
   const steal = f.steal === true;
   const positional = positionalArgs(argv);
 
   if (f.repo === true) {
-    if (positional.length) die("unclaim --repo takes no epic id — it clears the whole repository's marker");
+    if (positional.length) refuse("unclaim --repo takes no epic id — it clears the whole repository's marker");
     const held = readRepoClaim();
-    if (!held) { process.stderr.write("conductor: the repository marker was not set — nothing to clear\n"); return; }
+    if (!held) { errStream().write("conductor: the repository marker was not set — nothing to clear\n"); return; }
     if (held.session !== session && isLiveClaim(held) && !steal) {
       refuseHeld("this repository", held, "unclaim --repo");
     }
     if (held.session !== session) {
-      process.stderr.write(`conductor: cleared a marker held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
+      errStream().write(`conductor: cleared a marker held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
     }
     clearRepoClaim();
-    process.stderr.write("conductor: repository marker cleared\n");
+    errStream().write("conductor: repository marker cleared\n");
     return;
   }
 
   if (positional.length !== 1) {
-    die("usage: conductor.mjs unclaim <epic-id> --session <name> [--steal]\n" +
+    refuse("usage: conductor.mjs unclaim <epic-id> --session <name> [--steal]\n" +
       "       conductor.mjs unclaim --repo --session <name> [--steal]");
   }
   const epicId = positional[0];
   const state = loadState();
   const epic = state.epics.find(e => e.id === epicId);
-  if (!epic) die(`epic '${escapeControls(epicId)}' not found`);
+  if (!epic) refuse(`epic '${escapeControls(epicId)}' not found`);
   const held = epic.claim;
-  if (!held) { process.stderr.write(`conductor: '${escapeControls(epicId)}' was not claimed — nothing to release\n`); return; }
+  if (!held) { errStream().write(`conductor: '${escapeControls(epicId)}' was not claimed — nothing to release\n`); return; }
   if (held.session !== session && isLiveClaim(held) && !steal) {
     refuseHeld(`epic '${escapeControls(epicId)}'`, held, "unclaim");
   }
   if (held.session !== session) {
-    process.stderr.write(`conductor: cleared a claim held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
+    errStream().write(`conductor: cleared a claim held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
   }
   delete epic.claim;
   const saved = saveState(state);
@@ -358,17 +361,17 @@ export function formatOwners(rows) {
  *  that repo on the way to answering "is it safe to write here" would be answering its own
  *  question wrongly. */
 export function owners() {
-  if (!isInitialized()) die("run /pm:init first");
+  if (!isInitialized()) refuse("run /pm:init first");
   // Through the parser like every other verb, rather than `process.argv.includes("--json")`.
   // `owners` declares one valueless flag so there is nothing for requireFlagValues to require
   // today — but a raw argv scan is how a verb ends up outside the rule, and the next flag this
   // verb grows would inherit that rather than the rule (#152).
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {
-    process.stdout.write(jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
+    outStream().write(jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(formatOwners(rows) + "\n");
+  outStream().write(formatOwners(rows) + "\n");
 }

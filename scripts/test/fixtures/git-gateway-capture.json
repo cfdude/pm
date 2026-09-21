@@ -1,0 +1,486 @@
+{
+  "_what": "Frozen captures of the git gateway's operations (scripts/lib/git-gateway.mjs), for the assertion half's double (fixtures/fake-git.mjs). Committed deliberately: the double must not be reconstructed from the machine's git at test time.",
+  "_builtBy": "scripts/test/fixtures/git-gateway-repo.mjs buildCapture(), against the fixture that module builds",
+  "_normalization": "Each fixture root path is replaced by its token in every case's args and every case's value: <ROOT> for the attached repository, <ROOT-DETACHED> for the detached one. It is the ONE substitution either side makes — git worktree list --porcelain prints absolute paths, and headRef is asked about directories that are fresh temporary ones, so neither could be byte-identical without it. Nothing else is normalized.",
+  "_refreshWhen": "Only when a failure has been READ and attributed to a real change — the fixture, or a git release reformatting a command's output. The check names the operation and the first differing line; a refresh that skips that step is a stale capture wearing a pass.",
+  "operations": {
+    "shortHead": {
+      "asks": "the abbreviated object name of HEAD",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [],
+          "status": 0,
+          "value": "8394663"
+        }
+      ]
+    },
+    "headRef": {
+      "asks": "the ref HEAD points at; exit 1 means detached",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "<ROOT>"
+          ],
+          "status": 0,
+          "value": null
+        },
+        {
+          "args": [
+            "<ROOT-DETACHED>"
+          ],
+          "status": 1,
+          "value": null
+        }
+      ]
+    },
+    "abbreviateCommit": {
+      "asks": "one commit's abbreviated name",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": "8394663"
+        }
+      ]
+    },
+    "verifyCommitName": {
+      "asks": "one value's full object name, peeled to a commit",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "a27f29eb803bb3f271f7fc0a348402491c944532"
+          ],
+          "status": 0,
+          "value": "a27f29eb803bb3f271f7fc0a348402491c944532"
+        },
+        {
+          "args": [
+            "0000000000000000000000000000000000000000"
+          ],
+          "status": 1,
+          "value": null
+        }
+      ]
+    },
+    "mergeBaseIsAncestor": {
+      "asks": "is a an ancestor of b",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "a27f29eb803bb3f271f7fc0a348402491c944532",
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": null
+        },
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069",
+            "a27f29eb803bb3f271f7fc0a348402491c944532"
+          ],
+          "status": 1,
+          "value": null
+        }
+      ]
+    },
+    "committerDate": {
+      "asks": "one commit's committer date",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": "2020-01-02T03:04:05Z"
+        }
+      ]
+    },
+    "commitExists": {
+      "asks": "does this clone hold that commit",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "a27f29eb803bb3f271f7fc0a348402491c944532"
+          ],
+          "status": 0,
+          "value": null
+        },
+        {
+          "args": [
+            "0000000000000000000000000000000000000000"
+          ],
+          "status": 1,
+          "value": null
+        }
+      ]
+    },
+    "refsContaining": {
+      "asks": "is the commit reachable from any ref",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": "refs/heads/main"
+        }
+      ]
+    },
+    "diffNamesAgainstHead": {
+      "asks": "which of these paths differ from HEAD",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            [
+              "README.md"
+            ]
+          ],
+          "status": 0,
+          "value": "README.md\u0000"
+        },
+        {
+          "args": [
+            [
+              "PROJECT.md"
+            ]
+          ],
+          "status": 0,
+          "value": ""
+        }
+      ]
+    },
+    "batchCheckCommits": {
+      "asks": "resolve a set of commit values in one process",
+      "refreshWhen": "the fixture's commit content changes (the object size on the second field moves with it), or git stops printing `<name> commit <size>` for a peeled value",
+      "cases": [
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069^{commit}\n0000000000000000000000000000000000000000^{commit}\n"
+          ],
+          "status": 0,
+          "value": "8394663fe762285c21ae3e78db08ddcf362bb069 commit 224\n0000000000000000000000000000000000000000^{commit} missing\n"
+        }
+      ]
+    },
+    "revListNotReached": {
+      "asks": "which of these are not reached by head",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            [
+              "80a8475ac9dec866cebb00c041b87b79db882149"
+            ],
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": "80a8475ac9dec866cebb00c041b87b79db882149\n"
+        },
+        {
+          "args": [
+            [
+              "8394663fe762285c21ae3e78db08ddcf362bb069"
+            ],
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": ""
+        }
+      ]
+    },
+    "isShallowRepository": {
+      "asks": "is this a shallow clone",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [],
+          "status": 0,
+          "value": "false"
+        }
+      ]
+    },
+    "gitPath": {
+      "asks": "a git-internal path, relative to this directory",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "shallow"
+          ],
+          "status": 0,
+          "value": ".git/shallow"
+        }
+      ]
+    },
+    "logPickaxe": {
+      "asks": "when a fixed string first appeared in these paths",
+      "refreshWhen": "the fixture's first commit changes, or the pickaxe's output format moves",
+      "cases": [
+        {
+          "args": [
+            "\"id\": \"e1\"",
+            ".conductor/state.json"
+          ],
+          "status": 0,
+          "value": "a27f29eb803bb3f271f7fc0a348402491c944532 2020-01-02T03:04:05Z\n"
+        }
+      ]
+    },
+    "diffTreeNames": {
+      "asks": "the names one commit changed",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": "README.md\u0000"
+        }
+      ]
+    },
+    "showPrefix": {
+      "asks": "this directory's prefix inside the git tree",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [],
+          "status": 0,
+          "value": "\n"
+        }
+      ]
+    },
+    "commitSubject": {
+      "asks": "one commit's subject line",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "8394663fe762285c21ae3e78db08ddcf362bb069"
+          ],
+          "status": 0,
+          "value": "two"
+        }
+      ]
+    },
+    "headSubject": {
+      "asks": "HEAD's subject line",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [],
+          "status": 0,
+          "value": "two"
+        }
+      ]
+    },
+    "commitWatchGit": {
+      "asks": "commit-watch's own plumbing, for the three arg lists it passes",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            [
+              "rev-parse",
+              "--git-dir"
+            ],
+            "<ROOT>"
+          ],
+          "status": 0,
+          "value": ".git"
+        },
+        {
+          "args": [
+            [
+              "rev-parse",
+              "--git-path",
+              "logs/HEAD"
+            ],
+            "<ROOT>"
+          ],
+          "status": 0,
+          "value": ".git/logs/HEAD"
+        },
+        {
+          "args": [
+            [
+              "for-each-ref",
+              "--contains",
+              "8394663fe762285c21ae3e78db08ddcf362bb069",
+              "--count=1",
+              "--format=%(refname)",
+              "refs/heads"
+            ],
+            "<ROOT>"
+          ],
+          "status": 0,
+          "value": "refs/heads/main"
+        }
+      ]
+    },
+    "worktreeList": {
+      "asks": "every worktree, its HEAD and its branch",
+      "refreshWhen": "the porcelain format changes in a git release, OR the fixture gains or loses a worktree — both change the number of entries, which is the field a failure names",
+      "cases": [
+        {
+          "args": [],
+          "status": 0,
+          "value": "worktree <ROOT>\nHEAD 8394663fe762285c21ae3e78db08ddcf362bb069\nbranch refs/heads/main\n\nworktree <ROOT>-wt\nHEAD 8394663fe762285c21ae3e78db08ddcf362bb069\nbranch refs/heads/wt-branch\n\n"
+        }
+      ]
+    },
+    "mergeBaseIsAncestorOfHead": {
+      "asks": "is a worktree's head already merged into HEAD",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            "a27f29eb803bb3f271f7fc0a348402491c944532"
+          ],
+          "status": 0,
+          "value": null
+        },
+        {
+          "args": [
+            "80a8475ac9dec866cebb00c041b87b79db882149"
+          ],
+          "status": 1,
+          "value": null
+        }
+      ]
+    },
+    "lsFiles": {
+      "asks": "the tracked files under a pathspec",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [
+            [
+              ".claude/skills",
+              ".claude/commands/opsx"
+            ]
+          ],
+          "status": 0,
+          "value": ".claude/skills/openspec-apply/SKILL.md\n"
+        }
+      ]
+    },
+    "describeExactTag": {
+      "asks": "the tag HEAD is exactly at, if any",
+      "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
+      "cases": [
+        {
+          "args": [],
+          "status": 0,
+          "value": "v-fixture"
+        }
+      ]
+    }
+  },
+  "noRepository": {
+    "shortHead": {
+      "status": 128,
+      "value": null
+    },
+    "headRef": {
+      "status": 128,
+      "value": null
+    },
+    "abbreviateCommit": {
+      "status": 128,
+      "value": null
+    },
+    "verifyCommitName": {
+      "status": 128,
+      "value": null
+    },
+    "mergeBaseIsAncestor": {
+      "status": 128,
+      "value": null
+    },
+    "committerDate": {
+      "status": 128,
+      "value": null
+    },
+    "commitExists": {
+      "status": 128,
+      "value": null
+    },
+    "refsContaining": {
+      "status": 128,
+      "value": null
+    },
+    "diffNamesAgainstHead": {
+      "status": 1,
+      "value": null
+    },
+    "batchCheckCommits": {
+      "status": 128,
+      "value": null
+    },
+    "revListNotReached": {
+      "status": 128,
+      "value": null
+    },
+    "isShallowRepository": {
+      "status": 128,
+      "value": null
+    },
+    "gitPath": {
+      "status": 128,
+      "value": null
+    },
+    "logPickaxe": {
+      "status": 128,
+      "value": null
+    },
+    "diffTreeNames": {
+      "status": 128,
+      "value": null
+    },
+    "showPrefix": {
+      "status": 128,
+      "value": null
+    },
+    "commitSubject": {
+      "status": 128,
+      "value": null
+    },
+    "headSubject": {
+      "status": 128,
+      "value": null
+    },
+    "commitWatchGit": {
+      "status": 128,
+      "value": null
+    },
+    "worktreeList": {
+      "status": 128,
+      "value": null,
+      "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+    },
+    "mergeBaseIsAncestorOfHead": {
+      "status": 128,
+      "value": null
+    },
+    "lsFiles": {
+      "status": 128,
+      "value": null
+    },
+    "describeExactTag": {
+      "status": 128,
+      "value": null
+    }
+  }
+}

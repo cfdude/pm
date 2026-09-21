@@ -27,6 +27,8 @@ import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 import { getAutonomy, grantLabel } from "./autonomy.mjs";
+import { die } from "./command-exit.mjs";
+import { outStream } from "./invocation.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -1036,6 +1038,6 @@ export function formatIntegrity(report) {
  *  telling you it writes none — and would do it against the live record of whatever repo is
  *  being audited. Read-only means the file is byte-identical afterwards. */
 export function integrity() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  process.stdout.write(formatIntegrity(runIntegrity(loadState())) + "\n");
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  outStream().write(formatIntegrity(runIntegrity(loadState())) + "\n");
 }
