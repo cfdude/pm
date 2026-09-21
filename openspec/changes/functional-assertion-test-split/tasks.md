@@ -376,7 +376,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       refused by the script with the file named, in the same commit 5.3's inline copy is removed; and
       confirm a commit that changes a certified module with no record is refused with the run named,
       and no functional process was started by the hook
-- [ ] 6.5 GREEN — `.github/workflows/ci.yml` runs all THREE buckets — this is the one place the
+- [x] 6.5 GREEN — `.github/workflows/ci.yml` runs all THREE buckets — this is the one place the
       functional half and the sweep bucket run on their triggers, with the record absent and none
       substitutable — and each bucket's floor is enumerated from that bucket's own tracked files (6.4's
       invariant, applied per bucket; enumerating both halves at once here is the superset the invariant
