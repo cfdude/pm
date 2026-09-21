@@ -203,8 +203,22 @@ export function coversFor(moduleId, { root = REPO, functional = functionalIds(ro
   if (moduleId === ENGINE_ENTRY) return [CONFORMANCE_ID];
   const base = path.basename(moduleId);
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // THE BARE NAME — an unqualified mention, which is how a test names the module it is driving.
   const names = new RegExp(`(^|[^\\w./-])${escaped}(?![\\w-])`);
-  return functional.filter((id) => names.test(readFile(path.join(root, "scripts", "test", "functional", `${id}.test.mjs`))));
+  // ...AND THE IMPORT SPECIFIER, which the bare rule cannot see (G-M2, Gate 2). A test that reaches
+  // a module the normal way writes `await import("../../lib/commit-watch.mjs")`, and the character
+  // before the basename is `/` — inside the bare rule's excluded set, because that set exists to stop
+  // `not-git.mjs` matching `git.mjs`. The two rules are kept separate for exactly that reason: an
+  // IMPORT can only be the module's own specifier, so `/` is safe there, and widening the bare rule
+  // instead would make every file that merely prints a module's path a claim to cover it. Found by a
+  // certified module (`commit-watch.mjs`) certifying with an EMPTY covers, which the writer now
+  // refuses — the refusal is what made the hole visible rather than a module reading as covered by
+  // nothing.
+  const imported = new RegExp(`(?:from\\s*|import\\s*\\(|require\\s*\\()\\s*["'][^"']*/${escaped}["']`);
+  return functional.filter((id) => {
+    const src = readFile(path.join(root, "scripts", "test", "functional", `${id}.test.mjs`));
+    return names.test(src) || imported.test(src);
+  });
 }
 
 /** The conformance set's row ids, read out of the functional conformance file's ROWS table. The rows
@@ -280,6 +294,20 @@ export function readRecord(gitCommonDir, readFile = readDefault) {
  *  not drop the other's claim. The write is atomic (write beside, then rename) so a killed run
  *  cannot leave a half-written record that reads as a pass. */
 export function writeEntry(gitCommonDir, entryId, entry, io = fs) {
+  // AN ENTRY WITH NO COVERS IS REFUSED (G-M2, Gate 2). `covers` is what makes a record answerable:
+  // it names the tests the claim rests on, and every one of them is resolved when the record is
+  // consulted. An empty list passes that resolution vacuously, so a module could certify over a run
+  // in which NOTHING is named as covering it — a pass with no observation behind it, which is the
+  // shape this whole record exists to make impossible. The refusal is at the WRITER, where the
+  // entry is created, rather than in the drift check, because a record that should never exist is
+  // better refused than diagnosed later.
+  if (!Array.isArray(entry?.covers) || entry.covers.length === 0) {
+    throw new Error(
+      `certification: refusing to record '${entryId}' with an EMPTY covers — the entry would claim a ` +
+      "pass with no test named as covering it. Every certified module must be named by at least one " +
+      "functional or sweep id; if none does, the derivation in coversFor() is missing a mention of it " +
+      `(an import specifier counts — see coversFor), and the fix belongs there.`);
+  }
   const p = path.join(gitCommonDir, RECORD_NAME);
   const record = readRecord(gitCommonDir, (q) => io.readFileSync(q, "utf8"));
   record.version = 1;
@@ -339,7 +367,13 @@ export function recordRefusals({
         kind: "stale-record",
         entryId,
         changed,
-        noun: set.get(entryId).kind,
+        // WHAT KIND OF THING CHANGED (G-M1, Gate 2). This read `set.get(entryId).kind`, and the
+        // certified set maps an id to its FILES — an array, whose `.kind` is undefined — so the
+        // trigger branch below never fired and every refusal called the engine-source trigger a
+        // "module". The entry's OWN kind is the right source when the record has one (it was
+        // written by whoever certified it); the derivation is the fallback for the case the entry is
+        // missing or was written without one, and it is the same derivation `runFor()` uses.
+        noun: entry?.kind ?? (entryId === ENGINE_SOURCE ? KIND_TRIGGER : KIND_MODULE),
         run: runFor(entryId),
         why: !entry
           ? "no record entry covers this content"

@@ -366,8 +366,10 @@ test("6.2: the record is written beside the suite lock, and a fresh clone reads 
 
   // `writeEntry` is ATOMIC and MERGING: a killed run must not leave a half-written record, and
   // recording one bucket must not drop the other's claim (an edit to conductor.mjs demands both).
-  writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H1", covers: [] });
-  writeEntry(dir, "engine-source", { kind: KIND_TRIGGER, result: "pass", contentHash: "H2", covers: [] });
+  // `covers` is non-empty because the writer REFUSES an empty one (G-M2) — these entries exist to
+  // prove the write is atomic and merging, and an empty covers would now fail before reaching that.
+  writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H1", covers: ["conformance"] });
+  writeEntry(dir, "engine-source", { kind: KIND_TRIGGER, result: "pass", contentHash: "H2", covers: ["output-interpolations"] });
   const after = readRecord(dir);
   assert.deepEqual(Object.keys(after.entries).sort(), ["engine-source", "scripts/lib/git.mjs"],
     "the second write kept the first");
@@ -375,6 +377,64 @@ test("6.2: the record is written beside the suite lock, and a fresh clone reads 
   assert.deepEqual(fs.readdirSync(dir).filter((f) => f !== RECORD_NAME), [], "no half-written temp file survives");
   assert.match(RECORD_NAME, /\.json$/, "and the record is machine-readable by name");
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("G-M1 the refusal says WHICH KIND of thing changed — the trigger is not a module", () => {
+  // The refusal read `set.get(entryId).kind`, and `certifiedSet()` maps an id to its FILES, so the
+  // noun was always `undefined`, the trigger branch in describeRefusal never fired, and a refusal
+  // about the engine-source trigger printed "the certified module 'engine-source' changed".
+  const set = certifiedSet(REPO);
+  const record = { entries: {
+    [ENGINE_SOURCE]: { kind: KIND_TRIGGER, result: "pass", contentHash: "OLD", covers: ["output-interpolations"] },
+    "scripts/lib/git.mjs": { kind: KIND_MODULE, result: "pass", contentHash: "OLD", covers: ["tool-currency"] },
+  } };
+  const refused = recordRefusals({
+    stagedFiles: ["scripts/lib/rank.mjs", "scripts/lib/git.mjs"],
+    record, set, hashStaged: () => "NEW",
+    liveIds: [...functionalIds(REPO), ...sweepIds(REPO)], conformanceRowsNow: conformanceRows(REPO),
+  });
+  const trigger = refused.find((r) => r.entryId === ENGINE_SOURCE);
+  const module = refused.find((r) => r.entryId === "scripts/lib/git.mjs");
+  assert.ok(trigger && module, "both demands are refused by the same edit set");
+  assert.equal(trigger.noun, KIND_TRIGGER, "the engine-source entry is a TRIGGER, not a module");
+  assert.equal(module.noun, KIND_MODULE);
+  assert.match(describeRefusal(trigger), /change-triggered bucket 'engine-source'/,
+    "so the developer is told which bucket moved, and which command re-certifies it");
+  assert.match(describeRefusal(module), /the certified module 'scripts\/lib\/git\.mjs'/);
+
+  // AND THE DERIVATION CARRIES IT when the record has no entry at all — the case that made the
+  // fallback necessary, since `entry` is then undefined.
+  const noEntry = recordRefusals({
+    stagedFiles: ["scripts/lib/rank.mjs"], record: { entries: {} }, set, hashStaged: () => "NEW",
+    liveIds: [...functionalIds(REPO), ...sweepIds(REPO)], conformanceRowsNow: conformanceRows(REPO),
+  }).find((r) => r.entryId === ENGINE_SOURCE);
+  assert.equal(noEntry.noun, KIND_TRIGGER, "a missing entry still names the trigger as a trigger");
+});
+
+test("G-M2 the record writer REFUSES an entry with an empty covers, and writes nothing", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-covers-"));
+  const written = [];
+  const fakeIo = {
+    readFileSync: () => { const e = new Error("ENOENT"); e.code = "ENOENT"; throw e; },
+    writeFileSync: (p) => written.push(p),
+    renameSync: (a, b) => written.push(`${a}->${b}`),
+  };
+  assert.throws(
+    () => writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H", covers: [] }, fakeIo),
+    /EMPTY covers/, "an empty covers must be refused by name");
+  assert.throws(
+    () => writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H" }, fakeIo),
+    /EMPTY covers/, "and so must a missing one, which is the same thing with a different spelling");
+  assert.deepEqual(written, [], "a refused entry must not reach the record — not even a temp file");
+  fs.rmSync(dir, { recursive: true, force: true });
+
+  // AND THE DERIVATION ACTUALLY SATISFIES IT for every certified module in this repository: the
+  // refusal is only usable if nothing legitimate is empty, or the runner would be unable to write a
+  // record at all. `commit-watch.mjs` resolved to [] before coversFor learned the import form.
+  for (const id of certifiedModules(REPO)) {
+    assert.ok(coversFor(id).length > 0,
+      `'${id}' is in the certified set and resolves to no covering id — the record for it could not be written`);
+  }
 });
 
 test("check 4 — a covers id from the SWEEP BUCKET resolves (found by running the gate end-to-end)", () => {
