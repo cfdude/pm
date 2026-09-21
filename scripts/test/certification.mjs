@@ -85,6 +85,14 @@ export function assertionIds(root = REPO, readdir = readdirDefault) {
   return testIdsIn(root, "assert", readdir);
 }
 
+/** The sweep bucket's ids. A `covers` entry may name one of these as readily as a functional id —
+ *  the `engine-source` trigger's own member does — so a resolver that looked only in the functional
+ *  half would refuse every record the sweep runner writes. Found by running the drift script against
+ *  a record produced by `certify sweeps`, which is the reason that verification is end-to-end. */
+export function sweepIds(root = REPO, readdir = readdirDefault) {
+  return testIdsIn(root, "sweeps", readdir);
+}
+
 function testIdsIn(root, half, readdir) {
   return readdir(path.join(root, "scripts", "test", half))
     .filter((f) => f.endsWith(".test.mjs"))
@@ -213,6 +221,43 @@ export function conformanceRows(root = REPO, readFile = readDefault) {
   return [...body.matchAll(/^\s*name:\s*"((?:[^"\\]|\\.)*)"/gm)].map((m) => JSON.parse(`"${m[1]}"`));
 }
 
+/** The entry one certified MODULE gets, as data — pure, so its SHAPE is testable without running a
+ *  bucket (the shape is what 7.2's dangling-id checks read). `covers` is recorded, never implied
+ *  (D7), and for the entry point the conformance set's ROWS are recorded beside the file id so that
+ *  deleting a row refuses rather than leaving `conductor.mjs` certified by a class nobody observes
+ *  any more. */
+export function moduleEntry(id, { root = REPO, functional, counts, ranAt, engineSha, readFile = (p) => fs.readFileSync(p, "utf8") }) {
+  return {
+    kind: KIND_MODULE,
+    files: [id],
+    contentHash: contentHash([id], (rel) => readFile(path.join(root, rel))),
+    covers: coversFor(id, { root, functional, readFile }),
+    result: "pass",
+    ranAt,
+    engineSha,
+    counts,
+    run: "node scripts/test/certify.mjs functional",
+    ...(id === ENGINE_ENTRY ? { conformanceRows: conformanceRows(root, readFile) } : {}),
+  };
+}
+
+/** The entry the `engine-source` TRIGGER gets — a second, DISJOINT demand over the whole engine
+ *  source, which is the sweep bucket's subject (D9/6.3). */
+export function triggerEntry({ root = REPO, counts, ranAt, engineSha, readFile = (p) => fs.readFileSync(p, "utf8") }) {
+  const files = engineSourceFiles(root);
+  return {
+    kind: KIND_TRIGGER,
+    files,
+    contentHash: contentHash(files, (rel) => readFile(path.join(root, rel))),
+    covers: ["output-interpolations"],
+    result: "pass",
+    ranAt,
+    engineSha,
+    counts,
+    run: "node scripts/test/certify.mjs sweeps",
+  };
+}
+
 // ───────────────────────────── the record ─────────────────────────────
 
 /** Read the record, or an empty one. A fresh clone has NO record, and that is correct behaviour
@@ -275,11 +320,13 @@ export function recordRefusals({
   record,
   set,                       // Map<entryId, files[]>, from certifiedSet()
   hashStaged,                // (files) => string|null
-  functional,                // live functional ids
+  liveIds,                   // every id a covers entry may name: the functional half PLUS the
+                             // sweep bucket, which is where the engine-source trigger's own
+                             // member (`output-interpolations`) lives
   conformanceRowsNow,        // string[] | null — null when the conformance file is absent
 }) {
   const staged = new Set(stagedFiles);
-  const live = new Set(functional);
+  const live = new Set(liveIds);
   const refusals = [];
 
   for (const [entryId, files] of set) {
@@ -292,6 +339,7 @@ export function recordRefusals({
         kind: "stale-record",
         entryId,
         changed,
+        noun: set.get(entryId).kind,
         run: runFor(entryId),
         why: !entry
           ? "no record entry covers this content"
@@ -357,8 +405,8 @@ export function recordRefusals({
 export function describeRefusal(r) {
   switch (r.kind) {
     case "stale-record":
-      return `the certified module '${r.entryId}' changed (${r.changed.join(", ")}), and ${r.why}. ` +
-        `Run \`${r.run}\` to certify the new content.`;
+      return `the certified ${r.noun === "trigger" ? "change-triggered bucket" : "module"} '${r.entryId}' ` +
+        `changed (${r.changed.join(", ")}), and ${r.why}. Run \`${r.run}\` to certify the new content.`;
     case "dangling-entry":
       return `the record holds an entry for '${r.entryId}': ${r.why}. Delete the entry or re-run ` +
         `\`${runFor(r.entryId)}\`.`;

@@ -329,7 +329,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       spawns nothing (the capability forbids it running the functional half, driving git or spawning
       the engine), and it implements exactly these four — including 5.4's two — and no converse of the
       twin rule
-- [ ] 6.2 GREEN — the dev-only runner `scripts/test/certify.mjs` writes the record (design D7): per
+- [x] 6.2 GREEN — the dev-only runner `scripts/test/certify.mjs` writes the record (design D7): per
       module, the files, a content hash over their bytes, the functional ids that cover it, the result,
       the timestamp, and the engine sha as provenance. It is the same runner 6.3 uses for the sweep
       bucket (`node scripts/test/certify.mjs functional` / `… sweeps`), so there is one record writer
@@ -342,7 +342,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       `pm-suite.lock`, and is never committed. Verify: a fresh clone has no record and the first
       commit touching a certified module demands a run; and a one-line edit to `conductor.mjs` with no
       fresh conformance entry is refused
-- [ ] 6.3 GREEN — the sweep bucket and its `engine-source` record (design D9). Three things land
+- [x] 6.3 GREEN — the sweep bucket and its `engine-source` record (design D9). Three things land
       together, because a trigger with no producer is a refusal nobody can satisfy: (a) the move —
       `scripts/test/output-interpolations.test.mjs` and its two helper modules
       (`output-interpolations.mjs`, `output-interpolations.judged.mjs`) become

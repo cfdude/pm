@@ -37,7 +37,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   REPO, ENGINE_SOURCE, certifiedSet, conformanceRows, couplingRefusals, describeRefusal,
-  enrolmentRefusals, functionalIds, assertionIds, homeOf, readRecord, recordRefusals, twinRefusals,
+  enrolmentRefusals, functionalIds, assertionIds, homeOf, readRecord, recordRefusals, sweepIds, twinRefusals,
 } from "./certification.mjs";
 
 // ───────────────────────────── the index reads ─────────────────────────────
@@ -123,7 +123,8 @@ export function checkAll(root = REPO) {
         }
         return h.digest("hex");
       },
-      functional,
+      // Every id a covers entry may legitimately name: the functional half AND the sweep bucket.
+      liveIds: [...functional, ...sweepIds(root)],
       conformanceRowsNow: (() => {
         try { return conformanceRows(root); } catch { return null; }
       })(),
