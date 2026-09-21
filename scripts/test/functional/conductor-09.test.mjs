@@ -328,6 +328,43 @@ test("G-I1 the floor FIRES when the runner's glob cannot reach a file the half s
     "and it must say what a shortfall means, because the symptom is a passing suite");
 });
 
+test("G-I3 the hook does NOT run the functional half — a marker file there is never picked up", () => {
+  // "THE HOOK DOES NOT RUN THE FUNCTIONAL HALF" IS A REQUIREMENT, NOT A STYLE (design D8, and the
+  // spec's "A commit that touches nothing certified runs the assertion half only" scenario): the
+  // functional half is the triggered half, and running it on every commit is exactly the cost the
+  // split exists to remove. It was held by nothing — adding the functional glob to the hook's runner
+  // left the whole assertion half green AND the hook's own functional tests green (Gate 2, G-I3).
+  //
+  // So the functional half of the FIXTURE holds a marker test that fails the moment it runs, and the
+  // assertion is that the run never reaches it. Its assertion twin is written too — the drift script
+  // refuses a functional id with no twin, and a fixture that tripped the drift check would be
+  // testing the wrong refusal.
+  const r = runHookAgainstFixture(
+    `test("the one the runner reaches", () => { assert.ok(true); });`,
+    {
+      extraFiles: {
+        "scripts/test/functional/marker.test.mjs":
+          'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+          'test("G-I3 MARKER the hook must never run this functional file", () => {\n' +
+          '  assert.fail("the hook ran the functional half");\n});\n',
+        "scripts/test/assert/marker.test.mjs":
+          'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+          'test("the marker\'s assertion twin", () => { assert.ok(true); });\n',
+      },
+    },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.equal(r.status, 0, `the hook must run only the passing assertion half: ${combined}`);
+  assert.doesNotMatch(combined, /G-I3 MARKER the hook must never run this functional file/,
+    "the hook ran a file from scripts/test/functional/ — the triggered half ran on a commit, which " +
+    "is the cost this change exists to remove");
+  assert.doesNotMatch(combined, /the hook ran the functional half/,
+    "the marker's failure reached the hook's output");
+  assert.match(combined, /pre-commit: 2\/2 passing/,
+    "and the run must be the assertion half's own two tests — a marker that never ran must not have " +
+    "changed the count either");
+});
+
 test(".githooks/pre-commit aborts when the glob runs FEWER tests than are declared", () => {
   // The failure mode the glob introduces: a test file that stops being picked up. The suite
   // still passes -- on a subset. Simulated here by declaring tests in a file the hook's glob

@@ -267,6 +267,15 @@ test("a bare invocation with no subcommand prints usage and exits 0", () => {
 //    hook's SHAPE is asserted HERE instead — it is a source read that needs no shell, so D5 puts it
 //    on the per-commit path, and the coupling check that requires both halves to move together is
 //    satisfied by that rather than worked around.
+// 4. THE TWO GATE 2 HOOK-RUN TESTS (G-I1, G-I3), for the same reason and with the same division of
+//    labour: a dotfile the runner's glob cannot reach while the index still declares it (the floor's
+//    firing direction), and a marker file in the functional half that fails if it is ever picked up
+//    (the hook does not run the triggered half). Both drive the REAL hook in a fixture repository, so
+//    both spawn and both belong to the functional half. What this half holds instead is the HOOK'S
+//    TEXT: the runner line asserted by exact equality — so a second glob cannot survive it — and the
+//    floor's derivation asserted NOT to enumerate the functional half or the sweep bucket. Between
+//    them, the source-level shape and the running hook are pinned from both sides, which is the
+//    division D5's placement rule produces rather than a gap in it.
 
 // ──────────────── the pre-commit hook's SHAPE (moved here in 6.4) ────────────────
 //
