@@ -63,12 +63,31 @@ test("conformance: an unreadable state file returns the class's status per verb"
 });
 
 test("conformance: nothing the engine prints for an invocation reaches the process's own streams", () => {
+  // THE ASSERTION THAT WAS MISSING (G-M4, Gate 2). This test used to check that the call produced
+  // output and a numeric status, which an engine that ALSO wrote to the process would satisfy — the
+  // real check lived only in the functional twin (`withLeakWatch`), where it dies when a refusal
+  // leaks. `invokeEngine` now returns what reached the process's own writers, so the per-commit half
+  // holds the property too, on the half that CAN hold it: the capture is a patch of two functions,
+  // not a spawn.
   const cwd = tmpRepo();
   const r = invokeEngine(["init"], { cwd });
   assert.ok((r.stdout + r.stderr).length > 0, "the call produced output — the check is not vacuous");
-  // Everything it printed is on the streams the CALLER supplied; the process's own are untouched,
-  // which is the only way many invocations share one process without their output interleaving.
-  assert.equal(typeof r.status, "number");
+  assert.equal(r.leaked, "",
+    `the engine wrote to the process's own streams: ${JSON.stringify(r.leaked)}. Everything it ` +
+    "prints must land on the streams the CALLER supplied — that is the only way many invocations " +
+    "share one process without their output interleaving, and it is a SHALL of engine-invocation");
+
+  // A REFUSAL THAT THROWS TOO, not only a success: `die()` is the one path every refusal class goes
+  // through (`invocation().stderr.write(message)` then throw), and a leak there would be the one that
+  // got away — refusals are where the engine writes most. Verified against a mutant whose `die()`
+  // ALSO writes to `process.stderr`: the unknown-verb case above does NOT catch it (it is refused
+  // before dispatch, without `die()`), and this one does.
+  const runner = tmpRepo();
+  run(["init"], { cwd: runner });
+  const refused = invokeEngine(["update-epic", "ghost", "--priority", "P0"], { cwd: runner });
+  assert.ok((refused.stdout + refused.stderr).length > 0, "the refusal produced output on the caller's streams");
+  assert.equal(refused.leaked, "",
+    `a refused invocation wrote to the process's own streams: ${JSON.stringify(refused.leaked)}`);
 });
 
 test("conformance: two invocations in one process act on their own roots", () => {

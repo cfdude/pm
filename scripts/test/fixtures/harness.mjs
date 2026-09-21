@@ -58,7 +58,7 @@ export function runner() {
  *  double for git. Returns the captured streams and the returned status rather than throwing, so
  *  `runCombined` and a caller that wants the status can both be built on it. */
 export function invokeEngine(args, { cwd, env = {}, input, git } = {}) {
-  let out = "", err = "";
+  let out = "", err = "", leaked = "";
   const io = {
     cwd,
     // The same three keys the spawned form set: the root the engine acts on, the empty cache it
@@ -70,8 +70,30 @@ export function invokeEngine(args, { cwd, env = {}, input, git } = {}) {
     stderr: { write: (s) => { err += s; return true; } },
     ...(git ? { git } : {}),
   };
-  const status = main(args, io);
-  return { status, stdout: out, stderr: err };
+  // THE PROCESS'S OWN WRITERS ARE PATCHED-AND-FORWARDED FOR THE CALL (G-M4, Gate 2). "Everything the
+  // engine prints lands on the streams the CALLER supplied, and nothing on the process's own" is a
+  // SHALL of engine-invocation, and it is what lets many invocations share one process without their
+  // output interleaving. The assertion half had no way to observe it: its conformance twin asserted
+  // only that the call produced output and returned a number, so an engine that ALSO wrote to the
+  // process would have passed. The capture is forwarded rather than swallowed, so the runner's own
+  // output is unchanged and a leak is both returned as data and still visible in the log.
+  const realOut = process.stdout.write, realErr = process.stderr.write;
+  process.stdout.write = function (chunk, ...rest) {
+    leaked += String(chunk);
+    return realOut.call(this, chunk, ...rest);
+  };
+  process.stderr.write = function (chunk, ...rest) {
+    leaked += String(chunk);
+    return realErr.call(this, chunk, ...rest);
+  };
+  let status;
+  try {
+    status = main(args, io);
+  } finally {
+    process.stdout.write = realOut;
+    process.stderr.write = realErr;
+  }
+  return { status, stdout: out, stderr: err, leaked };
 }
 
 /** The two entry points, bound to one gateway. `fake` is a boolean rather than an object because the
