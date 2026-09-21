@@ -13,7 +13,47 @@
 
 export * from "./helpers.mjs";
 
-import { makeHarness, setRunner } from "./harness.mjs";
+// THE RUNTIME GUARD (G-I4), installed by IMPORT — see the module's own header. It must come before
+// the harness builds anything, and it must never be imported by the functional half's binding:
+// `scripts/test/functional/` runs the real git on purpose, and a PATH shim there would make the
+// half that exists to prove the double against the real binary unable to find it.
+import "./assert-git-shim.mjs";
+export { gitSpawns, GIT_SPAWN_LOG, SHIM_DIR } from "./assert-git-shim.mjs";
+
+import { EMPTY_CACHE, makeHarness, setRunner } from "./harness.mjs";
+import { fakeGit } from "./fake-git.mjs";
+import { installedInvocation, setInvocation } from "../../lib/invocation.mjs";
+
+/** Run `fn` with an invocation INSTALLED, the way `run()` installs one for the duration of a call.
+ *
+ *  WHY THIS EXISTS (G-I4). A test that imports a lib module directly and calls a function from it
+ *  runs OUTSIDE any invocation, so `invocation()` answers with the live PROCESS_CONTEXT and
+ *  `gitOps()` builds the REAL gateway — one `git symbolic-ref` per call, in the half whose whole
+ *  contract is that it runs no git. The call site that did this was invisible to review and to the
+ *  source scan; the fix is not to weaken either, it is to give such a test the same invocation every
+ *  other test in this half gets. The double is the half's (`fakeGit({ noRepository: true })`), the
+ *  streams are discarded, and the previous invocation — usually `null`, the process view — is put
+ *  back afterwards so a later direct call sees exactly what it saw before.
+ *
+ *  ASYNC-AWARE: `fn` is awaited before the invocation is restored, so a test may await between its
+ *  own appends and still have each call land under the root it was given. */
+export async function withAssertInvocation(cwd, fn) {
+  const prev = installedInvocation();
+  setInvocation({
+    cwd,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+    argv: ["node", "conductor.mjs"],
+    stdin: { read: () => "", isTTY: false },
+    stdout: { write: () => true },
+    stderr: { write: () => true },
+    git: fakeGit({ noRepository: true }),
+  });
+  try {
+    return await fn();
+  } finally {
+    setInvocation(prev);
+  }
+}
 
 const harness = makeHarness({ fake: true });
 export const run = harness.run;

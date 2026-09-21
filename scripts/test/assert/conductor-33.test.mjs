@@ -13,7 +13,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEngine , injectConflictOnce} from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEngine, injectConflictOnce,
+  withAssertInvocation } from "../fixtures/assert-harness.mjs";
 
 const REPO = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "..");
 
@@ -672,9 +673,13 @@ test("gh-111: a full segment rotates to a new one rather than growing past a rea
   const { ACTIVITY_SEGMENT_MAX_BYTES } =
     await import(new URL("../../lib/constants.mjs", import.meta.url).href);
   const cwd = tmpRepo();
-  const prev = process.env.CLAUDE_PROJECT_DIR;
-  process.env.CLAUDE_PROJECT_DIR = cwd;
-  try {
+  // NOT a bare `process.env.CLAUDE_PROJECT_DIR = cwd` around a DIRECT call (G-I4). That shape left
+  // `invocation()` on the live process context, so `gitOps()` built the REAL gateway and
+  // `appendEvents`'s detach probe ran `git symbolic-ref --quiet HEAD` — a real git process inside
+  // the half that runs no git, invisible to review and to 5.2's source scan because no spawn call
+  // is written here. The call is driven under an installed invocation instead, with this half's
+  // double, which is what every other test in the half already gets through `run()`.
+  await withAssertInvocation(cwd, async () => {
     appendEvents([{ at: new Date().toISOString(), kind: "state-write", verb: "x" }]);
     const first = fs.readdirSync(activityDir())[0];
     fs.writeFileSync(path.join(activityDir(), first), "x".repeat(ACTIVITY_SEGMENT_MAX_BYTES + 1));
@@ -683,10 +688,7 @@ test("gh-111: a full segment rotates to a new one rather than growing past a rea
     const names = fs.readdirSync(activityDir()).sort();
     assert.equal(names.length, 2, "the full segment must be closed, not appended to");
     assert.ok(names[1] > names[0], "ISO names must sort chronologically — retention depends on it");
-  } finally {
-    if (prev === undefined) delete process.env.CLAUDE_PROJECT_DIR;
-    else process.env.CLAUDE_PROJECT_DIR = prev;
-  }
+  });
 });
 
 test("gh-111: retention prunes OLDEST first and never the last remaining segment", async () => {

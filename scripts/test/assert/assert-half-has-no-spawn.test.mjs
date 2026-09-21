@@ -34,6 +34,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+// INSTALLS the PATH shim as a side effect, and hands back the counter it writes to (G-I4).
+import { SHIM_DIR, gitSpawns } from "../fixtures/assert-git-shim.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -96,6 +98,27 @@ test("5.2 the assertion half spawns no child process and runs no git", () => {
     "file that needs real git belongs in scripts/test/functional/ — it runs on the trigger there, " +
     "which is what makes a real git call affordable. Do not weaken this guard: add the test to the " +
     "functional half instead, or extend fixtures/fake-git.mjs if the call is scenery.");
+});
+
+test("G-I4 the assertion half makes ZERO real git calls — a PATH shim counts them", () => {
+  // THE SOURCE SCAN ABOVE CANNOT SEE THIS ONE (Gate 2, G-I4). It refuses a spawn WRITTEN in a file
+  // in this half; it is blind to a test that calls a lib function directly, because then
+  // `invocation()` answers with the live PROCESS_CONTEXT, `gitOps()` builds the REAL gateway, and
+  // `git symbolic-ref` runs three modules away from the call. Exactly that was live in
+  // `conductor-33.test.mjs` and the reviewer proved it with a `git` shim exiting 128: 1237/1237
+  // still passed, because a shim that merely fails is tolerated by every caller.
+  //
+  // So the enforcement is a shim that does not fail anything — it COUNTS, and an `exit` listener
+  // installed with it fails the whole half when the count is not zero. That listener is what makes
+  // this hold for the files that run AFTER this one; the assertion here is the same fact, read
+  // directly, so a spawn is reported as a named test failure as well as a process status.
+  assert.equal(process.env.PATH.split(path.delimiter)[0], SHIM_DIR,
+    "the git shim must be first on PATH, or a real `git` is reachable and this guard counts nothing");
+  const spawns = gitSpawns();
+  assert.deepEqual(spawns, [],
+    `the assertion half ran ${spawns.length} real git invocation(s) up to this point: ${spawns.join(" | ")}. ` +
+    "The half runs in one process on the injected double; a real git call means something reached " +
+    "the gateway through the PROCESS context instead of through an installed invocation.");
 });
 
 test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the stated reason", () => {
