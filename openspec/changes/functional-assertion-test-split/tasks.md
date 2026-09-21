@@ -184,15 +184,15 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       set is derived rather than typed
 - [x] 4.2 GREEN — the gateway module exposes one operation per invocation, and no module imports it;
       every caller receives it. Verify: 4.1 green, the full suite green
-- [ ] 4.3 GREEN — the fake, injected in the assertion half. Its canned answers for the gateway's
+- [x] 4.3 GREEN — the fake, injected in the assertion half. Its canned answers for the gateway's
       operations are FROZEN CAPTURES committed under `scripts/test/fixtures/`, each saying when it
       would be legitimate to refresh it — not derived at test time from the machine's git, per
       `docs/lessons/a-fixture-reconstructed-from-live-data-dies-when-the-data-improves.md`
-- [ ] 4.4 GREEN — the fake-versus-live check in the functional half: for each gateway operation, one
+- [x] 4.4 GREEN — the fake-versus-live check in the functional half: for each gateway operation, one
       functional test asserts the fake's canned output is byte-identical to the real git's output for
       the same invocation, and names the differing field on failure. Verify: mutate one byte of the
       fake and confirm the check fails and names the field
-- [ ] 4.5 GREEN — the git-version question is decided and stated: a live output that changes with the
+- [x] 4.5 GREEN — the git-version question is decided and stated: a live output that changes with the
       git version FAILS the check loudly rather than being absorbed, and refreshing the capture is a
       deliberate edit the drift script then re-certifies
 
