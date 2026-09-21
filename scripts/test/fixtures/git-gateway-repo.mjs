@@ -46,6 +46,10 @@ process.env.GIT_CONFIG_NOSYSTEM ??= "1";
 export const ROOT_TOKEN = "<ROOT>";
 /** The detached fixture's token — see rootsOf(). */
 export const ROOT_DETACHED_TOKEN = "<ROOT-DETACHED>";
+/** The NO-REPOSITORY fixture's token. The assertion half's invocation root is a fresh temporary
+ *  directory with no `git init` anywhere above it, so this is the world its double has to model —
+ *  see `buildNoRepositoryCapture()` and `fakeGit({ noRepository: true })`. */
+export const NO_REPO_TOKEN = "<NO-REPO>";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const CAPTURE_PATH = path.join(HERE, "git-gateway-capture.json");
@@ -157,9 +161,59 @@ function buildAt(prefix, { detach = false } = {}) {
 
 /** The whole fixture: an attached repository whose case list the capture was taken from, and one
  *  detached repository, which exists solely so `headRef`'s DISCRIMINATING answer — a throw with
- *  status 1 — has a live side to be checked against. */
+ *  status 1 — has a live side to be checked against. The third root is NOT a repository at all —
+ *  see `buildNoRepositoryCapture()`. */
 export function buildFixture() {
-  return { attached: buildAt("pm-gateway-fx-"), detached: buildAt("pm-gateway-fx-det-", { detach: true }) };
+  return {
+    attached: buildAt("pm-gateway-fx-"),
+    detached: buildAt("pm-gateway-fx-det-", { detach: true }),
+    // A plain temporary directory: no `git init`, and nothing above it either, so every git command
+    // run with this as its cwd answers 128 "not a git repository". That is the world the ASSERTION
+    // half's invocations run in (design D5's placement rule sends a test that needs a real
+    // repository to the functional half), so the double has to model it rather than guess at it.
+    plain: fs.mkdtempSync(path.join(os.tmpdir(), "pm-gateway-fx-plain-")),
+  };
+}
+
+/** THE ASSERTION HALF'S WORLD, CAPTURED. Every gateway operation run with a non-repository
+ *  directory as the invocation's root, frozen the same way the repository cases are and checked
+ *  against the live git by the same 4.4 test.
+ *
+ *  ARGUMENTS ARE DELIBERATELY THE SAME SHAPES AS `casesFor()`, and the answers do not depend on
+ *  them at all: git fails before it reads them. That is why the fake built from this section
+ *  answers PER OPERATION rather than per argument — see `fakeGit({ noRepository: true })` and the
+ *  note there on why that is not the "plausible default" the arg-keyed mode refuses.
+ *
+ *  This section exists because the alternative is a silent lie in the other direction. Without it
+ *  the double would answer every root-less operation with the FIXTURE repository's answer —
+ *  `shortHead()` returning a commit the test's directory does not contain, `worktreeList()`
+ *  listing a worktree that does not exist — and the assertion half would be asserting against a
+ *  repository that is not there. */
+export function buildNoRepositoryCapture(plain) {
+  const gateway = realGit(() => ({ root: plain, env: process.env }));
+  // Placeholder values, not a real repository's: git never gets as far as reading them here, which
+  // is the point — the answer is the same for every argument, so the arguments cannot matter.
+  const aSha = "0".repeat(40);
+  const argsFor = {
+    headRef: [plain], commitWatchGit: [["rev-parse", "--git-dir"], plain],
+    abbreviateCommit: [aSha], verifyCommitName: [aSha], mergeBaseIsAncestor: [aSha, aSha],
+    committerDate: [aSha], commitExists: [aSha], refsContaining: [aSha],
+    diffNamesAgainstHead: [["README.md"]], batchCheckCommits: [`${aSha}^{commit}\n`],
+    revListNotReached: [[aSha], aSha], gitPath: ["shallow"], logPickaxe: ["x", ".conductor/state.json"],
+    diffTreeNames: [aSha], commitSubject: [aSha], mergeBaseIsAncestorOfHead: [aSha],
+    lsFiles: [[".claude/skills"]],
+  };
+  const roots = { root: plain, token: NO_REPO_TOKEN };
+  const out = {};
+  for (const op of REQUIRED_OPERATIONS) {
+    const answer = callReal(gateway, op, argsFor[op] ?? []);
+    out[op] = {
+      status: answer.status,
+      value: rootToToken(answer.value, roots),
+      ...(answer.stderr ? { stderr: rootToToken(answer.stderr, roots) } : {}),
+    };
+  }
+  return out;
 }
 
 /** EVERY INVOCATION THE CHECK AND THE CAPTURE ARE DRIVEN FROM — one object per call, `args` being
@@ -255,6 +309,7 @@ export function buildCapture(fx) {
     _normalization: `Each fixture root path is replaced by its token in every case's args and every case's value: ${ROOT_TOKEN} for the attached repository, ${ROOT_DETACHED_TOKEN} for the detached one. It is the ONE substitution either side makes — git worktree list --porcelain prints absolute paths, and headRef is asked about directories that are fresh temporary ones, so neither could be byte-identical without it. Nothing else is normalized.`,
     _refreshWhen: "Only when a failure has been READ and attributed to a real change — the fixture, or a git release reformatting a command's output. The check names the operation and the first differing line; a refresh that skips that step is a stale capture wearing a pass.",
     operations,
+    noRepository: buildNoRepositoryCapture(fx.plain),
   };
 }
 

@@ -66,6 +66,26 @@ export function headAttachment(root = engineRoot()) {
  *  is why every caller asks this rather than `!== "attached"`. */
 export const isDetachedTree = (root = engineRoot()) => headAttachment(root) === "detached";
 
+/** CLEAR THE THREE PER-PROCESS CACHES. Call it once at the START of every invocation.
+ *
+ *  These three Maps are keyed by root or by value and were written for a process that serves ONE
+ *  invocation, where the key is enough: `headAttachment`'s own comment reasons that "HEAD does not
+ *  move under a running invocation". Under 0.47.0's assertion half that reasoning is FALSE in the
+ *  same way it is false for `subcommands.mjs`'s `showPrefix` — one process serves many invocations,
+ *  and a test that detaches a tree, commits, or makes a commit unreachable BETWEEN two invocations
+ *  gets the first invocation's answer served to the second. Measured: every `detached-warning` and
+ *  `detached-suppression` case in the functional half, twelve tests, because the tree is attached
+ *  when the fixture is built and detached before the invocation under test.
+ *
+ *  THE INVARIANT THAT HOLDS is the narrower one: an answer is good for the invocation that asked
+ *  it. Clearing is the whole fix; nothing else about the caching changes, so the per-invocation
+ *  spawn count it exists to save is still saved. */
+export function resetGitCaches() {
+  headAttachmentCache.clear();
+  resolvedCommitCache.clear();
+  unreachedCache.clear();
+}
+
 /** Kinds whose IDENTITY is the commit they describe, so a second row for the same sha is a
  *  duplicate by definition rather than a second event (gh#81: one repo held 8 rows for 4 distinct
  *  shas, one sha three times, twice with an empty note).

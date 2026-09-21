@@ -34,10 +34,48 @@ export function loadCapture() {
  *  encoding is enough: every argument here is a string, a number, an array or a boolean. */
 const keyOf = (args) => JSON.stringify(args);
 
+/** THE OTHER WORLD: the invocation's root is NOT a repository.
+ *
+ *  The assertion half runs every invocation against a fresh temporary directory with no `git init`
+ *  anywhere above it (design D5 sends a test that needs a real repository to the functional half), so
+ *  the double has to answer what git answers THERE, and the frozen `noRepository` section of the
+ *  capture holds exactly that — one answer per operation, taken against a real non-repository
+ *  directory and checked byte-for-byte by 4.4 against the live git.
+ *
+ *  IT ANSWERS PER OPERATION AND IGNORES THE ARGUMENTS, which the arg-keyed mode below deliberately
+ *  does not, and the difference is not a loophole. In a non-repository git fails before it reads its
+ *  arguments, so the answer genuinely does not depend on them; this is the one place where "the same
+ *  answer whatever you asked" is git's behaviour rather than a convenience. What it must never do is
+ *  answer a SUCCESS: a test whose subject needs git to succeed belongs in the functional half, and
+ *  gets a loud 128 here rather than a plausible value. */
+function noRepositoryGateway(capture) {
+  const section = capture.noRepository;
+  const gateway = {};
+  for (const { name } of GIT_OPERATIONS) {
+    const c = section[name];
+    if (!c) throw new Error(`fake git: the capture holds no no-repository answer for ${name}`);
+    gateway[name] = () => {
+      if (c.status !== 0) {
+        const err = new Error(c.stderr || `git exited ${c.status}`);
+        err.status = c.status;
+        err.stderr = c.stderr || "";
+        throw err;
+      }
+      return c.value === null ? undefined : c.value;
+    };
+  }
+  return gateway;
+}
+
 /** The double. `roots` is the list `rootToToken` wants — `[{root, token}, …]` — and may be empty for
  *  a test that only needs operations with no path in their arguments; a call carrying a real root then
- *  simply will not match, which is the loud failure rather than the quiet one. */
-export function fakeGit({ capture = loadCapture(), roots = [] } = {}) {
+ *  simply will not match, which is the loud failure rather than the quiet one.
+ *
+ *  `noRepository: true` selects the OTHER world instead — see `noRepositoryGateway()`. The assertion
+ *  half uses it for every invocation whose root is a plain temporary directory. */
+export function fakeGit({ capture = loadCapture(), roots = [], noRepository = false } = {}) {
+  if (noRepository) return noRepositoryGateway(capture);
+
   const answers = new Map();
   for (const [op, entry] of Object.entries(capture.operations)) {
     for (const c of entry.cases) {

@@ -93,7 +93,7 @@ import { loadState, readStdin } from "./lib/state.mjs";
 import { refusalFor } from "./lib/refusal.mjs";
 import { CommandExit } from "./lib/command-exit.mjs";
 import { engineRoot, escapeControls, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
-import { isDetachedTree } from "./lib/git.mjs";
+import { isDetachedTree, resetGitCaches } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { checkCommandLine } from "./lib/argv-surface.mjs";
 import { verbHelp } from "./lib/help.mjs";
@@ -131,7 +131,7 @@ import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 import { recoverCreatedAt } from "./lib/created-at.mjs";
 import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
-import { currentArgv, currentEnv, errStream, normalizeStdin, outStream, setInvocation, stdinSource } from "./lib/invocation.mjs";
+import { currentArgv, currentEnv, errStream, installedInvocation, normalizeStdin, outStream, setInvocation, stdinSource } from "./lib/invocation.mjs";
 
 /** This module's own absolute path. `main()` hands it to the delegation handoff, the banner names
  *  its directory, and the tail compares it against `process.argv[1]` to decide whether this module
@@ -166,6 +166,25 @@ const SELF = fileURLToPath(import.meta.url);
 // process's own values and assigns the result to `process.exitCode` — never `process.exit()`, whose
 // reason is recorded there.
 export function main(argv, io = {}) {
+  // THE INVOCATION IS INSTALLED FOR THE DURATION OF THIS CALL AND THEN PUT BACK. A caller that
+  // enters through main() must not change what a DIRECT lib caller sees afterwards: `state.mjs`,
+  // `git.mjs`, `integrity.mjs` and the rest answer from `invocation()`, which outside an invocation
+  // is a live view of the PROCESS. Before 0.47.0's in-process suite every invocation was a child
+  // process, so the parent's view was never touched; leaving the context installed made every later
+  // direct call read the last invocation's temporary directory instead. Measured: conductor-15's
+  // `isAncestorHere` hits this repository's REAL history on purpose and started returning the
+  // three-valued `null` ("cannot answer") because its `root()` had become a fixture repo.
+  const previous = installedInvocation();
+  try {
+    return runInvocation(argv, io);
+  } finally {
+    setInvocation(previous);
+  }
+}
+
+/** The invocation itself. `main()` owns installing and uninstalling the context around it, so
+ *  nothing here has to unwind it on any of its early returns. */
+function runInvocation(argv, io = {}) {
   const cwd = io.cwd ?? process.cwd();
   const env = io.env ?? process.env;
   const stdout = io.stdout ?? process.stdout;
@@ -185,6 +204,9 @@ export function main(argv, io = {}) {
     git: io.git,
   };
   setInvocation(ctx);
+  // The engine's per-process git caches are per-INVOCATION in fact: this process may serve many
+  // (0.47.0's assertion half serves all of them). See resetGitCaches' own note.
+  resetGitCaches();
   // ---------- self-hosting handoff (gh-134) ----------
   //
   // hooks.json and every command doc invoke this engine through ${CLAUDE_PLUGIN_ROOT} — the

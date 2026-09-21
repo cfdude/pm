@@ -41,8 +41,12 @@ import { activeChangeIds } from "./epic-progress.mjs";
 import { currentEnv, gitOps } from "./invocation.mjs";
 
 const SEMVER = /(\d+\.\d+\.\d+)/;
-const OPENSPEC_DIR = path.join(engineRoot(), "openspec");
-const SKILLS_DIR = path.join(engineRoot(), ".claude", "skills");
+// PER CALL, NOT AT MODULE LOAD — the same defect 3.2 fixed for the twelve constants in
+// constants.mjs, in a module that sweep never looked at. Frozen here, both paths came from
+// whichever root was current when this module was FIRST imported, so an in-process invocation
+// checked ANOTHER tree for `openspec/` and for the installed skills.
+const openspecDir = () => path.join(engineRoot(), "openspec");
+const skillsDir = () => path.join(engineRoot(), ".claude", "skills");
 
 /** The paths `openspec update` regenerates for the `claude` host tool, repo-relative and in the
  *  form the user is told to look at. Named once so the nudge text and the tracked-ness probe
@@ -111,11 +115,11 @@ function generatedByOf(file) {
  *  this reader does not understand. */
 export function projectOpenspecVersion() {
   let dirs;
-  try { dirs = fs.readdirSync(SKILLS_DIR, { withFileTypes: true }); } catch { return null; }
+  try { dirs = fs.readdirSync(skillsDir(), { withFileTypes: true }); } catch { return null; }
   let oldest = null;
   for (const d of dirs) {
     if (!d.isDirectory() || !d.name.startsWith("openspec-")) continue;
-    const v = generatedByOf(path.join(SKILLS_DIR, d.name, "SKILL.md"));
+    const v = generatedByOf(path.join(skillsDir(), d.name, "SKILL.md"));
     if (v && (oldest === null || cmpVer(v, oldest) < 0)) oldest = v;
   }
   return oldest;
@@ -165,7 +169,7 @@ export function generatedArtifactsTracked() {
  *  reading is a stale reading or a downgraded CLI, and `openspec update` would move the project
  *  BACKWARDS. There is no instruction to give. */
 export function openspecCurrency() {
-  if (!fs.existsSync(OPENSPEC_DIR)) return null;      // not initialized — a different message
+  if (!fs.existsSync(openspecDir())) return null;      // not initialized — a different message
   const project = projectOpenspecVersion();
   if (project === null) return null;                  // cannot tell
   const installed = installedOpenspecVersion();

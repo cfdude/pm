@@ -387,5 +387,100 @@
         }
       ]
     }
+  },
+  "noRepository": {
+    "shortHead": {
+      "status": 128,
+      "value": null
+    },
+    "headRef": {
+      "status": 128,
+      "value": null
+    },
+    "abbreviateCommit": {
+      "status": 128,
+      "value": null
+    },
+    "verifyCommitName": {
+      "status": 128,
+      "value": null
+    },
+    "mergeBaseIsAncestor": {
+      "status": 128,
+      "value": null
+    },
+    "committerDate": {
+      "status": 128,
+      "value": null
+    },
+    "commitExists": {
+      "status": 128,
+      "value": null
+    },
+    "refsContaining": {
+      "status": 128,
+      "value": null
+    },
+    "diffNamesAgainstHead": {
+      "status": 1,
+      "value": null
+    },
+    "batchCheckCommits": {
+      "status": 128,
+      "value": null
+    },
+    "revListNotReached": {
+      "status": 128,
+      "value": null
+    },
+    "isShallowRepository": {
+      "status": 128,
+      "value": null
+    },
+    "gitPath": {
+      "status": 128,
+      "value": null
+    },
+    "logPickaxe": {
+      "status": 128,
+      "value": null
+    },
+    "diffTreeNames": {
+      "status": 128,
+      "value": null
+    },
+    "showPrefix": {
+      "status": 128,
+      "value": null
+    },
+    "commitSubject": {
+      "status": 128,
+      "value": null
+    },
+    "headSubject": {
+      "status": 128,
+      "value": null
+    },
+    "commitWatchGit": {
+      "status": 128,
+      "value": null
+    },
+    "worktreeList": {
+      "status": 128,
+      "value": null,
+      "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+    },
+    "mergeBaseIsAncestorOfHead": {
+      "status": 128,
+      "value": null
+    },
+    "lsFiles": {
+      "status": 128,
+      "value": null
+    },
+    "describeExactTag": {
+      "status": 128,
+      "value": null
+    }
   }
 }

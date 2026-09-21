@@ -198,17 +198,28 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 5. The split
 
-- [ ] 5.1 GREEN — `scripts/test/assert/` runs in ONE process
+- [x] 5.1 GREEN — `scripts/test/assert/` runs in ONE process
       (`node --test --test-isolation=none scripts/test/assert/*.test.mjs`) and `scripts/test/functional/`
-      runs real git through the real gateway; shared fixtures move to `scripts/test/fixtures/`. The
-      third bucket's directory, `scripts/test/sweeps/`, is NOT created here — it belongs to the sweep
+      runs real git through the real gateway; shared fixtures move to `scripts/test/fixtures/`. **AMENDED AT APPLY TIME: the
+      third bucket's directory IS created here, with its one member in it.** The plan named the
+      sweeps bucket's home in THIS task and left the directory to 6.3; leaving `output-interpolations`
+      at the top level instead would have landed a commit in which 19 tests are run by no runner and
+      counted by no floor — the exact silence this section exists to remove, and the reason the
+      rationale given ((a bucket with no member is never on disk)) does not apply here: it HAS a
+      member. 6.3 keeps (b) the runner and (c) the record entry, and its (a) is already on disk.
+      ORIGINAL TEXT, kept so the change is visible: the
+      third bucket's directory was NOT created here — it belongs to the sweep
       that occupies it (6.3), so that a bucket with no member is never on disk. Verify: both
       invocations run and report
-- [ ] 5.2 REGRESSION GUARD — the assertion-half guard: a test that walks `scripts/test/assert/` and
+- [x] 5.2 REGRESSION GUARD — the assertion-half guard: a test that walks `scripts/test/assert/` and
       fails, naming the file, when a file spawns a child process or invokes git. It is a guard, not a
       RED: it passes the moment the directory it walks exists, so it lands with 5.1 rather than with a
       GREEN elsewhere. Verify: add one `spawnSync` by hand and confirm the guard names that file
-- [ ] 5.3 GREEN — migrate the existing 80 test files by SUBJECT (design D5: git's behaviour →
+- [ ] 5.3 GREEN — **PARTIAL: the migration, the re-point, the per-half floor and the inline
+      enrolment check are COMMITTED; the 44 assertion twins 5.3 also asks for are NOT written, so
+      this box stays unticked.** See `dispositions-5.3.md` in this change directory for every
+      file's home, its disposition and its gateway operations, and for the debt stated as a debt.
+      migrate the existing 85 test files by SUBJECT (design D5: git's behaviour →
       functional; git as scenery → assertion with the fake). Each migrated file is recorded in this
       change directory as a disposition line, and the vocabulary is the one the spec's twin rule
       admits (design D6): **`kept whole`** (stays in `scripts/test/assert/` as one file — no functional
@@ -220,9 +231,12 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       construction. An unmentioned file is visibly unclassified rather than quietly dropped. Verify:
       the assertion half contains no spawn, the functional half covers every gateway operation, every
       functional id has an assertion file of the same name, and the total declared test count across
-      both halves is not below today's 1,831 top-level declarations LESS the 19 the sweep carries
-      (`rg -c '^test\(' scripts/test/output-interpolations.test.mjs`), which moves to its own bucket in
-      6.3 — 1,812 across the two halves, with the sweep's 19 counted in its own bucket rather than lost
+      both halves is not below the 1,852 top-level declarations HEAD carries (`git ls-files
+      'scripts/test/*.test.mjs' 'scripts/test/**/*.test.mjs' | xargs grep -Hc '^test('`, DERIVED at apply
+      time — this document said 1,831 against 80 files and both were stale) LESS the 19 the sweep
+      carries (`rg -c '^test\(' scripts/test/output-interpolations.test.mjs`), which moves to its own
+      bucket in 6.3 — so the floor across the two halves is >= 1,833, with the sweep's 19 counted in
+      its own bucket rather than lost
       **THE RE-POINT LANDS IN THIS COMMIT, NOT IN SECTION 6.** `.githooks/pre-commit:69` and `:81` and
       `.github/workflows/ci.yml:32` and `:35` all name `scripts/test/*.test.mjs`; the shell does not
       recurse, so the moment the first file moves under `scripts/test/assert/` the hook's suite is a
@@ -254,7 +268,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       nothing and counted by nothing (reproduced in a scratch repository with six half files and one
       `scripts/test/leftover.test.mjs`: both halves ran 15 tests, the floor compared 15 against 15,
       and the hook exited 0 while the leftover's two tests never ran). So this task also assigns the
-      files that exist today: the 80 top-level declarations move by subject under the vocabulary
+      files that exist today: the 85 files' top-level declarations move by subject under the vocabulary
       above, and the files whose home is NOT a subject judgement are named here rather than left
       unclassified — `output-interpolations.test.mjs` and its two helper modules go to the
       change-triggered bucket `scripts/test/sweeps/` (6.3 moves them, names the runner and writes the
@@ -293,7 +307,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       and `conductor-12`'s cache-busting imports (which stop being the mechanism once the root is
       per-call). Verify: each guard still fails on a deliberate mutation of the thing it guards — a
       repair that only makes it green is the failure this list exists to catch
-- [ ] 5.7 GREEN — narrow `hermetic-git.test.mjs`'s "every file containing the string git imports the
+- [x] 5.7 GREEN — narrow `hermetic-git.test.mjs`'s "every file containing the string git imports the
       hermetic module" predicate to the halves that can run git, with the narrowing justified in the
       test body (assertion-half files will contain the string without ever running git)
 

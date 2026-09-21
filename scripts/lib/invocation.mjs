@@ -53,10 +53,22 @@ const PROCESS_CONTEXT = {
 /** The invocation in force. Never null: outside `main()` it is a live view of the process. */
 export const invocation = () => CURRENT || PROCESS_CONTEXT;
 
-/** Enter an invocation. `main()` calls this exactly once, before anything reads a global.
+/** The invocation currently INSTALLED, or `null` when none is — distinct from `invocation()`, which
+ *  cannot tell "none installed" from "the process view is installed" because both ANSWER with the
+ *  process view. `main()` needs that distinction: it saves this before installing its own context
+ *  and puts it back when it returns, so code that runs OUTSIDE an invocation (a test importing a
+ *  lib module and calling it directly) sees the process view again rather than the last invocation's
+ *  temporary directory — which is exactly what it saw when an invocation was a child process. */
+export const installedInvocation = () => CURRENT;
+
+/** Enter an invocation. `main()` calls this exactly once, before anything reads a global, and puts
+ *  the PREVIOUS value back when it returns (see `installedInvocation`).
  *
  *  Deliberately NOT re-entrant and deliberately not refcounted: the engine has one entry point and
- *  the assertion half runs tests in sequence, so "the current invocation" is a stack of one. */
+ *  the assertion half runs tests in sequence, so "the current invocation" is a stack of one. What
+ *  it is NOT is permanent — an in-process invocation that stayed installed after returning made
+ *  every DIRECT lib call that followed read the invocation's temporary directory, where a child
+ *  process had left the caller's own process view alone. */
 export function setInvocation(ctx) {
   CURRENT = ctx;
   return CURRENT;

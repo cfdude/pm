@@ -27,9 +27,23 @@ jobs:
           node-version: "18"
 
       - name: Syntax check
+        # RE-POINTED WITH THE SPLIT (5.3), in the same commit as the first file that leaves
+        # `scripts/test/*.test.mjs`. The `for` loop does NOT descend a directory, so the moment a
+        # file moved under `scripts/test/assert/` or `scripts/test/functional/` it stopped being
+        # syntax-checked entirely — a class of error that reaches a green suite as a runtime throw.
+        # `scripts/test/fixtures/*.mjs` is named too: the shared modules and the two harnesses are
+        # not tests and were never in the old glob, but a syntax error in one now breaks both halves.
         run: |
           node -c scripts/conductor.mjs
-          for f in scripts/lib/*.mjs scripts/test/*.mjs; do node -c "$f"; done
+          for f in scripts/lib/*.mjs scripts/test/assert/*.mjs scripts/test/functional/*.mjs scripts/test/sweeps/*.mjs scripts/test/fixtures/*.mjs; do node -c "$f"; done
 
       - name: Run test suite
-        run: node --test scripts/test/*.test.mjs
+        # The assertion half, run exactly as the pre-commit hook runs it — one process, one file set.
+        # 6.5 owns the rest of CI's shape: the functional half and the sweep bucket on their own
+        # triggers, each with its floor enumerated from that bucket's own tracked files.
+        #
+        # `--test-isolation=none` IS UNVERIFIED ON THIS WORKFLOW'S `node-version` (18): the flag is
+        # present on the machine this change was developed on (Node v26.9.0) and no Node 18 binary
+        # exists here to probe. 6.5 decides between bumping `node-version` and falling back to
+        # per-file isolation for CI only, and states which in the workflow.
+        run: node --test --test-isolation=none scripts/test/assert/*.test.mjs

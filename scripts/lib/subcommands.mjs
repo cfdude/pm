@@ -999,7 +999,16 @@ export function retractDetour() {
     "kept in .conductor/detours.log, hidden from PROJECT.md\n");
 }
 
-const HONCHO_MEMORIES_LOG = path.join(conductorDir(), "honcho-memories.log");
+// PER CALL, NOT AT MODULE LOAD. This was `const HONCHO_MEMORIES_LOG = path.join(conductorDir(),
+// "honcho-memories.log")` — a THIRTEENTH frozen path constant, and the only one that lived outside
+// constants.mjs, which is why the 3.2 sweep (derived from `path.join((ROOT|CONDUCTOR_DIR|
+// CHANGES_DIR)` in THAT module) did not reach it. Spawned, it was accidentally right: one process
+// meant one root. In-process it is gh#175 exactly — the invocation guards one tree and appends the
+// memory line to whichever tree was current when this module was FIRST imported. Measured: with the
+// assertion half running in one process, every invocation's line landed in the REPOSITORY's own
+// .conductor/honcho-memories.log and the fixture's file was never written, which is what made
+// reconcile-obligation's gh-8.3 guard fail.
+const honchoMemoriesLog = () => path.join(conductorDir(), "honcho-memories.log");
 
 /** Format the exact one-line Honcho memory string for a detour-stack PUSH or POP, per
  *  CLAUDE.md rule 4 ("on every PUSH and POP, also write a one-line memory to Honcho").
@@ -1025,7 +1034,7 @@ export function honchoMemoryLine(action, epicId, reason) {
 export function appendHonchoMemory(action, epicId, reason) {
   const line = honchoMemoryLine(action, epicId, reason);
   fs.mkdirSync(conductorDir(), { recursive: true });
-  fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
+  fs.appendFileSync(honchoMemoriesLog(), `${new Date().toISOString()}\t${line}\n`);
   outStream().write(line + "\n");
   return line;
 }
