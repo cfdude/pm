@@ -400,7 +400,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 7. Required task items
 
-- [ ] 7.1 **Call-site completeness sweep** (required task item 1) — for each rule this change
+- [x] 7.1 **Call-site completeness sweep** (required task item 1) — for each rule this change
       introduces, enumerate ALL call sites MECHANICALLY rather than from this document's lists: (a) the
       no-`process.exit` rule over `scripts/lib/*.mjs` and `scripts/conductor.mjs`; (b) the injected-global
       rule over `process.argv`, `process.env`, `process.cwd()`, `process.stdout`, `process.stderr`,
@@ -420,7 +420,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       each rule holds and where it does not, and justify every omission — a site left unguarded beside
       an identical guarded sibling is a FINDING, and both gates are diff-scoped and structurally
       cannot see it
-- [ ] 7.2 **DATA references are call sites** (required task item 1) — the certification record holds
+- [x] 7.2 **DATA references are call sites** (required task item 1) — the certification record holds
       the module ids it certifies and the functional ids that cover it. Enumerate every place those
       ids are WRITTEN, READ and REMOVED, and prove a module renamed or a functional test deleted
       cannot leave a record pointing at something that no longer exists. **`covers` is the field this
@@ -429,22 +429,22 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       reading as certified by a functional id that no longer exists. Verify: rename one module in the
       gateway set and confirm the record is refused rather than silently not covering it; then delete
       one conformance id and confirm the same for the `conductor.mjs` entry
-- [ ] 7.3 **Every operation has an inverse** (required task item 1) — enumerate the inverse of each
+- [x] 7.3 **Every operation has an inverse** (required task item 1) — enumerate the inverse of each
       new operation and name each one deliberately not shipped: `main()`'s entry point against the CLI
       tail (both shipped — the tail is the inverse's only caller); the record written by a passing run
       against its removal (say whether a run can invalidate a record, and if not, why a stale record
       is refused by content rather than deleted); the split's two directories against a merge back
       (not shipped — say why); the drift script's refusal against a bypass (not shipped — say why, and
       name the CI backstop instead)
-- [ ] 7.4 **Verify against the commit, not the working tree** (required task item 2) — for every task
+- [x] 7.4 **Verify against the commit, not the working tree** (required task item 2) — for every task
       above, run `git show --stat <that task's sha>` and assert every file the task claims to change
       appears in THAT commit. An engine file claiming to have lost its `process.exit` but absent from
       the commit FAILS, and the working tree will hold the intended edit while both gates are green.
       Verify: the check is run per task, and its output is kept with the disposition lines from 5.3
-- [ ] 7.5 **Attribute every commit to its epic** (required task item 4) — `update-epic
+- [x] 7.5 **Attribute every commit to its epic** (required task item 4) — `update-epic
       functional-assertion-test-split --attribute-commit <sha>` as each commit is made. The commit
       that moves this change under `archive/` is lifecycle bookkeeping and is NOT attributed
-- [ ] 7.6 **Route what the work taught you** (required task item 7) — name which of the three each
+- [x] 7.6 **Route what the work taught you** (required task item 7) — name which of the three each
       finding is, before the change closes: a PRACTICE (the twin-link and certification discipline, if
       it earned its place) becomes its own epic with the evidence that made it necessary; FRICTION (a
       guard that read engine source and had to be repaired by hand, or the test-count floor's second
@@ -453,7 +453,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       particular: `a-one-off-sweep-certifies-only-the-day-it-ran` is the lesson this change
       instantiates, and if the work shows the certification record is the mechanism that lesson lacked,
       say so there rather than only in this change
-- [ ] 7.7 **Declare lifecycle bookkeeping** (required task item 3) — the archive task below carries the
+- [x] 7.7 **Declare lifecycle bookkeeping** (required task item 3) — the archive task below carries the
       literal `<!-- pm:lifecycle -->` marker on its own line, marked at the moment this source was
       authored
 

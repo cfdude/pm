@@ -368,8 +368,8 @@ export function recordRefusals({
           kind: "dangling-covers",
           entryId,
           covers: id,
-          why: "the record says this module is certified by a functional id that no longer exists — " +
-            "the module would read as covered by a test nobody can run",
+          why: "the record names a test id that no longer exists in either half or the sweep bucket — " +
+            "the entry would read as covered by a test nobody can run",
         });
       }
     }

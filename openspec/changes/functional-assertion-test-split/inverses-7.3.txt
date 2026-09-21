@@ -1,0 +1,71 @@
+0.47.0 task 7.3 — EVERY OPERATION HAS AN INVERSE (required task item 1's last clause).
+
+"An operation shipped without its inverse, and not justified, is a FINDING." The clause exists
+because the call-site sweep cannot reach this class: enumerating the callers of a thing that is
+WRITTEN never leads to the question of whether it can be UNWRITTEN. So each operation this change
+adds or modifies is enumerated with its inverse, and every inverse NOT shipped is named here with
+its reason.
+
+=====================================================================
+1. main(argv, io)  ↔  THE CLI TAIL
+   INVERSE: SHIPPED, and the tail is the inverse's only caller.
+   `main(argv, io)` turns a process into a value — it does not end the process. The inverse is the
+   three-line tail at the bottom of conductor.mjs that turns a value back into a process: build `io`
+   from `process.argv/cwd/env/stdin/stdout/stderr`, call `main`, assign `process.exitCode`. Both
+   directions exist and neither can be reached without the other, which is why the conformance set
+   (1.1) can compare them for every refusal class — the operation and its inverse are the two routes
+   whose equality IS the requirement.
+   The tail assigns `process.exitCode` rather than calling `process.exit`, deliberately and with the
+   reason recorded at conductor.mjs:504: a hook's refusal can be a JSON payload on stdout, and an
+   immediate exit truncates it at a pipe buffer. So the inverse is not the exact mirror of a
+   hypothetical `process.exit` — it is the mirror that preserves the shipped contract.
+
+2. THE RECORD WRITTEN BY A PASSING RUN  ↔  ITS REMOVAL
+   INVERSE: DELIBERATELY NOT SHIPPED beyond `rm`. A RUN CANNOT INVALIDATE ITS OWN RECORD, and the
+   reason is that invalidation would have no meaning.
+   Can a later run revoke an earlier one? No. The record is keyed by CONTENT, not by sequence: two
+   entries for one module id are not two claims to reconcile, they are the same claim written twice,
+   and `writeEntry` REPLACES the entry for that id. A FAILING run writes nothing at all (certify.mjs
+   returns non-zero before touching the record), so a failure cannot "un-certify" and cannot be read
+   as a pass either.
+   Why a stale record is REFUSED BY CONTENT RATHER THAN DELETED: deleting on staleness would make the
+   record self-erasing — the act of refusing a commit would destroy the evidence that a run ever
+   happened, and the next reader could not tell "never certified" from "certified, then the content
+   moved". The refusal is the information. It names the module and the run; nothing is written.
+   The escape hatch is the file itself and it is deliberately not a verb: the record is machine
+   state under the git common directory, never committed, and deleting it restores exactly the
+   state a fresh clone is in — which is a supported state (6.2's first scenario), not an error.
+
+3. THE SPLIT  ↔  A MERGE BACK INTO ONE DIRECTORY
+   INVERSE: NOT SHIPPED, and the reason is that the property it would destroy is the one the change
+   exists for.
+   Merging `assert/` and `functional/` back into `scripts/test/` is mechanically possible at any
+   time — every file's imports are relative and the id is derived from the path, so a merge would
+   rename 133 ids and make the twin rule unsatisfiable rather than merely unenforced. But the
+   operation it would inverse is not the split; it is the TRIGGER, and a merge does not restore the
+   per-commit suite, it makes the suite the 6-minute serial one the change measured away. The
+   rollback that DOES exist is the ordinary one and it is git: steps 1-5 left the CLI contract
+   untouched, so the engine changes revert without anything a user can see, and steps 6-7 are three
+   dev files. Naming a "merge" verb here would be inventing an inverse for a decision rather than
+   for an operation.
+
+4. THE DRIFT SCRIPT'S REFUSAL  ↔  A BYPASS
+   INVERSE: NOT SHIPPED, deliberately, and the backstop is named instead.
+   The four refusals are unconditional: no flag, no environment variable and no allowlist turns them
+   off, so the only ways past them are (a) satisfying them, (b) `--no-verify` — which this repository
+   forbids outright and the hook cannot prevent, and (c) deleting or editing the record, which is a
+   HUMAN editing machine state under `.git/`.
+   THAT IS A REAL LIMIT AND IT IS STATED RATHER THAN PAPERED OVER (design D7's risk note, kept): the
+   record "has the same trust level as the pre-commit hook that reads it". A bypass verb would be
+   strictly worse — it would convert a deliberate, visible act (`--no-verify`) into a supported
+   workflow with a flag name, and the flag would be the thing every future refusal recommends.
+   THE BACKSTOP IS CI, and it is not a formality: `.github/workflows/ci.yml` runs all three buckets
+   on the same trigger, with NO record present and none substitutable (6.5). A commit that bypassed
+   the hook still cannot merge without the functional half and the sweep bucket actually running.
+
+=====================================================================
+FINDINGS: none. Every operation this change adds either ships with its inverse (1) or has its
+absent inverse named with a reason (2, 3, 4). The class this item exists to catch — the
+pre-authorization grant that accumulated with no revoke — has no analogue here: the only state this
+change accumulates is a record that is replaced in place on every run and refused by content rather
+than revoked.

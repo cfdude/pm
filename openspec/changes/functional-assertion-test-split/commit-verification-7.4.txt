@@ -1,0 +1,68 @@
+0.47.0 task 7.4 — VERIFY AGAINST THE COMMIT, NOT THE WORKING TREE (required task item 2).
+
+Every commit of this run was checked IMMEDIATELY after it landed, with `git show --stat <sha>`,
+BEFORE its successor was started. The check: does every file the task claims to change appear in
+THAT commit? The failure mode this exists for is a task whose claimed file is absent from its
+commit while the working tree holds the intended edit — all four verification layers reading the
+working tree and none of them seeing it.
+
+The check is not retro-fitted here. It was run per commit; this is the record of it.
+
+======================================================================
+commit 9e34296  test(test): the drift script's four checks (5.4, 6.1)
+
+ .../functional-assertion-test-split/red-5.4.txt    |  53 +++
+ .../functional-assertion-test-split/tasks.md       |   4 +-
+ scripts/test/assert/drift-script.test.mjs          | 304 +++++++++++++++++
+ scripts/test/certification.mjs                     | 371 +++++++++++++++++++++
+ scripts/test/drift.mjs                             | 182 ++++++++++
+ 5 files changed, 912 insertions(+), 2 deletions(-)
+======================================================================
+commit 87cf506  test(test): the five hook verbs' end-to-end invocations, with their twin (5.5)
+
+ .../functional-assertion-test-split/tasks.md       |   2 +-
+ scripts/test/assert/hook-verbs-e2e.test.mjs        | 129 ++++++++++++++++
+ scripts/test/functional/hook-verbs-e2e.test.mjs    | 171 +++++++++++++++++++++
+ 3 files changed, 301 insertions(+), 1 deletion(-)
+======================================================================
+commit 57d2b4b  test(test): the source-reading guards, mutation-verified (5.6)
+
+ .../mutation-evidence-5.6.txt                      | 114 +++++++++++++++++++++
+ .../functional-assertion-test-split/tasks.md       |   2 +-
+ scripts/test/assert/conductor-13.test.mjs          |  23 ++++-
+ 3 files changed, 137 insertions(+), 2 deletions(-)
+======================================================================
+commit 17896bc  feat(test): the certify runner and the engine-source record (6.2, 6.3)
+
+ .../evidence-6.2-6.3.txt                           |  69 ++++++++++
+ .../functional-assertion-test-split/tasks.md       |   4 +-
+ scripts/test/assert/drift-script.test.mjs          | 117 +++++++++++++++--
+ scripts/test/certification.mjs                     |  56 ++++++++-
+ scripts/test/certify.mjs                           | 140 +++++++++++++++++++++
+ scripts/test/drift.mjs                             |   5 +-
+ 6 files changed, 370 insertions(+), 21 deletions(-)
+======================================================================
+commit 22213ae  feat(test): the hook runs the drift script, and retires its own copy (6.4)
+
+ .githooks/pre-commit                               | 49 ++++++++-------
+ .../evidence-6.4.txt                               | 71 ++++++++++++++++++++++
+ .../functional-assertion-test-split/tasks.md       |  2 +-
+ 3 files changed, 100 insertions(+), 22 deletions(-)
+======================================================================
+commit 4297f46  feat(ci): all three buckets, each with its own floor (6.5)
+
+ .github/workflows/ci.yml                           | 76 ++++++++++++++++++----
+ .../functional-assertion-test-split/tasks.md       |  2 +-
+ 2 files changed, 63 insertions(+), 15 deletions(-)
+======================================================================
+commit 9b0e977  docs: re-point the five places that named the single-glob suite (6.6)
+
+ .claude/skills/pr-workflow/SKILL.md                | 11 +++--
+ .claude/skills/release-checklist/SKILL.md          | 15 ++++---
+ CLAUDE.md                                          | 13 ++++--
+ CONTRIBUTING.md                                    | 18 +++++---
+ .../functional-assertion-test-split/tasks.md       |  2 +-
+ scripts/test/assert/conductor-09.test.mjs          | 48 +++++++++++++++++++++-
+ scripts/test/fixtures/helpers.mjs                  | 16 ++++++++
+ scripts/test/functional/conductor-09.test.mjs      | 40 ++++--------------
+ 8 files changed, 112 insertions(+), 51 deletions(-)

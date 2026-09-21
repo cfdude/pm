@@ -1562,9 +1562,12 @@ export const usesGhIssueList = (tracker) =>
 // run in the output, so the fix is to make it distinguishable. This guard only observes.
 //
 // A first-class `--project-dir` flag (the tracker's "better" suggestion) is deliberately NOT part
-// of this: the frozen `path.join(ROOT, …)` constants above are computed at module load, before any
-// dispatcher could parse a flag, so it needs a re-exec or argv-parsing inside this module. That is
-// the issue's separate "(b) missing feature", not this defect.
+// of this. The reason that stood here — "the frozen `path.join(ROOT, …)` constants above are
+// computed at module load, before any dispatcher could parse a flag" — was TRUE UNTIL 0.47.0 and
+// is now FALSE: those constants are functions of a current root (`statePath(root)`, `projectMd(root)`
+// …, see the file's head), so a flag parsed by the dispatcher could supply one. The flag is still
+// not part of this defect, and the reason is now the narrower one: this guard only observes, and a
+// flag is the issue's separate "(b) missing feature".
 
 /** Is `ROOT` a DIFFERENT repository from the one the caller is standing in, or merely a different
  *  path to the same project?  Returns `{ target, cwd }` for the former, `null` otherwise.
