@@ -215,10 +215,17 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       fails, naming the file, when a file spawns a child process or invokes git. It is a guard, not a
       RED: it passes the moment the directory it walks exists, so it lands with 5.1 rather than with a
       GREEN elsewhere. Verify: add one `spawnSync` by hand and confirm the guard names that file
-- [ ] 5.3 GREEN — **PARTIAL: the migration, the re-point, the per-half floor and the inline
-      enrolment check are COMMITTED; the 44 assertion twins 5.3 also asks for are NOT written, so
-      this box stays unticked.** See `dispositions-5.3.md` in this change directory for every
-      file's home, its disposition and its gateway operations, and for the debt stated as a debt.
+- [x] 5.3 GREEN — **COMPLETE: the migration, the re-point, the per-half floor, the inline
+      enrolment check AND the 44 assertion twins are all on disk.** See `dispositions-5.3.md` in
+      this change directory for every file's home, its disposition and its gateway operations.
+      **THE 44 TWINS LANDED IN TWO COMMITS** — the first 19, then the remaining 25 — because the
+      pre-commit hook runs the whole assertion half and one commit carrying all 44 would have been
+      a single unreviewable step. Each twin carries every behaviour of its functional counterpart
+      that needs no repository, and names at its foot the behaviour it deliberately does not carry
+      (a real commit, a detached checkout, a spawned shell — design D5's placement rule). Where a
+      behaviour could be reached through the frozen capture's answers, the twin drives it: the
+      arg-keyed double (`fakeGit({ roots: [] })`) makes the fixture's git answers available
+      in-process, which is what the twins for the gate-review and integrity families use.
       migrate the existing 85 test files by SUBJECT (design D5: git's behaviour →
       functional; git as scenery → assertion with the fake). Each migrated file is recorded in this
       change directory as a disposition line, and the vocabulary is the one the spec's twin rule
