@@ -15,6 +15,14 @@
 // 7.2'S DATA-REFERENCE OBLIGATION IS TESTED HERE TOO, in the same table, because it is check 4's
 // other half: the record holds module ids and functional ids, and every one of them is a pointer that
 // can be left dangling by a rename or a deletion.
+//
+// WHAT THIS FILE CANNOT REACH, AND ITS FUNCTIONAL TWIN DOES (G-I2). Every check-4 case below injects
+// `hashStaged` as a STUB, so the decision is tested and the READER is not: swapping the staged read
+// (`git show :<path>`) for a worktree `readFileSync` left all of these green, and the bypass that buys
+// is a commit whose index holds unverified content while the worktree holds the certified bytes.
+// `scripts/test/functional/drift-script.test.mjs` builds that exact state in a real repository and
+// requires the refusal — the half that may spawn is the half that can observe where the bytes came
+// from, which is D5's placement rule producing a pairing rather than a gap.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

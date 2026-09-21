@@ -1,0 +1,27 @@
+G-I2 RED — the record's freshness is DOCUMENTED as reading the staged bytes; nothing held it.
+
+REGRESSION-GUARD style: the implementation already reads the index, so the new functional test passes
+the moment it exists. The RED is therefore the MUTATION, made in a copy of this working tree at
+.../g2fix-47/gi2/pm. Nothing was weakened to make anything pass.
+
+MUTANT — the reader becomes a WORKTREE read, one line in scripts/test/drift.mjs:
+  `return gitRead(root, ["show", `:${rel}`]);`   →   `return fs.readFileSync(path.join(root, rel), "utf8");`
+
+The fixture repository is put into the bypass's exact state: scripts/lib/m.mjs is edited and
+`git add`ed (so the INDEX holds content no run covers), then the worktree file is written back to the
+CERTIFIED bytes. The record holds entries over the certified content for BOTH demands the certified
+set derives (the module and the engine-source trigger), so a missing entry cannot refuse for the wrong
+reason.
+
+  $ node --test scripts/test/functional/drift-script.test.mjs
+  ✖ G-I2 the record's freshness is taken over the STAGED bytes, not the worktree's
+    AssertionError: the drift script accepted a commit whose index holds content the record does not
+      cover. Output was: drift: ok — 0 tracked test files, 0 functional ids, 1 staged paths
+  ✔ G-I2 control: the same fixture with the worktree MATCHING the index is accepted
+
+THE CONTROL IS THE POINT: with the worktree matching the index the gate still ACCEPTS under the
+mutant, so the failure above is attributable to the staged/worktree divergence and not to any refusal
+the fixture happens to produce.
+
+CONTROL — in this working tree, with the reader unchanged: both tests pass (1 refused when the index
+diverges from the record; 1 accepted when it does not).
