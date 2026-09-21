@@ -298,6 +298,36 @@ test("every dispatch-table subcommand is mentioned somewhere in README.md", () =
 // inline is caught first. What is left here is the part whose subject IS a shell: the hook run
 // against a fixture repository.
 
+test("G-I1 the floor FIRES when the runner's glob cannot reach a file the half still declares", () => {
+  // THE FIRING DIRECTION, which nothing held (Gate 2, G-I1). The test above pins the floor's
+  // PRECISION — it must not fire on a non-test .mjs file — and the shape assertion in the assertion
+  // twin pins the hook's TEXT. Neither of them makes the floor fire, so neutering it left the whole
+  // suite green: `if [ "$total" -lt "$declared" ]; then` → `if false; then` was invisible.
+  //
+  // The shape reproduced here is the real one, and it is git's: `git ls-files 'scripts/test/assert/
+  // *.test.mjs'` matches `/` AND a leading dot, while `/bin/sh`'s expansion of the SAME pattern
+  // matches neither. So a file sitting in that directory behind a dot is DECLARED (it is in the
+  // index) and UNREACHABLE (the runner is handed a shell-expanded list that omits it) — which is
+  // exactly `total < declared`, produced by construction rather than by a doctored count.
+  const r = runHookAgainstFixture(
+    `test("the one the runner reaches", () => { assert.ok(true); });`,
+    {
+      extraFiles: {
+        "scripts/test/assert/.collapsed.test.mjs":
+          'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+          'test("declared, and unreachable by the runner\'s own glob", () => { assert.ok(true); });\n',
+      },
+    },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.notEqual(r.status, 0,
+    `the floor must abort the commit: the file is declared and never ran. Output was: ${combined}`);
+  assert.match(combined, /pre-commit: ABORT -- the assertion half ran 1 tests but 2 are declared in/,
+    "the ABORT must name BOTH counts — a refusal that says only 'fewer' cannot be diagnosed");
+  assert.match(combined, /A test file is not being picked up/,
+    "and it must say what a shortfall means, because the symptom is a passing suite");
+});
+
 test(".githooks/pre-commit aborts when the glob runs FEWER tests than are declared", () => {
   // The failure mode the glob introduces: a test file that stops being picked up. The suite
   // still passes -- on a subset. Simulated here by declaring tests in a file the hook's glob

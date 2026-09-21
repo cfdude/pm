@@ -330,7 +330,12 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
   // invisible to it, the floor would compare a real count against 0, and every assertion written
   // against the hook's guard would be passing on nothing. In the real repository the suite is
   // tracked by construction; a fixture has to say so.
-  execFileSync("git", ["add", "--", "scripts/test/assert/fixture.test.mjs"], { cwd });
+  //
+  // THE extraFiles ARE TRACKED TOO (G-I1). The floor's firing direction needs a file that is IN the
+  // index — so it is declared — and NOT reachable by the shell's expansion of the runner's own glob,
+  // which is the one shape that separates "what the runner ran" from "what the runner was given".
+  // A fixture could not express that while only one path was addable.
+  execFileSync("git", ["add", "--", "scripts/test/assert/fixture.test.mjs", ...Object.keys(extraFiles)], { cwd });
   const realHookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
   const hookDestPath = path.join(cwd, ".githooks", "pre-commit");
   fs.copyFileSync(realHookPath, hookDestPath);

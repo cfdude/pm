@@ -284,8 +284,22 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // RE-POINTED WITH THE SPLIT (5.3), in the same commit as the glob it reads. The hook runs the
   // ASSERTION HALF now — one process, one file set — and this assertion is about the half it runs
   // and the isolation it runs it under, not about the literal pattern that used to be there.
-  assert.match(hookText, /node --test --test-isolation=none scripts\/test\/assert\/\*\.test\.mjs/,
-    ".githooks/pre-commit does not run the assertion half in one process");
+  //
+  // EXACT-LINE, NOT A MATCH (G-I1c). `assert.match` on a substring is satisfied by a runner line
+  // that ALSO hands the functional half to the same process — the shape that makes the per-commit
+  // gate pay the cost the trigger exists to avoid, and the one the spec's "does not run the
+  // functional half" scenario forbids. Boundary characters can be slipped past a substring test;
+  // they cannot be slipped past an equality. If the runner's flags or its redirection change, this
+  // fails and is re-pointed deliberately, which is the correct cost for a line this load-bearing.
+  // The pattern is ANCHORED at the start of a command line, so the hook's own prose about
+  // `node --test` (there are three such comments, and one of them says a directory argument does NOT
+  // work) is not mistaken for a second runner.
+  const runnerLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l));
+  assert.equal(runnerLines.length, 1,
+    `the hook must run exactly ONE test runner, and it runs ${runnerLines.length}: ${runnerLines.join(" | ")}`);
+  assert.equal(runnerLines[0].trim(),
+    'if node --test --test-isolation=none scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then',
+    "the hook's runner must name exactly the assertion half — one process, one half, no second glob");
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
   // The floor makes partial-suite runs possible in a way the single file did not, so the hook must
   // cross-check the ran count against the declared count. WHAT IT MUST BE DERIVED FROM is the whole
@@ -297,6 +311,16 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
     ".githooks/pre-commit's floor does not enumerate the tracked files of the half its runner was given");
   assert.doesNotMatch(hookText, /declared=\$\(grep /,
     "the floor's declared count must not be the shell's expansion of the runner's own pattern");
+  // THE SUPERSET SHAPE (G-I1b): `declared` must enumerate the half the runner was given and NOTHING
+  // ELSE. Adding the functional half's glob was invisible to every existing check — the shape
+  // assertion above is a prefix match, so it still passed — while in the real repository it aborts
+  // every commit that has a functional half at all. This is the invariant D8 states, asserted in the
+  // direction that breaks the commit rather than the direction that only mis-counts.
+  assert.doesNotMatch(hookText, /declared=\$\(git ls-files[^\n]*functional/,
+    "the hook's floor enumerates the functional half as well as the assertion half: it is a superset " +
+    "of what this runner was given, and it aborts every commit that has a functional half at all");
+  assert.doesNotMatch(hookText, /declared=\$\(git ls-files[^\n]*sweeps/,
+    "the hook's floor enumerates the sweep bucket as well — same superset, same refusal");
   // The enrolment check landed INLINE in 5.3, because a file in neither half is run by nothing and
   // counted by nothing and the floor alone cannot see it. 6.4 RETIRED THAT COPY, handing all four
   // checks to the drift script so one rule has one implementation — so this pins the handover, and
