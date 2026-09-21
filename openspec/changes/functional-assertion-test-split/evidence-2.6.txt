@@ -1,0 +1,17 @@
+Task 2.6 verification evidence — the two commands, run in-process against the GREEN engine.
+
+Command: node evidence.mjs   (scratch dir; imports the engine by absolute path, never cd's into the repo)
+
+=== (0) what the PROCESS route does, for contrast — the binary's behaviour is UNCHANGED ===
+    env -u CLAUDE_PROJECT_DIR node scripts/conductor.mjs not-a-verb  ->  status 1
+    its real stderr, first line: "conductor: engine 0.46.0 @ /Users/robsherman/Documents/Repos/pm/scripts"
+    (the tail hands over the process's own streams, so this is where its output belongs)
+=== (a) in-process refused verb, io.stderr supplied ===
+    status 1; caller's stderr bytes 652; PROCESS's own stderr bytes 0
+    caller's stderr first line: "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target"
+=== (b) in-process mutating verb in a DETACHED checkout ===
+    status 0; caller's stderr bytes 681; PROCESS's own stderr bytes 0
+    caller's stderr lines: ["conductor: ⚠ DETACHED CHECKOUT — this tree is not on a branch, so a deploy that checks it out again discards what this command writes.","conductor:   about to write: state.json, plus render()'s writes","conductor:   session bookkeeping is NOT written here (commit watermark, detour log, brief snapshot, session claim, activity log), so any of those named above will not happen.","conductor:   if you meant the workspace, run this in the checkout that is on a branch.","conductor: rendered /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-47/verify-2.6/repo-ctKBe1/PROJECT.md","conductor: added epic 'x' (claude-code, queued)"]
+    the DETACHED block, all four lines on the caller's stderr: 4
+
+2.6 EVIDENCE: PASS — both invocations routed, nothing on the process's own streams.

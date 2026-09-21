@@ -57,16 +57,39 @@ test("#162: delegation never fires from either shape the test harness can produc
   }
 });
 
-test("#162: the handoff hands the child the SAME fd, so it cannot buffer or drop output", () => {
-  // `stdio: "inherit"` is the whole argument. The child writes to the parent's own descriptor —
-  // the parent never captures and re-emits — and spawnSync blocks until the child has exited and
-  // flushed. A parent that captured stdout and re-wrote it WOULD be losable, which is why this
-  // asserts the mechanism rather than trusting the comment beside it.
+test("#162: the handoff cannot silently truncate or drop the child's output", () => {
+  // THIS GUARD WAS RE-POINTED BY 2.6, and the reversal is deliberate rather than a weakening.
+  // It used to assert `stdio: "inherit"` — the child writes to the parent's own descriptor, so
+  // there is nothing to lose — and that mechanism is what 2.6 removed: the child inheriting the
+  // PROCESS's descriptors is the one route by which the engine's output still reached the process's
+  // own streams whatever `io` a caller supplied, which engine-invocation forbids as a SHALL.
+  //
+  // The property #162 is about — output is not lost — is unchanged; only the mechanism is. It is
+  // now carried by THREE things, and all three are asserted here because a capture without them
+  // IS the losable parent this guard exists to prevent:
+  //   1. the child's output is captured from pipes and written to the INVOCATION's streams;
+  //   2. the capture is BOUNDED far above anything the engine can produce, so a child that
+  //      exceeded it would be killed and reported rather than quietly cut off;
+  //   3. a child that started is never fallen back from, so an over-bound child cannot have the
+  //      engine run a second time on top of it.
   const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "self-hosting.mjs"), "utf8");
-  assert.match(src, /spawnSync\([\s\S]{0,400}stdio:\s*"inherit"/,
-    "the delegation handoff must stay stdio:inherit — capturing and re-emitting could lose output");
-  assert.doesNotMatch(src, /spawnSync\([\s\S]{0,400}encoding:\s*"utf8"/,
-    "capturing the child's output would reintroduce exactly the loss #162 imagined");
+  assert.match(src, /stdio:\s*realStdin\s*\?\s*\["inherit",\s*"pipe",\s*"pipe"\]\s*:\s*\["pipe",\s*"pipe",\s*"pipe"\]/,
+    "both of the child's output streams are captured — fd 2 as well as fd 1, or a warning goes astray");
+  assert.match(src, /if \(r\.stdout\) outStream\(\)\.write\(r\.stdout\);/,
+    "and what was captured is re-emitted on the INVOCATION's stdout");
+  assert.match(src, /if \(r\.stderr\) errStream\(\)\.write\(r\.stderr\);/,
+    "and on the invocation's stderr");
+  const bound = /maxBuffer:\s*(\d+)\s*\*\s*(\d+)\s*\*\s*(\d+)/.exec(src);
+  assert.ok(bound, "the capture is bounded explicitly rather than left at spawnSync's 1 MB default");
+  const bytes = Number(bound[1]) * Number(bound[2]) * Number(bound[3]);
+  assert.ok(bytes >= 8 * 1024 * 1024,
+    `the capture bound is ${bytes} bytes — the largest write path the engine has is ~9 KB, so a ` +
+    "bound within an order of magnitude of that is a truncation waiting to happen");
+  assert.match(src, /const started = typeof r\.pid === "number" && r\.pid > 0;/,
+    "an unborn child and one that ran are told apart, so only the first can degrade to running locally");
+  assert.match(src, /if \(!started\) \{[\s\S]{0,400}return null;/,
+    "a child that never started is the ONLY fallback — falling back after a mutating child ran " +
+    "would perform the verb twice");
 });
 
 // ═══════════════ the truncation that IS real, and is not delegation's ═══════════════

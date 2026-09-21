@@ -90,7 +90,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       shape is no longer needed (a refusal now throws and is caught, so a `finally` no longer drops
       the mutating-verb case). Verify: an activity-log test asserts one line per invocation and none
       at process end
-- [ ] 2.6 GREEN — the FIVE things that today run at MODULE LOAD move behind `main(argv, io)`, so no
+- [x] 2.6 GREEN — the FIVE things that today run at MODULE LOAD move behind `main(argv, io)`, so no
       caller pays for them once per process against the real env and the real streams: the delegation
       handoff (`:146–147`, which spawns a child and exits — it becomes a value `main()` acts on), the
       root-divergence warning (`:225`), **the detached-tree warning (`:234`)** — `isDetachedTree()`

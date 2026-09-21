@@ -400,7 +400,8 @@ x("save-report.mjs", "reportSave", {
 }, "passthrough", "each caller's changed/unchanged line is swept at the caller");
 x("self-hosting.mjs", "delegateToCheckout", {
   "r.error.message": 1,
-}, "engine", "a spawn error of the node binary; the target path is escaped");
+  "r.error ? r.error.message : \"the child never started\"": 1,
+}, "engine", "spawn errors of the node binary, and a literal for the one unreachable arm (2.6: the child has always started whenever this text is reached — it is defensive, not a value from git); the target path is escaped");
 x("state.mjs", "describeHolder", {
   "info.kind": 1,
   "c.pid": 1,

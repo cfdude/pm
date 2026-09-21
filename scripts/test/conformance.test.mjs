@@ -75,17 +75,44 @@ function ambiguousRulesRepo() {
   return cwd;
 }
 
-/** A directory shaped like a pm checkout whose engine exits 9 and prints nothing. The delegation
- *  row asserts only that the CHILD's status is what `main()` returns; a child that printed would
- *  put its bytes on the test runner's own stdout through the inherited stdio. */
-function fakeCheckout(exitCode) {
+/** A directory shaped like a pm checkout whose engine exits with `exitCode`, optionally having
+ *  written `printed.stdout` / `printed.stderr` first.
+ *
+ *  2.6: the child's bytes are what the delegation row must NOT depend on, and the stdio row must.
+ *  Before 2.6 the handoff spawned with `stdio: "inherit"`, so a child that printed put its bytes on
+ *  the test runner's own stdout — which is why the delegation row above passes no `printed`. */
+function fakeCheckout(exitCode, printed = {}) {
   const dir = tmpRepo();
   fs.mkdirSync(path.join(dir, ".claude-plugin"), { recursive: true });
   fs.writeFileSync(path.join(dir, ".claude-plugin", "plugin.json"),
     JSON.stringify({ name: "pm", version: "9.9.9" }) + "\n");
   fs.mkdirSync(path.join(dir, "scripts"), { recursive: true });
-  fs.writeFileSync(path.join(dir, "scripts", "conductor.mjs"), `process.exit(${exitCode});\n`);
+  const body = [];
+  if (printed.stdout) body.push(`process.stdout.write(${JSON.stringify(printed.stdout)});`);
+  if (printed.stderr) body.push(`process.stderr.write(${JSON.stringify(printed.stderr)});`);
+  body.push(`process.exit(${exitCode});`);
+  fs.writeFileSync(path.join(dir, "scripts", "conductor.mjs"), body.join("\n") + "\n");
   return dir;
+}
+
+/** Run an in-process invocation with the process's OWN writers patched-and-forwarded, so a leak
+ *  is recorded without corrupting the runner's output. Returns the caller's streams, the status,
+ *  and everything that reached the process itself. */
+async function withLeakWatch(args, io) {
+  let out = "", err = "";
+  const callerIo = {
+    ...io,
+    stdout: { write: (s) => { out += s; return true; } },
+    stderr: { write: (s) => { err += s; return true; } },
+  };
+  const realOut = process.stdout.write, realErr = process.stderr.write;
+  let leaked = "";
+  process.stdout.write = function (chunk, ...rest) { leaked += String(chunk); return realOut.call(this, chunk, ...rest); };
+  process.stderr.write = function (chunk, ...rest) { leaked += String(chunk); return realErr.call(this, chunk, ...rest); };
+  let status;
+  try { status = await main(args, callerIo); }
+  finally { process.stdout.write = realOut; process.stderr.write = realErr; }
+  return { status, out, err, leaked };
 }
 
 /** ONE state.json write conflict, injected from OUTSIDE the engine. A preload for the process
@@ -278,6 +305,32 @@ for (const row of ROWS) {
     if (row.bothOutput) row.bothOutput(viaProcess, viaInProcess);
   });
 }
+
+// ───────────────────── 2.6 — the delegated child's stdio IS the invocation's ─────────────────────
+
+test("conformance: nothing a DELEGATED child prints reaches the process's own streams", async () => {
+  // 2.6's stdio half. The handoff used to spawn with `stdio: "inherit"`, which hands the child the
+  // PARENT PROCESS's descriptors — so `main(argv, io)` printing through a child was the one route by
+  // which the engine's output still reached the process's own stdout and stderr, whichever streams
+  // the caller supplied. The child's bytes must arrive on the streams the INVOCATION names.
+  //
+  // BOTH DIRECTIONS ARE ASSERTED. Only checking that the caller received them would pass against a
+  // `stdio: "inherit"` plus a tee; only checking the leak would pass against a child whose output was
+  // dropped. The verb is irrelevant — the handoff owns the whole invocation before dispatch — so the
+  // row reuses the delegation row's command line.
+  const cwd = fakeCheckout(0, { stdout: "CHILD-STDOUT-MARKER\n", stderr: "CHILD-STDERR-MARKER\n" });
+  const { status, out, err, leaked } = await withLeakWatch(["brief", "--platform", "claude-code"], {
+    cwd,
+    env: { ...baseEnv(cwd), PM_ENGINE_DELEGATION: cwd },
+    stdin: { read: () => "", isTTY: false },
+  });
+  assert.equal(status, 0, "the delegated child's status is still what main() returns");
+  assert.equal(out, "CHILD-STDOUT-MARKER\n", "the child's stdout arrives on the CALLER's stdout");
+  assert.equal(err, "CHILD-STDERR-MARKER\n", "and its stderr on the caller's stderr");
+  assert.doesNotMatch(leaked, /CHILD-STDOUT-MARKER|CHILD-STDERR-MARKER/,
+    "and neither reached the PROCESS's own streams — the child inherits the INVOCATION's stdio, " +
+    "not the process's, or engine-invocation's guarantee is false for the one route that spawns");
+});
 
 test("conformance: the entry point never ends the calling process, whatever it is refused for", async () => {
   // The refusal classes above prove the STATUS. This proves the other half of the requirement —

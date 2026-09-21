@@ -42,7 +42,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { engineRoot, escapeControls } from "./constants.mjs";
 import { readJSON } from "./state.mjs";
-import { currentArgv, currentEnv, errStream } from "./invocation.mjs";
+import { currentArgv, currentEnv, errStream, outStream, stdinSource } from "./invocation.mjs";
 
 /** Opt-in, and the whole trust boundary: the ABSOLUTE PATH of the checkout whose engine may be
  *  executed. Unset — the default, and what every ordinary project sees — means no handoff. */
@@ -106,6 +106,25 @@ export function checkoutEngine(root = engineRoot()) {
  *     hook and CONFLICT_EXIT_CODE (9) is retryable-vs-fatal signal; swallowing either turns a
  *     rendering bug into a safety regression.
  *
+ *  A THIRD is 2.6's, and it is the reason the streams are captured rather than inherited. The child
+ *  used to be spawned with `stdio: "inherit"`, which hands it the PARENT PROCESS's three descriptors:
+ *  under `main(argv, io)` the child then wrote to the process's own stdout and stderr whatever streams
+ *  the caller supplied — the one route by which the engine's output still bypassed the invocation, and
+ *  it makes engine-invocation's "nothing the engine prints for that invocation SHALL reach the
+ *  process's own stdout or stderr" false for every call. So the child's output is captured and
+ *  re-emitted on the INVOCATION's streams.
+ *
+ *  STDIN IS THE EXCEPTION, and only when it is the real one. The invocation's stdin is `{read, isTTY}`
+ *  rather than a stream (lib/invocation.mjs), so it cannot be handed to a child as a descriptor; a
+ *  real invocation therefore keeps `inherit` for fd 0, which is exactly today's behaviour for a hook
+ *  payload arriving on a pipe. An INJECTED stdin is drained and passed as `input`, so an in-process
+ *  caller's payload reaches the child instead of the process's own fd 0.
+ *
+ *  THE COST IS BUFFERING, and it is accepted: the child's output is held until it exits rather than
+ *  streamed live. Every caller of this handoff is a hook or a slash command whose output is short and
+ *  read at the end (`rules` is the largest at ~9 KB); `maxBuffer` is raised well above any of them so
+ *  a large child output fails loudly rather than truncating.
+ *
  *  A spawn failure degrades to the status quo (run the installed engine) rather than crashing
  *  the hook: stale output is a nuisance, a hook that cannot run is worse. */
 export function delegateToCheckout({
@@ -122,16 +141,40 @@ export function delegateToCheckout({
   const self = real(selfPath) ?? selfPath;
   if (target === self) return null;  // already the checkout engine — nothing to hand off to
 
+  const stdin = stdinSource();
+  const realStdin = stdin.real === true;
   const r = spawnSync(process.execPath, [target, ...argv], {
-    stdio: "inherit",
     env: { ...env, [DELEGATED_ENV]: "1", CLAUDE_PLUGIN_ROOT: root },
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: realStdin ? ["inherit", "pipe", "pipe"] : ["pipe", "pipe", "pipe"],
+    input: realStdin ? undefined : stdin.read(),
   });
-  if (r.error) {
+  // WHETHER THE CHILD STARTED, not merely whether spawnSync set `error`. `spawnSync` reports
+  // ENOENT (nothing at that path) and ENOBUFS (its output exceeded maxBuffer, so it was killed)
+  // the same way in `error`, and the two need opposite responses: an unborn child degrades to the
+  // status quo, while one that RAN must never fall back — running the installed engine after a
+  // child has already performed a mutating verb would perform it twice. Measured: ENOENT reports
+  // `pid: 0`, a killed child reports a real pid, so the pid is the discriminator.
+  const started = typeof r.pid === "number" && r.pid > 0;
+  if (!started) {
     errStream().write(
       `conductor: could not hand off to the checkout engine at ${escapeControls(target)} ` +
-      `(${r.error.message}); running the installed engine instead\n`
+      `(${r.error ? r.error.message : "the child never started"}); running the installed engine instead\n`
     );
     return null;
+  }
+  // The child owns the whole invocation, so its output is this invocation's output — and it goes
+  // where THIS invocation's streams point, never to the process's own.
+  if (r.stdout) outStream().write(r.stdout);
+  if (r.stderr) errStream().write(r.stderr);
+  if (r.error) {
+    // Started and did not finish cleanly — the maxBuffer bound is the only way here, and saying so
+    // loudly is what keeps the capture from being the silent truncation it replaced inherit to avoid.
+    errStream().write(
+      `conductor: the checkout engine at ${escapeControls(target)} did not exit cleanly ` +
+      `(${r.error.message}); its output above may be truncated\n`
+    );
   }
   // A child killed by a signal reports status null; treat that as a failure rather than as
   // success, which is what a bare `|| 0` would silently produce.
