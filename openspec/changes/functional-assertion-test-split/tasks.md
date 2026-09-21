@@ -301,7 +301,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       diff. There is deliberately no converse check — an assertion-only file is not a refusal — and
       the drift script implements exactly this pair of checks. Verify: delete one assertion partner
       and confirm the refusal names the id (the drift script itself is 6.1; these tests land with it)
-- [ ] 5.5 GREEN — the five hook verbs' end-to-end invocations become the functional half's real-spawn
+- [x] 5.5 GREEN — the five hook verbs' end-to-end invocations become the functional half's real-spawn
       tests (six registrations in `hooks/hooks.json`). They are functional-half files that run NO git —
       the half is the half that MAY spawn and runs on a trigger, not the half that runs git — so each
       lands with its assertion twin like any other functional id, per 5.4 and design D5's table.
