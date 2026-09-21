@@ -9,6 +9,7 @@ import { engineRoot, changesDir, archiveDir, plansDir, laneRank, isOpenspecLane,
 import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
+import { errStream } from "./invocation.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -176,7 +177,7 @@ export function reconcileArchived(state) {
       const links = Array.isArray(e.links) ? e.links : [];
       if (!pausedByAnyFrame.has(e.id) && !links.some(l => isArmed(l) || isUnmigrated(l))) {
         e.reconcileNeeded = false; changed = true;
-        process.stderr.write(
+        errStream().write(
           `conductor: cleared the reconcile obligation on '${escapeControls(e.id)}' — it holds no may-invalidate link a ` +
           "verdict could be recorded against and no detour frame pausing it, so no record-reconcile " +
           "could ever be accepted and it would have blocked the epic permanently\n");

@@ -27,6 +27,7 @@ import {
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
+import { errStream } from "./invocation.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -1092,7 +1093,7 @@ export function writeRules(platform = "claude-code") {
     const { i, j, lines } = arrangement;
     const body = lines[i].endsWith("\r\n") ? block.split("\n").join("\r\n") : block;
     next = lines.slice(0, i).join("") + body + lines.slice(j + 1).join("");
-    process.stderr.write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
+    errStream().write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
   } else if (existing.trim()) {
     // Append with the file's own line ending: its first terminator, LF when it has none.
     const firstLf = existing.indexOf("\n");
@@ -1103,10 +1104,10 @@ export function writeRules(platform = "claude-code") {
     } else {
       next = existing.replace(/\n*$/, "\n\n") + block;
     }
-    process.stderr.write(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
+    errStream().write(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
   } else {
     next = `# ${name}\n\n` + block;
-    process.stderr.write(`conductor: created ${name} with rules block (platform: ${platform})\n`);
+    errStream().write(`conductor: created ${name} with rules block (platform: ${platform})\n`);
   }
   fs.writeFileSync(target, next);
   return target;

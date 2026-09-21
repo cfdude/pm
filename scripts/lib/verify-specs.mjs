@@ -42,6 +42,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 /** How far into a document the leading metadata block may start. Generous — a title, a blank
  *  line and a couple of badges — and bounded so a document with no header never has its BODY
@@ -305,7 +306,7 @@ function danglingBlock(dangling) {
  *  writes none. Read-only here means state.json is byte-identical afterwards. */
 export function verifySpecs() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("verify-specs", f);
   // An unregistered flag is refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs); without it the flag would
   // parse, be ignored, and exit 0 having checked the default root instead of the one named.
@@ -323,8 +324,8 @@ export function verifySpecs() {
   const absRoot = f.root ? path.resolve(engineRoot(), f.root) : specsDir();
   const state = loadState();
   if (f.headers) {
-    process.stdout.write(formatHeaderCandidates(headerCandidates(state, absRoot)) + "\n");
+    outStream().write(formatHeaderCandidates(headerCandidates(state, absRoot)) + "\n");
     return;
   }
-  process.stdout.write(formatSpecCoverage(specCoverage(state, absRoot)) + "\n");
+  outStream().write(formatSpecCoverage(specCoverage(state, absRoot)) + "\n");
 }

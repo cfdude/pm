@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import { execFileSync, execSync } from "node:child_process";
 import { engineRoot, conductorDir, detoursLog, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
+import { currentEnv } from "./invocation.mjs";
 
 export function gitShortSha() {
   try { return execSync("git rev-parse --short HEAD", { cwd: engineRoot(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); }
@@ -392,7 +393,7 @@ export function resolveCommits(values) {
   try {
     lines = execFileSync("git", ["cat-file", "--batch-check"], {
       cwd: engineRoot(), encoding: "utf8", input: asked.map(v => `${v}^{commit}\n`).join(""),
-      stdio: ["pipe", "pipe", "ignore"], env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
+      stdio: ["pipe", "pipe", "ignore"], env: { ...currentEnv(), GIT_NO_LAZY_FETCH: "1" },
     }).split("\n");
   } catch { lines = []; }
   asked.forEach((v, i) => {
@@ -436,7 +437,7 @@ export function commitsNotReachedBy(commits, head) {
   try {
     const out = execFileSync("git", ["rev-list", ...list, "^" + head], {
       cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024,
-      env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
+      env: { ...currentEnv(), GIT_NO_LAZY_FETCH: "1" },
     });
     const listed = new Set(out.split("\n").map(l => l.trim()).filter(Boolean));
     answer = new Set(list.filter(c => listed.has(c)));

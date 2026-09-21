@@ -15,6 +15,7 @@ import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 import { assertKnownPlatform, platformFlag } from "./platform.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 /** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
  *  constants.mjs. Recomputed on every parseFlags() call rather than frozen at module scope, so
@@ -132,7 +133,7 @@ export function requireFlagValues(command, f) {
  *  validating it would be #152's shape — a valueless `--platform` silently falling back to the
  *  recorded platform while looking answered. One function, so the six call sites cannot drift apart. */
 export function requirePlatformFlag(command) {
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   requireFlagValues(command, parseFlags(argv));
   const declared = platformFlag(argv);
   if (declared) assertKnownPlatform(declared);
@@ -254,7 +255,7 @@ export function findCyclePath(stuckIds, deps) {
  *  rather than producing a bogus order. Pure read + stdout — no state mutation. */
 export function planHierarchy() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("plan-hierarchy", f);
   const parent = typeof f.parent === "string" ? f.parent : undefined;
   if (!parent) { die("usage: conductor.mjs plan-hierarchy --parent <id>\n"); }
@@ -316,7 +317,7 @@ export function planHierarchy() {
       })),
     })),
   };
-  process.stdout.write(jsonText(plan) + "\n");
+  outStream().write(jsonText(plan) + "\n");
 }
 
 /** Validate a proposed `parent` for epic `id` against the current `epics`.
@@ -339,7 +340,7 @@ export function parentError(epics, id, parent) {
 
 export function addEpic() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   // An undeclared flag never reaches this line: the pre-dispatch command-line check (lib/argv-surface.mjs) refuses it by name before dispatch,
   // reading this verb's registry rows. #79's failure — `--notes "<text>"` parsed, exited 0 and wrote
   // nothing — is that check's to prevent now, for this verb and every other one.

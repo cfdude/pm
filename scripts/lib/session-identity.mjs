@@ -17,6 +17,7 @@
 // without exporting a variable the child then inherits in turn.
 //
 // Leaf module: imports nothing from lib/. Nothing here reads or writes state.
+import { currentEnv } from "./invocation.mjs";
 
 /** The session identity for this invocation, or null when nobody said.
  *
@@ -27,7 +28,7 @@ export function resolveSession(flags = {}) {
   const raw = flags.session;
   const fromFlag = Array.isArray(raw) ? raw[raw.length - 1] : raw;
   if (typeof fromFlag === "string" && fromFlag.trim()) return fromFlag.trim();
-  const fromEnv = process.env.PM_SESSION;
+  const fromEnv = currentEnv().PM_SESSION;
   if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
   return null;
 }

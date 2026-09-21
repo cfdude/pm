@@ -10,6 +10,7 @@ import { render } from "./render.mjs";
 import { ownedDetours } from "./links.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** Enforce the single-active invariant: `id` becomes the one active epic AND the
  *  top-level `.active` pointer. Any OTHER epic left at status "active" is demoted to
@@ -63,7 +64,7 @@ export function owedReconcileNotice(state, previousActiveId) {
   const e = (state.epics || []).find(x => x && x.id === previousActiveId);
   if (!e || e.reconcileNeeded !== true) return;
   const owed = ownedDetours(e);
-  process.stderr.write(
+  errStream().write(
     `conductor: '${escapeControls(e.id)}' is no longer the active epic and still owes a reconcile` +
     (owed.length ? ` against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "") +
     " — the obligation is kept, and gate-guard blocks edits again when it is active. Answer it with " +
@@ -91,7 +92,7 @@ export function staleMarker(epic) {
 /** `set-active <id>` — the CLI verb for the top-level active pointer (positional id). */
 export function setActive() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) { die("usage: conductor.mjs set-active <id>\n"); }
   const state = loadState();

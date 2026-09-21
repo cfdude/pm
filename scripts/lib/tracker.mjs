@@ -11,6 +11,7 @@ import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { CONTROL_CHARACTER, KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
  *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
@@ -18,7 +19,7 @@ import { die } from "./command-exit.mjs";
  *  block + brief) can assign sync work to the interactive agent. */
 export function setTracker() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("set-tracker", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
   // A TRACKER'S RECORDED SCOPE holding a control character is refused before anything is read or
@@ -189,7 +190,7 @@ export function setTracker() {
   if (isNew && t.direction === undefined) t.direction = "inward";
   state.tracker = t;
   const saved = saveState(state);
-  for (const line of notices) process.stderr.write(`${line}\n`);
+  for (const line of notices) errStream().write(`${line}\n`);
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
   render();
   reportSave(saved, {

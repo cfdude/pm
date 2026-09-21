@@ -38,6 +38,7 @@ import { execFileSync } from "node:child_process";
 import { engineRoot, escapeControls } from "./constants.mjs";
 import { cmpVer } from "./plugin-meta.mjs";
 import { activeChangeIds } from "./epic-progress.mjs";
+import { currentEnv } from "./invocation.mjs";
 
 const SEMVER = /(\d+\.\d+\.\d+)/;
 const OPENSPEC_DIR = path.join(engineRoot(), "openspec");
@@ -63,7 +64,7 @@ export const OPENSPEC_GENERATED_PATHS = [".claude/skills/openspec-*", ".claude/c
  *  see this file's header. The timeout matters: this runs on the SessionStart hook, and a child
  *  that hangs there hangs every session start. */
 export function installedOpenspecVersion() {
-  const override = process.env.PM_OPENSPEC_VERSION;
+  const override = currentEnv().PM_OPENSPEC_VERSION;
   if (override !== undefined) {
     const m = String(override).match(SEMVER);
     return m ? m[1] : null;

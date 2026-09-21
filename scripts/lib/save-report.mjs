@@ -20,6 +20,7 @@
 // rewritten. Most verbs call render() (PROJECT.md) and several call writeRules() (CLAUDE.md) after
 // it, and those CAN change while state does not — so an `unchanged` line for such a verb names the
 // state file rather than claiming the invocation did nothing at all.
+import { errStream } from "./invocation.mjs";
 
 /** Print the outcome of a save from the save's OWN answer, never from an assumption.
  *
@@ -30,7 +31,7 @@
  *
  *  Returns whether the save was a no-op, so a caller can suppress follow-on detail that would
  *  otherwise describe a write that did not happen. */
-export function reportSave(saved, { changed, unchanged, stream = process.stderr, quiet = false } = {}) {
+export function reportSave(saved, { changed, unchanged, stream = errStream(), quiet = false } = {}) {
   const noop = !!(saved && saved.unchanged);
   const line = noop ? unchanged : changed;
   if (!quiet && line) stream.write(line.endsWith("\n") ? line : `${line}\n`);

@@ -480,7 +480,14 @@ function sinkJoins(fnCode, name) {
   return new RegExp(`(?<![\\w$.])${x}\\.map\\(escapeControls\\)\\.join\\(|\\breturn\\s+${x}\\.map\\(escapeControls\\)\\s*[;}]`).test(fnCode);
 }
 /** Calls that write their argument straight to a process stream. */
-const DIRECT_OUTPUT_CALLS = /\b(process\.(?:stdout|stderr)\.write|console\.(?:log|error|warn|info)|fs\.writeSync)\(/g;
+// 0.47.0 (task 3.4) REPAIRED THIS LIST, and the repair is load-bearing rather than cosmetic. The
+// engine writes through the INVOCATION's streams now — `outStream().write(...)`,
+// `errStream().write(...)` — so a list that knew only `process.stdout.write` stopped recognizing
+// every output call in the engine. Measured effect: the Gate 2 W-I1 discrimination below ("a value
+// written straight to a stream beside a sink never goes there") silently stopped applying, and the
+// mutant test that proves it went from a finding to no findings — a guard failing OPEN, found by
+// its own mutation test rather than by its green run.
+const DIRECT_OUTPUT_CALLS = /\b(process\.(?:stdout|stderr)\.write|(?:out|err)Stream\(\)\.write|console\.(?:log|error|warn|info)|fs\.writeSync)\(/g;
 const NOT_OUTPUT_CALLS = /\b(new RegExp|path\.(?:join|resolve|relative|dirname|basename)|fs\.(?!writeSync\b)[a-zA-Z]+|execFileSync|spawnSync|execSync|JSON\.parse|import)\(/g;
 
 function balancedParens(s) { let d = 0; for (const ch of s) { if (ch === "(") d++; else if (ch === ")" && --d < 0) return false; } return d === 0; }

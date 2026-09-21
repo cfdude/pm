@@ -9,6 +9,7 @@ import { requirePlatformFlag } from "./add-epic.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { escapeControls } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { outStream } from "./invocation.mjs";
 
 /** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
  *  source writes while the active epic still owes a reconcile. Off by default. This is
@@ -60,7 +61,7 @@ export function setGateGuard() {
     out.push("  epic that owes one of those two things.");
     out.push("");
     out.push("  Change it with `set-gate-guard on|off`.");
-    process.stdout.write(out.join("\n") + "\n");
+    outStream().write(out.join("\n") + "\n");
     return;
   }
   if (val !== "on" && val !== "off") {

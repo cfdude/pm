@@ -357,7 +357,11 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
     const next = src.indexOf("\nexport ", start + 1);
     const body = src.slice(start, next === -1 ? undefined : next);
     assert.match(body, /execFileSync\("git"/, `${fn} still spawns git`);
-    assert.match(body, /env: \{ \.\.\.process\.env, GIT_NO_LAZY_FETCH: "1" \}/,
+    // 0.47.0 (task 3.3): the child environment is the INVOCATION's, so this reads
+    // `currentEnv()` rather than `process.env`. The property is unchanged — the spread is still
+    // there and GIT_NO_LAZY_FETCH is still set — which is why the anchor moves rather than the
+    // assertion.
+    assert.match(body, /env: \{ \.\.\.currentEnv\(\), GIT_NO_LAZY_FETCH: "1" \}/,
       `${fn}'s git call must not fetch from a promisor remote`);
   }
 });

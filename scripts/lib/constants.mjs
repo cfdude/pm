@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { invocation } from "./invocation.mjs";
+import { currentCwd, currentEnv, errStream, invocation } from "./invocation.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
 
 // ── the invocation's paths, as FUNCTIONS OF A CURRENT ROOT ────────────────────────────────────
@@ -1589,7 +1589,7 @@ export const usesGhIssueList = (tracker) =>
  *  A git WORKTREE of the same repository does trip this, and that is correct rather than
  *  collateral: a worktree has its own checkout of `.conductor/state.json`, so writing the main
  *  checkout's copy from inside a worktree changes a different file than the one on screen. */
-export function rootDivergence({ env = process.env, cwd = process.cwd() } = {}) {
+export function rootDivergence({ env = currentEnv(), cwd = currentCwd() } = {}) {
   const declared = env.CLAUDE_PROJECT_DIR;
   if (!declared) return null;
   // A path that does not exist cannot be realpath'd; resolve() still normalizes it, and a
@@ -1641,7 +1641,7 @@ export function warnDetachedTree(writes) {
     tag = execFileSync("git", ["describe", "--tags", "--exact-match", "HEAD"],
       { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
   } catch { /* no exact tag, or no git — the message stands without it */ }
-  process.stderr.write(
+  errStream().write(
     `conductor: ⚠ DETACHED CHECKOUT${tag ? ` (at ${tag})` : ""} — this tree is not on a branch, so ` +
     "a deploy that checks it out again discards what this command writes.\n" +
     `conductor:   about to write: ${writes || "state"}\n` +
@@ -1650,7 +1650,7 @@ export function warnDetachedTree(writes) {
     "conductor:   if you meant the workspace, run this in the checkout that is on a branch.\n");
 }
 
-export function warnRootDivergence(stream = process.stderr) {
+export function warnRootDivergence(stream = errStream()) {
   const d = rootDivergence();
   if (!d) return null;
   stream.write(

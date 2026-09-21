@@ -682,8 +682,9 @@ test("5.3g (Gate 2 W-M1) jsonText passes its replacer through, as JSON.stringify
   assert.equal(jsonText({ a: 1, b: 2 }, (k, v) => (k === "b" ? undefined : v), 1), '{\n "a": 1\n}');
 });
 
-/** Source guard (Gate 2 U2-M1, widened by V-M1): a declaration that writes to stdout (process.stdout.write,
- *  a refusal's `stdout:`, console.log) never names JSON.stringify — not called in the write, not aliased
+/** Source guard (Gate 2 U2-M1, widened by V-M1): a declaration that writes to stdout (the invocation's
+ *  stdout stream — `outStream().write(...)`, or the bare `process.stdout.write(...)` a module outside
+ *  the sweep still uses — a refusal's `stdout:`, console.log) never names JSON.stringify — not called in the write, not aliased
  *  (`const j = JSON.stringify`), not built into a variable written later. The one form allowed is
  *  `escapeControls(JSON.stringify(…))`, a quoted value inside an already-escaped line. BOUND: the rule is per
  *  top-level declaration, so a document stringified in one declaration and written by another is outside it;
@@ -695,7 +696,12 @@ async function stdoutJsonBypasses(read = (rel) => fs.readFileSync(path.join(REPO
     const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
     for (const fn of topLevelFunctions(src)) {
       const body = src.slice(fn.start, fn.end);
-      if (!/process\.stdout\.write\(|\bstdout\s*:|console\.log\(/.test(body)) continue;
+      // REPAIRED BY 0.47.0 (task 3.4), and the repair is the difference between a guard and a
+      // decoration: the engine writes through the INVOCATION's streams now, so a predicate that
+      // knew only `process.stdout.write` matched NOTHING and this check passed against an empty
+      // set. Its own mutation test caught that — both mutants at 5.3g went from an offender to no
+      // offenders — which is the only reason it was noticed at all.
+      if (!/process\.stdout\.write\(|outStream\(\)\.write\(|\bstdout\s*:|console\.log\(/.test(body)) continue;
       for (const m of body.replace(/\bescapeControls\(\s*JSON\.stringify\(/g, "escapeControls(").matchAll(/\bJSON\s*\.\s*stringify\b|\bJSON\s*\[\s*["'`]stringify/g)) {
         offenders.push(`${rel} [${fn.name}]: ${m[0]}`);
       }
@@ -712,11 +718,11 @@ test("5.3g mutants (Gate 2 V-M1): an aliased JSON.stringify, and a document stri
     return (r) => (r === rel ? text.replace(from, () => to) : fs.readFileSync(path.join(REPO_ROOT, r), "utf8"));
   };
   const aliased = await stdoutJsonBypasses(mutate("scripts/lib/triage.mjs",
-    "process.stdout.write(jsonText({", "const __j = JSON.stringify; process.stdout.write(__j({"));
+    "outStream().write(jsonText({", "const __j = JSON.stringify; outStream().write(__j({"));
   assert.ok(aliased.some(o => o.startsWith("scripts/lib/triage.mjs [triage]")), `aliased: ${aliased.join("; ")}`);
   const variable = await stdoutJsonBypasses(mutate("scripts/lib/lane-routing.mjs",
-    "process.stdout.write(jsonText(laneSuggestion(loadState(), text)) + \"\\n\");",
-    "const doc = JSON.stringify(laneSuggestion(loadState(), text));\n  process.stdout.write(doc + \"\\n\");"));
+    "outStream().write(jsonText(laneSuggestion(loadState(), text)) + \"\\n\");",
+    "const doc = JSON.stringify(laneSuggestion(loadState(), text));\n  outStream().write(doc + \"\\n\");"));
   assert.ok(variable.some(o => o.startsWith("scripts/lib/lane-routing.mjs [suggestLane]")), `variable: ${variable.join("; ")}`);
 });
 

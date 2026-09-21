@@ -9,6 +9,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
  *  than transcribing it, and deliberately NOT the same list as constants.mjs's
@@ -19,7 +20,7 @@ export const KNOWN_GATE_VERDICTS = ["pass", "fail"];
 
 export function recordGateReview() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Without an allowlist this command read the flags it happened to name and dropped every other
@@ -113,7 +114,7 @@ export function recordGateReview() {
     if (typedHead !== undefined) headSha = resolved.get(typedHead);
   }
   if (rangeOnGate1) {
-    process.stderr.write(
+    errStream().write(
       `conductor: recorded — but ${baseSha}..${headSha} is an IMPLEMENTATION range on a gate 1 ` +
       "verdict, and every consumer that reads that field treats it as one. Gate 1 reviews " +
       "artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.\n");

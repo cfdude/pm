@@ -9,6 +9,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES, escapeControls } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 // `autonomy` is optional per epic — absent means "off", today's behavior, unchanged.
 // getAutonomy() is the ONLY place that should read epic.autonomy directly; everywhere
@@ -84,7 +85,7 @@ const namesGrant = (grant, target) => target.category !== undefined
  *  consistent with the engine's instruction-layer law. */
 export function setAutonomy() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     die(
@@ -222,7 +223,7 @@ export function setAutonomy() {
   // somebody already armed; the report states what is LIVE, not what moved.
   if (level === "autonomous") {
     const live = liveGrants(a);
-    process.stderr.write(live.length
+    errStream().write(live.length
       ? `conductor: arming ${live.length} pre-authorization${live.length === 1 ? "" : "s"} on ` +
         `'${escapeControls(id)}': ${live.map(g => escapeControls(grantLabel(g))).join(", ")}\n`
       // Said out loud rather than left silent: silence here is indistinguishable from a report that

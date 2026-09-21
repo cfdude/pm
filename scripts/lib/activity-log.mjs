@@ -35,11 +35,12 @@ import { isDetachedTree } from "./git.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { die } from "./command-exit.mjs";
+import { currentCwd, currentEnv } from "./invocation.mjs";
 
 /** Re-derived per call, like write-conflicts.mjs's: the tests cache-bust by moving
  *  CLAUDE_PROJECT_DIR, and a module-scope constant would freeze the first repo seen. */
 export function activityRoot() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return currentEnv().CLAUDE_PROJECT_DIR || currentCwd();
 }
 export function activityDir() {
   return path.join(activityRoot(), ".conductor", "activity");

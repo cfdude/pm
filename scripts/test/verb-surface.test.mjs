@@ -257,10 +257,15 @@ test("checkCommandLine: a --leading token that is not flag-shaped is a positiona
   assert.deepEqual(v.positionals, ["--story <n> is 1-indexed"]);
 });
 
-test("argv-surface.mjs imports constants.mjs and verb-effects.mjs only", () => {
+test("argv-surface.mjs imports constants.mjs, invocation.mjs and verb-effects.mjs only", () => {
+  // The guard's SUBJECT is that the pre-dispatch path pulls in no VERB module, so that a refusal
+  // can be decided before anything is loaded that could write. 0.47.0 (task 3.3) added
+  // invocation.mjs, which is a leaf — Node built-ins only, and it imports no other lib module — so
+  // it is allowed here by the same test the guard already applied to the other two. The list is
+  // still an exact set rather than a prefix match, so a fourth import is still a failure.
   const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "argv-surface.mjs"), "utf8");
   const imports = [...src.matchAll(/^import\s[^;]*?from\s+"([^"]+)"/gm)].map(m => m[1]).sort();
-  assert.deepEqual(imports, ["./constants.mjs", "./verb-effects.mjs"],
+  assert.deepEqual(imports, ["./constants.mjs", "./invocation.mjs", "./verb-effects.mjs"],
     "the pre-dispatch path must pull in no verb module");
 });
 

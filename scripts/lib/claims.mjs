@@ -49,6 +49,7 @@ import { isDetachedTree } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
 import { claimExpiry, isLiveClaim, validTtlMinutes } from "./claim-shape.mjs";
+import { currentArgv, currentCwd, currentEnv, errStream, outStream } from "./invocation.mjs";
 
 export { claimExpiry, isLiveClaim };
 
@@ -70,7 +71,7 @@ export function repoClaimPath() {
  *  process whose import-time root differs from CLAUDE_PROJECT_DIR (a test, a delegated engine, CI's
  *  detached pull_request checkout) answered about the wrong tree — the 0.42.0 frozen-ROOT defect. */
 function repoClaimRoot() {
-  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  return currentEnv().CLAUDE_PROJECT_DIR || currentCwd();
 }
 
 /** A claim record, or null. Shape: {session, claimedAt, ttlMinutes}. */
@@ -146,7 +147,7 @@ function ttlFrom(f, fallback) {
  *  `claim --repo --session <name> [--ttl <minutes>] [--steal]` */
 export function claim() {
   if (!isInitialized()) refuse("run /pm:init first");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const f = parseFlags(argv);
   requireFlagValues("claim", f);
 
@@ -168,17 +169,17 @@ export function claim() {
     // the marker, and in a detached tree the marker does not change.
     const stolenFrom = held && held.session !== session ? held : null;
     if (!writeRepoClaim(makeClaim(session, ttl))) {
-      process.stderr.write(
+      errStream().write(
         "conductor: NOT recorded — this tree is detached, so no repository marker was written " +
         "and nothing was taken over. Run this in the checkout that is on a branch.\n");
       return;
     }
     if (stolenFrom) {
-      process.stderr.write(
+      errStream().write(
         `conductor: took over the repository marker from session '${escapeControls(stolenFrom.session)}' ` +
         `(${isLiveClaim(stolenFrom) ? "STOLEN while live" : "its claim had expired"})\n`);
     }
-    process.stderr.write(
+    errStream().write(
       `conductor: repository marked busy by '${escapeControls(session)}' until ${claimExpiry(readRepoClaim())}\n`);
     return;
   }
@@ -202,7 +203,7 @@ export function claim() {
     refuseHeld(`epic '${escapeControls(epicId)}'`, held, "claim");
   }
   if (held && held.session !== session) {
-    process.stderr.write(
+    errStream().write(
       `conductor: took over '${escapeControls(epicId)}' from session '${escapeControls(held.session)}' ` +
       `(${isLiveClaim(held) ? "STOLEN while live" : "its claim had expired"})\n`);
   }
@@ -230,7 +231,7 @@ export function claim() {
  *  fails when there is nothing to clean up is a cleanup path people stop running. */
 export function unclaim() {
   if (!isInitialized()) refuse("run /pm:init first");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const f = parseFlags(argv);
   requireFlagValues("unclaim", f);
 
@@ -242,15 +243,15 @@ export function unclaim() {
   if (f.repo === true) {
     if (positional.length) refuse("unclaim --repo takes no epic id — it clears the whole repository's marker");
     const held = readRepoClaim();
-    if (!held) { process.stderr.write("conductor: the repository marker was not set — nothing to clear\n"); return; }
+    if (!held) { errStream().write("conductor: the repository marker was not set — nothing to clear\n"); return; }
     if (held.session !== session && isLiveClaim(held) && !steal) {
       refuseHeld("this repository", held, "unclaim --repo");
     }
     if (held.session !== session) {
-      process.stderr.write(`conductor: cleared a marker held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
+      errStream().write(`conductor: cleared a marker held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
     }
     clearRepoClaim();
-    process.stderr.write("conductor: repository marker cleared\n");
+    errStream().write("conductor: repository marker cleared\n");
     return;
   }
 
@@ -263,12 +264,12 @@ export function unclaim() {
   const epic = state.epics.find(e => e.id === epicId);
   if (!epic) refuse(`epic '${escapeControls(epicId)}' not found`);
   const held = epic.claim;
-  if (!held) { process.stderr.write(`conductor: '${escapeControls(epicId)}' was not claimed — nothing to release\n`); return; }
+  if (!held) { errStream().write(`conductor: '${escapeControls(epicId)}' was not claimed — nothing to release\n`); return; }
   if (held.session !== session && isLiveClaim(held) && !steal) {
     refuseHeld(`epic '${escapeControls(epicId)}'`, held, "unclaim");
   }
   if (held.session !== session) {
-    process.stderr.write(`conductor: cleared a claim held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
+    errStream().write(`conductor: cleared a claim held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
   }
   delete epic.claim;
   const saved = saveState(state);
@@ -365,12 +366,12 @@ export function owners() {
   // `owners` declares one valueless flag so there is nothing for requireFlagValues to require
   // today — but a raw argv scan is how a verb ends up outside the rule, and the next flag this
   // verb grows would inherit that rather than the rule (#152).
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {
-    process.stdout.write(jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
+    outStream().write(jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(formatOwners(rows) + "\n");
+  outStream().write(formatOwners(rows) + "\n");
 }

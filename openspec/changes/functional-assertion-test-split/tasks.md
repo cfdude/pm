@@ -139,7 +139,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       the per-call/gateway scope of the `changedFiles()` call that caches it: its comment states the
       invariant "ROOT does not move under a running invocation", and this task is what makes that
       false. Verify: 3.1 and 3.6 green
-- [ ] 3.3 GREEN — the 46 `process.argv` reads in `scripts/lib`, the 23 `process.env` reads
+- [x] 3.3 GREEN — the 46 `process.argv` reads in `scripts/lib`, the 23 `process.env` reads
       (`scripts/lib` 20, `conductor.mjs` 3; seven distinct keys) and the nine
       `process.env.CLAUDE_PROJECT_DIR || process.cwd()` root derivations (`constants.mjs:12`,
       `state.mjs:17,501,506`, `write-conflicts.mjs:15`, `claims.mjs:72`, `purge-logs.mjs:34`,
@@ -147,7 +147,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       from this list) go through the invocation's values; `constants.mjs:1568`'s `rootDivergence` is
       the shape the rest take. Verify: 3.1 green, and a test asserting the engine neither reads nor
       mutates the calling process's own `process.argv` or `process.cwd`
-- [ ] 3.4 GREEN — the 288 direct `process.stdout.write` / `process.stderr.write` calls (278 in
+- [x] 3.4 GREEN — the 288 direct `process.stdout.write` / `process.stderr.write` calls (278 in
       `scripts/lib` — 30 + 248 — plus TEN in `conductor.mjs` at
       `:171,179,187,246,344,354,364,367,377,381`) go through the invocation's streams, **and the
       invocation's STDIN does too**: `state.mjs:28`'s `readStdin()` reads fd 0 globally and is reached

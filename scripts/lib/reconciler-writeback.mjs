@@ -9,12 +9,13 @@ import { render } from "./render.mjs";
 import { isArmed, isUnmigrated, liveReconcileFrame, ownedDetours } from "./links.mjs";
 import { escapeControls } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 const KNOWN_RECONCILE_VERDICTS = ["valid", "invalidated"];
 
 export function recordReconcile() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   requireFlagValues("record-reconcile", f);

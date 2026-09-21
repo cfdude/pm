@@ -32,6 +32,7 @@ import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { escapeControls, jsonText } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 /** Every event, oldest first, optionally scoped. Returns `{events, malformed, segmentsRead}`.
  *
@@ -284,7 +285,7 @@ export function activity() {
   // answer `triage --limit` and `verify-specs --root` had each invented independently, written
   // on a branch where `VERB_FLAGS` did not exist yet. It also let `--since "   "` through, and a
   // blank window is the same silent drop as a missing one, one step further on.
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   // BOTH halves, and `activity` had NEITHER: `activity --bogus` printed the report and exited 0.
   // `--since`/`--epic` are read through the computed `val()` accessor below, which conductor-31's
   // region scanner is structurally blind to, so a flag added later and never declared would be
@@ -301,13 +302,13 @@ export function activity() {
   let state = null;
   try { state = loadState(); } catch (e) {
     if (!(e instanceof StateUnreadableError)) throw e;
-    process.stderr.write(`conductor: ${e.message} — the current revision and whether the log is on are unknown.\n`);
+    errStream().write(`conductor: ${e.message} — the current revision and whether the log is on are unknown.\n`);
   }
   const { events, malformed } = readEvents({ since: val("since"), epic: val("epic") });
   const report = buildReport(events, { currentRevision: state ? state.revision : null, malformed });
   if (f.json === true) {
-    process.stdout.write(jsonText({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
+    outStream().write(jsonText({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : null }) + "\n");
+  outStream().write(formatReport(report, { enabled: state ? activityEnabled(state) : null }) + "\n");
 }

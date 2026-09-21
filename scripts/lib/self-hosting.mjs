@@ -42,6 +42,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { engineRoot, escapeControls } from "./constants.mjs";
 import { readJSON } from "./state.mjs";
+import { currentArgv, currentEnv, errStream } from "./invocation.mjs";
 
 /** Opt-in, and the whole trust boundary: the ABSOLUTE PATH of the checkout whose engine may be
  *  executed. Unset — the default, and what every ordinary project sees — means no handoff. */
@@ -61,7 +62,7 @@ function real(p) {
 /** Has the USER authorized executing `root`'s own engine? True only when the environment names
  *  a path that resolves to the same tree as `root`. Nothing readable from inside `root` can
  *  influence this. */
-export function delegationAuthorized(root = engineRoot(), env = process.env) {
+export function delegationAuthorized(root = engineRoot(), env = currentEnv()) {
   const named = env[DELEGATION_ENV];
   if (!named) return false;
   const a = real(named);
@@ -109,9 +110,9 @@ export function checkoutEngine(root = engineRoot()) {
  *  the hook: stale output is a nuisance, a hook that cannot run is worse. */
 export function delegateToCheckout({
   selfPath,
-  argv = process.argv.slice(2),
+  argv = currentArgv().slice(2),
   root = engineRoot(),
-  env = process.env,
+  env = currentEnv(),
 } = {}) {
   if (env[DELEGATED_ENV]) return null;
   if (!delegationAuthorized(root, env)) return null;
@@ -126,7 +127,7 @@ export function delegateToCheckout({
     env: { ...env, [DELEGATED_ENV]: "1", CLAUDE_PLUGIN_ROOT: root },
   });
   if (r.error) {
-    process.stderr.write(
+    errStream().write(
       `conductor: could not hand off to the checkout engine at ${escapeControls(target)} ` +
       `(${r.error.message}); running the installed engine instead\n`
     );

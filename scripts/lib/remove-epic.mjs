@@ -10,6 +10,7 @@ import { tombstoneArtifacts } from "./source-artifacts.mjs";
 import { render } from "./render.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 /** Render a short (id, title, summary) table for human review — used when a removal is
  *  blocked by children, so the operator sees exactly what's in play without a raw dump. */
@@ -29,7 +30,7 @@ export function epicSummaryTable(epics) {
  *  control state rather than a record and blocks the removal instead. */
 export function removeEpic() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) { die("usage: conductor.mjs remove-epic <id> [--cascade]\n"); }
   const f = parseFlags(argv.slice(1));
@@ -140,7 +141,7 @@ export function removeEpic() {
     unchanged: `conductor: nothing matched for removal — ${STATE_UNCHANGED}`,
   });
   if (affected.length) {
-    process.stderr.write(
+    errStream().write(
       `conductor: stripped ${affected.length} dangling reference(s) to removed epic(s), held by: ` +
       `${escapeControls([...new Set(affected)].join(", "))}\n`);
   }
@@ -151,7 +152,7 @@ export function removeEpic() {
     // plan points an epic's progress source at a file with no checkboxes.
     const how = [...new Set(tombstoned.map(t => t.flag))]
       .map(flag => `\`update-epic <id> --${flag} <path>\``).join(" or ");
-    process.stderr.write(
+    errStream().write(
       `conductor: recorded ${tombstoned.length} sync-ignore tombstone(s) so sync will not ` +
       `re-register the removed epic(s)' source artifact(s): ` +
       `${escapeControls(tombstoned.map(t => t.path).join(", "))}. ` +

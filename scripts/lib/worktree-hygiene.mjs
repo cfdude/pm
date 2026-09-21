@@ -9,6 +9,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
 import { engineRoot, renderStampPath, statePath, jsonText } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { errStream, outStream } from "./invocation.mjs";
 
 /** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
  *  the `df-verify-worktrees-merged-not-just-archived` fix, actual merge state) to catch a
@@ -35,7 +36,7 @@ export function verifyWorktrees() {
   try {
     out = execSync("git worktree list --porcelain", { cwd: engineRoot(), encoding: "utf8" });
   } catch {
-    process.stdout.write(jsonText({ orphaned: [] }) + "\n");
+    outStream().write(jsonText({ orphaned: [] }) + "\n");
     return;
   }
   const orphaned = [];
@@ -61,7 +62,7 @@ export function verifyWorktrees() {
       currentHead = null;
     }
   }
-  process.stdout.write(jsonText({ orphaned }) + "\n");
+  outStream().write(jsonText({ orphaned }) + "\n");
 }
 
 /** True if `sha` is an ancestor of the current branch's HEAD (i.e. already merged in) —
@@ -95,7 +96,7 @@ export function changesets() {
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    process.stdout.write(jsonText({ changesets: [] }) + "\n");
+    outStream().write(jsonText({ changesets: [] }) + "\n");
     return;
   }
   const out = [];
@@ -106,7 +107,7 @@ export function changesets() {
     out.push({ id, path: p, body: fs.readFileSync(p, "utf8") });
   }
   out.sort((a, b) => a.id.localeCompare(b.id));
-  process.stdout.write(jsonText({ changesets: out }) + "\n");
+  outStream().write(jsonText({ changesets: out }) + "\n");
 }
 
 /** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md
@@ -134,5 +135,5 @@ export function verifyState() {
       "review the diff, and reconcile before trusting PROJECT.md again.\n"
     );
   }
-  process.stderr.write("conductor: state.json matches the last render — no hand-edit detected.\n");
+  errStream().write("conductor: state.json matches the last render — no hand-edit detected.\n");
 }

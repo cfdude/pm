@@ -52,6 +52,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { escapeControls } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 /** `reorder <id> <id> …` — set the manual rank of one whole priority band, atomically.
  *
@@ -60,7 +61,7 @@ import { die } from "./command-exit.mjs";
  *  chose it. */
 export function reorder() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const ids = process.argv.slice(3).filter(a => !a.startsWith("--"));
+  const ids = currentArgv().slice(3).filter(a => !a.startsWith("--"));
   const fail = (msg) => {
     die(`conductor: ${msg}\n`);
   };
@@ -108,7 +109,7 @@ export function reorder() {
   ids.forEach((id, i) => { byId.get(id).rank = i + 1; });
   const saved = saveState(state, { verb: "reorder" });
   reportSave(saved, {
-    stream: process.stdout,
+    stream: outStream(),
     changed: `conductor: ${escapeControls(band)} reordered — ${escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join("  "))}`,
     unchanged: `conductor: ${escapeControls(band)} was already in that order — ${STATE_UNCHANGED}`,
   });

@@ -29,6 +29,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { die } from "./command-exit.mjs";
+import { errStream } from "./invocation.mjs";
 
 /** The state file as a git PATHSPEC — CWD-relative, for the reason differsFromHead()'s is: git
  *  walks UP to find a repository, so a pm-managed project nested inside a larger repo has to be
@@ -166,7 +167,7 @@ export function recoverCreatedAt() {
     unchanged: `${summary} — ${STATE_UNCHANGED}`,
   });
   if (unrecoverable) {
-    process.stderr.write(
+    errStream().write(
       "   Unrecoverable means UNKNOWN, not unknowable: no commit in THIS checkout introduces " +
       "those ids into .conductor/state.json. Re-run after fetching more history.\n");
   }

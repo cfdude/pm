@@ -25,6 +25,7 @@ import { activityDir, segments } from "./activity-log.mjs";
 import { segmentStart } from "./activity-report.mjs";
 import { PURGE_KINDS, escapeControls } from "./constants.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { currentArgv, currentCwd, currentEnv, outStream } from "./invocation.mjs";
 
 // Re-exported from its DECLARATION in constants.mjs: `VERB_FLAGS`' `--kind` row names these
 // kinds in its own refusal phrase, so the list has to live where constants.mjs can read it
@@ -32,7 +33,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 export { PURGE_KINDS };
 
 function conductorDir() {
-  return path.join(process.env.CLAUDE_PROJECT_DIR || process.cwd(), ".conductor");
+  return path.join(currentEnv().CLAUDE_PROJECT_DIR || currentCwd(), ".conductor");
 }
 
 /** `100`, `4K`, `10M`, `1G` → bytes; null when unparseable. */
@@ -110,7 +111,7 @@ const refuse = (msg) => die(`conductor: ${msg}\n`);
  *              [--older-than <days>] [--dry-run] [--yes]` */
 export function purgeLogs() {
   if (!isInitialized()) refuse("run /pm:init first");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   // Never the `KNOWN = ["kind", "keep", …]` literal and hand-written loop this verb used to carry —
   // the enumeration defect #152 reports. "Is this flag known on this verb" is answered before
   // dispatch by the command-line check (lib/argv-surface.mjs) from the registry;
@@ -161,7 +162,7 @@ export function purgeLogs() {
   const confirmed = flags.yes === true && !dryRun;
 
   if (!doomed.length) {
-    process.stdout.write(
+    outStream().write(
       `purge-logs: nothing matches (${files.length} candidate file(s) under --kind ${kind}).\n`);
     return;
   }
@@ -174,7 +175,7 @@ export function purgeLogs() {
       ? "--dry-run: nothing was removed."
       : "Nothing was removed. This is the plan; re-run with --yes to apply it.");
   }
-  process.stdout.write(L.join("\n") + "\n");
+  outStream().write(L.join("\n") + "\n");
   if (!confirmed) return;
   for (const f of doomed) {
     try { fs.rmSync(f.path, { force: true }); } catch { /* best effort */ }

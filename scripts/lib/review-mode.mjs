@@ -10,6 +10,7 @@ import { render } from "./render.mjs";
 import { KNOWN_REVIEW_MODES, escapeControls } from "./constants.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 /** `set-review-mode --mode off|standard|thorough` — the repo-level dial, mirroring Comet's
  *  review_mode: bounds how many fresh-context reviewer passes run and when, replacing an
@@ -18,7 +19,7 @@ import { die } from "./command-exit.mjs";
  *  `update-epic <id> --review-mode <mode>` (never below it) — see currentReviewMode(epicId). */
 export function setReviewMode() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("set-review-mode", f);
   const mode = typeof f.mode === "string" ? f.mode : undefined;
   if (!mode || !KNOWN_REVIEW_MODES.includes(mode)) {

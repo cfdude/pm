@@ -18,6 +18,7 @@ import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
 import { die } from "./command-exit.mjs";
+import { errStream, outStream } from "./invocation.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -250,7 +251,7 @@ export function upgrade() {
   // post-upgrade blindspot. Print the CHANGELOG delta for (stamped, running].
   const delta = changelogBetween(stamped, state.pmVersion || null);
   if (delta && delta.length) {
-    process.stdout.write(
+    outStream().write(
       `What's new in pm (since ${escapeControls(stamped)}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
   }
 
@@ -262,7 +263,7 @@ export function upgrade() {
   // whose checkouts sit at different commits, which is the one property a one-shot,
   // never-replayed transformation may not have.
   const openspecLines = openspecCurrencyLines();
-  for (const l of openspecLines) process.stderr.write(l + "\n");
+  for (const l of openspecLines) errStream().write(l + "\n");
 
   // COMMIT WHAT THIS JUST REWROTE. Every path below is one THIS function wrote a moment ago:
   // state.json (migrations + the version stamp), the platform's rules file (NOT always
@@ -282,7 +283,7 @@ export function upgrade() {
   const rewritten = differsFromHead(
     [".conductor/state.json", rulesFile, "PROJECT.md", ".conductor/render-stamp.json", ".gitignore"]);
   if (rewritten.length) {
-    process.stderr.write(
+    errStream().write(
       `conductor: \u26a0 COMMIT THIS UPGRADE — it rewrote ${rewritten.length} tracked ` +
       `file${rewritten.length === 1 ? "" : "s"} and git still records the old ones.\n` +
       `   git add ${rewritten.join(" ")}\n` +

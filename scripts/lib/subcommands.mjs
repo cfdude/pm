@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, execSync } from "node:child_process";
-import { invocation } from "./invocation.mjs";
+import { currentArgv, errStream, invocation, outStream } from "./invocation.mjs";
 import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
@@ -100,14 +100,14 @@ export function init() {
   // THEN the rules-block preflight, still before the first write (state.json on a fresh repo,
   // .gitignore otherwise): an ambiguous marker arrangement refuses with nothing created. The target
   // is resolved with the platform this init would use, WITHOUT recording it.
-  assertRulesBlockWritable(resolvePlatform({ platform: platformFlag(process.argv.slice(3)) }, recorded));
+  assertRulesBlockWritable(resolvePlatform({ platform: platformFlag(currentArgv().slice(3)) }, recorded));
   if (isInitialized()) {
-    process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
+    errStream().write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
     // save-report: exempt — the file does not exist on this branch (isInitialized() is false), so
     // the first write of defaultState() cannot compare equal to a disk pre-image there is none of.
     saveState(defaultState());
-    process.stderr.write("conductor: created .conductor/state.json\n");
+    errStream().write("conductor: created .conductor/state.json\n");
   }
   ensureGitignore();
   sync(true);                 // pull in existing openspec changes + plans
@@ -117,7 +117,7 @@ export function init() {
   const { platform } = resolveAndRecordPlatform();
   writeRules(platform);
   render();
-  process.stderr.write(
+  errStream().write(
     // Verbs, never a hand-edit of the state of record (conductor-record): a hand-edit skips the
     // validation, the write lock and the read-back every verb supplies. Code spans, so the
     // emitted-invocation sweep reads them as invocations.
@@ -132,7 +132,7 @@ export function brief() {
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
   const context = buildBrief(loadState(), { consume: true });
-  process.stdout.write(jsonText({
+  outStream().write(jsonText({
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
   }));
 }
@@ -155,7 +155,7 @@ export function snapshot() {
   // the next thing to touch it is a `git checkout --force` that discards the file.
   const detached = isDetachedTree();
   if (!detached) fs.writeFileSync(briefPath(), buildBrief(state) + "\n");
-  process.stderr.write(detached
+  errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
       "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"
     : "conductor: snapshot written before compaction\n");
@@ -688,7 +688,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
   // above are about the DETOUR record and are decided by different inputs, so splicing the two
   // obligations into one sentence would make each harder to act on than either alone.
-  process.stdout.write(jsonText({
+  outStream().write(jsonText({
     hookSpecificOutput: {
       hookEventName: event,
       // The amend paragraph sits BEFORE the attribution one: a withdrawal of the replaced commit is
@@ -763,7 +763,7 @@ export function sync(quiet = false) {
   for (const e of state.epics) {
     if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
       e.status = "untriaged";
-      if (!quiet) process.stderr.write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
+      if (!quiet) errStream().write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
     }
   }
   const known = new Set(state.epics.map(e => e.id));
@@ -772,7 +772,7 @@ export function sync(quiet = false) {
     if (!known.has(id)) {
       // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
       // silent skip would read as a clean sync (design D4).
-      if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("change", id)); continue; }
+      if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
@@ -799,20 +799,20 @@ export function sync(quiet = false) {
     //    done-signal #69 asks for without inferring completion from anything.
     const claim = claimed.get(norm);
     if (claim) {
-      if (!quiet) process.stderr.write(
+      if (!quiet) errStream().write(
         `conductor: sync skipped ${claim.label} '${escapeControls(fname)}' — already claimed by epic '${escapeControls(claim.epic)}'\n`);
       continue;
     }
 
     // 2. The pre-existing id guard, unchanged in behavior and in wording.
     if (known.has(id)) {
-      if (!quiet) process.stderr.write(`conductor: sync skipped plan '${escapeControls(id)}' — id already exists\n`);
+      if (!quiet) errStream().write(`conductor: sync skipped plan '${escapeControls(id)}' — id already exists\n`);
       continue;
     }
 
     // 3. TOMBSTONED — `remove-epic` said no. Removal used to buy you only until the next sync.
     if (ignored.has(norm)) {
-      if (!quiet) process.stderr.write(
+      if (!quiet) errStream().write(
         `conductor: sync skipped plan '${escapeControls(fname)}' — sync-ignore tombstone (removed epic); ` +
         `attach it to an epic with \`update-epic <id> --plan ${commandValue(planPath, "<plan path>")}\` to un-ignore it\n`);
       continue;
@@ -835,7 +835,7 @@ export function sync(quiet = false) {
     const near = state.epics.find(e =>
       e.id !== id && strippedChangeId(e.id) === strippedChangeId(id) && !epicSourceArtifacts(e).length);
     if (near) {
-      if (!quiet) process.stderr.write(
+      if (!quiet) errStream().write(
         `conductor: sync skipped plan '${escapeControls(fname)}' — epic '${escapeControls(near.id)}' has the same name without ` +
         `the date prefix and claims no plan. If it IS that epic's plan: ` +
         `${orNoRemedy(() => `\`update-epic ${printedId(near.id)} --plan ${commandValue(planPath, "<plan path>")}\``)}. If it is genuinely different work: ` +
@@ -845,7 +845,7 @@ export function sync(quiet = false) {
 
     // 5. Real backlog — the final registration step, so only an entry no rung above matched is
     //    tested: a name no epic id can carry is skipped and named on every run (design D4).
-    if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("plan", fname)); continue; }
+    if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("plan", fname)); continue; }
     const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
@@ -861,7 +861,7 @@ export function sync(quiet = false) {
   const firstBackfill = !("archiveBackfilledAt" in state);
   const skippedArchives = [];
   const backfilled = backfillArchive(state, skippedArchives);
-  for (const dir of skippedArchives) process.stderr.write(unstorableSkipLine("archive directory", dir));
+  for (const dir of skippedArchives) errStream().write(unstorableSkipLine("archive directory", dir));
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
   const saved = saveState(state);
@@ -871,7 +871,7 @@ export function sync(quiet = false) {
   // conductor state. A count that moved with nobody told is the silent side effect this
   // capability is defined against.
   if (backfilled.length) {
-    process.stderr.write(firstBackfill
+    errStream().write(firstBackfill
       ? `conductor: archive backfill — registered ${backfilled.length} historical archived ` +
         `change(s) the conductor never held: ${backfilled.join(", ")}\n`
       : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
@@ -891,14 +891,14 @@ export function sync(quiet = false) {
     const tracker = state.tracker && state.tracker.system ? state.tracker : null;
     const secondaries = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
     if (anyInwardProcedureEmittable(tracker, secondaries)) {
-      process.stderr.write(
+      errStream().write(
         "conductor: inward tracker sync is YOURS — follow the inward sync section in the rules " +
         "block: list open items, register the unmirrored ones (matching on `externalUrl`, never " +
         "on a bare item number — the same number in two trackers is two different items), then " +
         "compare each linked epic's `externalUpdatedAt` watermark against its item's updated " +
         "timestamp and read the movers\n");
     } else if (tracker || secondaries.length) {
-      process.stderr.write(
+      errStream().write(
         "conductor: no inward procedure is configured — registered local OpenSpec/Superpowers " +
         "sources only; nothing was read from your tracker(s), and nothing should be\n");
     }
@@ -917,7 +917,7 @@ export function logDetour() {
   // the change that ships the rule against it.
   const logged = appendDetourLog("MINIMAL", state.active || "-", reason);
   render();
-  process.stderr.write(logged
+  errStream().write(logged
     ? "conductor: logged minimal detour\n"
     : "conductor: NOT logged — this tree is detached, so nothing was written to .conductor/detours.log\n");
 }
@@ -939,7 +939,7 @@ export function retractDetour() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const refuse = (msg) => { die(`conductor: retract-detour refused — ${msg}\n`); };
   const [arg] = checkedPositionals("retract-detour");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const f = parseFlags(argv[0] && !argv[0].startsWith("--") ? argv.slice(1) : argv);
   requireFlagValues("retract-detour", f);
   if (!arg) refuse("usage: retract-detour <sha> --reason \"<why>\"");
@@ -1001,7 +1001,7 @@ export function retractDetour() {
     die("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
   }
   render();
-  process.stderr.write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
+  errStream().write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
     "kept in .conductor/detours.log, hidden from PROJECT.md\n");
 }
 
@@ -1032,7 +1032,7 @@ export function appendHonchoMemory(action, epicId, reason) {
   const line = honchoMemoryLine(action, epicId, reason);
   fs.mkdirSync(conductorDir(), { recursive: true });
   fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
-  process.stdout.write(line + "\n");
+  outStream().write(line + "\n");
   return line;
 }
 
@@ -1061,6 +1061,6 @@ export function honchoMemory() {
   // a line the agent pastes into Honcho verbatim.
   if (action === "push") {
     const note = deferralNote(deferralHistory(loadState(), epicId));
-    if (note) process.stderr.write(`conductor: \`${escapeControls(epicId)}\` — ${note}\n`);
+    if (note) errStream().write(`conductor: \`${escapeControls(epicId)}\` — ${note}\n`);
   }
 }

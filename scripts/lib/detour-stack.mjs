@@ -37,6 +37,7 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { deferralHistory, deferralNote, isArmed, liveReconcileFrame, ownedDetours } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 // This module's own spelling of the ONE exit path (command-exit.mjs): the call sites name the
 // refusal as a FRAGMENT and this adds the `conductor: ` prefix and the newline they have always
@@ -94,7 +95,7 @@ function linkOnce(epic, type, otherId, reason, { arm } = {}) {
  *  attributable; a forgotten default is not. */
 export function pushDetour() {
   if (!isInitialized()) refuse("run /pm:init first");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Before loadState(), so a refusal can never leave a partial write behind — the same position
@@ -191,7 +192,7 @@ export function pushDetour() {
   // Computed from the POST-push state so the push being made is counted; silent on a first
   // deferral, because the first detour is the mechanism working.
   const note = deferralNote(deferralHistory(state, id));
-  if (note) process.stderr.write(`conductor: \`${escapeControls(id)}\` — ${note}\n`);
+  if (note) errStream().write(`conductor: \`${escapeControls(id)}\` — ${note}\n`);
   // Step 3 of the old protocol, no longer a step: the ready-to-copy Honcho line is emitted here
   // and logged durably, so the pivot survives outside this repo without a second invocation the
   // agent has to remember. stdout, because it is a line the agent pastes verbatim.
@@ -210,7 +211,7 @@ export function pushDetour() {
  *  the hand-edit this verb exists to remove. It warns, which is the honest shape. */
 export function popDetour() {
   if (!isInitialized()) refuse("run /pm:init first");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const expected = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
 
   const state = loadState();
@@ -255,7 +256,7 @@ export function popDetour() {
   const detourId = typeof frame.spawnedDetour === "string" ? frame.spawnedDetour : null;
   const detour = detourId ? state.epics.find(e => e.id === detourId) : null;
   if (detour && detour.status !== "archived") {
-    process.stderr.write(
+    errStream().write(
       `conductor: detour '${escapeControls(detourId)}' is still ${escapeControls(detour.status)}, not archived — resuming anyway, ` +
       "but confirm its work is finished and committed before building on the resumed epic\n");
   }
@@ -279,7 +280,7 @@ export function popDetour() {
     // is named — not only the one just popped.
     const owed = ownedDetours(resumed);
     const targets = owed.length ? owed : [detourId || "<detourId>"];
-    process.stderr.write(
+    errStream().write(
       `conductor: RECONCILE GATE — '${escapeControls(pausedEpic)}' carries reconcileNeeded` +
       (owed.length ? ` and owes a verdict against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "") +
       ". Run the reconciler BEFORE writing code, then " +
@@ -335,7 +336,7 @@ export function dropDetour() {
   // all, it re-raises `reconcileNeeded` from the frame it popped. The one rule they genuinely share —
   // "is anything still owed" — is already factored, in links.mjs, and both read it from there.
   if (!isInitialized()) refuse("run /pm:init first");
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Before loadState(), the position every other write surface here calls it from.

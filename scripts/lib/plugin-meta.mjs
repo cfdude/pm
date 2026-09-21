@@ -7,14 +7,15 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readJSON } from "./state.mjs";
+import { currentEnv } from "./invocation.mjs";
 
 /** The running plugin's root dir. Env-first so tests can point at a fixture.
  *  NOTE: this file lives at scripts/lib/plugin-meta.mjs, one directory deeper than the
  *  original scripts/conductor.mjs — hence ".." TWICE (lib/ -> scripts/ -> plugin root),
  *  not once. */
 export function pluginRoot() {
-  return process.env.CLAUDE_PLUGIN_ROOT
-    ? process.env.CLAUDE_PLUGIN_ROOT
+  return currentEnv().CLAUDE_PLUGIN_ROOT
+    ? currentEnv().CLAUDE_PLUGIN_ROOT
     : path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 }
 
@@ -81,7 +82,7 @@ export function changelogAddedHeadlines(fromVer, toVer, limit = 3) {
  *  Cache root is env-overridable for testability. Per-entry resilient: one bad
  *  plugin.json doesn't collapse the scan. */
 export function newestInstalledVersion() {
-  const cacheRoot = process.env.PM_CACHE_ROOT || path.join(os.homedir(), ".claude", "plugins", "cache");
+  const cacheRoot = currentEnv().PM_CACHE_ROOT || path.join(os.homedir(), ".claude", "plugins", "cache");
   let best = null;
   try {
     for (const mp of fs.readdirSync(cacheRoot, { withFileTypes: true })) {

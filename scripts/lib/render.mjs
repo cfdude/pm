@@ -18,6 +18,7 @@ import { visibleDetourRows } from "./git.mjs";
 import { detoursLog, projectMd, statePath, renderStampPath, conductorDir, escapeControls, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
+import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 /** THE builder of every PROJECT.md table DATA row (user-text-never-forges-output D1). Each cell is
  *  passed through escapeTableCell() exactly once — here and nowhere else, because that escaper is not
@@ -305,7 +306,7 @@ export function render() {
   try { existing = fs.readFileSync(projectMd(), "utf8"); } catch { /* no file yet */ }
   writeRenderStamp();
 
-  const flags = parseFlags(process.argv.slice(3));
+  const flags = parseFlags(currentArgv().slice(3));
   if (flags["diff-summary"]) {
     // df-project-md-diff-triviality-not-mechanically-checkable: the "Last rendered" timestamp
     // and the "Recent detours" table rotate on nearly every render even when nothing
@@ -314,15 +315,15 @@ export function render() {
     // (nothing to compare against); otherwise strip both known-trivial sources of diff noise
     // before comparing.
     const epicRelevant = !existing || normalizeForDiffSummary(existing) !== normalizeForDiffSummary(content);
-    process.stdout.write(`epic-relevant: ${epicRelevant ? "yes" : "no"}\n`);
+    outStream().write(`epic-relevant: ${epicRelevant ? "yes" : "no"}\n`);
   }
 
   if (existing && existing.replace(STAMP_RE, "") === content.replace(STAMP_RE, "")) {
-    process.stderr.write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
+    errStream().write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
     return;
   }
   fs.writeFileSync(projectMd(), content);
-  process.stderr.write(`conductor: rendered ${escapeControls(projectMd())}\n`);
+  errStream().write(`conductor: rendered ${escapeControls(projectMd())}\n`);
 }
 
 /** Normalizes the two sources of PROJECT.md diff noise that are never "epic-relevant" on

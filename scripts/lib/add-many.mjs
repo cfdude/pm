@@ -13,6 +13,7 @@ import { render } from "./render.mjs";
 import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -21,7 +22,7 @@ import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
  *  (zero-dep engine). `--from -` reads stdin. */
 export function addMany() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("add-many", f);
   const from = typeof f.from === "string" ? f.from : undefined;
   if (!from) { die("usage: conductor.mjs add-many --from <path|->\n"); }

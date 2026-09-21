@@ -16,12 +16,15 @@
 // This is NOT the module-scope capture it replaces, and the difference is the whole point:
 // `PROCESS_CONTEXT` below is a LIVE view (getters), so a caller that never enters through `main()`
 // — a test importing `state.mjs` directly and moving `CLAUDE_PROJECT_DIR` — sees exactly today's
-// behaviour, while a caller that does enter through `main()` is handed a frozen snapshot for the
-// duration of that one call. `setInvocation()` is called once per invocation and never
-// concurrently: the assertion half is a SINGLE process running tests in sequence.
+// behaviour, while a caller that does enter through `main()` is handed a snapshot for the duration
+// of that one call. `setInvocation()` is called once per invocation and never concurrently: the
+// assertion half is a SINGLE process running tests in sequence.
 //
-// `root` is deliberately a value and not a getter even in the process context: read once, the way
-// `constants.mjs` read it once, so the CLI's own semantics are unchanged.
+// Depends on nothing but Node built-ins. `constants.mjs` imports THIS module (for `engineRoot`), so
+// anything imported here would cycle back into the module every other module depends on.
+
+import fs from "node:fs";
+import { isatty } from "node:tty";
 
 let CURRENT = null;
 
@@ -31,7 +34,9 @@ const PROCESS_CONTEXT = {
   get cwd() { return process.cwd(); },
   get env() { return process.env; },
   get argv() { return process.argv; },
-  get stdin() { return process.stdin; },
+  get stdin() {
+    return { real: true, read: () => fs.readFileSync(0, "utf8"), get isTTY() { return isatty(0); } };
+  },
   get stdout() { return process.stdout; },
   get stderr() { return process.stderr; },
   get root() { return process.env.CLAUDE_PROJECT_DIR || process.cwd(); },
@@ -50,6 +55,55 @@ export function setInvocation(ctx) {
 }
 
 /** The root this invocation acts on: `CLAUDE_PROJECT_DIR` when the caller supplied it, else the
- *  invocation's working directory. The eleven path constants in `constants.mjs` are functions of
- *  THIS by default — see `conductorDir(root = root())` and its siblings. */
-export const root = (ctx = invocation()) => ctx.root;
+ *  invocation's working directory. `constants.mjs`'s path constants are functions of THIS by
+ *  default — see `conductorDir(root = engineRoot())` and its siblings. */
+export const engineRoot = (ctx = invocation()) => ctx.root;
+
+/** The invocation's full argument list — index 0 and 1 are the program and the script, exactly as
+ *  `process.argv` shapes them, so every existing `argv[2]` / `argv.slice(3)` reader is unchanged.
+ *  `main()` owns a COPY: the pre-dispatch check rewrites it in place (canonicalArgv), and
+ *  engine-invocation guarantees the calling process's own arguments are never modified. */
+export const currentArgv = (ctx = invocation()) => ctx.argv;
+
+/** The environment this invocation consults — `CLAUDE_PROJECT_DIR`, `PM_CACHE_ROOT`,
+ *  `CLAUDE_PLUGIN_ROOT` and the four banner/session keys. Never the process's own, once `main()`
+ *  has been entered: leaving env process-global would make the assertion half's roots a shared
+ *  mutable, which is the hazard per-call values exist to remove. */
+export const currentEnv = (ctx = invocation()) => ctx.env;
+
+/** The working directory this invocation acts on. Distinct from `engineRoot()`: a caller may point
+ *  `CLAUDE_PROJECT_DIR` at a project from anywhere, and the divergence warning exists precisely
+ *  because those two can differ. */
+export const currentCwd = (ctx = invocation()) => ctx.cwd;
+
+/** The streams this invocation writes to. `die()` already goes through `errStream()`; 3.4 routes the
+ *  rest, so an in-process caller receives everything on its own streams and nothing reaches the
+ *  process's own stdout or stderr — engine-invocation states that as a SHALL, and it is what lets
+ *  one process serve many invocations without their output interleaving. */
+export const outStream = (ctx = invocation()) => ctx.stdout;
+export const errStream = (ctx = invocation()) => ctx.stderr;
+
+/** The input this invocation drains. `readStdin()` and the refused-hook-line drain both go through
+ *  it, rather than reading fd 0 behind the caller's back. */
+export const stdinSource = (ctx = invocation()) => ctx.stdin;
+
+/** Normalize whatever a caller passed as `stdin` into `{ read(), isTTY, real }`.
+ *
+ *  The REAL case is the CLI tail handing over `process.stdin`, and it must keep using `isatty(0)`
+ *  and `fs.readFileSync(0)` rather than `process.stdin.isTTY`: touching `process.stdin` opens a
+ *  stream on fd 0, and that makes the synchronous drain read NOTHING — the hook writer then sees
+ *  EPIPE. That reason is recorded at the drain site in conductor.mjs and is why this lives here
+ *  rather than at the drain.
+ *
+ *  An INJECTED source is `{ read(): string, isTTY?: boolean }` — a plain object, because a test
+ *  that had to build a real Readable would be paying for the thing this change removes. */
+export function normalizeStdin(s) {
+  if (!s || s === process.stdin) {
+    return { real: true, read: () => fs.readFileSync(0, "utf8"), get isTTY() { return isatty(0); } };
+  }
+  return {
+    real: false,
+    read: () => { try { return String(s.read() ?? ""); } catch { return ""; } },
+    isTTY: !!s.isTTY,
+  };
+}

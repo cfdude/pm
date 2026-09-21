@@ -19,6 +19,7 @@ import { claimArtifacts } from "./source-artifacts.mjs";
 import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours, storedEpicIdError } from "./links.mjs";
 import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, errStream } from "./invocation.mjs";
 
 // The flags update-epic recognizes, as the registry projects them. Anything else is refused before
 // dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) — an unrecognized flag (e.g. a typo) used to parse, run, and print
@@ -277,7 +278,7 @@ function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
  *  key. `links` is deliberately refused by it and points at --clear-links. */
 export function updateEpic() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   // #71: `update-epic --id my-epic --priority P1` is the mistake everyone makes, because every
   // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way. The
@@ -285,7 +286,7 @@ export function updateEpic() {
   // meant — now lives in the pre-dispatch command-line check (lib/argv-surface.mjs), generalised to every verb whose first positional is an epic id,
   // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
-    process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
+    errStream().write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
     die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
@@ -977,7 +978,7 @@ export function updateEpic() {
   }
 
   // Every refusal has now had its turn: the write is going to happen, so say what it cleared.
-  for (const line of announcements) process.stderr.write(line);
+  for (const line of announcements) errStream().write(line);
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
   // while already archived) — supports velocity tracking off startedAt/completedAt.
@@ -997,7 +998,7 @@ export function updateEpic() {
   // does not clear it — parking an epic does not change who owns it, and the owner is exactly
   // who resumes it.
   if (status === "archived" && epic.claim) {
-    process.stderr.write(
+    errStream().write(
       `conductor: cleared the advisory claim held by '${escapeControls(epic.claim.session)}' — '${escapeControls(id)}' has ended\n`);
     delete epic.claim;
   }

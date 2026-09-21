@@ -9,6 +9,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { escapeControls } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv } from "./invocation.mjs";
 
 /** The verdicts a refresh can record. `unchanged` and `material-change` are the whole
  *  vocabulary: the question the gate asks is "did the linked item's content move in a way that
@@ -25,7 +26,7 @@ export const KNOWN_REFRESH_VERDICTS = ["unchanged", "material-change"];
  *  skew and by the tracker's own write latency. */
 export function recordTrackerRefresh() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     die(

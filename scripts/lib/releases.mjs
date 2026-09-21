@@ -26,6 +26,7 @@ import {
   CROSS_SPEC_MIN_SPECS, KNOWN_CROSS_SPEC_VERDICTS, crossSpecLine, crossSpecRequired,
   releaseSpecFiles, specDigest,
 } from "./cross-spec-review.mjs";
+import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 const str = (v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined);
 
@@ -93,14 +94,14 @@ const amend = (rel, entry) => {
  *  last two. `release show [<id>]` is the read form and lives in releaseShow() below. */
 export function release() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   // THE READ FORM, dispatched before anything else parses. `show` is a reserved positional (see
   // SHOW above), so this branch is unambiguous and the write path below can never see that id.
   if (argv[0] === SHOW) { releaseShow(argv.slice(1)); return; }
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
-    process.stderr.write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    process.stderr.write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"]\n");
+    errStream().write("conductor: release requires a release id as its first POSITIONAL argument\n");
+    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"]\n");
     die("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
@@ -254,7 +255,7 @@ export function release() {
     const wasDeferred = rel.deferred.find(d => d && d.epic === epicId);
     if (wasDeferred) {
       rel.deferred = rel.deferred.filter(d => !d || d.epic !== epicId);
-      process.stderr.write(
+      errStream().write(
         `conductor: '${escapeControls(epicId)}' was deferred from '${escapeControls(id)}' — that record is now removed ` +
         `(it read: ${escapeControls(wasDeferred.reason)})\n`);
       // THE SIBLING CALL SITE. `--member` has been performing an implicit undefer since the verb
@@ -282,7 +283,7 @@ export function release() {
   if (unmember) {
     delete knownEpic(unmember.epic).release;
     amend(rel, { op: "unmember", epic: unmember.epic, reason: unmember.reason });
-    process.stderr.write(
+    errStream().write(
       `conductor: '${escapeControls(unmember.epic)}' is no longer a member of '${escapeControls(id)}' — ${escapeControls(unmember.reason)}. ` +
       "It keeps its place in the backlog; nothing about the epic itself changed.\n");
   }
@@ -291,7 +292,7 @@ export function release() {
     const was = rel.deferred.find(d => d && d.epic === undefer.epic);
     rel.deferred = rel.deferred.filter(d => !d || d.epic !== undefer.epic);
     amend(rel, { op: "undefer", epic: undefer.epic, reason: undefer.reason, was: was && was.reason });
-    process.stderr.write(
+    errStream().write(
       `conductor: '${escapeControls(undefer.epic)}' is no longer deferred from '${escapeControls(id)}' — ${escapeControls(undefer.reason)} ` +
       `(the exclusion read: ${escapeControls(was && was.reason)}). It is NOT a member: say so with --member.\n`);
   }
@@ -343,7 +344,7 @@ export function releaseShow(rest) {
   // cannot disagree about how many epics a release holds.
   if (id === undefined) {
     if (!releases.length) {
-      process.stdout.write(
+      outStream().write(
         "conductor: no releases are declared in this repo. Declare one with " +
         "`release <id> --intent \"<what this release is for>\"`.\n");
       return;
@@ -355,7 +356,7 @@ export function releaseShow(rest) {
     }
     out.push("  Read one back with `release show <id>`.");
     // One entry per line: escaping each is what keeps a stored id, intent or target on its line.
-    process.stdout.write(out.map(escapeControls).join("\n") + "\n");
+    outStream().write(out.map(escapeControls).join("\n") + "\n");
     return;
   }
 
@@ -405,7 +406,7 @@ export function releaseShow(rest) {
         `${a.at ? ` (${a.at})` : ""}`);
     }
   }
-  process.stdout.write(out.map(escapeControls).join("\n") + "\n");
+  outStream().write(out.map(escapeControls).join("\n") + "\n");
 }
 
 // ─────────────────── the RELEASE-scope review gate (gh#126) ───────────────────
@@ -428,7 +429,7 @@ export function releaseShow(rest) {
  */
 export function recordCrossSpecReview() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const argv = process.argv.slice(3);
+  const argv = currentArgv().slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs), reading this verb's two

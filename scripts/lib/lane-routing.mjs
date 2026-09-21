@@ -9,6 +9,7 @@ import { render } from "./render.mjs";
 import { KNOWN_LANES, escapeControls, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { die } from "./command-exit.mjs";
+import { currentArgv, outStream } from "./invocation.mjs";
 
 export function laneMatchTest(match, text) {
   const hay = String(text).toLowerCase();
@@ -32,7 +33,7 @@ export function laneMatchTest(match, text) {
  *  surfaces the match so the interactive agent can act on it. */
 export function setLaneRouting() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("set-lane-routing", f);
   // every-verb-refuses-what-it-does-not-read D8: with NONE of the three operations this used to write
   // `laneRouting: {overrides: []}` where no block existed and report success — a write nobody asked
@@ -105,7 +106,7 @@ export function suggestLane() {
   const [positional] = checkedPositionals("suggest-lane");
   // `--ask=<text>` carries the text as a flag VALUE, so a title shaped like a flag routes like any
   // other. One verb, one text: both at once is a surplus argument, never a silent pick of one.
-  const f = parseFlags(process.argv.slice(3));
+  const f = parseFlags(currentArgv().slice(3));
   requireFlagValues("suggest-lane", f);
   const ask = typeof f.ask === "string" ? f.ask : undefined;
   if (ask !== undefined && typeof positional === "string") {
@@ -116,5 +117,5 @@ export function suggestLane() {
   if (typeof text !== "string" || !text.length) {
     die("usage: conductor.mjs suggest-lane \"<free text>\" | --ask=<text>\n");
   }
-  process.stdout.write(jsonText(laneSuggestion(loadState(), text)) + "\n");
+  outStream().write(jsonText(laneSuggestion(loadState(), text)) + "\n");
 }

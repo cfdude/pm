@@ -82,7 +82,6 @@
  */
 
 import path from "node:path";
-import { isatty } from "node:tty";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
@@ -130,6 +129,7 @@ import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 import { recoverCreatedAt } from "./lib/created-at.mjs";
 import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
+import { currentArgv, currentEnv, errStream, outStream, stdinSource } from "./lib/invocation.mjs";
 
 // ---------- self-hosting handoff (gh-134) ----------
 //
@@ -149,7 +149,7 @@ if (delegated !== null) process.exit(delegated);
 
 // ---------- dispatch ----------
 
-const cmd = process.argv[2];
+const cmd = currentArgv()[2];
 
 const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
@@ -167,17 +167,17 @@ const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync
 //
 // An UNKNOWN verb keeps today's behaviour exactly: a help token first → global usage, exit 0;
 // otherwise it falls through to dispatch's USAGE, exit 1, having warned where it is pointed.
-const helpAt = process.argv.slice(2).findIndex(a => a === "--help" || a === "-h");
+const helpAt = currentArgv().slice(2).findIndex(a => a === "--help" || a === "-h");
 if (!cmd || (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, cmd) && (helpAt === 0 || helpAt === 1))) {
-  process.stdout.write(USAGE);
+  outStream().write(USAGE);
   process.exit(0);
 }
 {
-  const verdict = checkCommandLine(cmd, process.argv, { initialized: isInitialized() });
+  const verdict = checkCommandLine(cmd, currentArgv(), { initialized: isInitialized() });
   if (verdict.kind === "help") {
     // #158 — VERB-SCOPED help, projected from the same declarations the check enforces.
     const { verbHelp } = await import("./lib/help.mjs");
-    process.stdout.write(verbHelp(cmd));
+    outStream().write(verbHelp(cmd));
     process.exit(0);
   }
   if (verdict.kind === "refuse") {
@@ -185,17 +185,20 @@ if (!cmd || (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, cmd) && (helpAt
     // do on their own paths, so the hook writer is not left holding a pipe (an EPIPE on its side).
     // Never from a terminal: a person typing a refused hook line would wait on a read that only
     // ends at EOF, with the refusal not yet printed. The message goes first for the same reason.
-    process.stderr.write(verdict.message + "\n");
-    // isatty(0), not process.stdin.isTTY: touching process.stdin opens a stream on fd 0 that makes
-    // the synchronous drain read nothing, and the hook writer then sees EPIPE.
-    if (VERB_EFFECTS[cmd].hook === true && !isatty(0)) readStdin();
+    errStream().write(verdict.message + "\n");
+    // The INVOCATION's stdin, whose default is the real fd 0 tested with isatty(0) rather than
+    // process.stdin.isTTY: touching process.stdin opens a stream on fd 0 that makes the synchronous
+    // drain read nothing, and the hook writer then sees EPIPE. A caller that supplied its own input
+    // gets the question asked of ITS input, which is what makes a refused hook line testable
+    // in-process.
+    if (VERB_EFFECTS[cmd].hook === true && !stdinSource().isTTY) readStdin();
     process.exit(1);
   }
   // D10 — every verb reads its command line in canonical order: positionals first, then flags with
   // their values in their original relative order, argv-level flags (`--force`) last. So an
   // `argv[0]` reader sees its positional first (`set-active --force e2`), and saveState()'s own
   // `process.argv.includes("--force")` keeps working unedited.
-  if (verdict.canonicalArgv) process.argv.splice(3, process.argv.length - 3, ...verdict.canonicalArgv);
+  if (verdict.canonicalArgv) currentArgv().splice(3, currentArgv().length - 3, ...verdict.canonicalArgv);
 }
 
 // gh#82 — is ROOT the repository the caller is standing in?  Emitted here, ONCE, and for every
@@ -240,11 +243,11 @@ if (VERB_EFFECTS[cmd]?.effect !== "read-only") {
 // exists to guard against is unlikely there) -- set PM_VERBOSE_ENGINE_BANNER=1 to force it
 // back on. PM_QUIET_ENGINE_BANNER=1 continues to work as an explicit suppress outside that
 // context too (back-compat with the pre-fix default-on behavior).
-const showEngineBanner = process.env.PM_VERBOSE_ENGINE_BANNER
+const showEngineBanner = currentEnv().PM_VERBOSE_ENGINE_BANNER
   ? true
-  : (process.env.PM_QUIET_ENGINE_BANNER || process.env.CLAUDE_PROJECT_DIR) ? false : true;
+  : (currentEnv().PM_QUIET_ENGINE_BANNER || currentEnv().CLAUDE_PROJECT_DIR) ? false : true;
 if (showEngineBanner) {
-  process.stderr.write(
+  errStream().write(
     `conductor: engine ${pluginVersion() || "unknown"} @ ${escapeControls(path.dirname(fileURLToPath(import.meta.url)))}\n`
   );
 }
@@ -270,7 +273,7 @@ try {
   if (isInitialized()) {
     const activityBefore = loadState();
     if (activityEnabled(activityBefore)) {
-      const session = resolveSession(parseFlags(process.argv.slice(3)));
+      const session = resolveSession(parseFlags(currentArgv().slice(3)));
       process.on("exit", () => {
         try {
           const after = loadState();
@@ -336,36 +339,36 @@ try {
   upgrade,
   changelog,
   rules: () => {
-    const f = parseFlags(process.argv.slice(3));
+    const f = parseFlags(currentArgv().slice(3));
     requireFlagValues("rules", f);
     const epicId = typeof f.epic === "string" ? f.epic : undefined;
-    const declared = platformFlag(process.argv.slice(3));
+    const declared = platformFlag(currentArgv().slice(3));
     if (declared) assertKnownPlatform(declared);
     const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
+    outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
   },
   "write-rules": () => {
     // #152: `--platform` is read straight off argv by platformFlag(), which treats a valueless
     // occurrence as absent — so `write-rules --platform` silently wrote the RECORDED platform's
     // rules block while looking answered. Parsed and checked here for that reason alone; the
     // resolution below is unchanged.
-    requireFlagValues("write-rules", parseFlags(process.argv.slice(3)));
+    requireFlagValues("write-rules", parseFlags(currentArgv().slice(3)));
     const { platform, switched } = resolveAndRecordPlatform();
     writeRules(platform);
-    if (switched) process.stderr.write(`conductor: platform: ${platform}\n`);
+    if (switched) errStream().write(`conductor: platform: ${platform}\n`);
   },
   // Read-only query: which file does this platform's rules block belong in? Exists so a
   // CONSUMER (evals/observe.py) never has to mirror PLATFORM_RULES_CHAIN -- a second copy of
   // platform knowledge is exactly the drift this epic was filed to remove. Deliberately does
   // NOT record the platform: a query must not mutate state the way write-rules does.
   "rules-target": () => {
-    requireFlagValues("rules-target", parseFlags(process.argv.slice(3)));
-    const declared = platformFlag(process.argv.slice(3));
+    requireFlagValues("rules-target", parseFlags(currentArgv().slice(3)));
+    const declared = platformFlag(currentArgv().slice(3));
     if (declared) assertKnownPlatform(declared);
-    process.stdout.write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), engineRoot()) + "\n");
+    outStream().write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), engineRoot()) + "\n");
   },
 }[cmd] || (() => {
-  process.stderr.write(USAGE);
+  errStream().write(USAGE);
   process.exit(1);
 }))();
 } catch (err) {
@@ -383,11 +386,11 @@ try {
     // for another.
     const refusal = refusalFor(cmd, err);
     if (refusal === null) throw err;
-    if (refusal.stderr) process.stderr.write(refusal.stderr);
+    if (refusal.stderr) errStream().write(refusal.stderr);
     // exitCode and RETURN, never process.exit(): a hook's refusal can be a JSON payload on stdout
     // (SessionStart), and exiting straight after a stdout write truncates it at a pipe's buffer
     // (conductor-38). Nothing after this catch keeps the event loop alive.
-    if (refusal.stdout) process.stdout.write(refusal.stdout);
+    if (refusal.stdout) outStream().write(refusal.stdout);
     process.exitCode = refusal.exitCode;
   }
 }
