@@ -3,8 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'openspec/**', '.conductor/**']
   pull_request:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'openspec/**', '.conductor/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
