@@ -297,10 +297,14 @@ export async function main(argv, io = {}) {
   // typed from memory goes stale the moment a verb is added, and a verb that forgot to emit would
   // be invisible in exactly the log built to find invisible things. The diff cannot forget.
   //
-  // process.on("exit"), NOT try/finally. Verified mechanically before choosing the shape:
-  // `rg -n "process\.exit" scripts/lib/` finds one MUTATING verb that writes state and then exits
-  // non-zero (update-epic's post-write attribution read-back). process.exit() skips `finally` and
-  // runs exit handlers, so a `finally` would drop exactly the invocation most worth recording.
+  // A SNAPSHOT HERE, and the diff in a `finally` around dispatch below — NOT process.on("exit"),
+  // which is what this was until 0.47.0 and which ITS OWN COMMENT argued for. The argument was
+  // sound at the time and is now false: `process.exit()` skips `finally`, so the exit-handler shape
+  // was the only one that recorded update-epic's post-write attribution refusal. Refusals are
+  // THROWN and caught now (lib/command-exit.mjs), so a `finally` runs on every path including that
+  // one. Keeping the handler would be a defect specific to this change: in the assertion half's ONE
+  // shared process every call would register another listener, none would fire until the runner
+  // exited, and main() would have returned long before the diff it owes.
   //
   // Placed AFTER the --help short-circuit (a help flag must have no side effect, and there is
   // nothing to diff) and BEFORE dispatch, so the snapshot is genuinely the pre-verb state.
@@ -308,29 +312,24 @@ export async function main(argv, io = {}) {
   // EVERY call here is guarded. Observability must never break the run it observes — the rule
   // lib/write-conflicts.mjs opens with, for the same reason: a throw would convert a working
   // command into a visible failure, and would fire when the filesystem is already in trouble.
+  let activityBefore = null;
+  let activitySession = null;
   try {
     if (isInitialized()) {
-      const activityBefore = loadState();
-      if (activityEnabled(activityBefore)) {
-        const session = resolveSession(parseFlags(currentArgv().slice(3)));
-        process.on("exit", () => {
-          try {
-            const after = loadState();
-            // No revision movement means no write happened; recording a line for it would make
-            // every read verb a log entry and drown the signal the log exists for.
-            if (after.revision === activityBefore.revision) return;
-            appendEvents(diffEvents(activityBefore, after, { verb: cmd, session }));
-          } catch { /* never break the run being observed */ }
-        });
+      const snapshot = loadState();
+      if (activityEnabled(snapshot)) {
+        activityBefore = snapshot;
+        activitySession = resolveSession(parseFlags(currentArgv().slice(3)));
       }
     }
-  } catch { /* ditto — including a state.json this process cannot read at all */ }
+  } catch { /* including a state.json this process cannot read at all */ }
 
+  let status;
   try {
   // The dispatch table's own arm returns nothing — every handler reports by writing and by
   // throwing. The arm beside it, the unknown-verb usage, returns 1, and CAPTURING the result is
   // what makes that 1 leave `main()` as a return rather than being discarded by the call.
-  const status = await ({
+  status = await ({
     init,
     render,
     brief,
@@ -413,9 +412,6 @@ export async function main(argv, io = {}) {
     errStream().write(USAGE);
     return 1;
   }))();
-  // The SUCCESS path, written rather than left to fall off the end, so that `main()` RETURNS a
-  // numeric status on every route (engine-invocation).
-  return typeof status === "number" ? status : 0;
   } catch (err) {
     // A refusal now arrives as a THROWN VALUE rather than as a call to process.exit
     // (lib/command-exit.mjs): `die()` has already written the message to the invocation's stderr, so
@@ -423,7 +419,7 @@ export async function main(argv, io = {}) {
     // refusalFor()'s classes and would otherwise be re-thrown as an unhandled error, turning
     // "refused" into "crashed".
     if (err instanceof CommandExit) {
-      return err.code;
+      status = err.code;
     } else {
       // A conflict is retryable; a validation error is not; an unreadable state file is neither. They
       // must not share an exit code — lib/refusal.mjs holds the mapping. Anything else is re-thrown
@@ -436,9 +432,26 @@ export async function main(argv, io = {}) {
       // (SessionStart), and exiting straight after a stdout write truncates it at a pipe's buffer
       // (conductor-38). Nothing after this catch keeps the event loop alive.
       if (refusal.stdout) outStream().write(refusal.stdout);
-      return refusal.exitCode;
+      status = refusal.exitCode;
+    }
+  } finally {
+    // ONE line per invocation, on EVERY path — success, a refusal, and a re-thrown crash alike —
+    // and it runs BEFORE main() returns, so an in-process caller can read the log the moment the
+    // call is over rather than at some later process exit.
+    if (activityBefore) {
+      try {
+        const after = loadState();
+        // No revision movement means no write happened; recording a line for it would make every
+        // read verb a log entry and drown the signal the log exists for.
+        if (after.revision !== activityBefore.revision) {
+          appendEvents(diffEvents(activityBefore, after, { verb: cmd, session: activitySession }));
+        }
+      } catch { /* never break the run being observed */ }
     }
   }
+  // The SUCCESS path, written rather than left to fall off the end, so that `main()` RETURNS a
+  // numeric status on every route (engine-invocation).
+  return typeof status === "number" ? status : 0;
 }
 
 // ---------- the CLI tail ----------

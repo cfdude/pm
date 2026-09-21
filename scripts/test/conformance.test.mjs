@@ -352,3 +352,46 @@ test("conformance: two invocations in one process act on their own roots", async
   assert.deepEqual(ids(second), ["beta"], "the second root holds exactly the epic its own call created");
 });
 
+// ───────────────────────────── 2.5 — the activity log ─────────────────────────────
+
+/** Every event line the activity log holds for `cwd`, across whatever segments exist. */
+function activityLines(cwd) {
+  const dir = path.join(cwd, ".conductor", "activity");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).sort().flatMap((name) => {
+    const f = path.join(dir, name);
+    return fs.statSync(f).isFile() ? fs.readFileSync(f, "utf8").split("\n").filter(Boolean) : [];
+  });
+}
+
+test("conformance: the engine registers no process exit handler", () => {
+  // 2.5 moved the activity log's instrumentation out of `process.on("exit")` and into main()'s own
+  // control flow. The exit-handler shape was argued for in a comment that is now false — refusals
+  // are THROWN and caught, so the `finally` it feared losing runs on every path — and leaving it
+  // would be a defect specific to the assertion half: in one shared process every call would
+  // register another listener, none would fire until the runner exited, and main() would have
+  // returned long before the diff it owes. A source guard, so the shape cannot come back silently.
+  const src = fs.readFileSync(path.join(HERE, "..", "conductor.mjs"), "utf8")
+    .replace(/\/\/[^\n]*/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.doesNotMatch(src, /process\.on\(\s*["'`]exit["'`]/,
+    "the engine must not instrument anything through a process exit handler — main() owns the " +
+    "invocation's whole lifetime, and an exit handler outlives it");
+});
+
+test("conformance: the activity log is written BY main(), once per invocation, before it returns", async () => {
+  const cwd = initRepo();
+  run(["set-activity-log", "on"], { cwd });
+  const io = () => ({
+    cwd, env: baseEnv(cwd), stdin: { read: () => "", isTTY: false },
+    stdout: { write: () => true }, stderr: { write: () => true },
+  });
+  assert.equal(await main(["add-epic", "--id", "e1", "--lane", "claude-code"], io()), 0);
+  assert.equal(activityLines(cwd).length, 1,
+    "the first invocation's line is on disk the moment main() returns — not at some later process end");
+  assert.equal(await main(["add-epic", "--id", "e2", "--lane", "claude-code"], io()), 0);
+  assert.equal(activityLines(cwd).length, 2);
+  assert.equal(await main(["add-epic", "--id", "e3", "--lane", "claude-code"], io()), 0);
+  assert.equal(activityLines(cwd).length, 3,
+    "one line per invocation: an exit handler would have produced ZERO here, and three at process end");
+});

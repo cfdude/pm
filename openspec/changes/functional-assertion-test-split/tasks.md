@@ -84,7 +84,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       `process.exit`, preserving the truncation reason recorded at `conductor.mjs:378–381`. Verify: the
       five hook verbs still exit with their documented statuses, run as the processes
       `hooks/hooks.json` registers (six command registrations over five verbs)
-- [ ] 2.5 GREEN — the activity-log instrumentation moves from `process.on("exit")`
+- [x] 2.5 GREEN — the activity-log instrumentation moves from `process.on("exit")`
       (`conductor.mjs:268–284`) into `main()`'s own control flow, running exactly once per invocation
       before it returns, and the comment block at `:257–260` is rewritten to say why the exit-handler
       shape is no longer needed (a refusal now throws and is caught, so a `finally` no longer drops
