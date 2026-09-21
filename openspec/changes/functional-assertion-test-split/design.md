@@ -65,6 +65,13 @@ See `proposal.md` for the measurements and the motivation. What shapes the appro
   `subcommands.mjs:222`, `git.mjs:10` and `worktree-hygiene.mjs:35` — and the gateway sweep's regex
   (`rg -e 'execFileSync\(' -e 'execSync\('`) reaches all three; the gateway's operations therefore
   take a command, not an argv pair, for those.
+  **THE ENGINE HAS TWO OTHER SPAWNS, AND NEITHER IS GIT** (corrected at Gate 2, G-I5 — the sweep above
+  names only `execFileSync`/`execSync`, and the guard that read it once claimed `tool-currency.mjs`'s
+  `openspec` probe was the engine's *only* non-git spawn): `self-hosting.mjs`'s delegation handoff
+  runs `spawnSync(process.execPath, …)` — `spawnSync`, and a program passed as an expression rather
+  than a literal, so no pattern over string literals could see it at all — and `tool-currency.mjs`'s
+  `openspec --version`. Both are deliberate omissions from a gateway that is over GIT, and the guard
+  now asserts the whole non-git set by identity so a third one has to be a written decision.
 - **The assertion half will share one process across all its files.** Three module-level caches
   already exist in `git.mjs` — `headAttachmentCache`, `resolvedCommitCache`, `unreachedCache`, all
   three named, all keyed by value or by root (`rg -n '^const .*Cache = new Map' scripts/lib`) — plus

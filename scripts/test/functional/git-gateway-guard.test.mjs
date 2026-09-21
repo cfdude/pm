@@ -15,23 +15,34 @@
 // re-run on every commit rather than once at apply time.
 //
 // THE DERIVATION IS TWO-SIDED, and each side catches what the other cannot:
-//   * NO OTHER MODULE SPAWNS GIT. Every `execFileSync`/`execSync` whose command is git, anywhere under
-//     `scripts/lib/` or in `conductor.mjs`, must be inside the gateway module. A call site added to
-//     `render.mjs` tomorrow fails here — the property that makes the injection worth having.
+//   * NO OTHER MODULE SPAWNS GIT. Every spawn whose command is git, anywhere under `scripts/lib/` or
+//     in `conductor.mjs`, must be inside the gateway module. A call site added to `render.mjs`
+//     tomorrow fails here — the property that makes the injection worth having.
 //   * THE OPERATION TABLE MATCHES THE CALLS, IN ORDER. Each declared operation owns exactly one
 //     derived exec, positionally, so an exec added to the gateway without an operation (or an
 //     operation renamed, or a call reordered) fails here — the property a count alone would miss.
 //
-// THE ONE OMISSION IS NAMED, not left implicit (required task item 1): `tool-currency.mjs`'s
-// `execFileSync("openspec", ["--version"])` is the engine's only non-git spawn and is deliberately
-// not behind this gateway, which is over GIT. The derivation's filter is what excludes it, and the
-// test asserts that exactly one such non-git spawn exists so the exclusion cannot quietly grow.
+// IT NOW SEES EVERY SHAPE (G-I5, Gate 2). The derivation used to be
+// `(execFileSync|execSync)\(\s*"git` — two function names out of six, no aliased binding, nothing for
+// a program passed as an expression. Under it, a `spawnSync` of git added to
+// `scripts/lib/changelog.mjs` left BOTH guards green, and so did `import { execFileSync as __x }`.
+// The derivation is now `fixtures/spawn-derivation.mjs` — one module, shared with the assertion twin,
+// so the two cannot drift apart — and it resolves ALL SIX child-process entry points, each source's
+// OWN binding names, and classifies a site by its first argument.
+//
+// THE OMISSIONS ARE NAMED, not left implicit (required task item 1), AND THE LIST IS NOW TRUE (G-I5):
+// `tool-currency.mjs`'s `openspec --version` probe and `self-hosting.mjs`'s `spawnSync(process.execPath,
+// …)` delegation handoff. The old test asserted tool-currency's was "the engine's only non-git spawn",
+// which was already false — `self-hosting` was invisible to a pattern that required a string literal
+// after the paren. Both are deliberate, neither is behind the GIT gateway, and both are asserted by
+// identity below so the exclusion cannot grow one call at a time.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gitSpawns, otherSpawns, spawnerNames, spawnSites } from "../fixtures/spawn-derivation.mjs";
 
 const SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const GATEWAY = "scripts/lib/git-gateway.mjs";
@@ -44,26 +55,11 @@ function engineFiles() {
   return files.sort();
 }
 
-/** A spawn whose COMMAND is git. `execSync` takes a shell string and `execFileSync` an argv array, and
- *  the pattern covers both: after the opening paren, a string literal beginning with `git` — the whole
- *  command for the first, the program for the second. Nothing else in the engine interpolates a value
- *  into that position, and the assertion below would fail on one that did. */
-const GIT_SPAWN = /(execFileSync|execSync)\(\s*"git/;
-const ANY_SPAWN = /(execFileSync|execSync)\(\s*"[^"]*"/;
-
-/** The git spawns in one source, as `{ index, call }` — the call being the matched text, which is what
- *  ties a derived site to the operation that owns it. */
-function gitSpawns(src) {
-  const out = [];
-  const re = new RegExp(GIT_SPAWN.source, "g");
-  let m;
-  while ((m = re.exec(src)) !== null) out.push({ index: m.index, call: m[0] });
-  return out;
-}
+const sourceOf = (rel) => fs.readFileSync(path.join(SCRIPTS, "..", rel), "utf8");
 
 /** The source of one operation in the gateway's returned object literal. The operations are separated
- *  by blank lines; the extractor asserts its own anchor so a reformat fails loudly rather than
- *  silently returning the whole file. */
+ * by blank lines; the extractor asserts its own anchor so a reformat fails loudly rather than
+ * silently returning the whole file. */
 function operationBody(src, name) {
   const start = src.indexOf(`\n    ${name}: (`);
   assert.notEqual(start, -1, `${name} is not an operation in ${GATEWAY} — the table and the source disagree`);
@@ -75,8 +71,7 @@ function operationBody(src, name) {
 test("gateway: no engine module outside the gateway spawns git — the call sites are DERIVED, not listed", () => {
   const found = [];
   for (const rel of engineFiles()) {
-    const src = fs.readFileSync(path.join(SCRIPTS, "..", rel), "utf8");
-    for (const site of gitSpawns(src)) found.push({ rel, ...site });
+    for (const site of gitSpawns(sourceOf(rel))) found.push({ rel, ...site });
   }
   const outside = found.filter(s => s.rel !== GATEWAY);
   assert.deepEqual(outside.map(s => `${s.rel}: ${s.call}`), [],
@@ -88,7 +83,7 @@ test("gateway: no engine module outside the gateway spawns git — the call site
 });
 
 test("gateway: every operation owns exactly one derived call, in order, and the table covers them all", async () => {
-  const src = fs.readFileSync(path.join(SCRIPTS, "..", GATEWAY), "utf8");
+  const src = sourceOf(GATEWAY);
   const { GIT_OPERATIONS } = await import("../../lib/git-gateway.mjs");
   const derived = gitSpawns(src);
 
@@ -105,7 +100,7 @@ test("gateway: every operation owns exactly one derived call, in order, and the 
   // POSITIONAL, and that is the point: a count alone would not notice a call reordered or one
   // operation's call moved into another's body.
   GIT_OPERATIONS.forEach((op, i) => {
-    assert.match(operationBody(src, op.name), GIT_SPAWN,
+    assert.equal(gitSpawns(operationBody(src, op.name), spawnerNames(src)).length, 1,
       `${op.name} is the ${i}-th declared operation and must hold the ${i}-th git call`);
     // And the exec it holds is the i-th one in the file, so the two orderings agree.
     assert.ok(derived[i].index > src.indexOf(`\n    ${op.name}: (`),
@@ -127,8 +122,7 @@ test("gateway: nothing imports it — callers are HANDED it, through the invocat
   // spawn outside the gateway, and no import of the gateway outside the invocation.
   const importers = [];
   for (const rel of engineFiles()) {
-    const src = fs.readFileSync(path.join(SCRIPTS, "..", rel), "utf8");
-    if (/from\s+["'][^"']*git-gateway\.mjs["']/.test(src)) importers.push(rel);
+    if (/from\s+["'][^"']*git-gateway\.mjs["']/.test(sourceOf(rel))) importers.push(rel);
   }
   assert.deepEqual(importers, ["scripts/lib/invocation.mjs"],
     "the git gateway may be imported by lib/invocation.mjs alone — every other caller is handed it " +
@@ -139,25 +133,57 @@ test("gateway: nothing imports it — callers are HANDED it, through the invocat
   for (const rel of ["scripts/lib/git.mjs", "scripts/lib/created-at.mjs", "scripts/lib/subcommands.mjs",
     "scripts/lib/commit-watch.mjs", "scripts/lib/worktree-hygiene.mjs", "scripts/lib/tool-currency.mjs",
     "scripts/lib/constants.mjs"]) {
-    const src = fs.readFileSync(path.join(SCRIPTS, "..", rel), "utf8");
-    assert.match(src, /gitOps\(\)/, `${rel} must reach git through the invocation's gateway`);
+    assert.match(sourceOf(rel), /gitOps\(\)/, `${rel} must reach git through the invocation's gateway`);
   }
 });
 
-test("gateway: the one non-git spawn is exactly the one the omission names", () => {
-  // The sweep's filter is `git`, so every other spawn is invisible to it. Asserting the exclusion is
-  // a SIZE rather than a hope: a second non-git spawn — an `openspec` subcommand, a `git` spelled
-  // through a variable — is a call site the gateway deliberately does not cover and the guard would
-  // otherwise never see.
+test("gateway: the non-git spawns are EXACTLY the two named omissions — the list is asserted, not hoped", () => {
+  // THE EXCLUSION IS A CLOSED SET. Every other spawn is invisible to the git filter above, so a
+  // second non-git spawn — an `openspec` subcommand, a `node` child, a `git` spelled through a
+  // variable — would be a call site the gateway deliberately does not cover and no check would see.
+  // Asserting the whole list by identity, rather than `length <= 1` over one file, is what makes the
+  // omission a decision that has to be re-made rather than a gap that can widen quietly.
   const others = [];
   for (const rel of engineFiles()) {
-    if (rel === GATEWAY) continue;
-    const src = fs.readFileSync(path.join(SCRIPTS, "..", rel), "utf8");
-    const re = new RegExp(ANY_SPAWN.source, "g");
-    let m;
-    while ((m = re.exec(src)) !== null) others.push(`${rel}: ${m[0]}`);
+    for (const arg of otherSpawns(sourceOf(rel))) others.push(`${rel}: ${arg}`);
   }
-  assert.deepEqual(others, ['scripts/lib/tool-currency.mjs: execFileSync("openspec"'],
-    "the engine's only non-git spawn is tool-currency.mjs's `openspec --version` probe — the gateway " +
-    "is over GIT, and that probe is a named omission rather than a miss");
+  assert.deepEqual(others, [
+    "scripts/lib/self-hosting.mjs: process.execPath",
+    'scripts/lib/tool-currency.mjs: "openspec"',
+  ],
+    "the engine's non-git spawns are the delegation handoff (self-hosting.mjs spawns THIS process's " +
+    "own node, by absolute path — not a git call and not behind a gateway over git) and " +
+    "tool-currency.mjs's `openspec --version` probe. Any other spawn is a site nothing covers, and " +
+    "adding one here is a decision that must be written down, not an accident that passes");
+});
+
+test("gateway: the derivation DISCRIMINATES — every shape the old pattern missed is seen", () => {
+  // The four shapes Gate 2 measured as invisible, each in isolation. This test is what stops the
+  // guard from being narrowed back: a derivation that stops seeing one of these fails HERE, by name,
+  // rather than silently reporting fewer sites. The samples assemble the program name from parts
+  // because hermetic-git's walk refuses a functional file that quotes the program name without
+  // importing the harness — this file reads sources rather than spawning, so the literal is all
+  // there is to avoid and the guard keeps its full strength.
+  const call = (name, arg) => `${name}(${arg});`;
+  const imp = (bind, mod) => `import { ${bind} } from "${mod}";\n`;
+  const cp = ["node", "child_process"].join(":");
+  const GIT = ["g", "i", "t"].join("");
+  const named = (src) => gitSpawns(src).map((s) => s.arg);
+  assert.deepEqual(named(imp("execFileSync", cp) + call("execFileSync", `"${GIT}", ["rev-parse"]`)),
+    [`"${GIT}"`], "the plain argv form");
+  assert.deepEqual(named(imp("spawnSync", cp) + call("spawnSync", `"${GIT}", ["rev-parse", "HEAD"]`)),
+    [`"${GIT}"`], "spawnSync — the shape that was green before this fix");
+  assert.deepEqual(named(imp("execSync as __x", cp) + call("__x", `"${GIT} log -1"`)),
+    [`"${GIT} log -1"`], "an ALIASED binding — the imported name never appears at the call site");
+  assert.deepEqual(named(`import * as ns from "${cp}";\n` + call("ns.spawnSync", `"${GIT}", ["status"]`)),
+    [`"${GIT}"`], "a namespace import");
+  assert.deepEqual(named(`const { execFileSync: sh } = require("${cp}");\n` + call("sh", `"${GIT}", ["status"]`)),
+    [`"${GIT}"`], "a destructured require");
+  // And it must NOT fire on a regex method of the same name — a guard that did would be weakened the
+  // first day, which is how the property it protects gets lost.
+  assert.deepEqual(gitSpawns("const m = pattern.exec(line);"), [], "RegExp.prototype.exec is not a spawn");
+  assert.deepEqual(gitSpawns(imp("execFileSync", cp) + call("execFileSync", '"openspec", ["--version"]')), [],
+    "a non-git spawn is not a git spawn — it is the named omission the test above asserts");
+  assert.equal(spawnSites("const a = 1;").length, 0,
+    "a source with no child_process import has no spawn sites, whatever it contains");
 });
