@@ -9749,10 +9749,12 @@
         "04c850b6f4b63f102431098e59c7ce5ccb93b47d",
         "1caaf7419332b0434df3326f1cb208c38c3f602a",
         "31710fe3f8a5f6eb46cb5d6dae3b7e0e6b0ac1c8",
-        "94fa55b2528107713b0c5130404cc3cbc834f783"
+        "94fa55b2528107713b0c5130404cc3cbc834f783",
+        "ec981f4c48c90b41d9966abed08f3c5cb6d30c2c",
+        "8fe0a3b79621b7e251b47f053febc2a42d9e61ca"
       ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-21T14:55:47.271Z",
+      "touchedAt": "2026-09-21T15:19:53.532Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -9765,6 +9767,13 @@
             "openspec/changes/functional-assertion-test-split/tasks.md"
           ],
           "reviewer": "two fresh-context lenses (A correctness/testability incl. hook-floor reproduction; B absent edits — all 23 git sites, every process.exit, every consumer of the suite command): round 1 fail (3 C: a silent-pass window between the file move and the hook re-point, twin set-equality contradicting the migration dispositions, a module-scope showPrefix cache breaking under per-call roots; 8 I); fixes applied; confirmation round fail (C1's replacement floor unsatisfiable — declared counted both halves while the runner runs one; 3 I incl. five module-load side effects not four, and a re-measurement: ~0.22-0.24 s/spawn, ~9-10 min serial floor, not 15.7); fixes applied (floor compares what the runner ran against what it was given; every test file has an explicit home; the sweep has a producer and a record); 2026-09-20"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-21T15:19:53.528Z",
+          "baseSha": "77c2a71ed8d05fa42ff328b59b2619c4e34b6678",
+          "headSha": "8fe0a3b79621b7e251b47f053febc2a42d9e61ca",
+          "reviewer": "two fresh-context lenses (spec conformance via mutation battery incl. 43-case binary-vs-main equivalence, 22-check cross-contamination probe; end-to-end real binary + real hook): round 1 fail (1 C: CI's piped steps could not go red on a failing suite; 7 I: floor/hook/refresh guards untestable in the firing direction, the assert half could spawn real git, gateway guard failed open, item-2 record incomplete) + 22 missing attributions backfilled; fixes dfb246d..8fe0a3b, every mutant proven dead; 2026-09-21"
         }
       },
       "startedAt": "2026-09-21T03:55:42.343Z",
@@ -9865,7 +9874,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1218,
+  "revision": 1221,
   "reviewMode": "thorough",
   "releases": [
     {
