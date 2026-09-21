@@ -20,6 +20,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized } from "./state.mjs";
+import { conductorDie } from "./command-exit.mjs";
 import { activityDir, segments } from "./activity-log.mjs";
 import { segmentStart } from "./activity-report.mjs";
 import { PURGE_KINDS, escapeControls } from "./constants.mjs";
@@ -99,7 +100,8 @@ export function selectForRemoval(files, { keep = null, over = null, olderThanDay
   return files.filter(f => marked.has(f.path));
 }
 
-function die(msg) { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); }
+// This module's own `die(msg)` spelling of the ONE exit path (command-exit.mjs).
+const die = conductorDie;
 
 /** `purge-logs [--kind activity|conflicts|detours|all] [--keep <n>] [--over <size>]
  *              [--older-than <days>] [--dry-run] [--yes]` */

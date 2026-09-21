@@ -235,6 +235,15 @@ x("claims.mjs", "claim", {
   "claimExpiry(readRepoClaim())": 1,
   "claimExpiry(epic.claim)": 1,
 }, "engine", "claimExpiry() is an ISO string computed from a parsed date, or null");
+// command-exit.mjs is the ONE exit path every refusal now goes through (0.47.0). Both of its
+// interpolations are judged here rather than in the five module-local `die` helpers the sweep used
+// to judge: those helpers are gone, and what replaced them is this pair.
+x("command-exit.mjs", "conductorDie", {
+  "msg": 1,
+}, "passthrough", "callers pass a literal or an already-escaped refusal, and command-exit.mjs writes it verbatim — the `conductor: ` prefix is the caller's, which is why it is not prefixed here");
+x("command-exit.mjs", "refusalSummary", {
+  "code": 1,
+}, "not-output", "the CommandExit Error message; never printed, because die() has already written the refusal to the invocation's stderr");
 x("claims.mjs", "refuseHeld", {
   "claimExpiry(claim)": 1,
 }, "engine", "a computed ISO string");
@@ -242,9 +251,6 @@ x("claims.mjs", "refuseHeld", {
   "what": 1,
   "verb": 1,
 }, "passthrough", "callers pass literal verbs and `this repository` or an escaped epic id");
-x("claims.mjs", "die", {
-  "msg": 1,
-}, "passthrough", "every caller escapes the values it quotes");
 x("claims.mjs", "writeRepoClaim", {
   "p": 1,
   "process.pid": 1,
@@ -293,9 +299,6 @@ x("cross-spec-review.mjs", "releaseSpecFiles", {
   "r.id": 1,
   "path.relative(r.root, abs).split(path.sep).join(\"/\")": 1,
 }, "not-output", "a Map key; record-cross-spec-review prints only the spec COUNT");
-x("detour-stack.mjs", "die", {
-  "msg": 1,
-}, "passthrough", "every caller escapes the values it quotes");
 x("detour-stack.mjs", "pushDetour", {
   "pushReport": 1,
   "note": 1,
@@ -363,9 +366,6 @@ x("links.mjs", "unknownLinkTypeMessage", {
   "t.drives": 1,
   "LINK_TYPES_WRITTEN.map(t => t.type).join(\", \")": 1,
 }, "engine", "the link-type registry (the caller values are escaped)");
-x("purge-logs.mjs", "die", {
-  "msg": 1,
-}, "passthrough", "every caller passes a literal or a vocabulary list");
 x("purge-logs.mjs", "purgeLogs", {
   "kind": 1,
   "bytes": 1,
@@ -375,9 +375,6 @@ x("refusal.mjs", "refusalFor", {
   "err.message": 1,
   "message": 1,
 }, "passthrough", "conflict messages hold revision numbers and engine lock paths; unreadableStateMessage() carries a reason escaped where readStateFile() builds it");
-x("releases.mjs", "die", {
-  "msg": 1,
-}, "passthrough", "every caller escapes the values it quotes");
 x("remove-epic.mjs", "epicSummaryTable", {
   "escapeControls(e.id).padEnd(24)": 1,
   "escapeControls(String(e.title)).slice(0, 50).padEnd(50)": 1,

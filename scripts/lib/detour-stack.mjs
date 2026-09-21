@@ -36,8 +36,11 @@ import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { deferralHistory, deferralNote, isArmed, liveReconcileFrame, ownedDetours } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
+import { conductorDie } from "./command-exit.mjs";
 
-const die = (msg) => { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); };
+// This module's own `die(msg)` spelling of the ONE exit path (command-exit.mjs). The call
+// sites below are unchanged: they name the refusal, and where it goes is not their business.
+const die = conductorDie;
 
 const PUSH_USAGE =
   "usage: conductor.mjs push-detour <pausedEpicId> --detour <detourEpicId> --reason \"<why>\" " +

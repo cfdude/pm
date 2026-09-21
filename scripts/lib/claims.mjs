@@ -42,6 +42,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { conductorDie } from "./command-exit.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { CLAIM_DEFAULT_TTL_MINUTES, jsonText, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
@@ -108,10 +109,8 @@ function clearRepoClaim() {
   try { fs.rmSync(repoClaimPath(), { force: true }); } catch { /* best effort */ }
 }
 
-function die(msg) {
-  process.stderr.write(`conductor: ${msg}\n`);
-  process.exit(1);
-}
+// This module's own `die(msg)` spelling of the ONE exit path (command-exit.mjs).
+const die = conductorDie;
 
 /** The shared refusal when someone else holds a LIVE claim. One phrasing, both verbs, so the
  *  two surfaces cannot describe the same situation differently. */

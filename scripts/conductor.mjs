@@ -91,6 +91,7 @@ import {
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
 import { refusalFor } from "./lib/refusal.mjs";
+import { CommandExit } from "./lib/command-exit.mjs";
 import { ROOT, escapeControls, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
@@ -368,16 +369,25 @@ try {
   process.exit(1);
 }))();
 } catch (err) {
-  // A conflict is retryable; a validation error is not; an unreadable state file is neither. They
-  // must not share an exit code — lib/refusal.mjs holds the mapping. Anything else is re-thrown
-  // UNCHANGED so a real crash keeps its stack -- swallowing it here would trade one silent failure
-  // for another.
-  const refusal = refusalFor(cmd, err);
-  if (refusal === null) throw err;
-  if (refusal.stderr) process.stderr.write(refusal.stderr);
-  // exitCode and RETURN, never process.exit(): a hook's refusal can be a JSON payload on stdout
-  // (SessionStart), and exiting straight after a stdout write truncates it at a pipe's buffer
-  // (conductor-38). Nothing after this catch keeps the event loop alive.
-  if (refusal.stdout) process.stdout.write(refusal.stdout);
-  process.exitCode = refusal.exitCode;
+  // A refusal now arrives as a THROWN VALUE rather than as a call to process.exit
+  // (lib/command-exit.mjs): `die()` has already written the message to the invocation's stderr, so
+  // this arm only carries the status out. It is checked FIRST because CommandExit is not one of
+  // refusalFor()'s classes and would otherwise be re-thrown as an unhandled error, turning
+  // "refused" into "crashed".
+  if (err instanceof CommandExit) {
+    process.exitCode = err.code;
+  } else {
+    // A conflict is retryable; a validation error is not; an unreadable state file is neither. They
+    // must not share an exit code — lib/refusal.mjs holds the mapping. Anything else is re-thrown
+    // UNCHANGED so a real crash keeps its stack -- swallowing it here would trade one silent failure
+    // for another.
+    const refusal = refusalFor(cmd, err);
+    if (refusal === null) throw err;
+    if (refusal.stderr) process.stderr.write(refusal.stderr);
+    // exitCode and RETURN, never process.exit(): a hook's refusal can be a JSON payload on stdout
+    // (SessionStart), and exiting straight after a stdout write truncates it at a pipe's buffer
+    // (conductor-38). Nothing after this catch keeps the event loop alive.
+    if (refusal.stdout) process.stdout.write(refusal.stdout);
+    process.exitCode = refusal.exitCode;
+  }
 }

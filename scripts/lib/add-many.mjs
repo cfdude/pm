@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { die as dieShared } from "./command-exit.mjs";
 import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
@@ -41,7 +42,9 @@ export function addMany() {
   }
   if (!incoming.length) { process.stderr.write("conductor: add-many: nothing to add (need `parent` and/or `epics`)\n"); process.exit(1); }
 
-  const die = (msg) => { process.stderr.write(`conductor: add-many: ${msg}\n`); process.exit(1); };
+  // This module's own `die(msg)` spelling of the ONE exit path (command-exit.mjs), with the
+  // verb name add-many's refusals have always carried.
+  const die = (msg) => dieShared(`conductor: add-many: ${msg}\n`);
 
   // The keys a batch entry may carry, derived from the shared EPIC_FLAGS registry rather than
   // restated here. add-many used to copy a fixed key set and drop every other key without a

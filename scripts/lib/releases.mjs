@@ -17,6 +17,7 @@
 
 import { EPIC_ID_FORMAT, escapeControls, findRelease, orNoRemedy, printedId, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { conductorDie } from "./command-exit.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -39,7 +40,8 @@ const lastStr = (v) => {
   return all.length ? str(all[all.length - 1]) : undefined;
 };
 
-const die = (msg) => { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); };
+// This module's own `die(msg)` spelling of the ONE exit path (command-exit.mjs).
+const die = conductorDie;
 
 /** The positional that names the READ form rather than a release. RESERVED as an id, and the
  *  write path refuses it by name: a keyword resolved by guesswork ("is `show` an id or a verb

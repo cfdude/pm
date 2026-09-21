@@ -63,7 +63,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 2. Refusals become values
 
-- [ ] 2.1 GREEN — one `die(message, code = 1)` that writes to the injected stderr and throws
+- [x] 2.1 GREEN — one `die(message, code = 1)` that writes to the injected stderr and throws
       `CommandExit { code }`, and the five existing local `die` helpers
       (`detour-stack.mjs:40`, `claims.mjs:111`, `add-many.mjs:44`, `releases.mjs:42`,
       `purge-logs.mjs:102`) collapse onto it. Verify by 1.2's guard and the full suite
