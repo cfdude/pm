@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "functional-assertion-test-split",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -9682,7 +9682,7 @@
       "id": "functional-assertion-test-split",
       "title": "Split the suite: one-process assertion tests over an injected git fake; functional git tests only when the seam changes",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9693,9 +9693,27 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c213ac0353f893ec2ce1a2901cad74b467149541"
+      ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-21T02:37:57.561Z"
+      "touchedAt": "2026-09-21T04:38:25.259Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-21T03:55:40.782Z",
+          "artifacts": [
+            "openspec/changes/functional-assertion-test-split/design.md",
+            "openspec/changes/functional-assertion-test-split/proposal.md",
+            "openspec/changes/functional-assertion-test-split/specs/engine-invocation/spec.md",
+            "openspec/changes/functional-assertion-test-split/specs/suite-certification/spec.md",
+            "openspec/changes/functional-assertion-test-split/tasks.md"
+          ],
+          "reviewer": "two fresh-context lenses (A correctness/testability incl. hook-floor reproduction; B absent edits — all 23 git sites, every process.exit, every consumer of the suite command): round 1 fail (3 C: a silent-pass window between the file move and the hook re-point, twin set-equality contradicting the migration dispositions, a module-scope showPrefix cache breaking under per-call roots; 8 I); fixes applied; confirmation round fail (C1's replacement floor unsatisfiable — declared counted both halves while the runner runs one; 3 I incl. five module-load side effects not four, and a re-measurement: ~0.22-0.24 s/spawn, ~9-10 min serial floor, not 15.7); fixes applied (floor compares what the runner ran against what it was given; every test file has an explicit home; the sweep has a producer and a record); 2026-09-20"
+        }
+      },
+      "startedAt": "2026-09-21T03:55:42.343Z",
+      "release": "0.47.0"
     }
   ],
   "detourStack": [],
@@ -9706,7 +9724,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1152,
+  "revision": 1158,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10074,6 +10092,26 @@
           }
         ],
         "reviewer": "two fresh-context lenses over both changes' spec sets, combined with Gate 1 fix confirmation: round 1 lens A pass (5 POLISH), lens B fail (2 BLOCKS: an engine-invocation exemption that could not fail, a multi-digit fd redirect evading the shape minimum); fixed; narrow confirmation round pass — MODIFIED delta fidelity diffed against the main spec, 117-case regex diff, mutation proofs both ways, drop-detour reachability verified on 0.45.0; 2026-09-17"
+      }
+    },
+    {
+      "id": "0.47.0",
+      "intent": "Split the test suite into a per-commit in-process assertion half and a triggered functional half: every git call behind one injected gateway, every refusal a caught value, every functional result certified by content hash.",
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-21T04:38:47.624Z",
+        "specs": [
+          {
+            "key": "functional-assertion-test-split/specs/engine-invocation/spec.md",
+            "sha256": "4e2da4d03d5a00b9e189928aef5008ad1d3ce4a91e36ab3889eeb7e4ec4c00fc"
+          },
+          {
+            "key": "functional-assertion-test-split/specs/suite-certification/spec.md",
+            "sha256": "7755076c65b77878222459ace9578e59876385dfa2bc5b5ede4abba52d90b46a"
+          }
+        ],
+        "reviewer": "INLINE review by the applying agent, NOT fresh-context lenses — this run's discipline forbids subagent dispatch, and that limitation is recorded here rather than papered over. Six questions over the release's two spec files (engine-invocation, suite-certification): (1) contradiction — none; the near-miss (one-process assertion half vs two-independent-invocations) is mutual dependency, not conflict. (2) double ownership — none; conductor.mjs's covers referencing the conformance set is a reference, and engine-invocation explicitly declines to restate verb-surface's refusal classes. (3) unmeetable — none in the specs. (4) gaps against proposal What-Changes — one: ci.yml's non-descending syntax loop has no requirement; declined as POLISH. (5) vocabulary forks — two, change-internal: \"double\" vs \"fake\", \"change-triggered bucket\" vs \"sweeps bucket\"; declined, renaming churns a passed Gate 1 contract for no behaviour change. (6) shared chokepoint — the single-process assertion half with injected streams is load-bearing for BOTH specs; guarded on each side (1.2 exits, 3.5 roots, 5.2 spawns). FINDING raised against the TASK LIST, not the specs: git.mjs's resolvedCommitCache is keyed by VALUE ONLY (unreachedCache by head+commits), so two invocations in one process against two roots share it and a hex abbreviation resolving in one repository and not the other gets the first repository's answer — engine-invocation forbids observing another invocation's values, and no task keys those caches; handled in the gateway work (4.2) rather than by amending a spec that is already correct. Verdict pass: no BLOCK found in either spec file; one BLOCK-level finding against tasks.md, acted on. 2026-09-20"
       }
     }
   ],

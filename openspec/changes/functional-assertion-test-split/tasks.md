@@ -15,7 +15,7 @@
       openspec/changes/functional-assertion-test-split/tasks.md --artifact
       openspec/changes/functional-assertion-test-split/specs/engine-invocation/spec.md --artifact
       openspec/changes/functional-assertion-test-split/specs/suite-certification/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.47.0 holds this change's two spec
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.47.0 holds this change's two spec
       files — `engine-invocation` and `suite-certification` — counted FLAT, so it qualifies. Run the
       `cross-spec-review` skill against the release's whole spec set (including any sibling change's)
       after Gate 1 and again after any later round of concurrent amendment; ask the six questions and
