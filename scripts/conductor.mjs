@@ -96,6 +96,7 @@ import { engineRoot, escapeControls, warnRootDivergence, warnDetachedTree } from
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { checkCommandLine } from "./lib/argv-surface.mjs";
+import { verbHelp } from "./lib/help.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
@@ -151,10 +152,20 @@ const SELF = fileURLToPath(import.meta.url);
 // lib/invocation.mjs — never the process's own — so two calls in one process are independent and
 // nothing an invocation prints reaches the process's stdout or stderr.
 //
+// IT IS SYNCHRONOUS, AND THE ASSERTION HALF IS WHY. `scripts/lib` holds ZERO async functions
+// (`rg -n 'async ' scripts/lib` is empty) — the `await`s this entry point used to carry were one
+// dynamic `import()` of lib/help.mjs, now hoisted to a static import above, and an `await` over a
+// dispatch table whose every arm returns a plain number. What that bought was a Promise where the
+// spec asks for "a numeric exit status" (engine-invocation), and what it COST was the in-process
+// suite of task 5.1: 1,624 of this suite's 1,852 `test(...)` callbacks are synchronous, `await` is
+// a syntax error inside one, and the alternative to a sync entry point is either converting all
+// 1,624 or keeping the process spawn per assertion that the assertion half exists to remove.
+// A synchronous return satisfies the spec's wording strictly more than an async one does.
+//
 // The module still runs as `node scripts/conductor.mjs …`: the tail below calls main() with this
 // process's own values and assigns the result to `process.exitCode` — never `process.exit()`, whose
 // reason is recorded there.
-export async function main(argv, io = {}) {
+export function main(argv, io = {}) {
   const cwd = io.cwd ?? process.cwd();
   const env = io.env ?? process.env;
   const stdout = io.stdout ?? process.stdout;
@@ -219,7 +230,9 @@ export async function main(argv, io = {}) {
     const verdict = checkCommandLine(cmd, currentArgv(), { initialized: isInitialized() });
     if (verdict.kind === "help") {
       // #158 — VERB-SCOPED help, projected from the same declarations the check enforces.
-      const { verbHelp } = await import("./lib/help.mjs");
+      // A STATIC import (0.47.0's sync entry point): the dynamic `await import()` here was the only
+      // reason main() had to be async, and help.mjs imports nothing but constants.mjs, so hoisting it
+      // adds no cycle and no cost a caller pays twice.
       outStream().write(verbHelp(cmd));
       return 0;
     }
@@ -333,7 +346,12 @@ export async function main(argv, io = {}) {
   // The dispatch table's own arm returns nothing — every handler reports by writing and by
   // throwing. The arm beside it, the unknown-verb usage, returns 1, and CAPTURING the result is
   // what makes that 1 leave `main()` as a return rather than being discarded by the call.
-  status = await ({
+  //
+  // NOT AWAITED (0.47.0's sync entry point), and the `await` that used to sit here was doing
+  // nothing: `scripts/lib` holds ZERO async functions (`rg -n 'async ' scripts/lib` is empty), so
+  // every arm of this table returns a plain status and awaiting it only made the RETURNED value a
+  // Promise for the caller. See the sync-entry-point note above.
+  status = ({
     init,
     render,
     brief,
@@ -485,7 +503,9 @@ function invokedDirectly() {
 }
 
 if (invokedDirectly()) {
-  process.exitCode = await main(process.argv.slice(2), {
+  // No `await`: main() is synchronous (see the entry-point note above), so this module no longer
+  // carries top-level await either.
+  process.exitCode = main(process.argv.slice(2), {
     cwd: process.cwd(), env: process.env,
     // `stdin` IS DELIBERATELY ABSENT, and passing `process.stdin` here is a REAL DEFECT that the
     // pre-commit suite caught. Reading that property CREATES the lazy ReadStream on fd 0, and a

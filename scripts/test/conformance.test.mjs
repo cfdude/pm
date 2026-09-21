@@ -349,6 +349,39 @@ test("conformance: the entry point never ends the calling process, whatever it i
   assert.ok(true, "the process survived both");
 });
 
+test("conformance: main() RETURNS its status — it is not a promise", () => {
+  // WHY THIS IS A REQUIREMENT AND NOT A STYLE CHOICE. The assertion half runs one process for the
+  // whole suite, and 1,624 of the suite's 1,852 `test(...)` callbacks are SYNCHRONOUS. `await` inside
+  // a sync callback is a syntax error, so an entry point that answered with a Promise would leave two
+  // options, both bad: convert 1,624 callbacks, or keep spawning a child — which is the process
+  // boundary the assertion half exists to remove. A sync status is what makes the in-process `run()`
+  // of task 5.1 callable at all.
+  //
+  // engine-invocation says only that the entry point "RETURNS a numeric exit status" and says nothing
+  // about how; a synchronous return satisfies it strictly more than an async one does, so this adds
+  // a constraint rather than relaxing the spec.
+  //
+  // THE ASSERTION IS ASSERTED TO DISCRIMINATE. `status instanceof Promise` alone would pass for a
+  // thenable that is not a Promise — which is exactly what `async` compiles to at the boundary a
+  // caller can see — so the thenable test is what actually fires.
+  const cwd = initRepo();
+  const io = {
+    cwd,
+    env: baseEnv(cwd),
+    stdin: { read: () => "", isTTY: false },
+    stdout: { write: () => true },
+    stderr: { write: () => true },
+  };
+  const returned = main(["brief", "--platform", "claude-code"], io);
+  assert.equal(typeof returned, "number",
+    "main() returned a " + Object.prototype.toString.call(returned) + " rather than a numeric " +
+    "status; a Promise (or any thenable) cannot be read by the 1,624 synchronous test callbacks " +
+    "the assertion half is made of");
+  assert.equal(typeof returned.then, "undefined",
+    "main() returned a THENABLE — awaiting it would work and reading it as a status would not, " +
+    "which is the shape an `async function` produces");
+});
+
 test("conformance: nothing the engine prints for an invocation reaches the process's own streams", async () => {
   // engine-invocation states this as a SHALL, and it is the property that makes one process able
   // to serve many invocations without their output interleaving.

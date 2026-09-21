@@ -106,7 +106,12 @@ See `proposal.md` for the measurements and the motivation. What shapes the appro
 
 ### D1 — `main(argv, io)` is the entry point, and the CLI is a three-line tail
 
-`scripts/conductor.mjs` exports `async function main(argv, io)` returning a numeric status. Its
+`scripts/conductor.mjs` exports `function main(argv, io)` returning a numeric status — SYNCHRONOUS,
+amended at apply time: `scripts/lib` holds zero async functions and the entry point's only `await`s
+were a dynamic `import()` of `lib/help.mjs` (now static) and a dispatch table whose every arm
+returns a plain number, so `async` bought nothing the spec asks for and cost the in-process
+assertion half its callers — 1,624 of the suite's 1,852 `test(...)` callbacks are synchronous and
+cannot `await`. Its
 `io` carries `{ cwd, env, stdin, stdout, stderr }`. The module keeps working as `node
 scripts/conductor.mjs …` by ending in a tail that calls `main(process.argv.slice(2), { cwd:
 process.cwd(), env: process.env, stdin: process.stdin, stdout: process.stdout, stderr:
