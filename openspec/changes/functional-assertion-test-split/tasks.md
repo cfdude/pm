@@ -117,7 +117,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 - [ ] 3.1 RED — a two-roots-in-one-process test: `main()` called twice in one process against two
       temporary roots, the first initialized and the second not, asserting each call's read and write
       land under the root it was given. Fails today: `ROOT` is captured at `constants.mjs:12`
-- [ ] 3.2 GREEN — ALL TWELVE frozen path constants become functions of a current root, following
+- [x] 3.2 GREEN — ALL TWELVE frozen path constants become functions of a current root, following
       `git.mjs`'s `headAttachment(root = ROOT)` shape; `main()` sets the invocation's root. **The set
       is DERIVED, never typed — seven is wrong and this list was it**:
       `rg -n 'path\.join\((ROOT|CONDUCTOR_DIR|CHANGES_DIR)' scripts/lib/constants.mjs` returns

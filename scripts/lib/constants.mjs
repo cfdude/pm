@@ -1,21 +1,45 @@
 // scripts/lib/constants.mjs
 // Shared path/enum constants for the conductor engine. No dependencies on any other
-// lib module — every other module may import from here. The ONE exception is verb-effects.mjs,
-// which itself imports nothing (so no cycle can form): the `--force` row below derives the verbs
-// it is accepted on from VERB_EFFECTS rather than restating them.
+// lib module — every other module may import from here. TWO exceptions, both of which import
+// nothing that could cycle back here: `verb-effects.mjs` (the `--force` row below derives the
+// verbs it is accepted on from VERB_EFFECTS rather than restating them) and `invocation.mjs`
+// (the per-call root the path functions below default to).
 
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { invocation } from "./invocation.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
 
-export const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-export const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
-export const STATE_PATH = path.join(CONDUCTOR_DIR, "state.json");
-export const BRIEF_PATH = path.join(CONDUCTOR_DIR, "brief.txt");
-export const RENDER_STAMP_PATH = path.join(CONDUCTOR_DIR, "render-stamp.json");
-export const DETOURS_LOG = path.join(CONDUCTOR_DIR, "detours.log");
-export const WRITE_CONFLICTS_LOG = path.join(CONDUCTOR_DIR, "write-conflicts.log");
+// ── the invocation's paths, as FUNCTIONS OF A CURRENT ROOT ────────────────────────────────────
+//
+// These were `export const` VALUES, computed once when this module first loaded. engine-invocation
+// forbids that, and the reason is mechanical rather than tidy: the assertion half runs every one of
+// its files in ONE process (`--test-isolation=none`), so a module-scope root is captured by
+// whichever test file loaded the engine first and every later file's reads and writes land in the
+// FIRST file's directory. gh#175 is this repository's own instance of the same defect one level
+// down — guarding one tree while writing to another.
+//
+// THE COUNT IS THIRTEEN, and it is derived rather than remembered:
+//   rg -n 'path\.join\((engineRoot|conductorDir|changesDir)' scripts/lib/constants.mjs
+// The tokens `engineRoot|statePath|conductorDir` cannot reach briefPath, renderStampPath,
+// detoursLog, writeConflictsLog, archiveDir, projectMd, claudeMd, changesDir, plansDir or specsDir
+// — FIVE of which the engine WRITES — which is exactly how a frozen path survives a sweep that
+// names only the root. (The task list says "eleven derived, twelve with ROOT"; the list it prints
+// beside that sentence is twelve derived names, and the arithmetic is the list's, not the
+// sentence's. Twelve derived plus the root is thirteen.)
+//
+// Each takes an explicit `root` for callers asking about a tree that is not the invocation's —
+// the shape `git.mjs`'s `headAttachment(root = engineRoot())` already had — and defaults to the
+// invocation's root, which is what makes every other call site inherit the per-call guarantee for
+// free.
+export const engineRoot = (ctx = invocation()) => ctx.root;
+export const conductorDir = (root = engineRoot()) => path.join(root, ".conductor");
+export const statePath = (root = engineRoot()) => path.join(conductorDir(root), "state.json");
+export const briefPath = (root = engineRoot()) => path.join(conductorDir(root), "brief.txt");
+export const renderStampPath = (root = engineRoot()) => path.join(conductorDir(root), "render-stamp.json");
+export const detoursLog = (root = engineRoot()) => path.join(conductorDir(root), "detours.log");
+export const writeConflictsLog = (root = engineRoot()) => path.join(conductorDir(root), "write-conflicts.log");
 // Distinct from the 1 that every validation failure already uses (14 sites in update-epic.mjs
 // alone), so an agent can tell "someone else wrote" from "you passed a bad flag" and retry
 // rather than guess.
@@ -39,17 +63,17 @@ export const STATE_LOCK_STALE_MS = 30000;
 // statSync is O(1) and rename(2) is O(1), so the mechanism never reads the log body.
 export const CONFLICT_LOG_MAX_BYTES = 8192;
 export const CONFLICT_WARN_THRESHOLD = 3;
-export const PROJECT_MD = path.join(ROOT, "PROJECT.md");
-export const CLAUDE_MD = path.join(ROOT, "CLAUDE.md");
-export const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
-export const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
-export const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
+export const projectMd = (root = engineRoot()) => path.join(root, "PROJECT.md");
+export const claudeMd = (root = engineRoot()) => path.join(root, "CLAUDE.md");
+export const changesDir = (root = engineRoot()) => path.join(root, "openspec", "changes");
+export const archiveDir = (root = engineRoot()) => path.join(changesDir(root), "archive");
+export const plansDir = (root = engineRoot()) => path.join(root, "docs", "superpowers", "plans");
 // Where `verify-specs` looks for design documents when no `--root` is given (#93). A DEFAULT
 // and never an assumption: nothing scans it, no epic is registered from it, and a repository
 // that keeps its designs elsewhere is told the root is absent rather than handed a confidently
 // empty report. It sits beside PLANS_DIR because they are the same kind of fact — a convention
 // this estate happens to follow — not because the engine reads inside either one.
-export const SPECS_DIR = path.join(ROOT, "docs", "superpowers", "specs");
+export const specsDir = (root = engineRoot()) => path.join(root, "docs", "superpowers", "specs");
 export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 
 /** The `--link` vocabulary. It lives HERE, beside every other `KNOWN_*`, because gh#100 was
@@ -1615,7 +1639,7 @@ export function warnDetachedTree(writes) {
   let tag = "";
   try {
     tag = execFileSync("git", ["describe", "--tags", "--exact-match", "HEAD"],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
   } catch { /* no exact tag, or no git — the message stands without it */ }
   process.stderr.write(
     `conductor: ⚠ DETACHED CHECKOUT${tag ? ` (at ${tag})` : ""} — this tree is not on a branch, so ` +

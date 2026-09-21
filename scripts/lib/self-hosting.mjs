@@ -40,7 +40,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { ROOT, escapeControls } from "./constants.mjs";
+import { engineRoot, escapeControls } from "./constants.mjs";
 import { readJSON } from "./state.mjs";
 
 /** Opt-in, and the whole trust boundary: the ABSOLUTE PATH of the checkout whose engine may be
@@ -61,7 +61,7 @@ function real(p) {
 /** Has the USER authorized executing `root`'s own engine? True only when the environment names
  *  a path that resolves to the same tree as `root`. Nothing readable from inside `root` can
  *  influence this. */
-export function delegationAuthorized(root = ROOT, env = process.env) {
+export function delegationAuthorized(root = engineRoot(), env = process.env) {
   const named = env[DELEGATION_ENV];
   if (!named) return false;
   const a = real(named);
@@ -84,7 +84,7 @@ export function delegationAuthorized(root = ROOT, env = process.env) {
  *  not defence in depth; it is the shape of protection with none of the substance, and in a
  *  file that decides whether to execute someone else's code it is worse than nothing. The one
  *  reachable existence guard is the caller's `target === null`. */
-export function checkoutEngine(root = ROOT) {
+export function checkoutEngine(root = engineRoot()) {
   const engine = real(path.join(root, "scripts", "conductor.mjs"));
   const manifest = readJSON(path.join(root, ".claude-plugin", "plugin.json"), null);
   if (!manifest || manifest.name !== "pm") return null;
@@ -110,7 +110,7 @@ export function checkoutEngine(root = ROOT) {
 export function delegateToCheckout({
   selfPath,
   argv = process.argv.slice(2),
-  root = ROOT,
+  root = engineRoot(),
   env = process.env,
 } = {}) {
   if (env[DELEGATED_ENV]) return null;

@@ -8,15 +8,19 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
-import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
+import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, STORABLE_EPIC_ID, conductorDir, engineRoot, escapeControls, statePath } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 
-// Re-evaluate paths each time they're accessed to support cache-busting tests
+// Re-evaluate paths each time they're accessed — and 0.47.0 (task 3.2) makes that the ONLY shape
+// that can work: the root is the INVOCATION's, so freezing these into captured values would pin
+// whichever of two in-process roots happened to load the module first. The shape is preserved
+// deliberately (it is what lets a test move the record under a running engine); what changed is
+// where the root comes FROM — `engineRoot()` reads the invocation, not this process's environment.
 function getPaths() {
-  const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
-  const STATE_PATH = path.join(CONDUCTOR_DIR, "state.json");
+  const root = engineRoot();
+  const CONDUCTOR_DIR = conductorDir(root);
+  const STATE_PATH = statePath(root);
   return { STATE_PATH, CONDUCTOR_DIR };
 }
 

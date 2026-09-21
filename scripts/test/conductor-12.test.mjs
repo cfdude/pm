@@ -217,10 +217,14 @@ test("rotation replaces an existing .prev rather than accumulating files", async
 });
 
 test("state.mjs's locally computed paths agree with constants.mjs — #82 must not silently diverge them", async () => {
-  // state.mjs computes its own paths because the cache-busting test pattern cannot refresh a
-  // statically imported constants.mjs. That duplication is behaviourally identical TODAY. #82
-  // proposes changing ROOT resolution; without this test its fix would update constants.mjs and
-  // leave state.mjs resolving a different root, silently.
+  // #82 asked that a root-resolution change cannot update constants.mjs and leave state.mjs
+  // resolving a different root, silently. 0.47.0 (task 3.2) is that change, and it CLOSED the gap
+  // by construction rather than by agreeing with a twin: state.mjs's getPaths() no longer derives
+  // a root at all — it calls engineRoot()/conductorDir()/statePath() from constants.mjs, so the
+  // two cannot diverge because there is only one of them. The guard is kept, and kept able to
+  // fail, because that is the property and it is worth holding: it now reads the FUNCTION the
+  // constant became, and a future edit that gave state.mjs its own root derivation again would
+  // still be caught here.
   const cwd = tmpRepo();
   process.env.CLAUDE_PROJECT_DIR = cwd;
   const bust = `?t=${Date.now()}${Math.random()}`;
@@ -233,8 +237,8 @@ test("state.mjs's locally computed paths agree with constants.mjs — #82 must n
   saveState(s);
 
   // If state.mjs resolved a different root, the write would have landed somewhere else.
-  assert.ok(fs.existsSync(consts.STATE_PATH), "state.mjs must write to the path constants.mjs names");
-  assert.match(fs.readFileSync(consts.STATE_PATH, "utf8"), /path-probe/);
+  assert.ok(fs.existsSync(consts.statePath()), "state.mjs must write to the path constants.mjs names");
+  assert.match(fs.readFileSync(consts.statePath(), "utf8"), /path-probe/);
 });
 
 test("recordConflict must never throw, even when mkdirSync fails — it runs on a hook's failure path", async () => {
@@ -254,10 +258,10 @@ test("recordConflict must never throw, even when mkdirSync fails — it runs on 
 });
 
 test("write-conflicts.mjs's locally computed paths agree with constants.mjs — #82 must not silently diverge them", async () => {
-  // write-conflicts.mjs computes its own paths for the same reason state.mjs does: cache-busting
-  // tests cannot refresh a statically imported constants.mjs. That duplication is behaviourally
-  // identical TODAY. #82 proposes changing ROOT resolution; without this test its fix would update
-  // constants.mjs and leave write-conflicts.mjs resolving a different root, silently.
+  // Same guard, same reasoning as state.mjs's above: 0.47.0 (task 3.2) closed #82's gap by
+  // construction — write-conflicts.mjs's getPaths() calls constants.mjs's own root helpers rather
+  // than deriving a second root — and the guard is kept, reading the function the constant became,
+  // so a future second derivation is still caught.
   const cwd = tmpRepo();
   process.env.CLAUDE_PROJECT_DIR = cwd;
   const bust = `?t=${Date.now()}${Math.random()}`;
@@ -268,8 +272,8 @@ test("write-conflicts.mjs's locally computed paths agree with constants.mjs — 
   recordConflict({ verb: "render", expected: 1, found: 2 });
 
   // If write-conflicts.mjs resolved a different root, the write would have landed somewhere else.
-  assert.ok(fs.existsSync(consts.WRITE_CONFLICTS_LOG), "write-conflicts.mjs must write to the path constants.mjs names");
-  assert.match(fs.readFileSync(consts.WRITE_CONFLICTS_LOG, "utf8"), /render\t1\t2/);
+  assert.ok(fs.existsSync(consts.writeConflictsLog()), "write-conflicts.mjs must write to the path constants.mjs names");
+  assert.match(fs.readFileSync(consts.writeConflictsLog(), "utf8"), /render\t1\t2/);
 });
 
 // ─────────────── the threshold warning ───────────────

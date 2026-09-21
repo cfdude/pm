@@ -10,7 +10,7 @@ import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 
@@ -26,7 +26,7 @@ export function addMany() {
   const from = typeof f.from === "string" ? f.from : undefined;
   if (!from) { die("usage: conductor.mjs add-many --from <path|->\n"); }
   let raw;
-  try { raw = from === "-" ? readStdin() : fs.readFileSync(path.resolve(ROOT, from), "utf8"); }
+  try { raw = from === "-" ? readStdin() : fs.readFileSync(path.resolve(engineRoot(), from), "utf8"); }
   catch { die(`conductor: cannot read '${escapeControls(from)}'\n`); }
   let doc;
   try { doc = JSON.parse(raw); } catch { die("conductor: --from is not valid JSON\n"); }

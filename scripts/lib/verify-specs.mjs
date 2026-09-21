@@ -37,7 +37,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
+import { EPIC_ID_FORMAT, engineRoot, specsDir, escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -109,7 +109,7 @@ export const SPEC_INDEX_FILES = new Set(["readme.md", "index.md", "contributing.
 /** Repo-relative, forward-slashed, in the SAME normal form artifact paths are compared in.
  *  A document enumerated one way and claimed the other would read as uncovered-and-dangling —
  *  one document reported twice, as both halves of the difference it is on neither side of. */
-const relToRoot = (abs) => normalizeArtifactPath(path.relative(ROOT, abs).split(path.sep).join("/"));
+const relToRoot = (abs) => normalizeArtifactPath(path.relative(engineRoot(), abs).split(path.sep).join("/"));
 
 /** Every design document under `absRoot`, recursively, as repo-relative normalized paths. */
 export function specDocuments(absRoot) {
@@ -157,7 +157,7 @@ export function specCoverage(state, absRoot) {
     if (!e || typeof e !== "object") continue;
     const p = normalizeArtifactPath(e.specPath);
     if (!p) continue;
-    if (!fs.existsSync(path.join(ROOT, p))) dangling.push({ epic: e.id, path: p });
+    if (!fs.existsSync(path.join(engineRoot(), p))) dangling.push({ epic: e.id, path: p });
   }
 
   return { root: relToRoot(absRoot) || absRoot, rootExists, documents, dangling };
@@ -229,7 +229,7 @@ export function headerCandidates(state, absRoot) {
   const proposals = [], unknown = [];
   for (const rel of specDocuments(absRoot)) {
     let text;
-    try { text = fs.readFileSync(path.join(ROOT, rel), "utf8"); } catch { continue; }
+    try { text = fs.readFileSync(path.join(engineRoot(), rel), "utf8"); } catch { continue; }
     const found = headerEpicIds(text);
     if (!found.length) continue;
     const covered = (claims.get(rel) || []).length > 0;
@@ -320,7 +320,7 @@ export function verifySpecs() {
   if (f.headers !== undefined && f.headers !== true) {
     die("conductor: --headers takes no value (did you mean --root?)\n");
   }
-  const absRoot = f.root ? path.resolve(ROOT, f.root) : SPECS_DIR;
+  const absRoot = f.root ? path.resolve(engineRoot(), f.root) : specsDir();
   const state = loadState();
   if (f.headers) {
     process.stdout.write(formatHeaderCandidates(headerCandidates(state, absRoot)) + "\n");

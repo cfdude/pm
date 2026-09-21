@@ -22,7 +22,7 @@ function rethrowUnreadable(e) {
 import fs from "node:fs";
 import path from "node:path";
 import {
-  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
+  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
@@ -1031,7 +1031,7 @@ export class RulesBlockAmbiguousError extends Error {
  *  always names — complete the reconcile gate. Stated normatively in the managed-rules-block spec. Lines are deleted highest first, so
  *  each deletion leaves the numbers still to delete unchanged. */
 export function rulesBlockAmbiguousMessage(err) {
-  const shown = path.relative(ROOT, err.file) || path.basename(err.file);
+  const shown = path.relative(engineRoot(), err.file) || path.basename(err.file);
   const L = [
     `conductor: refused to write the pm rules block into ${shown} — its marker lines are not exactly ` +
       "one BEGIN line followed by one END line, so which text is managed cannot be known:",
@@ -1054,7 +1054,7 @@ export function rulesBlockAmbiguousMessage(err) {
  *  renders and back-fills .gitignore after the block write; `init` has the same shape on a fresh
  *  repository. Resolves the target with the platform the verb would use and records nothing. */
 export function assertRulesBlockWritable(platform = "claude-code") {
-  const target = rulesTarget(platform, ROOT);
+  const target = rulesTarget(platform, engineRoot());
   let existing = "";
   try { existing = fs.readFileSync(target, "utf8"); } catch { return; }
   const arrangement = rulesBlockArrangement(existing);
@@ -1075,7 +1075,7 @@ export function assertRulesBlockWritable(platform = "claude-code") {
  *  and copied the file's own prefix into the block when a recorded value contained one. An
  *  ambiguous arrangement throws RulesBlockAmbiguousError before anything is written or reported. */
 export function writeRules(platform = "claude-code") {
-  const target = rulesTarget(platform, ROOT);
+  const target = rulesTarget(platform, engineRoot());
   const name = path.basename(target);
 
   let existing = "";

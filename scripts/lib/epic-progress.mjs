@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane, withdrawnGate, escapeControls } from "./constants.mjs";
+import { engineRoot, changesDir, archiveDir, plansDir, laneRank, isOpenspecLane, withdrawnGate, escapeControls } from "./constants.mjs";
 import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
@@ -13,7 +13,7 @@ import { isArmed, isUnmigrated } from "./links.mjs";
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
   try {
-    return fs.readdirSync(CHANGES_DIR, { withFileTypes: true })
+    return fs.readdirSync(changesDir(), { withFileTypes: true })
       .filter(d => d.isDirectory() && d.name !== "archive")
       .map(d => d.name);
   } catch { return []; }
@@ -31,7 +31,7 @@ const PLAN_INDEX_FILES = new Set(["readme.md", "index.md", "contributing.md"]);
 
 export function planFiles() {
   try {
-    return fs.readdirSync(PLANS_DIR, { withFileTypes: true })
+    return fs.readdirSync(plansDir(), { withFileTypes: true })
       .filter(d => d.isFile() && d.name.endsWith(".md"))
       .filter(d => !PLAN_INDEX_FILES.has(d.name.toLowerCase()))
       .map(d => d.name);
@@ -66,7 +66,7 @@ export const strippedChangeId = (name) => String(name).replace(/^\d{4}-\d{2}-\d{
  *  root can pass it (cross-spec-review.mjs enumerates a release's specs under a root a test may
  *  supply) — WITHOUT that caller re-deriving the date-prefix naming rule, which is the one thing
  *  a second archive reader must never do. */
-export function archivedChanges(dir = ARCHIVE_DIR) {
+export function archivedChanges(dir = archiveDir()) {
   try {
     return fs.readdirSync(dir, { withFileTypes: true })
       .filter(d => d.isDirectory())
@@ -80,18 +80,18 @@ export function archivedChanges(dir = ARCHIVE_DIR) {
  *  directory — so a consumer that needs the counts has to look where the file went. Both archive
  *  namings are tried, the same two `isArchived()` matches. */
 export function archivedTasksPath(id) {
-  const exact = path.join(ARCHIVE_DIR, id, "tasks.md");
+  const exact = path.join(archiveDir(), id, "tasks.md");
   if (fs.existsSync(exact)) return exact;
   const hit = archivedChanges().find(c => c.id === strippedChangeId(id));
-  return hit ? path.join(ARCHIVE_DIR, hit.dir, "tasks.md") : exact;
+  return hit ? path.join(archiveDir(), hit.dir, "tasks.md") : exact;
 }
 
 /** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
  *  so an exact-name check misses it. Match the exact id (older/manual) OR a date-prefixed dir. */
 export function isArchived(id) {
-  if (fs.existsSync(path.join(ARCHIVE_DIR, id))) return true;
+  if (fs.existsSync(path.join(archiveDir(), id))) return true;
   let entries;
-  try { entries = fs.readdirSync(ARCHIVE_DIR, { withFileTypes: true }); } catch { return false; }
+  try { entries = fs.readdirSync(archiveDir(), { withFileTypes: true }); } catch { return false; }
   const re = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
   return entries.some(d => d.isDirectory() && re.test(d.name));
 }
@@ -272,14 +272,14 @@ export function epicProgress(epic) {
     return { done, total, excluded, excludedLabel: "disposed", source: "stories", warn: null };
   }
   if (epic.planPath) {
-    const c = countCheckboxes(path.join(ROOT, epic.planPath));
+    const c = countCheckboxes(path.join(engineRoot(), epic.planPath));
     if (!c.exists) {
       return { done: 0, total: 0, excluded: 0, source: "plan", warn: archived ? null : "planPath missing" };
     }
     return { done: c.done, total: c.total, excluded: c.excluded, source: "plan", warn: null };
   }
   if ((epic.lane || "openspec") === "openspec") {
-    const c = countCheckboxes(path.join(CHANGES_DIR, epic.id, "tasks.md"));
+    const c = countCheckboxes(path.join(changesDir(), epic.id, "tasks.md"));
     if (!c.exists) {
       // A BACKFILLED epic reads its counts from the archived artifacts. It never passed through
       // the conductor while it was in flight, so `0/0` here is not "a managed epic whose source

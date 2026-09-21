@@ -24,7 +24,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ROOT } from "./constants.mjs";
+import { engineRoot } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -59,17 +59,17 @@ function idNeedle(epicId) {
 function shallowBoundaries() {
   try {
     const isShallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     if (isShallow !== "true") return new Set();
     const p = execFileSync("git", ["rev-parse", "--git-path", "shallow"],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     // RESOLVED AGAINST ROOT, not left to process.cwd(). `--git-path` answers relative to the
     // directory git ran in, which is ROOT — and readFileSync would resolve it against the
     // PROCESS's cwd instead. Those are the same directory in the common case and diverge for a
     // pm-managed project nested inside a larger repository, which is the layout differsFromHead()
     // carries the same warning for. The catch below would swallow that as an empty set, so the
     // guard would go silently inert in exactly the checkout shape it exists for.
-    const body = fs.readFileSync(path.resolve(ROOT, p), "utf8");
+    const body = fs.readFileSync(path.resolve(engineRoot(), p), "utf8");
     return new Set(body.split("\n").map(l => l.trim()).filter(Boolean));
   } catch { return new Set(); }
 }
@@ -97,7 +97,7 @@ export function introducedAt(epicId, grafted = shallowBoundaries()) {
   try {
     const out = execFileSync(
       "git", ["log", `-S${idNeedle(epicId)}`, "--reverse", "--format=%H %cI", "--", STATE_PATHSPEC],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
     const first = out.split("\n").map(l => l.trim()).filter(Boolean)[0];
     if (!first) return null;
     const [sha, date] = first.split(" ");

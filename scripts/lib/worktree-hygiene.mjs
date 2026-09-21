@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
-import { ROOT, RENDER_STAMP_PATH, STATE_PATH, jsonText } from "./constants.mjs";
+import { engineRoot, renderStampPath, statePath, jsonText } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
 
 /** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
@@ -33,7 +33,7 @@ export function verifyWorktrees() {
   const byId = new Map(state.epics.map(e => [e.id, e]));
   let out;
   try {
-    out = execSync("git worktree list --porcelain", { cwd: ROOT, encoding: "utf8" });
+    out = execSync("git worktree list --porcelain", { cwd: engineRoot(), encoding: "utf8" });
   } catch {
     process.stdout.write(jsonText({ orphaned: [] }) + "\n");
     return;
@@ -73,7 +73,7 @@ export function isAncestorOfCurrentHead(sha) {
     // A worktree head read from `git worktree list`, not a stored value — but never interpolated into
     // a shell line, and never read as an option either (hex-gated; no `--end-of-options`, see git.mjs).
     if (typeof sha !== "string" || !/^[0-9a-fA-F]{4,64}$/.test(sha)) return false;
-    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: ROOT, stdio: "ignore" });
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: engineRoot(), stdio: "ignore" });
     return true;
   } catch {
     return false;
@@ -90,7 +90,7 @@ export function isAncestorOfCurrentHead(sha) {
  *  `.changesets/` doesn't exist or is empty — never errors on a missing directory. */
 export function changesets() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  const dir = path.join(ROOT, ".changesets");
+  const dir = path.join(engineRoot(), ".changesets");
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -117,7 +117,7 @@ export function changesets() {
  *  read — never modifies state.json or PROJECT.md itself. */
 export function verifyState() {
   if (!isInitialized()) { die("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); }
-  const stamp = readJSON(RENDER_STAMP_PATH, null);
+  const stamp = readJSON(renderStampPath(), null);
   if (!stamp || typeof stamp.stateMtimeMs !== "number") {
     die(
       "conductor: no render stamp found (.conductor/render-stamp.json) — state.json has never " +
@@ -125,7 +125,7 @@ export function verifyState() {
       "and establish a baseline.\n"
     );
   }
-  const currentMtimeMs = fs.statSync(STATE_PATH).mtimeMs;
+  const currentMtimeMs = fs.statSync(statePath()).mtimeMs;
   if (currentMtimeMs > stamp.stateMtimeMs) {
     die(
       "conductor: state.json was modified AFTER the last render — this looks like an " +

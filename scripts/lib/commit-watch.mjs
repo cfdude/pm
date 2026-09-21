@@ -46,14 +46,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ROOT } from "./constants.mjs";
+import { engineRoot } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { breakStaleLockAt, inspectLock, lockContent, lockHolderAlive, sameLock } from "./state.mjs";
 
 export const COMMIT_OBSERVE_FILE = "commit-observe.json";
 /** Where the observation record lives for a conductor root. Per-checkout (a worktree has its own
  *  HEAD reflog and its own .conductor/), so ensureGitignore() ignores it and its lock and temp. */
-export const commitObservePath = (root = ROOT) => path.join(root, ".conductor", COMMIT_OBSERVE_FILE);
+export const commitObservePath = (root = engineRoot()) => path.join(root, ".conductor", COMMIT_OBSERVE_FILE);
 
 export const OBSERVE_LOCK_WAIT_MS = 200;
 export const OBSERVE_LOCK_STALE_MS = 10_000;
@@ -77,7 +77,7 @@ function gitOut(args, root) {
 /** Absolute path of HEAD's reflog file, or null when git cannot answer (no git, no repository).
  *  `--git-path` prints a path relative to the working directory (`../../.git/logs/HEAD` in a
  *  nested conductor), so it is resolved against the conductor root the command ran in. */
-export function headReflogPath(root = ROOT) {
+export function headReflogPath(root = engineRoot()) {
   try {
     gitOut(["rev-parse", "--git-dir"], root);
     return path.resolve(root, gitOut(["rev-parse", "--git-path", "logs/HEAD"], root));
@@ -86,7 +86,7 @@ export function headReflogPath(root = ROOT) {
 
 /** The recorded `{anchor, reported}`. Absent, unreadable and malformed all read as "no anchor",
  *  which is the unverifiable rung — a corrupt record degrades the hook, never crashes it. */
-export function readObserveRecord(root = ROOT) {
+export function readObserveRecord(root = engineRoot()) {
   try {
     const v = JSON.parse(fs.readFileSync(commitObservePath(root), "utf8"));
     const a = v && v.anchor;
@@ -150,7 +150,7 @@ const observeLockPaths = (root) => {
 };
 
 /** The observation lock currently in place, as state.mjs inspectLock() reads a lock, or null. */
-export const inspectObserveLock = (root = ROOT) => inspectLock(observeLockPaths(root).LOCK);
+export const inspectObserveLock = (root = engineRoot()) => inspectLock(observeLockPaths(root).LOCK);
 
 /** Is this observation lock stale — safe to break? Holder confirmed dead: yes, at once. Holder
  *  confirmed alive: only past OBSERVE_LOCK_LIVE_MAX_MS. Not confirmable (another host or pid
@@ -213,7 +213,7 @@ function acquireLock(root, { waitMs = OBSERVE_LOCK_WAIT_MS } = {}) {
  *
  *  The caller MUST end every handle with finish() or release(). A run that exits on unreadable
  *  state calls neither write, so the anchor and the set stay where they were (Decision 3). */
-export function beginObservation({ root = ROOT } = {}) {
+export function beginObservation({ root = engineRoot() } = {}) {
   const got = acquireLock(root);
   if (got === false) return { verdict: "skipped" };
   let released = false;
@@ -284,7 +284,7 @@ export const isAmend = (entry) => AMEND_ACTION.test(entry.action);
  *
  *  git failing to answer at all reads as LIVE — the pre-filter behaviour, and the direction in which
  *  a wrong answer is visible (a row that can be retracted) rather than silent. */
-export function isLiveCommit(sha, root = ROOT) {
+export function isLiveCommit(sha, root = engineRoot()) {
   try {
     return gitOut(["for-each-ref", "--contains", sha, "--count=1", "--format=%(refname)", "refs/heads"], root) !== "";
   } catch { return true; }

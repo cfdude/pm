@@ -25,13 +25,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { runIntegrity } from "../lib/integrity.mjs";
-import { ROOT } from "../lib/constants.mjs";
+import { engineRoot } from "../lib/constants.mjs";
 
 // REAL commits of the repository the engine reads (gates-bind-to-verified-evidence 4.7 / Gate 2 m7):
 // the arms here ask git for a commit's date, and a stored `HEAD` or fake `aaaaaaa` is now never
 // handed to git at all, so a literal would disarm the check this file exists to exercise.
-const HEAD_SHA = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
-const PARENT_SHA = execFileSync("git", ["rev-parse", "HEAD~1"], { cwd: ROOT, encoding: "utf8" }).trim();
+const HEAD_SHA = execFileSync("git", ["rev-parse", "HEAD"], { cwd: engineRoot(), encoding: "utf8" }).trim();
+const PARENT_SHA = execFileSync("git", ["rev-parse", "HEAD~1"], { cwd: engineRoot(), encoding: "utf8" }).trim();
 
 const findingsFor = (id, state) => {
   const c = runIntegrity(state).find(x => x.id === id);

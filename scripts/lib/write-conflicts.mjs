@@ -8,13 +8,15 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { CONFLICT_LOG_MAX_BYTES } from "./constants.mjs";
+import { CONFLICT_LOG_MAX_BYTES, conductorDir, engineRoot, writeConflictsLog } from "./constants.mjs";
 
-// Re-evaluate paths each time they're accessed to support cache-busting tests
+// Re-evaluate paths each time they're accessed (task 3.2): the root is the INVOCATION's, and this
+// module runs on a hook's failure path — the one place a stale root would write the diagnostic into
+// the wrong repository and leave the real one silent.
 function getPaths() {
-  const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
-  const WRITE_CONFLICTS_LOG = path.join(CONDUCTOR_DIR, "write-conflicts.log");
+  const root = engineRoot();
+  const CONDUCTOR_DIR = conductorDir(root);
+  const WRITE_CONFLICTS_LOG = writeConflictsLog(root);
   // The latch marker lives BESIDE the log, never in state.json — that is the file whose write
   // just failed, which is the whole reason this module exists.
   const WRITE_CONFLICTS_LATCH = path.join(CONDUCTOR_DIR, "write-conflicts.latch");

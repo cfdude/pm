@@ -92,7 +92,7 @@ import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPla
 import { loadState, readStdin } from "./lib/state.mjs";
 import { refusalFor } from "./lib/refusal.mjs";
 import { CommandExit } from "./lib/command-exit.mjs";
-import { ROOT, escapeControls, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
+import { engineRoot, escapeControls, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { checkCommandLine } from "./lib/argv-surface.mjs";
@@ -362,7 +362,7 @@ try {
     requireFlagValues("rules-target", parseFlags(process.argv.slice(3)));
     const declared = platformFlag(process.argv.slice(3));
     if (declared) assertKnownPlatform(declared);
-    process.stdout.write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT) + "\n");
+    process.stdout.write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), engineRoot()) + "\n");
   },
 }[cmd] || (() => {
   process.stderr.write(USAGE);

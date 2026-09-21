@@ -18,7 +18,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { ROOT, findRelease, releaseMembers } from "./constants.mjs";
+import { engineRoot, findRelease, releaseMembers } from "./constants.mjs";
 import { archivedChanges, strippedChangeId } from "./epic-progress.mjs";
 
 /** What an AGENT may pass to `--verdict`, mirroring gate-review-writeback's KNOWN_GATE_VERDICTS.
@@ -44,7 +44,7 @@ export const NO_CROSS_SPEC_REVIEW = "no cross-spec review";
  *  Both archive namings are resolved through the SAME `strippedChangeId()`/`archivedChanges()`
  *  epic-progress.mjs resolves `tasks.md` with. A second date-prefix rule written here would be a
  *  second place for the archive move to be handled wrongly. */
-export function changeSpecRoot(changeId, root = ROOT) {
+export function changeSpecRoot(changeId, root = engineRoot()) {
   const changesDir = path.join(root, "openspec", "changes");
   const live = path.join(changesDir, changeId);
   if (fs.existsSync(path.join(live, "specs"))) return { root: live, id: strippedChangeId(changeId) };
@@ -90,7 +90,7 @@ function walkMarkdown(dir) {
  * contributes nothing whatever its lane says, and a lane label that is wrong must not be able to
  * hide a spec from the review.
  */
-export function releaseSpecFiles(state, epics, releaseId, root = ROOT) {
+export function releaseSpecFiles(state, epics, releaseId, root = engineRoot()) {
   const seen = new Map();
   for (const epic of releaseMembers(epics, releaseId)) {
     const r = changeSpecRoot(epic.id, root);
@@ -167,7 +167,7 @@ export function crossSpecMarking(release, specs) {
  * apply and nothing is recorded, so a repo that does not plan in multi-spec releases sees
  * nothing at all.
  */
-export function crossSpecLine(state, epics, releaseId, root = ROOT) {
+export function crossSpecLine(state, epics, releaseId, root = engineRoot()) {
   const release = findRelease(state, releaseId);
   if (!release) return "";
   const specs = releaseSpecFiles(state, epics, releaseId, root);

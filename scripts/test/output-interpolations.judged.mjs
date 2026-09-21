@@ -129,7 +129,7 @@ x("conductor.mjs", "showEngineBanner", {
   "platform": 1,
 }, "engine", "the engine's shipped version and a validated platform (its install directory is escaped: a self-hosted checkout engine lives in the workspace, Gate 2 W-I1)");
 x("conductor.mjs", "showEngineBanner", {
-  "rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT)": 1,
+  "rulesTarget(resolvePlatform({ platform: declared }, loadState()), engineRoot())": 1,
 }, "justified", "rules-target prints ONE machine-read path (evals/observe.py opens it); escaping would name a different file. It is the rules file under the harness's CLAUDE_PROJECT_DIR");
 x("conductor.mjs", "helpAt", {
   "verdict.message": 1,

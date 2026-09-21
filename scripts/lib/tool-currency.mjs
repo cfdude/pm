@@ -35,13 +35,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ROOT, escapeControls } from "./constants.mjs";
+import { engineRoot, escapeControls } from "./constants.mjs";
 import { cmpVer } from "./plugin-meta.mjs";
 import { activeChangeIds } from "./epic-progress.mjs";
 
 const SEMVER = /(\d+\.\d+\.\d+)/;
-const OPENSPEC_DIR = path.join(ROOT, "openspec");
-const SKILLS_DIR = path.join(ROOT, ".claude", "skills");
+const OPENSPEC_DIR = path.join(engineRoot(), "openspec");
+const SKILLS_DIR = path.join(engineRoot(), ".claude", "skills");
 
 /** The paths `openspec update` regenerates for the `claude` host tool, repo-relative and in the
  *  form the user is told to look at. Named once so the nudge text and the tracked-ness probe
@@ -70,7 +70,7 @@ export function installedOpenspecVersion() {
   }
   try {
     const out = execFileSync("openspec", ["--version"], {
-      cwd: ROOT, encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"],
+      cwd: engineRoot(), encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"],
     });
     const m = String(out).match(SEMVER);
     return m ? m[1] : null;
@@ -146,7 +146,7 @@ export function projectOpenspecVersion() {
 export function generatedArtifactsTracked() {
   try {
     const out = execFileSync("git", ["ls-files", "--", ".claude/skills", ".claude/commands/opsx"], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+      cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
     });
     return out.split("\n").some(l => /^\.claude\/(skills\/openspec-|commands\/opsx\/)/.test(l.trim()));
   } catch { return null; }

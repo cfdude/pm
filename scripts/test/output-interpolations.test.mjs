@@ -153,8 +153,8 @@ test("mutant (Gate 2 W-I2): an ALL_CAPS literal is still literal, unless it is r
 });
 
 test("mutant (Gate 2 W-I2): render's PROJECT_MD — a path under CLAUDE_PROJECT_DIR — printed raw is UNCLASSIFIED, though render() is judged sink-flow as a whole", () => {
-  const { findings } = sweepMutated("scripts/lib/render.mjs", "${escapeControls(PROJECT_MD)}", "${PROJECT_MD}");
-  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/render\.mjs:\d+ \[render\] \$\{\} PROJECT_MD$/.test(f)), findings.join("\n"));
+  const { findings } = sweepMutated("scripts/lib/render.mjs", "${escapeControls(projectMd())}", "${projectMd()}");
+  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/render\.mjs:\d+ \[render\] \$\{\} projectMd\(\)$/.test(f)), findings.join("\n"));
 });
 
 test("every LITERAL_ALLOWLIST entry names a declaration that exists with exactly that text, and carries a reason (Gate 2 W-I2)", async () => {

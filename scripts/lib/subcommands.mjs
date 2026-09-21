@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, execSync } from "node:child_process";
+import { invocation } from "./invocation.mjs";
 import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
@@ -21,7 +22,7 @@ import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
-import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
+import { engineRoot, conductorDir, briefPath, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
 import { platformFlag, resolveAndRecordPlatform, resolvePlatform } from "./platform.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 // The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
@@ -79,7 +80,7 @@ export function ensureGitignore() {
     // engine-written, per-checkout, and useless to anyone but this working tree.
     ".conductor/activity/",
   ];
-  const giPath = path.join(ROOT, ".gitignore");
+  const giPath = path.join(engineRoot(), ".gitignore");
   let existing = "";
   try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
   const have = new Set(existing.split("\n").map(l => l.trim()));
@@ -143,7 +144,7 @@ export function snapshot() {
   // written. Never exit 2 on this hook — on PreCompact that blocks compaction (lib/refusal.mjs).
   const state = loadState();
   render();
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.mkdirSync(conductorDir(), { recursive: true });
   // NO consume — the opposite of brief(). This briefing is written to .conductor/brief.txt,
   // which NOTHING reads back, so consuming here retired the contention warning against a reader
   // who never existed: a PreCompact landing between the threshold crossing and the next
@@ -153,7 +154,7 @@ export function snapshot() {
   // gh#175: a snapshot is for the NEXT session in this tree, and a deployed checkout has none —
   // the next thing to touch it is a `git checkout --force` that discards the file.
   const detached = isDetachedTree();
-  if (!detached) fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
+  if (!detached) fs.writeFileSync(briefPath(), buildBrief(state) + "\n");
   process.stderr.write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
       "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"
@@ -176,10 +177,22 @@ export function headChangedFiles() {
  *  equal a conductor-relative path — a git-root `PROJECT.md` in a monorepo is not this conductor's.
  *  `--relative` is rejected: it DROPS out-of-root paths and turns a mixed commit into a
  *  bookkeeping-only one. */
-let showPrefix = null;   // invariant for one process: ROOT does not move under a running invocation
+/** The `git rev-parse --show-prefix` answer for ONE INVOCATION.
+ *
+ *  It used to be `let showPrefix = null` at module scope, under a comment stating the invariant
+ *  "ROOT does not move under a running invocation". task 3.2 is precisely the decision that makes
+ *  that invariant FALSE, so the cache moves to the invocation it was always implicitly about: a
+ *  second invocation against a SUBDIRECTORY of the first would otherwise reuse invocation 1's
+ *  prefix, mis-strip every path, and corrupt each CONDUCTOR_OWN_FILES comparison the
+ *  root-divergence and bookkeeping-commit logic rests on. */
+function prefixCache() {
+  const ctx = invocation();
+  if (!ctx.__changedFilesPrefix) ctx.__changedFilesPrefix = { resolved: false, value: "" };
+  return ctx.__changedFilesPrefix;
+}
 export function changedFiles(sha) {
   try {
-    const opts = { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+    const opts = { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
     // `-z`: NUL-terminated and UNQUOTED. Without it git quotes any path holding a non-ASCII byte
     // (`"projects/s\303\274b/PROJECT.md"`, core.quotePath), so no path under a non-ASCII conductor
     // root matched the prefix and every bookkeeping commit there was logged (Gate 2 G2-I1). `-z` also
@@ -187,8 +200,12 @@ export function changedFiles(sha) {
     const out = execFileSync("git", ["diff-tree", "-z", "--no-commit-id", "--name-only", "-r", "--root", sha], opts);
     // --show-prefix prints the prefix raw today; quotePath=false keeps it comparable with the -z paths
     // should that ever change.
-    if (showPrefix === null) showPrefix = execFileSync("git", ["-c", "core.quotePath=false", "rev-parse", "--show-prefix"], opts).replace(/\n$/, "");
-    const prefix = showPrefix;
+    const cache = prefixCache();
+    if (!cache.resolved) {
+      cache.value = execFileSync("git", ["-c", "core.quotePath=false", "rev-parse", "--show-prefix"], opts).replace(/\n$/, "");
+      cache.resolved = true;
+    }
+    const prefix = cache.value;
     return out.split("\0").filter(Boolean).map(p => !prefix ? p : p.startsWith(prefix) ? p.slice(prefix.length) : `:/${p}`);
   } catch { return null; }
 }
@@ -210,7 +227,7 @@ export const withinOwnArtifacts = (file, artifacts) =>
 export function commitSubject(sha) {
   try {
     return execFileSync("git", ["log", "-1", "--format=%s", sha], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+      cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch { return null; }
 }
@@ -221,7 +238,7 @@ export function commitSubject(sha) {
 export function headSubject() {
   try {
     return execSync("git log -1 --format=%s", {
-      cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
+      cwd: engineRoot(), stdio: ["ignore", "pipe", "ignore"],
     }).toString().trim();
   } catch { return null; }
 }
@@ -829,7 +846,7 @@ export function sync(quiet = false) {
     // 5. Real backlog — the final registration step, so only an entry no rung above matched is
     //    tested: a name no epic id can carry is skipped and named on every run (design D4).
     if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("plan", fname)); continue; }
-    const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
+    const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
   }
@@ -988,7 +1005,7 @@ export function retractDetour() {
     "kept in .conductor/detours.log, hidden from PROJECT.md\n");
 }
 
-const HONCHO_MEMORIES_LOG = path.join(CONDUCTOR_DIR, "honcho-memories.log");
+const HONCHO_MEMORIES_LOG = path.join(conductorDir(), "honcho-memories.log");
 
 /** Format the exact one-line Honcho memory string for a detour-stack PUSH or POP, per
  *  CLAUDE.md rule 4 ("on every PUSH and POP, also write a one-line memory to Honcho").
@@ -1013,7 +1030,7 @@ export function honchoMemoryLine(action, epicId, reason) {
  *  purpose: two writers appending to one file must not each carry their own copy of where it is. */
 export function appendHonchoMemory(action, epicId, reason) {
   const line = honchoMemoryLine(action, epicId, reason);
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.mkdirSync(conductorDir(), { recursive: true });
   fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
   process.stdout.write(line + "\n");
   return line;
