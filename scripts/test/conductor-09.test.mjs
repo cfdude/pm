@@ -84,7 +84,11 @@ test("record-reconcile on an unknown detour id exits non-zero and writes nothing
 
 test("every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md", () => {
   const engineSrc = fs.readFileSync(ENGINE, "utf8");
-  const dispatchMatch = engineSrc.match(/^\(\{\n([\s\S]*?)\n\}\[cmd\]/m);
+  // 0.47.0 (task 2.3) wrapped the module body in `main(argv, io)`, so the table is no longer a
+  // bare `({` at the start of a line and its closing `}[cmd]` is indented. The extractor is
+  // re-pointed rather than loosened into uselessness: it still requires the object literal to be
+  // the one indexed by `[cmd]`.
+  const dispatchMatch = engineSrc.match(/\(\{\n([\s\S]*?)\n\s*\}\[cmd\]/m);
   assert.ok(dispatchMatch, "could not locate the dispatch table object in conductor.mjs — " +
     "has the dispatch section been restructured? update this test's extraction regex");
   const dispatchBody = dispatchMatch[1];
@@ -250,7 +254,11 @@ test("update-epic archiving a non-openspec-lane epic is unaffected by gate-revie
 
 test("every dispatch-table subcommand is mentioned somewhere in README.md", () => {
   const engineSrc = fs.readFileSync(ENGINE, "utf8");
-  const dispatchMatch = engineSrc.match(/^\(\{\n([\s\S]*?)\n\}\[cmd\]/m);
+  // 0.47.0 (task 2.3) wrapped the module body in `main(argv, io)`, so the table is no longer a
+  // bare `({` at the start of a line and its closing `}[cmd]` is indented. The extractor is
+  // re-pointed rather than loosened into uselessness: it still requires the object literal to be
+  // the one indexed by `[cmd]`.
+  const dispatchMatch = engineSrc.match(/\(\{\n([\s\S]*?)\n\s*\}\[cmd\]/m);
   assert.ok(dispatchMatch, "could not locate the dispatch table object in conductor.mjs — " +
     "has the dispatch section been restructured? update this test's extraction regex");
   const dispatchBody = dispatchMatch[1];

@@ -124,14 +124,14 @@ x("constants.mjs", "withdrawnGate", {
 }, "engine", "a gate number");
 
 // ── engine-composed: numbers, registry and vocabulary values, validated values, engine paths/versions/shas
-x("conductor.mjs", "showEngineBanner", {
+x("conductor.mjs", "main", {
   "pluginVersion() || \"unknown\"": 1,
   "platform": 1,
 }, "engine", "the engine's shipped version and a validated platform (its install directory is escaped: a self-hosted checkout engine lives in the workspace, Gate 2 W-I1)");
-x("conductor.mjs", "showEngineBanner", {
+x("conductor.mjs", "main", {
   "rulesTarget(resolvePlatform({ platform: declared }, loadState()), engineRoot())": 1,
 }, "justified", "rules-target prints ONE machine-read path (evals/observe.py opens it); escaping would name a different file. It is the rules file under the harness's CLAUDE_PROJECT_DIR");
-x("conductor.mjs", "helpAt", {
+x("conductor.mjs", "main", {
   "verdict.message": 1,
 }, "passthrough", "an argv-surface refusal, whose caller tokens are escaped where it is built");
 x("activity-log.mjs", "setActivityLog", {

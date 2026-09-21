@@ -42,7 +42,7 @@ verified by a deliberate violation instead of by failing first: **3.5, 4.1, 5.2,
 with the thing they guard. Section 6 has no RED of its own for that reason, and section 4 has none
 either — 4.1's set-equality guard is green the moment the gateway it reads exists, which is 4.2.
 
-- [ ] 1.1 RED — a table-driven conformance test that runs each invocation BOTH ways: as
+- [x] 1.1 RED — a table-driven conformance test that runs each invocation BOTH ways: as
       `node scripts/conductor.mjs …` (reading the real process status) and in-process through the
       engine's entry point (reading the returned value), asserting the two are equal. One row per
       class, derived from `scripts/lib/refusal.mjs` plus the executable `process.exit` sites rather
@@ -51,11 +51,11 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       under `commit-nudge` 2; under `brief` 0; a `gate-guard` reconcile block 2; an ambiguous rules
       block 11; the delegated handoff returning its child's status. Fails today: no in-process entry
       point exists
-- [ ] 1.2 RED — a source-scan guard asserting the engine contains no executable `process.exit(` in
+- [x] 1.2 RED — a source-scan guard asserting the engine contains no executable `process.exit(` in
       `scripts/lib/*.mjs` or `scripts/conductor.mjs` (comments and the CLI tail's `process.exitCode`
       are not matches), naming the file and line of each. Fails today: 194 occurrences in
       `scripts/lib` (191 executable: 189 `exit(1)` and 2 `exit(2)`) and 5 in `conductor.mjs`
-- [ ] 1.3 MUTATION, recorded in this change directory as `red-1.x-mutation-evidence.txt` — for 1.2,
+- [x] 1.3 MUTATION, recorded in this change directory as `red-1.x-mutation-evidence.txt` — for 1.2,
       re-introduce one inline exit by hand and confirm the GUARD goes red (not the suite); for 1.1,
       neuter one class's returned status and confirm only that class's row fails. A guard whose
       failure mode is "the whole process died" proves nothing, and
@@ -71,7 +71,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       convert to `die(...)`, module by module, with the whole suite green between modules; the two
       `process.exit(2)` hook blocks in `gate-guard.mjs:389,397` become `die(msg, 2)`. Verify: 1.2
       green, 1.1 green, and `rg -n 'process\.exit\(' scripts/lib` empty of executable hits
-- [ ] 2.3 GREEN — `conductor.mjs` exports `main(argv, io)` returning a status: `io` carries
+- [x] 2.3 GREEN — `conductor.mjs` exports `main(argv, io)` returning a status: `io` carries
       `{ cwd, env, stdin, stdout, stderr }`; four of the five executable exits convert (`:368` to
       `die`; `:172`, `:180` to a returned 0; `:147` to the delegated child's status, returned by
       `main()`); **`:191` is the pre-dispatch refusal and it RETURNS its code** — it does not become
@@ -80,7 +80,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       status; its stdin drain at `:190` still happens before the return; dispatch's existing `catch`
       (`:370`) maps `CommandExit` and delegates everything else to `refusalFor()`. Verify: 1.1 green
       across every class
-- [ ] 2.4 GREEN — the CLI tail: `process.exitCode = await main(process.argv.slice(2), …)` with no
+- [x] 2.4 GREEN — the CLI tail: `process.exitCode = await main(process.argv.slice(2), …)` with no
       `process.exit`, preserving the truncation reason recorded at `conductor.mjs:378–381`. Verify: the
       five hook verbs still exit with their documented statuses, run as the processes
       `hooks/hooks.json` registers (six command registrations over five verbs)
@@ -114,7 +114,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 3. Globals become per-call values
 
-- [ ] 3.1 RED — a two-roots-in-one-process test: `main()` called twice in one process against two
+- [x] 3.1 RED — a two-roots-in-one-process test: `main()` called twice in one process against two
       temporary roots, the first initialized and the second not, asserting each call's read and write
       land under the root it was given. Fails today: `ROOT` is captured at `constants.mjs:12`
 - [x] 3.2 GREEN — ALL TWELVE frozen path constants become functions of a current root, following
@@ -158,11 +158,11 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       and a result land on caller-supplied streams and that the process's own stdout and stderr stay
       empty, and a test that drives a hook verb in-process with a payload on a caller-supplied stdin
       while the process's own stdin is a terminal
-- [ ] 3.5 REGRESSION GUARD + MUTATION — the assertion half's shared process must not observe a
+- [x] 3.5 REGRESSION GUARD + MUTATION — the assertion half's shared process must not observe a
       captured root, so mutate one module back to a module-scope root and confirm 3.1's test fails
       rather than some unrelated test flaking. `git.mjs`'s `headAttachment` comment records gh#175,
       this repository's own instance of the same defect
-- [ ] 3.6 RED — the `showPrefix` symptom, which is a DIFFERENT failure from 3.1's and survives 3.2's
+- [x] 3.6 RED — the `showPrefix` symptom, which is a DIFFERENT failure from 3.1's and survives 3.2's
       sweep if only the constants move: `main()` called twice in one process against two roots whose
       `git rev-parse --show-prefix` answers differ (the second a subdirectory of the first), asserting
       each call's `changedFiles()`/`headChangedFiles()` result is stripped against the root THAT call

@@ -71,8 +71,15 @@ function dispatchedVerbs() {
   assert.notEqual(end, -1, "the dispatch object must still be indexed as `}[cmd]`");
   const table = body.slice(0, end);
   const verbs = new Set();
-  for (const m of table.matchAll(/^ {2}(?:"([a-z-]+)"|([a-z-]+))\s*:/gm)) verbs.add(m[1] || m[2]);
-  for (const m of table.matchAll(/^ {2}([a-z-]+),\s*$/gm)) verbs.add(m[1]);
+  // THE INDENT IS PART OF THE SHAPE, and 0.47.0 (task 2.3) moved the dispatch table two spaces to
+  // the right by wrapping conductor.mjs's module body in `main(argv, io)`. A reader pinned to
+  // EXACTLY two spaces found nothing, and the guard that exists to catch a missing VERB_EFFECTS
+  // row went green against an EMPTY set — caught by its own "the reader is broken, not the table"
+  // assertion, which is why that assertion exists. The band `2,4` accepts either shape and refuses
+  // anything deeper, so a table nested one level further down still fails rather than silently
+  // matching a handler's own line.
+  for (const m of table.matchAll(/^ {2,4}(?:"([a-z-]+)"|([a-z-]+))\s*:/gm)) verbs.add(m[1] || m[2]);
+  for (const m of table.matchAll(/^ {2,4}([a-z-]+),\s*$/gm)) verbs.add(m[1]);
   return verbs;
 }
 
