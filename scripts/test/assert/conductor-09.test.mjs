@@ -303,12 +303,23 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // The pattern is ANCHORED at the start of a command line, so the hook's own prose about
   // `node --test` (there are three such comments, and one of them says a directory argument does NOT
   // work) is not mistaken for a second runner.
-  const runnerLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l));
+  // 0.47.0's Node-18 fallback added a PROBE -- a `node --test` whose subject is one tiny file,
+  // run at most once per clone (its answer is cached in the git dir) to learn whether
+  // --test-isolation exists on this binary. The probe is not a runner: it runs no half and no
+  // glob, and it must never be widened into one. So the guard counts RUNNERS -- lines whose
+  // subject is the assert GLOB -- and asserts exactly one, while separately asserting the probe,
+  // if present, is the tiny-file probe and nothing else.
+  const runnerLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test.*scripts\/test\/assert\/\*\.test\.mjs/.test(l));
   assert.equal(runnerLines.length, 1,
-    `the hook must run exactly ONE test runner, and it runs ${runnerLines.length}: ${runnerLines.join(" | ")}`);
+    `the hook must run exactly ONE test runner for the assert glob, and it runs ${runnerLines.length}: ${runnerLines.join(" | ")}`);
   assert.equal(runnerLines[0].trim(),
-    'if node --test --test-isolation=none scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then',
-    "the hook's runner must name exactly the assertion half — one process, one half, no second glob");
+    'if node --test $ISOFLAG scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then',
+    "the hook's runner must name exactly the assertion half through $ISOFLAG — one process, one half, no second glob");
+  const probeLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l) && !/^\s*(?:if\s+)?node --test.*scripts\/test\/assert\/\*\.test\.mjs/.test(l));
+  for (const probe of probeLines) {
+    assert.match(probe, /lessons-index\.test\.mjs/,
+      `the hook's only other node --test must be the isolation PROBE on a single tiny file, never a second runner: ${probe}`);
+  }
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
   // The floor makes partial-suite runs possible in a way the single file did not, so the hook must
   // cross-check the ran count against the declared count. WHAT IT MUST BE DERIVED FROM is the whole

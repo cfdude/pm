@@ -103,7 +103,26 @@ if ! node scripts/test/drift.mjs --root "$PWD"; then
   exit 1
 fi
 
-if node --test --test-isolation=none scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+# --test-isolation does not exist on Node 18 (verified: "bad option"), and the runner MUST NOT
+# fail there for want of the flag -- single-process is an optimization, not the contract. Probe it
+# ONCE per clone and cache the answer beside the suite lock (a probe is a second `node --test`,
+# which the one-runner guard below counts, and 0.3 s of every commit is still a tax); on a Node
+# without the flag, fall back to plain node --test (process-per-file isolation), which runs the
+# same tests correctly and merely pays the spawn cost again. The floor below parses both
+# reporters, so the count is version-independent either way. The cache is keyed by re-probing
+# whenever the cached answer stops matching the binary -- cheap, because a wrong cached answer
+# self-corrects on the next commit either way.
+ISOFLAGFILE="$(git rev-parse --git-common-dir)/pm-isolation-flag"
+if [ ! -f "$ISOFLAGFILE" ]; then
+  if node --test --test-isolation=none scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1; then
+    printf -- '--test-isolation=none' > "$ISOFLAGFILE"
+  else
+    : > "$ISOFLAGFILE"
+  fi
+fi
+ISOFLAG=$(cat "$ISOFLAGFILE")
+# shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag
+if node --test $ISOFLAG scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
   # node --test's default reporter (and therefore this summary line's leading marker) differs
   # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,
   # older Node (e.g. the CI runner's Node 18) defaults to the "tap" reporter (#). Match both.
