@@ -74,7 +74,10 @@ it SHALL NOT run a real `git` binary — git behaviour it depends on SHALL be su
 double.
 
 A test SHALL exist that fails when a file in the assertion half spawns a child process or invokes
-git, so the property is enforced rather than merely intended.
+git, so the property is enforced rather than merely intended. The guard SHALL observe the half at RUN
+TIME as well as in its source: a git invocation reached by calling a library function directly — one
+whose spawn is written three modules away, and never in the test file that caused it — is the same
+violation and SHALL fail the half rather than the file only.
 
 #### Scenario: A spawn added to the assertion half fails a guard
 
@@ -171,9 +174,12 @@ functional run even where the assertion half covers the same behaviour.
 
 The checks that enforce the requirements above — the enrolment, the twin pair, the diff coupling and
 the record's freshness — SHALL be performed by a script that reads files and runs in the pre-commit
-gate. It SHALL NOT run the functional half, drive git against a
-repository, or spawn the engine, so that enforcing the link cannot make every commit as slow as the
-thing the link exists to keep out of the way.
+gate. It SHALL NOT run the functional half, SHALL NOT spawn a test runner or the engine, and SHALL
+NOT start a git fixture or drive git against a repository; reading the index through the permitted
+read-only subcommands (what is tracked, what is staged, the staged bytes, where the common directory
+is) is the whole of its access to git, and the set SHALL be enforced where the call is made. The
+property being protected is that enforcing the link cannot start the thing whose result it is
+checking, and cannot make every commit as slow as the thing the link exists to keep out of the way.
 
 The script SHALL be development-only: it SHALL NOT be part of what the plugin ships, and it SHALL
 add no runtime or development dependency.

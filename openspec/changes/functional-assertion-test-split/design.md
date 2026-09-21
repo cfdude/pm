@@ -250,11 +250,15 @@ A guard test in the assertion half enforces the property mechanically: it walks 
 and fails, naming the file, when a file spawns a child process or invokes git.
 
 **Every tracked test file has exactly ONE home, and the enumeration covers all of them.** The
-enumeration is `git ls-files 'scripts/test/*.test.mjs' 'scripts/test/**/*.test.mjs'` — BOTH arms,
-because git's `**` does not match zero directories and the first arm is therefore the only one that
-reaches a file sitting directly in `scripts/test/` (verified in a scratch repository: the `**` arm
-matched the six nested files and missed the seventh at the top level). Each file enumerated lands in
-one of four homes:
+enumeration is `git ls-files 'scripts/test/*.test.mjs' 'scripts/test/**/*.test.mjs'` — BOTH arms —
+and the reason for the pair was measured rather than reasoned (G-M3, Gate 2, because the first
+version of this paragraph had it backwards). A git pathspec's `*` matches `/`: `ls-files
+'scripts/test/*.test.mjs'` returns a top-level file AND the nested ones, so the single-star arm is the
+one that reaches everything, while `ls-files 'scripts/test/**/*.test.mjs'` MISSES the top-level file
+because `**` does not match zero directories. The pair is kept because that rule is easy to re-read
+the other way — this paragraph did, and so did the two comments that copy it — so the enumeration is
+correct under either reading instead of correct by an argument. Each file enumerated lands in one of
+four homes:
 
 | home | what it is | who runs it |
 |---|---|---|
@@ -365,8 +369,14 @@ CONFORMANCE SET (D10, section 1 of the task list) — its `covers` entry is thos
 ### D8 — The drift script
 
 One dev-only script, plain Node, no dependency, lives with the repository's tooling (not under
-`scripts/lib`, so it is not part of the engine and not shipped). It reads files and spawns nothing. It
-performs exactly the four checks the capability names:
+`scripts/lib`, so it is not part of the engine and not shipped). **It spawns no runner and no engine,
+and starts no git fixture** — it reads the index through four permitted subcommands
+(`ls-files`, `diff --cached`, `show :<path>`, `rev-parse --git-common-dir`) and nothing else, enforced
+at the call in `drift.mjs` (`PERMITTED_SUBCOMMANDS`). G-M5 (Gate 2) corrects the earlier wording here,
+which said it "spawns nothing": true of runners and far too strong about git — the script would have
+to spawn `git` four ways to read the index at all. What the capability actually requires is that the
+check cannot start the thing whose result it is checking. It performs exactly the four checks the
+capability names:
 
 1. every tracked test file under `scripts/test/` has exactly one home (D5) — in `assert/`, in
    `functional/`, in `sweeps/`, or in the script's named exclusion list, which is empty today. A file

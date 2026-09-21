@@ -60,10 +60,25 @@ export function gitRead(root, args) {
 }
 
 export function trackedTestFiles(root) {
-  // BOTH ARMS, and the reason is git's: the nested arm's `**` does not match zero directories, so the
-  // top-level arm is the only one that reaches a file sitting directly in scripts/test/ and the
-  // nested arm is the only one that reaches a file one level down. One arm alone silently
-  // under-counts, and the enumeration is what check 1 refuses over (D5).
+  // BOTH ARMS, AND THE REASON IS GIT'S — corrected at Gate 2 (G-M3), because the first version of
+  // this comment had it backwards and the code is only as safe as the reason it is kept for.
+  //
+  // Measured on git 2.55.0, in a scratch repository holding one top-level test file and three under
+  // `assert/` (one of them two levels down):
+  //   `ls-files 'scripts/test/*.test.mjs'`   → ALL FOUR. A git pathspec's `*` matches `/`, so this
+  //                                            arm reaches nested files as well as top-level ones.
+  //   `ls-files 'scripts/test/**/*.test.mjs'` → THREE — it MISSES the top-level file, because `**`
+  //                                            does not match zero directories.
+  // So the claim this comment used to make ("the nested arm is the only one that reaches a file one
+  // level down") is wrong in the direction that matters: the single-star arm is the load-bearing one
+  // and the `**` arm is the one that under-counts. The previous text asserted the opposite and
+  // justified the pair by an under-count that does not happen.
+  //
+  // The pair is kept anyway, and this is the honest reason: `*`-matches-`/` is a pathspec rule that
+  // is easy to re-read the other way (this comment did), so the enumeration names both spellings and
+  // is then correct under either reading rather than correct by an argument. It is also what the
+  // drift script's own tests exercise, and an enumeration that is what check 1 refuses over (D5)
+  // should not depend on one subtle rule being remembered.
   return gitRead(root, ["ls-files", "scripts/test/*.test.mjs", "scripts/test/**/*.test.mjs"])
     .split("\n").filter(Boolean).sort();
 }

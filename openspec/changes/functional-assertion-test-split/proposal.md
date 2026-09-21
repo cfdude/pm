@@ -63,9 +63,11 @@ repository on tests whose subject is neither.
   not the half that runs git.
 - **Every tracked test file has exactly one home, and the floor counts what the runner was given.**
   The enumeration covers all of `scripts/test/` — `git ls-files 'scripts/test/*.test.mjs'
-  'scripts/test/**/*.test.mjs'`, both arms because git's `**` does not match zero directories — and a
-  file in neither half and in neither named bucket is a refusal naming the file, rather than a test
-  run by nothing and counted by nothing. The pre-commit gate's test-count floor is re-derived from
+  'scripts/test/**/*.test.mjs'`, both arms: a git pathspec's `*` matches `/`, so the single-star arm
+  reaches every tracked test file, while the `**` arm misses a file sitting directly in
+  `scripts/test/` because `**` does not match zero directories (measured on git 2.55.0 at Gate 2)
+  — and a file in neither half and in neither named bucket is a refusal naming the file, rather than
+  a test run by nothing and counted by nothing. The pre-commit gate's test-count floor is re-derived from
   the tracked files of exactly the half its runner was handed, never a superset of them, so the two
   counts agree by construction.
 - **The link between the halves can never break.** Every functional test is written with its

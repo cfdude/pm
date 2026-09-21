@@ -66,9 +66,11 @@ export function homeOf(rel) {
 }
 
 /** Every tracked test file that has no home. The enumeration the caller passes MUST be BOTH arms of
- *  `git ls-files 'scripts/test/*.test.mjs'` plus the nested arm (see drift.mjs): git's `**` matches no zero
- *  directories, so the first arm is the only one that reaches a file sitting directly in
- *  `scripts/test/`, and the second is the only one that reaches a nested one. */
+ *  `git ls-files 'scripts/test/*.test.mjs'` plus the nested arm (see drift.mjs's `trackedTestFiles`
+ *  for the measurement): a git pathspec's `*` matches `/`, so the FIRST arm reaches nested files as
+ *  well as top-level ones, and the `**` arm is the one that misses a file sitting directly in
+ *  `scripts/test/`. Both are named so the enumeration is correct under either reading of a rule this
+ *  repository has already mis-stated once (G-M3, Gate 2). */
 export function enrolmentRefusals(trackedTestFiles, exclusions = EXCLUSIONS) {
   const excused = new Set(exclusions.map((e) => (typeof e === "string" ? e : e.file)));
   return trackedTestFiles.filter((f) => homeOf(f) === null && !excused.has(f)).sort();
