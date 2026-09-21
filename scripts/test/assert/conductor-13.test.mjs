@@ -22,6 +22,20 @@ import { KNOWN_OUTCOMES } from "../../lib/disposition.mjs";
 const repo = () => { const cwd = tmpRepo(); run(["init"], { cwd }); return cwd; };
 const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
+/** The source with COMMENT-ONLY lines removed: a line whose first non-space characters open a line
+ *  comment, a block comment or a continuation of one.
+ *
+ *  IT IS LINE-ORIENTED ON PURPOSE, AND THAT IS THE REPAIR. A character-level stripper (the shape
+ *  `assert-half-has-no-spawn.test.mjs` carries, whose docstring claims it can only produce a FALSE
+ *  POSITIVE) was tried here first and IS NOT SOUND in that direction: measured on
+ *  `lib/update-epic.mjs`, a regex literal holding a quote earlier in the file leaves it in
+ *  string-mode, and every comment after that point passes through VERBATIM — a false NEGATIVE, which
+ *  is the direction a guard cannot have. This cannot desync, because it never tracks state across
+ *  lines: it either drops a whole line or keeps it whole. */
+function codeLines(src) {
+  return src.split("\n").filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join("\n");
+}
+
 // ─────────────────── the registry ───────────────────
 
 test("every registry entry names a flag, and the projection is not a literal that happens to match", () => {
@@ -142,7 +156,14 @@ test("the gate is reachable from update-epic, refusal text intact", () => {
 
 test("update-epic holds no openspec-lane archive condition of its own", () => {
   // The gate owns the rule; a second copy in the verb is how the two drift apart.
-  const src = fs.readFileSync(new URL("../../lib/update-epic.mjs", import.meta.url), "utf8");
+  //
+  // 5.6 MUTATION-REPAIRED. This read the RAW source, and the verb's own prose calls the gate by
+  // name — `// The REPLACEMENT RULE, one level down from archiveGate()'s refusal …` — so the guard
+  // was satisfied by a COMMENT. Proved by mutation in a copy: alias the imported symbol and its
+  // call site away and the guard stayed GREEN, because the comment still matched. A source-reading
+  // guard a comment can satisfy checks the wrong half of what it claims
+  // (`docs/lessons/a-guard-can-check-the-wrong-half.md`), so the read drops comment-only lines.
+  const src = codeLines(fs.readFileSync(new URL("../../lib/update-epic.mjs", import.meta.url), "utf8"));
   assert.match(src, /archiveGate\(/, "the verb calls the gate");
 });
 

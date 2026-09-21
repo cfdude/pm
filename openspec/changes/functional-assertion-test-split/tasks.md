@@ -307,7 +307,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       lands with its assertion twin like any other functional id, per 5.4 and design D5's table.
       Verify: each hook command still exits with its documented status through the real binary, and
       each has an assertion twin of the same id
-- [ ] 5.6 GREEN — repair the source-reading guards to the new shape, each in the task that changes
+- [x] 5.6 GREEN — repair the source-reading guards to the new shape, each in the task that changes
       what it reads: `conductor-25`'s dispatch-object read and its `}[cmd]` anchor (`:349–380`),
       `save-report-surface`'s `saveState` call-site scan, `conductor-15`, `conductor-16`,
       `conductor-18`, `conductor-28`, `conductor-31`, `emitted-invocations`, `output-interpolations`,
