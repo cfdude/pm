@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+* **The test suite runs in seconds, not minutes.** The engine is invocable in-process
+  (`main(argv, io)` returns its status; every process global is per-call), all git access
+  goes through one injected gateway, and the suite is split: the assertion half (one
+  process, spawn-free, git faked) runs on every commit; the functional half (real git) and
+  the sweep bucket are triggered by content-hash certification and run in CI. A drift
+  script in pre-commit enforces the functional–assertion pairing. Pre-commit wall time
+  drops from ~7 minutes to ~90 seconds. Dev-only dependencies are now permitted (see the
+  amended hard constraint); the engine remains zero-runtime-dependency, and none were
+  needed.
+
+---
+
 ## [0.46.0] — 2026-09-18
 
 Cluster 4 of the independent 0.43.0 review: the defect class both gates structurally miss — an

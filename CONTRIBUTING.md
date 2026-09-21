@@ -50,8 +50,13 @@ After that, `git commit` runs `.githooks/pre-commit` automatically, which runs t
 (`node scripts/test/drift.mjs`, four checks over the index — enrolment, twin coverage, diff
 coupling, record freshness) and then the ASSERTION HALF,
 `node --test --test-isolation=none scripts/test/assert/*.test.mjs`, and blocks the commit on any
-failure. The functional half and the sweep bucket are triggered, not per-commit: CI runs them,
-and `node scripts/test/certify.mjs functional|sweeps` is what records a passing run.
+failure. The drift script refuses, naming the file: a tracked test file in NEITHER half
+(no test runs it — enrol it), a functional test with no assertion twin of the same id, a
+functional test or its twin changed without a fresh certification record, or a certified
+module whose staged content no longer matches the record. The functional half and the sweep
+bucket are triggered, not per-commit: CI runs them, and
+`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when
+you ran one locally. To satisfy a refusal, run the command it names.
 
 ## Developing pm with pm (required one-time setup)
 
