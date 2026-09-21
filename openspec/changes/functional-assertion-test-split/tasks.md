@@ -296,7 +296,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       `git ls-files` over both arms, refusing by name any tracked test file outside the two halves and
       the sweeps bucket, which does not exist yet), and 6.4 REMOVES that inline form as it hands the
       check to the drift script — one implementation at a time, never two.
-- [ ] 5.4 RED — twin coverage (design D6, ONE direction): every functional id has an assertion file
+- [x] 5.4 RED — twin coverage (design D6, ONE direction): every functional id has an assertion file
       of the same id, and a staged change to a functional file requires its twin in the same staged
       diff. There is deliberately no converse check — an assertion-only file is not a refusal — and
       the drift script implements exactly this pair of checks. Verify: delete one assertion partner
@@ -320,7 +320,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 6. Certification and the drift script
 
-- [ ] 6.1 REGRESSION GUARD — the drift script's FOUR checks, each with a test that deliberately
+- [x] 6.1 REGRESSION GUARD — the drift script's FOUR checks, each with a test that deliberately
       violates it and is refused with the module, id or file named: a tracked test file in neither half
       and in neither named bucket; a functional id with no assertion twin; a staged change touching one
       half only; a certified module's staged content with no matching `contentHash` in the record. It
