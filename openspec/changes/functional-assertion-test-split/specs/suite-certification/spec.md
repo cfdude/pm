@@ -25,11 +25,47 @@ module added to the certified set later cannot silently fall outside it.
   in
 - **THEN** the pre-commit gate runs the assertion half and does not run the functional half
 
-#### Scenario: A commit that touches a certified module runs the functional half
+#### Scenario: A commit that touches a certified module requires a fresh functional result
 
 - **WHEN** a commit changes a file belonging to a module in the certified set
-- **THEN** the pre-commit gate requires a fresh functional result for that module and refuses the
-  commit when there is none
+- **THEN** the pre-commit gate requires a fresh functional result for that module, refuses the commit
+  when there is none, and names the run that would satisfy it — it does not start that run itself
+
+### Requirement: Every tracked test file has exactly one home, and the floor counts what the runner was given
+
+The enumeration of the suite SHALL cover every tracked test file under the test directory, and each
+one SHALL have exactly one home: the assertion half, the functional half, or a named
+change-triggered bucket whose run writes the record entry that covers it. A tracked test file in none
+of them SHALL be a refusal that names the file — a file in neither half is run by nothing and counted
+by nothing, and that state SHALL NOT be reachable by silence. The change-triggered bucket is not a
+third half: its members run no git and start no engine, and the twin rule does not reach them.
+
+The pre-commit gate's test-count floor — the check that aborts a commit when the runner ran fewer
+tests than the suite declares — SHALL enumerate the declared count from the tracked files of exactly
+the set the runner was given in that invocation, and not from the runner's own glob nor from any
+superset of it. What the floor compares is what the runner RAN against what the runner was GIVEN, so
+the two counts agree by construction on a healthy tree and can disagree only in the direction the
+floor exists to catch.
+
+#### Scenario: A test file in neither half is refused
+
+- **WHEN** a tracked test file exists under the test directory outside both halves and outside the
+  named change-triggered bucket
+- **THEN** the pre-commit gate refuses the commit naming that file, rather than running and counting
+  nothing
+
+#### Scenario: A collapsed half still fires the floor
+
+- **WHEN** the files the runner is handed for a half are fewer than the tracked test files that half
+  holds — a glob that stopped matching a directory, or a file renamed out of it
+- **THEN** the floor fires, because the declared count was enumerated from the tracked set and not
+  from the same expansion the runner was handed
+
+#### Scenario: The change-triggered bucket is demanded only when its subject moves
+
+- **WHEN** a commit changes engine source, in neither half
+- **THEN** the gate demands a fresh run of the change-triggered bucket and names it, and the
+  per-commit assertion half is unaffected
 
 ### Requirement: The assertion half spawns no process and runs no git
 
@@ -48,8 +84,9 @@ git, so the property is enforced rather than merely intended.
 #### Scenario: The assertion half runs in one process
 
 - **WHEN** the assertion half is run in the repository
-- **THEN** the whole half is executed by one Node process, and its duration is not dominated by
-  process startup
+- **THEN** the whole half is executed by one Node process — the run reports every file's tests from a
+  single process, with no per-file isolation — and the invocation starts no engine subprocess for any
+  test in it
 
 ### Requirement: Every functional test has an assertion twin sharing its id
 
@@ -58,8 +95,11 @@ SHALL be identified by the same id. The id SHALL be derived from the two files' 
 than declared in a registry, so a pair whose halves are renamed apart is not silently paired with
 something else.
 
-The two halves' id sets SHALL be equal at every commit: a functional test with no assertion twin, and
-an assertion twin with no functional test, are both refusals.
+The coverage SHALL hold in ONE direction: a functional test with no assertion twin is a refusal. An
+assertion-half file with no functional twin is NOT a refusal and SHALL NOT be treated as one — a test
+whose subject is not git's behaviour belongs in the assertion half precisely because it needs no real
+git, and demanding a functional counterpart for it would either invent an empty one or pull every
+assertion file into the triggered half.
 
 #### Scenario: A functional test with no twin is refused
 
@@ -129,8 +169,9 @@ functional run even where the assertion half covers the same behaviour.
 
 ### Requirement: The pre-commit gate checks the record without running the functional half
 
-The check that enforces the three requirements above SHALL be performed by a script that reads files
-and runs in the pre-commit gate. It SHALL NOT run the functional half, drive git against a
+The checks that enforce the requirements above — the enrolment, the twin pair, the diff coupling and
+the record's freshness — SHALL be performed by a script that reads files and runs in the pre-commit
+gate. It SHALL NOT run the functional half, drive git against a
 repository, or spawn the engine, so that enforcing the link cannot make every commit as slow as the
 thing the link exists to keep out of the way.
 

@@ -18,32 +18,63 @@ See `proposal.md` for the measurements and the motivation. What shapes the appro
   5 of 194 sites; the other 189 are inline `process.stderr.write(...); process.exit(1);` pairs. The
   conversion is mechanical, but it is a 194-site sweep and the task list is sized for that.
 - **The root is frozen at module load.** `scripts/lib/constants.mjs:12` captures
-  `ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd()`, and six more path constants are derived
-  from it in the same module-load pass (`:13` `CONDUCTOR_DIR`, `:42` `PROJECT_MD`, `:43` `CLAUDE_MD`,
-  `:44` `CHANGES_DIR`, `:46` `PLANS_DIR`, `:52` `SPECS_DIR`). 17 library modules reference `ROOT` (98
-  references); 7 reference `STATE_PATH`/`CONDUCTOR_DIR` (48 references).
+  `ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd()`, and ELEVEN more path constants derive from
+  it in the same module-load pass — `:13` `CONDUCTOR_DIR`, `:14` `STATE_PATH`, `:15` `BRIEF_PATH`, `:16`
+  `RENDER_STAMP_PATH`, `:17` `DETOURS_LOG`, `:18` `WRITE_CONFLICTS_LOG`, `:42` `PROJECT_MD`, `:43`
+  `CLAUDE_MD`, `:44` `CHANGES_DIR`, `:45` `ARCHIVE_DIR`, `:46` `PLANS_DIR`, `:52` `SPECS_DIR`. **Twelve
+  constants, enumerated mechanically rather than from this list**:
+  `rg -n 'path\.join\((ROOT|CONDUCTOR_DIR|CHANGES_DIR)' scripts/lib/constants.mjs`. Five of them are
+  WRITTEN by the engine — `PROJECT_MD` (`render.mjs:324`), `RENDER_STAMP_PATH` (`render.mjs:365`),
+  `BRIEF_PATH` (`subcommands.mjs:155`), `DETOURS_LOG` (`git.mjs:114,175`), `WRITE_CONFLICTS_LOG`
+  (`write-conflicts.mjs:33,46,63`) — so a sweep keyed on the token `ROOT` reaches neither them nor the
+  constants that hold them, which is exactly how a frozen path survives a "convert every ROOT reader"
+  pass. 17 library modules reference `ROOT` (98 references); 7 reference `STATE_PATH`/`CONDUCTOR_DIR`
+  (48 references — matching lines, `rg -c '\b(STATE_PATH|CONDUCTOR_DIR)\b' scripts/lib`; the raw
+  occurrence count is 54, and `created-at.mjs:35,98`'s `STATE_PATHSPEC` is a different constant and
+  must not be dragged into this one).
   Per-call root has prior art in the engine already: `git.mjs`'s `headAttachment(root = ROOT)` and
   `isDetachedTree(root = ROOT)`, and six `root = ROOT` parameters in `commit-watch.mjs`. **The
-  brief's second file reference is wrong**: `state.mjs` is already per-call — `getPaths()` at
-  `state.mjs:15–19` re-derives `ROOT`, `CONDUCTOR_DIR` and `STATE_PATH` on every access, deliberately
-  so tests can move it. There is nothing to fix there, and the sweep must not "fix" it into a
-  captured value.
-- **Other globals are read directly**: 46 `process.argv` reads in `scripts/lib`, 20 `process.env`
-  reads in `scripts/lib` plus 3 in `conductor.mjs` (7 distinct keys: `CLAUDE_PROJECT_DIR` ×10,
+  brief's second file reference is wrong ABOUT THE SHAPE**: `state.mjs` is already per-call —
+  `getPaths()` at `state.mjs:15–19` re-derives `ROOT`, `CONDUCTOR_DIR` and `STATE_PATH` on every
+  access, deliberately so tests can move it, and the sweep must not "fix" that into a captured value.
+  What it is NOT free of is the global it re-derives FROM: `process.env.CLAUDE_PROJECT_DIR ||
+  process.cwd()` (see the `process.cwd()` sites below), which under an injected env is the process's,
+  so `state.mjs` is swept like every other module for that and exempted from nothing.
+- **Other globals are read directly**: 46 `process.argv` reads in `scripts/lib`, 23 `process.env`
+  reads (20 in `scripts/lib`, 3 in `conductor.mjs`; 7 distinct keys — `CLAUDE_PROJECT_DIR` ×10,
   `CLAUDE_PLUGIN_ROOT` ×2, and one each of `PM_VERBOSE_ENGINE_BANNER`, `PM_QUIET_ENGINE_BANNER`,
-  `PM_SESSION`, `PM_OPENSPEC_VERSION`, `PM_CACHE_ROOT`), and 278 `process.stdout.write` /
-  `process.stderr.write` calls (30 + 248).
+  `PM_SESSION`, `PM_OPENSPEC_VERSION`, `PM_CACHE_ROOT`), 288 `process.stdout.write` /
+  `process.stderr.write` calls (278 in `scripts/lib` — 30 + 248 — plus TEN in `conductor.mjs` at
+  `:171,179,187,246,344,354,364,367,377,381`, of which the unknown-verb usage and the refusal output
+  are two the conformance set exercises), and **nine `process.cwd()` reads across seven modules**, each
+  deriving a root as `process.env.CLAUDE_PROJECT_DIR || process.cwd()`: `constants.mjs:12`,
+  `state.mjs:17`, `state.mjs:501`, `state.mjs:506`, `write-conflicts.mjs:15`, `claims.mjs:72`,
+  `purge-logs.mjs:34`, `lessons.mjs:42`, `activity-log.mjs:41` — enumerated by `rg -n 'process\.cwd\(\)'
+  scripts/lib`, never from this list. A tenth site, `constants.mjs:1568`'s
+  `rootDivergence({ env = process.env, cwd = process.cwd() })`, is already injectable and is the shape
+  the other nine take. Under an injected env these nine see the PROCESS's cwd, not the invocation's, so
+  a sweep that names only `process.argv`/`process.env`/`process.stdout`/`process.stderr` — or that
+  exempts `state.mjs` because `getPaths()` is already per-call — leaves Decision 3's two-roots
+  guarantee unmet.
 - **Git is reached from seven modules**, 23 invocations in total: `git.mjs` 11 (`:10, :55, :121,
   :129, :203, :229, :254, :274, :320, :392, :436`), `created-at.mjs` 3 (`:60, :63, :97`),
-  `subcommands.mjs` 4 (`:186, :189, :211, :222` — the last is the only shell-string `execSync`),
-  `commit-watch.mjs` 1 helper (`gitOut` at `:72`) reached from 3 call sites (`:82, :83, :289`),
-  `worktree-hygiene.mjs` 2 (`:35, :75`), `tool-currency.mjs` 1 (`:148`; `:72` in that file runs
-  `openspec`, not git), `constants.mjs` 1 (`:1617`).
-- **The assertion half will share one process across all its files.** Four module-level caches
-  already exist in `git.mjs` (`headAttachmentCache`, `resolvedCommitCache`, `unreachedCache`, all
-  keyed by value or by root) and `conductor-12` currently cache-busts module imports to re-evaluate
-  frozen constants. One process makes those caches live for the whole half and makes cache-busting
-  imports useless.
+  `subcommands.mjs` 4 (`:186, :189, :211, :222`), `commit-watch.mjs` 1 helper (`gitOut` at `:72`)
+  reached from 3 call sites (`:82, :83, :289`), `worktree-hygiene.mjs` 2 (`:35, :75`),
+  `tool-currency.mjs` 1 (`:148`; `:72` in that file runs `openspec`, not git), `constants.mjs` 1
+  (`:1617`). **THREE of those sites are shell-string `execSync`, not argv `execFileSync`** —
+  `subcommands.mjs:222`, `git.mjs:10` and `worktree-hygiene.mjs:35` — and the gateway sweep's regex
+  (`rg -e 'execFileSync\(' -e 'execSync\('`) reaches all three; the gateway's operations therefore
+  take a command, not an argv pair, for those.
+- **The assertion half will share one process across all its files.** Three module-level caches
+  already exist in `git.mjs` — `headAttachmentCache`, `resolvedCommitCache`, `unreachedCache`, all
+  three named, all keyed by value or by root (`rg -n '^const .*Cache = new Map' scripts/lib`) — plus
+  one module-scope mutable outside it: `subcommands.mjs:178`'s
+  `let showPrefix = null`, which caches `git rev-parse --show-prefix` under an explicit invariant
+  comment ("ROOT does not move under a running invocation"). `conductor-12` currently cache-busts
+  module imports to re-evaluate frozen constants. One process makes those caches live for the whole
+  half, makes cache-busting imports useless, and — for `showPrefix` — makes the invariant the comment
+  states FALSE: invocation 2 reuses invocation 1's prefix against invocation 1's root and
+  `changedFiles()` mis-strips, which corrupts every `CONDUCTOR_OWN_FILES` comparison downstream.
 - **Three places run the suite command** and all three will be wrong after the split:
   `.githooks/pre-commit` (which also holds a test-count floor and a cross-worktree lock at
   `$(git rev-parse --git-common-dir)/pm-suite.lock`), `.github/workflows/ci.yml` (`node-version: 18`,
@@ -81,6 +112,23 @@ scripts/conductor.mjs …` by ending in a tail that calls `main(process.argv.sli
 process.cwd(), env: process.env, stdin: process.stdin, stdout: process.stdout, stderr:
 process.stderr })` and assigns the result to `process.exitCode`.
 
+**FIVE things that run at module load move behind `main(argv, io)` with it**, because each of them is
+per-invocation work that would otherwise happen once per PROCESS — against the real env and the real
+streams — while `main()` was still being entered: the delegation handoff
+(`conductor.mjs:146–147`, which SPAWNS a child and exits), the root-divergence warning (`:225`, real
+stderr), **the detached-tree warning (`:234`, which probes the real git at load — `isDetachedTree()`
+runs `git symbolic-ref` from `git.mjs:51–63` against the FROZEN `ROOT`, so it is both a stderr write
+and a module-load git invocation that ignores the invocation's root — and then writes FOUR lines to
+real stderr through `warnDetachedTree`, `scripts/lib/constants.mjs:1620–1627`)**, the engine banner
+(`:244–249`, three real `process.env` keys), and the activity log's exit handler (`:273–281`, D11).
+The first four are gated on `VERB_EFFECTS[cmd]?.effect !== "read-only"` (`:221`), so the warning path
+is reached by a mutating or unknown verb and never by `--help` or a read-only verb — which is why the
+verify below needs two commands and not one. Verified they fire before dispatch today: `env -u
+CLAUDE_PROJECT_DIR node scripts/conductor.mjs not-a-verb` prints the banner and refusals with nothing
+dispatched. Without the move, `io.stderr` is not where the banner goes and the spec's "nothing the
+engine prints for that invocation SHALL reach the process's own stdout or stderr" is unmet on every
+invocation.
+
 **The brief specified `main(argv, {cwd, stdout, stderr})`; stdin and env are added, and the reason is
 measured rather than stylistic.** Four call sites read stdin — `gate-guard.mjs:330`,
 `lessons.mjs:129`, `subcommands.mjs:298`, `add-many.mjs:28` (via `state.mjs:28`'s `fs.readFileSync(0)`)
@@ -107,11 +155,13 @@ own the mapping from a thrown error to `{ exitCode, stdout, stderr }` for confli
 input (11), ambiguous rules blocks (11) and the hook-specific statuses (2 for `gate-guard` and
 `commit-nudge`, 0 for `brief`).
 
-Two exits do NOT become `CommandExit` and keep their meaning: `:147` returns the delegated child's
-status (the `PM_ENGINE_DELEGATION` handoff owns the whole invocation — `main()` returns it), and the
-CLI tail sets `process.exitCode` rather than calling `process.exit`, preserving the reason recorded
-at `conductor.mjs:378–381` (a hook's refusal can be a JSON payload on stdout and exiting immediately
-truncates it at a pipe buffer).
+Three exits do NOT become `CommandExit` and keep their meaning. `:147` returns the delegated child's
+status (the `PM_ENGINE_DELEGATION` handoff owns the whole invocation — `main()` returns it). `:191`,
+the pre-dispatch refusal, **returns its code** rather than throwing: it sits ABOVE dispatch's `try`, so
+a `CommandExit` thrown there would escape the one `catch` that maps it, and the refusal would leave
+`main()` as an exception instead of a status. And the CLI tail sets `process.exitCode` rather than
+calling `process.exit`, preserving the reason recorded at `conductor.mjs:378–381` (a hook's refusal can
+be a JSON payload on stdout and exiting immediately truncates it at a pipe buffer).
 
 *Consequence worth naming:* the `gate-guard` hook's exit-2 block (`gate-guard.mjs:389,397`) becomes a
 return value of 2. That is what makes the hook's boolean contract testable in-process, and it is also
@@ -122,8 +172,22 @@ that stops blocking is a safety regression, not a test failure.
 
 Every frozen path constant in `constants.mjs` becomes a function of a current root
 (`conductorDir(root)`, `statePath(root)`, `projectMd(root)`, …), defaulting to the invocation's root,
-following `headAttachment(root = ROOT)`'s existing shape. `main()` sets the invocation's root, argv,
-env and streams; the 46 `process.argv` reads, 23 env reads and 278 stream writes go through them.
+following `headAttachment(root = ROOT)`'s existing shape. **All TWELVE of them** — not the seven the
+task list originally named: the enumeration is
+`rg -n 'path\.join\((ROOT|CONDUCTOR_DIR|CHANGES_DIR)' scripts/lib/constants.mjs`, and the tokens
+`ROOT|STATE_PATH|CONDUCTOR_DIR` cannot reach `BRIEF_PATH`, `RENDER_STAMP_PATH`, `DETOURS_LOG`,
+`WRITE_CONFLICTS_LOG`, `ARCHIVE_DIR`, `PROJECT_MD`, `CLAUDE_MD`, `CHANGES_DIR`, `PLANS_DIR` or
+`SPECS_DIR`, five of which the engine WRITES. Each constant's consumers are then swept from the
+constant, not from `ROOT`. `main()` sets the invocation's root, argv, env and streams; the 46
+`process.argv` reads, the 23 env reads, the nine
+`process.env.CLAUDE_PROJECT_DIR || process.cwd()` root derivations and the 288 stream writes go through
+them. **`state.mjs` is in this sweep, not exempt from it**: `getPaths()`'s per-call re-derivation is
+the right *shape* and is preserved, but it re-derives from `process.env.CLAUDE_PROJECT_DIR ||
+process.cwd()` — process globals — so it must take the invocation's env and cwd instead of the
+process's, or the second of two in-process roots reads the first's directory.
+**`subcommands.mjs:178`'s `showPrefix` moves to the same per-call scope as the root it caches
+against** — a cached `--show-prefix` is only sound while the root cannot move, and Decision 3 is
+precisely the decision that it can.
 
 **This is not tidiness — under `--test-isolation=none` it is correctness.** All assertion files share
 one module graph, so a module-scope `ROOT` would be captured once, by whichever file loaded the
@@ -173,6 +237,42 @@ twice, `gate-guard`, `lesson-advice`).
 A guard test in the assertion half enforces the property mechanically: it walks `scripts/test/assert/`
 and fails, naming the file, when a file spawns a child process or invokes git.
 
+**Every tracked test file has exactly ONE home, and the enumeration covers all of them.** The
+enumeration is `git ls-files 'scripts/test/*.test.mjs' 'scripts/test/**/*.test.mjs'` — BOTH arms,
+because git's `**` does not match zero directories and the first arm is therefore the only one that
+reaches a file sitting directly in `scripts/test/` (verified in a scratch repository: the `**` arm
+matched the six nested files and missed the seventh at the top level). Each file enumerated lands in
+one of four homes:
+
+| home | what it is | who runs it |
+|---|---|---|
+| `scripts/test/assert/<id>.test.mjs` | the per-commit half: one process, no spawn, no git | the hook, every commit |
+| `scripts/test/functional/<id>.test.mjs` | the triggered half: real git through the real gateway, and the engine's real-spawn end-to-end invocations (the conformance set, the five hook verbs' six registrations in `hooks/hooks.json`) | the functional runner, `node scripts/test/certify.mjs functional`, on the trigger |
+| `scripts/test/sweeps/<id>.test.mjs` | **change-triggered, outside both halves**: runs no git and starts no engine, and is too slow to run per commit — today exactly one member, `output-interpolations` | the sweep runner, `node scripts/test/certify.mjs sweeps` (D9/D7), on the `engine-source` trigger |
+| explicitly excluded | the drift script's named list, EMPTY today: each entry must say why the file is in neither half, who runs it, and where its result is recorded | whoever the entry names |
+
+The middle two are the ones a two-way vocabulary would lose. **The conformance set and the hook
+verbs' end-to-end invocations are functional-half files that run no git**: the functional half is the
+half that runs on a trigger and may spawn, so a real-spawn test belongs there whether or not git is
+its subject, and each carries its assertion twin like any other functional id. **The sweep is the
+reverse case** — no spawn, no git, too slow for the per-commit half — and it is why "outside both
+halves" is a home rather than a hole. It is not a third half: it runs on its own trigger, writes its
+own record entry, and the twin rule does not reach it (D6's direction is stated over functional ids).
+
+**A tracked test file in none of these is a refusal, not a silence.** There is no orphan today —
+the two halves do not exist yet, and every one of the 80 files currently in `scripts/test/` is
+classified by 5.3 — but the failure mode is not hypothetical: a test file left in (or added to)
+`scripts/test/` is run by neither half's glob and counted by neither half's floor, so the suite would
+pass on a subset with nothing to say so. Measured in a scratch repository with six half files and one
+leftover at the top level: the two halves ran 15 tests, the floor compared 15 against 15, the hook
+exited 0, and the leftover's two tests never ran (D8, check 1).
+The assignment of the files that exist today is 5.3's by subject, with three named exceptions whose
+home is not a subject judgement: the sweep and its two helper modules (D9, assigned by 6.3), the
+conformance set and the hook end-to-end invocations (functional, assigned by 1.1's own move and by
+5.5), and the non-test modules in `scripts/test/` — `helpers.mjs`, `hermetic-git.mjs`,
+`parity-helpers.mjs`, `inject-state-conflict.cjs`, `fixtures/` — which are outside the enumeration
+entirely (it matches `*.test.mjs`) and move to `scripts/test/fixtures/` in 5.1 where they are shared.
+
 ### D6 — The twin id is the file's own name, and the diff must carry both halves
 
 A functional test's id is its file's path under `scripts/test/functional/`, without the extension; its
@@ -181,10 +281,23 @@ disk, never from a registry, so the pair cannot go stale — the same reasoning 
 gate uses when it enumerates a release's spec set off disk and hashes it.
 
 Two checks, both in the drift script (D8):
-1. **Set equality** — every functional id has an assertion file and every assertion file has a
-   functional id. Missing either half is a refusal.
+1. **Twin coverage, ONE direction** — every functional id has an assertion file of the same id. A
+   functional test with no twin is a refusal. **The converse is deliberately NOT a refusal**: an
+   assertion-half file with no functional twin is the normal shape for a test whose subject is not
+   git's behaviour (D5 places it there precisely because it needs no real git), and requiring a
+   functional twin for it would either invent an empty one or force every assertion file into the
+   triggered half. The direction that carries the risk is the one that is checked: the functional half
+   is the half that can go months unrun, so the fast half is the one that must learn its behaviour.
 2. **Diff coupling** — if the staged diff touches one half's file, it must touch the other's.
-   `git diff --cached --name-only` supplies the set; a rename carries both paths and passes.
+   `git diff --cached --name-only` supplies the set; a rename carries both paths and passes. This key
+   exists only where check 1 does, i.e. on the functional half's ids.
+
+The two checks constrain the MIGRATION too, and the migration's dispositions are stated to agree with
+them: a file that lands in the functional half is `paired` (its assertion twin is written in the same
+task); a file that stays in the assertion half is `kept whole` (no twin required); a file whose tests
+divide between the halves is `split into a pair` and keeps one id on both sides. **A file cannot be
+"moved" into the functional half without a twin** — that disposition does not exist, because check 1
+would refuse the very commit that created it.
 
 *Why coupling is a refusal rather than a warning.* The functional half does not run on every commit,
 so a change that loosens it would be unverified until the trigger fires — which may be months. The
@@ -195,7 +308,12 @@ trips neither check.
 
 ### D7 — Certification is a content hash per module, recorded in the git directory
 
-The functional runner writes, after a pass, a machine-readable record keyed by module:
+One dev-only runner — `scripts/test/certify.mjs`, plain Node, no dependency, living in the test tree
+and therefore not shipped (D8, D12) — runs a triggered bucket and writes its record entry after a
+pass: `node scripts/test/certify.mjs functional` runs `scripts/test/functional/`, and
+`node scripts/test/certify.mjs sweeps` runs `scripts/test/sweeps/` and writes the `engine-source`
+entry (D9). It is the only record writer there is, so "who produces this entry" has one answer rather
+than one per bucket. It writes, after a pass, a machine-readable record keyed by module:
 
 ```
 { "<module-id>": { "files": [...], "contentHash": "<hash of those files' bytes>",
@@ -218,38 +336,105 @@ it is machine state, not repository content, so committing it would churn a file
 run; worktrees share it exactly as they already share the suite lock; and a fresh clone having no
 record is correct behaviour — the first commit touching a certified module demands a run.
 
-Modules in the certified set are the gateway and the modules that invoke it: `git.mjs`,
-`created-at.mjs`, `subcommands.mjs`, `commit-watch.mjs`, `worktree-hygiene.mjs`, `tool-currency.mjs`,
-`constants.mjs`. The task that performs the gateway sweep re-derives this set mechanically.
+Modules in the certified set are the gateway, the modules that invoke it, and the entry point whose
+return-status mapping the conformance set pins: `git.mjs`, `created-at.mjs`, `subcommands.mjs`,
+`commit-watch.mjs`, `worktree-hygiene.mjs`, `tool-currency.mjs`, `constants.mjs` — **and
+`conductor.mjs`**. The task that performs the gateway sweep re-derives the git-side members
+mechanically; `conductor.mjs` is not derivable from that sweep and is named here for the opposite
+reason: the in-process/CLI status equivalence lives in its dispatch and its tail (`:147`, `:191`,
+`:366–383`), so a change there can break the conformance set's subject with nothing in the gateway set
+moving. **Which functional ids certify which member is recorded, not implied**: the gateway members are
+covered by the gateway operations' functional tests (D4/D5), and `conductor.mjs` is covered by the
+CONFORMANCE SET (D10, section 1 of the task list) — its `covers` entry is those ids, so the record for
+`conductor.mjs` is satisfied by a conformance run and not by an assertion as a substitute. The
+`engine-source` trigger (D9) is a second, disjoint entry covering `conductor.mjs` plus
+`scripts/lib/**/*.mjs` for the output sweep; the two entries do not cover each other.
 
 ### D8 — The drift script
 
 One dev-only script, plain Node, no dependency, lives with the repository's tooling (not under
 `scripts/lib`, so it is not part of the engine and not shipped). It reads files and spawns nothing. It
-performs exactly the three checks the capability names:
+performs exactly the four checks the capability names:
 
-1. the twin id sets are equal (D6);
-2. a staged change to one half carries the other (D6);
-3. for every certified module whose files appear in the staged diff, a record exists whose
+1. every tracked test file under `scripts/test/` has exactly one home (D5) — in `assert/`, in
+   `functional/`, in `sweeps/`, or in the script's named exclusion list, which is empty today. A file
+   in none of them is refused by name;
+2. every functional id has an assertion twin (D6, one direction only);
+3. a staged change to one half carries the other (D6);
+4. for every certified module whose files appear in the staged diff, a record exists whose
    `contentHash` equals the hash of those files as staged (D7).
 
-It runs in `.githooks/pre-commit`, inside the existing suite lock, before the suite runs. The hook's
-existing test-count floor (`grep -Hc '^test('` over the glob, which aborts when the runner ran fewer
-tests than are declared) is re-pointed at the assertion half and must also be taught the new shape —
-with two halves and a `--test-isolation=none` invocation, the summary line it parses comes from one
-command (or two, run in sequence). The CI workflow gains the same two invocations.
+It is not the runner: the runner is `scripts/test/certify.mjs` (D7), which spawns by design and is
+what a refusal names.
+
+**It runs in `.githooks/pre-commit` and the HOOK DOES NOT RUN THE FUNCTIONAL HALF.** The script is a
+check, not a runner: it reads the record and refuses when the record does not cover the staged
+content, naming the module and the command the developer runs to produce one. The ordering follows
+from that and is the reason for it: the check runs BEFORE the assertion half, and it cannot be
+satisfied by a run that happens later in the same hook, so a hook that also ran the functional half
+would either refuse before its own run could write the record or make every commit pay the cost the
+trigger exists to avoid. CI is the other half of the answer and is where the functional half actually
+runs on the same trigger, with no record present and none substitutable (see D7's risk note).
+
+The hook's existing test-count floor (`grep -Hc '^test('` over the glob, which aborts when the runner
+ran fewer tests than are declared) is the defect this check must not reproduce, because after the split
+the runner's glob and the floor's glob would be the SAME expression over a set that can silently
+shrink. Measured on 0.46.0's hook: with eight test files, four of them moved under
+`scripts/test/assert/`, the hook's two lines report `4/4 passing`, `declared=4`, and exit 0 while four
+files never ran.
+
+**The floor's invariant, stated once: it compares what the runner RAN against what the runner was
+GIVEN, and never against a superset of it.** `declared` is therefore enumerated from the tracked files
+OF THE SAME HALF (or halves) the runner is handed in that invocation — the hook passes only
+`scripts/test/assert/*.test.mjs` to the runner, so its `declared` is
+`git ls-files 'scripts/test/assert/*.test.mjs' | xargs grep -Hc '^test('`, and CI, which runs all
+three buckets, enumerates each bucket's own tracked files against that bucket's own run. The two
+counts then agree BY CONSTRUCTION on a healthy tree, and disagree only in the direction the floor
+exists to catch.
+
+The enumeration is independent of the runner's own glob in the way that matters — it names the
+tracked files in the half's DIRECTORY, and does not take the shell's expansion of the pattern the
+runner was given — so a glob that stopped matching a directory reports fewer tests than the half
+declares and fires. **Enumerating over BOTH halves at once is the shape that must not be written**: it
+is a superset of what the hook's runner was given, so it aborts on every commit that has a functional
+half at all (reproduced in a scratch repository with three files per half — the assertion runner
+reported `total=6` against `declared=15`, and the hook aborted). And the counts are not the whole
+guard: a file in NEITHER half is invisible to both sides of this comparison and is check 1's job, not
+the floor's — reproduced with six half files and one leftover at the top level, the two halves ran 15
+tests, the floor compared 15 against 15, and the hook exited 0 while the leftover's two tests never
+ran.
+
+**The re-point and the migration cannot be separated by a commit.** `.githooks/pre-commit:69,81` and
+`.github/workflows/ci.yml:32,35` name `scripts/test/*.test.mjs`, which matches nothing under either new
+half; the moment the first file leaves that glob the hook's suite is a subset and, with the floor's
+`declared` computed from the same glob, the gap is invisible. So the hook's two globs, ci.yml's syntax
+loop and suite step, and the first migration of a file out of `scripts/test/*.test.mjs` land in ONE
+commit — the re-point cannot be deferred to the drift-script section, and the task list is ordered so
+no commit exists between them. The CI workflow gains the same two invocations in that same commit, and
+`node --test --test-isolation=none` is verified on the pinned version there (D5's CI risk).
 
 ### D9 — A trigger table, not a special case for the output sweep
 
-`scripts/test/output-interpolations.test.mjs` is measured today at 25 scenarios, each re-sweeping 58
-source files (one sweep: 1,497 interpolations — 479 escaped, 266 literal, 191 sunk, 22 not-output,
-539 judged, 0 findings, 6.7 s wall / 1.5 s CPU on a loaded machine). It certifies a property of the
-engine's SOURCE and needs no git and no engine call, so it is neither an assertion test (it is too
-slow to run every commit) nor a functional test (it runs no git).
+`scripts/test/output-interpolations.test.mjs` is measured today at 25 scenarios (re-run here:
+`node --test scripts/test/output-interpolations.test.mjs` reports `ℹ tests 25`; 19 are top-level
+declarations and one of them is a table-driven loop emitting the rest), each re-sweeping 58 source
+files — `sweptFiles()` returns 58 — over one sweep: 1,497 interpolations, 479 escaped, 266 literal,
+191 sunk, 22 not-output, 539 judged, 0 findings, 6.7 s wall / 1.5 s CPU on a loaded machine.
+It certifies a property of the engine's SOURCE and needs no git and no engine call, so it is neither
+an assertion test (it is too slow to run every commit) nor a functional test (it runs no git).
+
+**It is the `sweeps` bucket (D5): it moves to `scripts/test/sweeps/output-interpolations.test.mjs`
+with its two helper modules (`output-interpolations.mjs`, `output-interpolations.judged.mjs`, which
+are not test files and therefore not enumerated), and 6.3 is the task that moves it, names its
+runner and writes its record.** Its runner is the same dev-only one every triggered bucket uses —
+`node scripts/test/certify.mjs sweeps` (D7), which runs `node --test
+scripts/test/sweeps/*.test.mjs` and, on a pass, writes the record entry below. Nothing else about the
+record changes: it lives under `$(git rev-parse --git-common-dir)` with the rest of it, and the
+refusal that names the missing entry names that command.
 
 Rather than special-case it, the record carries a second kind of entry: a trigger id of
 `engine-source`, hashing `scripts/conductor.mjs` plus `scripts/lib/**/*.mjs`. The drift script's
-third check therefore covers it in exactly the same way, and the script learns no second rule.
+fourth check therefore covers it in exactly the same way, and the script learns no second rule.
 
 *Note on the brief's duration.* The brief cites ~18 s; the suite's own reported `duration_ms` for that
 file measured **312 s** here, on a machine at 11% CPU with other work running. The file is 25
@@ -355,9 +540,15 @@ Ordered so that every step is independently reversible and the suite is green at
    activity-log move (D11) in the same step.
 4. **The gateway sweep and injection** (D4), then the fake, then the fake-vs-live check.
 5. **The split** (D5/D6): create the two directories, migrate tests by subject, add the twin ids, add
-   the assertion-half spawn guard.
-6. **The drift script and the record** (D7/D8/D9), then the three call sites that run the suite
-   (`.githooks/pre-commit`, `ci.yml`, the `release-checklist` skill).
+   the assertion-half spawn guard. **`.githooks/pre-commit` and `ci.yml` are re-pointed in the same
+   commit as the first file that leaves `scripts/test/*.test.mjs`** (D8) — everything before that
+   commit still runs correctly against the old glob, and everything after it would not.
+6. **The drift script, the record and the sweep bucket** (D7/D8/D9): the runner that writes the
+   record, the four checks, the `engine-source` entry, and the move of the sweep into
+   `scripts/test/sweeps/` with the runner and the record that make its trigger satisfiable — then the
+   remaining place that names the suite command (the `release-checklist` skill, whose Real Numbers
+   recipe derives the published test count from it) and the docs that quote it (`CONTRIBUTING.md`,
+   this repo's `CLAUDE.md`, the `pr-workflow` skill).
 7. **Docs**: README/SKILL if any contributor-facing instruction changes, CHANGELOG, and the
    release-checklist's Real Numbers recipe.
 
