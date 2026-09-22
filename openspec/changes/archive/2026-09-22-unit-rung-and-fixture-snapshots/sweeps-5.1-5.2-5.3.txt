@@ -1,0 +1,142 @@
+# Tasks 5.1, 5.2 and 5.3 — the sweeps, enumerated mechanically
+
+Every list below was produced by a command, and the commands are printed with their output. Where a
+list is short enough to type, it is still derived, because a list typed from memory goes stale the
+moment a caller is added.
+
+═══════════════════ 5.1(a) — the store rule over every `.conductor/` write site and PROJECT.md ═══════════════════
+
+**THE PATTERN IS THE FINDING, and it reproduces.** Starting from the path constants:
+
+    $ rg -n '^export const \w+ = \(root = engineRoot\(\)\)' scripts/lib/constants.mjs
+    36: conductorDir        37: statePath           38: briefPath          39: renderStampPath
+    40: detoursLog          41: writeConflictsLog   65: projectMd          66: claudeMd
+    67: changesDir         68: archiveDir          69: plansDir           75: specsDir
+    → TWELVE.
+
+The obviously-similar pattern reaches SIX of them and reads as though it reached all twelve:
+
+    $ rg -c 'path\.join\((conductorDir|engineRoot|ROOT)' scripts/lib/constants.mjs
+    6
+
+because the repo-root-relative constants are written `path.join(root, …)` rather than
+`path.join(engineRoot(), …)`. `ROOT|STATE_PATH|CONDUCTOR_DIR` reaches THREE. A pattern that reaches an
+arbitrary subset while reading as if it reached all of them is the defect this item exists to catch,
+and it was made while the change's own proposal was being written.
+
+**Every raw filesystem MUTATION in the engine, after the seam.** The enumeration is the check
+`assert/store-ownership.test.mjs` runs on every commit:
+
+    $ rg -o 'fs\.(writeFileSync|appendFileSync|rmSync|unlinkSync|renameSync|mkdirSync|cpSync|fsyncSync)\(' \
+           scripts/lib/*.mjs scripts/conductor.mjs
+
+    scripts/lib/store.mjs            (24 sites — the disk implementation)
+    scripts/lib/rules.mjs:1112       CLAUDE.md's managed block
+    scripts/lib/subcommands.mjs:90   .gitignore line management
+    scripts/lib/commit-watch.mjs:191,:196,:223,:241-244   the observation record and its lock
+    scripts/lib/activity-log.mjs:128 activity retention's removal (a caller-supplied directory)
+
+**Five files, and each one is a DECISION in design D1's table rather than an omission** — which is
+the property the table was written for and this sweep is what makes it checkable. Every other write
+site in the engine goes through the store.
+
+**Where the rule HOLDS and where it does not:**
+
+| artifact | writer | through the store? |
+| --- | --- | --- |
+| `.conductor/state.json` | `saveState` | YES (task 1.2) |
+| `PROJECT.md` | `render` | YES (1.3) |
+| `.conductor/render-stamp.json` | `writeRenderStamp` | YES (1.3) |
+| `.conductor/detours.log` | `git.mjs` ×2 | YES (1.4) |
+| `.conductor/write-conflicts.log` (+ `.latch`, + `.prev`) | `write-conflicts.mjs`, `store.mjs` | YES (1.2/1.4) |
+| `.conductor/honcho-memories.log` | `appendHonchoMemory` | YES (1.4) |
+| `.conductor/activity/*` | `appendEvents` | YES, the APPEND (1.4) |
+| `.conductor/brief.txt` | `snapshot` | YES (1.4) |
+| `.conductor/session-claim.json` | `writeRepoClaim` | YES (1.2, as `writeAtomic`) |
+| `CLAUDE.md` | `rules.mjs` | NO — a repository file, D1 |
+| `.gitignore` | `platform.mjs` | NO — a repository file, D1 |
+| `.conductor/commit-observe.json` (+ `.lock`) | `commit-watch.mjs` | NO — a lock is an inode + a nonce, D1 |
+| activity retention's removal | `pruneToCap` | NO — a caller-supplied directory, D1 |
+| `.changesets/` | nothing (read only) | N/A |
+
+**THE ONE THE CONSTANTS SWEEP CANNOT REACH, found here rather than by the sweep:** the constants
+enumeration above is a superset of NOTHING — `.conductor/honcho-memories.log` had no constant at all.
+Its path was built inline in `subcommands.mjs`, so no scan of `constants.mjs` could ever have found
+it. It is store-owned now, and the sweep's own shape is why this is recorded: a sweep that starts
+from an enumeration is only as wide as the enumeration, and the artifact that was outside it is the
+proof.
+
+═══════════════════ 5.1(b) — the no-filesystem-work rule over `scripts/test/unit/` ═══════════════════
+
+Enforced at two layers, and each covers what the other cannot:
+
+* **SOURCE SCAN** — `assert/assert-half-has-no-spawn.test.mjs` walks `scripts/test/unit/` and refuses
+  a file that imports the filesystem module or calls a read or a write. `violations(name, src, "unit")`
+  matches a BARE call or an `fs.`-receiver call and not a general member call, because the rung's own
+  tests legitimately call `store.read(...)`.
+* **RUN-TIME COUNTER** — `fixtures/fs-work-counter.mjs`, armed per test by `unitTest()`. ZERO WRITES
+  AND FLUSHES absolutely; READS refused when the engine is not on the call chain.
+
+Both are exercised by their own tests, and both have been SEEN to fail: red-2.1.txt holds the
+discrimination test with the predicate removed AND the walk firing against a deliberately violating
+file it then named.
+
+═══════════════════ 5.1(c) — the ENROLMENT rule over the four homes and every enumerator ═══════════════════
+
+    $ rg -n 'scripts/test/(assert|unit|functional|sweeps)' .githooks/pre-commit scripts/test/drift.mjs \
+           scripts/test/certification.mjs scripts/test/certify.mjs .github/workflows/ci.yml
+
+| consumer | enumerates | derived from |
+| --- | --- | --- |
+| `certification.mjs` `homeOf()` | all four homes | `HOMES`, ONE list (2.2) |
+| `drift.mjs`'s enrolment refusal | all four homes | `homesInProse()` ← `HOMES` (2.2) |
+| `drift.mjs`'s twin refusal | both assertion-half rungs | `twinPathsOf()` ← `HOMES` (5.1c) |
+| `certification.mjs` `assertionIds()` | both assertion-half rungs | `HOMES` (4.1) |
+| `couplingRefusals()` | both assertion-half rungs | `twinPathsOf()` (5.1c) |
+| `.githooks/pre-commit` floor | the two rungs the runner was handed | `git ls-files`, literal |
+| `ci.yml` syntax check + three bucket steps | four homes, per step | literal, per step |
+| `certify.mjs` `bucketFiles()` | functional / sweeps | `certification.mjs` |
+| `assert-half-has-no-spawn` | `assert/` and `unit/` separately | two `path.join` globs |
+
+**A NON-DERIVED ENUMERATION WAS FOUND AND IS THE FINDING THIS ITEM EXISTS FOR**: `certification.mjs`
+carried the twin path as the literal `scripts/test/assert/${id}.test.mjs` in TWO places while
+`drift.mjs` named a third in prose — three copies of one fact, and all three would have been wrong
+the moment a twin moved to the unit rung (which 4.1's first migration did). All three are now
+`twinPathsOf(id)`. The hook's floor and CI's steps stay literal ON PURPOSE: each enumerates the set
+its OWN runner was handed, and a derived set there would be the "superset the runner was not given"
+trap the hook's comment names.
+
+═══════════════════ 5.1(d) — the rung-membership rule, whose call sites are human decisions ═══════════════════
+
+The rule: a test belongs to the rung matching its OBSERVABLE. It holds where it can and does not
+where it cannot, and both are stated rather than implied:
+
+* **HOLDS — `scripts/test/unit/`.** The rung's tests assert on values obtained through the store. The
+  guard makes the wrong direction LOUD: a unit test that reads a path is refused by name.
+* **HOLDS — the file rung's byte-observing population**: `render-byte-parity` (PROJECT.md's bytes
+  against a pre-seam capture), `store-seam` (half its subject IS the disk store), `fixture-snapshot`
+  (the restore path is a filesystem), `git-gateway-*`, `hermetic-git`, `worktree-hygiene` and every
+  test reading `CLAUDE.md`'s managed block or `.changesets/` (D1's not-owned list).
+* **DOES NOT HOLD, AND IS NOT MEANT TO — the 90 unmigrated files.** Task 4.1's migration is per file
+  and by judgment; one file has moved (`flag-parsing`, commit e6b928f) and the rest are listed in
+  worklist-4.1.md in cost order. The rule is what the migration is FOR; it is not a property the
+  suite has yet, and claiming otherwise would be the kind of overstatement the acceptance number
+  exists to prevent.
+* **THE SECOND DIRECTION IS DELIBERATELY NOT LOUD**, and the spec says so: the unit rung's guard
+  scans `scripts/test/unit/` only, so a value-observing test left on the file rung goes undetected.
+  What carries it is the per-file judgment of 4.1.
+
+═══════════════════ 5.3 — every operation has an inverse ═══════════════════
+
+| operation | inverse | shipped? |
+| --- | --- | --- |
+| store `read` | `write` / `append` | YES |
+| store `write` / `append` | `remove` | **YES** — 1.2's I2; the sites that remove store-owned artifacts (`write-conflicts`' `clearConflicts`, `purge-logs`, `activity-log`'s prune, `claims.mjs`'s clear) are on it |
+| store `write` (accumulating) | `rotate` (`x` → `x.prev`) | **YES** — `write-conflicts.mjs:35`'s rotation |
+| store `writeAtomic` | `remove` | **YES** (`claims.mjs`'s clearRepoClaim) |
+| fixture build | template + copies DISCARDED | **YES** — 3.5, by the file's teardown hook with a process-exit backstop |
+| the ownership table | the check that fails on an unnamed write site | **YES** — `assert/store-ownership.test.mjs` (5.2) |
+| the rung's guard | a bypass | **NOT SHIPPED, and named**: the source scan and the run-time counter are the two halves, and the counter's blind spot — a module that captured `fs`'s functions before the wrapper was installed — is stated in design Risk 7 rather than claimed closed. There is no third layer and no exemption mechanism, which is the point: an exemption list is how a guard stops guarding. |
+| the migration's per-file move | a move BACK | **NOT SHIPPED, and the reason is stated**: a rung decision is a judgment about an observable, and re-deriving it automatically is exactly the codemod design D6 rejects. The unit rung's guard makes one direction loud; the other is caught by review or by the test going slow. |
+| `rotate` | rotate back (`.prev` → `x`) | **NOT SHIPPED**: `.prev` is a bounded, deliberately discarding slot — its reader is `purge-logs`, which removes it, and restoring it would resurrect the log a rotation ended. Named rather than left implicit. |
+| `remove` | restore | **NOT SHIPPED, and not implementable**: the store has no undo, and the artifacts on this interface are logs and markers. The state RECORD is the one whose loss would matter, and it is not removed by this interface at all — `state.json` has no remove path. |

@@ -17,6 +17,22 @@
 // predate `update-epic --plan` (shipped 0.27.0) and therefore claim nothing yet; it must offer
 // BOTH exits, because a same-stripped-name collision can be coincidental and pointing an epic's
 // progress source at an unrelated plan would report `0/N` forever.
+//
+// ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
+//
+// TWO of its nineteen tests moved to `scripts/test/unit/conductor-20.test.mjs` — the tombstone-free
+// removal (whose fixture needs no plan file) and the registry sweep (which is pure).
+//
+// SEVENTEEN STAY, and SIXTEEN of them are ONE population with one reason: `withPlan(cwd, name, body)`
+// puts a real file under `docs/superpowers/plans/`, and a plan FILE on disk is precisely what the
+// resolution ladder resolves ABOUT — every rung of it needs one. The seventeenth reads the
+// `--clear <field>` row out of `commands/epic.md`.
+//
+// THIS FILE IS WHERE THE SEAM'S EDGE LEAVES THE LEAST, and that is the honest reading rather than a
+// shortfall in the migration: the ladder IS a directory walk, and the unit rung has no directory.
+//
+// No assertion changed in either direction.
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -46,8 +62,6 @@ function seed(cwd, epics, extra = {}) {
 
 const ids = (cwd) => readState(cwd).epics.map(e => e.id).sort();
 
-// ─────────── rung 1: the association, which is the whole point of #64/#69 ───────────
-
 test("gh-69: sync skips a plan already claimed by an epic's planPath, whatever the epic is called", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-01-big-refactor.md");
@@ -60,7 +74,6 @@ test("gh-69: sync skips a plan already claimed by an epic's planPath, whatever t
     "the claimed plan must not become a second epic");
   assert.match(out, /claimed by epic 'totally-different-name'/);
 });
-
 test("gh-64: the claim is status-blind — an ARCHIVED epic's plan is not re-offered as new work", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-03-platform-parity-mechanism.md");
@@ -75,7 +88,6 @@ test("gh-64: the claim is status-blind — an ARCHIVED epic's plan is not re-off
   assert.match(out, /claimed by epic 'platform-parity-mechanism'/,
     "the CLAIM must be what suppressed it — a name match is the fallback, not the mechanism");
 });
-
 test("gh-64: the claim is lane-blind — a decision-lane epic may hold a superpowers plan", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-07-14-epic-hierarchy-orchestration.md");
@@ -86,7 +98,6 @@ test("gh-64: the claim is lane-blind — a decision-lane epic may hold a superpo
   assert.match(out, /claimed by epic 'epic-hierarchy-orchestration'/,
     "same reason as the status-blind case — pin the rung, not just the outcome");
 });
-
 test("a plan no epic claims is still registered — the ladder must not suppress real backlog", () => {
   const cwd = tmpRepo();
   withPlan(cwd, "2026-08-01-genuinely-new.md", "# Genuinely New\n- [ ] a\n");
@@ -97,7 +108,6 @@ test("a plan no epic claims is still registered — the ladder must not suppress
   assert.equal(e.planPath, rel("2026-08-01-genuinely-new.md"));
   assert.equal(e.lane, "superpowers");
 });
-
 test("a claim spelled './docs/...' is the same artifact as 'docs/...'", () => {
   const cwd = tmpRepo();
   withPlan(cwd, "2026-08-20-leading-dot.md");
@@ -111,7 +121,6 @@ test("a claim spelled './docs/...' is the same artifact as 'docs/...'", () => {
   assert.deepEqual(ids(cwd), ["dotted"]);
   assert.match(out, /claimed by epic 'dotted'/);
 });
-
 test("a tombstone written with one spelling suppresses the other", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-21-dotted-phantom.md");
@@ -124,7 +133,6 @@ test("a tombstone written with one spelling suppresses the other", () => {
 });
 
 // ─────────── rung 4: the recovery path for epics registered before `--plan` existed ───────────
-
 test("gh-64: a date-prefixed plan matching an epic id is NOT registered, and both exits are named", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-07-21-conductor-mjs-module-split.md");
@@ -138,7 +146,6 @@ test("gh-64: a date-prefixed plan matching an epic id is NOT registered, and bot
   assert.match(out, /update-epic conductor-mjs-module-split --plan docs\/superpowers\/plans\/2026-07-21-conductor-mjs-module-split\.md/);
   assert.match(out, new RegExp(`add-epic --id 2026-07-21-conductor-mjs-module-split .*--plan ${p.replace(/[/.]/g, "\\$&")}`));
 });
-
 test("the name-match rung never fires when some epic already claims the plan", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-07-21-conductor-mjs-module-split.md");
@@ -151,7 +158,6 @@ test("the name-match rung never fires when some epic already claims the plan", (
   assert.doesNotMatch(out, /update-epic conductor-mjs-module-split --plan/,
     "an existing claim is the answer; instructing a second association would create a fork");
 });
-
 test("the name-match rung never offers an epic that already claims a DIFFERENT plan", () => {
   const cwd = tmpRepo();
   const first = withPlan(cwd, "2026-08-01-recurring-audit.md");
@@ -170,7 +176,6 @@ test("the name-match rung never offers an epic that already claims a DIFFERENT p
 });
 
 // ─────────── rung 3: the tombstone — removal that survives the next sync ───────────
-
 test("gh-64: remove-epic tombstones the removed epic's plan, and sync does not resurrect it", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-14-phantom.md");
@@ -182,7 +187,6 @@ test("gh-64: remove-epic tombstones the removed epic's plan, and sync does not r
   assert.deepEqual(ids(cwd), [], "removal used to buy you only until the next sync");
   assert.match(out, /sync-ignore/);
 });
-
 test("gh-64: --cascade tombstones EVERY removed epic's plan, not just the named one", () => {
   const cwd = tmpRepo();
   const pa = withPlan(cwd, "2026-08-14-parent-plan.md");
@@ -197,18 +201,6 @@ test("gh-64: --cascade tombstones EVERY removed epic's plan, not just the named 
   run(["sync"], { cwd });
   assert.deepEqual(ids(cwd), []);
 });
-
-test("removing an epic that claims no plan writes no tombstone", () => {
-  const cwd = tmpRepo();
-  seed(cwd, [epic({ id: "no-plan" })]);
-  run(["remove-epic", "no-plan"], { cwd });
-  const st = readState(cwd);
-  assert.ok(!st.syncIgnore || st.syncIgnore.length === 0,
-    "an ignore list that accumulates entries for epics with no artifact is noise");
-});
-
-// ─────────── un-ignore: associating a plan is the explicit statement that it is real ───────────
-
 test("update-epic --plan clears a tombstone on that path", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-14-phantom.md");
@@ -219,7 +211,6 @@ test("update-epic --plan clears a tombstone on that path", () => {
   assert.deepEqual(readState(cwd).syncIgnore, [],
     "attaching a plan says it is real work — the contrary tombstone must go");
 });
-
 test("add-epic --plan clears a tombstone on that path", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-14-phantom.md");
@@ -228,7 +219,6 @@ test("add-epic --plan clears a tombstone on that path", () => {
   run(["add-epic", "--id", "reborn", "--lane", "superpowers", "--plan", p], { cwd });
   assert.deepEqual(readState(cwd).syncIgnore, []);
 });
-
 test("add-many clears a tombstone on a batch entry's planPath", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-14-phantom.md");
@@ -242,7 +232,6 @@ test("add-many clears a tombstone on a batch entry's planPath", () => {
 });
 
 // ─────────── back-compat: nothing existing must be transformed ───────────
-
 test("a tombstone's removedEpic is historical and must not be reported as a dangling reference", async () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-22-gone.md");
@@ -260,40 +249,6 @@ test("a tombstone's removedEpic is historical and must not be reported as a dang
 });
 
 // ─────────── the family: #92's specPath must fit this shape, not invent a second one ───────────
-
-test("every source-artifact field is a registered EPIC_FLAGS key on all three write surfaces", async () => {
-  const { EPIC_SOURCE_ARTIFACTS } = await import("../../lib/source-artifacts.mjs");
-  const { EPIC_FLAGS } = await import("../../lib/constants.mjs");
-  assert.ok(EPIC_SOURCE_ARTIFACTS.length >= 1);
-  for (const a of EPIC_SOURCE_ARTIFACTS) {
-    const reg = EPIC_FLAGS.find(f => f.key === a.key);
-    assert.ok(reg, `source artifact '${a.key}' is not a registered epic flag — nothing can write it`);
-    assert.equal(reg.flag, a.flag, `'${a.key}' names --${a.flag} in its skip instruction but EPIC_FLAGS says --${reg.flag}`);
-    // All three, because the claim clearing lives in pushEpic (add-epic, add-many, sync) and in
-    // update-epic. An artifact field settable at creation but not afterwards is exactly the
-    // #66 blocker that kept #64/#69 unfixable: the association could not be populated for the
-    // epics that already existed.
-    for (const cmd of ["add-epic", "update-epic", "add-many"]) {
-      assert.ok(reg.commands.includes(cmd),
-        `--${a.flag} must be settable on ${cmd}, or the association is unreachable for some epics`);
-    }
-  }
-});
-
-// ─────────── the SIBLING sweep: what can be SET can be UNSET, or says why not ───────────
-//
-// A SIBLING of the sweep above rather than a widening of it, deliberately. That one asserts
-// every source-artifact field appears on all three of add-epic/update-epic/add-many, which two
-// NULLABLE fields fail BY DESIGN — `notes` is ["add-epic","update-epic"] and `review-mode` is
-// ["update-epic"] alone — and it is driven by a different registry (EPIC_SOURCE_ARTIFACTS).
-// Widening it was cited as the fix for gh-66 and is not implementable; this is what that
-// citation was correcting toward.
-//
-// DECLARATION-level on purpose. The FUNCTIONAL half — that `--clear <flag>` actually removes the
-// field from the record — is exercised per nullable row in nullable-clearing.test.mjs, against a
-// fixture that SETS the field first so it cannot pass against an implementation that does
-// nothing. What this sweep adds is the other direction: a settable field that silently declares
-// neither markers, and a nullable field that no user-facing document names.
 test("every settable epic field is declared clearable or declares why it is not", async () => {
   const { settableEpicFlags, nullableEpicFlags } = await import("../../lib/constants.mjs");
   const settable = settableEpicFlags("update-epic");
@@ -332,7 +287,6 @@ test("every settable epic field is declared clearable or declares why it is not"
       "the document promises a clear the engine refuses by name");
   }
 });
-
 test("a state file written before syncIgnore existed loads and syncs unchanged", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-01-old.md");

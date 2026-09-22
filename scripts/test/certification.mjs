@@ -46,10 +46,14 @@ export const ENGINE_ENTRY = "scripts/conductor.mjs";
  *  watches it. */
 export const CONFORMANCE_ID = "conformance";
 
-/** The three homes a tracked test file may have (D5), plus the script's named exclusion list, which
- *  is EMPTY today. An entry here states why the file is in neither half, who runs it, and where its
- *  result is recorded — the vocabulary is D5's table, and the emptiness is the claim that every one
- *  of the repository's 85 test files has a home. */
+/** The FOUR homes a tracked test file may have (D5, plus 0.48.0's unit rung), plus the script's
+ *  named exclusion list, which is EMPTY today. An entry here states why the file is in neither half,
+ *  who runs it, and where its result is recorded — the vocabulary is D5's table, and the emptiness is
+ *  the claim that every one of the repository's tracked test files has a home.
+ *
+ *  THE COUNT MOVED FROM THREE TO FOUR WITH THE UNIT RUNG (0.48.0, task 2.2), and the comment moves
+ *  in the same edit on purpose: a comment that under-counts the homes is how the next file gets filed
+ *  in none. */
 export const EXCLUSIONS = [];
 
 const readDefault = (p) => fs.readFileSync(p, "utf8");
@@ -57,12 +61,27 @@ const readdirDefault = (p) => fs.readdirSync(p);
 
 // ───────────────────────────── the enrolment rule (check 1) ─────────────────────────────
 
-/** The home a repository-relative test path lands in, or `null`. `assert/`, `functional/` and
- *  `sweeps/` are the three; anything else — including a file sitting directly in `scripts/test/` —
- *  is no home at all. */
+/** The rungs and halves a test file may be filed under, IN THE ORDER the refusal message names
+ *  them. ONE list, because it is asked two questions — "where does this path land" and "what should
+ *  the refusal say" — and two lists answering them is how a fourth home gets added to one and not the
+ *  other. That is exactly what happened before 0.48.0: `drift.mjs`'s enrolment refusal named the
+ *  THREE homes in hand-written prose ("move it under scripts/test/assert/, scripts/test/functional/
+ *  or scripts/test/sweeps/"), which is not derived from this regex and would have stayed wrong the
+ *  moment `unit` was added (task 2.2's I5). */
+export const HOMES = ["assert", "unit", "functional", "sweeps"];
+
+/** The home a repository-relative test path lands in, or `null`. The names above are the homes;
+ *  anything else — including a file sitting directly in `scripts/test/` — is no home at all. */
 export function homeOf(rel) {
-  const m = /^scripts\/test\/(assert|functional|sweeps)\/[^/]+\.test\.mjs$/.exec(rel);
+  const m = new RegExp(`^scripts\\/test\\/(${HOMES.join("|")})\\/[^/]+\\.test\\.mjs$`).exec(rel);
   return m ? m[1] : null;
+}
+
+/** The homes as a reader should see them named in a refusal, derived from HOMES so the message cannot
+ *  go stale: `scripts/test/assert/, scripts/test/unit/, …`, with the last joined by "or". */
+export function homesInProse() {
+  const dirs = HOMES.map((h) => `scripts/test/${h}/`);
+  return `${dirs.slice(0, -1).join(", ")} or ${dirs[dirs.length - 1]}`;
 }
 
 /** Every tracked test file that has no home. The enumeration the caller passes MUST be BOTH arms of
@@ -82,9 +101,17 @@ export function functionalIds(root = REPO, readdir = readdirDefault) {
   return testIdsIn(root, "functional", readdir);
 }
 
-/** The assertion half's ids. */
+/** The assertion half's ids — BOTH ITS RUNGS (0.48.0 task 4.1).
+ *
+ *  THE TWIN RULE IS ABOUT HALVES, NOT DIRECTORIES: it says every functional id has a twin in the
+ *  ASSERTION half, and the unit rung is a rung of that half (design D2) — same trigger, same process.
+ *  Reading only `assert/` would refuse a functional id whose twin had MOVED to the unit rung, which
+ *  is exactly what 4.1's migration does to a file whose tests assert on values: flag-parsing is the
+ *  first one, and its twin is a full port of a functional file's tests. Found by attempting that
+ *  move rather than by reading the rule — the refusal named the missing twin, and the missing twin
+ *  was there, one directory over. */
 export function assertionIds(root = REPO, readdir = readdirDefault) {
-  return testIdsIn(root, "assert", readdir);
+  return [...new Set([...testIdsIn(root, "assert", readdir), ...testIdsIn(root, "unit", readdir)])].sort();
 }
 
 /** The sweep bucket's ids. A `covers` entry may name one of these as readily as a functional id —
@@ -96,7 +123,15 @@ export function sweepIds(root = REPO, readdir = readdirDefault) {
 }
 
 function testIdsIn(root, half, readdir) {
-  return readdir(path.join(root, "scripts", "test", half))
+  // A MISSING DIRECTORY IS AN EMPTY ONE, not a crash. These functions are handed synthetic
+  // repositories as well as this one — the functional half's hook tests build a throwaway tree with
+  // only the directories their subject needs — so a rung this repository has and a fixture does not
+  // would otherwise turn "no unit files here" into `ENOENT … scandir`, which is a failure of the
+  // CHECK rather than a finding about the suite. The enrolment check is what refuses a file with no
+  // home; it is not this function's job to insist a directory exists.
+  let names;
+  try { names = readdir(path.join(root, "scripts", "test", half)); } catch { return []; }
+  return names
     .filter((f) => f.endsWith(".test.mjs"))
     .map((f) => f.slice(0, -".test.mjs".length))
     .sort();
@@ -112,6 +147,16 @@ export function twinRefusals({ functional, assertion }) {
   return functional.filter((id) => !have.has(id)).sort();
 }
 
+/** THE PATHS A TWIN CAN LIVE AT — one per rung of the assertion half (0.48.0 task 5.1(c)).
+ *
+ *  A SINGLE DERIVATION, because this path is asked three questions: which file would SATISFY the twin
+ *  rule, which file must be STAGED with a functional change, and which file the refusal should NAME.
+ *  Until 4.1's first migration it was the literal `scripts/test/assert/${id}.test.mjs` in two of those
+ *  places and prose in the third — the shape 5.1(c) exists to find, and it would have been wrong in
+ *  all three the moment a twin moved to the unit rung. */
+export const twinPathsOf = (id) => HOMES.filter((h) => h !== "functional" && h !== "sweeps")
+  .map((h) => `scripts/test/${h}/${id}.test.mjs`);
+
 /** Check 3 — DIFF COUPLING (D6). A staged change to a functional file requires its twin in the SAME
  *  staged diff. Keyed on the functional half only, where check 2 is keyed. A rename carries both
  *  paths and passes — which is why the caller must collect the staged set with `--no-renames`. */
@@ -122,7 +167,9 @@ export function couplingRefusals({ stagedFiles, functional, assertion }) {
   for (const id of functional) {
     const functionalPath = `scripts/test/functional/${id}.test.mjs`;
     if (!staged.has(functionalPath)) continue;
-    const twinPath = `scripts/test/assert/${id}.test.mjs`;
+    // THE TWIN MAY BE ON EITHER RUNG — `find` reports the first one that is STAGED, so the
+    // refusal names the file the author would have had to touch.
+    const twinPath = twinPathsOf(id).find((p) => staged.has(p)) || twinPathsOf(id)[0];
     if (staged.has(twinPath) && have.has(id)) continue;
     out.push({ id, functional: functionalPath, assertion: twinPath });
   }

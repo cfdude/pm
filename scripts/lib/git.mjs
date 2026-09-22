@@ -3,8 +3,12 @@
 // lib/constants.mjs.
 
 import fs from "node:fs";
-import { engineRoot, conductorDir, detoursLog, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
+// `conductorDir` and `detoursLog` are GONE from this import with 0.48.0's tasks 1.3/1.4: every
+// read and every append of the detour log goes through the store now, and an import left behind is
+// the first step back to a module-scope path. (The sweep in 5.1(a) looks for exactly that residue.)
+import { engineRoot, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
 import { gitOps } from "./invocation.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 
 export function gitShortSha() {
   try { return gitOps().shortHead(); }
@@ -96,11 +100,16 @@ export function resetGitCaches() {
  *  would delete a record, which is the opposite of what this is for. */
 export const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
 
-/** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable. */
+/** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable.
+ *
+ *  READ THROUGH THE STORE (0.48.0 task 1.3, I3). `detours.log` is an artifact the store OWNS — its
+ *  two writers are this module's own append sites below — and this read runs on EVERY render via
+ *  visibleDetourRows(), so leaving it on the module-scope path would have made the one read that is
+ *  always taken the third leak of the ownership table. */
 export function readDetourRows() {
-  let body;
-  try { body = fs.readFileSync(detoursLog(), "utf8"); } catch { return []; }
-  return body.split("\n").filter(Boolean).map((raw) => {
+  const read = storeOps().read(ARTIFACT.DETOURS_LOG);
+  if (read.kind !== "ok") return [];
+  return read.text.split("\n").filter(Boolean).map((raw) => {
     const [when, sha, kind, epic, note] = raw.split("\t");
     return { raw, when, sha, kind, epic, note };
   });
@@ -127,11 +136,12 @@ export function visibleDetourRows(rows = readDetourRows()) {
  *  detached tree like the row it retracts (gh#175); returns whether it was written. */
 export function appendRetraction(sha, epic, reason) {
   if (isDetachedTree()) return false;
-  fs.mkdirSync(conductorDir(), { recursive: true });
   // One line per row whatever the values hold: whitespace collapses, then every remaining control
   // character (NEL, a legacy epic id's newline) is escaped (user-text-never-forges-output 8.1).
   const line = [new Date().toISOString(), sha, "RETRACTED", escapeControls(epic || "-"), escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
-  fs.appendFileSync(detoursLog(), line + "\n");
+  // THE APPEND IS THE STORE'S (0.48.0 task 1.4). The mkdir that preceded it is gone with the move:
+  // the interface's append creates what it needs, so a caller can no longer be the one that forgot.
+  storeOps().append(ARTIFACT.DETOURS_LOG, line + "\n");
   return true;
 }
 
@@ -160,9 +170,9 @@ export const rowMatches = (rowSha, full) =>
  *  has one, exact otherwise. Reads the file whole — it is small, append-only, and render() already
  *  reads it whole on every render, so this adds no new order of cost. */
 function alreadyLogged(kind, sha, full) {
-  let body;
-  try { body = fs.readFileSync(detoursLog(), "utf8"); } catch { return false; }
-  for (const line of body.split("\n")) {
+  const read = storeOps().read(ARTIFACT.DETOURS_LOG);
+  if (read.kind !== "ok") return false;
+  for (const line of read.text.split("\n")) {
     if (!line) continue;
     const [, s, k] = line.split("\t");
     if (k !== kind) continue;
@@ -183,14 +193,13 @@ export function appendDetourLog(kind, epic, note, rev) {
   // gh#175: a detour is BY DEFINITION an interruption of active work, and a detached tree is one
   // nobody is working in. Suppressed silently, like every other session-bookkeeping write.
   if (isDetachedTree()) return false;
-  fs.mkdirSync(conductorDir(), { recursive: true });
   const sha = rev === undefined ? gitShortSha() : shortSha(rev);
   // sha "-" is "cannot tell" (no git, no repository, no commits yet), NOT a commit identity.
   // Collapsing on it would fold every unrelated row in a git-less repo into one.
   if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha, fullSha(rev === undefined ? "HEAD" : rev))) return false;
   // One line per row whatever the values hold (see appendRetraction()).
   const line = [new Date().toISOString(), sha, kind, escapeControls(epic || "-"), escapeControls((note || "").replace(/\s+/g, " ").trim())].join("\t");
-  fs.appendFileSync(detoursLog(), line + "\n");
+  storeOps().append(ARTIFACT.DETOURS_LOG, line + "\n");
   return true;
 }
 

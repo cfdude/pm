@@ -7,13 +7,26 @@
 // alone. These tests bind the engine half of closing that gap: the spec set is ENUMERATED from
 // disk (never asserted by the agent), the verdict records a digest per spec, and a spec ADDED
 // or CHANGED after the verdict makes it stale.
+//
+// ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
+//
+// TWO of its seventeen tests moved to `scripts/test/unit/cross-spec-review.test.mjs` —
+// `crossSpecRequired` (a pure function of a spec list) and the rules-block test (emitted text).
+//
+// FIFTEEN STAY, and EVERY ONE IS THE SAME POPULATION: this feature's whole premise is that the spec set
+// is DERIVED FROM DISK — `releaseSpecFiles()` walks `openspec/changes/<id>/specs/<cap>/spec.md` — so the
+// fixture writes those files, and the enumeration, the digest, the staleness check and the two rendered
+// surfaces are all questions about what it finds there. That includes the archive-move test, which
+// renames a directory to prove the record is keyed by CHANGE-relative keys rather than by path.
+//
+// No assertion changed in either direction.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { run, runCombined, tmpRepo, readState, writeState, projectMd, parseBrief, expectFail } from "../fixtures/assert-harness.mjs";
-import { releaseSpecFiles, crossSpecStaleness, crossSpecRequired } from "../../lib/cross-spec-review.mjs";
+import { releaseSpecFiles, crossSpecStaleness } from "../../lib/cross-spec-review.mjs";
 
 /** Write `openspec/changes/<changeId>/specs/<cap>/spec.md` for each capability. */
 function withChange(cwd, changeId, caps, { archived = false, body = "# spec\n" } = {}) {
@@ -52,7 +65,6 @@ test("releaseSpecFiles enumerates every member change's specs, keyed change-rela
   ]);
   assert.ok(specs.every(s => fs.existsSync(s.abs)), "every enumerated spec must resolve to a real file");
 });
-
 test("releaseSpecFiles finds an ARCHIVED change's specs under its date-prefixed directory", () => {
   const cwd = tmpRepo();
   withChange(cwd, "shipped", ["alpha", "beta"], { archived: true });
@@ -64,7 +76,6 @@ test("releaseSpecFiles finds an ARCHIVED change's specs under its date-prefixed 
     "shipped/specs/beta/spec.md",
   ]);
 });
-
 test("releaseSpecFiles ignores epics that are not members and counts a dual-lane pair once", () => {
   const cwd = tmpRepo();
   withChange(cwd, "in-release", ["alpha", "beta"]);
@@ -84,16 +95,6 @@ test("releaseSpecFiles ignores epics that are not members and counts a dual-lane
   const keys = releaseSpecFiles(state, state.epics, "rel", cwd).map(s => s.key);
   assert.deepEqual(keys, ["in-release/specs/alpha/spec.md", "in-release/specs/beta/spec.md"]);
 });
-
-test("crossSpecRequired is a FLAT SPEC COUNT, not a member count", () => {
-  // One member change carrying six specs is exactly 0.27.0's shape, and it is the case a
-  // member-count threshold silently drops.
-  assert.equal(crossSpecRequired([{ key: "a" }]), false);
-  assert.equal(crossSpecRequired([{ key: "a" }, { key: "b" }]), true);
-});
-
-// ───────────────────────── recording the verdict ─────────────────────────
-
 test("record-cross-spec-review stores the verdict with an engine-computed digest per spec", () => {
   const { cwd } = releaseRepo(["alpha", "beta", "gamma"]);
   run(["record-cross-spec-review", "rel", "--verdict", "pass", "--reviewer", "two lenses"], { cwd });
@@ -107,7 +108,6 @@ test("record-cross-spec-review stores the verdict with an engine-computed digest
     assert.match(s.key, /^big-change\/specs\//);
   }
 });
-
 test("record-cross-spec-review refuses a release below the two-spec threshold", () => {
   const { cwd } = releaseRepo(["only"]);
   const err = expectFail(() => run(["record-cross-spec-review", "rel", "--verdict", "pass"], { cwd }));
@@ -115,7 +115,6 @@ test("record-cross-spec-review refuses a release below the two-spec threshold", 
   assert.match(err.stderr, /1 spec file/);
   assert.equal(readState(cwd).releases.find(r => r.id === "rel").crossSpecReview, undefined);
 });
-
 test("record-cross-spec-review refuses an unknown release, an unknown flag and a bad verdict", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   assert.match(expectFail(() => run(["record-cross-spec-review", "nope", "--verdict", "pass"], { cwd })).stderr,
@@ -127,7 +126,6 @@ test("record-cross-spec-review refuses an unknown release, an unknown flag and a
   assert.match(expectFail(() => run(["record-cross-spec-review", "rel", "--verdict", "pass", "--reviewr", "x"], { cwd })).stderr,
     /unknown flag --reviewr for record-cross-spec-review/);
 });
-
 test("re-recording supersedes the prior verdict once, never a growing chain", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["record-cross-spec-review", "rel", "--verdict", "fail", "--reviewer", "round 1"], { cwd });
@@ -140,7 +138,6 @@ test("re-recording supersedes the prior verdict once, never a growing chain", ()
 });
 
 // ───────────────────────── staleness: what a RELEASE gate exists for ─────────────────────────
-
 test("a spec ADDED to the release after the verdict makes it stale", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["record-cross-spec-review", "rel", "--verdict", "pass"], { cwd });
@@ -155,7 +152,6 @@ test("a spec ADDED to the release after the verdict makes it stale", () => {
   assert.equal(st.state, "stale");
   assert.deepEqual(st.added, ["big-change/specs/delta/spec.md"]);
 });
-
 test("a spec whose CONTENT changed after the verdict makes it stale", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["record-cross-spec-review", "rel", "--verdict", "pass"], { cwd });
@@ -167,7 +163,6 @@ test("a spec whose CONTENT changed after the verdict makes it stale", () => {
   assert.deepEqual(st.changed, ["big-change/specs/beta/spec.md"]);
   assert.deepEqual(st.added, []);
 });
-
 test("the ARCHIVE MOVE does not make a verdict stale", () => {
   // `/opsx:archive` relocates openspec/changes/<id>/ under archive/<date>-<id>/. Keying the
   // record on the on-disk path would report every archived release stale forever — the same
@@ -183,7 +178,6 @@ test("the ARCHIVE MOVE does not make a verdict stale", () => {
   assert.equal(specs.length, 2, "the archived change's specs are still enumerated");
   assert.equal(crossSpecStaleness(state.releases[0], specs).state, "fresh");
 });
-
 test("no recorded verdict reads as 'none', and an unreadable spec as 'unverifiable'", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   let state = readState(cwd);
@@ -196,14 +190,12 @@ test("no recorded verdict reads as 'none', and an unreadable spec as 'unverifiab
 });
 
 // ───────────────────────── the surfaces report it ─────────────────────────
-
 test("PROJECT.md and the brief warn when a multi-spec release has no cross-spec review", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["render"], { cwd });
   assert.match(projectMd(cwd), /no cross-spec review/);
   assert.match(parseBrief(cwd), /no cross-spec review/);
 });
-
 test("PROJECT.md and the brief report a recorded verdict, and mark it stale when it goes stale", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["record-cross-spec-review", "rel", "--verdict", "pass", "--reviewer", "two lenses"], { cwd });
@@ -214,7 +206,6 @@ test("PROJECT.md and the brief report a recorded verdict, and mark it stale when
   assert.match(projectMd(cwd), /cross-spec pass \(2 specs\) · two lenses ⚠ stale/);
   assert.match(parseBrief(cwd), /⚠ stale/);
 });
-
 test("a single-spec release gets no cross-spec line at all", () => {
   const { cwd } = releaseRepo(["only"]);
   run(["render"], { cwd });
@@ -222,17 +213,6 @@ test("a single-spec release gets no cross-spec line at all", () => {
 });
 
 // ───────────────────────── the instruction surface ─────────────────────────
-
-test("the rules block carries the release gate as a NUMBERED REQUIRED TASK ITEM", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const out = run(["rules"], { cwd });
-  // Measured in this repo: a rule carried by a required task reached 14/14 subsequent changes,
-  // the same rule as a prose bullet reached 3/15. Bind the numbering, not just the words.
-  assert.match(out, /^\d+\. \*\*Review a release's specs against each other\.\*\*/m);
-  assert.match(out, /record-cross-spec-review/);
-});
-
 test("the usage line and the command doc both name the new subcommand", () => {
   const cwd = tmpRepo();
   assert.match(runCombined(["--help"], { cwd }), /record-cross-spec-review/);

@@ -1,0 +1,20 @@
+G-M2 RED — a module could certify with an EMPTY covers, so a "pass" could be recorded over a run that
+names no test as covering it.
+
+A genuine RED: same mutant copy as G-M1 (.../g2fix-47/gm12/pm, the pre-fix source restored), the new
+test fails against it.
+
+  $ node --test --test-name-pattern="G-M2" scripts/test/assert/drift-script.test.mjs
+  ✖ G-M2 the record writer REFUSES an entry with an empty covers, and writes nothing
+    AssertionError: Missing expected exception: an empty covers must be refused by name
+
+WHY IT MATTERED: `covers` is the field check 4 resolves; an empty list resolves vacuously, so the
+entry claims a pass with no observation behind it. `scripts/lib/commit-watch.mjs` was reaching that
+state for a real reason — `coversFor`'s rule was "the module's basename appears in the functional
+file's source", and the character before the basename of an IMPORT SPECIFIER
+(`await import("../../lib/commit-watch.mjs")`) is `/`, which the bare rule's exclusion class
+deliberately refuses (`not-git.mjs` must not match `git.mjs`). So the fix is two-sided: the writer
+refuses an empty covers, and `coversFor` gains the import-specifier arm — kept SEPARATE from the bare
+rule, because an import can only be the module's own specifier where a bare mention can be prose. The
+new test also asserts that EVERY module in this repository's certified set resolves to at least one
+covering id, since a refusal the runner cannot satisfy would be worse than the hole.

@@ -17,18 +17,43 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine, readState, writeState } from "../fixtures/assert-harness.mjs";
+import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
 
 const main = (await import("../../conductor.mjs")).main;
 
-test("conformance: main() RETURNS its status — it is not a promise", () => {
+/** An initialized repository with nothing else done to it, shared by the three tests below that each
+ *  need exactly that and nothing more.
+ *
+ *  A SNAPSHOT SINCE 0.48.0 (task 3.4), and it is here for the helper's OWN rule rather than for the
+ *  clock: three tests in this file use the same fixture and none of them mutates it, which is the
+ *  case the helper exists for. (The file's other tests each corrupt the record in a DIFFERENT way —
+ *  an unreadable state file, an ambiguous rules block — and a fixture cannot serve those; a snapshot
+ *  of a corrupted tree is a fixture nobody reuses.) It also keeps this file moving with its
+ *  functional twin, which the drift script's diff-coupling rule requires of a staged functional
+ *  file — a rule that fires whether or not the change is one the twin could mirror. */
+const initializedRepo = fixtureOnce(() => {
   const cwd = tmpRepo();
+  run(["init"], { cwd });
+  return cwd;
+}, { name: "pm-conformance-init" });
+
+// 4.1 (0.48.0) moved THREE of this file's tests to `scripts/test/unit/conformance.test.mjs`: the
+// exit-handler count, the activity-log instrument's read-is-not-a-log-entry check (the activity
+// directory is store-owned), and a delegated child's status being the RETURNED value. THE EIGHT BELOW
+// STAY, and one fixture decides most of them: `init` WRITES CLAUDE.md through raw fs — edge 3 of this
+// migration's four seam edges — so any conformance case whose fixture initializes a repository cannot
+// be a unit test. Two more are file-rung by subject: the unreadable-state-file row (raw bytes that
+// cannot parse) and the conflict row, whose malformed revision the disk store coerces on a write path
+// the memory store does not share (probed: the same fixture returns 0 there, not 9).
+
+test("conformance: main() RETURNS its status — it is not a promise", () => {
+  const cwd = initializedRepo();
   const r = invokeEngine(["init"], { cwd });
   assert.equal(typeof r.status, "number", `main() must return a numeric status; got ${typeof r.status}`);
 });
 
 test("conformance: the entry point never ends the calling process, whatever it is refused for", () => {
-  const cwd = tmpRepo();
-  invokeEngine(["init"], { cwd });
+  const cwd = initializedRepo();
   const refusals = [
     ["add-epic", "--id", "x", "--bogus-flag"],              // a command-line refusal
     ["no-such-verb"],                                        // an unknown verb
@@ -44,7 +69,7 @@ test("conformance: the entry point never ends the calling process, whatever it i
 });
 
 test("conformance: the returned status is the class's documented status", () => {
-  const cwd = tmpRepo();
+  const cwd = initializedRepo();
   assert.equal(invokeEngine(["init"], { cwd }).status, 0, "success");
   assert.equal(invokeEngine(["--help"], { cwd }).status, 0, "a help token");
   assert.equal(invokeEngine(["definitely-not-a-verb"], { cwd }).status, 1, "an unknown verb");
@@ -99,37 +124,6 @@ test("conformance: two invocations in one process act on their own roots", () =>
   invokeEngine(["add-epic", "--id", "in-b", "--lane", "claude-code"], { cwd: b });
   assert.deepEqual(readState(a).epics.map(e => e.id), ["in-a"]);
   assert.deepEqual(readState(b).epics.map(e => e.id), ["in-b"]);
-});
-
-test("conformance: the engine registers no process exit handler", () => {
-  const cwd = tmpRepo();
-  const before = process.listenerCount("exit");
-  for (let i = 0; i < 5; i++) invokeEngine(["brief"], { cwd });
-  assert.equal(process.listenerCount("exit"), before,
-    "an exit handler left behind would accumulate one listener per invocation in the shared " +
-    "assertion process, and the activity log would be written once at process end for all of them");
-});
-
-test("conformance: the activity-log instrument runs inside main(), not at process end", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const dir = path.join(cwd, ".conductor", "activity");
-  const files = () => (fs.existsSync(dir) ? fs.readdirSync(dir).filter(n => /^activity-.*\.log$/.test(n)).length : 0);
-  const before = files();
-  // The read paths write nothing; a mutating verb writes one line BEFORE main() returns, so a
-  // caller can read it the moment the call is over.
-  invokeEngine(["brief"], { cwd });
-  assert.equal(files(), before, "reads are not log entries");
-});
-
-test("conformance: a delegated child's status is what main() RETURNS", () => {
-  // The delegation handoff owns the whole invocation, and D2 keeps its exit as a VALUE rather than
-  // a `process.exit`. Without the opt-in the handoff never fires, so the returned status is this
-  // invocation's own — which is the assertion this half can make (the delegated route is
-  // functional-only: it spawns a child).
-  const cwd = tmpRepo();
-  const r = invokeEngine(["--help"], { cwd, env: { PM_ENGINE_DELEGATION: "" } });
-  assert.equal(r.status, 0);
 });
 
 test("conformance: nothing a DELEGATED child prints reaches the process's own streams", () => {

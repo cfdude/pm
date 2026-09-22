@@ -1,0 +1,35 @@
+═══════ RED 1.5 — MUTANT A: the memory store skips its revision comparison ═══════
+
+✖ 1.5 a STALE revision, a NO-OP write and an UNREADABLE record meet the same door in both stores (1.128875ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+--
+✖ 1.5 a STALE revision, a NO-OP write and an UNREADABLE record meet the same door in both stores (1.128875ms)
+  AssertionError [ERR_ASSERTION]: the memory store must refuse it too: [object Object]
+  + actual - expected
+  
+  + undefined
+  - 'StateConflictError'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/store-seam.test.mjs:151:10)
+
+═══════ RED 1.5 — MUTANT B: the memory store skips the strict read's shape check ═══════
+
+✖ 1.5 a STALE revision, a NO-OP write and an UNREADABLE record meet the same door in both stores (1.461125ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+--
+✖ 1.5 a STALE revision, a NO-OP write and an UNREADABLE record meet the same door in both stores (1.461125ms)
+  AssertionError [ERR_ASSERTION]: the memory store's strict read must refuse a shape the disk store refuses
+  
+  'ok' !== 'unreadable'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/store-seam.test.mjs:169:10)

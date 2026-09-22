@@ -153,8 +153,15 @@ test("mutant (Gate 2 W-I2): an ALL_CAPS literal is still literal, unless it is r
 });
 
 test("mutant (Gate 2 W-I2): render's PROJECT_MD — a path under CLAUDE_PROJECT_DIR — printed raw is UNCLASSIFIED, though render() is judged sink-flow as a whole", () => {
-  const { findings } = sweepMutated("scripts/lib/render.mjs", "${escapeControls(projectMd())}", "${projectMd()}");
-  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/render\.mjs:\d+ \[render\] \$\{\} projectMd\(\)$/.test(f)), findings.join("\n"));
+  // RE-POINTED with the shape it reads (0.48.0 task 1.3). The rendered-path message stopped reading
+  // the module-scope `projectMd()` and became a STORE RESOLUTION — a logical artifact name for a
+  // store that has no path, the real path for the disk store — so the mutant's old operand no
+  // longer exists in render.mjs and the substitution found nothing to mutate. The property under
+  // test is unchanged: whatever that expression is, printing it RAW must be UNCLASSIFIED.
+  const escaped = "${escapeControls(storeOps().resolve(ARTIFACT.PROJECT_MD) || ARTIFACT.PROJECT_MD)}";
+  const raw = "${storeOps().resolve(ARTIFACT.PROJECT_MD) || ARTIFACT.PROJECT_MD}";
+  const { findings } = sweepMutated("scripts/lib/render.mjs", escaped, raw);
+  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/render\.mjs:\d+ \[render\] \$\{\} storeOps\(\)\.resolve\(ARTIFACT\.PROJECT_MD\) \|\| ARTIFACT\.PROJECT_MD$/.test(f)), findings.join("\n"));
 });
 
 test("every LITERAL_ALLOWLIST entry names a declaration that exists with exactly that text, and carries a reason (Gate 2 W-I2)", async () => {

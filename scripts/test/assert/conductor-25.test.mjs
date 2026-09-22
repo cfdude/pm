@@ -6,6 +6,15 @@
 // recovery path with no test that can fail when it is deleted. #85 is a mutation nobody
 // DECLARED, so no guard could be pointed at it. Each test below asserts BEHAVIOUR — a value read
 // back off disk, a heal that landed, a tree that did not move — and never a declaration.
+//
+// ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
+//
+// Six of its sixteen tests moved to `scripts/test/unit/conductor-25.test.mjs`: #136's registry
+// round-trip (asserted on what the created epic HOLDS) and #131's four retry-POLICY tests (a pure
+// function of injected callbacks). What is LEFT here observes a path or a source file — #131's
+// conflict-seam proof and its source scan, #105's emitted text (whose fixture cannot be built in
+// memory at all: `set-tracker` writes CLAUDE.md as a side effect) and its command-doc read, and
+// #85's four tree-hash tests. No assertion changed in either direction.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
@@ -33,74 +42,6 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 // `add-epic` had neither. This is the registry-driven half for it, and it does not supersede
 // the documentation-driven one — they fail on different mistakes.
 
-/** How to exercise each `add-epic` flag, and what reading it back looks like. The ENUMERATION
- *  is the registry projection, never this table: a row added to EPIC_FLAGS for `add-epic` with
- *  no entry here is a hard failure naming the flag, not a silent skip. */
-const ADD_EPIC_EXERCISE = {
-  // `--id` and `--lane` are on every invocation; they are still exercised explicitly so the
-  // check's enumeration can stay the whole registry projection rather than a filtered one.
-  "id": { args: [], check: (e) => assert.equal(e.id, "subject") },
-  "lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
-  "title": { args: ["--title", "A registered title"], check: (e) => assert.equal(e.title, "A registered title") },
-  "priority": { args: ["--priority", "P1"], check: (e) => assert.equal(e.priority, "P1") },
-  "status": { args: ["--status", "later"], check: (e) => assert.equal(e.status, "later") },
-  "parent": { args: ["--parent", "other"], check: (e) => assert.equal(e.parent, "other") },
-  "external-id": { args: ["--external-id", "JOB-7"], check: (e) => assert.equal(e.externalId, "JOB-7") },
-  "external-url": { args: ["--external-url", "https://example.test/7"], check: (e) => assert.equal(e.externalUrl, "https://example.test/7") },
-  "external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
-  "plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
-  "spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
-  "link": { args: ["--link", "blocks:other:because"], check: (e) => assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "because" }]) },
-  "description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
-  // THE regression this file is named for. A note reads back as an ENTRY — {at, actor, text} —
-  // so asserting on the text alone would pass against an implementation that stored the raw
-  // string and lost the append-only trail.
-  "notes": {
-    args: ["--notes", "the evidence block that was being dropped"],
-    check: (e) => {
-      assert.ok(Array.isArray(e.notes), "notes must be the append-only entry array, not a string");
-      assert.equal(e.notes.at(-1).text, "the evidence block that was being dropped");
-      assert.equal(typeof e.notes.at(-1).at, "string");
-    },
-  },
-  "add-story": { args: ["--add-story", "a milestone"], check: (e) => assert.equal(e.stories.at(-1).title, "a milestone") },
-};
-
-test("gh-136: every EPIC_FLAGS row registered on add-epic is HONOURED, not merely accepted", async () => {
-  const { EPIC_FLAGS } = await import(CONSTANTS);
-  const registered = EPIC_FLAGS.filter(f => f.commands.includes("add-epic")).map(f => f.flag);
-  assert.ok(registered.length >= 12,
-    `the registry projection yielded only ${registered.length} add-epic flags — the projection is broken, not the command`);
-
-  for (const flag of registered) {
-    const spec = ADD_EPIC_EXERCISE[flag];
-    assert.ok(spec,
-      `EPIC_FLAGS registers --${flag} on add-epic but this check has no exercise entry for it — ` +
-      "a registered flag must be invoked and read back, never skipped for being unknown here " +
-      "(#136: --notes parsed, matched the registry, exited 0 and wrote nothing)");
-
-    const cwd = tmpRepo();
-    run(["init"], { cwd });
-    run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
-    const err = expectFail(() =>
-      run(["add-epic", "--id", "subject", "--lane", "claude-code", ...spec.args], { cwd }));
-    assert.equal(err, null,
-      `add-epic rejected --${flag}, which its own registry says it accepts: ${err && String(err.stderr || err.message)}`);
-    const epic = readState(cwd).epics.find(e => e.id === "subject");
-    assert.ok(epic, `add-epic --${flag} created no epic at all`);
-    spec.check(epic);
-  }
-});
-
-test("gh-136: a valueless --notes is REFUSED, never accepted and dropped", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const err = expectFail(() => run(["add-epic", "--id", "e1", "--lane", "claude-code", "--notes"], { cwd }));
-  assert.ok(err, "a valueless --notes must refuse rather than exit 0 having written nothing");
-  assert.match(String(err.stderr || err.message), /--notes requires a value/);
-  assert.equal(readState(cwd).epics.length, 0, "a refused registration must create no epic");
-});
-
 // ───────────────────────── gh-131: the retry half of retry-once-then-skip ─────────────────────
 //
 // 0.26.0 specified hook writes as RETRY ONCE, THEN SKIP and shipped the retry at two sites.
@@ -123,72 +64,14 @@ test("gh-136: a valueless --notes is REFUSED, never accepted and dropped", () =>
 // invocation — identical final state, identical revision, identical conflict log. That cover is
 // the exact mechanism that hid this defect, so (3) is what binds that site.
 
-const HOOK_WRITE = new URL("../../lib/hook-write.mjs", import.meta.url).href;
 
-test("gh-131: the policy retries ONCE after a conflict, and the retry re-loads and re-heals", async () => {
-  const { saveHookHeal } = await import(HOOK_WRITE);
-  const calls = [];
-  // Two distinct objects: `stale` is what the caller already holds, `fresh` is what a reload
-  // returns. Asserting the SECOND save receives `fresh` is the whole point — re-saving `stale`
-  // would clobber the newer revision the guard exists to protect.
-  const stale = { tag: "stale" };
-  const fresh = { tag: "fresh" };
-  const res = saveHookHeal({
-    state: stale,
-    verb: "render",
-    load: () => { calls.push("load"); return fresh; },
-    heal: (s) => { calls.push(`heal:${s.tag}`); return true; },
-    save: (s) => {
-      calls.push(`save:${s.tag}`);
-      return { ok: s.tag === "fresh" };
-    },
-  });
-  assert.deepEqual(calls, ["save:stale", "load", "heal:fresh", "save:fresh"],
-    "after a conflicting first save the policy must reload, re-run the heal, and save the RELOADED state");
-  assert.equal(res.ok, true);
-  assert.equal(res.retried, true);
-});
-
-test("gh-131: the policy retries at most ONCE — a second conflict skips, it does not loop", async () => {
-  const { saveHookHeal } = await import(HOOK_WRITE);
-  let saves = 0;
-  const res = saveHookHeal({
-    state: {}, verb: "render",
-    load: () => ({}), heal: () => true,
-    save: () => { saves++; return { ok: false }; },
-  });
-  assert.equal(saves, 2, "retry ONCE, then skip — never a loop on a permanently contended file");
-  assert.equal(res.ok, false);
-  assert.equal(res.retried, true);
-});
-
-test("gh-131: a first save that succeeds neither reloads nor saves twice", async () => {
-  const { saveHookHeal } = await import(HOOK_WRITE);
-  let loads = 0, saves = 0;
-  const res = saveHookHeal({
-    state: {}, verb: "render",
-    load: () => { loads++; return {}; }, heal: () => true,
-    save: () => { saves++; return { ok: true }; },
-  });
-  assert.equal(saves, 1);
-  assert.equal(loads, 0, "the uncontended path must not re-read state.json");
-  assert.equal(res.retried, false);
-});
-
-test("gh-131: the reloaded state having nothing left to heal is a SKIP, not a blind re-save", async () => {
-  const { saveHookHeal } = await import(HOOK_WRITE);
-  const saved = [];
-  const res = saveHookHeal({
-    state: { tag: "stale" }, verb: "render",
-    load: () => ({ tag: "fresh" }),
-    // Someone else's write already applied the heal; re-saving would write a state built on a
-    // superseded revision for no gain.
-    heal: () => false,
-    save: (s) => { saved.push(s.tag); return { ok: false }; },
-  });
-  assert.deepEqual(saved, ["stale"], "a fresh state with nothing to heal must not be written");
-  assert.equal(res.ok, false);
-});
+// THE POLICY TESTS ARE ON THE UNIT RUNG. `saveHookHeal()` is a pure function of four injected
+// callbacks — no engine, no path, no clock — so the four tests that pin its behaviour (the retry
+// RE-LOADS and RE-HEALS rather than re-saving the stale in-hand object; at most one retry; no
+// reload on the uncontended path; a re-healed state with nothing left to do is a SKIP) moved to
+// `scripts/test/unit/conductor-25.test.mjs` with every assertion unchanged. That is item 1 of the
+// three below; items 2 and 3 are what remains here, because one needs the CONFLICT SEAM and the
+// other reads engine source.
 
 // The conflict-injection seam. It is a NODE PRELOAD living entirely under scripts/test/ — no
 // test-only branch, env var or verb is shipped in the engine, which is why an earlier

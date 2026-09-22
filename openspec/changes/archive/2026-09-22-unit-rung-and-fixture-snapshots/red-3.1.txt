@@ -1,0 +1,23 @@
+RED 3.1 — the deliberate violation: the helper hands out the TEMPLATE instead of a copy.
+This is the naive implementation, and it is what the leak test exists to refuse:
+
+✔ 3.1 the first test MUTATES the restored fixture, and the change lands in its own copy (2.651666ms)
+✖ 3.1 the NEXT test reads the value the fixture was BUILT with, not the first test's mutation (0.435458ms)
+✖ 3.1 TWO copies can be live at once, and neither disturbs the other (2.39075ms)
+✖ 3.1 the template is never handed out, and the copy is a different directory (0.07825ms)
+ℹ tests 8
+ℹ pass 5
+ℹ fail 3
+✖ 3.1 the NEXT test reads the value the fixture was BUILT with, not the first test's mutation (0.435458ms)
+✖ 3.1 TWO copies can be live at once, and neither disturbs the other (2.39075ms)
+✖ 3.1 the template is never handed out, and the copy is a different directory (0.07825ms)
+
+RED 3.3 — the deliberate violation: the restore pays a durability flush.
+Without this the helper could 'restore' by re-running init and look identical from the tests:
+
+✖ 3.3 a restore performs no durability flush and starts no engine (30.840792ms)
+✔ 3.3 the restore's cost is the COPY, not the build (the measurement the helper exists for) (77.937167ms)
+✔ 3.5 a template is disposed rather than left to accumulate (20.860542ms)
+--
+✖ 3.3 a restore performs no durability flush and starts no engine (30.840792ms)
+  AssertionError [ERR_ASSERTION]: a restore must perform no durability flush; it performed 3. A restore that flushes is not a copy — it is the rebuild the helper exists to replace, and it would cost what it cost before

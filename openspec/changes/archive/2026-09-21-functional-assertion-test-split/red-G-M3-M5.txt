@@ -1,0 +1,36 @@
+G-M3 / G-M5 RED — two stated reasons were wrong. The CODE is safe in both cases; what is corrected is
+why it is safe, because a guard kept for a reason that is not true is a guard nobody can re-derive.
+
+G-M3 — the both-arms rationale was BACKWARDS. Measured on this machine's git 2.55.0, in a scratch
+repository at .../g2fix-47/probe/a holding one TOP-LEVEL test file plus three under assert/ (one of
+them two levels down):
+
+  $ git ls-files 'scripts/test/*.test.mjs'
+  scripts/test/assert/.hidden.test.mjs
+  scripts/test/assert/sub/nested.test.mjs
+  scripts/test/assert/visible.test.mjs
+  scripts/test/top.test.mjs
+  $ git ls-files 'scripts/test/**/*.test.mjs'
+  scripts/test/assert/.hidden.test.mjs
+  scripts/test/assert/sub/nested.test.mjs
+  scripts/test/assert/visible.test.mjs          # top.test.mjs is MISSING
+
+A git pathspec's `*` matches `/`, so the single-star arm reaches nested files too; it is the `**` arm
+that misses the top-level file. The claims corrected said the opposite ("the nested arm is the only
+one that reaches a file one level down", "one arm alone silently under-counts"), which would have led
+the next reader to keep the WRONG arm. The pair is retained, now for the honest reason: the rule is
+easy to re-read the other way — three documents in this change did — so naming both spellings makes
+the enumeration correct under either reading. Fixed in design.md D5, proposal.md, drift.mjs's
+trackedTestFiles and certification.mjs's enrolmentRefusals doc.
+
+G-M5 — "the drift script spawns nothing" was false of the implementation, which reads the index
+through four git subcommands (`ls-files`, `diff --cached`, `show :<path>`, `rev-parse
+--git-common-dir`) and enforces that set at the call. The design's D8 sentence and the spec's literal
+SHALL now say what is true and what the capability actually needs: it spawns NO RUNNER AND NO ENGINE
+and starts no git fixture — the property is that the check cannot start the thing whose result it is
+checking. Verified in the same pass:
+
+  $ node scripts/test/drift.mjs --root "$PWD"
+  drift: ok — 135 tracked test files, 46 functional ids, 0 staged paths
+  $ openspec validate functional-assertion-test-split --strict
+  Change 'functional-assertion-test-split' is valid

@@ -1,0 +1,215 @@
+# Task 5.4 — VERIFY AGAINST THE COMMIT, NOT THE WORKING TREE
+
+Every commit the epic attributes, in the order the engine holds them, with `git show --stat <sha>`
+run against each. The commit is the unit of verification: reading a file in the working tree is
+not verification, and a task whose claimed file is absent from its commit FAILS even when the tree
+holds the intended edit and the suite is green.
+
+    $ git cat-file -t <each attributed sha>       # every one resolves to a commit
+    $ git show --stat <each attributed sha>        # and its file list is below
+
+SIXTEEN UNIQUE COMMITS (one appears twice — see the note at the end).
+
+── 2eff64d ──
+ .conductor/render-stamp.json                       |  4 +-
+ .conductor/state.json                              | 68 ++++++++++++++++++++--
+ PROJECT.md                                         | 22 +++----
+ .../specs/engine-invocation/spec.md                | 12 +++-
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  4 +-
+ 5 files changed, 88 insertions(+), 22 deletions(-)
+
+── bf748ac ──
+ .conductor/render-stamp.json                       |   4 +-
+ .conductor/state.json                              |   8 +-
+ PROJECT.md                                         |  10 +-
+ .../baseline-before.md                             | 151 +++++++++++++++++++++
+ .../count-fsync.cjs                                |  54 ++++++++
+ .../unit-rung-and-fixture-snapshots/noop-fsync.cjs |  21 +++
+ .../unit-rung-and-fixture-snapshots/tasks.md       |   2 +-
+ 7 files changed, 239 insertions(+), 11 deletions(-)
+
+── d833159 ──
+ ...21-openspec-archive-copies-instead-of-moving.md | 59 ++++++++++++++++++++++
+ .conductor/render-stamp.json                       |  4 +-
+ .conductor/state.json                              |  7 +--
+ PROJECT.md                                         |  8 +--
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  2 +-
+ 5 files changed, 70 insertions(+), 10 deletions(-)
+
+── d688230 ──
+ .conductor/render-stamp.json                       |    4 +-
+ .conductor/state.json                              |   23 +-
+ PROJECT.md                                         |   13 +-
+ .../unit-rung-and-fixture-snapshots/design.md      |   29 +-
+ .../unit-rung-and-fixture-snapshots/red-1.1.txt    |   77 ++
+ .../unit-rung-and-fixture-snapshots/red-1.5.txt    |   35 +
+ .../unit-rung-and-fixture-snapshots/tasks.md       |    4 +-
+ scripts/conductor.mjs                              |    6 +
+ scripts/lib/claims.mjs                             |   32 +-
+ scripts/lib/state.mjs                              |  735 ++------------
+ scripts/lib/store.mjs                              | 1026 ++++++++++++++++++++
+ scripts/test/assert/store-seam.test.mjs            |  179 ++++
+ scripts/test/fixtures/harness.mjs                  |    5 +-
+ .../test/sweeps/output-interpolations.judged.mjs   |   77 +-
+ 14 files changed, 1517 insertions(+), 728 deletions(-)
+
+── d5ce5c5 ──
+ .conductor/render-stamp.json                       |  4 +-
+ .conductor/state.json                              |  7 +--
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  4 +-
+ scripts/lib/git.mjs                                | 20 ++++---
+ scripts/lib/render.mjs                             | 62 +++++++++++++++-------
+ .../test/sweeps/output-interpolations.judged.mjs   |  3 ++
+ scripts/test/sweeps/output-interpolations.test.mjs | 11 +++-
+ 7 files changed, 75 insertions(+), 36 deletions(-)
+
+── 9700529 ──
+ .conductor/render-stamp.json                       |  5 +-
+ .conductor/state.json                              |  7 +-
+ PROJECT.md                                         |  8 +--
+ .../unit-rung-and-fixture-snapshots/design.md      |  1 +
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  2 +-
+ scripts/lib/activity-log.mjs                       | 40 +++++------
+ scripts/lib/git.mjs                                |  8 +--
+ scripts/lib/purge-logs.mjs                         | 10 ++-
+ scripts/lib/subcommands.mjs                        | 22 ++++--
+ scripts/lib/write-conflicts.mjs                    | 81 ++++++++--------------
+ scripts/test/fixtures/assert-harness.mjs           |  7 ++
+ .../test/sweeps/output-interpolations.judged.mjs   | 33 +++++++--
+ 12 files changed, 119 insertions(+), 105 deletions(-)
+
+── a727744 ──
+ .conductor/render-stamp.json                       |  6 +-
+ .conductor/state.json                              |  7 ++-
+ PROJECT.md                                         |  8 +--
+ .../call-site-sweep-1.6.txt                        | 71 ++++++++++++++++++++++
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  2 +-
+ 5 files changed, 83 insertions(+), 11 deletions(-)
+
+── f9286c5 ──
+ .conductor/render-stamp.json                       |   6 +-
+ .conductor/state.json                              |   7 +-
+ PROJECT.md                                         |   8 +-
+ .../red-1.x-mutation-evidence.txt                  |  52 ++++++++++
+ .../unit-rung-and-fixture-snapshots/tasks.md       |   6 +-
+ scripts/test/assert/render-byte-parity.test.mjs    | 106 +++++++++++++++++++++
+ scripts/test/fixtures/render-parity-project-md.txt |  46 +++++++++
+ scripts/test/fixtures/render-parity-state.json     |  33 +++++++
+ 8 files changed, 251 insertions(+), 13 deletions(-)
+
+── be2daa9 ──
+ .githooks/pre-commit                               | 40 +++++++++++++-----
+ .../node-version-fallback-2.4.txt                  | 47 ++++++++++++++++++++++
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  4 +-
+ scripts/test/assert/conductor-09.test.mjs          | 25 +++++++++---
+ 4 files changed, 98 insertions(+), 18 deletions(-)
+
+── 11049ed ──
+ .conductor/render-stamp.json                          |  6 +++---
+ .conductor/state.json                                 |  8 +++++---
+ PROJECT.md                                            |  8 ++++----
+ .../changes/unit-rung-and-fixture-snapshots/tasks.md  |  2 +-
+ scripts/test/assert/assert-half-has-no-spawn.test.mjs | 19 +++++++++++++++++++
+ 5 files changed, 32 insertions(+), 11 deletions(-)
+
+── d9e6cfa ──
+ .conductor/render-stamp.json                       |  6 +--
+ .conductor/state.json                              |  7 ++--
+ .github/workflows/ci.yml                           | 41 +++++++++++++-------
+ PROJECT.md                                         |  8 ++--
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  2 +-
+ scripts/test/assert/ci-workflow.test.mjs           | 45 ++++++++++++++++++----
+ 6 files changed, 78 insertions(+), 31 deletions(-)
+
+── 79b5c57 ──
+ .conductor/render-stamp.json                       |   6 +-
+ .conductor/state.json                              |  23 ++-
+ .githooks/pre-commit                               |   4 +-
+ PROJECT.md                                         |   8 +-
+ .../unit-rung-and-fixture-snapshots/red-3.1.txt    |  23 +++
+ .../unit-rung-and-fixture-snapshots/tasks.md       |  10 +-
+ scripts/test/assert/conformance.test.mjs           |  24 +++-
+ scripts/test/assert/fixture-snapshot.test.mjs      | 158 +++++++++++++++++++++
+ .../test/assert/gate-guard-write-paths.test.mjs    |  14 +-
+ scripts/test/assert/reconcile-obligation.test.mjs  |  12 +-
+ scripts/test/fixtures/fixture-snapshot.mjs         | 139 ++++++++++++++++++
+ scripts/test/functional/conformance.test.mjs       |   9 +-
+ 12 files changed, 398 insertions(+), 32 deletions(-)
+
+── 75676d9 ──
+ .conductor/render-stamp.json                       |   6 +-
+ .conductor/state.json                              |   7 +-
+ PROJECT.md                                         |   8 +-
+ .../worklist-4.1.md                                | 124 +++++++++++++++++++++
+ 4 files changed, 135 insertions(+), 10 deletions(-)
+
+── e6b928f ──
+ .conductor/render-stamp.json                       |   6 +-
+ .conductor/state.json                              |   7 +-
+ .../measurements-4.2.md                            |  47 +++++
+ scripts/lib/store.mjs                              |  26 ++-
+ scripts/test/assert/flag-parsing.test.mjs          | 198 ------------------
+ scripts/test/assert/store-seam.test.mjs            |  13 +-
+ scripts/test/certification.mjs                     |  22 +-
+ scripts/test/fixtures/unit-harness.mjs             |  27 ++-
+ .../test/sweeps/output-interpolations.judged.mjs   |   3 +
+ scripts/test/unit/append-log-verb.test.mjs         |   6 +-
+ scripts/test/unit/flag-parsing.test.mjs            | 222 +++++++++++++++++++++
+ scripts/test/unit/render-verb.test.mjs             |   8 +-
+ scripts/test/unit/state-verb.test.mjs              |   8 +-
+ 13 files changed, 366 insertions(+), 227 deletions(-)
+
+── 966ba72 ──
+ .conductor/render-stamp.json                       |   4 +-
+ .conductor/state.json                              |  31 +-
+ PROJECT.md                                         |  13 +-
+ .../unit-rung-and-fixture-snapshots/.openspec.yaml |   2 +
+ .../unit-rung-and-fixture-snapshots/design.md      | 408 +++++++++++++++++++++
+ .../unit-rung-and-fixture-snapshots/proposal.md    | 136 +++++++
+ .../specs/engine-invocation/spec.md                |  78 ++++
+ .../specs/suite-certification/spec.md              | 181 +++++++++
+ .../unit-rung-and-fixture-snapshots/tasks.md       | 304 +++++++++++++++
+ 9 files changed, 1148 insertions(+), 9 deletions(-)
+
+── acccca5 ──
+ .../unit-rung-and-fixture-snapshots/design.md      | 148 ++++++++++++------
+ .../unit-rung-and-fixture-snapshots/proposal.md    |  46 ++++--
+ .../specs/engine-invocation/spec.md                |  23 +--
+ .../specs/suite-certification/spec.md              |  11 +-
+ .../unit-rung-and-fixture-snapshots/tasks.md       | 165 +++++++++++++++------
+ 5 files changed, 277 insertions(+), 116 deletions(-)
+
+── 75d34a2 ──
+ openspec/changes/unit-rung-and-fixture-snapshots/design.md | 14 +++++++++++---
+ .../specs/suite-certification/spec.md                      |  7 +++++--
+ openspec/changes/unit-rung-and-fixture-snapshots/tasks.md  |  7 ++++++-
+ 3 files changed, 22 insertions(+), 6 deletions(-)
+
+── 93e3ae7 ──
+ .conductor/render-stamp.json                       |   6 +-
+ .conductor/state.json                              |   8 +-
+ PROJECT.md                                         |   8 +-
+ .../unit-rung-and-fixture-snapshots/red-2.1.txt    |  19 +++
+ .../unit-rung-and-fixture-snapshots/tasks.md       |   4 +-
+ .../test/assert/assert-half-has-no-spawn.test.mjs  | 113 +++++++++++++++-
+ scripts/test/assert/drift-script.test.mjs          |   5 +
+ scripts/test/certification.mjs                     |  35 +++--
+ scripts/test/drift.mjs                             |   8 +-
+ scripts/test/fixtures/fake-git.mjs                 |  11 +-
+ scripts/test/fixtures/fs-work-counter.mjs          | 143 +++++++++++++++++++++
+ scripts/test/fixtures/unit-harness.mjs             | 101 +++++++++++++++
+ scripts/test/unit/append-log-verb.test.mjs         |  40 ++++++
+ scripts/test/unit/render-verb.test.mjs             |  52 ++++++++
+ scripts/test/unit/state-verb.test.mjs              |  46 +++++++
+ 15 files changed, 573 insertions(+), 26 deletions(-)
+
+── A NOTE ON THE ARRAY'S ORDER, recorded because it is a property of the ENGINE and not of this change ──
+
+`attributedCommits` is APPEND-ONLY and the engine neither reorders nor de-duplicates it (required
+task item 4). This change attributed its work forward, and then had to CATCH UP four commits that
+landed EARLIER — three proposal commits from before the first attributed one, and 2.1/2.2 re-attributed after its commit was
+amended. Appending them put an ancestor of an already-attributed commit at the END of the array,
+which breaks the invariant the array is read with (every attributed commit must be REACHED by the
+recorded Gate 2 headSha, which is the LAST attributed commit). The repair is to re-attribute the
+true head, e6b928f, so the last entry reaches every other one — the duplicate is what makes it
+hold, and that is a shape the engine tolerates rather than intends. Filed as feedback (5.6).

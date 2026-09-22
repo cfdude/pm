@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "revision": 7,
+  "pmVersion": "__PM_VERSION__",
+  "active": "alpha",
+  "epics": [
+    {
+      "id": "alpha",
+      "title": "Alpha",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "touchedAt": "2026-01-02T00:00:00.000Z",
+      "attributedCommits": []
+    },
+    {
+      "id": "beta",
+      "title": "Beta",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "touchedAt": "2026-01-02T00:00:00.000Z",
+      "attributedCommits": []
+    }
+  ],
+  "detourStack": []
+}

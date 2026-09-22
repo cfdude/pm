@@ -41,6 +41,13 @@ export async function withAssertInvocation(cwd, fn) {
   const prev = installedInvocation();
   setInvocation({
     cwd,
+    // `root`, because `main()` ALWAYS sets it and a context without one is a shape no real
+    // invocation has. `engineRoot()` reads exactly this field, so a hand-built context that omitted
+    // it made every path constant resolve against `undefined` — silently, for anything that caught
+    // its own errors (0.48.0's activity-log append did, and the segment directory was never
+    // created), and loudly for anything that did not. Found by task 1.4's move of that append onto
+    // the store, which was the first thing in this helper to reach `storeOps()`.
+    root: cwd,
     env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
     argv: ["node", "conductor.mjs"],
     stdin: { read: () => "", isTTY: false },

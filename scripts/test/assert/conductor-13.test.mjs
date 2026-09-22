@@ -9,18 +9,31 @@
 //
 // THE REGISTRY IS THE ONE PLACE A FLAG CAN BE READ BUT NOT DECLARED, and the failure is silent: the
 // verb works, and the flag is invisible to every help surface and every guard built on the registry.
+//
+// ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
+//
+// TWELVE of its twenty tests moved to `scripts/test/unit/conductor-13.test.mjs` — the two registry
+// tests, the two unknown-flag refusals, the whole disposition family, and both
+// archive-gate-as-a-value tests.
+//
+// EIGHT STAY, on three of the four seam edges:
+//   * SIX lifecycle tests, ONE population: `changeWithTasks()` writes
+//     `openspec/changes/feat-x/tasks.md`, and that file is what the task count is READ FROM — the
+//     fixture has to put it on disk, which is the rule as written;
+//   * `add-many rejects an unpersisted batch key` — a batch FILE;
+//   * `update-epic holds no openspec-lane archive condition of its own` — reads `lib/update-epic.mjs`
+//     and asserts its call site with comment-only lines stripped. It is one of the source-shape guards
+//     4.1 names by hand, and it stays where its subject is.
+//
+// No assertion changed in either direction.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail, projectMd, parseBrief } from "../fixtures/assert-harness.mjs";
-import { UPDATE_EPIC_FLAGS } from "../../lib/update-epic.mjs";
-import { AGENT_OUTCOMES } from "../../lib/archive-gate.mjs";
-import { KNOWN_OUTCOMES } from "../../lib/disposition.mjs";
+import { tmpRepo, run, readState, writeState, expectFail, projectMd } from "../fixtures/assert-harness.mjs";
 
 const repo = () => { const cwd = tmpRepo(); run(["init"], { cwd }); return cwd; };
-const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
 /** The source with COMMENT-ONLY lines removed: a line whose first non-space characters open a line
  *  comment, a block comment or a continuation of one.
@@ -36,34 +49,6 @@ function codeLines(src) {
   return src.split("\n").filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join("\n");
 }
 
-// ─────────────────── the registry ───────────────────
-
-test("every registry entry names a flag, and the projection is not a literal that happens to match", () => {
-  // The projection is read off the registry, so a flag added there appears here without an edit.
-  assert.ok(UPDATE_EPIC_FLAGS.length > 20, `the projection is broken — only ${UPDATE_EPIC_FLAGS.length} flags`);
-  for (const flag of UPDATE_EPIC_FLAGS) assert.equal(typeof flag, "string");
-  assert.equal(new Set(UPDATE_EPIC_FLAGS).size, UPDATE_EPIC_FLAGS.length,
-    "no (command, flag) pair is governed by two rows");
-});
-
-test("update-epic still names the offending flag AND the flags it does support", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const err = expectFail(() => run(["update-epic", "e1", "--titel", "x"], { cwd }));
-  const text = String(err.stderr || "");
-  assert.match(text, /titel/, "it names the offending flag");
-  assert.match(text, /--priority|--status/, "and the ones it does support, so the reader can correct it");
-});
-
-test("add-epic rejects an unsupported flag by name and writes nothing (#79)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  const before = stateBytes(cwd);
-  const err = expectFail(() => run(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code",
-    "--recorded-by", "me"], { cwd }));
-  assert.match(String(err.stderr || ""), /recorded-by/);
-  assert.equal(stateBytes(cwd), before);
-});
-
 test("add-many rejects an unpersisted batch key by name and creates ZERO epics", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   const batch = path.join(cwd, "batch.json");
@@ -73,87 +58,6 @@ test("add-many rejects an unpersisted batch key by name and creates ZERO epics",
 });
 
 // ─────────────────── the disposition record ───────────────────
-
-test("an agent-supplied disposition that is not `delivered` is rejected without a reason", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const err = expectFail(() => run(["update-epic", "e1", "--status", "archived", "--outcome", "killed", "--no-deferrals"], { cwd }));
-  assert.match(String(err.stderr || ""), /requires a non-empty reason/);
-  assert.match(String(err.stderr || ""), /only 'delivered' may omit one/);
-});
-
-test("`delivered` needs no reason, and an agent's record carries no recordedBy", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "e1", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
-  const d = readState(cwd).epics.find(e => e.id === "e1").disposition;
-  assert.equal(d.outcome, "delivered");
-  assert.equal(d.recordedBy, undefined, "the agent's own record carries no engine stamp");
-});
-
-test("an outcome outside the vocabulary is rejected by name", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const err = expectFail(() => run(["update-epic", "e1", "--status", "archived", "--outcome", "finished", "--no-deferrals"], { cwd }));
-  const text = String(err.stderr || "");
-  for (const o of AGENT_OUTCOMES) assert.ok(text.includes(o), `the refusal names ${o}`);
-});
-
-test("the outcome vocabulary and the engine-stamp token set are each exactly what the release defines", () => {
-  assert.ok(Array.isArray(AGENT_OUTCOMES) && AGENT_OUTCOMES.includes("delivered"));
-  const engineOnly = KNOWN_OUTCOMES.filter(o => !AGENT_OUTCOMES.includes(o));
-  assert.deepEqual(engineOnly, ["unknown"],
-    "exactly one token is the engine's: an engine stamp is never something an agent may claim");
-});
-
-test("outcomeOf is the reader — an epic with no disposition reads `unknown`", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const out = runCombined(["status"], { cwd });
-  assert.ok(typeof out === "string");
-  assert.equal(readState(cwd).epics.find(e => e.id === "e1").disposition, undefined);
-});
-
-test("a recorded disposition renders in PROJECT.md and the brief from state.json alone", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "e1", "--status", "archived", "--outcome", "killed",
-    "--reason", "superseded by the rewrite", "--no-deferrals"], { cwd });
-  run(["render"], { cwd });
-  assert.match(projectMd(cwd), /superseded by the rewrite/);
-  assert.match(parseBrief(cwd), /superseded by the rewrite/);
-});
-
-test("an engine `unknown` stamp with no reason adds no disposition row", () => {
-  const cwd = repo();
-  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [{
-    id: "e1", title: "t", priority: "P1", status: "archived", role: "epic", lane: "claude-code",
-    links: [], disposition: { outcome: "unknown", recordedBy: "heal" } }] });
-  run(["render"], { cwd });
-  const md = projectMd(cwd);
-  assert.doesNotMatch(md, /`unknown`/, "an engine stamp nobody was asked about is not a decision to render");
-});
-
-// ─────────────────── the archive gate is a value, not an exit ───────────────────
-
-test("the archive gate returns a refusal OBJECT and never exits the process itself", async () => {
-  // Driven, not scanned: the gate is CALLED with a record it must refuse, and the refusal comes
-  // back as a value. A function that exited would end this process and the assertion would never run.
-  const { archiveGate } = await import("../../lib/archive-gate.mjs");
-  const out = archiveGate({ id: "e1", title: "t", status: "queued", lane: "openspec", links: [] },
-    { outcome: "finished" });
-  assert.equal(out.ok, false);
-  assert.match(String(out.message), /not one of/);
-});
-
-test("the gate is reachable from update-epic, refusal text intact", () => {
-  const cwd = repo();
-  run(["add-epic", "--id", "e1", "--lane", "openspec"], { cwd });
-  const err = expectFail(() => run(["update-epic", "e1", "--status", "archived",
-    "--outcome", "delivered", "--no-deferrals"], { cwd }));
-  assert.match(String(err.stderr || ""), /Gate 2|gate/i);
-});
-
 test("update-epic holds no openspec-lane archive condition of its own", () => {
   // The gate owns the rule; a second copy in the verb is how the two drift apart.
   //
@@ -176,7 +80,6 @@ function changeWithTasks(cwd, body, id = "feat-x") {
   fs.writeFileSync(path.join(dir, "tasks.md"), body);
   return dir;
 }
-
 test("a declared lifecycle task leaves BOTH numerator and denominator", () => {
   const cwd = repo();
   run(["add-epic", "--id", "feat-x", "--title", "t", "--lane", "openspec"], { cwd });
@@ -189,7 +92,6 @@ test("a declared lifecycle task leaves BOTH numerator and denominator", () => {
   // task leaves the numerator and the denominator TOGETHER, and the render says how many it left.
   assert.match(projectMd(cwd), /1\/1 stories · 1 lifecycle/);
 });
-
 test("a marked task is excluded whether or not it is ticked", () => {
   const cwd = repo();
   run(["add-epic", "--id", "feat-x", "--title", "t", "--lane", "openspec"], { cwd });
@@ -201,7 +103,6 @@ test("a marked task is excluded whether or not it is ticked", () => {
   assert.match(projectMd(cwd), /1\/1 stories · 1 lifecycle/,
     "a marked task is excluded whether or not it is ticked");
 });
-
 test("the marker is read on the task LINE — never on a following line, never by position", () => {
   const cwd = repo();
   run(["add-epic", "--id", "feat-x", "--title", "t", "--lane", "openspec"], { cwd });
@@ -214,7 +115,6 @@ test("the marker is read on the task LINE — never on a following line, never b
   assert.match(row, /0\/1 stories/, "a marker on its own line belongs to no task");
   assert.doesNotMatch(row, /lifecycle/, "and it excludes nothing");
 });
-
 test("an UNDECLARED task is counted however it is worded", () => {
   const cwd = repo();
   run(["add-epic", "--id", "feat-x", "--title", "t", "--lane", "openspec"], { cwd });
@@ -225,7 +125,6 @@ test("an UNDECLARED task is counted however it is worded", () => {
   run(["render"], { cwd });
   assert.match(projectMd(cwd), /0\/2 stories/);
 });
-
 test("a source whose every task is excluded is still a SOURCE — no missing-source warning", () => {
   const cwd = repo();
   run(["add-epic", "--id", "feat-x", "--title", "t", "--lane", "openspec"], { cwd });
@@ -234,7 +133,6 @@ test("a source whose every task is excluded is still a SOURCE — no missing-sou
   const md = projectMd(cwd);
   assert.doesNotMatch(md, /no change on disk/, "an all-excluded source is a source, not a ghost");
 });
-
 test("a task that merely DOCUMENTS the marker is not excluded by it", () => {
   const cwd = repo();
   run(["add-epic", "--id", "feat-x", "--title", "t", "--lane", "openspec"], { cwd });

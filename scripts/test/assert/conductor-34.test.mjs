@@ -15,6 +15,12 @@ const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..",
 const shipped = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8");
 const rulesText = (cwd) => run(["rules"], { cwd });
 
+// 4.1 (0.48.0) moved FIVE of this file's tests to `scripts/test/unit/conductor-34.test.mjs` — the
+// ones whose ONLY surface is the rendered block (item 3's mustSay, the intake/operating-rule/
+// reporting numbering, and the reporting carve-outs). What remains asserts over SURFACES, looping
+// `readFileSync` over the shipped mirrors: splitting that loop to move one value-valued arm would
+// weaken the per-surface assertion that is the point of it.
+
 /** The three shipped markdown mirrors of the emitted procedure — the same list conductor-16's
  *  drift guards use. Named here rather than imported so this file states its own population. */
 const EMITTED_DOCS = ["skills/conductor/SKILL.md", "commands/epic.md", "commands/status.md"];
@@ -63,19 +69,6 @@ test("34.1 every surface that documents the lifecycle marker also names the lint
   }
 });
 
-test("34.1 the collision rides item 3's mustSay, so a reworded mirror cannot drop it", () => {
-  const item = GATE_PROCEDURE_ITEMS.find(i => i.title === "Declare lifecycle bookkeeping.");
-  assert.ok(item, "the lifecycle-bookkeeping item must still exist under that title");
-  for (const claim of ["openspec validate --archived", "do NOT wire it into a pm-managed repo"]) {
-    assert.ok(item.mustSay.some(c => norm(c) === norm(claim)),
-      `"${claim}" must be declared in item 3's mustSay — otherwise conductor-16's 15.5 guard ` +
-      "compares titles only and a mirror can drop the warning silently");
-  }
-  // It stays a NUMBERED required task item, not a prose bullet appended underneath it.
-  const items = numberedItems(rulesText(initRepo())).join("\n");
-  assert.match(items, /\*\*Declare lifecycle bookkeeping\.\*\*/);
-});
-
 // ───────────── 34.2 (#114): lane routing is instruction, not algorithm ─────────────
 //
 // What already shipped closed the CALL-SITE half: 0.27.0 stopped hardcoding a mirrored issue to
@@ -101,18 +94,6 @@ function intakeSection(text) {
   const next = rest.search(/\n## /);
   return next === -1 ? rest : rest.slice(0, next);
 }
-
-test("34.2 lane choice is a NUMBERED intake item, not a prose aside", () => {
-  const section = intakeSection(rulesText(initRepo()));
-  const items = numberedItems(section);
-  assert.match(items.join("\n"), /\*\*Decide the lane; do not inherit it\.\*\*/,
-    "the lane decision must be a numbered intake item — 14/14 against 3/15 is why the form matters");
-  // Contiguous 1..N: an inserted item that leaves a gap breaks the "item N means the same thing
-  // everywhere" claim the numbering carries.
-  assert.deepEqual(items.map(l => Number(l.match(/^(\d+)\./)[1])), items.map((_, i) => i + 1),
-    "intake's numbered items must run 1..N with no gap");
-  assert.doesNotMatch(section, /^\s*[-*] \*\*Decide the lane/m, "not a bullet");
-});
 
 test("34.2 the emitted lane rule states the judgment half, the asymmetry, and the recorded reason", () => {
   const surfaces = [
@@ -174,24 +155,6 @@ test("34.2 the recorded-reason demand is no longer a one-site rule", () => {
 // genuine gate obligation. It lands instead as a NUMBERED operating rule (the same form, in the
 // list that governs how the conductor is operated) plus a numbered step where the cost is
 // concentrated.
-
-test("34.3 delegating discovery is a NUMBERED operating rule, not a prose bullet", () => {
-  const block = rulesText(initRepo());
-  const items = numberedItems(block);
-  const rule = items.find(l => /\*\*Delegate discovery/.test(l));
-  assert.ok(rule, "the emitted block must carry the delegation rule as a numbered item — " +
-    "14/14 against 3/15 for the same rule as a prose bullet");
-  assert.doesNotMatch(block, /^\s*[-*] \*\*Delegate discovery/m, "not a bullet");
-  // Its list is the operating rules, which run 1..N contiguously.
-  const opsStart = block.indexOf("## PM Conductor — operating rules");
-  const opsEnd = block.indexOf("## The gate procedure");
-  assert.ok(opsStart !== -1 && opsEnd > opsStart);
-  const ops = numberedItems(block.slice(opsStart, opsEnd));
-  assert.deepEqual(ops.map(l => Number(l.match(/^(\d+)\./)[1])), ops.map((_, i) => i + 1),
-    "the operating rules must run 1..N with no gap");
-  assert.ok(ops.some(l => /\*\*Delegate discovery/.test(l)),
-    "the rule belongs to the OPERATING rules, not to some other numbered list in the block");
-});
 
 test("34.3 the rule names the mechanism, binds the orchestrator, and does not weaken a full read", () => {
   const surfaces = [
@@ -255,22 +218,6 @@ test("34.3 the hierarchy preflight — the heaviest inline read — is dispatche
 // carve-outs deletes obligations, and carve-outs without deference is the house style the issue
 // was filed about.
 
-const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
-
-test("34.4 the emitted block carries the reporting split as its own numbered section", () => {
-  const block = rulesText(initRepo());
-  assert.ok(block.includes(REPORTING_HEADING),
-    "reporting must be a section of its own, not a sentence inside another");
-  const start = block.indexOf(REPORTING_HEADING);
-  const rest = block.slice(start + REPORTING_HEADING.length);
-  const cut = rest.search(/\n## /);
-  const section = cut === -1 ? rest : rest.slice(0, cut);
-  const items = numberedItems(section);
-  assert.ok(items.length >= 5, "the split is carried as numbered items, not prose bullets");
-  assert.deepEqual(items.map(l => Number(l.match(/^(\d+)\./)[1])), items.map((_, i) => i + 1),
-    "the reporting items must run 1..N with no gap");
-});
-
 test("34.4 human-facing output defers to the user, and pm says its own headings are only a default", () => {
   const surfaces = [
     ["rules block", rulesText(initRepo())],
@@ -289,25 +236,6 @@ test("34.4 human-facing output defers to the user, and pm says its own headings 
     assert.ok(norm(shipped(rel)).includes(norm("a default, not a house style")),
       `${rel} prescribes a human-facing shape and must mark it as a default, not a house style`);
   }
-});
-
-test("34.4 the carve-outs are stated, so 'defer to the user' cannot delete an obligation", () => {
-  const t = norm(rulesText(initRepo()));
-  // Scope: this governs REPORTING, never DOING. Without it a brevity contract reads as licence to
-  // skip a gate — the same failure the issue reports, pointed the other way.
-  assert.ok(t.includes(norm("governs how you REPORT")),
-    "the section must scope itself to reporting, never to what the other sections instruct");
-  assert.ok(t.includes(norm("does not authorise skipping a required task item")),
-    "it must say outright that a brevity contract does not excuse a required task item or a gate");
-  // RECORDED band: a write is not a sentence.
-  assert.ok(t.includes(norm("not sentences")) && t.includes(norm("data loss, not brevity")),
-    "the recorded band must be named as writes, with the consequence of shortening one");
-  // PARSED band: field names are a wire format.
-  assert.ok(t.includes(norm("wire format")) && t.includes(norm("STATUS/DONE/DECISIONS/CONCERNS")),
-    "the parsed band must name the machine-read blocks and say they do not bend");
-  // The mapping mechanic: reshape, never drop.
-  assert.ok(t.includes(norm("Reshaping is always allowed")) && t.includes(norm("ADD a slot")),
-    "it must say to add a slot for a required element the user's shape has no room for, not drop it");
 });
 
 test("34.4 the inheritance rule is stated wherever a subagent's contract is decided", () => {

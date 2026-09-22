@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "functional-assertion-test-split",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -9682,7 +9682,7 @@
       "id": "functional-assertion-test-split",
       "title": "Split the suite: one-process assertion tests over an injected git fake; functional git tests only when the seam changes",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9754,7 +9754,7 @@
         "8fe0a3b79621b7e251b47f053febc2a42d9e61ca"
       ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-21T15:19:53.532Z",
+      "touchedAt": "2026-09-22T06:11:39.190Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -9777,7 +9777,18 @@
         }
       },
       "startedAt": "2026-09-21T03:55:42.343Z",
-      "release": "0.47.0"
+      "release": "0.48.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-22T06:11:39.187Z",
+        "reason": "0.47.0 shipped this change's two spec deltas and every engine change they describe; the epic was archived by render()'s drift heal, which stamps outcome 'unknown' with NO reason, so it read as a live unexplained finding to integrity and to the conductor-15 day-one record. This records the disposition the ordinary end of the documented workflow owes. Found pre-existing (it fails on the pre-1.2 tree too) while certifying 1.2's commit."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-22T06:11:39.168Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-22T06:11:39.187Z"
     },
     {
       "id": "alpha",
@@ -9864,17 +9875,200 @@
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:07:20.863Z",
       "touchedAt": "2026-09-21T13:07:20.867Z"
+    },
+    {
+      "id": "unit-rung-and-fixture-snapshots",
+      "title": "0.48.0: a unit test rung over in-memory state; fixture snapshots for integration-shaped tests; sub-10s pre-commit",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "functional-assertion-test-split",
+          "reason": "continues its architecture to the unit rung"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [
+        "2eff64d3484d8559d0f0518003ba11ce5de1263b",
+        "bf748ac7c753266cb211726cbf3217717bff9068",
+        "d833159aa69b9210b3dd9c1908ec812b7743c9fb",
+        "d6882309d6f6fae86b585ffac3cff7f176bff2fe",
+        "d5ce5c5107f4c303e0881c00c330729256874c20",
+        "9700529ce71906af734583c8d42a56ace91f03ec",
+        "a727744c003349d0549327877de83cb7be3199fe",
+        "f9286c52d13f45fe0a0f4d968f96578be02ce650",
+        "be2daa99cfceb3fe7625dd2d31f595cfcf0a5102",
+        "11049ed56b7bd3618f5752dc093b0607c32511d5",
+        "d9e6cfaf88f9e11745fd37585254885028f05413",
+        "79b5c57449468370f90d627b721e4848d0c6e3b2",
+        "75676d918474f83a72ab52d97262249116fa4137",
+        "e6b928fe4973cf593ce33eccc30c0a75e444b330",
+        "966ba72576ec9ee075d6294fd27ce0c7f10bc1d3",
+        "acccca58a5f266e328f56f93efb9d267c4bf9dc2",
+        "75d34a23a1dbb53251207e1e5e6fac26964c045b",
+        "93e3ae7661041b4b21860848e59810e05e287189",
+        "e6b928fe4973cf593ce33eccc30c0a75e444b330",
+        "70612bd2bda4e1cf66d2f8b77dc91eeee7543ddf",
+        "f552fad2e3438d3586121ffab07e4410d3cabc6b",
+        "d36380956b7d231ae613fcf6643af6e0347355a1",
+        "13eabc030e88a1829d291dcc51e5012890412ccc",
+        "10107afda745f8b7b066eebd3b08b81d67626254",
+        "3648441a78e3cbfcaecc0a08ad0b8d498e857071",
+        "d32c497db6aebc52bccd2fdc810036867b09e0e2",
+        "29a4494259403d0f8a758f1181eb4828ebfd8ca1",
+        "0cc5bf11935661f1d03eb8d15658cb7025e95783",
+        "deecf31837d8290e55bca17e15ec63850452e352",
+        "5b7ed9baf3d129e0d94c40ef0c676dd6c5de9689",
+        "7c64348c7ccc8bfa91d098b7c9b309c6c3ecf031",
+        "71a578ddf5d42aa8e6b395cdb511ec913f5e8ebb",
+        "7f0e86f77eb25cf6216bafb63f993bb63069858e",
+        "a5f76e11e7b66235558d2ec402185d9c331585cf",
+        "0e68b12acfa99ff42993a0a2bc4d9742ae99edd1",
+        "5aea50cb5a522a6050e5b8fa67c91944df5389d7",
+        "fc7bcaa9dcfedf8b18fd7892763b56cea0651df3",
+        "5db437f70b998237c830609f5a632a9313d2b7c9",
+        "a2e99d01e497f6601161b99e3e9ed66c7bd9ae6c",
+        "13c807878af34f6c194a300a61fbcac3c10bb800",
+        "5b0b75e118cd40619eb5cf3bd153ebebbebf081f",
+        "93d5403875d525752e9d40c2e3ad5094c61b2efb",
+        "5e27872f86b8525dcc6a019f3d38218d146e48e4",
+        "ffd19e214e2e83c6200fe5979e2449264cded5a6",
+        "4b7155e9c0910e09fc108149bd62f91bf8573af5",
+        "9b4c4a573407257c16605f713faa1362fed43cba",
+        "805741542efc98dc9f690329a784e8179258407e",
+        "ae9b5522cc4abe8dbdfa3ff21bc2ccc7e8a601be",
+        "35d091b9affce1603f9bf9c8f3b16631e87f140c",
+        "bcebace2d720810f7494b831cbe8b3c67952a986",
+        "8351883e9b08579d81ef9b69271969879ff97433",
+        "4d2127c5b0b635bc2f8e97c1d16102d9d7bf508f",
+        "dc9d6fb468c4c748dc4d65b454e30d92e494c193",
+        "75272bed21583959ef295f41a99ebff0d249cf57",
+        "521b20982aa1a8743cdedfa1674fca0f3956ab37",
+        "d557d7bb343f00ac495ad684acc89b711d3c9afa",
+        "48ae194a769c4d7e8ef2904f890f091b59ad7708",
+        "7a3c060b7fcff7079f20ffbb5cff8e045fae6d79",
+        "998f19b3d3b420b7c53c04a432fd133e3bffce67",
+        "878fac053506560746fe44f3d510362aaad50cb1",
+        "f9b16ca5addf853e679f523d0a5f0f7442788e08",
+        "b6798075a3b5ade82c3d77ed152db3392e78af6c",
+        "c426fb8981b4d8f3f482a3b63772689ce096bc61",
+        "7d6e17711594d34fef27ed05ee97283d1ac082f1",
+        "2a24a5afb39380374dd5bcaba7214395d65e234d",
+        "6ce96296a6d99aea9ce275db44fd98392c1d3258",
+        "f956779ee31180fc8641924fd95f4a770484e0e2",
+        "d9ef177d0862011aa4cf36ec75b70d005baf13b4",
+        "2c51e0e760b6cc5111e20caa3ff7a1c3b37a66e8",
+        "a511ad709e49931b7bb4502f7126f7310fb17274",
+        "c1e7ff2ac3d3dfec3cfcb3740cc5c65f7ae8540c",
+        "d8065bfe02ad0135b85a0b6f1f446be0d10ab1fd",
+        "d7a71ccfee36742bb5d47be1099adbb5d5b8a4be",
+        "078057bc238d5413b9140dcb46d64e02240713de",
+        "2c3cc130b4c5824cbd9e1401ee6425e73a24f3ad",
+        "640687322ede35ce5e86b30611a07a91cdf358d0",
+        "f6e87ed51101f72de0d2dd3a3e75050c64879601",
+        "a63691956be179378ff0f59600c48c5e91c3a026",
+        "7188db9830f54c48336fdfacd473120ac502b4bc",
+        "24a8fe38fe28f7353e88b32197201b8ce44efc40",
+        "20f91c6c48b0343875a17b106ac94fca3c42b784",
+        "a061b674401a10e9d04488003ea4f49093954200",
+        "9e4764d5b5b676cfdf05f283915ad09a5ec147a7",
+        "34282d2e342c87d41467e81089c516259cfbc8ec",
+        "5b9bfd63a6121d0c3bff8470dcbc030569cba4e4",
+        "ee6778e8073e9e55572d3da48b962efdaf9ead5c",
+        "ba918dadfc3ba615ba39d210f1629a7e4c42a53a",
+        "d8ff7e1003b6d9d8e8eaf0b9e77548e4c313bd62",
+        "15268fbcbf26b3c4467b73a80b636d8a918a0fce",
+        "da4e3358b9b5271b08d9e2fdb411eb41bb7200a3",
+        "f1c0c1d50913a9e0fc031f4dd5d8458b305dca09",
+        "e97876d7e0e68db9be267c79e2e3cb0b765ad6c8",
+        "a0e827fb51181a66291cedcc4c13acdd7bd57aa9",
+        "29e6562303ec92082ffd209947fa15ada0358384"
+      ],
+      "createdAt": "2026-09-22T04:49:43.433Z",
+      "touchedAt": "2026-09-22T11:09:55.429Z",
+      "release": "0.48.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-22T05:22:51.503Z",
+          "baseSha": "ab171b7f3edbb77050c3101f89fb5d1ceecf1995",
+          "headSha": "75d34a23a1dbb53251207e1e5e6fac26964c045b",
+          "reviewer": "two fresh-context lenses (A reproduced the fsync premise: 12,524 fsyncs, 8.1x no-fsync control; B swept the 137 call sites and 10 write sites): round 1 fail (2 C: rung definitions stranded 82% of the half, render parity unachievable; 15 I/M), fixes applied; confirmation fail (3 residue: D5's population, a false guard-loudness claim, a missed detours-log read), fixed; 2026-09-21"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-22T11:09:00.425Z",
+          "baseSha": "ab171b7f3edbb77050c3101f89fb5d1ceecf1995",
+          "headSha": "29e6562303ec92082ffd209947fa15ada0358384",
+          "reviewer": "two fresh-context lenses (A reproduced the fsync premise: 12,524 fsyncs, 8.1x no-fsync control; B swept the 137 call sites and 10 write sites): round 1 fail (2 C: rung definitions stranded 82% of the half, render parity unachievable; 15 I/M), fixes applied; confirmation fail (3 residue: D5's population, a false guard-loudness claim, a missed detours-log read), fixed; 2026-09-21"
+        }
+      },
+      "startedAt": "2026-09-22T05:22:52.790Z",
+      "withdrawnCommits": [
+        {
+          "sha": "a45b368c29ebe4cece96592c9a3e3c554984bbff",
+          "reason": "both commits were AMENDED AWAY during this change's own 2.1-2.4 split: a45b368 carried 2.1/2.2 plus 2.3/2.4 in one commit and 8f0ee70 carried 2.1/2.2 with conductor-09's hook re-point, which left that tree's own suite red. Each was replaced by a corrected commit (93e3ae7 and be2daa9) and BOTH replacements are attributed, so the epic's delivered range is fully covered without them. They are recorded shas reachable from no ref - the shape a squash-merge leaves - and the integrity check is right that the next git gc would take them; withdrawing them is the honest end rather than tagging a commit nobody shipped.",
+          "withdrawnAt": "2026-09-22T07:40:27.517Z"
+        },
+        {
+          "sha": "8f0ee703d7e4e1d00e0c0cf289b84d694d32618f",
+          "reason": "both commits were AMENDED AWAY during this change's own 2.1-2.4 split: a45b368 carried 2.1/2.2 plus 2.3/2.4 in one commit and 8f0ee70 carried 2.1/2.2 with conductor-09's hook re-point, which left that tree's own suite red. Each was replaced by a corrected commit (93e3ae7 and be2daa9) and BOTH replacements are attributed, so the epic's delivered range is fully covered without them. They are recorded shas reachable from no ref - the shape a squash-merge leaves - and the integrity check is right that the next git gc would take them; withdrawing them is the honest end rather than tagging a commit nobody shipped.",
+          "withdrawnAt": "2026-09-22T07:40:27.517Z"
+        }
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-22T11:09:55.426Z",
+        "reason": "a store seam (137 loadState/saveState sites, decisions separated from persistence, memory store shipped) plus fixture snapshots moved the assertion half from 72-73 s to 26.50 s and per-unit-test to 0.70-0.87 ms; the sub-15 s acceptance was MISSED (1.77x) and is recorded as a miss — the remaining 21.3 s is durability flushing held by the CLAUDE.md managed-block seam edge (E1), which is a recorded cross-spec boundary not amendable in-apply; fsyncs 12,524 to 3,430; Gate 2 pass at 29e6562"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-22T11:09:55.404Z",
+        "deferrals": [
+          {
+            "epic": "store-owns-claude-md-managed-block",
+            "section": "E1 - making the managed-block write store-mediated requires amending the recorded cross-spec boundary that the store does not own CLAUDE.md; a separate spec change after this release"
+          },
+          {
+            "epic": "code-review-0-43-0-minors",
+            "section": "rows 62-91 (30 files, 2.5% of baseline) recorded by cost, not migrated"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-22T11:09:55.426Z"
+    },
+    {
+      "id": "store-owns-claude-md-managed-block",
+      "title": "0.49.0 candidate: make the managed rules block a store-owned artifact (removes the last fsync wall in the assertion half's file rung)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "unit-rung-and-fixture-snapshots",
+          "reason": "its E1 stop - the only path to sub-15s"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-22T11:09:54.629Z",
+      "touchedAt": "2026-09-22T11:09:54.633Z"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.46.0",
+  "pmVersion": "0.47.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1221,
+  "revision": 1329,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10262,6 +10456,57 @@
           }
         ],
         "reviewer": "INLINE review by the applying agent, NOT fresh-context lenses — this run's discipline forbids subagent dispatch, and that limitation is recorded here rather than papered over. Six questions over the release's two spec files (engine-invocation, suite-certification): (1) contradiction — none; the near-miss (one-process assertion half vs two-independent-invocations) is mutual dependency, not conflict. (2) double ownership — none; conductor.mjs's covers referencing the conformance set is a reference, and engine-invocation explicitly declines to restate verb-surface's refusal classes. (3) unmeetable — none in the specs. (4) gaps against proposal What-Changes — one: ci.yml's non-descending syntax loop has no requirement; declined as POLISH. (5) vocabulary forks — two, change-internal: \"double\" vs \"fake\", \"change-triggered bucket\" vs \"sweeps bucket\"; declined, renaming churns a passed Gate 1 contract for no behaviour change. (6) shared chokepoint — the single-process assertion half with injected streams is load-bearing for BOTH specs; guarded on each side (1.2 exits, 3.5 roots, 5.2 spawns). FINDING raised against the TASK LIST, not the specs: git.mjs's resolvedCommitCache is keyed by VALUE ONLY (unreachedCache by head+commits), so two invocations in one process against two roots share it and a hex abbreviation resolving in one repository and not the other gets the first repository's answer — engine-invocation forbids observing another invocation's values, and no task keys those caches; handled in the gateway work (4.2) rather than by amending a spec that is already correct. Verdict pass: no BLOCK found in either spec file; one BLOCK-level finding against tasks.md, acted on. 2026-09-20"
+      }
+    },
+    {
+      "id": "0.48.0",
+      "intent": "Make assertions actually assertions: a unit rung over in-memory state and fixture snapshots, so the pre-commit hook is seconds and the dev loop is sub-second",
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-22T05:39:32.285Z",
+        "specs": [
+          {
+            "key": "functional-assertion-test-split/specs/engine-invocation/spec.md",
+            "sha256": "4e2da4d03d5a00b9e189928aef5008ad1d3ce4a91e36ab3889eeb7e4ec4c00fc"
+          },
+          {
+            "key": "functional-assertion-test-split/specs/suite-certification/spec.md",
+            "sha256": "ec612e9e29ee5f10b34e227b895964d830e24b9779f814f660e97e518a13beff"
+          },
+          {
+            "key": "unit-rung-and-fixture-snapshots/specs/engine-invocation/spec.md",
+            "sha256": "37de25e98455086c868e152b7d9c96990e8a48e94fe9eacd66a740676a0df004"
+          },
+          {
+            "key": "unit-rung-and-fixture-snapshots/specs/suite-certification/spec.md",
+            "sha256": "fea3f205ec8798ffe5fd9c58212c0a4b8180610de92b6640932cbdedb3b961c5"
+          }
+        ],
+        "reviewer": "inline foreground cross-spec review of the 0.48.0 spec set — no fresh-context subagents were available in this run, so the reviewer is the applying agent, which read both of this change's deltas in full and answered the six questions. NOTE ON THE ENUMERATED SET: the engine enumerated FOUR specs, not two — the extra pair is functional-assertion-test-split/specs/{suite-certification,engine-invocation}/spec.md, the stale LIVE duplicate of the tree ab171b7 archived (task 0.4), which the release-scope enumeration reaches because the live directory was copied rather than moved. Those two are byte-identical to the archived originals and are the same two capabilities this change deltas, so the review covers them; the duplicate is filed separately under 0.4 rather than repaired here. BLOCKS (fixed in this commit): engine-invocation's 'the invocation that used the in-memory store created no file' scenario was unreachable — init() writes CLAUDE.md (rules.mjs:1097) and .gitignore through raw fs, both deliberately outside the store per design D1, so the scenario was narrowed to the store's own footprint and an explicit boundary paragraph was added. CONTRADICTION: none. suite-certification's rungs and engine-invocation's per-call store agree; 'both rungs run in one invocation of one process' does not collide with 'two invocations in one process are independent' — different claims about different things, and no scenario still speaks of the assertion half as one on-disk directory (the modified requirement and all four of its scenarios name the rungs). DOUBLE OWNERSHIP: none. engine-invocation owns the caller's contract and now states the store's boundary; suite-certification owns rung membership and names the store only as the mechanism a unit test obtains a value through, which is the split task 0.2 asked for. UNMEETABLE: the one above, now fixed. GAPS against the proposal's What Changes: none found — the three artifacts I1 added (session-claim.json, commit-observe.json + .lock, write-conflicts.log.prev) and render's three reads (projectMd pre-image render.mjs:306, the stamp's mtime test :356, detoursLog :276) are each carried by a task (1.2, 1.3). VOCABULARY: consistent within the spec set; POLISH declined — the file rung's directory is still named assert/ (the half's own name) while the unit rung's is unit/, so the rungs are named on disk as required but the names are not parallel; renaming is out of this change's scope. CHOKEPOINTS: homeOf() (certification.mjs:63) and the two-glob runner invocation the hook and ci.yml both hand to one runner are each owned by exactly one capability. Recorded AFTER the amendment above, so the recorded hashes cover the amended text.",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-22T05:39:21.456Z",
+          "specs": [
+            {
+              "key": "functional-assertion-test-split/specs/engine-invocation/spec.md",
+              "sha256": "4e2da4d03d5a00b9e189928aef5008ad1d3ce4a91e36ab3889eeb7e4ec4c00fc"
+            },
+            {
+              "key": "functional-assertion-test-split/specs/suite-certification/spec.md",
+              "sha256": "ec612e9e29ee5f10b34e227b895964d830e24b9779f814f660e97e518a13beff"
+            },
+            {
+              "key": "unit-rung-and-fixture-snapshots/specs/engine-invocation/spec.md",
+              "sha256": "37de25e98455086c868e152b7d9c96990e8a48e94fe9eacd66a740676a0df004"
+            },
+            {
+              "key": "unit-rung-and-fixture-snapshots/specs/suite-certification/spec.md",
+              "sha256": "fea3f205ec8798ffe5fd9c58212c0a4b8180610de92b6640932cbdedb3b961c5"
+            }
+          ],
+          "reviewer": "inline foreground cross-spec review of the 0.48.0 spec set (2 spec files: suite-certification, engine-invocation) — no fresh-context subagents were available in this run, so the reviewer is the applying agent, which read both deltas in full and answered the six questions. BLOCKS (fixed in this commit): engine-invocation's 'the invocation that used the in-memory store created no file' scenario was unreachable — init() writes CLAUDE.md (rules.mjs:1097) and .gitignore through raw fs, both deliberately outside the store per design D1, so the scenario was narrowed to the store's own footprint with an explicit boundary paragraph added. Contradiction: none — suite-certification's rungs and engine-invocation's per-call store agree; the rung's process claim ('both rungs, one invocation, one process') does not collide with 'two invocations in one process are independent' because they are different claims about different things. Double ownership: none — engine-invocation owns the caller's contract and states the store boundary; suite-certification owns rung membership and names the store only as the mechanism a unit test obtains a value through. Unmeetable: the one above, now fixed. Gaps vs the proposal's What Changes: none found — the three artifacts I1 added (session-claim.json, commit-observe.json+.lock, write-conflicts.log.prev) and the render's three reads (projectMd pre-image :306, the stamp's mtime test :356, detoursLog :276) are each carried by a task (1.2, 1.3). Vocabulary: ok within the spec set; POLISH declined — the file rung's directory is still named assert/ (the half's own name) while the unit rung's is unit/, and the spec's 'the two rungs SHALL be named on disk' is satisfied but the names are not parallel; renaming is out of this change's scope. Chokepoints: homeOf() (certification.mjs:63) and the two-glob runner invocation shared by the hook and ci.yml are each owned by exactly one capability. Recorded after the amendment above, so the hash covers the amended text."
+        }
       }
     }
   ],

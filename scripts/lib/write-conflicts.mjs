@@ -6,66 +6,44 @@
 // log is APPEND-ONLY and therefore needs no guard of its own: no reader-modifier-writer, no
 // lock, nothing that can be lost to the race it exists to record.
 
-import fs from "node:fs";
-import path from "node:path";
-import { CONFLICT_LOG_MAX_BYTES, conductorDir, engineRoot, writeConflictsLog } from "./constants.mjs";
+import { ARTIFACT, clearConflictsOn, recordConflictOn, storeOps } from "./store.mjs";
 
-// Re-evaluate paths each time they're accessed (task 3.2): the root is the INVOCATION's, and this
-// module runs on a hook's failure path — the one place a stale root would write the diagnostic into
-// the wrong repository and leave the real one silent.
-function getPaths() {
-  const root = engineRoot();
-  const CONDUCTOR_DIR = conductorDir(root);
-  const WRITE_CONFLICTS_LOG = writeConflictsLog(root);
-  // The latch marker lives BESIDE the log, never in state.json — that is the file whose write
-  // just failed, which is the whole reason this module exists.
-  const WRITE_CONFLICTS_LATCH = path.join(CONDUCTOR_DIR, "write-conflicts.latch");
-  return { CONDUCTOR_DIR, WRITE_CONFLICTS_LOG, WRITE_CONFLICTS_LATCH };
-}
-
-/** Rotate when the file exceeds the cap. Deliberately SIZE-triggered and wholesale:
- *  statSync is O(1) and rename(2) is O(1), so this never reads the log body. A count cap
- *  ("keep the last N") would require reading, filtering and rewriting on every trip — a
- *  read-modify-write on the path that exists to record a failed read-modify-write. */
-function rotateIfNeeded() {
-  const { WRITE_CONFLICTS_LOG } = getPaths();
-  let size = 0;
-  try { size = fs.statSync(WRITE_CONFLICTS_LOG).size; } catch { return; }
-  if (size <= CONFLICT_LOG_MAX_BYTES) return;
-  try { fs.renameSync(WRITE_CONFLICTS_LOG, `${WRITE_CONFLICTS_LOG}.prev`); } catch { /* best effort */ }
-}
+// NO PATHS ARE DERIVED HERE ANY MORE (0.48.0 task 1.4). Every operation below is a store
+// operation keyed on a LOGICAL artifact name, so the root keeps being re-evaluated per call for the
+// reason it always was — the root is the INVOCATION's, and this module runs on a hook's failure
+// path, the one place a stale root would write the diagnostic into the wrong repository and leave
+// the real one silent — except that re-evaluation now happens inside the store.
+//
+// THE WRITE ITSELF LIVES IN store.mjs (`recordConflictOn`), and the direction of that edge is
+// deliberate rather than tidy: `writeRecord()` must record a conflict from INSIDE its own write
+// section, and a module the store imported in order to do that would put a cycle on the seam's own
+// edge. The policy below — the latch, the count, and what "consume" means — stays HERE, because it
+// is policy about an EPISODE rather than a write to an artifact.
 
 export function recordConflict({ verb, expected, found }) {
-  // Diagnostics must NEVER break the hook they are diagnosing. Every filesystem call here is
-  // guarded, mkdirSync included: this runs on a hook's failure path, so an exception converts
-  // the harmless skip we deliberately chose into the visible error we deliberately avoided —
-  // and it would fire exactly when the filesystem is already in trouble.
-  try {
-    const { CONDUCTOR_DIR, WRITE_CONFLICTS_LOG } = getPaths();
-    fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-    rotateIfNeeded();
-    const line = `${new Date().toISOString()}\t${verb}\t${expected}\t${found}\n`;
-    fs.appendFileSync(WRITE_CONFLICTS_LOG, line);
-  } catch { /* observability only — never fail the run being observed */ }
+  // Diagnostics must NEVER break the hook they are diagnosing. Every operation here is guarded:
+  // this runs on a hook's failure path, so an exception converts the harmless skip we deliberately
+  // chose into the visible error we deliberately avoided — and it would fire exactly when the
+  // filesystem is already in trouble.
+  recordConflictOn(storeOps(), { verb, expected, found });
 }
 
 /** Consecutive skips since the last successful write. Counting lines is fine here — this is
  *  read only by the briefing, not on the write path, and the file is capped at 8 KB. */
 export function conflictCount() {
-  const { WRITE_CONFLICTS_LOG } = getPaths();
-  try {
-    return fs.readFileSync(WRITE_CONFLICTS_LOG, "utf8").split("\n").filter(Boolean).length;
-  } catch { return 0; }
+  const read = storeOps().read(ARTIFACT.WRITE_CONFLICTS_LOG);
+  if (read.kind !== "ok") return 0;
+  return read.text.split("\n").filter(Boolean).length;
 }
 
 /** Called after ANY successful state write. The signal of interest is CONSECUTIVE skips, not
- *  skips ever — without this reset a single contended afternoon would warn forever. */
+ *  skips ever — without this reset a single contended afternoon would warn forever.
+ *
+ *  Also called from INSIDE store.mjs's own writeRecord() on the success path, which is why the
+ *  body lives there as `clearConflictsOn(store)` and this is a delegation rather than a second
+ *  copy: two implementations of "the episode ended" would be two chances to disagree. */
 export function clearConflicts() {
-  const { WRITE_CONFLICTS_LOG, WRITE_CONFLICTS_LATCH } = getPaths();
-  try { fs.rmSync(WRITE_CONFLICTS_LOG, { force: true }); } catch { /* best effort */ }
-  // The latch goes with the log: a successful write ends the episode, so the NEXT run of
-  // contention must be able to warn again. Leaving the latch behind would silence it forever.
-  try { fs.rmSync(WRITE_CONFLICTS_LATCH, { force: true }); } catch { /* best effort */ }
+  clearConflictsOn(storeOps());
 }
 
 /** Has this episode of contention already been warned about? The warning is delivered once per
@@ -73,8 +51,7 @@ export function clearConflicts() {
  *  a briefing is composed), so the count is whatever the burst left behind by the time anyone
  *  looks. See consumeConflictWarning() for why the latch is a file rather than a lower count. */
 export function conflictWarningLatched() {
-  const { WRITE_CONFLICTS_LATCH } = getPaths();
-  try { return fs.existsSync(WRITE_CONFLICTS_LATCH); } catch { return false; }
+  return storeOps().exists(ARTIFACT.WRITE_CONFLICTS_LATCH);
 }
 
 /** Consume the warning for this EPISODE: nothing about the log moves, and the evidence stays at
@@ -93,8 +70,6 @@ export function conflictWarningLatched() {
  *  clearConflicts(), on a successful state write, ends the episode. */
 export function consumeConflictWarning() {
   try {
-    const { CONDUCTOR_DIR, WRITE_CONFLICTS_LATCH } = getPaths();
-    fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-    fs.writeFileSync(WRITE_CONFLICTS_LATCH, `${new Date().toISOString()}\n`);
+    storeOps().write(ARTIFACT.WRITE_CONFLICTS_LATCH, `${new Date().toISOString()}\n`);
   } catch { /* observability only — never fail the run being observed */ }
 }

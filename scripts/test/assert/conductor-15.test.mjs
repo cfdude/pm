@@ -189,22 +189,11 @@ test("8.6: a repo already carrying the marker registers nothing and announces no
   assert.ok(readState(cwd).epics.some(e => e.id === "late"));
 });
 
-test("9.1: integrity leaves state.json byte-identical and blocks nothing", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const before = stateBytes(cwd);
-  run(["integrity"], { cwd });
-  assert.equal(stateBytes(cwd), before);
-});
-
-test("9.1: every check is reported with its count, including the ones that found nothing", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const out = run(["integrity"], { cwd });
-  const lines = out.split("\n").filter(l => / — \d+ finding\(s\)/.test(l));
-  assert.ok(lines.length >= 5, `the report names each check and its count; found ${lines.length} lines`);
-});
+// 4.1 (0.48.0) moved the 9.1 pair to `scripts/test/unit/conductor-15.test.mjs` — `integrity` is a
+// read, and both its assertions are decided from the record and the report it prints. What remains
+// needs a PATH: the migration family reads the checked-in `fixtures/state-0.26.0.json` (the point of
+// a migration test is that the fixture is what 0.26.0 wrote), and the backfill family writes
+// `openspec/changes/archive/<date>-<id>/tasks.md`, which is what `sync` reads.
 
 // ───────────────────────── the deliberate omissions ─────────────────────────
 //

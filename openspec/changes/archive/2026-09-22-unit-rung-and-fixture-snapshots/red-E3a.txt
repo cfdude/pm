@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: a save that changes nothing does not write and does not bump the revision
+ok 1 - a save that changes nothing does not write and does not bump the revision
+  ---
+  duration_ms: 7.849167
+  type: 'test'
+  ...
+# Subtest: the same guarantee holds for a SECOND root in the same process
+ok 2 - the same guarantee holds for a SECOND root in the same process
+  ---
+  duration_ms: 2.482417
+  type: 'test'
+  ...
+# Subtest: any other error maps to null so it is re-thrown with its stack intact
+ok 3 - any other error maps to null so it is re-thrown with its stack intact
+  ---
+  duration_ms: 0.071833
+  type: 'test'
+  ...
+# Subtest: persistFailure carries the revision it was written at
+ok 4 - persistFailure carries the revision it was written at
+  ---
+  duration_ms: 0.11525
+  type: 'test'
+  ...
+# Subtest: a successful state write clears the conflict log
+not ok 5 - a successful state write clears the conflict log
+  ---
+  duration_ms: 1.85
+  type: 'test'
+  location: '/Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:124:3'
+  failureType: 'testCodeFailure'
+  error: 'the signal is CONSECUTIVE skips, so a landing write resets it'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/conductor-12.test.mjs:71:10
+    TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:128:13)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41.868458

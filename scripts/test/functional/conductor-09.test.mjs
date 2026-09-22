@@ -408,6 +408,46 @@ test(".githooks/pre-commit dumps full node --test output and fails the commit wh
   assert.doesNotMatch(combined, /^pre-commit: \d+\/\d+ passing/m, "must not print the success summary on failure");
 });
 
+test(".githooks/pre-commit runs the half when a rung holds no test file — an unresolved glob must never reach node --test", () => {
+  // THE NODE-18 DIVERGENCE, and this is the test for it. Found on CI (PR #217), reproduced against
+  // v18.20.8 before it was fixed: the hook's runner is handed TWO rung globs, `/bin/sh` leaves a
+  // pattern that matches NOTHING as a LITERAL (POSIX sh has no nullglob -- dash on the CI runner and
+  // bash-as-sh on macOS both do it), and the two Node majors then DISAGREE about the literal:
+  //
+  //   * v18.20.8 REFUSES it -- `Could not find '/tmp/…/scripts/test/unit/*.test.mjs'`, exit 1 -- so
+  //     the commit fails and the hook's own message says "tests FAILED", which blames the suite for
+  //     a pattern that never resolved.
+  //   * v26.9.0 ignores a pattern it cannot resolve and runs the files that DID match.
+  //
+  // Same tree, same commit, opposite verdicts from the gate every commit passes through -- and on the
+  // CI runner (Node 18) it took the five hook tests in this file down with it. The divergence is the
+  // defect, not the fixture: the hook's own comment claims the floor is version-independent, and a
+  // gate that answers differently on the runner than on the developer's machine is exactly what that
+  // claim forbids.
+  //
+  // THE FIXTURE'S TREE IS A SHAPE THE SUITE ALREADY CALLS LEGITIMATE. certification.mjs's `testIdsIn`
+  // states it: "A MISSING DIRECTORY IS AN EMPTY ONE, not a crash … the functional half's hook tests
+  // build a throwaway tree with only the directories their subject needs". So the rung directory here
+  // EXISTS and holds no test file, which is the sharper of the two cases: the property is that the
+  // PATTERN resolves, never that the directory is present.
+  //
+  // THIS TEST IS RED ON NODE 18 AND GREEN ON NODE 26 BEFORE THE FIX, and that is not a weakness in
+  // it -- the divergence IS the subject. Under v18.20.8 it failed on `Could not find`; under v26.9.0
+  // it passed, which is why the bug reached a release at all.
+  const r = runHookAgainstFixture(
+    `test("the one that does exist", () => { assert.ok(true); });`,
+    { extraFiles: { "scripts/test/unit/.keep": "" } },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.doesNotMatch(combined, /Could not find/,
+    "a rung glob that resolves to nothing was handed to node --test. On the Node the CI runner uses " +
+    "(18) that is a hard refusal, so the commit fails with a message that blames the suite: the " +
+    `runner's file set must be resolved before it is handed over. Output was: ${combined}`);
+  assert.equal(r.status, 0, `the hook must run the half that exists: ${combined}`);
+  assert.match(combined, /pre-commit: 1\/1 passing/,
+    "and the file that DOES exist must still have run — the fix must not be 'run nothing'");
+});
+
 // ---------- sync must not register a directory's own index file as a plan (#87) ----------
 
 test("sync ignores README.md/INDEX.md in the plans directory — they are not plans", () => {

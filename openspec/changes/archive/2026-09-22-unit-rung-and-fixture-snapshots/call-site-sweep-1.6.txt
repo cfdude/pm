@@ -1,0 +1,71 @@
+# Task 1.6 — the 137 call sites, enumerated mechanically
+
+Derived, not typed. Every command below was run from the repository root; the outputs are verbatim.
+
+## (1) The population, and it is unchanged
+
+    $ rg -o -e '\bloadState\(\)' -e '\bsaveState\(' scripts/lib/*.mjs scripts/conductor.mjs | wc -l
+    143
+
+    $ rg -o -e '\bloadState\(\)' -e '\bsaveState\(' scripts/lib/*.mjs scripts/conductor.mjs \
+        | awk -F: '{print $1}' | sort | uniq -c | sort -rn | head -8
+      19 scripts/lib/update-epic.mjs
+      12 scripts/lib/subcommands.mjs
+       9 scripts/lib/detour-stack.mjs
+       7 scripts/lib/claims.mjs
+       6 scripts/lib/store.mjs
+       6 scripts/lib/releases.mjs
+       6 scripts/lib/add-epic.mjs
+       5 scripts/lib/state.mjs
+
+**143 - 6 = 137**, and the 6 are all inside `scripts/lib/store.mjs` as COMMENT text:
+
+    $ rg -n 'loadState\(\)|saveState\(' scripts/lib/store.mjs
+    10:// The half's cost is the durability term `saveState()` pays on every write — the fsync of the temp
+    16://   * `diskStore()` is what the COMMAND LINE builds, and it is `saveState()`'s behaviour moved
+    308:// whole reason: `saveState()` must record a conflict from INSIDE its write section, and a module
+    912:   *  store's shape. On disk the caller's `loadState()` result and the record the next write reads
+    1013: *  outside the seam — the whole 137-call-site population `loadState()`/`saveState()` exist to
+
+(That is five lines; one of them carries two matches. `store.mjs` CALLS neither function — it is
+what they call.)
+
+The per-file ranking reproduces the change's own sizing EXACTLY — 19 in `update-epic.mjs`, 12 in
+`subcommands.mjs`, 9 in `detour-stack.mjs` — which is the check that the enumeration is the same
+population the task counted, rather than a new one that happens to land nearby.
+
+**THE COUNT IS UNCHANGED BY THIS CHANGE, AND THAT IS THE DESIGN.** `getPaths()` had exactly ONE
+caller — `state.mjs` — and all 137 sites reached the record THROUGH it. The seam therefore changes
+where `state.mjs`'s I/O comes from and edits no verb body: `loadState()`/`saveState()` obtain the
+store with `storeOps()`, which returns the invocation's store (`io.store`, else the disk store),
+exactly as `gitOps()` returns the invocation's gateway. Editing 137 signatures would have been a
+rewrite of twenty verb bodies — a different and much larger change than the one this is.
+
+## (2) Nothing reaches the record through a module-scope path
+
+    $ rg -n 'statePath\(\)|getPaths\(\)|fs\.(writeFileSync|appendFileSync)\(statePath' \
+         scripts/lib/*.mjs scripts/conductor.mjs
+    scripts/lib/state.mjs:8:// of reaching `getPaths()` — the strict read, the lock, the ...
+    scripts/lib/state.mjs:13:// The seam is CENTRAL precisely so they need not be: `getPaths()` had ...
+    scripts/lib/store.mjs:1012: *  memory store, and a module that reached `statePath()` and `fs` ...
+    scripts/lib/worktree-hygiene.mjs:128:  const currentMtimeMs = fs.statSync(statePath()).mtimeMs;
+
+One CODE hit, and it is the deliberate one: `verify-state` (`worktree-hygiene.mjs`) compares
+state.json's live mtime against the render stamp. It is a FILESYSTEM CHECK BY CONSTRUCTION — an
+mtime is precisely what a store that produces no path cannot answer — and task 1.3 states that it
+stays on the file rung rather than leaving the omission implicit.
+
+`getPaths()` no longer exists anywhere: the three hits above are the prose that records why it is
+gone.
+
+## (3) What the sweep does NOT reach, stated rather than left implicit
+
+* **A module that reaches the record by building a path from a VARIABLE.** The pattern above matches
+  the literal forms. The backstop is not this sweep: `write-conflicts.mjs`, `claims.mjs`,
+  `activity-log.mjs`, `purge-logs.mjs`, `git.mjs`, `render.mjs` and `subcommands.mjs` — every module
+  that held a write site — were converted in tasks 1.2/1.3/1.4, and each conversion is visible in
+  its own commit.
+* **`store.mjs` itself**, which is where the disk store's paths legitimately live. It resolves them
+  through `constants.mjs`'s own functions rather than re-deriving a root, so it cannot drift from
+  the rest of the engine (the property `conductor-12`'s "state.mjs's locally computed paths agree
+  with constants.mjs" asserts, which still passes).

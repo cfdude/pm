@@ -20,6 +20,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized } from "./state.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 import { die } from "./command-exit.mjs";
 import { activityDir, segments } from "./activity-log.mjs";
 import { segmentStart } from "./activity-report.mjs";
@@ -177,7 +178,14 @@ export function purgeLogs() {
   }
   outStream().write(L.join("\n") + "\n");
   if (!confirmed) return;
+  // THE REMOVAL IS THE STORE'S (0.48.0 tasks 1.2/1.4, design D1's I2: an operation has an inverse
+  // and the store ships it). Every candidate this verb can mark IS a store-owned artifact, and each
+  // already carries its logical name — `detours.log`, `write-conflicts.log` and its `.prev`, or an
+  // `activity/<segment>` — so the removal addresses them the way the writers do rather than by
+  // path. `candidates()` keeps `path` for its dry-run listing, where naming the real file is the
+  // point; nothing on the removal path reaches it any more.
   for (const f of doomed) {
-    try { fs.rmSync(f.path, { force: true }); } catch { /* best effort */ }
+    try { storeOps().remove(f.kind === "activity" ? `${ARTIFACT.ACTIVITY_PREFIX}${f.name}` : f.name); }
+    catch { /* best effort */ }
   }
 }

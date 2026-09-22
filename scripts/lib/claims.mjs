@@ -39,9 +39,8 @@
 //     state.json right now", so putting it INSIDE state.json — where setting and clearing it
 //     bump `revision` and can themselves conflict — inverts the purpose of the marker.
 
-import fs from "node:fs";
-import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 import { die } from "./command-exit.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { CLAIM_DEFAULT_TTL_MINUTES, jsonText, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from "./constants.mjs";
@@ -60,12 +59,6 @@ export { claimExpiry, isLiveClaim };
 // a verb accepting nothing, rather than a loud failure. Deriving inside the checker removes both
 // the second literal and the chance of handing it the wrong list.
 
-/** The repo-level quiescence marker's path. Re-derived per call for the same reason
- *  write-conflicts.mjs does it: the tests cache-bust by moving CLAUDE_PROJECT_DIR. */
-export function repoClaimPath() {
-  return path.join(repoClaimRoot(), ".conductor", "session-claim.json");
-}
-
 /** The repository the marker is written INTO — derived per call, exactly as its path is. The
  *  detached-tree check must ask about this root: ROOT in constants.mjs is frozen at import, so a
  *  process whose import-time root differs from CLAUDE_PROJECT_DIR (a test, a delegated engine, CI's
@@ -79,10 +72,17 @@ function makeClaim(session, ttlMinutes) {
   return { session, claimedAt: new Date().toISOString(), ttlMinutes };
 }
 
-/** The repo marker as recorded, or null when absent/corrupt. */
+/** The repo marker as recorded, or null when absent/corrupt. READ THROUGH THE STORE (1.2's I1):
+ *  the marker is one of the three write sites the ownership table missed, and the decision taken
+ *  here is to BRING IT BEHIND THE STORE rather than name it as not-owned — it is a plain
+ *  record-directory artifact with no lock and no inode, which is exactly what the interface
+ *  expresses, so leaving it on raw `fs` would have been a sibling left unguarded beside five
+ *  siblings moved. */
 export function readRepoClaim() {
   try {
-    const c = JSON.parse(fs.readFileSync(repoClaimPath(), "utf8"));
+    const read = storeOps().read(ARTIFACT.SESSION_CLAIM);
+    if (read.kind !== "ok") return null;
+    const c = JSON.parse(read.text);
     return c && typeof c === "object" && typeof c.session === "string" ? c : null;
   } catch { return null; }
 }
@@ -95,19 +95,17 @@ function writeRepoClaim(claim) {
   // gh#175: this file says "THIS session is mid-operation in THIS working tree", which is the
   // session-bookkeeping criterion stated aloud.
   if (isDetachedTree(repoClaimRoot())) return false;
-  const p = repoClaimPath();
-  fs.mkdirSync(path.dirname(p), { recursive: true });
   // Temp file plus rename in the same directory, so a reader racing this write sees the whole old
   // marker or the whole new one — never a torn file that readRepoClaim() would read as "no claim".
-  // Not LOCKED: the marker is advisory and never guarded a read-modify-write (design D5).
-  const tmp = `${p}.tmp-${process.pid}-${Date.now()}`;
-  fs.writeFileSync(tmp, JSON.stringify(claim, null, 2) + "\n");
-  fs.renameSync(tmp, p);
+  // Not LOCKED: the marker is advisory and never guarded a read-modify-write (design D5). The
+  // atomicity MOVES WITH the write rather than being dropped: `writeAtomic` is the store's own
+  // operation, so a memory store answers it in one assignment and the disk store keeps the rename.
+  storeOps().writeAtomic(ARTIFACT.SESSION_CLAIM, JSON.stringify(claim, null, 2) + "\n");
   return true;
 }
 
 function clearRepoClaim() {
-  try { fs.rmSync(repoClaimPath(), { force: true }); } catch { /* best effort */ }
+  try { storeOps().remove(ARTIFACT.SESSION_CLAIM); } catch { /* best effort */ }
 }
 
 // This module's own spelling of the ONE exit path (command-exit.mjs): the call sites name the

@@ -29,16 +29,18 @@ cd "$(git rev-parse --show-toplevel)"
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
-# The suite this hook runs is the ASSERTION HALF -- a glob of scripts/test/assert/*.test.mjs, run in
-# ONE process (--test-isolation=none) because that is the half's whole design (0.47.0, D5). Three
-# notes on the shape, each of them a trap someone has already paid for:
+# The suite this hook runs is the ASSERTION HALF -- TWO RUNG GLOBS in ONE invocation, scripts/test/
+# unit/*.test.mjs and scripts/test/assert/*.test.mjs, run in ONE process (--test-isolation=none)
+# because that is the half's whole design (0.47.0, D5; the unit rung joins it in 0.48.0, D2/D3).
+# Three notes on the shape, each of them a trap someone has already paid for:
 #   * `node --test scripts/test` does NOT work -- on Node 26 a directory argument is treated as
 #     a module to execute, so it dies with MODULE_NOT_FOUND and reports "1 test". It exits
 #     nonzero so it can't pass silently, but don't "simplify" the glob into a directory.
 #   * The glob introduces a NEW silent-loss risk the single-file suite never had: if a file
 #     stops matching (renamed, moved, a typo in the pattern), the suite still passes -- just
 #     with fewer tests. So below we cross-check the runner's reported count against the number
-#     of test() declarations actually present in the TRACKED files of this half. A drop fails.
+#     of test() declarations actually present in the TRACKED files of exactly these two rungs. A
+#     drop fails.
 #   * The OTHER half (scripts/test/functional/) and the sweep bucket (scripts/test/sweeps/) are NOT
 #     run here, by design: they are triggered, and this hook runs on every commit. The drift script
 #     below is what keeps the two halves aligned when only one of them ran -- it checks the record
@@ -114,15 +116,60 @@ fi
 # self-corrects on the next commit either way.
 ISOFLAGFILE="$(git rev-parse --git-common-dir)/pm-isolation-flag"
 if [ ! -f "$ISOFLAGFILE" ]; then
-  if node --test --test-isolation=none scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1; then
+  # THE PROBE EXERCISES THE SHAPE THE RUNNER IS ACTUALLY GIVEN (0.48.0 task 2.4): TWO GLOBS, one
+  # file from each rung, in ONE invocation. Probing with a single file would answer "does this Node
+  # know the flag" while leaving "does this Node still run EVERY file when handed two patterns"
+  # untested — and that second question is the one the fallback has to answer, because on a Node
+  # without the flag the runner falls back to process-per-file isolation and must still reach both
+  # rungs. Two named files rather than the two globs, deliberately: the probe is paid once per clone
+  # and a glob here would boot the whole half to answer a yes/no.
+  if node --test --test-isolation=none scripts/test/unit/state-verb.test.mjs scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1; then
     printf -- '--test-isolation=none' > "$ISOFLAGFILE"
   else
     : > "$ISOFLAGFILE"
   fi
 fi
 ISOFLAG=$(cat "$ISOFLAGFILE")
-# shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag
-if node --test $ISOFLAG scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+
+# ─────────── THE RUNNER'S FILE SET IS RESOLVED HERE, BEFORE IT IS HANDED OVER (0.49.0) ───────────
+# THE REASON IS A VERSION DIVERGENCE THAT REACHED A RELEASE (found on CI, PR #217, and reproduced
+# against v18.20.8). `/bin/sh` leaves a pattern that matches NOTHING as a LITERAL -- POSIX sh has no
+# nullglob, and this script is `sh` (dash on the CI runner, bash-as-sh here) -- and the two Node
+# majors then disagree about that literal:
+#   * v18.20.8 REFUSES it: `Could not find '…/scripts/test/unit/*.test.mjs'`, exit 1, so the commit
+#     fails and the message printed below says "tests FAILED", blaming the SUITE for a pattern that
+#     never resolved.
+#   * v26.9.0 ignores a pattern it cannot resolve and runs whatever did match.
+# Same tree, same commit, opposite verdicts from the gate every commit passes through -- and CI runs
+# Node 18, so the version the divergence is invisible on is the developer's. `[ -f ]` on the literal
+# is false, so an unresolved pattern drops out and BOTH versions hand the runner the same file set.
+# The order is kept -- unit first, then assert -- because the floor below enumerates them in that
+# order through `git ls-files`.
+#
+# THE GLOBS STAY THE SHELL'S, and that is not incidental: deriving this list from `git ls-files`
+# would make it the SAME expression the floor's `declared` is derived from, which is precisely the
+# blindness the floor was re-pointed in 0.47.0 to remove. A file that is in the index but unreachable
+# by the shell's expansion of the pattern (the dotfile G-I1's fixture builds) must still be DECLARED
+# and NOT RUN.
+#
+# AN EMPTY LIST MUST ABORT rather than reach the runner, and this is a safety requirement, not
+# tidiness: `node --test` with no positional argument falls back to DEFAULT DISCOVERY, which walks
+# the tree. Measured against v18.20.8: a bare `node --test` in a tree holding only
+# scripts/test/functional/marker.test.mjs RAN that file. That is a triggered half, run on every
+# commit, which is the cost the split exists to remove.
+RUNG_FILES=""
+for f in scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs; do
+  if [ -f "$f" ]; then RUNG_FILES="$RUNG_FILES $f"; fi
+done
+if [ -z "$RUNG_FILES" ]; then
+  echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
+  echo "pre-commit: (scripts/test/unit/ and scripts/test/assert/ both matched nothing) -- refusing" >&2
+  echo "pre-commit: to hand the runner no path at all, which would run its default discovery instead." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag; RUNG_FILES is a file list
+if node --test $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then
   # node --test's default reporter (and therefore this summary line's leading marker) differs
   # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,
   # older Node (e.g. the CI runner's Node 18) defaults to the "tap" reporter (#). Match both.
@@ -151,12 +198,23 @@ if node --test $ISOFLAG scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
   # needs `-H` to keep its filename prefix when the glob matches ONE file (a bare `-c` printed a
   # number, `awk -F:` summed field 2 of nothing and the floor read 0), and one `grep -c` per file
   # has no such trap to fall into.
-  declared=$(git ls-files 'scripts/test/assert/*.test.mjs' \
-    | while IFS= read -r f; do grep -c '^test(' "$f" || true; done | awk '{s+=$1} END {print s+0}')
+  # THE DECLARED SET IS THE TWO RUNGS THIS INVOCATION WAS GIVEN AND NOTHING ELSE (0.48.0 task 2.3),
+  # enumerated from the TRACKED files of exactly those globs. That is what makes it the same set the
+  # runner ran rather than a superset of it — see the comment above for the shape that must NOT be
+  # written here, and note this is not it: enumerating over both HALVES is the trap; enumerating over
+  # the two RUNGS the runner was handed is the invariant.
+  #
+  # TWO DECLARATION SHAPES ARE COUNTED, and both belong here: a file-rung test declares itself with
+  # `test(`, and a unit-rung test declares itself with `unitTest(` — the wrapper that arms the
+  # run-time filesystem counter. Counting only `test(` would give every unit file a declared count of
+  # ZERO, so a unit file that stopped running would drop from both sides of the floor at once and the
+  # floor would go blind in exactly the case it exists for.
+  declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
+    | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$f" || true; done | awk '{s+=$1} END {print s+0}')
   if [ -n "$total" ] && [ -n "$declared" ] && [ "$total" -lt "$declared" ]; then
     echo "pre-commit: ABORT -- the assertion half ran ${total} tests but ${declared} are declared in" >&2
-    echo "pre-commit: scripts/test/assert/. A test file is not being picked up; the suite is" >&2
-    echo "pre-commit: passing on a subset." >&2
+    echo "pre-commit: its two rungs (scripts/test/unit/ and scripts/test/assert/)." >&2
+    echo "pre-commit: A test file is not being picked up; the suite is passing on a subset." >&2
     exit 1
   fi
 

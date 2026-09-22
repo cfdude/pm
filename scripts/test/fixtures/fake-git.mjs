@@ -25,9 +25,16 @@ import fs from "node:fs";
 import { CAPTURE_PATH, rootToToken } from "./git-gateway-repo.mjs";
 import { GIT_OPERATIONS } from "../../lib/git-gateway.mjs";
 
-/** The capture as committed. Read once — it is not the thing under test and nothing mutates it. */
+/** The capture as committed. Read ONCE, AT MODULE LOAD, and it is the one thing this change moved
+ *  here for a measurement rather than for tidiness: the fake used to read the file lazily on its
+ *  first call, which put a `readFileSync` of a fixture INSIDE the first invocation of every
+ *  in-process test — including a unit-rung test's, where 0.48.0's run-time counter is watching (task
+ *  2.1). The read is the HARNESS's, not the engine's and not the test's, so the honest fix is to take
+ *  it out of every window rather than to teach the counter to excuse it. `loadCapture()` still
+ *  returns a fresh parse for a caller that wants one. */
+const CAPTURE = JSON.parse(fs.readFileSync(CAPTURE_PATH, "utf8"));
 export function loadCapture() {
-  return JSON.parse(fs.readFileSync(CAPTURE_PATH, "utf8"));
+  return JSON.parse(JSON.stringify(CAPTURE));
 }
 
 /** A stable key for an argument list, so matching is exact rather than approximate. JSON's own

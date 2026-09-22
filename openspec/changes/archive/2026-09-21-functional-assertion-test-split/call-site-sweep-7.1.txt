@@ -1,0 +1,199 @@
+0.47.0 task 7.1 — CALL-SITE COMPLETENESS SWEEP (required task item 1).
+
+Every rule this change introduces, enumerated MECHANICALLY at apply time rather than from
+tasks.md's own lists (which is the rule's whole point: a list typed from memory goes stale the
+moment a caller is added). Commands are shown with their results. Where a rule DOES NOT hold,
+the site is named and the omission justified.
+
+======================================================================
+(a) THE NO-process.exit RULE — over scripts/lib/*.mjs and scripts/conductor.mjs
+
+$ rg -n 'process\.exit\(' scripts/lib scripts/conductor.mjs        # every hit is a COMMENT
+scripts/conductor.mjs:166:// process's own values and assigns the result to `process.exitCode` — never `process.exit()`, whose
+scripts/conductor.mjs:341:  // sound at the time and is now false: `process.exit()` skips `finally`, so the exit-handler shape
+scripts/conductor.mjs:475:      // exitCode and RETURN, never process.exit(): a hook's refusal can be a JSON payload on stdout
+scripts/conductor.mjs:504:// reaches the runtime. `process.exitCode` and NOT `process.exit()`: a hook's refusal can be a JSON
+scripts/lib/archive-gate.mjs:180: * and any cleanup it has to do. A gate that called process.exit() itself would be unusable
+scripts/lib/command-exit.mjs:4:// Before this module the engine had 194 `process.exit(` sites in scripts/lib and five local `die`
+scripts/lib/command-exit.mjs:46: *  Never `process.exit()`: under the assertion half's ONE shared process an exit takes every
+scripts/lib/activity-log.mjs:18:// IT SURVIVES process.exit(). Verified mechanically before choosing this shape:
+scripts/lib/activity-log.mjs:20:// non-zero (update-epic's post-write attribution read-back). process.exit() skips `finally`, so
+
+The same enumeration with comments stripped, so an executable site cannot hide behind a
+comment that mentions one:
+  ZERO executable process.exit sites.
+
+VERDICT: the rule HOLDS everywhere in the shipped engine. The only writer of an exit status is
+the CLI tail, which assigns `process.exitCode` and returns; the one refusal that must not
+become a thrown value (the pre-dispatch refusal, which sits ABOVE dispatch's catch) RETURNS its
+code instead. Enforced by scripts/test/assert/no-inline-exit.test.mjs, whose guard was
+mutation-verified in task 1.3 (red-1.x-mutation-evidence.txt, MUTATION A).
+
+======================================================================
+(b) THE INJECTED-GLOBAL RULE — process.argv, process.env, process.cwd(), process.stdout,
+    process.stderr, stdin (readFileSync(0) / isatty(0)), and the twelve path constants
+
+The enumeration strips comments AND string bodies first, so what is listed is an executable
+read. Applied over scripts/conductor.mjs plus every scripts/lib/*.mjs:
+  process.cwd()      4 site(s), in: scripts/conductor.mjs, scripts/lib/invocation.mjs
+      scripts/conductor.mjs:105
+      scripts/conductor.mjs:448
+      scripts/lib/invocation.mjs:39
+      scripts/lib/invocation.mjs:47
+  process.env        4 site(s), in: scripts/conductor.mjs, scripts/lib/invocation.mjs
+      scripts/conductor.mjs:106
+      scripts/conductor.mjs:448
+      scripts/lib/invocation.mjs:40
+      scripts/lib/invocation.mjs:47
+  process.stdout     3 site(s), in: scripts/conductor.mjs, scripts/lib/invocation.mjs
+      scripts/conductor.mjs:107
+      scripts/conductor.mjs:455
+      scripts/lib/invocation.mjs:45
+  process.stderr     3 site(s), in: scripts/conductor.mjs, scripts/lib/invocation.mjs
+      scripts/conductor.mjs:108
+      scripts/conductor.mjs:455
+      scripts/lib/invocation.mjs:46
+  process.argv       3 site(s), in: scripts/conductor.mjs, scripts/lib/invocation.mjs
+      scripts/conductor.mjs:438
+      scripts/conductor.mjs:447
+      scripts/lib/invocation.mjs:41
+  isatty(0)          2 site(s), in: scripts/lib/invocation.mjs
+      scripts/lib/invocation.mjs:43
+      scripts/lib/invocation.mjs:95
+  process.stdin      1 site(s), in: scripts/lib/invocation.mjs
+      scripts/lib/invocation.mjs:94
+
+VERDICT: the rule HOLDS everywhere, and every read is confined to exactly TWO files, both of
+which are the boundary itself:
+  * scripts/conductor.mjs — `main(argv, io)`'s defaults (`io.cwd ?? process.cwd()` …) and the
+    CLI tail that CONSTRUCTS the invocation. This is the one place a process global may be read,
+    because it is where the process becomes an invocation; a second such place is the defect.
+  * scripts/lib/invocation.mjs — the accessor that supplies the real process values when a
+    caller did not, so every other module reads them through `invocation()`.
+NO module outside those two reads a process global. The previous count (46 argv, 23 env, nine
+cwd derivations, 288 stream writes) is now ZERO outside the boundary, and the nine
+`process.env.CLAUDE_PROJECT_DIR || process.cwd()` root derivations that the design's Decision 3
+had to sweep are gone with them.
+
+THE TWELVE PATH CONSTANTS, enumerated from the same place the design derives them:
+36:export const conductorDir = (root = engineRoot()) => path.join(root, ".conductor");
+37:export const statePath = (root = engineRoot()) => path.join(conductorDir(root), "state.json");
+38:export const briefPath = (root = engineRoot()) => path.join(conductorDir(root), "brief.txt");
+39:export const renderStampPath = (root = engineRoot()) => path.join(conductorDir(root), "render-stamp.json");
+40:export const detoursLog = (root = engineRoot()) => path.join(conductorDir(root), "detours.log");
+41:export const writeConflictsLog = (root = engineRoot()) => path.join(conductorDir(root), "write-conflicts.log");
+65:export const projectMd = (root = engineRoot()) => path.join(root, "PROJECT.md");
+66:export const claudeMd = (root = engineRoot()) => path.join(root, "CLAUDE.md");
+67:export const changesDir = (root = engineRoot()) => path.join(root, "openspec", "changes");
+68:export const archiveDir = (root = engineRoot()) => path.join(changesDir(root), "archive");
+69:export const plansDir = (root = engineRoot()) => path.join(root, "docs", "superpowers", "plans");
+75:export const specsDir = (root = engineRoot()) => path.join(root, "docs", "superpowers", "specs");
+  All TWELVE are functions of a current root (the eleven above plus `engineRoot()` itself), and
+  no module-scope `const` holds any of them:
+  NONE — the sweep is complete, not partial.
+
+  THE SWEEP FOUND A STALE COMMENT, and it is fixed in this task: scripts/lib/constants.mjs:1565
+  still said "the frozen `path.join(ROOT, …)` constants above are computed at module load" —
+  true before 0.47.0 and false after it. A comment asserting the old shape is how the old shape
+  comes back: the next reader consults it instead of the code.
+
+======================================================================
+(c) THE INJECTED-GATEWAY RULE — every git argv site, including the three shell-string execSync
+
+$ rg -n --glob '!test/**' -e 'execFileSync\(' -e 'execSync\(' -e 'spawnSync\(' scripts  (minus scripts/test)
+scripts/lib/git-gateway.mjs:53:      execSync("git rev-parse --short HEAD", { cwd: root(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim(),
+scripts/lib/git-gateway.mjs:58:      execFileSync("git", ["symbolic-ref", "--quiet", "HEAD"], { cwd: at ?? root(), stdio: ["ignore", "ignore", "ignore"] }),
+scripts/lib/git-gateway.mjs:62:      execFileSync("git", ["rev-parse", "--short", String(rev)],
+scripts/lib/git-gateway.mjs:67:      execFileSync("git", ["rev-parse", "--verify", "--quiet", `${String(rev)}^{commit}`],
+scripts/lib/git-gateway.mjs:72:      execFileSync("git", ["merge-base", "--is-ancestor", a, b], { cwd: root(), stdio: ["ignore", "ignore", "ignore"] }),
+scripts/lib/git-gateway.mjs:76:      execFileSync("git", ["show", "-s", "--format=%cI", sha],
+scripts/lib/git-gateway.mjs:83:      execFileSync("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`],
+scripts/lib/git-gateway.mjs:88:      execFileSync("git", ["for-each-ref", `--contains=${sha}`, "--count=1", "--format=%(refname)"],
+scripts/lib/git-gateway.mjs:93:      execFileSync("git", ["diff", "-z", "--name-only", "HEAD", "--", ...paths],
+scripts/lib/git-gateway.mjs:98:      execFileSync("git", ["cat-file", "--batch-check"], {
+scripts/lib/git-gateway.mjs:105:      execFileSync("git", ["rev-list", ...list, "^" + head], {
+scripts/lib/git-gateway.mjs:113:      execFileSync("git", ["rev-parse", "--is-shallow-repository"],
+scripts/lib/git-gateway.mjs:118:      execFileSync("git", ["rev-parse", "--git-path", name],
+scripts/lib/git-gateway.mjs:123:      execFileSync("git", ["log", `-S${needle}`, "--reverse", "--format=%H %cI", "--", pathspec],
+scripts/lib/git-gateway.mjs:129:      execFileSync("git", ["diff-tree", "-z", "--no-commit-id", "--name-only", "-r", "--root", sha],
+scripts/lib/git-gateway.mjs:135:      execFileSync("git", ["-c", "core.quotePath=false", "rev-parse", "--show-prefix"],
+scripts/lib/git-gateway.mjs:140:      execFileSync("git", ["log", "-1", "--format=%s", sha],
+scripts/lib/git-gateway.mjs:146:      execSync("git log -1 --format=%s", { cwd: root(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim(),
+scripts/lib/git-gateway.mjs:154:      execFileSync("git", args, { cwd: at ?? root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(),
+scripts/lib/git-gateway.mjs:160:      execSync("git worktree list --porcelain", { cwd: root(), encoding: "utf8" }),
+scripts/lib/git-gateway.mjs:165:      execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: root(), stdio: "ignore" }),
+scripts/lib/git-gateway.mjs:170:      execFileSync("git", ["ls-files", "--", ...paths],
+scripts/lib/git-gateway.mjs:176:      execFileSync("git", ["describe", "--tags", "--exact-match", "HEAD"],
+scripts/lib/tool-currency.mjs:77:    const out = execFileSync("openspec", ["--version"], {
+scripts/lib/self-hosting.mjs:146:  const r = spawnSync(process.execPath, [target, ...argv], {
+
+VERDICT: the rule HOLDS. Every one of the 23 git invocations lives in scripts/lib/git-gateway.mjs,
+the three shell-string `execSync` sites included (`:53`, `:146`, `:160`). Two spawn sites are
+outside the gateway and both are JUSTIFIED OMISSIONS, each named in the guard that would
+otherwise refuse them:
+  * scripts/lib/tool-currency.mjs — runs `openspec --version`, which is NOT git and must not sit
+    behind the git gateway (asserted by git-gateway-guard.test.mjs's named exception).
+  * scripts/lib/self-hosting.mjs — `spawnSync(process.execPath, …)`, the engine re-execing
+    ITSELF for the delegation handoff. It is not a git call and it is not behind the gateway by
+    design; the stdio contract for it is pinned by the conformance set's delegation row.
+Both gates' guards derive the call-site set mechanically (4.1), so a git call added to any other
+module fails rather than joining the unguarded set.
+
+======================================================================
+(d) THE NO-SPAWN / NO-GIT RULE — over scripts/test/assert/
+
+$ rg -n 'node:child_process|spawnSync|execFileSync|execSync' scripts/test/assert/
+scripts/test/assert/conductor-28.test.mjs:25: *  its contract (it advises, it never blocks), so this cannot go through run()/execFileSync. */
+scripts/test/assert/conductor-38.test.mjs:83:  assert.ok(bound, "the capture is bounded explicitly rather than left at spawnSync's 1 MB default");
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:6:// on the git double, without booting Node once per assertion. A single `spawnSync` added to one file
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:28:// first time someone writes "this file must not spawnSync" in a header. THE STRIPPER IS NOT SOUND
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:44:const SPAWN_CALLS = ["spawnSync", "spawn", "execFileSync", "execFile", "execSync", "exec"];
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:106:  const SPAWN = ["spawnSync", "execFileSync"].map(w => w);
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:113:  assert.match(violations("x.test.mjs", "const r = " + "spawnSync" + "([\"git\", [\"rev-parse\"]]);").join(" "), /calls spawnSync/, "a bare " + "spawnSync" + " call must be refused");
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:119:  assert.deepEqual(violations("x.test.mjs", "// this file must never " + "spawnSync" + "( anything\n/* nor use " + CHILD_PROCESS_MODULE + " */\nconst a = 1;\n"), [],
+scripts/test/assert/drift-script.test.mjs:295:  const spawns = [...src.matchAll(/execFileSync\(/g)].length;
+scripts/test/assert/drift-script.test.mjs:304:  assert.doesNotMatch(src, /spawnSync|"conductor\.mjs"/, "and never starts the engine");
+scripts/test/assert/parity.test.mjs:8:// (`spawnSync`), so those three are functional-only by subject (design D5).
+scripts/test/assert/verb-surface.test.mjs:11:// functional half goes months unrun. The functional file sweeps through `spawnSync`; this one sweeps
+
+VERDICT: the rule HOLDS, and every hit above is a COMMENT, a STRING or the guard's own
+vocabulary — no executable spawn, and no git. Two are worth naming because they look like
+violations and are not:
+  * assert-half-has-no-spawn.test.mjs — the guard itself. Its SPAWN_CALLS table and its
+    built-from-parts specifier are how it refuses the shape without containing it (a file that
+    spelled the specifier would be its own first violation).
+  * conductor-38.test.mjs:83 and conductor-28.test.mjs:25 — a message string and a comment.
+  * verb-surface.test.mjs and parity.test.mjs — comments that NAME the other half's use.
+Enforced by 5.2's guard, mutation-verified in 5.6 (a spawnSync added to a file in the walked
+directory → RED, naming the file).
+
+======================================================================
+(e) THE ENROLMENT RULE — every tracked test file has exactly ONE home, and EVERY consumer
+    that enumerates the suite reads the same set
+
+$ git ls-files 'scripts/test/*.test.mjs' 'scripts/test/**/*.test.mjs'   # BOTH arms: git's `**`
+                                                                        # matches no zero directories
+     133
+  and the files in neither half and in no bucket:
+  (none)
+
+THE CONSUMERS, enumerated mechanically — this is required item 1's "a consumer added later that
+enumerates a different set is the FINDING this item exists to catch":
+  1. .githooks/pre-commit — the floor's `declared`, from `git ls-files 'scripts/test/assert/*.test.mjs'`
+     (the ASSERTION HALF only, which is the only half its runner is handed).
+  2. scripts/test/drift.mjs — check 1, from BOTH arms, refusing any file with no home.
+  3. scripts/test/certification.mjs — `functionalIds`/`assertionIds`/`sweepIds`, the twin-id walk.
+  4. .github/workflows/ci.yml — THREE per-bucket enumerations, each from that bucket's own files.
+
+VERDICT: the rule HOLDS for all four consumers, and THE FOUR AGREE BY CONSTRUCTION rather than
+by inspection: consumers 2 and 3 derive their sets from disk by directory, and consumers 1 and 4
+enumerate from `git ls-files` over the same directories. No consumer enumerates a superset of
+what its runner was given — that is the invariant the floor's whole correctness rests on, and
+the shape that must not be written (both halves at once in the hook) aborts on every commit.
+The 5.3 INLINE copy of check 1 was RETIRED in 6.4 rather than kept beside the drift script's, so
+one rule has one implementation: asserted in scripts/test/assert/conductor-09.test.mjs.
+133 tracked test files, every one with a home.
+
+======================================================================
+(f) THE INVERSES this change's rules imply — required item 1's last clause; see the separate
+    disposition in inverses-7.3.txt, which names each one deliberately NOT shipped.
