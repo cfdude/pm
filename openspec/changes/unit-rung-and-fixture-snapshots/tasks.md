@@ -498,14 +498,14 @@ the seam, and the test-side move is a decision about what each test reads. A reg
 
 ## 7. Close
 
-- [ ] 7.1 **Gate 2** — two fresh-context lenses over the committed range (lens A: spec alignment and
+- [x] 7.1 **Gate 2** — two fresh-context lenses over the committed range (lens A: spec alignment and
       real tests, including that the seam's tests are proven to discriminate and that the unit rung's
       guard has been SEEN to fail; lens B: absent edits — the unguarded write site, the inverse that was
       not shipped, the write site the store's ownership table does not name, and the honesty of every
       refusal message). Fix Critical and Important, then record
       `record-gate-review unit-rung-and-fixture-snapshots --gate 2 --verdict pass --reviewer "<identity>"
       --base-sha <parent of the first attributed commit> --head-sha <the last attributed commit>`
-- [ ] 7.2 <!-- pm:lifecycle --> Archive — `/opsx:archive unit-rung-and-fixture-snapshots`, then
+- [x] 7.2 <!-- pm:lifecycle --> Archive — `/opsx:archive unit-rung-and-fixture-snapshots`, then
       `update-epic unit-rung-and-fixture-snapshots --status archived --outcome delivered --reason
       "the assertion half has a rung for tests whose observable is a value, and the durability flush
       they were paying for is gone from the path" --no-deferrals`. The commit that moves

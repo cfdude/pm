@@ -9984,10 +9984,11 @@
         "da4e3358b9b5271b08d9e2fdb411eb41bb7200a3",
         "f1c0c1d50913a9e0fc031f4dd5d8458b305dca09",
         "e97876d7e0e68db9be267c79e2e3cb0b765ad6c8",
-        "a0e827fb51181a66291cedcc4c13acdd7bd57aa9"
+        "a0e827fb51181a66291cedcc4c13acdd7bd57aa9",
+        "29e6562303ec92082ffd209947fa15ada0358384"
       ],
       "createdAt": "2026-09-22T04:49:43.433Z",
-      "touchedAt": "2026-09-22T11:02:21.700Z",
+      "touchedAt": "2026-09-22T11:09:00.430Z",
       "release": "0.48.0",
       "gateReview": {
         "gate1": {
@@ -9995,6 +9996,13 @@
           "reviewedAt": "2026-09-22T05:22:51.503Z",
           "baseSha": "ab171b7f3edbb77050c3101f89fb5d1ceecf1995",
           "headSha": "75d34a23a1dbb53251207e1e5e6fac26964c045b",
+          "reviewer": "two fresh-context lenses (A reproduced the fsync premise: 12,524 fsyncs, 8.1x no-fsync control; B swept the 137 call sites and 10 write sites): round 1 fail (2 C: rung definitions stranded 82% of the half, render parity unachievable; 15 I/M), fixes applied; confirmation fail (3 residue: D5's population, a false guard-loudness claim, a missed detours-log read), fixed; 2026-09-21"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-22T11:09:00.425Z",
+          "baseSha": "ab171b7f3edbb77050c3101f89fb5d1ceecf1995",
+          "headSha": "29e6562303ec92082ffd209947fa15ada0358384",
           "reviewer": "two fresh-context lenses (A reproduced the fsync premise: 12,524 fsyncs, 8.1x no-fsync control; B swept the 137 call sites and 10 write sites): round 1 fail (2 C: rung definitions stranded 82% of the half, render parity unachievable; 15 I/M), fixes applied; confirmation fail (3 residue: D5's population, a false guard-loudness claim, a missed detours-log read), fixed; 2026-09-21"
         }
       },
@@ -10021,7 +10029,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1324,
+  "revision": 1326,
   "reviewMode": "thorough",
   "releases": [
     {
