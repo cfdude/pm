@@ -3,7 +3,10 @@
 // lib/constants.mjs.
 
 import fs from "node:fs";
-import { engineRoot, conductorDir, detoursLog, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
+// `conductorDir` and `detoursLog` are GONE from this import with 0.48.0's tasks 1.3/1.4: every
+// read and every append of the detour log goes through the store now, and an import left behind is
+// the first step back to a module-scope path. (The sweep in 5.1(a) looks for exactly that residue.)
+import { engineRoot, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
 import { gitOps } from "./invocation.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
 

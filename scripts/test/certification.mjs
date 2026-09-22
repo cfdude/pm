@@ -147,6 +147,16 @@ export function twinRefusals({ functional, assertion }) {
   return functional.filter((id) => !have.has(id)).sort();
 }
 
+/** THE PATHS A TWIN CAN LIVE AT — one per rung of the assertion half (0.48.0 task 5.1(c)).
+ *
+ *  A SINGLE DERIVATION, because this path is asked three questions: which file would SATISFY the twin
+ *  rule, which file must be STAGED with a functional change, and which file the refusal should NAME.
+ *  Until 4.1's first migration it was the literal `scripts/test/assert/${id}.test.mjs` in two of those
+ *  places and prose in the third — the shape 5.1(c) exists to find, and it would have been wrong in
+ *  all three the moment a twin moved to the unit rung. */
+export const twinPathsOf = (id) => HOMES.filter((h) => h !== "functional" && h !== "sweeps")
+  .map((h) => `scripts/test/${h}/${id}.test.mjs`);
+
 /** Check 3 — DIFF COUPLING (D6). A staged change to a functional file requires its twin in the SAME
  *  staged diff. Keyed on the functional half only, where check 2 is keyed. A rename carries both
  *  paths and passes — which is why the caller must collect the staged set with `--no-renames`. */
@@ -157,7 +167,9 @@ export function couplingRefusals({ stagedFiles, functional, assertion }) {
   for (const id of functional) {
     const functionalPath = `scripts/test/functional/${id}.test.mjs`;
     if (!staged.has(functionalPath)) continue;
-    const twinPath = `scripts/test/assert/${id}.test.mjs`;
+    // THE TWIN MAY BE ON EITHER RUNG — `find` reports the first one that is STAGED, so the
+    // refusal names the file the author would have had to touch.
+    const twinPath = twinPathsOf(id).find((p) => staged.has(p)) || twinPathsOf(id)[0];
     if (staged.has(twinPath) && have.has(id)) continue;
     out.push({ id, functional: functionalPath, assertion: twinPath });
   }

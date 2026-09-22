@@ -37,7 +37,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   REPO, ENGINE_SOURCE, certifiedSet, conformanceRows, couplingRefusals, describeRefusal,
-  enrolmentRefusals, functionalIds, assertionIds, homeOf, homesInProse, readRecord, recordRefusals, sweepIds, twinRefusals,
+  enrolmentRefusals, functionalIds, assertionIds, homeOf, homesInProse, readRecord, recordRefusals, sweepIds, twinRefusals, twinPathsOf,
 } from "./certification.mjs";
 
 // ───────────────────────────── the index reads ─────────────────────────────
@@ -162,7 +162,10 @@ function render(refusals) {
     lines.push(`move it under ${homesInProse()} — or enrol it deliberately.`);
   }
   if (refusals.twins.length) {
-    lines.push("these functional ids have no assertion twin (scripts/test/assert/<id>.test.mjs):");
+    // DERIVED FROM THE SAME LIST THE CHECK USES (task 5.1(c)): the twin may live on EITHER rung of
+    // the assertion half, and a refusal naming one of them would send a reader to a file that is not
+    // where the rule looks.
+    lines.push(`these functional ids have no assertion twin (${twinPathsOf("<id>").join(" or ")}):`);
     for (const id of refusals.twins) lines.push(`  ${id}`);
   }
   if (refusals.coupling.length) {

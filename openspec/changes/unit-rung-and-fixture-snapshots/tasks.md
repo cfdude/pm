@@ -275,7 +275,7 @@ the seam, and the test-side move is a decision about what each test reads. A reg
 
 ## 5. Required task items
 
-- [ ] 5.1 **Call-site completeness sweep** (required task item 1) — for each rule this change
+- [x] 5.1 **Call-site completeness sweep** (required task item 1) — for each rule this change
       introduces, enumerate ALL call sites MECHANICALLY rather than from this document's lists:
       (a) the store rule over every **`.conductor/` write site and `PROJECT.md`** — and the enumeration
       must start from the path constants, not from a hand list. **The pattern is the finding here.**
@@ -296,14 +296,14 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       (d) the "rung membership follows the observable" rule, whose call sites are the human decisions,
       so state where it holds, where it does not (the files that stay on the file rung by design), and
       justify each omission.
-- [ ] 5.2 **DATA references are call sites** (required task item 1) — the store's record holds the
+- [x] 5.2 **DATA references are call sites** (required task item 1) — the store's record holds the
       artifact set it owns; enumerate every place each artifact is WRITTEN, READ and REMOVED, and name
       the artifact that is deliberately NOT moved. In particular the inverse of "the store owns an
       artifact": if the store's ownership table and the engine's write sites can disagree, say which
       one is derived and which is asserted, and add the check that fails when a write site exists that
       the table does not name — an ownership table maintained by hand is exactly the stale enumeration
       this repository's lesson set is built on.
-- [ ] 5.3 **Every operation has an inverse** (required task item 1) — enumerate the inverse of each new
+- [x] 5.3 **Every operation has an inverse** (required task item 1) — enumerate the inverse of each new
       operation and name each one shipped or deliberately not shipped: the store's write against a
       read, and against a REMOVAL (**shipped** — I2: the engine removes/rotates artifacts the store
       owns at `write-conflicts.mjs:35`/`:65`/`:68`, `purge-logs.mjs:181`, `activity-log.mjs:127`,
@@ -314,15 +314,15 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       run-time counter's blind spot is named in design's Risk 7 rather than claimed closed); the
       migration's per-file move against a move back (not shipped — say why a rung decision is not
       re-derived automatically).
-- [ ] 5.4 **Verify against the commit, not the working tree** (required task item 2) — for every task
+- [x] 5.4 **Verify against the commit, not the working tree** (required task item 2) — for every task
       above, run `git show --stat <that task's sha>` and assert every file the task claims to change
       appears in THAT commit. A verb module claiming to read the store but absent from the commit
       FAILS, and the working tree will hold the intended edit while both gates are green.
-- [ ] 5.5 **Attribute every commit to its epic** (required task item 4) — `update-epic
+- [x] 5.5 **Attribute every commit to its epic** (required task item 4) — `update-epic
       unit-rung-and-fixture-snapshots --attribute-commit <sha>` as each commit is made. The commit that
       moves this change under `archive/` is lifecycle bookkeeping and is NOT attributed (this is the
       one exclusion that is not a judgment call).
-- [ ] 5.6 **Route what the work taught you** (required task item 7) — name which of the three each
+- [x] 5.6 **Route what the work taught you** (required task item 7) — name which of the three each
       finding is, before the change closes. The candidate this change already carries: **friction** —
       the half's cost was explained for a release by a number nobody had measured, and the explanation
       was wrong in its mechanism (it named engine setup; the measurement names durability flushing).
@@ -332,7 +332,7 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       term"), a concrete `cost` (this change's own design was drafted against the wrong mechanism), and
       an `enforced_in` naming where it binds. Check whether an existing lesson already covers it —
       `docs/lessons/` is a corpus, and a second copy is worse than none.
-- [ ] 5.7 **Declare lifecycle bookkeeping** (required task item 3) — the archive task below carries the
+- [x] 5.7 **Declare lifecycle bookkeeping** (required task item 3) — the archive task below carries the
       literal `<!-- pm:lifecycle -->` marker on its own line, marked at the moment this source was
       authored.
 
