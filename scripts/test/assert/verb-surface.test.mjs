@@ -93,22 +93,6 @@ test("A trailing help token does not remove an epic, append to the detour log, o
   assert.deepEqual(readState(cwd).epics.map(e => e.id), ["e1"]);
 });
 
-test("A read-only verb refuses an undeclared flag, and refuses --force", () => {
-  const cwd = initialized();
-  for (const argv of [["brief", "--bogus"], ["brief", "--force"], ["status", "--force"]]) {
-    const r = invokeEngine(argv, { cwd });
-    assert.notEqual(r.status, 0, `${argv.join(" ")} must be refused`);
-  }
-});
-
-test("An id given as a flag is diagnosed as the positional", () => {
-  const cwd = initialized();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const r = invokeEngine(["update-epic", "--id=e1", "--priority", "P1"], { cwd });
-  assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /update-epic e1 --priority P1/, "the diagnosis rewrites the line the caller meant");
-});
-
 test("REGRESSION GUARD: A hook verb stays dormant in a repository without pm", () => {
   const cwd = tmpRepo();   // never initialized
   for (const argv of [["brief"], ["commit-nudge"], ["snapshot"], ["gate-guard"]]) {
@@ -128,6 +112,13 @@ test("A batch key is not a command-line flag", () => {
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(readState(cwd).epics.map(e => e.id), ["b1"]);
 });
+
+// 4.1 (0.48.0) moved TWO of this file's tests to `scripts/test/unit/verb-surface.test.mjs`: the
+// read-only-refuses-an-undeclared-flag pair and the id-given-as-a-flag diagnosis — refusals alone,
+// argv in and status/stderr out, no file read. THE SIX BELOW STAY because each derives its population
+// from `dispatchKeys()` (the dispatch table read out of conductor.mjs) and then asserts over
+// `WATCHED`, a four-path snapshot that includes CLAUDE.md — a file the store does not own. Watching
+// the paths a refusal must leave alone IS those tests' assertion.
 
 // ───────────────────────── the deliberate omissions ─────────────────────────
 //
