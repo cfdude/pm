@@ -169,8 +169,11 @@ The two failure directions are both real and both silent: a test that observes a
 the file rung pays for filesystem work it does not read, and a test that observes a file but lives in
 the unit rung either fails or, worse, passes while observing a stub instead of the artifact.
 
-The guard on the unit rung is what makes the first direction loud. The second is loud by construction:
-a unit-rung test that asserts on a file has to read one, and reading one is what the unit rung's guard
+Neither direction is made loud by the unit rung's guard: the guard scans `scripts/test/unit/` only, so
+a test left on the file rung that asserts on the record's values goes undetected. What carries the
+first direction is the per-file judgment of the migration (task 4.1), which sorts a file's tests by
+observable as each file moves. The second direction is loud where the test actually reads: a
+unit-rung test that asserts on a file has to read one, and reading one is what the unit rung's guard
 refuses.
 
 #### Scenario: A test moved between rungs keeps its assertions

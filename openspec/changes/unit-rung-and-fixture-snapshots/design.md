@@ -179,6 +179,11 @@ change where their I/O comes from:
   "state unchanged since the last render" test (`fs.statSync(statePath()).mtimeMs`, `:356`) becomes a
   store question about the STATE the stamp was taken from — an mtime cannot be answered by a store
   with no path, so the stamp records a state identity both implementations can supply. The
+  **`detours.log` read is a third one and it runs on EVERY render**: `fs.accessSync(detoursLog())`
+  (`:276`) plus `visibleDetourRows()` (`:277`, → `readDetourRows()` → `fs.readFileSync(detoursLog())`
+  at `git.mjs:102`) reaches the log through `constants.mjs`'s module-scope path for an artifact the
+  store OWNS (its writers are `git.mjs:134`/`:193`), so the "Recent detours" table's rows come from a
+  store read of that artifact like its siblings rather than from raw `fs`. The
   text-producing code is unchanged, which is what makes the byte-parity requirement in this change's
   `engine-invocation` delta checkable. The one consumer that is a filesystem check BY CONSTRUCTION is
   `verify-state` (`worktree-hygiene.mjs:120-140`), which reads the stamp against `state.json`'s live
@@ -282,9 +287,12 @@ The design is a `fixtureOnce()` helper in `scripts/test/fixtures/`:
   test's copy removed;
 - restore performs no `fsync` and starts no engine, which is what the requirement pins.
 
-**Why a copy and not an in-process state object.** The tests on this rung assert on FILES — 1,098 of
-them read `state.json`, 543 read `PROJECT.md` — so the restored thing has to BE a filesystem, not a
-state value. That is precisely why the two goals are different mechanisms and not one: the unit rung
+**Why a copy and not an in-process state object.** The tests that stay on this rung assert on BYTES
+on disk — a rendered `PROJECT.md`'s parity, the write-conflict log's bytes, the render stamp, the
+capture committed under `scripts/test/fixtures/` — so the restored thing has to BE a filesystem, not a
+state value. (The 67 files that read `state.json` are NOT this rung's population: C1 moves the 1,016
+tests asserting on its VALUES to the unit rung, and D5's count is the bytes-observing set that
+remains.) That is precisely why the two goals are different mechanisms and not one: the unit rung
 replaces the filesystem with a store, and the snapshot rung keeps the filesystem but stops rebuilding
 it.
 

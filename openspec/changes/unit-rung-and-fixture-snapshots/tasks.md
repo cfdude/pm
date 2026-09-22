@@ -113,7 +113,12 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       becomes a store question about the state the stamp was taken FROM — an mtime is not something a
       store that "produces no path on disk" can answer, so the stamp records a state identity the
       store can supply for both implementations, and the skip-rewrite/write decision is made from the
-      store's pre-image rather than from a path read. The markdown-building code is NOT edited — only
+      store's pre-image rather than from a path read. **A THIRD read, and the one that runs on EVERY
+      render**: `fs.accessSync(detoursLog())` (`:276`) plus `visibleDetourRows()` (`:277`, →
+      `readDetourRows()` → `fs.readFileSync(detoursLog())` at `git.mjs:102`) reaches a store-OWNED
+      artifact (`detours.log`; writers `git.mjs:134`/`:193`) through the module-scope `detoursLog()`
+      path, so the "Recent detours" rows also become a store read of that artifact — :306 and :356 are
+      not the whole set. The markdown-building code is NOT edited — only
       where its inputs come from and its output goes — because that is what makes 1.8's byte parity
       checkable. `verify-state` (`worktree-hygiene.mjs:120-140`) READS the stamp and state.json's
       mtime and is a filesystem check by construction: it stays on the file rung, stated here rather
