@@ -23,20 +23,22 @@ const observePath = (cwd) => path.join(cwd, ".conductor", "commit-observe.json")
 const ctxOf = (out) => (out.trim() ? JSON.parse(out).hookSpecificOutput.additionalContext : "");
 const nudge = (cwd, command) => run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command } }) });
 
+// 4.1 (0.48.0) moved SIX of this file's ten tests to
+// `scripts/test/unit/commit-observation.test.mjs`: a commit in a failing call, the advisory's no-sha
+// claim, the retract-detour pair, the help/undeclared-flag sweep, and the "naming the active epic is
+// not a detour" case — every one of them a value or a store-owned log read.
+//
+// THE FOUR BELOW STAY, and each names a path the store does not own: the shipped `hooks/hooks.json`
+// registration; the unreadable-state row (raw bytes); the corrupt observation record, whose fixture
+// WRITES `.conductor/commit-observe.json`; and "no anchor is written", whose observable is that same
+// artifact's absence — `commit-observe.json` is not in the store's ARTIFACT table, so there is no
+// store sibling to read it through.
+
 test("2.3 hooks.json wires commit-nudge for Bash on PostToolUse and PostToolUseFailure, and on no pre-call event", () => {
   const hooks = JSON.parse(fs.readFileSync(new URL("../../../hooks/hooks.json", import.meta.url), "utf8"));
   const nudgeEntries = JSON.stringify(hooks).match(/commit-nudge/g) || [];
   assert.ok(nudgeEntries.length >= 2, "commit-nudge is registered on both post-call events");
   assert.match(JSON.stringify(hooks), /PostToolUseFailure/);
-});
-
-test("2.3b a commit in a FAILING call is still observed — the hook runs on both events", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd);
-  // The two registrations exist because a failing Bash call is exactly where a commit most often
-  // lands (the test command after it exited non-zero). In this half neither rung can observe a
-  // commit, so both must emit the SAME advisory rather than one of them going silent.
-  const ok = nudge(cwd, 'git commit -m "feat(x): real work"');
-  assert.match(ok, /Commit detected|hookSpecificOutput/);
 });
 
 test("2.4 unreadable state writes nothing and defers the report", () => {
@@ -56,48 +58,10 @@ test("2.1 no anchor is written where no commit could have been observed", () => 
     "an anchor with no repository to anchor against is a record the hook invented");
 });
 
-test("3.1 a reported commit is stated as landed SINCE the last observation, not proven to be this call's", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd);
-  const ctx = ctxOf(nudge(cwd, 'git commit -m "fix: x"'));
-  assert.doesNotMatch(ctx, /\b[0-9a-f]{7,40}\b/,
-    "with no observation there is no sha, and the advisory claims no more than it can see");
-});
-
-test("4.1 retract-detour on a row that does not exist is refused and writes nothing", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  const before = detourLog(cwd);
-  const err = expectFail(() => run(["retract-detour", "0123456789abcdef0123456789abcdef01234567",
-    "--reason", "never happened"], { cwd }));
-  assert.ok(err, "there is no row to retract");
-  assert.equal(detourLog(cwd), before, "and the trail is untouched");
-});
-
-test("4.3 a retraction with no reason is refused", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  assert.ok(expectFail(() => run(["retract-detour", "0123456789abcdef0123456789abcdef01234567"], { cwd })));
-});
-
-test("4.4 help, undeclared flags and an unanswerable tree write nothing", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd);
-  for (const argv of [["retract-detour", "--help"], ["retract-detour", "abc", "--reason", "r", "--bogus"]]) {
-    try { run(argv, { cwd }); } catch { /* refusals are expected */ }
-  }
-  assert.equal(detourLog(cwd), "");
-});
-
 test("2.4 the observation record is not consulted when it is corrupt — the hook degrades", () => {
   const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd);
   fs.writeFileSync(observePath(cwd), "{ this is not json");
   assert.doesNotThrow(() => nudge(cwd, "git commit -m x"));
-});
-
-test("6.1 a commit touching the active epic's change directory is not an AUTO-DETOUR", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  writeState(cwd, { version: 1, active: "feat-x", detourStack: [], epics: [
-    { id: "feat-x", title: "feat-x", priority: "P1", status: "in-progress", role: "epic",
-      lane: "openspec", links: [], reconcileNeeded: false }] });
-  nudge(cwd, 'git commit -m "fix(feat-x): tighten validation"');
-  assert.equal(detourLog(cwd), "", "naming the active epic is the epic's own work, never a detour");
 });
 
 // ───────────────────────── the deliberate omissions ─────────────────────────
