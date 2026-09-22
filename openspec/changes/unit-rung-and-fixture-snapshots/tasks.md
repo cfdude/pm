@@ -105,7 +105,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       and `.conductor/write-conflicts.log.prev` (`write-conflicts.mjs:35` rotate). Each is either
       brought behind the store's interface or named in design D1's does-NOT-own list WITH its reason —
       a table that claims derivation from the write sites cannot silently omit a write site.
-- [ ] 1.3 GREEN — `scripts/lib/render.mjs` produces `PROJECT.md` and `render-stamp.json`
+- [x] 1.3 GREEN — `scripts/lib/render.mjs` produces `PROJECT.md` and `render-stamp.json`
       (`:325`, `:366`) through the store, AND its READS move with them (I3): the pre-image
       `fs.readFileSync(projectMd())` (`:306`) that decides the skip-rewrite and answers
       `--diff-summary` becomes a store read of the artifact's previous text, and `writeRenderStamp()`'s
@@ -128,7 +128,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       (`write-conflicts.mjs:48`, `:98`), `honcho-memories.log` (`subcommands.mjs:1037`), the activity
       segments (`activity-log.mjs:171`), and `brief.txt` (`subcommands.mjs:156`). Each keeps its
       existing guard-then-write shape; the failure policy on a write that cannot land does not change.
-- [ ] 1.5 RED — a seam test that a STALE revision is still refused through the in-memory store, and
+- [x] 1.5 RED — a seam test that a STALE revision is still refused through the in-memory store, and
       that a no-op write is still a no-op, both with the same status the disk store produces; AND a
       third case for the normalisation the disk load also applies (I6): a seeded record whose SHAPE
       the strict read refuses (`shapeProblem`) is refused through the memory store too, rather than

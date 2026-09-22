@@ -3,8 +3,8 @@
 // lib/active-pointer.mjs (staleMarker), lib/autonomy.mjs (getAutonomy), and
 // lib/add-epic.mjs (parseFlags) -- see the design doc.
 
-import fs from "node:fs";
-import { loadState, readJSON } from "./state.mjs";
+import { loadState } from "./state.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { buildBrief } from "./briefing.mjs";
@@ -15,7 +15,7 @@ import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateTableRows } from "./archive-gate.mjs";
 import { visibleDetourRows } from "./git.mjs";
-import { detoursLog, projectMd, statePath, renderStampPath, conductorDir, escapeControls, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
+import { escapeControls, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
 import { currentArgv, errStream, outStream } from "./invocation.mjs";
@@ -273,7 +273,14 @@ export function render() {
   try {
     // Retracted commit-derived rows and the RETRACTED rows themselves are filtered BEFORE the
     // eight-row slice, so the table always shows the last eight rows a reader should see.
-    fs.accessSync(detoursLog());
+    //
+    // THE PRESENCE CHECK AND THE READ ARE BOTH STORE QUESTIONS (0.48.0 task 1.3). This runs on
+    // EVERY render, and `detours.log` is an artifact the store OWNS — its writers are git.mjs's two
+    // append sites — so reaching it through the module-scope `detoursLog()` path made the ONE
+    // read that runs on every render the third leak the ownership table missed (the other two are
+    // the PROJECT.md pre-image below and the stamp's mtime test under it). visibleDetourRows()
+    // reads through the store itself; this is the existence half.
+    if (!storeOps().exists(ARTIFACT.DETOURS_LOG)) throw new Error("no detour log");
     const lines = visibleDetourRows().slice(-8);
     if (lines.length) {
       md.push("| When | SHA | Kind | Epic | Note |");
@@ -302,8 +309,12 @@ export function render() {
   // were already escaped by tableRow(); escapeControls() is idempotent over that output.
   const content = md.map(escapeControls).join("\n");
   const STAMP_RE = /^> Last rendered: .*$/m;
-  let existing = "";
-  try { existing = fs.readFileSync(projectMd(), "utf8"); } catch { /* no file yet */ }
+  // THE PRE-IMAGE IS A STORE READ (task 1.3, I3), not a path read. It decides two things — the
+  // skip-rewrite below and the answer `--diff-summary` prints — and both are questions about the
+  // artifact, not about where it lives. A memory store has no path to read, so an output-only move
+  // would have left the render VERB doing `fs` work through a store that "produces no path".
+  const priorRead = storeOps().read(ARTIFACT.PROJECT_MD);
+  const existing = priorRead.kind === "ok" ? priorRead.text : "";
   writeRenderStamp();
 
   const flags = parseFlags(currentArgv().slice(3));
@@ -322,8 +333,11 @@ export function render() {
     errStream().write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
     return;
   }
-  fs.writeFileSync(projectMd(), content);
-  errStream().write(`conductor: rendered ${escapeControls(projectMd())}\n`);
+  storeOps().write(ARTIFACT.PROJECT_MD, content);
+  // The message names the PATH where there is one and the logical artifact name where there is not
+  // (a memory store produces no path — printing "null" would be a sentence about the store's
+  // implementation rather than about what happened).
+  errStream().write(`conductor: rendered ${escapeControls(storeOps().resolve(ARTIFACT.PROJECT_MD) || ARTIFACT.PROJECT_MD)}\n`);
 }
 
 /** Normalizes the two sources of PROJECT.md diff noise that are never "epic-relevant" on
@@ -352,16 +366,24 @@ export function normalizeForDiffSummary(content) {
  *  subcommands so ordering/detour-stack/link invariants stay consistent). Sidecar file
  *  (not a state.json field) so stamping never itself perturbs the content being verified. */
 export function writeRenderStamp() {
-  let stateMtimeMs = null;
-  try { stateMtimeMs = fs.statSync(statePath()).mtimeMs; } catch { /* no state.json yet */ }
-  // verify-state only ever compares stateMtimeMs (see verifyState() below) — renderedAt is
-  // informational only, nothing reads it back for correctness. So if state.json's mtime
-  // hasn't moved since the last stamp, rewriting the file would only bump renderedAt and
-  // produce a spurious byte-for-byte diff on every render() call even though nothing that
-  // matters changed. Skip the rewrite in that case.
-  const existing = readJSON(renderStampPath(), null);
-  if (existing && existing.stateMtimeMs === stateMtimeMs) return;
-  const stamp = { renderedAt: new Date().toISOString(), stateMtimeMs };
-  fs.mkdirSync(conductorDir(), { recursive: true });
-  fs.writeFileSync(renderStampPath(), JSON.stringify(stamp, null, 2) + "\n");
+  const store = storeOps();
+  // THE SKIP DECISION IS A STORE QUESTION ABOUT THE STATE, not a stat of it (task 1.3, I3). It used
+  // to compare state.json's mtimeMs, and an mtime is precisely what a store that produces no path
+  // cannot answer. What it records instead is the RECORD'S IDENTITY — its revision — which is the
+  // same statement in a form both implementations can supply: writeRecord() advances the revision
+  // on every save that changes content and returns early without writing when nothing changed, so
+  // "the revision moved" and "the record was written" are the same fact. The observed behaviour is
+  // unchanged: nothing reads stateRevision back for correctness, and the stamp is still rewritten
+  // only when the record it was taken from has moved.
+  const stateIdentity = store.recordIdentity();
+  // stateMtimeMs is KEPT and is still what `verify-state` reads (worktree-hygiene.mjs), which is a
+  // filesystem check by construction and stays on the file rung. Null when the store has no path —
+  // a memory store writes no stamp anybody verifies.
+  const stateMtimeMs = store.mtimeMs(ARTIFACT.RECORD);
+  const existingRead = store.read(ARTIFACT.RENDER_STAMP);
+  let existing = null;
+  if (existingRead.kind === "ok") { try { existing = JSON.parse(existingRead.text); } catch { existing = null; } }
+  if (existing && existing.stateRevision === stateIdentity && existing.stateMtimeMs === stateMtimeMs) return;
+  const stamp = { renderedAt: new Date().toISOString(), stateRevision: stateIdentity, stateMtimeMs };
+  store.write(ARTIFACT.RENDER_STAMP, JSON.stringify(stamp, null, 2) + "\n");
 }

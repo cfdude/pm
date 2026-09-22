@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import { engineRoot, conductorDir, detoursLog, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
 import { gitOps } from "./invocation.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 
 export function gitShortSha() {
   try { return gitOps().shortHead(); }
@@ -96,11 +97,16 @@ export function resetGitCaches() {
  *  would delete a record, which is the opposite of what this is for. */
 export const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
 
-/** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable. */
+/** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable.
+ *
+ *  READ THROUGH THE STORE (0.48.0 task 1.3, I3). `detours.log` is an artifact the store OWNS — its
+ *  two writers are this module's own append sites below — and this read runs on EVERY render via
+ *  visibleDetourRows(), so leaving it on the module-scope path would have made the one read that is
+ *  always taken the third leak of the ownership table. */
 export function readDetourRows() {
-  let body;
-  try { body = fs.readFileSync(detoursLog(), "utf8"); } catch { return []; }
-  return body.split("\n").filter(Boolean).map((raw) => {
+  const read = storeOps().read(ARTIFACT.DETOURS_LOG);
+  if (read.kind !== "ok") return [];
+  return read.text.split("\n").filter(Boolean).map((raw) => {
     const [when, sha, kind, epic, note] = raw.split("\t");
     return { raw, when, sha, kind, epic, note };
   });
@@ -160,9 +166,9 @@ export const rowMatches = (rowSha, full) =>
  *  has one, exact otherwise. Reads the file whole — it is small, append-only, and render() already
  *  reads it whole on every render, so this adds no new order of cost. */
 function alreadyLogged(kind, sha, full) {
-  let body;
-  try { body = fs.readFileSync(detoursLog(), "utf8"); } catch { return false; }
-  for (const line of body.split("\n")) {
+  const read = storeOps().read(ARTIFACT.DETOURS_LOG);
+  if (read.kind !== "ok") return false;
+  for (const line of read.text.split("\n")) {
     if (!line) continue;
     const [, s, k] = line.split("\t");
     if (k !== kind) continue;
