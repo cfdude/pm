@@ -23,23 +23,24 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
   | | before 0.48.0 | after 0.48.0 |
   |---|---|---|
-  | the full assertion half (both rungs, one process) | **72.3 / 73.2 s** | **27.20 / 27.83 / 27.40 s** (median **27.40 s**) |
+  | the full assertion half (both rungs, one process) | **72.3 / 73.2 s** | **26.898 / 26.501 / 26.250 s** (median **26.50 s**) |
   | tests | 1,243 | 1,269, 0 failing |
-  | per-test median | 67.4 ms | **2.46 ms** |
-  | tests ≥ 100 ms / ≥ 200 ms | 378 / 67 | **37 / 6** |
+  | per-test median | 67.4 ms | **2.37 ms** |
+  | tests ≥ 100 ms / ≥ 200 ms | 378 / 67 | **34 / 5** |
   | `fsyncSync` calls per run | 12,524 | **3,430** — and **0** of them in the unit rung |
-  | with every flush removed (the control) | 12.2 s | **5.22 / 5.30 / 5.44 s** |
+  | with every flush removed (the control) | 12.2 s | **5.145 / 5.372 / 5.219 s** |
 
-  **The acceptance was sub-15 seconds for the full half, and 27.40 s is a miss — reported as a
+  **The acceptance was sub-15 seconds for the full half, and 26.50 s is a miss — reported as a
   miss.** The cause is stated rather than rounded: the control that removes EVERY flush still runs
-  5.3 s, so ~22 of the 27.4 s is durability flushing — the file rung's 517 tests issue all 3,430
+  5.22 s, so 21.3 s of the 26.5 s is durability flushing (80% of what is left, and it was 83% before) —
+  the file rung's 517 tests issue all 3,430
   `fsyncSync` calls, and the unit rung's 752 issue none. The file rung is down to 74 files from 91,
   with 63 files now on the unit rung. The gap between
-  27 s and 15 s is the file-rung population held there by four seam edges, the largest of which
+  26.5 s and 15 s is the file-rung population held there by four seam edges, the largest of which
   (`CLAUDE.md`'s managed rules block, ~27 tests) needs a spec change this release did not make: the
   `engine-invocation` delta states in bold that the block is a repository file the store does NOT
   own. **What IS met is the unit rung's own bound:** one engine invocation over the memory store is
-  **0.73–0.87 ms** (n = 200), and the rung's 752 tests run in **3.67 s with zero `fsyncSync`**
+  **0.70–0.87 ms** (n = 200), and the rung's 752 tests run in **3.67 s with zero `fsyncSync`**
   — the migrated, value-observing population is well inside the 10 s it was given.
 
   The memory store ships (design Open Question 1, resolved as recommended): it lives in

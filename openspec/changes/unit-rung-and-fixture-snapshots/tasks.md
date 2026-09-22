@@ -451,7 +451,7 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       `scripts/test/fixtures/**` files are all under `scripts/`, which the artifact list never names.
       A ledger that walked `scripts/` would have needed 63 new claims here; one that walks the
       capability surface correctly needs none.
-- [ ] 6.5 **THE AFTER MEASUREMENT, and it is the change's acceptance.** Re-run 0.3's (a)–(f) on the
+- [x] 6.5 **THE AFTER MEASUREMENT, and it is the change's acceptance.** Re-run 0.3's (a)–(f) on the
       final commit and write `baseline-after.md` beside `baseline-before.md`. The acceptance is
       **sub-15-second pre-commit for the FULL assertion half** and **~1 ms per unit-rung test**, with
       the value-observing population that migrates expected **under 10 s** on its own (design D10).
@@ -461,6 +461,40 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       proposal first carried rested on a 6.47 s control that does not reproduce. A miss is reported as
       a miss with the number, not rounded into a pass. **This task's commit is the one that reports the
       change's headline number**, and the CHANGELOG entry quotes it.
+      **DONE, and the headline is a MISS: 26.50 s against a sub-15 s acceptance (1.77× the target).**
+      `baseline-after.md` is written beside `baseline-before.md` and carries all of (a)–(f),
+      re-run on the final commit (`a0e827f`, the last commit touching anything the suite reads),
+      same commands, same machine, Node v26.9.0.
+      **(a)** 26.898 / 26.501 / 26.250 s, wall 26.995 / 26.601 / 26.368, 1,269 tests, 0 fail — an
+      earlier run at `f1c0c1d` gave 27.202 / 27.833 / 27.395 s, 0.9 s apart, which is load rather
+      than movement. **(b)** sum 26.3 s, **median 2.371 ms** (was 67.4), p25/p75 0.841/21.280,
+      ≥100 ms **34** (was 378), ≥200 ms **5** (was 67). **(c)** **3,430** `fsyncSync` (was 12,524,
+      −72.6%) — **split by rung: unit 752 tests / 3.67 s / ZERO flushes; file 517 tests / 24.28 s /
+      all 3,430**. **(d)** control **5.145 / 5.372 / 5.219 s**, every test passing, against 26.50 s =
+      5.1× (baseline 12.18 s against 73.2 = ≈6.0×). **(e)** drift **0.110–0.122 s** (was 0.24–0.27),
+      the half 26.50 s, probe cached; one end-to-end `git commit` measured at **28.79 s**.
+      **(f)** the per-verb table, flush counts reproducing exactly (8, 2, 2, 18, 0, 0, 0, 0) and the
+      file rung's unit cost UNCHANGED — a raw `open+write+fsync+close` is still 4.9–5.3 ms against
+      0.06–0.25 ms with the flush removed.
+      **WHERE THE BOUND IS MET, at the unit it was stated in:** one engine invocation over the memory
+      store is **0.70–0.87 ms** over two runs (n=200), reproducing the 0.70–0.84 ms `measurements-4.2.md` has
+      carried since batch 1; the unit rung is **3.67 s for 752 tests**, inside the 10 s D10 gave the
+      migrated population. `owingRepo()` is 6.519 ms over the memory store against 127.21 ms on disk.
+      **WHY THE MISS, AS ARITHMETIC:** sub-15 s needs ~1,800 of the 3,430 remaining flushes to go
+      (15 − 5.22 = 9.78 s of flush budget against 21.28 s spent, at ~6.2 ms a flush). They are the
+      file-rung tests the four seam edges hold; the largest block is E1 (`CLAUDE.md`'s managed block,
+      ~27 tests), a STOP that needs the spec decision task 0.4/0.2's evidence names. The 30
+      un-migrated worklist rows are measured not to be the answer — 1,795 ms, 2.5% of the baseline.
+      **ONE BASELINE PREDICTION DID NOT COME TRUE AND IS REPORTED RATHER THAN DROPPED:** 0.3(d)
+      predicted the `conductor-36` `assertedAt` flake would become INTERMITTENT on the faster half.
+      It is 0 failures in all three control runs and **0 in 40** targeted runs of that test on the
+      unit rung. The premise is intact (`scripts/lib/disposition.mjs:288` is still a raw ISO stamp
+      with no monotonic guard), so it is a rate that was not reached, not a flake that was fixed —
+      recorded in `baseline-after.md` as an open low-rate risk.
+      **This commit is the headline-number commit, and the CHANGELOG's `[Unreleased]` entry is
+      corrected in it** from the pre-docs run's 27.40 s to this run's **26.50 s**, so the two
+      documents carry one number rather than two; the CHANGELOG's per-test median, ≥100/≥200 counts
+      and control figures are moved to this run with it.
 
 ## 7. Close
 
