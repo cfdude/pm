@@ -123,7 +123,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       checkable. `verify-state` (`worktree-hygiene.mjs:120-140`) READS the stamp and state.json's
       mtime and is a filesystem check by construction: it stays on the file rung, stated here rather
       than left implicit.
-- [ ] 1.4 GREEN — the four append-only record writes move behind the store: `detours.log`
+- [x] 1.4 GREEN — the four append-only record writes move behind the store: `detours.log`
       (`scripts/lib/git.mjs:134`, `:193`), `write-conflicts.log` and its latch
       (`write-conflicts.mjs:48`, `:98`), `honcho-memories.log` (`subcommands.mjs:1037`), the activity
       segments (`activity-log.mjs:171`), and `brief.txt` (`subcommands.mjs:156`). Each keeps its

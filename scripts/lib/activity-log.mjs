@@ -31,6 +31,7 @@ import {
   ACTIVITY_SEGMENT_MAX_BYTES, ACTIVITY_RETENTION_MAX_BYTES, escapeControls,
 } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
@@ -131,25 +132,12 @@ export function pruneToCap(dir = activityDir(), cap = ACTIVITY_RETENTION_MAX_BYT
   return removed;
 }
 
-/** The segment to append to, rotating (and pruning) when the newest one is full.
- *
- *  128 KB is chosen against a stated constraint rather than by feel: a segment must be fully
- *  readable in ONE pass by an agent. 128 KB / 191 B ≈ 680 events ≈ 37k tokens, which leaves
- *  room for the actual task. Larger stops satisfying the constraint; smaller multiplies files
- *  for no gain. At the measured rate that is 1–2 segments per month for the busiest repo in the
- *  fleet, and a pathological burst produces many segments — which is the DESIRABLE behaviour:
- *  more segments means finer time-scoping, not a bigger problem. */
-function currentSegment(dir) {
-  const existing = segments(dir);
-  const newest = existing[existing.length - 1];
-  if (newest) {
-    let size = 0;
-    try { size = fs.statSync(path.join(dir, newest)).size; } catch { size = 0; }
-    if (size < ACTIVITY_SEGMENT_MAX_BYTES) return path.join(dir, newest);
-    pruneToCap(dir);
-  }
-  return path.join(dir, segmentName());
-}
+/** The segment-name choice that used to live here — `currentSegment(dir)`, which returned a PATH —
+ *  moved INTO appendEvents() in 0.48.0 (task 1.4) and became a choice between artifact NAMES there.
+ *  It was not worth keeping as a function once its only caller stopped needing a path: a helper that
+ *  builds a path is exactly what a store with no paths cannot use, and leaving it here would invite
+ *  the next caller to reach the filesystem directly again.
+ */
 
 /** Append already-built event objects. One JSON object per line. */
 export function appendEvents(events) {
@@ -165,10 +153,16 @@ export function appendEvents(events) {
   // never show it, because there one root is fixed at startup and the two can never diverge.
   if (isDetachedTree(activityRoot())) return;
   try {
-    const dir = activityDir();
-    fs.mkdirSync(dir, { recursive: true });
-    const seg = currentSegment(dir);
-    fs.appendFileSync(seg, events.map(e => JSON.stringify(e)).join("\n") + "\n");
+    // THE APPEND IS THE STORE'S (0.48.0 task 1.4). Only the LAST step of this function was a raw
+    // write: the segment CHOICE below is a decision (rotate when the newest one is full, prune when
+    // rotating), and it is expressed in artifact names rather than paths so a memory store can hold
+    // the same segments under the same keys.
+    const store = storeOps();
+    const newest = store.list(ARTIFACT.ACTIVITY_PREFIX).at(-1);
+    const target = newest && store.size(`${ARTIFACT.ACTIVITY_PREFIX}${newest}`) < ACTIVITY_SEGMENT_MAX_BYTES
+      ? newest
+      : (pruneToCap(activityDir(), ACTIVITY_RETENTION_MAX_BYTES), segmentName());
+    store.append(`${ARTIFACT.ACTIVITY_PREFIX}${target}`, events.map(e => JSON.stringify(e)).join("\n") + "\n");
   } catch { /* observability only — never fail the run being observed */ }
 }
 

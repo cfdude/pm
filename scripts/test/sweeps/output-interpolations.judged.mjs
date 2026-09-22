@@ -143,6 +143,14 @@ x("activity-log.mjs", "setActivityLog", {
 x("activity-log.mjs", "segmentName", {
   "at.toISOString().replace(/[:.]/g, \"-\")": 1,
 }, "not-output", "a segment file name");
+x("activity-log.mjs", "appendEvents", {
+  "ARTIFACT.ACTIVITY_PREFIX": 2,
+  "newest": 1,
+  "target": 1,
+}, "engine", "LOGICAL artifact names, never paths: the segment the store's listing says is newest, and the one chosen for this append (a store with no paths has no path to interpolate)");
+x("activity-log.mjs", "appendEvents", {
+  "events.map(e => JSON.stringify(e)).join(\"\\n\")": 1,
+}, "not-output", "the log segment's file BODY — one JSON object per line, handed to the store rather than to an appendFileSync the sweep would classify on its own");
 x("activity-log.mjs", "diffEvents", {
   "w && w.gate": 1,
 }, "not-output", "an event field of a JSON-lines activity segment");
@@ -339,6 +347,12 @@ x("gate-guard.mjs", "reconcileBlockMessage", {
 x("gate-guard.mjs", "trackerBlockMessage", {
   "shape": 1,
 }, "engine", "the same FIXED LABEL, on the arm that keeps its inverse — see reconcileBlockMessage above");
+x("git.mjs", "appendRetraction", {
+  "line": 1,
+}, "not-output", "the detour log's file BODY; the line itself is built by the statement above and its values are escaped there");
+x("git.mjs", "appendDetourLog", {
+  "line": 1,
+}, "not-output", "the detour log's file BODY, same shape as appendRetraction's");
 x("git.mjs", "commitsNotReachedBy", {
   "head": 1,
   "[...list].sort().join(\" \")": 1,
@@ -467,8 +481,11 @@ x("store.mjs", "memoryStore", {
   "name": 1,
 }, "not-output", "the artifact key of a rotated entry in the memory map");
 x("subcommands.mjs", "appendHonchoMemory", {
-  "line": 1,
-}, "escaped", "honchoMemoryLine() escapes the epic id and reason (design D7)");
+  "line": 2,
+}, "escaped", "honchoMemoryLine() escapes the epic id and reason (design D7). TWO occurrences since 0.48.0 task 1.4: the line is printed to stdout AND appended to the log through the store, where before the append came from a path the declaration did not mention");
+x("subcommands.mjs", "snapshot", {
+  "buildBrief(state)": 1,
+}, "not-output", "the brief SNAPSHOT's file BODY (`.conductor/brief.txt`), written through the store since task 1.4; buildBrief's own lines are the sink the briefing judgments already cover");
 x("subcommands.mjs", "changedFiles", {
   "p": 1,
 }, "not-output", "a git path list");
@@ -491,11 +508,9 @@ x("tracker-refresh-writeback.mjs", "recordTrackerRefresh", {
 x("update-epic.mjs", "missingGateWithdrawals", {
   "r.gate": 1,
 }, "not-output", "a state key");
-x("write-conflicts.mjs", "recordConflict", {
-  "verb": 1,
-  "expected": 1,
-  "found": 1,
-}, "engine", "one log line: an engine verb name and two revision numbers");
+// task 1.4: recordConflict()'s log-line interpolation MOVED to store.mjs (recordConflictOn), which
+// already carries its own judgment for it. What is left here is the delegation, and a delegation has
+// no interpolations — the entry is REMOVED rather than left to read STALE.
 
 // ── mixed declarations, per expression
 x("migrations.mjs", "upgrade", {
@@ -664,6 +679,10 @@ x("commit-watch.mjs", "observeLockPaths", {
 x("purge-logs.mjs", "purgeLogs", {
   "L.join(\"\\n\")": 1,
 }, "passthrough", "L is a local array of templates and literals only (its file names through escapeControls), each value swept where it is built");
+x("purge-logs.mjs", "purgeLogs", {
+  "ARTIFACT.ACTIVITY_PREFIX": 1,
+  "f.name": 1,
+}, "engine", "the LOGICAL artifact name the removal addresses (task 1.4 moved this verb's removals onto the store): a segment's own name under the activity prefix, never a path — the dry-run listing above still prints the real file, which is where naming the file is the point");
 x("rules.mjs", "rulesBlockAmbiguousMessage", {
   "L.join(\"\\n\")": 1,
 }, "passthrough", "L is a local array of templates and literals only (err.markers mapped to a template), each value swept where it is built");

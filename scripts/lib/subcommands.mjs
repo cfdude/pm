@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { currentArgv, errStream, gitOps, invocation, outStream } from "./invocation.mjs";
 import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
@@ -21,7 +22,7 @@ import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
-import { engineRoot, conductorDir, briefPath, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
+import { engineRoot, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
 import { platformFlag, resolveAndRecordPlatform, resolvePlatform } from "./platform.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 // The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
@@ -143,7 +144,6 @@ export function snapshot() {
   // written. Never exit 2 on this hook — on PreCompact that blocks compaction (lib/refusal.mjs).
   const state = loadState();
   render();
-  fs.mkdirSync(conductorDir(), { recursive: true });
   // NO consume — the opposite of brief(). This briefing is written to .conductor/brief.txt,
   // which NOTHING reads back, so consuming here retired the contention warning against a reader
   // who never existed: a PreCompact landing between the threshold crossing and the next
@@ -153,7 +153,10 @@ export function snapshot() {
   // gh#175: a snapshot is for the NEXT session in this tree, and a deployed checkout has none —
   // the next thing to touch it is a `git checkout --force` that discards the file.
   const detached = isDetachedTree();
-  if (!detached) fs.writeFileSync(briefPath(), buildBrief(state) + "\n");
+  // THE BRIEF IS A STORE ARTIFACT (0.48.0 task 1.4): `.conductor/brief.txt` is written into the
+  // record directory by this verb and read by nothing in the engine, which is exactly the shape the
+  // store owns. The detached-tree suppression above is unchanged.
+  if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state) + "\n");
   errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
       "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"
@@ -1007,8 +1010,10 @@ export function retractDetour() {
 // memory line to whichever tree was current when this module was FIRST imported. Measured: with the
 // assertion half running in one process, every invocation's line landed in the REPOSITORY's own
 // .conductor/honcho-memories.log and the fixture's file was never written, which is what made
-// reconcile-obligation's gh-8.3 guard fail.
-const honchoMemoriesLog = () => path.join(conductorDir(), "honcho-memories.log");
+// reconcile-obligation's gh-8.3 guard fail. The helper is GONE in 0.48.0 (task 1.4) rather than
+// kept per-call: the log is a store artifact now, so there is no path here for a root to go stale
+// against — which is the durable fix for the defect this comment records, not a second patch over
+// it.
 
 /** Format the exact one-line Honcho memory string for a detour-stack PUSH or POP, per
  *  CLAUDE.md rule 4 ("on every PUSH and POP, also write a one-line memory to Honcho").
@@ -1033,8 +1038,11 @@ export function honchoMemoryLine(action, epicId, reason) {
  *  purpose: two writers appending to one file must not each carry their own copy of where it is. */
 export function appendHonchoMemory(action, epicId, reason) {
   const line = honchoMemoryLine(action, epicId, reason);
-  fs.mkdirSync(conductorDir(), { recursive: true });
-  fs.appendFileSync(honchoMemoriesLog(), `${new Date().toISOString()}\t${line}\n`);
+  // THE APPEND IS THE STORE'S (0.48.0 task 1.4). This artifact is worth naming for a second reason:
+  // its path was built INLINE here rather than derived from constants.mjs, so it is the write site
+  // task 5.1's constants sweep cannot reach — a sweep that enumerates the twelve exported path
+  // constants is a superset of nothing, and this is the instance that proves it.
+  storeOps().append(ARTIFACT.HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
   outStream().write(line + "\n");
   return line;
 }

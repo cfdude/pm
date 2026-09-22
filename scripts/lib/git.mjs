@@ -133,11 +133,12 @@ export function visibleDetourRows(rows = readDetourRows()) {
  *  detached tree like the row it retracts (gh#175); returns whether it was written. */
 export function appendRetraction(sha, epic, reason) {
   if (isDetachedTree()) return false;
-  fs.mkdirSync(conductorDir(), { recursive: true });
   // One line per row whatever the values hold: whitespace collapses, then every remaining control
   // character (NEL, a legacy epic id's newline) is escaped (user-text-never-forges-output 8.1).
   const line = [new Date().toISOString(), sha, "RETRACTED", escapeControls(epic || "-"), escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
-  fs.appendFileSync(detoursLog(), line + "\n");
+  // THE APPEND IS THE STORE'S (0.48.0 task 1.4). The mkdir that preceded it is gone with the move:
+  // the interface's append creates what it needs, so a caller can no longer be the one that forgot.
+  storeOps().append(ARTIFACT.DETOURS_LOG, line + "\n");
   return true;
 }
 
@@ -189,14 +190,13 @@ export function appendDetourLog(kind, epic, note, rev) {
   // gh#175: a detour is BY DEFINITION an interruption of active work, and a detached tree is one
   // nobody is working in. Suppressed silently, like every other session-bookkeeping write.
   if (isDetachedTree()) return false;
-  fs.mkdirSync(conductorDir(), { recursive: true });
   const sha = rev === undefined ? gitShortSha() : shortSha(rev);
   // sha "-" is "cannot tell" (no git, no repository, no commits yet), NOT a commit identity.
   // Collapsing on it would fold every unrelated row in a git-less repo into one.
   if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha, fullSha(rev === undefined ? "HEAD" : rev))) return false;
   // One line per row whatever the values hold (see appendRetraction()).
   const line = [new Date().toISOString(), sha, kind, escapeControls(epic || "-"), escapeControls((note || "").replace(/\s+/g, " ").trim())].join("\t");
-  fs.appendFileSync(detoursLog(), line + "\n");
+  storeOps().append(ARTIFACT.DETOURS_LOG, line + "\n");
   return true;
 }
 
