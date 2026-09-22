@@ -208,10 +208,12 @@ quietly, and it is the first thing the remaining nineteen rows would benefit fro
 | 29 | `stored-value-integrity` | 12 | 12 | 0 | — the file is GONE. |
 | 30 | `flag-parsing` | 14 | 14 | 0 | — migrated in BATCH 1 (the pilot); counted once here for the row's sake. |
 
-**ROWS 1–30 OF THIS WORKLIST ARE MIGRATED.** 30 rows, 29 commits of my own plus the pilot's: **540 of the
-760 tests in those thirty files moved** (the file rung keeps 220, each with a reason recorded above), the
-unit rung is at 33 files / 515 declarations, the file rung is down to 85 files from 91, and the half is at
-38.0 s from 73.2 s.
+**ROWS 1–30 OF THIS WORKLIST ARE MIGRATED.** 30 rows, 29 commits of my own plus the pilot's: **507 of the
+709 tests in those thirty files moved**, and the file rung keeps **202**, each with a reason recorded in
+one of the four tables above. The per-batch arithmetic, so it can be checked against the rows:
+233 moved of 310 (rows 1–10), 159 of 230 (rows 11–20), 115 of 169 (rows 21–30, `flag-parsing`'s 14
+counted here). The unit rung is at 33 files / 515 declarations, the file rung is down to 85 files from
+91, and the half is at 38.0 s from 73.2 s.
 
 ### THE FOUR SEAM EDGES, AS THE THIRTY ROWS MEASURE THEM
 
