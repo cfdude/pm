@@ -12,6 +12,20 @@
 // kind gh-177 added: a Gate 1 pass records the ARTIFACTS it reviewed with no SHA range, which is
 // exactly the shape this half can produce. Where a behaviour is reachable only through a resolved
 // commit range, the omission is named at the bottom.
+//
+// ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
+//
+// SEVENTEEN of its twenty-one tests moved to `scripts/test/unit/conductor-09.test.mjs` — the whole
+// record-reconcile family, the whole record-gate-review family, both openspec-archive enforcement
+// tests, and all three `--help` tests.
+//
+// FOUR STAY, and each reads a FILE rather than a value: two doc-drift walks over `conductor.mjs`,
+// `skills/conductor/SKILL.md` and `README.md`; `sync`'s README/INDEX filter, whose fixture writes
+// `docs/superpowers/plans/*.md`; and the pre-commit hook's SHAPE, which asserts its runner line by
+// exact equality — the source-shape guard the change's own task 5.1 names, and the one guard in this
+// file whose subject is the per-commit gate itself.
+//
+// No assertion changed in either direction.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -19,72 +33,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, expectFail, ENGINE } from "../fixtures/assert-harness.mjs";
 
-// ──────────────── reconciler structured writeback: record-reconcile ────────────────
-
-test("record-reconcile writes a structured verdict onto the paused epic's link to the detour, and clears reconcileNeeded", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
-  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
-  run(["set-active", "paused-epic"], { cwd });
-  run(["push-detour", "paused-epic", "--detour", "detour-epic", "--reason", "blocked", "--reconcile"], { cwd });
-  run(["pop-detour", "paused-epic"], { cwd });
-  assert.equal(readState(cwd).epics.find(e => e.id === "paused-epic").reconcileNeeded, true);
-
-  run(["record-reconcile", "paused-epic", "--detour", "detour-epic",
-    "--verdict", "invalidated", "--amendments", "rewrite story 2;drop story 4"], { cwd });
-
-  const epic = readState(cwd).epics.find(e => e.id === "paused-epic");
-  assert.equal(epic.reconcileNeeded, false);
-  const link = epic.links.find(l => l.epic === "detour-epic");
-  assert.ok(link, "link to the detour should still exist");
-  assert.equal(link.reconciled.verdict, "invalidated");
-  assert.deepEqual(link.reconciled.amendments, ["rewrite story 2", "drop story 4"]);
-  assert.match(link.reconciled.reconciledAt, /^\d{4}-\d{2}-\d{2}T/);
-});
-
-test("record-reconcile NEVER creates a link: a detour the epic was not paused for is refused, and nothing is written", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
-  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-
-  const err = expectFail(() => run(["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "valid"], { cwd }));
-  assert.ok(err, "a verdict against a detour nobody armed is refused");
-  assert.match(String(err.stderr || err.message), /owes no reconcile verdict/);
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "nothing was written");
-  const epic = readState(cwd).epics.find(e => e.id === "paused-epic");
-  assert.equal((epic.links || []).some(l => l.epic === "detour-epic"), false, "no link was created");
-});
-
-test("record-reconcile rejects an unknown verdict", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
-  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
-  assert.ok(expectFail(() => run(
-    ["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "maybe"], { cwd })));
-});
-
-test("record-reconcile on an unknown epic id exits non-zero and writes nothing", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-reconcile", "ghost", "--detour", "detour-epic", "--verdict", "valid"], { cwd })));
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("record-reconcile on an unknown detour id exits non-zero and writes nothing", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  const err = expectFail(() => run(
-    ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd }));
-  assert.ok(err);
-  assert.match(String(err.stderr || err.message), /detour epic 'ghost-detour' not found/);
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
 // ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
+
+const HOOK = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
 
 /** The dispatch table's keys, extracted from conductor.mjs EXACTLY as the functional file extracts
  *  them — the `}({ … }[cmd]` object literal, re-pointed for the `main(argv, io)` wrapper. Kept
@@ -108,7 +59,6 @@ test("every dispatch-table subcommand is mentioned somewhere in skills/conductor
   assert.deepEqual(missing, [],
     `SKILL.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
 });
-
 test("every dispatch-table subcommand is mentioned somewhere in README.md", () => {
   const keys = dispatchKeys(fs.readFileSync(ENGINE, "utf8"));
   const readmeText = fs.readFileSync(path.join(path.dirname(ENGINE), "..", "README.md"), "utf8");
@@ -118,92 +68,6 @@ test("every dispatch-table subcommand is mentioned somewhere in README.md", () =
 });
 
 // ──────────────── openspec gate enforcement: record-gate-review ────────────────
-
-test("record-gate-review writes a structured verdict for the given gate onto an openspec-lane epic", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  // A Gate 1 PASS with ARTIFACT evidence and no SHA range (gh-177) — the evidence kind that needs
-  // no repository, and therefore the one this half can produce.
-  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass",
-    "--artifact", "openspec/changes/x/proposal.md",
-    "--reviewer", "fresh-context review of proposal.md"], { cwd });
-
-  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
-  assert.ok(epic.gateReview);
-  assert.equal(epic.gateReview.gate1.verdict, "pass");
-  assert.equal(epic.gateReview.gate1.reviewer, "fresh-context review of proposal.md");
-  assert.match(epic.gateReview.gate1.reviewedAt, /^\d{4}-\d{2}-\d{2}T/);
-});
-
-test("record-gate-review ACCEPTS a non-openspec-lane epic (#163)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
-  run(["record-gate-review", "cc-epic", "--gate", "1", "--verdict", "pass",
-    "--artifact", "docs/plan.md"], { cwd });
-  const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
-  assert.equal(epic.gateReview.gate1.verdict, "pass");
-  assert.deepEqual(epic.gateReview.gate1.artifacts, ["docs/plan.md"]);
-});
-
-test("recording a verdict adds NO archive obligation to a non-openspec lane (#163)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "cc2", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "cc2", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
-  assert.equal(readState(cwd).epics.find(e => e.id === "cc2").status, "archived");
-});
-
-test("record-gate-review rejects an unknown epic id", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-gate-review", "ghost", "--gate", "1", "--verdict", "pass", "--artifact", "a.md"], { cwd })));
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("record-gate-review rejects an invalid gate number", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-gate-review", "spec-epic", "--gate", "3", "--verdict", "pass", "--artifact", "a.md"], { cwd })));
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("record-gate-review rejects an invalid verdict", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "maybe"], { cwd })));
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("update-epic blocks archiving an openspec-lane epic without a passing gate2 review", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd })));
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdict", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  // A FAIL verdict needs no evidence (the same asymmetry a passing Gate 2 has, in reverse), so this
-  // is reachable without a commit range.
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
-  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd })));
-});
-
-test("update-epic archiving a non-openspec-lane epic is unaffected by gate-review enforcement", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "cc-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
-  assert.equal(readState(cwd).epics.find(e => e.id === "cc-epic").status, "archived");
-});
-
-// ---------- sync must not register a directory's own index file as a plan (#87) ----------
-
 test("sync ignores README.md/INDEX.md in the plans directory — they are not plans", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
@@ -222,70 +86,6 @@ test("sync ignores README.md/INDEX.md in the plans directory — they are not pl
 });
 
 // ---------- a help flag must never have a side effect (#91 family) ----------
-
-test("--help on a mutating subcommand prints usage and writes nothing", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-
-  const out = run(["log-detour", "--help"], { cwd });
-  assert.match(out, /conductor\.mjs log-detour/);
-  assert.ok(!out.includes("init|render|brief"),
-    "a named verb must get ITS help, not the global usage blob");
-
-  const logPath = path.join(cwd, ".conductor", "detours.log");
-  const logged = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8").trim() : "";
-  assert.equal(logged, "", `--help wrote a detour entry: ${logged}`);
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before,
-    "--help must not mutate state.json either");
-});
-
-test("-h is handled the same as --help", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  assert.match(run(["log-detour", "-h"], { cwd }), /conductor\.mjs log-detour/);
-  const logPath = path.join(cwd, ".conductor", "detours.log");
-  assert.ok(!fs.existsSync(logPath) || fs.readFileSync(logPath, "utf8").trim() === "");
-});
-
-test("a bare invocation with no subcommand prints usage and exits 0", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  assert.match(run([], { cwd }), /usage: conductor\.mjs/);
-});
-
-// ───────────────────────── the deliberate omissions ─────────────────────────
-//
-// 1. Every `--base-sha/--head-sha` case: the engine RESOLVES each recorded commit at write time, so
-//    a range needs real commits (`fixtureCommits` spawns git) — design D5 sends those to the
-//    functional half. This twin proves the same gate with the ARTIFACT evidence kind instead.
-// 2. "update-epic allows archiving an openspec-lane epic once gate2 has a passing verdict": a
-//    passing Gate 2 requires the range, so the positive half of the pair is functional-only. Its
-//    refusals above are the half this half can prove.
-// 3. The three `.githooks/pre-commit` tests that RUN the hook against a fixture repository SPAWN a
-//    shell (`runHookAgainstFixture`), which 5.2's guard refuses in this half by construction. The
-//    hook's SHAPE is asserted HERE instead — it is a source read that needs no shell, so D5 puts it
-//    on the per-commit path, and the coupling check that requires both halves to move together is
-//    satisfied by that rather than worked around.
-// 4. THE TWO GATE 2 HOOK-RUN TESTS (G-I1, G-I3), for the same reason and with the same division of
-//    labour: a dotfile the runner's glob cannot reach while the index still declares it (the floor's
-//    firing direction), and a marker file in the functional half that fails if it is ever picked up
-//    (the hook does not run the triggered half). Both drive the REAL hook in a fixture repository, so
-//    both spawn and both belong to the functional half. What this half holds instead is the HOOK'S
-//    TEXT: the runner line asserted by exact equality — so a second glob cannot survive it — and the
-//    floor's derivation asserted NOT to enumerate the functional half or the sweep bucket. Between
-//    them, the source-level shape and the running hook are pinned from both sides, which is the
-//    division D5's placement rule produces rather than a gap in it.
-
-// ──────────────── the pre-commit hook's SHAPE (moved here in 6.4) ────────────────
-//
-// THIS TEST READS FILES AND SPAWNS NOTHING, which is why it is in this half and not the other one.
-// What it watches is the gate whose failure mode is silence: a hook that stopped invoking the drift
-// script would commit with the two halves unpaired, and a hook that took the enrolment check back
-// inline would carry two implementations of one rule.
-
-const HOOK = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
-
 test(".githooks/pre-commit exists, is executable, and runs the assertion half and the drift script", () => {
   assert.ok(fs.existsSync(HOOK), ".githooks/pre-commit is missing");
   assert.ok(fs.statSync(HOOK).mode & 0o111, ".githooks/pre-commit is not executable");
