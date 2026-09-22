@@ -24,13 +24,18 @@
   (`package.json` `devDependencies`, `node_modules` gitignored, never shipped or committed) may exist —
   the distinction is WHO pays: a user installing the plugin pays nothing; a contributor runs `npm i`.
   Anything added here must earn its place against a measured problem, not preference.
-- **Tests:** three buckets, each on its own trigger. Every commit: the drift script
-  (`node scripts/test/drift.mjs`) then the assertion half
-  (`node --test --test-isolation=none scripts/test/assert/*.test.mjs`), which spawns nothing and
-  runs no git — it is driven by the git double in `scripts/test/fixtures/`. On a trigger (CI, and
+- **Tests:** three buckets, each on its own trigger, and FOUR homes — the assertion half's two
+  rungs, then the two triggered buckets. Every commit: the drift script
+  (`node scripts/test/drift.mjs`) then the assertion half — BOTH its rungs in ONE process,
+  `node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
+  — which spawns nothing and runs no git; it is driven by the git double in
+  `scripts/test/fixtures/`. A test's rung follows what it OBSERVES, never how fast it is: a VALUE
+  the engine produced (a verb's result, a refusal, anything `state.json` holds) is the UNIT rung,
+  over an in-memory store, and only BYTES on disk are the FILE rung. On a trigger (CI, and
   `node scripts/test/certify.mjs functional|sweeps`): the functional half, which runs the real git
   through the real gateway, and the sweep bucket. All tests pass before any commit — no exceptions,
-  no `--no-verify`.
+  no `--no-verify`. The dev inner loop (`node --test --watch`, which rung a new test belongs in,
+  and what the unit rung's guard refuses) is in `CONTRIBUTING.md`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
   instructions for the interactive Claude agent to act on (the managed `CLAUDE.md` rules block,
   the SessionStart/PreCompact brief, command-doc markdown). It must **never** open a network

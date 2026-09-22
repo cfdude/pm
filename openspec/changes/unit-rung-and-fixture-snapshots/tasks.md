@@ -377,12 +377,41 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       inside the "under a minute" the task asks for, and the 26 s is the half itself. Both `--watch`
       forms were exercised rather than assumed: a named file (19 tests, then "Restarted at …" on
       change) and both globs in one process (1,269 tests, then a restart).
-- [ ] 6.2 The other files that quote the suite's commands are checked as a SET, not one at a time —
+- [x] 6.2 The other files that quote the suite's commands are checked as a SET, not one at a time —
       `rg -n --hidden 'node --test' --glob '!scripts/**'` is the enumeration (`--hidden` is required:
       some live under `.claude/skills/`). Correct: this repo's own `CLAUDE.md`'s `Tests:` bullet
       (`:27`, which names the three buckets and now names four homes), `.claude/skills/pr-workflow/SKILL.md`
       and `.claude/skills/release-checklist/SKILL.md`. Say explicitly whether this is user-facing — it
       is not — so the documentation-currency check is answered rather than skipped.
+      **RUN AS A SET, and the enumeration is recorded here because the set is what the task is
+      about.** The bare command returns **260 hits over 76 files**; all but ten of those are
+      RECORDS rather than docs — `openspec/changes/**` (proposals, red files, past plans),
+      `docs/superpowers/**` and `.conductor/state.json` — and are not rewritten. Excluding those
+      records, the live set is **39 hits over 10 files**. Classified, and each disposal named:
+      | file | hits | disposal |
+      |---|---|---|
+      | `CONTRIBUTING.md` | 9 | **fixed in 6.1**, the file's own commit (both stale commands in it) |
+      | `CLAUDE.md` | 2 | **fixed here** — the `Tests:` bullet now names four homes and the rung rule |
+      | `.claude/skills/pr-workflow/SKILL.md` | 2 | **fixed here** — both sites name both rungs |
+      | `.claude/skills/release-checklist/SKILL.md` | 4 | **fixed here** — the checklist step and the "Real Numbers" recompute command |
+      | `.githooks/pre-commit` | 7 | correct already: it IS the command, and it was 2.3's subject |
+      | `.github/workflows/ci.yml` | 5 | correct already: 2.6 ran the rung in the same step |
+      | `CHANGELOG.md` | 6 | historical entries (`:2155`–`:2566`), records of past releases — not rewritten |
+      | `PROJECT.md` | 1 | generated; never hand-edited (design D1) |
+      | `commands/gate-guard.md` | 1 | not a command: `node --test > red-1.txt` is the redirect false-positive example |
+      | `.git/COMMIT_EDITMSG` | 2 | git's own scratch file, not in the tree |
+      **`README.md` IS ABSENT FROM THE SET FOR A CHECKED REASON, not an oversight:** it quotes no
+      suite command at all (`rg -n 'node --test|scripts/test/(assert|unit|functional|sweeps)' README.md`
+      returns nothing; its three test-suite sentences at `:431`, `:1490` and `:1583` are prose about
+      the pre-commit gate, verb-effects and a source scan, with no command in them). So there is
+      nothing there to have gone stale, which is why it takes no edit.
+      **NOT USER-FACING, stated rather than skipped.** `CLAUDE.md` is this repository's own agent
+      instructions, and `.claude/skills/` is repo-local: the plugin ships `skills/` at the root,
+      `commands/`, `agents/`, `hooks/` and `.claude-plugin/` — the paths `docs/parity-ledger.json`
+      walks — and `.claude/` is in none of them. `README.md`, the user-facing surface, is unchanged
+      because it never named a command. The documentation-currency check is therefore answered: a
+      user reading the plugin's docs sees no stale command, and the four repo-internal files that did
+      are corrected in this change.
 - [ ] 6.3 `CHANGELOG.md` — an entry under `## [Unreleased]`, stating the before/after numbers from 0.3
       and the final measurement, and saying whether the memory store ships (design Open Question 1).
       The release cut folds it into `0.48.0`; Mintlify's Changelog page and Introduction's Real Numbers
