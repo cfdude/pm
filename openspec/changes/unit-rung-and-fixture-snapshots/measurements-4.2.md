@@ -79,7 +79,8 @@ where the worklist said the time was.
 | the half's own spread across three consecutive runs, this batch | 1.92 s (was 1.16 s) |
 
 **The rung grew from 4 files to 14**, and now holds 255 test declarations, so the floor in
-`assert-half-has-no-spawn.test.mjs` was raised with it in the same commit as this measurement.
+`assert-half-has-no-spawn.test.mjs` was raised with it in the same commit as this measurement (and again
+to 24 in batch 3).
 
 ## What the acceptance still needs, restated against the new number
 
@@ -87,6 +88,52 @@ The change's acceptance is **sub-15-second pre-commit for the FULL assertion hal
 that bounds it is 12.2 s with every flush removed against 73.2 s (task 0.3(d), 6.0×). Batch 2 took the
 half to ~57 s. **Eleven files of the worklist's first thirty are
 migrated — the pilot plus batch 2's ten; the remaining nineteen carry the rest**, and the number is not going to arrive from these alone.
+
+This file is the record of that, and it exists so the shortfall is a measurement rather than an
+impression.
+
+## Batch 3 — TEN more files migrated (worklist rows 11–20)
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 45.59 s | 45.68 s | 1,269 | 1,269 | 0 |
+| 2 | 43.21 s | 43.29 s | 1,269 | 1,269 | 0 |
+| 3 | 43.17 s | 43.27 s | 1,269 | 1,269 | 0 |
+
+**ELEVEN AND A HALF SECONDS OFF THE SAME SUITE, and the cumulative number is the one that matters
+now.** Batch 1 was 72.40–73.56 s; batch 2 took it to 55.36–57.28 s; this batch is 43.17–45.59 s. That is
+**~30 s, 41% of the half**, against the control that bounds the acceptance (12.2 s with every flush
+removed against 73.2 s, task 0.3(d), 6.0×). Twenty-one files of the worklist's first thirty are
+migrated.
+
+**In the worklist's own units:** these ten files carried 15,413 ms of the half's 71,040 ms of per-test
+time (21.7%), and 159 of their 230 tests moved — because these files SPLIT heavily in one direction:
+conductor-10 moved 7 of 24, conductor-23 11 of 26, conductor-02's batch-2 neighbour similarly. The
+migrated 159 tests cost **722 ms of wall clock in total** across ten unit files (43–98 ms each, the
+whole ten together costing less than the single most expensive file they came from), with no fsyncSync
+anywhere in them.
+
+**The rung now holds 24 files and 414 test declarations** (from 4 files at the pilot), and the FILE rung
+is down to 88 files from 91.
+
+**THE BATCH'S FINDING — a reader that bypasses the seam (worklist row 19, `conductor-07`).**
+`verifyState()` reads its render stamp with `readJSON(renderStampPath(), null)` and state.json's mtime
+with `fs.statSync(statePath())` — raw paths — while `render.mjs` WRITES both through the store
+(`store.mtimeMs(ARTIFACT.RECORD)` at `:382`, `store.write(ARTIFACT.RENDER_STAMP, …)` at `:387`). Against
+a memory store that is observable in one line: render writes the stamp, `store.exists("render-stamp.json")`
+returns true, and `verify-state` still says "no render stamp found". The two success tests were moved
+and then MOVED BACK for that reason. It is the class the change's required item 1 exists to catch — a
+writer moved behind the seam with an identical sibling reader left untouched — and the fix (read both
+through `storeOps()`) is deliberately left to its own commit rather than riding on a test move. Recorded
+in worklist-4.1.md.
+
+## What the acceptance still needs, restated against the new number
+
+The change's acceptance is **sub-15-second pre-commit for the FULL assertion half**. Batch 3 puts the
+half at ~43 s. **Nine files of the worklist's first thirty remain, and they carry the next largest
+blocks of per-test time** (conductor-14 at 1,242 ms down to stored-value-integrity at 949 ms, plus
+`flag-parsing` already done) — and the shape of batches 2 and 3 says the split ratio is what decides
+each one: the four seam edges decide how much of a file can leave, not the file's cost.
 
 This file is the record of that, and it exists so the shortfall is a measurement rather than an
 impression.

@@ -153,3 +153,42 @@ subject at all — (1) its FIXTURE writes a path (`fixturePluginRoot`, `fixtureC
 effect (`set-tracker`, `set-review-mode`, `upgrade`, `init`); (4) the subject really is the
 filesystem (mtimes, `chmod`, conflict injection, a directory's absence). Only (4) is the rule as
 written; (1)–(3) are the SEAM's current edge, and each was found by attempting the move.
+
+## BATCH 3 — the decision recorded PER FILE (rows 11–20)
+
+| # | file | tests | moved | stayed | what the file-rung remainder is, and why |
+|---|---|---|---|---|---|
+| 11 | `conductor-01` | 33 | 21 | 12 | the filesystem SUBJECT (`render-stamp.json`'s mtime; the tmp-file hygiene walk of `.conductor/`); CLAUDE.md's managed block; five `sync`/`progress` tests that seed `docs/superpowers/plans/*.md` or `openspec/changes/*/tasks.md`; `init`/`upgrade` against `fixturePluginRoot`. |
+| 12 | `conductor-04` | 26 | 14 | 12 | six `changelog`/`upgrade` version-currency tests (`fixturePluginRoot(…, FIXTURE_CHANGELOG)`); six tracker tests, five on `claudeMd(cwd)` and ALL SIX running `set-tracker`, which writes CLAUDE.md. |
+| 13 | `verb-surface-answers-back` | 20 | 20 | 0 | — the file is GONE. Every observable is a value; no fixture writes a path. |
+| 14 | `autonomy-revocation` | 20 | 19 | 1 | `1.10`'s first test reads the three SHIPPED mirrors with `readFileSync`; its sibling asserts on the rendered block alone and moved. |
+| 15 | `conductor-03` | 21 | 16 | 5 | ONE edge, five tests: each needs `withArchivedChange(cwd, id)` — or a `mkdirSync` of `openspec/changes/archive/<date>-<id>` — because "is this archived" IS whether that directory exists. |
+| 16 | `conductor-21` | 24 | 20 | 4 | two `add-many` batch-file tests; the checkbox-source test (writes `docs/superpowers/plans/p.md`); the usage/doc test (reads `commands/epic.md`). |
+| 17 | `conductor-23` | 26 | 11 | 15 | FOURTEEN of the fifteen need `withSpec()` to put a design document on disk for `verify-specs` to FIND — a directory walk is that verb's subject, including its byte-identical read-only test; the fifteenth reads `conductor.mjs`'s usage line. |
+| 18 | `conductor-31` | 13 | 13 | 0 | — the file is GONE. Its only filesystem contact was a `void fs; void path;` line keeping two unused imports alive. |
+| 19 | `conductor-07` | 23 | 18 | 5 | two `.changesets/*.md` fixtures; the `utimesSync` hand-edit test (mtime IS the subject); **and THE FINDING — `verifyState()` bypasses the seam (see below)**. |
+| 20 | `conductor-10` | 24 | 7 | 17 | ONE edge, seventeen tests: every one runs `set-tracker`, which refreshes the managed rules block (`tracker.mjs:194` → `writeRules()` → `writeFileSync` on CLAUDE.md). |
+
+**230 tests in these ten files; 159 moved.** The rung is at 24 files / 414 declarations; the file rung is
+down to 88 files; the half is at ~43 s (measurements-4.2.md, batch 3).
+
+### THE FINDING: `verifyState()` reads what `render()` writes, through the wrong door
+
+`verify-state` is the verb that mechanically catches a hand-edit of the record by comparing
+state.json's mtime against the stamp the last render wrote. Its WRITER went behind the seam — `render.mjs`
+uses `store.mtimeMs(ARTIFACT.RECORD)` and `store.write(ARTIFACT.RENDER_STAMP, …)` — and its READER did
+not: `worktree-hygiene.mjs:120` calls `readJSON(renderStampPath(), null)` and `:130` calls
+`fs.statSync(statePath()).mtimeMs`.
+
+Measured, not inferred: through a memory store, `render` writes the stamp and
+`store.exists("render-stamp.json")` is `true`, while `verify-state` answers "no render stamp found
+(.conductor/render-stamp.json) — state.json has never been rendered". The two success tests were moved
+to the unit rung and then moved back for exactly that reason.
+
+**It is a FINDING of the class required item 1 names** — "a guard added at one call site while an
+identical sibling site is left untouched" — except here it is a reader rather than a guard, and the
+population was enumerated from `loadState`/`saveState` call sites, which is a set a raw `readJSON` of an
+artifact the store owns never appears in. **The fix is two lines** (read the stamp and the mtime through
+`storeOps()`) and it is NOT taken in a per-file migration commit: it changes what an engine verb reads,
+so it wants its own commit, its own suite run and its own review. It is named here rather than fixed
+quietly, and it is the first thing the remaining nineteen rows would benefit from.
