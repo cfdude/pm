@@ -130,8 +130,46 @@ if [ ! -f "$ISOFLAGFILE" ]; then
   fi
 fi
 ISOFLAG=$(cat "$ISOFLAGFILE")
-# shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag
-if node --test $ISOFLAG scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+
+# ─────────── THE RUNNER'S FILE SET IS RESOLVED HERE, BEFORE IT IS HANDED OVER (0.49.0) ───────────
+# THE REASON IS A VERSION DIVERGENCE THAT REACHED A RELEASE (found on CI, PR #217, and reproduced
+# against v18.20.8). `/bin/sh` leaves a pattern that matches NOTHING as a LITERAL -- POSIX sh has no
+# nullglob, and this script is `sh` (dash on the CI runner, bash-as-sh here) -- and the two Node
+# majors then disagree about that literal:
+#   * v18.20.8 REFUSES it: `Could not find '…/scripts/test/unit/*.test.mjs'`, exit 1, so the commit
+#     fails and the message printed below says "tests FAILED", blaming the SUITE for a pattern that
+#     never resolved.
+#   * v26.9.0 ignores a pattern it cannot resolve and runs whatever did match.
+# Same tree, same commit, opposite verdicts from the gate every commit passes through -- and CI runs
+# Node 18, so the version the divergence is invisible on is the developer's. `[ -f ]` on the literal
+# is false, so an unresolved pattern drops out and BOTH versions hand the runner the same file set.
+# The order is kept -- unit first, then assert -- because the floor below enumerates them in that
+# order through `git ls-files`.
+#
+# THE GLOBS STAY THE SHELL'S, and that is not incidental: deriving this list from `git ls-files`
+# would make it the SAME expression the floor's `declared` is derived from, which is precisely the
+# blindness the floor was re-pointed in 0.47.0 to remove. A file that is in the index but unreachable
+# by the shell's expansion of the pattern (the dotfile G-I1's fixture builds) must still be DECLARED
+# and NOT RUN.
+#
+# AN EMPTY LIST MUST ABORT rather than reach the runner, and this is a safety requirement, not
+# tidiness: `node --test` with no positional argument falls back to DEFAULT DISCOVERY, which walks
+# the tree. Measured against v18.20.8: a bare `node --test` in a tree holding only
+# scripts/test/functional/marker.test.mjs RAN that file. That is a triggered half, run on every
+# commit, which is the cost the split exists to remove.
+RUNG_FILES=""
+for f in scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs; do
+  if [ -f "$f" ]; then RUNG_FILES="$RUNG_FILES $f"; fi
+done
+if [ -z "$RUNG_FILES" ]; then
+  echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
+  echo "pre-commit: (scripts/test/unit/ and scripts/test/assert/ both matched nothing) -- refusing" >&2
+  echo "pre-commit: to hand the runner no path at all, which would run its default discovery instead." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag; RUNG_FILES is a file list
+if node --test $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then
   # node --test's default reporter (and therefore this summary line's leading marker) differs
   # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,
   # older Node (e.g. the CI runner's Node 18) defaults to the "tap" reporter (#). Match both.

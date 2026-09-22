@@ -113,25 +113,57 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // — the rule this guard exists to enforce about itself. The half now carries TWO RUNGS, so the
   // runner line names two globs; the property is unchanged and is asserted the same way: ONE runner,
   // EXACTLY, and both its globs are the assertion half's.
-  const runnerLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test.*scripts\/test\/(?:unit|assert)\/\*\.test\.mjs/.test(l));
+  // RE-POINTED AGAIN WITH THE RESOLVED FILE SET (0.49.0, CI PR #217), in the same commit as the
+  // shape it reads — a THIRD re-point of one line, and each of the three was the shape moving under
+  // it. The runner is no longer handed the two globs directly: it is handed a list the hook resolves
+  // from those same two globs, because `/bin/sh` leaves an unresolved pattern as a literal and Node
+  // 18 REFUSES such a literal where Node 26 ignores it (the divergence is spelled out at the loop in
+  // .githooks/pre-commit). WHAT THIS GUARD KEEPS IS THE WHOLE PROPERTY, not a weaker one:
+  //   * exactly ONE runner line, matched by EQUALITY (the boundary argument above still holds, and
+  //     equality is now the only way to read a line whose subject is a variable rather than a glob);
+  //   * the rung globs appear in exactly ONE place — the enumeration that builds that list — and it
+  //     names the assertion half's two rungs and nothing else;
+  //   * the runner CONSUMES that list, so a glob added at the runner itself cannot escape the
+  //     equality below, and a glob added at the enumeration cannot escape this one;
+  //   * the only other `node --test` is the tiny-file probe, and it carries no glob at all.
+  const RUNNER_LINE = 'if node --test $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then';
+  const ENUMERATION_LINE = 'for f in scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs; do';
+  const runnerLines = hookText.split("\n").filter((l) => l.trim() === RUNNER_LINE);
   assert.equal(runnerLines.length, 1,
-    `the hook must run exactly ONE test runner over the assertion half's rungs, and it runs ${runnerLines.length}: ${runnerLines.join(" | ")}`);
-  assert.equal(runnerLines[0].trim(),
-    'if node --test $ISOFLAG scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then',
-    "the hook's runner must name exactly the assertion half's TWO RUNGS through $ISOFLAG — one " +
-    "process, one half, no third glob, and the unit rung first because that is the order the " +
-    "floor's `git ls-files` list names them in");
-  // AND NOTHING ELSE MAY RIDE ALONG: a third glob here would be the functional half or a bucket,
-  // which is the shape the exact-line assertion above catches one level down and this one catches
-  // by counting them.
-  const globsInRunner = runnerLines[0].match(/scripts\/test\/[a-z]+\/\*\.test\.mjs/g) || [];
-  assert.deepEqual(globsInRunner.slice().sort(), ["scripts/test/assert/*.test.mjs", "scripts/test/unit/*.test.mjs"],
-    "the runner is handed exactly the assertion half's two rungs");
-  const probeLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l) && !/^\s*(?:if\s+)?node --test.*scripts\/test\/assert\/\*\.test\.mjs/.test(l));
-  for (const probe of probeLines) {
-    assert.match(probe, /lessons-index\.test\.mjs/,
-      `the hook's only other node --test must be the isolation PROBE on a single tiny file, never a second runner: ${probe}`);
-  }
+    `the hook must run exactly ONE test runner over the assertion half's rungs, and it runs ${runnerLines.length}`);
+  const nodeTestLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l));
+  assert.equal(nodeTestLines.length, 2,
+    `the hook's only two node --test lines are its runner and the isolation probe, and it has ` +
+    `${nodeTestLines.length}: ${nodeTestLines.join(" | ")}`);
+  const probeLine = nodeTestLines.find((l) => l.trim() !== RUNNER_LINE);
+  assert.match(probeLine, /lessons-index\.test\.mjs/,
+    `the hook's only other node --test must be the isolation PROBE on a single tiny file, never a ` +
+    `second runner: ${probeLine}`);
+  assert.doesNotMatch(probeLine, /\*\.test\.mjs/,
+    `the probe must not be widened into a runner by handing it a glob: ${probeLine}`);
+  // THE RUNGS ARE NAMED ONCE, where the runner's file set is built, and nowhere else. The
+  // enumeration is asserted by EQUALITY for the same reason the runner line is: a third glob here
+  // would be the functional half or a bucket, and it is one character away from a passing match.
+  const enumerationLines = hookText.split("\n").filter((l) => l.trim() === ENUMERATION_LINE);
+  assert.equal(enumerationLines.length, 1,
+    `the runner's file set must be built from exactly one enumeration of the assertion half's ` +
+    `rungs, and the hook has ${enumerationLines.length}`);
+  const globsInEnumeration = enumerationLines[0].match(/scripts\/test\/[a-z]+\/\*\.test\.mjs/g) || [];
+  assert.deepEqual(globsInEnumeration,
+    ["scripts/test/unit/*.test.mjs", "scripts/test/assert/*.test.mjs"],
+    "the runner is handed exactly the assertion half's two rungs, unit first — the order the " +
+    "floor's `git ls-files` list names them in — and nothing else may ride along");
+  assert.match(hookText, /RUNG_FILES="\$RUNG_FILES \$f"/,
+    "the enumeration no longer accumulates the file list the runner is handed");
+  // AN EMPTY LIST MUST ABORT: `node --test` with no positional argument falls back to its default
+  // discovery, which walks the tree and RUNS THE FUNCTIONAL HALF — measured against v18.20.8, where a
+  // bare `node --test` in a tree holding only scripts/test/functional/marker.test.mjs ran that file.
+  // A guard on this property belongs with the property, so the shape is asserted here.
+  assert.match(hookText, /if \[ -z "\$RUNG_FILES" \]/,
+    "an empty runner file list is not refused: `node --test` given no path at all runs its default " +
+    "discovery, which reaches the triggered halves this hook must not run");
+  assert.match(hookText, /neither rung of the assertion half holds a \*\.test\.mjs file/,
+    "the empty-list refusal must name what it could not find");
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
   // The floor makes partial-suite runs possible in a way the single file did not, so the hook must
   // cross-check the ran count against the declared count. WHAT IT MUST BE DERIVED FROM is the whole
