@@ -5,8 +5,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { isInitialized, loadState, readJSON } from "./state.mjs";
-import { engineRoot, renderStampPath, statePath, jsonText } from "./constants.mjs";
+import { isInitialized, loadState } from "./state.mjs";
+import { ARTIFACT, storeOps } from "./store.mjs";
+import { engineRoot, jsonText } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
 import { errStream, gitOps, outStream } from "./invocation.mjs";
 
@@ -111,13 +112,26 @@ export function changesets() {
 
 /** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md
  *  forbids hand-editing it; PROJECT.md must only ever be regenerated from it). Compares
- *  state.json's filesystem mtime against the stamp `writeRenderStamp()` records every
- *  render(): if state.json was modified AFTER the last recorded render, that mtime delta
- *  is evidence something wrote to it outside `/pm:status`/the engine's subcommands. Pure
- *  read — never modifies state.json or PROJECT.md itself. */
+ *  state.json's mtime against the stamp `writeRenderStamp()` records every render(): if
+ *  state.json was modified AFTER the last recorded render, that mtime delta is evidence
+ *  something wrote to it outside `/pm:status`/the engine's subcommands. BOTH SIDES OF THAT
+ *  COMPARISON COME FROM THE STORE — the stamp that `render.mjs` writes it with and the mtime it
+ *  stamps — because a reader on a raw path beside a writer on the store is a verb whose result
+ *  depends on which store it was handed. Pure read — never modifies state.json or PROJECT.md
+ *  itself. */
 export function verifyState() {
   if (!isInitialized()) { die("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); }
-  const stamp = readJSON(renderStampPath(), null);
+  // BOTH READS GO THROUGH THE STORE, and they are the same two lines `render.mjs:382`/`:387` write
+  // them with. They used to be raw — `readJSON(renderStampPath(), null)` and
+  // `fs.statSync(statePath()).mtimeMs` — which left the WRITER behind the seam and the READER in
+  // front of it: a memory-store render wrote the stamp, `store.exists("render-stamp.json")` was
+  // true, and `verify-state` still answered "no render stamp found" because it was reading a path
+  // the store had never written. `store.mtimeMs()` answers `null`/`0` where a store has no path, so
+  // the comparison below degrades to "nothing has moved" for a store that keeps no mtimes, which is
+  // the honest reading rather than a claim about a file that does not exist.
+  const stampRead = storeOps().read(ARTIFACT.RENDER_STAMP);
+  let stamp = null;
+  if (stampRead.kind === "ok") { try { stamp = JSON.parse(stampRead.text); } catch { stamp = null; } }
   if (!stamp || typeof stamp.stateMtimeMs !== "number") {
     die(
       "conductor: no render stamp found (.conductor/render-stamp.json) — state.json has never " +
@@ -125,7 +139,7 @@ export function verifyState() {
       "and establish a baseline.\n"
     );
   }
-  const currentMtimeMs = fs.statSync(statePath()).mtimeMs;
+  const currentMtimeMs = storeOps().mtimeMs(ARTIFACT.RECORD);
   if (currentMtimeMs > stamp.stateMtimeMs) {
     die(
       "conductor: state.json was modified AFTER the last render — this looks like an " +

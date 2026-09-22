@@ -1,12 +1,12 @@
 // scripts/test/unit/conductor-07.test.mjs
-// 4.1's migration of `assert/conductor-07.test.mjs` — 18 of its 23 tests, moved from the file rung to
+// 4.1's migration of `assert/conductor-07.test.mjs` — 20 of its 23 tests, moved from the file rung to
 // the unit rung with every assertion unchanged.
 //
 // ─────────────── WHAT MOVED, AND WHAT DID NOT ───────────────
 //
-// EIGHTEEN moved: `changesets` on an absent directory, all four `render --diff-summary` cases, the
-// two plan-hierarchy tests, all four engine-banner tests, the five timestamp/staleness tests, and
-// `verify-state` on a record that was never rendered.
+// TWENTY moved: `changesets` on an absent directory, all four `render --diff-summary` cases, the
+// two plan-hierarchy tests, all four engine-banner tests, the five timestamp/staleness tests,
+// `verify-state` on a record that was never rendered, and the two `verify-state` SUCCESS tests.
 //
 // THE INTERESTING PART OF THIS MOVE IS THAT THREE FIXTURES BECAME STORE OPERATIONS RATHER THAN
 // DISAPPEARING. `render --diff-summary` and `verify-state` compare an artifact against the record, so
@@ -19,21 +19,22 @@
 //
 // The tests did not change and neither did what they prove; the seam simply already had the operation.
 //
-// FIVE STAY, and two of them name a SEAM GAP rather than a rule:
+// THREE STAY, and each is a filesystem subject rather than a rule:
 //
 //   * two `changesets` tests write `.changesets/*.md` — a repository directory the store does not own;
 //   * `verify-state`'s hand-edit test forces state.json's MTIME forward with `utimesSync`, because
-//     mtime ordering IS the subject of that comparison;
-//   * THE OTHER TWO ARE THE FINDING. `verifyState()` reads its stamp with
-//     `readJSON(renderStampPath(), null)` and state.json's mtime with `fs.statSync(statePath())` —
-//     RAW PATHS, while `render.mjs` WRITES both through the store (`store.mtimeMs(ARTIFACT.RECORD)`,
-//     `store.write(ARTIFACT.RENDER_STAMP, …)`). So the writer went through the seam and the reader did
-//     not, and a memory-store render leaves verify-state reporting "no render stamp found" while
-//     `store.exists("render-stamp.json")` is true. Probed, not inferred. The fix is a two-line seam
-//     change in `worktree-hygiene.mjs` (read the stamp and the mtime through `storeOps()`), and it is
-//     NOT taken in a per-file migration commit: it changes what an engine VERB reads, which deserves
-//     its own commit and its own review rather than a ride on a test move. Recorded in
-//     worklist-4.1.md as the batch's finding.
+//     mtime ordering IS the subject of that comparison — and a store that keeps no mtimes cannot
+//     express it.
+//
+// THE TWO SUCCESS TESTS BELOW ARE THE FINDING (worklist-4.1.md), AND THEY MOVED WITH ITS FIX.
+// `verifyState()` read its stamp with `readJSON(renderStampPath(), null)` and state.json's mtime with
+// `fs.statSync(statePath())` — RAW PATHS, while `render.mjs` WRITES both through the store
+// (`store.mtimeMs(ARTIFACT.RECORD)`, `store.write(ARTIFACT.RENDER_STAMP, …)`). The writer went
+// through the seam and the reader did not, so a memory-store render left verify-state reporting "no
+// render stamp found" while `store.exists("render-stamp.json")` was true. Probed, not inferred. The
+// two-line fix in `worktree-hygiene.mjs` landed in ITS OWN commit — it changes what an engine VERB
+// reads — and these two tests were migrated in that same commit, which is where the `red-E2.txt`
+// saved in this change directory comes from.
 //
 //   `tmpRepo()` + `run(["init"], { cwd })`  →  `memoryEngine(emptyRecord())`
 //   `run(args, { cwd })`                    →  `engine(args)`
@@ -104,6 +105,19 @@ unitTest("verify-state fails loudly when never rendered (no stamp) but state.jso
   const engine = memoryEngine({ version: 1, active: null, detourStack: [], epics: [] });
   const err = expectFail(() => engine(["verify-state"]));
   assert.ok(err);
+});
+unitTest("verify-state succeeds right after init/render (stamp matches state.json)", () => {
+  const engine = memoryEngine(emptyRecord());
+  engine(["render"]); // `init` renders once, which is what establishes the stamp
+  const out = engine.combined(["verify-state"]);
+  assert.match(out, /conductor: state\.json matches the last render/);
+});
+unitTest("verify-state succeeds after render is re-run following a legitimate state change", () => {
+  const engine = memoryEngine(emptyRecord());
+  engine(["add-epic", "--id", "a", "--lane", "claude-code"]);
+  engine(["render"]);
+  const out = engine.combined(["verify-state"]);
+  assert.match(out, /conductor: state\.json matches the last render/);
 });
 unitTest("plan-hierarchy excludes already-archived children from the plan", () => {
   const engine = memoryEngine(emptyRecord());

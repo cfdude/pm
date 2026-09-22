@@ -6,26 +6,25 @@ import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEng
 
 // ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
 //
-// EIGHTEEN of its twenty-three tests moved to `scripts/test/unit/conductor-07.test.mjs` — `changesets`
+// TWENTY of its twenty-three tests moved to `scripts/test/unit/conductor-07.test.mjs` — `changesets`
 // on an absent directory, all four `render --diff-summary` cases, the two plan-hierarchy tests, all
-// four engine-banner tests, the five timestamp/staleness tests, and `verify-state` on a record that
-// was never rendered.
+// four engine-banner tests, the five timestamp/staleness tests, `verify-state` on a record that was
+// never rendered, and the two `verify-state` SUCCESS tests.
 //
-// FIVE STAY, and TWO OF THEM ARE A FINDING RATHER THAN A PLACEMENT:
+// THREE STAY, and each is a filesystem subject rather than a placement:
 //
 //   * two `changesets` tests, whose fixture writes `.changesets/*.md` — a repository directory the
 //     store does not own;
 //   * `verify-state`'s hand-edit test, which forces state.json's MTIME forward with `utimesSync`
-//     because mtime ordering IS the subject of that comparison;
-//   * **the two `verify-state` success tests, because THE READER BYPASSES THE SEAM.** `verifyState()`
-//     reads its stamp with `readJSON(renderStampPath(), null)` and state.json's mtime with
-//     `fs.statSync(statePath())` — raw paths — while `render.mjs` WRITES both through the store
-//     (`store.mtimeMs(ARTIFACT.RECORD)`, `store.write(ARTIFACT.RENDER_STAMP, …)`). Against a memory
-//     store the render writes the stamp and `store.exists("render-stamp.json")` is true, yet
-//     verify-state reports "no render stamp found". Probed, not inferred. The fix is two lines in
-//     `worktree-hygiene.mjs` — read both through `storeOps()` — and it is deliberately NOT taken in a
-//     per-file migration commit: it changes what an engine VERB reads and deserves its own commit.
-//     Recorded in worklist-4.1.md as this batch's finding.
+//     because mtime ordering IS the subject of that comparison.
+//
+// THE TWO SUCCESS TESTS WERE THE FINDING (worklist-4.1.md), AND THEY MOVED WHEN IT WAS FIXED.
+// `verifyState()` read its stamp with `readJSON(renderStampPath(), null)` and state.json's mtime with
+// `fs.statSync(statePath())` — raw paths — while `render.mjs` WRITES both through the store
+// (`store.mtimeMs(ARTIFACT.RECORD)`, `store.write(ARTIFACT.RENDER_STAMP, …)`): the writer behind the
+// seam and the reader in front of it, so a memory-store render left verify-state answering "no render
+// stamp found" while `store.exists("render-stamp.json")` was true. Probed, not inferred. The two-line
+// fix in `worktree-hygiene.mjs` landed in its own commit and moved these two tests with it.
 //
 // No assertion changed in either direction.
 
@@ -70,18 +69,4 @@ test("verify-state fails loudly when state.json is hand-edited after the last re
   assert.ok(err);
   const out = runCombined(["verify-state"], { cwd });
   assert.match(out, /hand-edit|re-render|\/pm:status/i);
-});
-test("verify-state succeeds right after init/render (stamp matches state.json)", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const out = runCombined(["verify-state"], { cwd });
-  assert.match(out, /conductor: state.json matches the last render/);
-});
-test("verify-state succeeds after render is re-run following a legitimate state change", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
-  run(["render"], { cwd });
-  const out = runCombined(["verify-state"], { cwd });
-  assert.match(out, /conductor: state.json matches the last render/);
 });
