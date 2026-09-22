@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "unit-rung-and-fixture-snapshots",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -9880,7 +9880,7 @@
       "id": "unit-rung-and-fixture-snapshots",
       "title": "0.48.0: a unit test rung over in-memory state; fixture snapshots for integration-shaped tests; sub-10s pre-commit",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9988,7 +9988,7 @@
         "29e6562303ec92082ffd209947fa15ada0358384"
       ],
       "createdAt": "2026-09-22T04:49:43.433Z",
-      "touchedAt": "2026-09-22T11:09:00.430Z",
+      "touchedAt": "2026-09-22T11:09:55.429Z",
       "release": "0.48.0",
       "gateReview": {
         "gate1": {
@@ -10018,7 +10018,46 @@
           "reason": "both commits were AMENDED AWAY during this change's own 2.1-2.4 split: a45b368 carried 2.1/2.2 plus 2.3/2.4 in one commit and 8f0ee70 carried 2.1/2.2 with conductor-09's hook re-point, which left that tree's own suite red. Each was replaced by a corrected commit (93e3ae7 and be2daa9) and BOTH replacements are attributed, so the epic's delivered range is fully covered without them. They are recorded shas reachable from no ref - the shape a squash-merge leaves - and the integrity check is right that the next git gc would take them; withdrawing them is the honest end rather than tagging a commit nobody shipped.",
           "withdrawnAt": "2026-09-22T07:40:27.517Z"
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-22T11:09:55.426Z",
+        "reason": "a store seam (137 loadState/saveState sites, decisions separated from persistence, memory store shipped) plus fixture snapshots moved the assertion half from 72-73 s to 26.50 s and per-unit-test to 0.70-0.87 ms; the sub-15 s acceptance was MISSED (1.77x) and is recorded as a miss — the remaining 21.3 s is durability flushing held by the CLAUDE.md managed-block seam edge (E1), which is a recorded cross-spec boundary not amendable in-apply; fsyncs 12,524 to 3,430; Gate 2 pass at 29e6562"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-22T11:09:55.404Z",
+        "deferrals": [
+          {
+            "epic": "store-owns-claude-md-managed-block",
+            "section": "E1 - making the managed-block write store-mediated requires amending the recorded cross-spec boundary that the store does not own CLAUDE.md; a separate spec change after this release"
+          },
+          {
+            "epic": "code-review-0-43-0-minors",
+            "section": "rows 62-91 (30 files, 2.5% of baseline) recorded by cost, not migrated"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-22T11:09:55.426Z"
+    },
+    {
+      "id": "store-owns-claude-md-managed-block",
+      "title": "0.49.0 candidate: make the managed rules block a store-owned artifact (removes the last fsync wall in the assertion half's file rung)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "unit-rung-and-fixture-snapshots",
+          "reason": "its E1 stop - the only path to sub-15s"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-22T11:09:54.629Z",
+      "touchedAt": "2026-09-22T11:09:54.633Z"
     }
   ],
   "detourStack": [],
@@ -10029,7 +10068,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1326,
+  "revision": 1329,
   "reviewMode": "thorough",
   "releases": [
     {
