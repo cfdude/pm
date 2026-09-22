@@ -37,7 +37,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   REPO, ENGINE_SOURCE, certifiedSet, conformanceRows, couplingRefusals, describeRefusal,
-  enrolmentRefusals, functionalIds, assertionIds, homeOf, readRecord, recordRefusals, sweepIds, twinRefusals,
+  enrolmentRefusals, functionalIds, assertionIds, homeOf, homesInProse, readRecord, recordRefusals, sweepIds, twinRefusals,
 } from "./certification.mjs";
 
 // ───────────────────────────── the index reads ─────────────────────────────
@@ -155,7 +155,11 @@ function render(refusals) {
   if (refusals.enrolment.length) {
     lines.push("these tracked test files are in neither half and in no bucket:");
     for (const f of refusals.enrolment) lines.push(`  ${f} — a test file with no home is run by nothing and counted by nothing`);
-    lines.push("move it under scripts/test/assert/, scripts/test/functional/ or scripts/test/sweeps/ — or enrol it deliberately.");
+    // DERIVED FROM homeOf'S OWN ALTERNATIVES, never typed (task 2.2's I5). Written out by hand, this
+    // line named three homes and would have gone on naming three after the unit rung became the
+    // fourth — a refusal that tells the reader to move the file somewhere that is about to stop
+    // being the whole set.
+    lines.push(`move it under ${homesInProse()} — or enrol it deliberately.`);
   }
   if (refusals.twins.length) {
     lines.push("these functional ids have no assertion twin (scripts/test/assert/<id>.test.mjs):");

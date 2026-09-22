@@ -46,10 +46,14 @@ export const ENGINE_ENTRY = "scripts/conductor.mjs";
  *  watches it. */
 export const CONFORMANCE_ID = "conformance";
 
-/** The three homes a tracked test file may have (D5), plus the script's named exclusion list, which
- *  is EMPTY today. An entry here states why the file is in neither half, who runs it, and where its
- *  result is recorded — the vocabulary is D5's table, and the emptiness is the claim that every one
- *  of the repository's 85 test files has a home. */
+/** The FOUR homes a tracked test file may have (D5, plus 0.48.0's unit rung), plus the script's
+ *  named exclusion list, which is EMPTY today. An entry here states why the file is in neither half,
+ *  who runs it, and where its result is recorded — the vocabulary is D5's table, and the emptiness is
+ *  the claim that every one of the repository's tracked test files has a home.
+ *
+ *  THE COUNT MOVED FROM THREE TO FOUR WITH THE UNIT RUNG (0.48.0, task 2.2), and the comment moves
+ *  in the same edit on purpose: a comment that under-counts the homes is how the next file gets filed
+ *  in none. */
 export const EXCLUSIONS = [];
 
 const readDefault = (p) => fs.readFileSync(p, "utf8");
@@ -57,12 +61,27 @@ const readdirDefault = (p) => fs.readdirSync(p);
 
 // ───────────────────────────── the enrolment rule (check 1) ─────────────────────────────
 
-/** The home a repository-relative test path lands in, or `null`. `assert/`, `functional/` and
- *  `sweeps/` are the three; anything else — including a file sitting directly in `scripts/test/` —
- *  is no home at all. */
+/** The rungs and halves a test file may be filed under, IN THE ORDER the refusal message names
+ *  them. ONE list, because it is asked two questions — "where does this path land" and "what should
+ *  the refusal say" — and two lists answering them is how a fourth home gets added to one and not the
+ *  other. That is exactly what happened before 0.48.0: `drift.mjs`'s enrolment refusal named the
+ *  THREE homes in hand-written prose ("move it under scripts/test/assert/, scripts/test/functional/
+ *  or scripts/test/sweeps/"), which is not derived from this regex and would have stayed wrong the
+ *  moment `unit` was added (task 2.2's I5). */
+export const HOMES = ["assert", "unit", "functional", "sweeps"];
+
+/** The home a repository-relative test path lands in, or `null`. The names above are the homes;
+ *  anything else — including a file sitting directly in `scripts/test/` — is no home at all. */
 export function homeOf(rel) {
-  const m = /^scripts\/test\/(assert|functional|sweeps)\/[^/]+\.test\.mjs$/.exec(rel);
+  const m = new RegExp(`^scripts\\/test\\/(${HOMES.join("|")})\\/[^/]+\\.test\\.mjs$`).exec(rel);
   return m ? m[1] : null;
+}
+
+/** The homes as a reader should see them named in a refusal, derived from HOMES so the message cannot
+ *  go stale: `scripts/test/assert/, scripts/test/unit/, …`, with the last joined by "or". */
+export function homesInProse() {
+  const dirs = HOMES.map((h) => `scripts/test/${h}/`);
+  return `${dirs.slice(0, -1).join(", ")} or ${dirs[dirs.length - 1]}`;
 }
 
 /** Every tracked test file that has no home. The enumeration the caller passes MUST be BOTH arms of

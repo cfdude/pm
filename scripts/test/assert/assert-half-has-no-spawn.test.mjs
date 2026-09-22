@@ -72,8 +72,37 @@ export function stripComments(src) {
   return out;
 }
 
-/** Every reason this source may not live in the assertion half. Empty means it may. */
-export function violations(name, src) {
+/** The filesystem module, built the same way and for the same reason as the child-process one. */
+const FS_MODULE = ["node", "fs"].join(":");
+
+/** THE UNIT RUNG'S SECOND PROHIBITION (0.48.0 task 2.1, design D4). The spec forbids a unit-rung file
+ *  to "read, write, create or remove a path", so BOTH sides are named: a predicate that named only
+ *  the write side would refuse less than the requirement states, and the read it would miss is a real
+ *  one — it is why the seam had to move `render()`'s reads as well as its writes (task 1.3).
+ *
+ *  The lists are the CALL NAMES, and the check for each requires a BARE call (the same
+ *  `(?<![.\\w$])` guard the spawn check uses), so `pattern.exec(`'s sibling shapes do not fire. */
+const FS_READ_CALLS = [
+  "readFileSync", "readFile", "readdirSync", "readdir", "statSync", "stat", "lstatSync",
+  "lstat", "existsSync", "accessSync", "access", "openSync", "open", "readlinkSync",
+  "realpathSync", "opendirSync", "createReadStream", "watch", "readSync", "fstatSync",
+];
+const FS_WRITE_CALLS = [
+  "writeFileSync", "writeFile", "appendFileSync", "appendFile", "mkdirSync", "mkdir",
+  "rmSync", "rm", "rmdirSync", "unlinkSync", "renameSync", "copyFileSync", "cpSync",
+  "fsyncSync", "fsync", "truncateSync", "chmodSync", "symlinkSync", "linkSync", "mkdtempSync",
+  "writeSync", "writevSync", "fchmodSync", "utimesSync",
+];
+export const UNIT_FS_READ_CALLS = FS_READ_CALLS;
+export const UNIT_FS_WRITE_CALLS = FS_WRITE_CALLS;
+
+/** Every reason this source may not live in the assertion half — and, where `rung` names the unit
+ *  rung, every reason it may not live THERE. Empty means it may.
+ *
+ *  `rung` is a parameter rather than a second function because the spawn/child-process half applies
+ *  to BOTH rungs and only the filesystem half is unit-specific; two functions would have to
+ *  duplicate the first half or call each other. */
+export function violations(name, src, rung = null) {
   const code = stripComments(src);
   const found = [];
   if (code.includes(CHILD_PROCESS_MODULE)) {
@@ -82,6 +111,23 @@ export function violations(name, src) {
   for (const call of SPAWN_CALLS) {
     if (new RegExp(`(?<![.\\w$])${call}\\s*\\(`).test(code)) {
       found.push(`${name} calls ${call}( — a child process in the assertion half`);
+    }
+  }
+  if (rung === "unit") {
+    if (code.includes(FS_MODULE)) {
+      found.push(`${name} reaches ${FS_MODULE} — the unit rung performs no filesystem work at all`);
+    }
+    for (const [label, calls] of [["reads", FS_READ_CALLS], ["writes", FS_WRITE_CALLS]]) {
+      for (const call of calls) {
+        // TWO SHAPES, because the unit rung's violation is a BARE call or an `fs.`-RECEIVER call
+        // and neither alone covers the other: `fs.writeFileSync(...)` is what every engine module
+        // writes and would slip past a bare-call-only predicate, while a general member call would
+        // refuse `store.read(...)` — a call the rung's own tests make by design, because the
+        // in-memory store's artifact read is spelled exactly that way.
+        if (new RegExp(`(?<![.\\w$])${call}\\s*\\(|(?<![.\\w$])fs\\.${call}\\s*\\(`).test(code)) {
+          found.push(`${name} calls ${call}( — the unit rung ${label} no path`);
+        }
+      }
     }
   }
   return found;
@@ -142,4 +188,67 @@ test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the s
   assert.deepEqual(violations("x.test.mjs", "// this file must never " + "spawnSync" + "( anything\n/* nor use " + CHILD_PROCESS_MODULE + " */\nconst a = 1;\n"), [],
     "a comment naming the rule must not be a violation");
   assert.deepEqual(violations("x.test.mjs", 'import { run } from "../fixtures/assert-harness.mjs";\nrun(["init"]);\n'), []);
+});
+
+// ─────────────────────── 2.1 — THE UNIT RUNG'S OWN PROHIBITION (0.48.0, design D4) ───────────────────────
+//
+// A unit-rung file SHALL perform no filesystem work at all: it SHALL NOT import the filesystem module,
+// SHALL NOT read, write, create or remove a path, and SHALL NOT flush a file to disk
+// (suite-certification's "The assertion half spawns no process and runs no git", whose UNIT RUNG
+// paragraph this is the enforcement of).
+//
+// WHY IT IS A SEPARATE WALK FROM THE ONE ABOVE. The two checks are the same FUNCTION and different
+// SUBJECTS: the half's walk hands `violations()` no rung, because a spawn is a violation anywhere in
+// the half; this walk names the unit rung, which adds the filesystem predicates. Keeping them as one
+// walk would have to decide the rung per file from its path — which is what `homeOf()` does, and
+// deriving it here would be a second copy of that rule.
+
+const UNIT = path.join(HERE, "..", "unit");
+
+test("2.1 the unit rung performs no filesystem work at all, and lives in one process with the half", () => {
+  const files = fs.readdirSync(UNIT).filter(f => f.endsWith(".test.mjs")).sort();
+  const found = files.flatMap(f => violations(f, fs.readFileSync(path.join(UNIT, f), "utf8"), "unit"));
+  assert.deepEqual(found, [],
+    "a unit-rung file asks the engine for the VALUES it decided and gets them through the store it " +
+    "supplies; a test that reads or writes a path belongs on the FILE rung (scripts/test/assert/), " +
+    "and the rung exists because that is where the half's 12,524 fsyncs per run come from. If the " +
+    "test genuinely needs bytes on disk, move the FILE, do not weaken this guard.");
+  // It is still the ASSERTION half, so the spawn prohibition above applies to it as well — asserted
+  // here rather than assumed, since this walk does not go through the half's own.
+  const spawned = files.flatMap(f => violations(f, fs.readFileSync(path.join(UNIT, f), "utf8")));
+  assert.deepEqual(spawned, [], "the unit rung is a rung of the assertion half, not a third half");
+});
+
+test("2.1 the filesystem predicate DISCRIMINATES — reads and writes are both refused, comments are not", () => {
+  // 2.1's required discrimination, kept as a test rather than a one-off run: a check nobody has seen
+  // fail is a check that may be comparing nothing. The sample sources are BUILT FROM PARTS so this
+  // file does not contain the tokens it refuses — a guard that exempted itself by name would be the
+  // first exemption of many.
+  const fsImport = "import f from \"" + FS_MODULE + "\";";
+  assert.match(violations("x.test.mjs", fsImport, "unit").join(" "), new RegExp(FS_MODULE),
+    "an import of the filesystem module must be refused");
+
+  const write = "const fd = " + "writeFileSync" + "(\"a\", \"b\");";
+  assert.match(violations("x.test.mjs", write, "unit").join(" "), /calls writeFileSync/,
+    "a WRITE must be refused");
+
+  const read = "const t = " + "readFileSync" + "(\"a\", \"utf8\");";
+  assert.match(violations("x.test.mjs", read, "unit").join(" "), /calls readFileSync/,
+    "and a READ must be refused — a write-only predicate would refuse less than the requirement states, " +
+    "and the read it would miss is render()'s pre-image, which is why the seam moved reads too");
+
+  const flush = "fs." + "fsyncSync" + "(0);";
+  assert.match(violations("x.test.mjs", flush, "unit").join(" "), /calls fsyncSync/,
+    "and a durability flush, which is the whole cost the rung exists to remove");
+
+  // A COMMENT naming any of them is NOT a violation — the failure mode that would get this guard
+  // deleted rather than obeyed the first time a file documents the rule.
+  const comment = "// this file must never " + "readFileSync" + "( a path\n/* nor reach " + FS_MODULE + " */\nconst a = 1;\n";
+  assert.deepEqual(violations("x.test.mjs", comment, "unit"), [],
+    "a comment naming the rule must not be a violation");
+
+  // AND THE RUNG IS WHAT DECIDES: the same source is clean for the half at large, where a file-rung
+  // test reads and writes by design.
+  assert.deepEqual(violations("x.test.mjs", read, null), [],
+    "the filesystem predicates are the UNIT rung's; the file rung exists to read paths");
 });

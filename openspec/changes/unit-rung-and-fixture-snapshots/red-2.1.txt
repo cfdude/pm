@@ -1,0 +1,19 @@
+RED 2.1 — with the filesystem predicate removed (the PRE-GREEN state: nothing refuses a
+unit-rung file that reads or writes), the guard's own walk and discrimination both go red:
+
+✖ 2.1 the filesystem predicate DISCRIMINATES — reads and writes are both refused, comments are not (0.302833ms)
+ℹ tests 5
+ℹ pass 4
+ℹ fail 1
+✖ 2.1 the filesystem predicate DISCRIMINATES — reads and writes are both refused, comments are not (0.302833ms)
+  AssertionError [ERR_ASSERTION]: an import of the filesystem module must be refused
+
+AND THE WALK ITSELF, seen to fire — a deliberately violating file placed in the rung:
+
+  AssertionError [ERR_ASSERTION]: a unit-rung file asks the engine for the VALUES it decided and gets them through the store it supplies; a test that reads or writes a path belongs on the FILE rung (scripts/test/assert/), and the rung exists because that is where the half's 12,524 fsyncs per run come from. If the test genuinely needs bytes on disk, move the FILE, do not weaken this guard.
+  + actual - expected
+  
+  + [
+  +   'zz-mutant.test.mjs reaches node:fs — the unit rung performs no filesystem work at all',
+  +   'zz-mutant.test.mjs calls writeFileSync( — the unit rung writes no path'
+  + ]

@@ -58,6 +58,11 @@ test("5.4/6.1: the repository's own suite passes all four checks", () => {
 
 test("5.4/6.1: the id is the file's place on disk, both directions of the walk", () => {
   assert.equal(homeOf("scripts/test/assert/conductor-01.test.mjs"), "assert");
+  // THE FOURTH HOME (0.48.0 task 2.2). This assertion was MISSING rather than wrong: the three above
+  // were written when there were three, and a positive assertion is the only thing that notices a
+  // name falling OUT of the regex — the two null cases below cannot, because a name that stopped
+  // matching is exactly what they expect for something else.
+  assert.equal(homeOf("scripts/test/unit/state-verb.test.mjs"), "unit");
   assert.equal(homeOf("scripts/test/functional/conductor-01.test.mjs"), "functional");
   assert.equal(homeOf("scripts/test/sweeps/output-interpolations.test.mjs"), "sweeps");
   assert.equal(homeOf("scripts/test/leftover.test.mjs"), null, "a file at the top level has no home");

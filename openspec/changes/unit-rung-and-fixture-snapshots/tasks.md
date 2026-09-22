@@ -163,7 +163,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
 
 ## 2. The unit rung: its home, its guard, and the floor
 
-- [ ] 2.1 RED — the unit rung's guard, and its discrimination. Extend
+- [x] 2.1 RED — the unit rung's guard, and its discrimination. Extend
       `scripts/test/assert/assert-half-has-no-spawn.test.mjs`'s source scan
       (`violations()`, `:76`; `stripComments()`, `:52`) with the filesystem predicate — and the
       predicate covers READS as well as writes (I4): the spec forbids a unit file to "read, write,
@@ -179,7 +179,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       not a hope: a source that imports the filesystem module is refused, one that calls a write is
       refused, one that calls a READ is refused, and one that names any of them only inside a comment
       is NOT refused.
-- [ ] 2.2 GREEN — `scripts/test/unit/` becomes the fourth home. `scripts/test/certification.mjs:63`'s
+- [x] 2.2 GREEN — `scripts/test/unit/` becomes the fourth home. `scripts/test/certification.mjs:63`'s
       `homeOf()` regex gains `unit` as a fourth alternative and nothing else; `EXCLUSIONS` (`:53`)
       stays empty; the comment at `:50` that states the three homes is corrected to four in the same
       edit, because a comment that under-counts the homes is how the next file gets filed in none.
