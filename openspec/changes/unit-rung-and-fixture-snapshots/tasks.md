@@ -134,7 +134,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       the strict read refuses (`shapeProblem`) is refused through the memory store too, rather than
       passing as a plain object. Guards the likeliest way the seam quietly weakens the engine: a
       memory implementation that skips the comparison — or the shape check — it inherited.
-- [ ] 1.6 GREEN — the ~20 verb modules read the store from the invocation instead of calling
+- [x] 1.6 GREEN — the ~20 verb modules read the store from the invocation instead of calling
       `loadState()`/`saveState()` against module-scope paths. **137 call sites** across `scripts/lib/`
       and `conductor.mjs`, derived mechanically with
       `rg -o -e '\bloadState\(\)' -e '\bsaveState\(' scripts/lib/*.mjs scripts/conductor.mjs` and not
