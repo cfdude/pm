@@ -4,7 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, invokeEngine } from "../fixtures/assert-harness.mjs";
-import { GATE_PROCEDURE_ITEMS } from "../../lib/rules.mjs";
 
 // gh-127 + gh-132: two practices invented in this repo that never reached the product.
 //
@@ -271,12 +270,11 @@ test("28.5 no local settings hook re-runs the advisor alongside the shipped one"
 const ROUTING_ITEM = "Route what the work taught you.";
 const MIRRORS = ["skills/conductor/SKILL.md", "commands/epic.md", "commands/status.md"];
 
-test("28.6 the routing item is a numbered gate-procedure item, not a prose bullet", () => {
-  const titles = GATE_PROCEDURE_ITEMS.map(i => i.title);
-  assert.ok(titles.includes(ROUTING_ITEM),
-    `the gate procedure must carry "${ROUTING_ITEM}" — measured here, a rule carried by a ` +
-    "required task reached 14/14 subsequent changes and the same rule as prose reached 3/15");
-});
+// 4.1 (0.48.0) moved FOUR of this file's tests to `scripts/test/unit/conductor-28.test.mjs`: the
+// routing item's presence in GATE_PROCEDURE_ITEMS, its mustSay declaration, the
+// no-unresolved-placeholder sweep over the three platform blocks, and lesson-advice's declared
+// effect. What remains reads a PATH: eleven tests whose fixture writes `docs/lessons/<slug>.md` (the
+// corpus is the advisor's own input), eight that read shipped files, and the absences.
 
 test("28.6 the item names all three destinations of the fork, on every emitted surface", () => {
   const cwd = initRepo();
@@ -298,24 +296,6 @@ test("28.6 the item names all three destinations of the fork, on every emitted s
   }
 });
 
-test("28.6 no `{{pm:…}}` placeholder survives into the rendered block, on any platform", () => {
-  const cwd = initRepo();
-  // The placeholder is new machinery with a silent failure mode: a typo'd name renders
-  // LITERALLY into the rules block and nothing else notices. platform.test.mjs catches the
-  // resolved-to-the-wrong-form case; this catches the never-resolved-at-all case.
-  for (const platform of ["claude-code", "codex", "hermes"]) {
-    assert.doesNotMatch(run(["rules", "--platform", platform], { cwd }), /\{\{/,
-      `an unresolved placeholder reached the ${platform} block`);
-  }
-});
-
-test("28.6 the item declares mustSay claims, so a mirror cannot contradict the generator", () => {
-  const item = GATE_PROCEDURE_ITEMS.find(i => i.title === ROUTING_ITEM);
-  assert.ok(item, "the item must exist before its claims can be checked");
-  assert.ok(Array.isArray(item.mustSay) && item.mustSay.length >= 2,
-    "an item added without mustSay widens the gap conductor-16's 15.5 guard exists to close");
-});
-
 // ─────────────────── 28.7: the ledger claims what ships ───────────────────
 
 test("28.7 every newly shipped artifact is claimed by exactly one capability", () => {
@@ -324,10 +304,4 @@ test("28.7 every newly shipped artifact is claimed by exactly one capability", (
     const owners = ledger.capabilities.filter(c => c.artifacts.includes(rel));
     assert.equal(owners.length, 1, `${rel} must be claimed by exactly one capability`);
   }
-});
-
-test("28.7 lesson-advice declares its working-tree effect", async () => {
-  const { VERB_EFFECTS } = await import("../../lib/verb-effects.mjs");
-  assert.equal(VERB_EFFECTS["lesson-advice"].effect, "read-only",
-    "an advisory hook that fires on every tool call must never touch the tree");
 });
