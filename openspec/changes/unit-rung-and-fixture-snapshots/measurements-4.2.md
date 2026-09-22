@@ -45,3 +45,48 @@ per file.
 
 This file is the record of that, and it exists so the shortfall is a measurement rather than an
 impression.
+
+## Batch 2 — TEN files migrated (worklist rows 1–10)
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 55.36 s | 55.44 s | 1,269 | 1,269 | 0 |
+| 2 | 57.15 s | 57.24 s | 1,269 | 1,269 | 0 |
+| 3 | 57.28 s | 57.38 s | 1,269 | 1,269 | 0 |
+
+**THE HALF MOVED THIS TIME, and the reading is honest about what moved it.** Batch 1 was 72.40 / 73.04
+/ 73.56 s; these three runs average 56.60 s, which is **16.4 s (22%) off the same suite** — the same
+1,269 tests, the same two globs, the same one process. That is twelve times the within-batch spread
+(1.92 s), so it is a signal rather than noise, which batch 1's single file could not produce.
+
+**Where the 16.4 s came from, in the units the worklist is ordered by.** The ten files carried
+27,771 ms of the half's 71,040 ms of per-test time (39.1%). They did NOT all leave: these files SPLIT,
+and 233 of their 310 tests moved (conductor-02 moved 13 of 28; conductor-25 6 of 16; conductor-05 19
+of 30). The migrated 233 tests now cost **2.73 s of wall clock in total** across the ten unit files —
+conductor-33 alone is 1.29 s of that, and reconcile-obligation 0.54 s — against per-file sums of
+2,398–5,967 ms each on the file rung. The arithmetic does not need to balance to the millisecond:
+`duration_ms` charges the run for one Node boot and the runner's own machinery, and the per-test sums
+do not. The claim the numbers support is the one stated: the half lost 16.4 s, and the ten files are
+where the worklist said the time was.
+
+**Per test, still the unit that matters:**
+
+| measurement | value |
+| --- | --- |
+| one engine invocation over the memory store (n=200, in-process, task 0.3) | **0.70–0.84 ms** |
+| the ten migrated files' 233 tests, sum of per-file wall clocks | **2.73 s** |
+| `fsyncSync` calls performed by the migrated files | **0** |
+| the half's own spread across three consecutive runs, this batch | 1.92 s (was 1.16 s) |
+
+**The rung grew from 4 files to 14**, and now holds 255 test declarations, so the floor in
+`assert-half-has-no-spawn.test.mjs` was raised with it in the same commit as this measurement.
+
+## What the acceptance still needs, restated against the new number
+
+The change's acceptance is **sub-15-second pre-commit for the FULL assertion half**, and the control
+that bounds it is 12.2 s with every flush removed against 73.2 s (task 0.3(d), 6.0×). Batch 2 took the
+half to ~57 s. **Eleven files of the worklist's first thirty are
+migrated — the pilot plus batch 2's ten; the remaining nineteen carry the rest**, and the number is not going to arrive from these alone.
+
+This file is the record of that, and it exists so the shortfall is a measurement rather than an
+impression.

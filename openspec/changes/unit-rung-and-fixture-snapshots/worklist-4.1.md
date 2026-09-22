@@ -122,3 +122,34 @@ presence here is the record of a decision that was made rather than skipped.
 | 1 | 94 | 2 | 0 | 0 | `ci-workflow.test.mjs` |
 | 1 | 100 | 4 | 0 | 0 | `hooks-schema.test.mjs` |
 | 1 | 107 | 3 | 0 | 0 | `outcome-vocabulary.test.mjs` |
+
+## BATCH 2 — the decision recorded PER FILE (rows 1–10), all twelve columns of the rule
+
+Each row is one commit. "Moved" is the number of tests that left the file rung; "file rung" is what
+stayed, with the reason 4.1 requires. `one commit per file` held throughout: ten files, ten commits,
+each attributed to the epic and each verified with `git show --stat`.
+
+| # | file | tests | moved | stayed | what the file-rung remainder is, and why |
+|---|---|---|---|---|---|
+| 1 | `conductor-33` | 58 | 39 | 19 | `.gitignore` reads; the disk store's conflict seam (`--steal is NOT --force`); `PROJECT.md`'s MTIME; `chmod` on the log dir; an unreadable `state.json` written as RAW BYTES; and the activity READER — `readEvents({dir})` is handed a directory and reads it, so the five tests that assert through `activity`'s report were moved and then MOVED BACK. The writer is store-mediated and the reader is not: "it is about the activity log" is not enough to place a test. |
+| 2 | `nullable-clearing` | 26 | 23 | 3 | the `add-many` surface's fixture is a BATCH FILE; one test READS `lib/<command>.mjs` (source-shape guard); `--clear plan`'s end-to-end proof writes a plan file and lets `sync` find it. |
+| 3 | `conductor-25` | 16 | 6 | 10 | gh-131's end-to-end conflict proof (disk-store guard) and its source scan; gh-85's four tree-hash tests (mtimes); gh-105's three emitted-text tests, whose FIXTURE cannot be built in memory because `set-tracker` writes CLAUDE.md as a side effect; `commands/feedback.md`. |
+| 4 | `conductor-16` | 33 | 23 | 10 | group 14 moved WHOLE; in group 15, everything that reads a SHIPPED document (`shipped()` is a `readFileSync`) and the walk over every `commands/*.md`. |
+| 5 | `detour-frame-drop` | 20 | 16 | 4 | three drift-heal scenarios need an `openspec/changes/archive/**` fixture written by the test's own frame; the `saveState`-count invariant reads `detour-stack.mjs`. |
+| 6 | `reconcile-obligation` | 46 | 42 | 4 | **ONE commit, not three** (task 4.3's question, answered in the commit): one fixture and one helper set drive every section, so a three-way split would land the same rewrite three times. The four: three `upgradeAt()` tests (`fixturePluginRoot`) and `g2-M26d` (batch file). |
+| 7 | `conductor-17` | 27 | 27 | 0 | — the file is GONE; every observable in it is a value. |
+| 8 | `conductor-06` | 26 | 25 | 1 | the 0.5.0 migration test: its subject IS the upgrade path, with `fixturePluginRoot("0.5.0")`, `upgrade`'s `.gitignore` back-fill, and a byte comparison of state.json. |
+| 9 | `conductor-02` | 28 | 13 | 15 | twelve version-currency tests (`fixturePluginRoot`/`fixtureCache`); two `sync` tests (an `openspec/changes/<id>/` fixture); the 30-epic ACCEPTANCE, whose last assertion is `fs.existsSync(cwd/openspec) === false` — a directory's ABSENCE. |
+| 10 | `conductor-05` | 30 | 19 | 11 | three review-mode tests (`set-review-mode` writes CLAUDE.md — probed, not assumed); two tracker tests (one asserts on `claudeMd`, both run `set-tracker`); six `add-many` tests whose fixture is a batch file. |
+
+**310 tests in these ten files; 233 moved.** The rung went from 4 files to 14 and to 255 test
+declarations, and the half from ~73 s to ~57 s (measurements-4.2.md, batch 2).
+
+**THE PATTERN THE TEN ARE MOST OF, and it is worth naming because it decides the remaining nineteen:**
+a test stays on the file rung for one of four reasons, and three of them are not about the test's
+subject at all — (1) its FIXTURE writes a path (`fixturePluginRoot`, `fixtureCache`, `writeBatch`,
+`openspec/changes/**`, a plan file); (2) it READS a file the store does not own (`CLAUDE.md`,
+`.gitignore`, `commands/*.md`, `lib/*.mjs`); (3) a VERB the fixture must run writes a path as a side
+effect (`set-tracker`, `set-review-mode`, `upgrade`, `init`); (4) the subject really is the
+filesystem (mtimes, `chmod`, conflict injection, a directory's absence). Only (4) is the rule as
+written; (1)–(3) are the SEAM's current edge, and each was found by attempting the move.
