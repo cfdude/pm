@@ -253,7 +253,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
 the seam, and the test-side move is a decision about what each test reads. A regex rewriting
 `run([...])` into a store call would rewrite assertions nobody read, 88 times in one commit.
 
-- [ ] 4.1 The ordered worklist is derived, not typed: the 133 tests over 100 ms and the 22 over 200 ms
+- [x] 4.1 The ordered worklist is derived, not typed: the 133 tests over 100 ms and the 22 over 200 ms
       from 0.3(b), mapped to their files, descending. Each migrated file is ONE commit; its diff shows
       its assertions unchanged and only the mechanism they obtain their values through moved.
       A file whose tests assert on `CLAUDE.md`'s managed rules block, `.changesets/`, or any repo file
@@ -266,12 +266,29 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       values**, so a file-rung rule that named "the `.conductor/` record" would strand 82% of the half
       on disk with its fsyncs intact and leave the acceptance resting on a control that no-op'd every
       flush.
-- [ ] 4.2 The migration is measured AS IT GOES, not only at the end: the half's wall clock and the two
+- [x] 4.2 The migration is measured AS IT GOES, not only at the end: the half's wall clock and the two
       rungs' counts are recorded at the end of each batch of ten files in this change directory, so a
       regression is attributed to the batch that caused it rather than discovered at Gate 2.
-- [ ] 4.3 `assert/reconcile-obligation.test.mjs` is called out separately: 46 tests at 7.84 s
+- [x] 4.3 `assert/reconcile-obligation.test.mjs` is called out separately: 46 tests at 7.84 s
       (170 ms/test, 27% above the half's own median per test). Whether it splits into one commit or
       three is the author's call and is stated in the commit that touches it.
+      **ANSWERED: ONE commit — `29a4494` (4.2 batch 2) — and the split is 42/4, not 46/0.** The 42
+      tests whose observable is a value moved to `scripts/test/unit/reconcile-obligation.test.mjs`;
+      the four that stayed are three `upgradeAt()` tests (a REAL plugin directory on disk) and
+      `g2-M26d` (an `add-many` batch file the verb reads by path). Both halves' reasons are stated in
+      the moved file's own header (`:12–:57`), which is where 4.3 asked for the one-commit-or-three
+      decision to live.
+      **THE ACTUAL NUMBER, re-measured over three runs at this commit (median):** the unit file's 42
+      tests sum to **705.6 ms of per-test durations — 16.80 ms/test** (runs 15.39 / 18.09 / 16.80) and
+      the four retained file-rung tests sum to **263.4 ms — 65.85 ms/test**. So the file's 46 tests
+      cost **0.97 s against the 7.84 s called out here: 8.1×**, and the file that was the half's
+      single most expensive is now the unit rung's.
+      **IT IS STILL THE RUNG'S MOST EXPENSIVE FILE, and that is structural rather than a defect:**
+      its 705.6 ms is 14.8% of the rung's 4.78 s. Every one of the 42 tests builds `owingRepo()` from
+      scratch — nine invocations — because `fixtureOnce()`'s subject (a directory tree to restore)
+      does not exist over a memory store; the moved file's header records that as a decision. Its
+      per-test cost is ~2.6× the rung's own mean (6.36 ms over 752 tests) and ~1/10th of the file
+      rung's.
 
 ## 5. Required task items
 
