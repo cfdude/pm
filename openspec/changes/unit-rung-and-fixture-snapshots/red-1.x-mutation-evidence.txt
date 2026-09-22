@@ -1,0 +1,52 @@
+═══════ 1.9 MUTANT A (for 1.7): the unreadable-record class exits 10 instead of 11 ═══════
+
+✔ conformance: success — a dispatched verb that writes — the returned status equals the exited status (224.645584ms)
+✔ conformance: a help token — prints the verb's help and exits 0, having written nothing — the returned status equals the exited status (185.692875ms)
+✔ conformance: a command-line refusal — an undeclared flag on a dispatched verb — the returned status equals the exited status (183.958125ms)
+✔ conformance: an unknown verb — the global usage — the returned status equals the exited status (199.676875ms)
+✔ conformance: a write conflict — a live lock holds the state file (exit 9, retryable) — the returned status equals the exited status (157.6935ms)
+✖ conformance: an unreadable state file — exit 11 for a dispatched verb — the returned status equals the exited status (194.579ms)
+✔ conformance: an unreadable state file under gate-guard — exit 2, BLOCK (a hook that stopped blocking is a safety regression) — the returned status equals the exited status (187.672417ms)
+✔ conformance: an unreadable state file under commit-nudge — exit 2, which is visible to the agent and blocks nothing — the returned status equals the exited status (211.17675ms)
+✔ conformance: an unreadable state file under brief — exit 0, because SessionStart shows a non-zero hook's stderr to the human only — the returned status equals the exited status (188.776667ms)
+✔ conformance: a gate-guard reconcile block — exit 2 while an epic still owes its reconcile — the returned status equals the exited status (343.420875ms)
+✖ conformance: an ambiguous rules block — exit 11, a human fixes the file — the returned status equals the exited status (198.337916ms)
+✔ conformance: the delegated handoff — main() returns the CHILD's status — the returned status equals the exited status (263.548958ms)
+✔ conformance: nothing a DELEGATED child prints reaches the process's own streams (82.29325ms)
+✔ conformance: the entry point never ends the calling process, whatever it is refused for (123.756167ms)
+✔ conformance: main() RETURNS its status — it is not a promise (42.418ms)
+✔ conformance: nothing the engine prints for an invocation reaches the process's own streams (58.882917ms)
+✔ conformance: two invocations in one process act on their own roots (120.297333ms)
+✔ conformance: the engine registers no process exit handler (0.2535ms)
+✔ conformance: the activity log is written BY main(), once per invocation, before it returns (118.754541ms)
+ℹ tests 19
+ℹ pass 17
+ℹ fail 2
+✖ conformance: an unreadable state file — exit 11 for a dispatched verb — the returned status equals the exited status (194.579ms)
+✖ conformance: an ambiguous rules block — exit 11, a human fixes the file — the returned status equals the exited status (198.337916ms)
+
+═══════ 1.9 MUTANT B (for 1.7): the write-conflict class exits 8 instead of 9 ═══════
+
+✖ conformance: a write conflict — a live lock holds the state file (exit 9, retryable) — the returned status equals the exited status (154.194083ms)
+ℹ tests 19
+ℹ pass 18
+ℹ fail 1
+✖ conformance: a write conflict — a live lock holds the state file (exit 9, retryable) — the returned status equals the exited status (154.194083ms)
+
+═══════ 1.9 MUTANT C (for 1.8): ONE BYTE of the rendered document changed ═══════
+
+  AssertionError [ERR_ASSERTION]: the memory store's render must be byte-identical to the PRE-SEAM capture once the stamp is stripped — a difference here is the seam changing what the command line writes
+  + actual - expected
+  
+  + '# PROJECT — Conductor Indev\n' +
+  - '# PROJECT — Conductor Index\n' +
+
+--- and the same mutant across the WHOLE assertion half, to show the failure is SCOPED ---
+✖ init scaffolds state.json, PROJECT.md, and CLAUDE.md rules block (45.83675ms)
+✖ 1.8 the same record renders byte-identically through the disk store, the memory store, and a PRE-SEAM capture (6.418084ms)
+ℹ tests 1248
+ℹ pass 1246
+ℹ fail 2
+✖ failing tests:
+✖ init scaffolds state.json, PROJECT.md, and CLAUDE.md rules block (45.83675ms)
+✖ 1.8 the same record renders byte-identically through the disk store, the memory store, and a PRE-SEAM capture (6.418084ms)

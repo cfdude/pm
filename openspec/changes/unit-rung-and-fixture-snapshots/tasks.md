@@ -141,11 +141,11 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       from a list in this document — 19 in `update-epic.mjs`, 12 in `subcommands.mjs`, 9 in
       `detour-stack.mjs`. (`rg -o`, not `rg -c`: `-c` counts LINES, and reports 135 here and 11 for
       `subcommands.mjs`, because a line can hold two matches — M1.) No verb body changes otherwise.
-- [ ] 1.7 REGRESSION GUARD — the conformance set (§`scripts/test/functional/conformance.test.mjs`)
+- [x] 1.7 REGRESSION GUARD — the conformance set (§`scripts/test/functional/conformance.test.mjs`)
       still passes UNCHANGED: every refusal class's returned status still equals the status the binary
       exits with. It is the same check 0.47.0 shipped and it is the reason a seam this wide is safe to
       land at all. Verified by a deliberate violation, not by a green run.
-- [ ] 1.8 REGRESSION GUARD — byte parity of the rendered artifact, compared with the render STAMP
+- [x] 1.8 REGRESSION GUARD — byte parity of the rendered artifact, compared with the render STAMP
       held constant (C2): `render()` stamps `> Last rendered: <now>` (`render.mjs:57`), so two renders
       of the same record are never byte-identical as raw text — the comparison strips the stamp line
       (the engine's own `STAMP_RE`, `:57`/`:304`) from BOTH sides before comparing, and the stamp
@@ -157,7 +157,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       because task 7.2 MOVES this directory under `archive/` and the test's path would break (I8) —
       and is read, not regenerated at assert time: a test that re-derives its own expectation cannot
       catch a change in it.
-- [ ] 1.9 MUTATION, saved here as `red-1.x-mutation-evidence.txt` — for 1.7, change one class's
+- [x] 1.9 MUTATION, saved here as `red-1.x-mutation-evidence.txt` — for 1.7, change one class's
       returned status by hand and confirm ONLY that class's row goes red; for 1.8, change one byte of
       the render and confirm the parity check names it rather than the whole suite failing.
 
