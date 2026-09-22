@@ -224,23 +224,23 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
 
 ## 3. Fixture snapshots
 
-- [ ] 3.1 RED — a `fixtureOnce()` helper in `scripts/test/fixtures/` with the leak test: two tests in
+- [x] 3.1 RED — a `fixtureOnce()` helper in `scripts/test/fixtures/` with the leak test: two tests in
       one file share a fixture, the first mutates the restored tree, the second reads the value the
       fixture was BUILT with. Fails today: `owingRepo()` is defined three times
       (`assert/gate-guard-write-paths.test.mjs:277`, `assert/reconcile-obligation.test.mjs:48`,
       `functional/conformance.test.mjs:60`) and each call rebuilds the repository.
-- [ ] 3.2 GREEN — the helper: build once per file into a template that is never handed out, restore
+- [x] 3.2 GREEN — the helper: build once per file into a template that is never handed out, restore
       per test with `fs.cpSync(template, dst, { recursive: true })`, remove the previous copy, and
       perform no `fsync` and start no engine on the restore path. Proven on ONE file
       (`assert/gate-guard-write-paths.test.mjs`) before any other file uses it.
-- [ ] 3.3 REGRESSION GUARD — the restore path performs no durability flush and starts no engine: a
+- [x] 3.3 REGRESSION GUARD — the restore path performs no durability flush and starts no engine: a
       counter over the flush calls, asserted to be zero for a restore, verified by a deliberate
       violation. Without it, a helper that "restores" by re-running `init` looks identical from the
       tests and costs what it cost before.
-- [ ] 3.4 GREEN — the three `owingRepo()` definitions collapse onto the helper, and the helper's own
+- [x] 3.4 GREEN — the three `owingRepo()` definitions collapse onto the helper, and the helper's own
       rule is stated where it lives: use it for a fixture more than one test in a file uses, NOT for a
       one-shot build, where the copy costs more than the build.
-- [ ] 3.5 GREEN — the template's DISPOSAL is shipped, not merely named (M4): 5.3 says the template is
+- [x] 3.5 GREEN — the template's DISPOSAL is shipped, not merely named (M4): 5.3 says the template is
       "removed with the file's run", but no task performs it. The helper removes its per-file
       `mkdtemp` template when the file's run ends (a process-exit or file-teardown hook), so a
       template does not outlive the file that built it and accumulate under the temp dir across files

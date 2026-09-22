@@ -31,6 +31,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "../fixtures/functional-harness.mjs";
+import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const { main } = await import("../../conductor.mjs");
@@ -57,14 +58,18 @@ function conflictedRepo() {
  *  (a detour PUSH followed by a POP) rather than by hand-writing the flag — the same fixture
  *  gate-guard-write-paths.test.mjs's owingRepo() uses, because reconcileNeeded is set at
  *  detour-POP time and cannot be derived from state. */
-function owingRepo() {
+// A SNAPSHOT SINCE 0.48.0 (task 3.4). The helper lives in `fixtures/` and is imported by BOTH
+// halves' bindings, so the functional half gets the same restore-once-per-file route the assertion
+// half does — which is where it matters most here, since a functional build runs the REAL git and a
+// real gateway run costs more than the copy by a wider margin than the assertion half's does.
+const owingRepo = fixtureOnce(() => {
   const cwd = initRepo();
   for (const id of ["p", "d"]) run(["add-epic", "--id", id, "--lane", "claude-code", "--title", id], { cwd });
   run(["set-active", "p"], { cwd });
   run(["push-detour", "p", "--detour", "d", "--reason", "it touched shared code", "--reconcile"], { cwd });
   run(["pop-detour", "p"], { cwd });
   return cwd;
-}
+}, { name: "pm-owing-conformance" });
 
 /** A CLAUDE.md holding a THIRD marker line, so the managed block's arrangement is neither "none"
  *  nor "one BEGIN followed by one END" and cannot be located. */

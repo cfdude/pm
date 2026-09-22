@@ -9900,13 +9900,12 @@
         "9700529ce71906af734583c8d42a56ace91f03ec",
         "a727744c003349d0549327877de83cb7be3199fe",
         "f9286c52d13f45fe0a0f4d968f96578be02ce650",
-        "a45b368c29ebe4cece96592c9a3e3c554984bbff",
-        "8f0ee703d7e4e1d00e0c0cf289b84d694d32618f",
         "be2daa99cfceb3fe7625dd2d31f595cfcf0a5102",
-        "11049ed56b7bd3618f5752dc093b0607c32511d5"
+        "11049ed56b7bd3618f5752dc093b0607c32511d5",
+        "d9e6cfaf88f9e11745fd37585254885028f05413"
       ],
       "createdAt": "2026-09-22T04:49:43.433Z",
-      "touchedAt": "2026-09-22T07:23:03.646Z",
+      "touchedAt": "2026-09-22T07:40:27.520Z",
       "release": "0.48.0",
       "gateReview": {
         "gate1": {
@@ -9917,7 +9916,19 @@
           "reviewer": "two fresh-context lenses (A reproduced the fsync premise: 12,524 fsyncs, 8.1x no-fsync control; B swept the 137 call sites and 10 write sites): round 1 fail (2 C: rung definitions stranded 82% of the half, render parity unachievable; 15 I/M), fixes applied; confirmation fail (3 residue: D5's population, a false guard-loudness claim, a missed detours-log read), fixed; 2026-09-21"
         }
       },
-      "startedAt": "2026-09-22T05:22:52.790Z"
+      "startedAt": "2026-09-22T05:22:52.790Z",
+      "withdrawnCommits": [
+        {
+          "sha": "a45b368c29ebe4cece96592c9a3e3c554984bbff",
+          "reason": "both commits were AMENDED AWAY during this change's own 2.1-2.4 split: a45b368 carried 2.1/2.2 plus 2.3/2.4 in one commit and 8f0ee70 carried 2.1/2.2 with conductor-09's hook re-point, which left that tree's own suite red. Each was replaced by a corrected commit (93e3ae7 and be2daa9) and BOTH replacements are attributed, so the epic's delivered range is fully covered without them. They are recorded shas reachable from no ref - the shape a squash-merge leaves - and the integrity check is right that the next git gc would take them; withdrawing them is the honest end rather than tagging a commit nobody shipped.",
+          "withdrawnAt": "2026-09-22T07:40:27.517Z"
+        },
+        {
+          "sha": "8f0ee703d7e4e1d00e0c0cf289b84d694d32618f",
+          "reason": "both commits were AMENDED AWAY during this change's own 2.1-2.4 split: a45b368 carried 2.1/2.2 plus 2.3/2.4 in one commit and 8f0ee70 carried 2.1/2.2 with conductor-09's hook re-point, which left that tree's own suite red. Each was replaced by a corrected commit (93e3ae7 and be2daa9) and BOTH replacements are attributed, so the epic's delivered range is fully covered without them. They are recorded shas reachable from no ref - the shape a squash-merge leaves - and the integrity check is right that the next git gc would take them; withdrawing them is the honest end rather than tagging a commit nobody shipped.",
+          "withdrawnAt": "2026-09-22T07:40:27.517Z"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -9928,7 +9939,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1243,
+  "revision": 1245,
   "reviewMode": "thorough",
   "releases": [
     {

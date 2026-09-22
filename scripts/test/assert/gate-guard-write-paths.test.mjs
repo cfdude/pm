@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, readState, writeState, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
 import { writeShape, isEngineInvocation, WRITE_SHAPE_LABELS } from "../../lib/gate-guard.mjs";
 
 const LABELS = Object.values(WRITE_SHAPE_LABELS);
@@ -273,8 +274,15 @@ const guard = (cwd, payload) => {
 };
 const bash = (command) => ({ tool_name: "Bash", tool_input: { command } });
 
-/** A repo whose live active epic `p` owes a reconcile — pushed `--reconcile`, then popped. */
-function owingRepo() {
+/** A repo whose live active epic `p` owes a reconcile — pushed `--reconcile`, then popped.
+ *
+ *  A SNAPSHOT SINCE 0.48.0 (task 3.2/3.4). This file is the one the helper was PROVEN on before any
+ *  other file used it, and the reason is in the numbers: the build below is init + two add-epic +
+ *  set-active + push + pop, measured at 133 ms, and this file calls it a dozen times. Restoring a
+ *  built tree is a `cpSync` (~1 ms), and the assertions are unchanged — only the mechanism the tests
+ *  obtain their tree through moved. The route per test is now a COPY, so a test that mutates the
+ *  repository cannot reach the next test's. */
+const owingRepo = fixtureOnce(() => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   for (const id of ["p", "d"]) run(["add-epic", "--id", id, "--lane", "claude-code", "--title", id], { cwd });
@@ -282,7 +290,7 @@ function owingRepo() {
   run(["push-detour", "p", "--detour", "d", "--reason", "it touched shared code", "--reconcile"], { cwd });
   run(["pop-detour", "p"], { cwd });
   return cwd;
-}
+}, { name: "pm-owing-guard" });
 
 test("2.1 a heredoc redirection is blocked while a reconcile is owed, and the block names the shape", () => {
   const cwd = owingRepo();

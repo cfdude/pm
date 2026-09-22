@@ -17,18 +17,34 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine, readState, writeState } from "../fixtures/assert-harness.mjs";
+import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
 
 const main = (await import("../../conductor.mjs")).main;
 
-test("conformance: main() RETURNS its status — it is not a promise", () => {
+/** An initialized repository with nothing else done to it, shared by the three tests below that each
+ *  need exactly that and nothing more.
+ *
+ *  A SNAPSHOT SINCE 0.48.0 (task 3.4), and it is here for the helper's OWN rule rather than for the
+ *  clock: three tests in this file use the same fixture and none of them mutates it, which is the
+ *  case the helper exists for. (The file's other tests each corrupt the record in a DIFFERENT way —
+ *  an unreadable state file, an ambiguous rules block — and a fixture cannot serve those; a snapshot
+ *  of a corrupted tree is a fixture nobody reuses.) It also keeps this file moving with its
+ *  functional twin, which the drift script's diff-coupling rule requires of a staged functional
+ *  file — a rule that fires whether or not the change is one the twin could mirror. */
+const initializedRepo = fixtureOnce(() => {
   const cwd = tmpRepo();
+  run(["init"], { cwd });
+  return cwd;
+}, { name: "pm-conformance-init" });
+
+test("conformance: main() RETURNS its status — it is not a promise", () => {
+  const cwd = initializedRepo();
   const r = invokeEngine(["init"], { cwd });
   assert.equal(typeof r.status, "number", `main() must return a numeric status; got ${typeof r.status}`);
 });
 
 test("conformance: the entry point never ends the calling process, whatever it is refused for", () => {
-  const cwd = tmpRepo();
-  invokeEngine(["init"], { cwd });
+  const cwd = initializedRepo();
   const refusals = [
     ["add-epic", "--id", "x", "--bogus-flag"],              // a command-line refusal
     ["no-such-verb"],                                        // an unknown verb
@@ -44,7 +60,7 @@ test("conformance: the entry point never ends the calling process, whatever it i
 });
 
 test("conformance: the returned status is the class's documented status", () => {
-  const cwd = tmpRepo();
+  const cwd = initializedRepo();
   assert.equal(invokeEngine(["init"], { cwd }).status, 0, "success");
   assert.equal(invokeEngine(["--help"], { cwd }).status, 0, "a help token");
   assert.equal(invokeEngine(["definitely-not-a-verb"], { cwd }).status, 1, "an unknown verb");

@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, fixturePluginRoot, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -44,12 +45,17 @@ function repo() {
 const push = (cwd, detour, reconcile = true, paused = "p") =>
   accepted(cwd, ["push-detour", paused, "--detour", detour, "--reason", "r", reconcile ? "--reconcile" : "--no-reconcile"]);
 const pop = (cwd, paused = "p") => accepted(cwd, ["pop-detour", paused]);
-/** p owes a reconcile against armed detour d: pushed with --reconcile and popped. */
-function owingRepo() {
+/** p owes a reconcile against armed detour d: pushed with --reconcile and popped.
+ *
+ *  A SNAPSHOT SINCE 0.48.0 (task 3.4). This is the file 4.3 calls out by name: 46 tests, and the
+ *  highest per-test cost measured anywhere in the assertion half. Its build is `repo()` — init plus
+ *  five add-epic — followed by a push and a pop, and it is called by nearly every test below.
+ *  Restoring the built tree is a copy; the assertions are unchanged. */
+const owingRepo = fixtureOnce(() => {
   const cwd = repo();
   push(cwd, "d"); pop(cwd);
   return cwd;
-}
+}, { name: "pm-owing-reconcile" });
 const verdict = (cwd, detour, v = "valid", extra = []) => ["record-reconcile", "p", "--detour", detour, "--verdict", v, ...extra];
 
 // ═══════════════ Requirement: A reconcile verdict answers only a detour the epic owes ═══════════════

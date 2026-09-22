@@ -175,8 +175,8 @@ if node --test $ISOFLAG scripts/test/unit/*.test.mjs scripts/test/assert/*.test.
     | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$f" || true; done | awk '{s+=$1} END {print s+0}')
   if [ -n "$total" ] && [ -n "$declared" ] && [ "$total" -lt "$declared" ]; then
     echo "pre-commit: ABORT -- the assertion half ran ${total} tests but ${declared} are declared in" >&2
-    echo "pre-commit: its two rungs (scripts/test/unit/ and scripts/test/assert/). A test file is not" >&2
-    echo "pre-commit: being picked up; the suite is passing on a subset." >&2
+    echo "pre-commit: its two rungs (scripts/test/unit/ and scripts/test/assert/)." >&2
+    echo "pre-commit: A test file is not being picked up; the suite is passing on a subset." >&2
     exit 1
   fi
 
