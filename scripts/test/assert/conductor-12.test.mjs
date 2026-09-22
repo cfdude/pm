@@ -17,30 +17,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine, readState, expectFail, injectConflictOnce } from "../fixtures/assert-harness.mjs";
-import { conflictExitCode, persistFailure } from "../../lib/state.mjs";
+
+// 4.1 (0.48.0) moved FOUR of this file's tests to `scripts/test/unit/conductor-12.test.mjs`: the
+// no-op-save guarantee, the same guarantee across a SECOND root in one process, and the two pure
+// `conflictExitCode`/`persistFailure` cases. What remains needs a real file: five `.gitignore` tests
+// (a file the store does not own) and the four `injectConflictOnce()` tests, whose seam IS a
+// filesystem write.
 
 // ─────────────────── the revision and the conflict guard ───────────────────
-
-test("a save that changes nothing does not write and does not bump the revision", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  run(["render"], { cwd });
-  run(["brief"], { cwd });
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("the same guarantee holds for a SECOND root in the same process", () => {
-  // The old shape for this test cache-busted a query-string import to re-evaluate the frozen
-  // constants. Per-call values make that unnecessary: two roots are two invocations.
-  const a = tmpRepo(); const b = tmpRepo();
-  invokeEngine(["init"], { cwd: a });
-  invokeEngine(["init"], { cwd: b });
-  const bytesA = fs.readFileSync(path.join(a, ".conductor", "state.json"), "utf8");
-  invokeEngine(["add-epic", "--id", "only-b", "--lane", "claude-code"], { cwd: b });
-  assert.equal(fs.readFileSync(path.join(a, ".conductor", "state.json"), "utf8"), bytesA,
-    "a write against the second root must not touch the first root's record");
-  assert.deepEqual(readState(b).epics.map(e => e.id), ["only-b"]);
-});
 
 test("a StateConflictError maps to the distinct conflict exit code", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
@@ -51,15 +35,6 @@ test("a StateConflictError maps to the distinct conflict exit code", () => {
   try { r = invokeEngine(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd }); }
   finally { const fired = restore(); assert.ok(fired, "the conflict seam must have fired, or this test proves nothing"); }
   assert.equal(r.status, 9, "a conflict is RETRYABLE and must be distinguishable from a validation failure");
-});
-
-test("any other error maps to null so it is re-thrown with its stack intact", () => {
-  assert.equal(conflictExitCode(new Error("not a conflict")), null);
-});
-
-test("persistFailure carries the revision it was written at", () => {
-  const msg = persistFailure({ expectedBytes: "a", diskBytes: "b", expectedRevision: 4, diskRevision: 4 });
-  assert.match(msg, /revision 4/);
 });
 
 // ─────────────────── the .gitignore entries ───────────────────
