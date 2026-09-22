@@ -31,53 +31,12 @@ function rootWith(epic, extra = {}) {
   return cwd;
 }
 
-test("gh#129: with no observation, NO sha is named — the unverifiable rung still emits its advisory", () => {
-  const cwd = rootWith({ id: "epic-a", title: "epic-a", priority: "P1", status: "active", role: "epic",
-    lane: "openspec", links: [], reconcileNeeded: false, attributedCommits: [] });
-  const ctx = ctxOf(nudge(cwd, "git commit -m 'feat(x): real work'"));
-  assert.match(ctx, /Commit detected/, "the legacy rung still runs — this is a no-regression check");
-  assert.doesNotMatch(ctx, /--attribute-commit/,
-    "unverifiable is not a quiet yes: no observation, no sha, no obligation asserted");
-});
-
-test("gh#129: no active epic — naming one would be the engine inventing the attribution", () => {
-  const cwd = rootWith(null);
-  assert.doesNotMatch(ctxOf(nudge(cwd, "git commit -m x")), /--attribute-commit/);
-});
-
-test("gh#129: a detour frame naming an epic the record does not hold produces no command", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  writeState(cwd, {
-    version: 1, active: null,
-    detourStack: [{ pausedEpic: "gone", pausedAt: "2026-08-28T00:00:00Z", reason: "x", spawnedDetour: "ghost-detour", reconcileOnResume: false }],
-    epics: [],
-  });
-  assert.doesNotMatch(ctxOf(nudge(cwd, "git commit -m x")), /--attribute-commit/,
-    "an id that names no epic must produce no command, not a command against a record that is not there");
-});
-
-test("gh#129: an ABSENT attributedCommits array asserts nothing — the epic predates attribution", () => {
-  // state.mjs deliberately leaves the array off archive-backfilled epics; asserting an obligation
-  // there would convert the staleness gate's one forgiven case into a repo-wide false positive.
-  const epic = { id: "epic-a", title: "epic-a", priority: "P1", status: "active", role: "epic",
-    lane: "openspec", links: [], reconcileNeeded: false };
-  const cwd = rootWith(epic);
-  assert.equal(Object.hasOwn(JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8")).epics[0], "attributedCommits"), false,
-    "the fixture must genuinely omit the array, or this test passes for the wrong reason");
-  assert.doesNotMatch(ctxOf(nudge(cwd, "git commit -m x")), /--attribute-commit/);
-});
-
-test("gh#129: a Bash call that merely mentions git commit names no sha, on either rung (gh#104)", () => {
-  const cwd = rootWith({ id: "epic-a", title: "epic-a", priority: "P1", status: "active", role: "epic",
-    lane: "openspec", links: [], reconcileNeeded: false, attributedCommits: [] });
-  // With a repository present and a primed watermark the functional file asserts TOTAL silence
-  // here. In this half there is no HEAD to observe, so the legacy text rung answers instead — and
-  // the obligation this file is about must still be absent from it, which is the gh#104 rule.
-  const ctx = ctxOf(nudge(cwd, "echo 'run git commit -m ok'"));
-  assert.doesNotMatch(ctx, /--attribute-commit/);
-  assert.doesNotMatch(ctx, /[0-9a-f]{7,40}/, "no rung may name a commit value it did not observe");
-});
+// 4.1 (0.48.0) moved FIVE of this file's six tests to
+// `scripts/test/unit/conductor-26.test.mjs`: the four SILENT RUNGS (no active epic, a detour frame
+// naming a ghost id, an ABSENT attributedCommits array, and the unverifiable rung) plus the gh#104
+// case where a Bash call merely mentions `git commit`. Every one of them is a record and a payload.
+// THE ONE BELOW STAYS because it needs an unreadable record — raw bytes that cannot parse, which the
+// memory store cannot hold; it answers "unreadable" only through `shapeProblem()`.
 
 test("gh#129: the unreadable-state rung refuses with exit 2 and writes nothing", () => {
   const cwd = rootWith({ id: "epic-a", title: "epic-a", priority: "P1", status: "active", role: "epic",
