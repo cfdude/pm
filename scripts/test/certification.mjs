@@ -101,9 +101,17 @@ export function functionalIds(root = REPO, readdir = readdirDefault) {
   return testIdsIn(root, "functional", readdir);
 }
 
-/** The assertion half's ids. */
+/** The assertion half's ids — BOTH ITS RUNGS (0.48.0 task 4.1).
+ *
+ *  THE TWIN RULE IS ABOUT HALVES, NOT DIRECTORIES: it says every functional id has a twin in the
+ *  ASSERTION half, and the unit rung is a rung of that half (design D2) — same trigger, same process.
+ *  Reading only `assert/` would refuse a functional id whose twin had MOVED to the unit rung, which
+ *  is exactly what 4.1's migration does to a file whose tests assert on values: flag-parsing is the
+ *  first one, and its twin is a full port of a functional file's tests. Found by attempting that
+ *  move rather than by reading the rule — the refusal named the missing twin, and the missing twin
+ *  was there, one directory over. */
 export function assertionIds(root = REPO, readdir = readdirDefault) {
-  return testIdsIn(root, "assert", readdir);
+  return [...new Set([...testIdsIn(root, "assert", readdir), ...testIdsIn(root, "unit", readdir)])].sort();
 }
 
 /** The sweep bucket's ids. A `covers` entry may name one of these as readily as a functional id —
@@ -115,7 +123,15 @@ export function sweepIds(root = REPO, readdir = readdirDefault) {
 }
 
 function testIdsIn(root, half, readdir) {
-  return readdir(path.join(root, "scripts", "test", half))
+  // A MISSING DIRECTORY IS AN EMPTY ONE, not a crash. These functions are handed synthetic
+  // repositories as well as this one — the functional half's hook tests build a throwaway tree with
+  // only the directories their subject needs — so a rung this repository has and a fixture does not
+  // would otherwise turn "no unit files here" into `ENOENT … scandir`, which is a failure of the
+  // CHECK rather than a finding about the suite. The enrolment check is what refuses a file with no
+  // home; it is not this function's job to insist a directory exists.
+  let names;
+  try { names = readdir(path.join(root, "scripts", "test", half)); } catch { return []; }
+  return names
     .filter((f) => f.endsWith(".test.mjs"))
     .map((f) => f.slice(0, -".test.mjs".length))
     .sort();

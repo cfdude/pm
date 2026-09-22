@@ -95,8 +95,17 @@ test("1.1 the same invocation returns the same status and the same record throug
   // record, and it is the one this invocation must not have created.
   assert.ok(!fs.existsSync(path.join(memRoot, ".conductor", "state.json")),
     "the in-memory store must not have created a record file");
-  assert.equal(memory.read("state.json").kind, "absent",
-    "nor may it have written one through the artifact interface");
+  // AND NOT EVEN A DIRECTORY TO PUT ONE IN. The second assertion used to read the artifact interface
+  // for `state.json` and expect `absent`; it was wrong about the seam rather than about the store —
+  // the record IS an artifact the interface answers, and the memory store now serialises it exactly
+  // as the disk store would (store.mjs's memoryArtifact), which is what lets a test assert on the
+  // record's BYTES without a file. `absent` would have meant the memory store could not answer for
+  // the artifact it owns. What the test is actually about is the FILESYSTEM, so that is what it
+  // asserts: no `.conductor` was created at all.
+  assert.ok(!fs.existsSync(path.join(memRoot, ".conductor")),
+    "nor may it have created the record directory — the invocation writes no path at all");
+  assert.match(memory.read("state.json").text, /"probe"/,
+    "and the record it holds is the one the verb wrote, readable as the bytes a disk store would hold");
 });
 
 test("1.1 two stores in one process do not observe each other", () => {

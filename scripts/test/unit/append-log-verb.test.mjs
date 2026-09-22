@@ -16,7 +16,7 @@ import { memoryEngine, recordWithEpic, unitTest } from "../fixtures/unit-harness
 
 unitTest("honcho-memory prints the line it appends, and both survive in the store", () => {
   const invoke = memoryEngine(recordWithEpic());
-  const r = invoke(["honcho-memory", "push", "e1", "paused for a detour"]);
+  const r = invoke.result(["honcho-memory", "push", "e1", "paused for a detour"]);
   assert.equal(r.status, 0, `the verb must succeed: ${r.stderr}`);
 
   const printed = r.stdout.trim();
@@ -31,8 +31,8 @@ unitTest("honcho-memory prints the line it appends, and both survive in the stor
 
 unitTest("two appends accumulate, and the second does not replace the first", () => {
   const invoke = memoryEngine(recordWithEpic());
-  invoke(["honcho-memory", "push", "e1", "first"]);
-  invoke(["honcho-memory", "pop", "e1", "second"]);
+  invoke.result(["honcho-memory", "push", "e1", "first"]);
+  invoke.result(["honcho-memory", "pop", "e1", "second"]);
   const lines = invoke.store.read("honcho-memories.log").text.split("\n").filter(Boolean);
   assert.equal(lines.length, 2, "an append-only log accumulates rather than rotating");
   assert.match(lines[0], /first/);

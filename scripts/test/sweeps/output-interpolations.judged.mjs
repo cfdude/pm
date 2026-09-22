@@ -480,6 +480,9 @@ x("store.mjs", "memoryStore", {
 x("store.mjs", "memoryStore", {
   "name": 1,
 }, "not-output", "the artifact key of a rotated entry in the memory map");
+x("store.mjs", "memoryStore", {
+  "JSON.stringify(record, null, 2)": 1,
+}, "not-output", "the record's file BODY, serialised on read so the memory store can answer for the artifact it owns (added by 4.1's first migration, which asserts on the record's bytes)");
 x("subcommands.mjs", "appendHonchoMemory", {
   "line": 2,
 }, "escaped", "honchoMemoryLine() escapes the epic id and reason (design D7). TWO occurrences since 0.48.0 task 1.4: the line is printed to stdout AND appended to the log through the store, where before the append came from a path the declaration did not mention");

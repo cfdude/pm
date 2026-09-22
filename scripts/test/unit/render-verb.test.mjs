@@ -16,7 +16,7 @@ import { memoryEngine, recordWithEpic, unitTest } from "../fixtures/unit-harness
 
 unitTest("render produces the artifact into the store, and writes no path", () => {
   const invoke = memoryEngine(recordWithEpic({ title: "Rendered" }));
-  const r = invoke(["render"]);
+  const r = invoke.result(["render"]);
   assert.equal(r.status, 0, `render must succeed over a memory store: ${r.stderr}`);
 
   const artifact = invoke.store.read("PROJECT.md");
@@ -28,9 +28,9 @@ unitTest("render produces the artifact into the store, and writes no path", () =
 
 unitTest("a second render of an unchanged record is a no-op that reports itself as one", () => {
   const invoke = memoryEngine(recordWithEpic());
-  invoke(["render"]);
+  invoke.result(["render"]);
   const first = invoke.store.read("PROJECT.md").text;
-  const second = invoke(["render"]);
+  const second = invoke.result(["render"]);
   assert.equal(second.status, 0);
   assert.match(second.stderr, /PROJECT\.md unchanged \(skipped rewrite\)/,
     "the skip-rewrite decision must be answered by the STORE's pre-image, not by a path read");
@@ -44,7 +44,7 @@ unitTest("render's detour table reads the log through the store, not through a p
   const invoke = memoryEngine(recordWithEpic());
   invoke.store.append("detours.log",
     ["2026-01-01T00:00:00.000Z", "abc1234", "MINIMAL", "e1", "a one-line note"].join("\t") + "\n");
-  const r = invoke(["render"]);
+  const r = invoke.result(["render"]);
   assert.equal(r.status, 0, `render must succeed: ${r.stderr}`);
   const text = invoke.store.read("PROJECT.md").text;
   assert.match(text, /abc1234/, "the logged row must appear");

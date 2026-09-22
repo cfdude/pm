@@ -16,7 +16,7 @@ import { memoryEngine, recordWithEpic, unitTest } from "../fixtures/unit-harness
 
 unitTest("update-epic decides from the record it was handed, and writes back into it", () => {
   const invoke = memoryEngine(recordWithEpic());
-  const r = invoke(["update-epic", "e1", "--priority", "P1", "--status", "queued"]);
+  const r = invoke.result(["update-epic", "e1", "--priority", "P1", "--status", "queued"]);
   assert.equal(r.status, 0, `the update must be accepted: ${r.stderr}`);
   assert.equal(r.stderr.includes("conductor: updated"), true,
     `the verb must report the update it made: ${r.stderr}`);
@@ -28,7 +28,7 @@ unitTest("update-epic decides from the record it was handed, and writes back int
 
 unitTest("a refusal over an in-memory record is the same refusal, and it writes nothing", () => {
   const invoke = memoryEngine(recordWithEpic());
-  const r = invoke(["update-epic", "no-such-epic", "--priority", "P1"]);
+  const r = invoke.result(["update-epic", "no-such-epic", "--priority", "P1"]);
   assert.notEqual(r.status, 0, "an unknown epic must be refused");
   assert.match(r.stderr, /no-such-epic/, "and the refusal must name it");
   assert.deepEqual(invoke.store.record().epics.map(e => e.id), ["e1"],
@@ -39,8 +39,8 @@ unitTest("a refusal over an in-memory record is the same refusal, and it writes 
 unitTest("the same invocation through two records in one process touches neither the other", () => {
   const a = memoryEngine(recordWithEpic({ id: "a", title: "A" }));
   const b = memoryEngine(recordWithEpic({ id: "b", title: "B" }));
-  assert.equal(a(["update-epic", "a", "--priority", "P0"]).status, 0);
-  assert.equal(b(["update-epic", "b", "--priority", "P3"]).status, 0);
+  assert.equal(a.result(["update-epic", "a", "--priority", "P0"]).status, 0);
+  assert.equal(b.result(["update-epic", "b", "--priority", "P3"]).status, 0);
   assert.deepEqual(a.store.record().epics.map(e => [e.id, e.priority]), [["a", "P0"]]);
   assert.deepEqual(b.store.record().epics.map(e => [e.id, e.priority]), [["b", "P3"]]);
 });

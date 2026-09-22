@@ -36,13 +36,34 @@ const VIRTUAL_ROOT = "/pm-unit-rung/no-such-directory";
 
 /** One in-process invocation over an in-memory record.
  *
+ *  TWO ACCESSORS, AND THE DEFAULT ONE THROWS — the same contract the file rung's `run()` has, because
+ *  a migrated file must not have to rewrite `expectFail(() => run([...]))` into something else to keep
+ *  its assertions. The first draft exposed only the raw result and six tests in the first migrated
+ *  file read `null.stderr`: `expectFail` catches a THROW, and returning `{status: 1}` is not one.
+ *
+ *    engine(args)         → the invocation's stdout, or THROWS with `.status` / `.stdout` / `.stderr`
+ *    engine.result(args)  → the raw `{ status, stdout, stderr }`, for a test asserting on the status
+ *                           itself rather than on the success path
+ *
  *  Returns the memory store as well as the invocation, so a test reads the values a verb wrote back
  *  out of the object it supplied — which is the `engine-invocation` scenario, not a convenience. */
 export function memoryEngine(seed) {
   const store = memoryStore(seed);
-  const invoke = (args) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store });
-  invoke.store = store;
-  return invoke;
+  const result = (args) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store });
+  const run = (args) => {
+    const r = result(args);
+    if (r.status !== 0) {
+      const e = new Error(r.stderr || `conductor exited ${r.status}: ${args.join(" ")}`);
+      e.status = r.status;
+      e.stdout = r.stdout;
+      e.stderr = r.stderr;
+      throw e;
+    }
+    return r.stdout;
+  };
+  run.result = result;
+  run.store = store;
+  return run;
 }
 
 /** The record a unit test starts from: an initialised conductor with no epics. */

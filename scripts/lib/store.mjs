@@ -923,6 +923,12 @@ export function memoryStore(seed = undefined) {
    *  anywhere outside `pushEpic()`'s body, COMMENTS INCLUDED, so writing it out here would report
    *  this file as a fifth epic-creation path. Same false positive, same remedy, as the certified-set
    *  note on `diskStore()` above.) */
+  /** The bytes a disk store would hold for `name`, or `""` when it holds none. */
+  const memoryArtifact = (name) => {
+    if (name === ARTIFACT.RECORD) return record === undefined ? "" : JSON.stringify(record, null, 2) + "\n";
+    return artifacts.has(name) ? artifacts.get(name) : "";
+  };
+
   const readRecord = () => {
     if (record === undefined) return { kind: "absent" };
     const shape = shapeProblem(record);
@@ -972,10 +978,22 @@ export function memoryStore(seed = undefined) {
       return { ok: true, revision: next.revision };
     },
 
-    exists: (name) => artifacts.has(name),
-    size: (name) => (artifacts.has(name) ? Buffer.byteLength(artifacts.get(name), "utf8") : 0),
-    mtimeMs: (name) => (artifacts.has(name) ? 0 : null),
-    read: (name) => (artifacts.has(name) ? { kind: "ok", text: artifacts.get(name) } : { kind: "absent" }),
+    // THE RECORD IS AN ARTIFACT TOO, and answering it from the artifacts map alone would be wrong in
+    // a way a unit test would feel immediately: the map holds what the OTHER artifact operations put
+    // in it, while the record lives in `record`. A test asserting on the record FILE's bytes — the
+    // refusal-leaves-it-byte-identical shape several files use — has to see the bytes the memory
+    // store would have written, so it is serialised ON READ, with exactly the disk store's
+    // formatting (`JSON.stringify(next, null, 2)` plus a trailing newline). Without this the seam
+    // would silently be narrower than the disk store for one artifact, which is exactly the kind of
+    // difference a unit-rung test could not have noticed.
+    exists: (name) => (name === ARTIFACT.RECORD ? record !== undefined : artifacts.has(name)),
+    size: (name) => Buffer.byteLength(memoryArtifact(name), "utf8"),
+    mtimeMs: (name) => (memoryArtifact(name) === "" ? null : 0),
+    read: (name) => {
+      const text = memoryArtifact(name);
+      return text === "" && !(name === ARTIFACT.RECORD ? record !== undefined : artifacts.has(name))
+        ? { kind: "absent" } : { kind: "ok", text };
+    },
     write: (name, text) => { artifacts.set(name, String(text)); },
     writeAtomic: (name, text) => { artifacts.set(name, String(text)); },
     append: (name, text) => { artifacts.set(name, (artifacts.get(name) || "") + String(text)); },
