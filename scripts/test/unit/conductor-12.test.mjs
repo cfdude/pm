@@ -1,19 +1,20 @@
 // scripts/test/unit/conductor-12.test.mjs
-// 4.1's migration of `assert/conductor-12.test.mjs` — 5 of its 14 tests, moved from the file rung to
+// 4.1's migration of `assert/conductor-12.test.mjs` — 6 of its 14 tests, moved from the file rung to
 // the unit rung with every assertion unchanged.
 //
 // 5.3's ASSERTION TWIN of scripts/test/functional/conductor-12.test.mjs — same id, same subject.
 //
 // ─────────────── WHAT MOVED, AND WHAT DID NOT ───────────────
 //
-// FIVE moved: the no-op-save guarantee, the same guarantee across a SECOND root in one process (two
+// SIX moved: the no-op-save guarantee, the same guarantee across a SECOND root in one process (two
 // memory stores, two invocations — which is the guarantee the file rung's cache-busting rewrite was
-// reaching for), the conflict exit code's two PURE cases, and the write-conflict log's reset on a
-// landing write, whose artifact is store-owned even though the fixture used to plant it by hand.
+// reaching for), the conflict exit code's two PURE cases, the write-conflict log's reset on a landing
+// write (whose artifact is store-owned) — and, moved LAST, that same reset once E3's two-line port of
+// `clearConflictsOn()` into the memory store closed the gap that had held it on the file rung.
 //
-// NINE STAY, in two populations. (1) FIVE of them are `.gitignore` — a file the store does NOT own,
+// EIGHT STAY, in two populations. (1) FIVE of them are `.gitignore` — a file the store does NOT own,
 // and the entries init/upgrade write into it are the subject; a repo's own `.gitignore` is not an
-// artifact the engine's record covers. (2) FOUR drive `injectConflictOnce()`, the one-shot patch
+// artifact the engine's record covers. (2) THREE drive `injectConflictOnce()`, the one-shot patch
 // that bumps the on-disk revision at saveState's first filesystem call — the seam IS a real file
 // write, so the conflict has to happen on a real file. That includes the contention-latch reads and
 // the commit-nudge degradation, which assert through the ignored `.gitignore` line as well.
@@ -54,15 +55,19 @@ unitTest("persistFailure carries the revision it was written at", () => {
 
 // ─────────────────── the contention latch ───────────────────
 //
-// THE CONFLICT LOG'S RESET IS *NOT* HERE, and it was attempted rather than skipped. "A successful
-// state write clears the conflict log" is a behaviour the DISK store implements inside its own
-// `writeRecord` (`scripts/lib/store.mjs:822` — `clearConflictsOn(this)`), and the MEMORY store's
-// `writeRecord` does not call it. It was written here first — plant `write-conflicts.log` through
-// `store.write`, run `add-epic`, assert it is gone — and it FAILED, which is the measurement: the
-// artifact survives, because the clear lives in one store implementation and not the other.
-//
-// So it is the SECOND gap of that class in this migration, and the first one outside `verifyState()`.
-// Like the render-stamp gap recorded in worklist-4.1.md it is named rather than fixed here: the fix
-// changes what an engine write DOES, so it wants its own commit, its own suite run and its own
-// review — not a rider on a test move. The test stays on the file rung, where the disk store is
-// real and the reset is observable.
+// THE CONFLICT LOG'S RESET MOVED HERE WHEN ITS GAP WAS CLOSED. "A successful state write clears the
+// conflict log" is a behaviour the DISK store implemented inside its own `writeRecord`
+// (`scripts/lib/store.mjs:822` — `clearConflictsOn(this)`) while the MEMORY store's `writeRecord` did
+// not call it, so the reset was a behaviour of one implementation rather than of the interface. It
+// was written here first, FAILED — plant `write-conflicts.log` through `store.write`, run `add-epic`,
+// assert it is gone: the artifact survived — and stayed on the file rung until the two-line fix
+// landed in its own commit. That was the second gap of the class in this migration and the first one
+// outside `verifyState()`; E3 of the three fixable seam edges (worklist-4.1.md).
+
+unitTest("a successful state write clears the conflict log", () => {
+  const engine = memoryEngine(emptyRecord());
+  engine.store.write("write-conflicts.log", "something\telse\n");
+  engine(["add-epic", "--id", "e1", "--lane", "claude-code"]);
+  assert.ok(!engine.store.exists("write-conflicts.log") || engine.store.read("write-conflicts.log").text.trim() === "",
+    "the signal is CONSECUTIVE skips, so a landing write resets it");
+});

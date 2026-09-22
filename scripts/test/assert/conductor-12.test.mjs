@@ -18,11 +18,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine, readState, expectFail, injectConflictOnce } from "../fixtures/assert-harness.mjs";
 
-// 4.1 (0.48.0) moved FOUR of this file's tests to `scripts/test/unit/conductor-12.test.mjs`: the
-// no-op-save guarantee, the same guarantee across a SECOND root in one process, and the two pure
-// `conflictExitCode`/`persistFailure` cases. What remains needs a real file: five `.gitignore` tests
-// (a file the store does not own) and the four `injectConflictOnce()` tests, whose seam IS a
-// filesystem write.
+// 4.1 (0.48.0) moved FIVE of this file's tests to `scripts/test/unit/conductor-12.test.mjs`: the
+// no-op-save guarantee, the same guarantee across a SECOND root in one process, the two pure
+// `conflictExitCode`/`persistFailure` cases, and — moved later, when E3's port of
+// `clearConflictsOn()` into the memory store closed the gap that had held it here — the
+// write-conflict log's reset on a landing write.
+//
+// What remains needs a real file: five `.gitignore` tests (a file the store does not own) and the
+// three `injectConflictOnce()` tests, whose seam IS a filesystem write.
 
 // ─────────────────── the revision and the conflict guard ───────────────────
 
@@ -107,16 +110,6 @@ test("the brief warns at the threshold and the warning is CONSECUTIVE, not cumul
   const restore = injectConflictOnce(path.join(cwd, ".conductor"));
   try { invokeEngine(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd }); } finally { restore(); }
   assert.doesNotThrow(() => run(["brief"], { cwd }));
-});
-
-test("a successful state write clears the conflict log", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  const logPath = path.join(cwd, ".conductor", "write-conflicts.log");
-  fs.mkdirSync(path.dirname(logPath), { recursive: true });
-  fs.writeFileSync(logPath, "something\telse\n");
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  assert.ok(!fs.existsSync(logPath) || fs.readFileSync(logPath, "utf8").trim() === "",
-    "the signal is CONSECUTIVE skips, so a landing write resets it");
 });
 
 // ───────────────────────── the deliberate omissions ─────────────────────────

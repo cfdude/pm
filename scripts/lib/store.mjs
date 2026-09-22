@@ -975,6 +975,15 @@ export function memoryStore(seed = undefined) {
       // is the one thing the disk store's tail does to the caller's object either way.
       record = copy(next);
       state.revision = next.revision;
+      // THE RESET IS PART OF THE INTERFACE, NOT OF ONE IMPLEMENTATION (E3). `clearConflictsOn()` was
+      // called at the disk store's own tail and nowhere else, so "a landing write clears the conflict
+      // log" was a behaviour of the disk store rather than of `writeRecord()` — and the unit rung,
+      // which binds the memory store, structurally could not see it. The test that proves it was
+      // written for the unit rung FIRST and failed there, which is how the gap was found
+      // (worklist-4.1.md, "the second seam gap"). Same position as the disk store's: after the write
+      // has landed, and NOT on the `unchanged` early return above, because a no-op save is not a
+      // landing write and must leave the episode where it is.
+      clearConflictsOn(this);
       return { ok: true, revision: next.revision };
     },
 
