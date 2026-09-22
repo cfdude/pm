@@ -207,6 +207,25 @@ const UNIT = path.join(HERE, "..", "unit");
 
 test("2.1 the unit rung performs no filesystem work at all, and lives in one process with the half", () => {
   const files = fs.readdirSync(UNIT).filter(f => f.endsWith(".test.mjs")).sort();
+  // ─── 2.5 — THE NON-VACUITY ASSERTION, AND ITS NUMBER IS THIS RUNG'S OWN ───
+  //
+  // A walk over an EMPTY directory passes and proves nothing, and an empty rung runs zero tests while
+  // EVERY floor still passes — the floor's declared count is enumerated from the same empty set, so
+  // both sides collapse together and nothing notices. That is the shape the file rung's `> 40` was
+  // written for (assert/assert-half-has-no-spawn.test.mjs's first test), and THIS NUMBER IS NOT
+  // THAT ONE (I11): 40 is the FILE rung's floor, and the unit rung starts, per design D7, with a
+  // handful of hand-written proofs — one per verb family that uses the store. Written with the file
+  // rung's 40, this check could not go green on a young rung, which is the opposite of what it is
+  // for. It states the rung's ACTUAL starting count and the rule that RAISES it:
+  //
+  //   RAISE THIS NUMBER whenever a unit-rung file is added. It is a floor, not a ceiling: the rung
+  //   is meant to grow as test 4.1's migration moves value-observing tests onto it, and a number left
+  //   at its first value while the rung grows still catches the one thing it is here for — a rung
+  //   that has been emptied, moved, or silently stopped being walked.
+  assert.ok(files.length >= 3,
+    `the unit rung holds ${files.length} file(s); it starts with three hand-written proofs (design ` +
+    "D7: a state verb, a render verb and an append-only log verb) and RAISES this floor as it fills. " +
+    "A number left below the rung's real size is still doing its job; a walk over an empty rung is not");
   const found = files.flatMap(f => violations(f, fs.readFileSync(path.join(UNIT, f), "utf8"), "unit"));
   assert.deepEqual(found, [],
     "a unit-rung file asks the engine for the VALUES it decided and gets them through the store it " +

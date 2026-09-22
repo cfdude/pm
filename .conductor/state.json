@@ -9900,10 +9900,12 @@
         "9700529ce71906af734583c8d42a56ace91f03ec",
         "a727744c003349d0549327877de83cb7be3199fe",
         "f9286c52d13f45fe0a0f4d968f96578be02ce650",
-        "a45b368c29ebe4cece96592c9a3e3c554984bbff"
+        "a45b368c29ebe4cece96592c9a3e3c554984bbff",
+        "8f0ee703d7e4e1d00e0c0cf289b84d694d32618f",
+        "be2daa99cfceb3fe7625dd2d31f595cfcf0a5102"
       ],
       "createdAt": "2026-09-22T04:49:43.433Z",
-      "touchedAt": "2026-09-22T07:09:14.676Z",
+      "touchedAt": "2026-09-22T07:20:20.423Z",
       "release": "0.48.0",
       "gateReview": {
         "gate1": {
@@ -9925,7 +9927,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1240,
+  "revision": 1242,
   "reviewMode": "thorough",
   "releases": [
     {

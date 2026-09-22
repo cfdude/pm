@@ -204,7 +204,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       Node-18 fallback still runs both rungs correctly. The probe is per-clone and cached; a two-glob
       runner on a Node without `--test-isolation` must still run every file, which the floor then
       confirms.
-- [ ] 2.5 REGRESSION GUARD — a NON-VACUITY assertion for the new rung, in the SHAPE
+- [x] 2.5 REGRESSION GUARD — a NON-VACUITY assertion for the new rung, in the SHAPE
       `assert/assert-half-has-no-spawn.test.mjs:94` uses — but NOT with that assertion's number (I11):
       `files.length > 40` is the FILE rung's floor, and the unit rung starts, per D7, with a handful
       of hand-written proofs (one per verb family — a state verb, a render verb, an append-only log
