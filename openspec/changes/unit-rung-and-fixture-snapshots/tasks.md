@@ -51,7 +51,7 @@
       **Report which commit this file lands in.** The scratch scripts that produced (c) and (d) are
       kept here too (`count-fsync.cjs`, `noop-fsync.cjs`) so the control is re-runnable rather than
       quoted.
-- [ ] 0.4 **The half's own anomalous state, recorded before it is touched.** `openspec list` today
+- [x] 0.4 **The half's own anomalous state, recorded before it is touched.** `openspec list` today
       reports `functional-assertion-test-split 47/48 tasks` as a LIVE change while
       `openspec/changes/archive/2026-09-21-functional-assertion-test-split/` also exists in the tree —
       the archive commit (`ab171b7`) ADDED the archive copy without removing the live directory, and
