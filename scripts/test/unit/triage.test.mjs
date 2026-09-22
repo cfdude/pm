@@ -1,3 +1,7 @@
+// scripts/test/unit/triage.test.mjs
+// 4.1's migration of `assert/triage.test.mjs` — 19 of its 19 tests, moved from the file rung to the
+// unit rung with every assertion unchanged. The file is GONE from the file rung.
+//
 // Intake triage (gh-112) — the MECHANICAL half of admitting an ask.
 //
 // The line this suite pins: the engine computes a CANDIDATE SET and never a VERDICT. Every
@@ -5,30 +9,34 @@
 // by reading), or that the engine declines to judge. A test that only asserted "valid JSON with
 // these keys" would pass with the candidate list hard-coded empty, which is the mutation these
 // were written against.
-import { test } from "node:test";
+//
+// WHY THE WHOLE FILE MOVED: `repoWith()` writes a whole record and every observable afterwards is a
+// VALUE — the JSON payload `triage` prints, the rules block it prints, PROJECT.md (a store-owned
+// artifact) — so the fixture's record becomes the record the memory store is seeded with. The two
+// `new URL(…).href` module specifiers are dynamic IMPORTS of lib modules rather than path reads, so
+// they are unchanged; the only file read left in the original was PROJECT.md, and it is the store's.
+
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { run, readState, writeState, tmpRepo, runCombined } from "../fixtures/assert-harness.mjs";
+import { emptyRecord, memoryEngine, unitTest } from "../fixtures/unit-harness.mjs";
 
 const TRIAGE = new URL("../../lib/triage.mjs", import.meta.url).href;
 const DISPOSITION = new URL("../../lib/disposition.mjs", import.meta.url).href;
 
 /** A repo whose state holds exactly `epics`, each entry `{id, title, description?, ...}`. */
 function repoWith(epics) {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const state = readState(cwd);
-  state.epics = epics.map(e => ({
-    priority: "P2", status: "queued", role: "epic", lane: "superpowers",
-    links: [], reconcileNeeded: false, ...e,
-  }));
-  state.active = null;
-  writeState(cwd, state);
-  return cwd;
+  const engine = memoryEngine({
+    ...emptyRecord(),
+    epics: epics.map(e => ({
+      priority: "P2", status: "queued", role: "epic", lane: "superpowers",
+      links: [], reconcileNeeded: false, ...e,
+    })),
+    active: null,
+  });
+  return engine;
 }
 
-const triage = (cwd, ask, ...flags) => JSON.parse(run(["triage", ask, ...flags], { cwd }));
+const triage = (engine, ask, ...flags) => JSON.parse(engine(["triage", ask, ...flags]));
+const readState = (engine) => engine.store.record();
 
 // ───────────────────────────── the live-evidence acceptance case ─────────────────────────────
 //
@@ -56,22 +64,22 @@ const LIVE_PAIRS = [
     title: "Platform parity mechanism implementation plan" },
 ];
 
-test("triage surfaces the already-registered twin of an ask — the four live pairs exact-id dedup missed", () => {
-  const cwd = repoWith(LIVE_PAIRS);
+unitTest("triage surfaces the already-registered twin of an ask — the four live pairs exact-id dedup missed", () => {
+  const engine = repoWith(LIVE_PAIRS);
   // For each pair, ask with ONE member's title and require the OTHER member to be surfaced.
   for (let i = 0; i < LIVE_PAIRS.length; i += 2) {
     const [a, b] = [LIVE_PAIRS[i], LIVE_PAIRS[i + 1]];
     for (const [ask, twin] of [[b.title, a.id], [a.title, b.id]]) {
-      const ids = triage(cwd, ask).candidates.map(c => c.id);
+      const ids = triage(engine, ask).candidates.map(c => c.id);
       assert.ok(ids.includes(twin),
         `triage("${ask}") must surface '${twin}' — got ${JSON.stringify(ids)}`);
     }
   }
 });
 
-test("a candidate carries what it takes to READ it, and a shared-token trail saying why it is here", () => {
-  const cwd = repoWith(LIVE_PAIRS);
-  const c = triage(cwd, "Epic-Hierarchy Orchestration Implementation Plan").candidates
+unitTest("a candidate carries what it takes to READ it, and a shared-token trail saying why it is here", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  const c = triage(engine, "Epic-Hierarchy Orchestration Implementation Plan").candidates
     .find(x => x.id === "epic-hierarchy-orchestration");
   assert.ok(c, "the twin must be a candidate at all");
   for (const k of ["id", "title", "status", "lane", "priority", "score", "shared"]) {
@@ -86,12 +94,12 @@ test("a candidate carries what it takes to READ it, and a shared-token trail say
 
 // ─────────────────── the ranking is weighted, not a count of shared words ───────────────────
 
-test("a rare shared token beats several ubiquitous ones, which are not evidence at all", () => {
+unitTest("a rare shared token beats several ubiquitous ones, which are not evidence at all", () => {
   // Ten epics all carrying the same three words, so those words say nothing about ANY epic.
   const noise = Array.from({ length: 10 }, (_, i) => ({
     id: `noise-${i}`, title: `conductor state render worker ${i}`,
   }));
-  const cwd = repoWith([
+  const engine = repoWith([
     ...noise,
     { id: "ubiquitous-three", title: "conductor state render pipeline" },
     // Carries the ubiquitous three AS WELL AS the rare one, so the trail assertion below is
@@ -99,7 +107,7 @@ test("a rare shared token beats several ubiquitous ones, which are not evidence 
     { id: "distinctive-one", title: "conductor state render quokka" },
   ]);
   // A generous limit on purpose, so nothing below is missing merely for being cut off.
-  const ranked = triage(cwd, "conductor state render quokka", "--limit", "50").candidates;
+  const ranked = triage(engine, "conductor state render quokka", "--limit", "50").candidates;
   const ids = ranked.map(c => c.id);
   // THREE shared words against ONE. Counting shared words ranks `ubiquitous-three` first and
   // drags all ten noise epics in behind it; weighting each token by how much it narrows the
@@ -112,106 +120,106 @@ test("a rare shared token beats several ubiquitous ones, which are not evidence 
     `the trail must name only the tokens that earned the score — got ${JSON.stringify(ranked[0].shared)}`);
 });
 
-test("a word almost every epic uses is not held against a small backlog", () => {
+unitTest("a word almost every epic uses is not held against a small backlog", () => {
   // The same shape below the threshold where a frequency means anything. Two epics both about
   // quokkas put "quokka" in 100% of the corpus; dropping it there would make the surface answer
   // nothing at exactly the moment it is cheapest to be right.
-  const cwd = repoWith([
+  const engine = repoWith([
     { id: "quokka-ingest", title: "quokka telemetry ingestion" },
     { id: "quokka-export", title: "quokka telemetry export" },
   ]);
-  const ids = triage(cwd, "quokka telemetry").candidates.map(c => c.id);
+  const ids = triage(engine, "quokka telemetry").candidates.map(c => c.id);
   assert.deepEqual(ids.sort(), ["quokka-export", "quokka-ingest"]);
 });
 
-test("an ask with nothing in common with the backlog surfaces nothing", () => {
-  const cwd = repoWith([
+unitTest("an ask with nothing in common with the backlog surfaces nothing", () => {
+  const engine = repoWith([
     { id: "alpha", title: "conductor state render" },
     { id: "beta", title: "detour stack reconcile gate" },
   ]);
-  const out = triage(cwd, "photosynthesis chlorophyll stomata");
+  const out = triage(engine, "photosynthesis chlorophyll stomata");
   assert.deepEqual(out.candidates, [],
     "surfacing unrelated epics would train the agent to ignore the whole surface");
 });
 
-test("--limit bounds the candidate set", () => {
-  const cwd = repoWith(LIVE_PAIRS);
-  const out = triage(cwd, "implementation plan orchestration parity harness split", "--limit", "2");
+unitTest("--limit bounds the candidate set", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  const out = triage(engine, "implementation plan orchestration parity harness split", "--limit", "2");
   assert.equal(out.candidates.length, 2);
 });
 
 // ───────────────────────────── the engine does not decide ─────────────────────────────
 
-test("the engine states that it reached no verdict, and labels no candidate a duplicate", () => {
-  const cwd = repoWith(LIVE_PAIRS);
-  const out = triage(cwd, "Epic-Hierarchy Orchestration Implementation Plan");
+unitTest("the engine states that it reached no verdict, and labels no candidate a duplicate", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  const out = triage(engine, "Epic-Hierarchy Orchestration Implementation Plan");
   assert.equal(out.verdict, null, "a verdict is the agent's to record, never the engine's");
-  const raw = run(["triage", "Epic-Hierarchy Orchestration Implementation Plan"], { cwd });
+  const raw = engine(["triage", "Epic-Hierarchy Orchestration Implementation Plan"]);
   assert.ok(!/"duplicate"|"same"|"overlaps"\s*:\s*true/.test(raw),
     "the engine must not assert that two asks are the same ask");
 });
 
 // ────────────────────────── the rest of what intake needs, cheaply ──────────────────────────
 
-test("triage carries the repo's lane routing and the backlog's shape", () => {
-  const cwd = repoWith(LIVE_PAIRS);
-  run(["set-lane-routing", "--add", "parity:openspec"], { cwd });
-  const out = triage(cwd, "platform parity mechanism");
+unitTest("triage carries the repo's lane routing and the backlog's shape", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  engine(["set-lane-routing", "--add", "parity:openspec"]);
+  const out = triage(engine, "platform parity mechanism");
   assert.deepEqual(out.lane, { lane: "openspec", matched: "parity" },
     "the lane a repo's own routing picks must arrive with the candidates, not need a second call");
   assert.equal(out.backlog.total, LIVE_PAIRS.length);
   assert.equal(out.backlog.byStatus.queued, LIVE_PAIRS.length);
-  const none = triage(cwd, "something else entirely");
+  const none = triage(engine, "something else entirely");
   assert.deepEqual(none.lane, { lane: null, matched: null });
 });
 
-test("a candidate already superseded by another epic says so", () => {
-  const cwd = repoWith([
+unitTest("a candidate already superseded by another epic says so", () => {
+  const engine = repoWith([
     { id: "old-thing", title: "quokka telemetry ingestion" },
     { id: "new-thing", title: "quokka telemetry ingestion, second attempt",
       links: [{ type: "supersedes", epic: "old-thing", reason: "consolidated at intake" }] },
   ]);
   const byId = Object.fromEntries(
-    triage(cwd, "quokka telemetry ingestion").candidates.map(c => [c.id, c]));
+    triage(engine, "quokka telemetry ingestion").candidates.map(c => [c.id, c]));
   assert.equal(byId["old-thing"].superseded, true,
     "consolidating a fourth ask INTO an epic that is already dead is the mistake this flags");
   assert.equal(byId["new-thing"].superseded, false);
 });
 
-test("a --limit that is not a positive integer is REFUSED, never coerced", () => {
-  const cwd = repoWith(LIVE_PAIRS);
+unitTest("a --limit that is not a positive integer is REFUSED, never coerced", () => {
+  const engine = repoWith(LIVE_PAIRS);
   // A valueless flag arrives from parseFlags as boolean `true`, and `Number(true)` is 1 — so a
   // coercing read answers with exactly ONE candidate: exit 0, plausible output, wrong result,
   // invisible. That is #79's shape, and `add-epic` already refuses a valueless `--description`
   // for it. `--limit abc` is the same failure wearing a different value.
   for (const argv of [["--limit"], ["--limit", "abc"], ["--limit", "0"], ["--limit", "-3"]]) {
-    const out = runCombined(["triage", "Epic-Hierarchy Orchestration Implementation Plan", ...argv], { cwd });
+    const out = engine.combined(["triage", "Epic-Hierarchy Orchestration Implementation Plan", ...argv]);
     assert.match(out, /--limit/, `\`triage … ${argv.join(" ")}\` must name the flag it refused — got ${out}`);
     assert.doesNotMatch(out, /"candidates"/,
       `\`triage … ${argv.join(" ")}\` must not answer at all — a wrong bound is worse than a refusal`);
   }
-  assert.equal(triage(cwd, "Epic-Hierarchy Orchestration Implementation Plan", "--limit", "3")
+  assert.equal(triage(engine, "Epic-Hierarchy Orchestration Implementation Plan", "--limit", "3")
     .candidates.length <= 3, true, "a real limit still works, so the refusal above is a decision");
 });
 
-test("triage rejects an unknown flag by name instead of ignoring it", () => {
-  const cwd = repoWith(LIVE_PAIRS);
-  const out = runCombined(["triage", "an ask", "--min-score", "0.4"], { cwd });
+unitTest("triage rejects an unknown flag by name instead of ignoring it", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  const out = engine.combined(["triage", "an ask", "--min-score", "0.4"]);
   assert.match(out, /min-score/, "the refusal must name the flag that was not understood");
   assert.match(out, /--limit/, "…and name what IS accepted, so the caller can fix it in one step");
   assert.doesNotMatch(out, /"candidates"/, "a silently dropped flag is a silently wrong answer");
 });
 
-test("triage refuses an empty ask and an uninitialized repo rather than answering", () => {
-  const cwd = repoWith([{ id: "alpha", title: "a" }]);
-  assert.match(runCombined(["triage"], { cwd }), /usage/);
-  const bare = tmpRepo();
-  assert.match(runCombined(["triage", "anything"], { cwd: bare }), /pm:init/);
+unitTest("triage refuses an empty ask and an uninitialized repo rather than answering", () => {
+  const engine = repoWith([{ id: "alpha", title: "a" }]);
+  assert.match(engine.combined(["triage"]), /usage/);
+  const bare = memoryEngine();
+  assert.match(bare.combined(["triage", "anything"]), /pm:init/);
 });
 
 // ─────────────────────── recording the decision: `declined` ───────────────────────
 
-test("`declined` is a terminal outcome, and it demands its reason like every non-delivered one", async () => {
+unitTest("`declined` is a terminal outcome, and it demands its reason like every non-delivered one", async () => {
   const { KNOWN_OUTCOMES, dispositionError } = await import(DISPOSITION);
   assert.ok(KNOWN_OUTCOMES.includes("declined"),
     "an ask that is considered and turned down must be recordable — declining by never " +
@@ -221,22 +229,22 @@ test("`declined` is a terminal outcome, and it demands its reason like every non
   assert.equal(dispositionError({ outcome: "declined", reason: "already covered by gh-70" }), null);
 });
 
-test("an ask can be registered and declined end to end, and the record keeps the reason", () => {
-  const cwd = repoWith([{ id: "existing-validator", title: "link format validation" }]);
-  run(["add-epic", "--id", "asked-for-thing", "--lane", "claude-code", "--status", "untriaged",
-    "--title", "Validate link types against a known set"], { cwd });
-  run(["update-epic", "asked-for-thing", "--status", "archived", "--outcome", "declined",
-    "--reason", "already covered by existing-validator", "--no-deferrals"], { cwd });
-  const e = readState(cwd).epics.find(x => x.id === "asked-for-thing");
+unitTest("an ask can be registered and declined end to end, and the record keeps the reason", () => {
+  const engine = repoWith([{ id: "existing-validator", title: "link format validation" }]);
+  engine(["add-epic", "--id", "asked-for-thing", "--lane", "claude-code", "--status", "untriaged",
+    "--title", "Validate link types against a known set"]);
+  engine(["update-epic", "asked-for-thing", "--status", "archived", "--outcome", "declined",
+    "--reason", "already covered by existing-validator", "--no-deferrals"]);
+  const e = readState(engine).epics.find(x => x.id === "asked-for-thing");
   assert.equal(e.status, "archived");
   assert.equal(e.disposition.outcome, "declined");
   assert.match(e.disposition.reason, /existing-validator/);
   assert.ok(!e.disposition.recordedBy, "a decline is the agent's judgment, not an engine stamp");
-  const md = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  const md = engine.store.read("PROJECT.md").text;
   assert.match(md, /declined/, "a decline must be visible in the rendered record");
 });
 
-test("a declined epic is out of the completion-shaped checks' scope", async () => {
+unitTest("a declined epic is out of the completion-shaped checks' scope", async () => {
   const { inCompletionScope } = await import(new URL("../../lib/integrity.mjs", import.meta.url).href);
   // A declined ask has zero ticked tasks and no gate verdict BY CONSTRUCTION — nobody ever
   // worked it. Leaving it in scope makes every recorded decline a permanent integrity finding,
@@ -248,9 +256,9 @@ test("a declined epic is out of the completion-shaped checks' scope", async () =
 
 // ─────────────────────── the judgment half: the emitted instruction ───────────────────────
 
-test("the rules block instructs the agent to triage an ask before registering it", () => {
-  const cwd = repoWith([{ id: "alpha", title: "a" }]);
-  const block = run(["rules"], { cwd });
+unitTest("the rules block instructs the agent to triage an ask before registering it", () => {
+  const engine = repoWith([{ id: "alpha", title: "a" }]);
+  const block = engine(["rules"]);
   assert.match(block, /## Intake/, "intake must be a section of its own, not a sentence inside another");
   assert.match(block, /triage "/, "the rules must name the command that produces the candidate set");
   assert.match(block, /--outcome declined/, "the rules must say how a 'no' is recorded");
@@ -261,11 +269,11 @@ test("the rules block instructs the agent to triage an ask before registering it
     "the intake section must name the identity-based dedup it is NOT a substitute for");
 });
 
-test("a triage verb exists and is dispatched", () => {
-  assert.match(run(["--help"]), /triage/, "the usage line must name it");
+unitTest("a triage verb exists and is dispatched", () => {
+  assert.match(memoryEngine()(["--help"]), /triage/, "the usage line must name it");
 });
 
-test("the scorer is a pure function of the epics it is given", async () => {
+unitTest("the scorer is a pure function of the epics it is given", async () => {
   const { candidateSet } = await import(TRIAGE);
   const epics = [{ id: "quokka-telemetry", title: "quokka telemetry" }, { id: "other", title: "render" }];
   const a = candidateSet(epics, "quokka telemetry", { limit: 5 });
@@ -278,11 +286,11 @@ test("the scorer is a pure function of the epics it is given", async () => {
 // JSON.stringify escapes C0 inside a string but leaves DEL, the C1 controls (NEL among them) and
 // U+2028/U+2029 raw, so a legacy stored value put a line start into a JSON verb's stdout for any
 // reader that splits lines before it parses. Written as `\u` escapes instead: valid JSON, same value.
-test("U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value", () => {
+unitTest("U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value", () => {
   const ch = (n) => String.fromCharCode(n);
   const status = "queued" + ch(0x2028) + "FORGED" + ch(0x85) + "FORGED" + ch(0x7f) + ch(0x2029);
-  const cwd = repoWith([{ id: "json-poison", title: "escape the json poison surface", status }]);
-  const out = run(["triage", "json poison surface"], { cwd });
+  const engine = repoWith([{ id: "json-poison", title: "escape the json poison surface", status }]);
+  const out = engine(["triage", "json poison surface"]);
   for (const c of [0x2028, 0x2029, 0x85, 0x7f]) assert.ok(!out.includes(ch(c)), `stdout holds no raw U+${c.toString(16).padStart(4, "0")}`);
   const parsed = JSON.parse(out);
   const hit = parsed.candidates.find(x => x.id === "json-poison");
