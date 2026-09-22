@@ -276,3 +276,31 @@ columns are made of:** the store could own `CLAUDE.md`'s managed block (~27 test
 -05, -10 and -14, because `set-tracker` and `set-review-mode` both refresh it), `verifyState()` could
 read its stamp and mtime through `storeOps()` (2 tests, plus whatever else reaches verify-state), and
 the memory store could call `clearConflictsOn()` (1 test).
+
+## BATCH 6 — the decision recorded PER FILE (rows 41–50)
+
+| # | file | tests | moved | stayed | what the file-rung remainder is, and why |
+|---|---|---|---|---|---|
+| 41 | `conductor-27` | 11 | 8 | 3 | the two-root half of gh#82: three tests need TWO initialized repos at two PATHS and NAME both in the emitted warning. A memory store models one root and has no path — `resolve()` returns null by design — so "is the target another initialized repo" would answer yes regardless of the path and the guard would be vacuous rather than tested. |
+| 42 | `conductor-34` | 13 | 5 | 8 | seven tests LOOP OVER SHIPPED SURFACES (`skills/conductor/SKILL.md`, `commands/epic.md`, `commands/status.md`, `commands/hierarchy.md`, `commands/lane-routing.md`, `commands/next.md`, `README.md`, three `agents/*.md`); the file says why splitting is wrong — "asserting against the surfaces JOINED would stay green when the warning is deleted from three of the four". The eighth runs `set-tracker`. |
+| 43 | `conductor-28` | 23 | 4 | 19 | ONE helper decides eleven: `lesson(cwd, slug, fields)` WRITES `docs/lessons/<slug>.md`, and that corpus is the advisor's own INPUT — walked on every tool call, and not the store's. Eight more read shipped files or assert an absence. |
+| 44 | `output-text-integrity` | 11 | 9 | 2 | `CLAUDE.md` byte-identical after `set-tracker` (a file the store does not own), and a SOURCE read of `lib/constants.mjs` for the two escapers both halves share. |
+| 45 | `conductor-18` | 10 | 10 | 0 | — the file is GONE. Both integrity checks are decided from the record and their observable is the report. |
+| 46 | `conductor-15` | 17 | 2 | 15 | the checked-in `fixtures/state-0.26.0.json` — a migration test whose fixture is what 0.26.0 WROTE, which a hand-built object could not be without inventing it — plus the `openspec/changes/archive/<date>-<id>/tasks.md` fixtures `sync` reads. |
+| 47 | `conductor-35` | 20 | 15 | 5 | the five that derive their population by READING `scripts/conductor.mjs`: the `dispatchedVerbs()` dispatch-table scan and the two sweeps built on it, the network-connection scan over every lib file, and the USAGE-vs-dispatch cross-check. |
+| 48 | `managed-rules-block` | 11 | 1 | 10 | the subject IS the human-owned rules file: a hand-written sentinel surviving a refresh, CRLF preserved, an upgrade that must write nothing, an init that must create no `.conductor/`. |
+| 49 | `conductor-39` | 8 | 8 | 0 | — the file is GONE. `createdAt`/`touchedAt` are record values and the degradation rungs are this half's world. |
+| 50 | `conformance` | 11 | 3 | 8 | **ONE fixture decides most of them**: `init` WRITES CLAUDE.md through raw fs, so every conformance case whose fixture initializes a repository stays — the status classes, both refusal classes, the two-roots test and the two delegated-child tests. Two more are file-rung by subject: raw unparseable bytes, and a conflict row whose malformed revision the disk store coerces on a write path the memory store does not share (probed: status 0 there, not 9). |
+
+**135 tests in these ten files; 65 moved.** Two are GONE from the file rung (`conductor-18`,
+`conductor-39`). The rung is at 58 files, the file rung is down to 78 from 80, and the half is at
+29.6 s from 32.9 s (measurements-4.2.md, batch 6).
+
+### THE FOURTH SHAPE — a fixture that had to be a FILE
+
+Batch 6 adds a shape batch 5 did not have, and it is the one no seam change reaches: **a checked-in
+FIXTURE FILE** (`fixtures/state-0.26.0.json`) and a **corpus the subject reads**
+(`docs/lessons/<slug>.md`, the `lesson-advice` advisor's input). Neither is the store's business and
+neither is the test's observable — they are what the test had to build to be about what it is about.
+The five seam edges below do not cover them, and by the change's own rule they do not need to: the
+file rung is where a test that needs bytes on disk belongs.

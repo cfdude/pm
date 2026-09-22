@@ -261,3 +261,57 @@ were files whose every observable was already a value.
 
 This file is the record of that, and it exists so the shortfall is a measurement rather than an
 impression.
+
+## Batch 6 — ten more files migrated (worklist rows 41–50)
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 27.40 s | 27.50 s | 1,269 | 1,269 | 0 |
+| 2 | 30.12 s | 30.23 s | 1,269 | 1,269 | 0 |
+| 3 | 31.16 s | 31.27 s | 1,269 | 1,269 | 0 |
+
+**THE SIX-BATCH TOTAL IS 73.2 s → 29.6 s (the mean of the three runs), a 43.6 s (60%) reduction of the
+FULL assertion half**, 1,269 tests, two globs, one process, every run green. The batch's own delta is
+−3.3 s against batch 5's 32.86 s mean, and the SPREAD is the honest part of this reading: 3.8 s across
+three consecutive runs, the widest of any batch, which is what a small delta on a loaded machine looks
+like. The direction is unambiguous over six batches (73 → 57 → 43 → 38 → 33 → 30) and no single run is
+being read as the number.
+
+**In the worklist's own units:** these ten files carried 4,963 ms of the half's 71,040 ms of per-test
+time (7.0%) — the smallest tranche yet — and 65 of their 135 tests moved. Two of the ten left the file
+rung entirely (`conductor-18`, `conductor-39`).
+
+**The right-hand column, per file:**
+
+| # | file | tests | moved | stayed | what decided it |
+| --- | --- | --- | --- | --- | --- |
+| 41 | `conductor-27` | 11 | 8 | 3 | the two-root half of gh#82: two initialized repos at two PATHS, and the assertion NAMES both in the warning |
+| 42 | `conductor-34` | 13 | 5 | 8 | seven tests loop over SHIPPED surfaces (`skills/conductor/SKILL.md`, `commands/*.md`, `README.md`, `agents/*.md`), so splitting the loop would weaken it; the eighth runs `set-tracker` |
+| 43 | `conductor-28` | 23 | 4 | 19 | eleven write `docs/lessons/<slug>.md` — the advisor's own INPUT, a directory the store does not own; eight read shipped files |
+| 44 | `output-text-integrity` | 11 | 9 | 2 | `CLAUDE.md` unchanged after `set-tracker`, and a SOURCE read of `lib/constants.mjs` |
+| 45 | `conductor-18` | 10 | 10 | 0 | **file GONE** — both checks are decided from the record and print a report |
+| 46 | `conductor-15` | 17 | 2 | 15 | the checked-in `fixtures/state-0.26.0.json`, which is the point of a migration test, plus the `openspec/changes/archive/**` fixtures `sync` reads |
+| 47 | `conductor-35` | 20 | 15 | 5 | the five that read `scripts/conductor.mjs` for the dispatch table, and the network scan over every lib file |
+| 48 | `managed-rules-block` | 11 | 1 | 10 | the subject IS the human-owned rules file — its bytes, its CRLF, its markers |
+| 49 | `conductor-39` | 8 | 8 | 0 | **file GONE** — createdAt/touchedAt are record values and the degradation rungs are this half's world |
+| 50 | `conformance` | 11 | 3 | 8 | **ONE fixture decides it**: `init` writes CLAUDE.md through raw fs, so every case whose fixture initializes a repo stays |
+
+**THE RUNG IS NOW 58 FILES** (43 at batch 5) and the FILE rung is down to **78 files from 80**. The
+floor in `assert-half-has-no-spawn.test.mjs` was raised with this measurement, in the same commit.
+
+### THE GENERAL FORM OF WHAT STAYED, AND IT IS WORTH NAMING BEFORE THE LAST ROWS
+
+Across these ten the retained tests fall into four shapes, and only the first is the rule as written:
+
+1. **The subject is a file's bytes** (`managed-rules-block`, `output-text-integrity`'s CLAUDE.md row).
+2. **The instrument is a LOOP over shipped surfaces** (`conductor-34`, part of `conductor-28`), where
+   splitting the loop to move one value-valued arm would weaken the assertion that is the point.
+3. **The fixture writes a path nothing's assertion names** (`conductor-15`'s checked-in 0.26.0 fixture,
+   `conductor-28`'s lesson corpus) — scenery that had to be a file for the test to be about what it is
+   about at all.
+4. **The verb's side effect writes a file the store does not own** (`init` and `set-tracker`, deciding
+   most of `conformance` and both of `conductor-28`'s excluded arms) — edge 3 of the four in
+   worklist-4.1.md, and the largest remaining fixable population.
+
+The third shape is new to this batch and is the one to watch: a checked-in FIXTURE FILE is not the
+store's business at all, and no seam change would move it.
