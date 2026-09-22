@@ -431,9 +431,26 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       and the disk store is still what a real invocation gets; the entry says both, so the shipped-
       surface change is deliberate rather than noticed. `package.json` is still absent and `npm i`'
       failure is stated as deliberate.
-- [ ] 6.4 Confirm `docs/parity-ledger.json` still claims every touched path and adds none — the store
+- [x] 6.4 Confirm `docs/parity-ledger.json` still claims every touched path and adds none — the store
       lives under `scripts/lib/`, which the ledger does not walk, and nothing new is added under
       `commands/`, `agents/`, `skills/`, `hooks/` or `.claude-plugin/`. State it rather than assume it.
+      **CONFIRMED ON THE COMMITS, not on the intent.** The ledger is 15 capabilities over **31
+      artifacts whose only roots are `.claude-plugin`, `agents`, `commands`, `hooks`, `skills`**
+      (read out of the file rather than recalled). Against the change's whole range
+      (`2eff64d..HEAD`, base through this commit):
+      * `git diff --stat 2eff64d..HEAD -- commands/ agents/ skills/ hooks/ .claude-plugin/` is
+        **empty** — no walked path is touched, so **no claim is lost**;
+      * `git status --porcelain` over the same five directories is **empty** — no untracked file
+        appeared there either, so **nothing is added** that needs a claim;
+      * `docs/parity-ledger.json` itself is **unmodified** across the range, and clean now;
+      * `scripts/test/assert/parity.test.mjs` passes **9/9** on this commit, so the two directions
+        the ledger exists to check (unclaimed, double-claimed) are green against the shipped surface
+        rather than merely unchanged.
+      **What moved is out of the ledger's reach, and that is the whole of why this is a confirmation
+      rather than an edit:** `scripts/lib/store.mjs` and the new `scripts/test/unit/**`,
+      `scripts/test/fixtures/**` files are all under `scripts/`, which the artifact list never names.
+      A ledger that walked `scripts/` would have needed 63 new claims here; one that walks the
+      capability surface correctly needs none.
 - [ ] 6.5 **THE AFTER MEASUREMENT, and it is the change's acceptance.** Re-run 0.3's (a)–(f) on the
       final commit and write `baseline-after.md` beside `baseline-before.md`. The acceptance is
       **sub-15-second pre-commit for the FULL assertion half** and **~1 ms per unit-rung test**, with
