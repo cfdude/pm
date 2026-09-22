@@ -97,22 +97,6 @@ unitTest("record-reconcile on an unknown detour id exits non-zero and writes not
   assert.equal(engine.store.read("state.json").text, before);
 });
 
-// ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
-
-/** The dispatch table's keys, extracted from conductor.mjs EXACTLY as the functional file extracts
- *  them — the `}({ … }[cmd]` object literal, re-pointed for the `main(argv, io)` wrapper. Kept
- *  identical so the two halves cannot disagree about what the table holds. */
-function dispatchKeys(engineSrc) {
-  const dispatchMatch = engineSrc.match(/\(\{\n([\s\S]*?)\n\s*\}\[cmd\]/m);
-  assert.ok(dispatchMatch, "could not locate the dispatch table object in conductor.mjs");
-  const body = dispatchMatch[1];
-  const keys = new Set();
-  for (const m of body.matchAll(/^\s*"([a-z-]+)"\s*:/gm)) keys.add(m[1]);
-  for (const m of body.matchAll(/^\s*([a-zA-Z][\w-]*)\s*:/gm)) keys.add(m[1]);
-  for (const m of body.matchAll(/^\s*([a-zA-Z][\w-]*),?\s*$/gm)) keys.add(m[1]);
-  assert.ok(keys.size > 10, `expected many dispatch keys, only extracted ${keys.size}`);
-  return keys;
-}
 unitTest("record-gate-review writes a structured verdict for the given gate onto an openspec-lane epic", () => {
   const engine = memoryEngine(emptyRecord());
   engine(["add-epic", "--id", "spec-epic", "--lane", "openspec"]);
@@ -236,11 +220,10 @@ unitTest("a bare invocation with no subcommand prints usage and exits 0", () => 
 //    them, the source-level shape and the running hook are pinned from both sides, which is the
 //    division D5's placement rule produces rather than a gap in it.
 
-// ──────────────── the pre-commit hook's SHAPE (moved here in 6.4) ────────────────
+// ──────────────── the pre-commit hook's SHAPE ────────────────
 //
-// THIS TEST READS FILES AND SPAWNS NOTHING, which is why it is in this half and not the other one.
-// What it watches is the gate whose failure mode is silence: a hook that stopped invoking the drift
-// script would commit with the two halves unpaired, and a hook that took the enrolment check back
-// inline would carry two implementations of one rule.
-
-const HOOK = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
+// IT IS NOT HERE, and this note is the record of why rather than a gap: it READS files, so the
+// source scan refuses it in this half. What it watches is the gate whose failure mode is silence —
+// a hook that stopped invoking the drift script would commit with the two halves unpaired, and a
+// hook that took the enrolment check back inline would carry two implementations of one rule — so
+// it lives on the FILE rung, where a source read is what the half is for.
