@@ -69,30 +69,45 @@ jobs:
         # were never in the old glob, but a syntax error in any of them breaks a half (6.5).
         run: |
           node -c scripts/conductor.mjs
-          for f in scripts/lib/*.mjs scripts/test/*.mjs scripts/test/assert/*.mjs scripts/test/functional/*.mjs scripts/test/sweeps/*.mjs scripts/test/fixtures/*.mjs; do node -c "$f"; done
+          for f in scripts/lib/*.mjs scripts/test/*.mjs scripts/test/assert/*.mjs scripts/test/unit/*.mjs scripts/test/functional/*.mjs scripts/test/sweeps/*.mjs scripts/test/fixtures/*.mjs; do node -c "$f"; done
 
       - name: Assertion half
-        # NO `--test-isolation=none` HERE, AND THAT IS A DECISION RATHER THAN AN OVERSIGHT (6.5).
-        # The flag makes the half ONE process, which is the whole point of the split and is how the
-        # pre-commit hook runs it — the developer's per-commit gate, where the saving matters, keeps
-        # the flag. It is VERIFIED PRESENT on the machine this was developed on (Node v26.9.0) and
-        # UNVERIFIED on the version pinned above: `node-version: "18"` has no binary here to probe and
-        # the registry fetch of one failed. Rather than bump the pinned version on an unverified
-        # claim, CI falls back to per-file isolation, which is strictly slower and strictly correct on
-        # every version this repository has ever run on. Bump `node-version` and add the flag in the
-        # same commit once it has been probed on that version.
+        # THIS STEP IS THE ASSERTION HALF'S TWO RUNGS IN ONE INVOCATION (0.48.0 task 2.6), exactly as
+        # the pre-commit hook runs them: one runner, handed `scripts/test/unit/*.test.mjs` and
+        # `scripts/test/assert/*.test.mjs`, with ONE floor over both. The unit rung is not a fourth
+        # bucket and gets no step of its own — it is a rung of this half with the same per-commit
+        # trigger, so splitting it into a second step would give it a trigger of its own and a second
+        # runner process to boot.
+        #
+        # THE FLOOR'S DECLARED COUNT COUNTS TWO DECLARATION SHAPES, for the reason the hook's does:
+        # a file-rung test declares itself with `test(` and a unit-rung test with `unitTest(`. With
+        # only `test(` counted, every unit file would contribute ZERO to `declared` while contributing
+        # its tests to `total`, and a unit file that stopped running would drop from one side of the
+        # floor and not the other.
+        #
+        # NO `--test-isolation=none` HERE, AND IT IS NOW A CLOSED DECISION RATHER THAN A DEFERRAL
+        # (this replaces the "bump and add once probed" TODO 0.47.0 left). THE PROBE WAS RUN on the
+        # oldest binary available on the development machine — nvm's v20.19.4 — and the flag is
+        # ABSENT there: `node --test --test-isolation=none …` is refused outright, while v26.9.0
+        # accepts it. The flag is therefore a recent-major feature, and `node-version: "18"` pinned
+        # above cannot have it. CI keeps per-file isolation: strictly slower, strictly correct on
+        # every version this repository runs, and — the property that matters more here than the wall
+        # clock — it attributes a failure to the FILE that failed. Bumping the pin to a version that
+        # supports the flag is a real option and a different change: it would buy CI wall clock at
+        # the cost of that attribution, and it is not this change's acceptance. Evidence and the
+        # measurement: openspec/changes/unit-rung-and-fixture-snapshots/node-version-fallback-2.4.txt
         run: |
           set -e
-          node --test scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+          node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
             cat /tmp/assert.out
             echo "::error::the assertion half FAILED — the runner's output is above"
             exit 1
           }
           total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')
-          declared=$(git ls-files 'scripts/test/assert/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
+          declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "assertion half: ran ${total}, declared ${declared}"
           if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
-            echo "::error::the assertion half ran ${total} tests but ${declared} are declared in scripts/test/assert/"; exit 1
+            echo "::error::the assertion half ran ${total} tests but ${declared} are declared in its two rungs"; exit 1
           fi
 
       - name: Functional half

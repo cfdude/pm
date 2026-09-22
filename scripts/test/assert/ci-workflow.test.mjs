@@ -31,6 +31,17 @@ const WORKFLOW = path.join(REPO, ".github", "workflows", "ci.yml");
 /** The three bucket steps, by the bucket directory each one runs. */
 export const BUCKETS = ["assert", "functional", "sweeps"];
 
+/** The RUNGS each step's runner is handed — a SET now rather than one directory (0.48.0 task 2.6).
+ *  The assertion half carries two rungs, so its step runs `scripts/test/unit/*.test.mjs` and
+ *  `scripts/test/assert/*.test.mjs` in ONE invocation with ONE floor over both, exactly as the
+ *  pre-commit hook does. The other two steps are unchanged and each names its own directory alone.
+ *
+ *  THE INVARIANT IS UNCHANGED and it is what the guard below still asserts: the floor compares the
+ *  runner's count against exactly the set the runner was GIVEN. A step that enumerated the
+ *  functional half as well would still be refused — it is a superset of what its runner was handed,
+ *  which is the shape D8 forbids. */
+export const RUNGS_OF = { assert: ["assert", "unit"], functional: ["functional"], sweeps: ["sweeps"] };
+
 /** Split a workflow into its steps, keeping `name`, raw text and order. A step starts at its
  *  `- name:` line and ends where the next one begins; indentation is preserved because the YAML
  *  run block's own indentation is not the point here — the text is. */
@@ -50,14 +61,24 @@ function runnerLine(step) {
 
 /** Every reason a bucket step cannot go red on a failing suite, or on the collapse the floor exists
  *  for. Empty means the step is sound. PURE — so the old shape can be fed to it by a test. */
-export function bucketRefusals(stepName, stepText, bucket) {
+export function bucketRefusals(stepName, stepText, bucket, rungs = [bucket]) {
   const found = [];
   const step = { name: stepName, text: stepText };
   const line = runnerLine(step);
+  const want = new Set(rungs);
 
   if (!line) {
     return [`${stepName}: no 'node --test scripts/test/${bucket}/*.test.mjs' invocation — the step ` +
       `does not run the bucket it is named for, and this guard is then checking nothing`];
+  }
+  // THE RUNNER IS HANDED EXACTLY THE EXPECTED RUNGS — no more and no fewer. Added with the two-rung
+  // assertion step (task 2.6): the `declared` check below would accept a runner given the unit rung
+  // whose floor also counted it, so the two checks together are what pin the invariant from both
+  // ends. A runner handed a bucket its floor does not name (or the reverse) is the mismatch.
+  const handed = new Set([...line.matchAll(/scripts\/test\/([\w-]+)\/\*\.test\.mjs/g)].map((m) => m[1]));
+  if (handed.size !== want.size || [...handed].some((h) => !want.has(h))) {
+    found.push(`${stepName}: the runner is handed ${[...handed].sort().join(", ") || "nothing"} ` +
+      `instead of ${[...want].sort().join(", ")} — the step must run exactly the rungs it is named for`);
   }
 
   // 1. The runner's status must be GATED ON, not piped away. `total=$(node --test … | …)` is the
@@ -91,10 +112,10 @@ export function bucketRefusals(stepName, stepText, bucket) {
       found.push(`${stepName}: 'declared' is not enumerated from the index (git ls-files) — a glob ` +
         `that stopped matching would shrink both sides at once and leave the floor blind`);
     }
-    if (named.size !== 1 || !named.has(bucket)) {
+    if (named.size !== want.size || [...named].some((n) => !want.has(n))) {
       found.push(`${stepName}: 'declared' enumerates ${[...named].sort().join(", ") || "nothing"} ` +
-        `instead of scripts/test/${bucket}/ alone — the floor must compare the runner's count ` +
-        `against exactly the set the runner was GIVEN, never a superset of it`);
+        `instead of ${[...want].map((r) => `scripts/test/${r}/`).join(" + ")} — the floor must compare ` +
+        `the runner's count against exactly the set the runner was GIVEN, never a superset of it`);
     }
   }
   return found;
@@ -109,7 +130,7 @@ test("G-C1 CI: every bucket step can go red on a failing suite", () => {
     const step = steps.find((s) => s.text.includes(`scripts/test/${bucket}/*.test.mjs`));
     if (!step) { found.push(`no CI step runs scripts/test/${bucket}/*.test.mjs`); continue; }
     seen++;
-    found.push(...bucketRefusals(step.name, step.text, bucket));
+    found.push(...bucketRefusals(step.name, step.text, bucket, RUNGS_OF[bucket]));
   }
   assert.equal(seen, BUCKETS.length,
     "the workflow must hold one step per bucket; a bucket with no step is a bucket CI never runs");
@@ -157,7 +178,17 @@ test("G-C1 CI: the guard DISCRIMINATES — the shape that shipped is refused, fo
   const superset = fixed.replace(
     "declared=$(git ls-files 'scripts/test/assert/*.test.mjs'",
     "declared=$(git ls-files 'scripts/test/assert/*.test.mjs' 'scripts/test/functional/*.test.mjs'");
-  assert.match(bucketRefusals("Assertion half", superset, "assert").join(" | "),
-    /enumerates assert, functional instead of scripts\/test\/assert\/ alone/,
+  assert.match(bucketRefusals("Assertion half", superset, "assert", RUNGS_OF.assert).join(" | "),
+    /enumerates assert, functional instead of scripts\/test\/assert\/ \+ scripts\/test\/unit\//,
     "a superset enumeration must be refused: the floor must never compare against more than the runner was given");
+
+  // AND A RUNNER HANDED A RUNG ITS FLOOR DOES NOT NAME is refused too (task 2.6): the two ends of
+  // the invariant are checked separately because a step can be wrong in either direction.
+  const mismatched = fixed.replace(
+    "          node --test scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {",
+    "          node --test scripts/test/assert/*.test.mjs scripts/test/functional/*.test.mjs > /tmp/assert.out 2>&1 || {");
+  assert.match(bucketRefusals("Assertion half", mismatched, "assert", RUNGS_OF.assert).join(" | "),
+    /the runner is handed assert, functional instead of assert, unit —/,
+    "a runner given a rung the step is not named for must be refused — here the FUNCTIONAL half, " +
+    "which is the per-commit-cost shape the spec's 'does not run the functional half' forbids");
 });

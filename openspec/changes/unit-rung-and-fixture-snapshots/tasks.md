@@ -215,7 +215,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       runs zero tests and every floor passes, because the floor's declared count is enumerated from
       the same empty set — so the count is asserted in the guard. Verified by emptying the directory
       and confirming the guard fails.
-- [ ] 2.6 GREEN — CI runs the rung in the SAME step as the assertion half, one runner invocation given
+- [x] 2.6 GREEN — CI runs the rung in the SAME step as the assertion half, one runner invocation given
       both globs and one floor over both (`.github/workflows/ci.yml:74`), and the syntax-check loop
       (`:72`) gains `scripts/test/unit/*.mjs`. The pinned `node-version: "18"` (`:33`) is PROBED for
       `--test-isolation=none`; if the probe succeeds, bump-and-add in one commit as `:75`'s comment
