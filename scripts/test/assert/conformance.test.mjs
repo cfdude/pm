@@ -37,6 +37,15 @@ const initializedRepo = fixtureOnce(() => {
   return cwd;
 }, { name: "pm-conformance-init" });
 
+// 4.1 (0.48.0) moved THREE of this file's tests to `scripts/test/unit/conformance.test.mjs`: the
+// exit-handler count, the activity-log instrument's read-is-not-a-log-entry check (the activity
+// directory is store-owned), and a delegated child's status being the RETURNED value. THE EIGHT BELOW
+// STAY, and one fixture decides most of them: `init` WRITES CLAUDE.md through raw fs — edge 3 of this
+// migration's four seam edges — so any conformance case whose fixture initializes a repository cannot
+// be a unit test. Two more are file-rung by subject: the unreadable-state-file row (raw bytes that
+// cannot parse) and the conflict row, whose malformed revision the disk store coerces on a write path
+// the memory store does not share (probed: the same fixture returns 0 there, not 9).
+
 test("conformance: main() RETURNS its status — it is not a promise", () => {
   const cwd = initializedRepo();
   const r = invokeEngine(["init"], { cwd });
@@ -115,37 +124,6 @@ test("conformance: two invocations in one process act on their own roots", () =>
   invokeEngine(["add-epic", "--id", "in-b", "--lane", "claude-code"], { cwd: b });
   assert.deepEqual(readState(a).epics.map(e => e.id), ["in-a"]);
   assert.deepEqual(readState(b).epics.map(e => e.id), ["in-b"]);
-});
-
-test("conformance: the engine registers no process exit handler", () => {
-  const cwd = tmpRepo();
-  const before = process.listenerCount("exit");
-  for (let i = 0; i < 5; i++) invokeEngine(["brief"], { cwd });
-  assert.equal(process.listenerCount("exit"), before,
-    "an exit handler left behind would accumulate one listener per invocation in the shared " +
-    "assertion process, and the activity log would be written once at process end for all of them");
-});
-
-test("conformance: the activity-log instrument runs inside main(), not at process end", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const dir = path.join(cwd, ".conductor", "activity");
-  const files = () => (fs.existsSync(dir) ? fs.readdirSync(dir).filter(n => /^activity-.*\.log$/.test(n)).length : 0);
-  const before = files();
-  // The read paths write nothing; a mutating verb writes one line BEFORE main() returns, so a
-  // caller can read it the moment the call is over.
-  invokeEngine(["brief"], { cwd });
-  assert.equal(files(), before, "reads are not log entries");
-});
-
-test("conformance: a delegated child's status is what main() RETURNS", () => {
-  // The delegation handoff owns the whole invocation, and D2 keeps its exit as a VALUE rather than
-  // a `process.exit`. Without the opt-in the handoff never fires, so the returned status is this
-  // invocation's own — which is the assertion this half can make (the delegated route is
-  // functional-only: it spawns a child).
-  const cwd = tmpRepo();
-  const r = invokeEngine(["--help"], { cwd, env: { PM_ENGINE_DELEGATION: "" } });
-  assert.equal(r.status, 0);
 });
 
 test("conformance: nothing a DELEGATED child prints reaches the process's own streams", () => {
