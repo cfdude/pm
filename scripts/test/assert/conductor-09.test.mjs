@@ -309,12 +309,24 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // glob, and it must never be widened into one. So the guard counts RUNNERS -- lines whose
   // subject is the assert GLOB -- and asserts exactly one, while separately asserting the probe,
   // if present, is the tiny-file probe and nothing else.
-  const runnerLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test.*scripts\/test\/assert\/\*\.test\.mjs/.test(l));
+  // RE-POINTED WITH THE TWO-GLOB RUNNER (0.48.0 task 2.3), in the same commit as the shape it reads
+  // — the rule this guard exists to enforce about itself. The half now carries TWO RUNGS, so the
+  // runner line names two globs; the property is unchanged and is asserted the same way: ONE runner,
+  // EXACTLY, and both its globs are the assertion half's.
+  const runnerLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test.*scripts\/test\/(?:unit|assert)\/\*\.test\.mjs/.test(l));
   assert.equal(runnerLines.length, 1,
-    `the hook must run exactly ONE test runner for the assert glob, and it runs ${runnerLines.length}: ${runnerLines.join(" | ")}`);
+    `the hook must run exactly ONE test runner over the assertion half's rungs, and it runs ${runnerLines.length}: ${runnerLines.join(" | ")}`);
   assert.equal(runnerLines[0].trim(),
-    'if node --test $ISOFLAG scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then',
-    "the hook's runner must name exactly the assertion half through $ISOFLAG — one process, one half, no second glob");
+    'if node --test $ISOFLAG scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then',
+    "the hook's runner must name exactly the assertion half's TWO RUNGS through $ISOFLAG — one " +
+    "process, one half, no third glob, and the unit rung first because that is the order the " +
+    "floor's `git ls-files` list names them in");
+  // AND NOTHING ELSE MAY RIDE ALONG: a third glob here would be the functional half or a bucket,
+  // which is the shape the exact-line assertion above catches one level down and this one catches
+  // by counting them.
+  const globsInRunner = runnerLines[0].match(/scripts\/test\/[a-z]+\/\*\.test\.mjs/g) || [];
+  assert.deepEqual(globsInRunner.slice().sort(), ["scripts/test/assert/*.test.mjs", "scripts/test/unit/*.test.mjs"],
+    "the runner is handed exactly the assertion half's two rungs");
   const probeLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l) && !/^\s*(?:if\s+)?node --test.*scripts\/test\/assert\/\*\.test\.mjs/.test(l));
   for (const probe of probeLines) {
     assert.match(probe, /lessons-index\.test\.mjs/,
@@ -327,8 +339,9 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // TRACKED files of the half the runner was GIVEN (the index, via git ls-files), never from the
   // shell's expansion of the runner's own pattern — the two shrinking in lockstep is exactly how a
   // file renamed out of the glob used to drop from both sides at once and leave the floor blind.
-  assert.match(hookText, /declared=\$\(git ls-files 'scripts\/test\/assert\/\*\.test\.mjs'/,
-    ".githooks/pre-commit's floor does not enumerate the tracked files of the half its runner was given");
+  assert.match(hookText, /declared=\$\(git ls-files 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
+    ".githooks/pre-commit's floor does not enumerate the tracked files of the RUNG SET its runner " +
+    "was given — and the set is a LIST now, so a floor still naming one rung would count a subset");
   assert.doesNotMatch(hookText, /declared=\$\(grep /,
     "the floor's declared count must not be the shell's expansion of the runner's own pattern");
   // THE SUPERSET SHAPE (G-I1b): `declared` must enumerate the half the runner was given and NOTHING

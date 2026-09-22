@@ -192,7 +192,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       `assert/drift-script.test.mjs:60-64`, which today assert only `assert`/`functional`/`sweeps`
       (and the two null cases). `drift.mjs`'s four checks are otherwise unchanged (`:111`) — the rung
       reaches them as a member of the assertion half.
-- [ ] 2.3 GREEN — the pre-commit hook runs BOTH rungs in ONE process and its floor enumerates exactly
+- [x] 2.3 GREEN — the pre-commit hook runs BOTH rungs in ONE process and its floor enumerates exactly
       those two globs (`.githooks/pre-commit:125`, `:154`). The declaration becomes
       `git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs'` piped through the
       existing per-file `grep -c '^test('`. The hook's own comment at `:144` forbids enumerating both
@@ -200,7 +200,7 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       given, so the invariant holds; enumerating a set the runner was NOT given is what aborts every
       commit. That distinction is written into the comment AND into the requirement, or the next reader
       re-derives the wrong rule.
-- [ ] 2.4 GREEN — the hook's isolation-flag probe (`:117`) covers the two-glob invocation, and the
+- [x] 2.4 GREEN — the hook's isolation-flag probe (`:117`) covers the two-glob invocation, and the
       Node-18 fallback still runs both rungs correctly. The probe is per-clone and cached; a two-glob
       runner on a Node without `--test-isolation` must still run every file, which the floor then
       confirms.

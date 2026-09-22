@@ -1,0 +1,47 @@
+# Task 2.4 — the two-glob runner on a Node WITHOUT `--test-isolation`
+
+Measured on this machine, 2026-09-22. Two binaries are installed; `node` is v26.9.0 and nvm carries
+v20.19.4, so the probe could be answered for a second major rather than argued from the comment.
+
+## The probe's question, asked of both
+
+    $ node --version
+    v26.9.0
+    $ node --test --test-isolation=none scripts/test/unit/state-verb.test.mjs \
+             scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1 && echo supported
+    supported
+
+    $ ~/.nvm/versions/node/v20.19.4/bin/node --version
+    v20.19.4
+    $ ~/.nvm/versions/node/v20.19.4/bin/node --test --test-isolation=none \
+             scripts/test/unit/state-verb.test.mjs scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1 \
+        || echo "not supported"
+    not supported
+
+So the hook's per-clone probe answers DIFFERENTLY on the two binaries present here, which is exactly
+the case the fallback exists for — and it means the fallback is not a hypothetical path on this
+machine.
+
+## The fallback runs BOTH rungs
+
+The hook's cached answer is empty on v20, so the runner is invoked WITHOUT the flag (process-per-file
+isolation). The same two-glob shape, on v20:
+
+    $ ~/.nvm/versions/node/v20.19.4/bin/node --test scripts/test/unit/*.test.mjs \
+             scripts/test/assert/lessons-index.test.mjs scripts/test/assert/render-byte-parity.test.mjs
+    # tests 16
+    # pass 16
+    # fail 0
+
+16 tests from BOTH rungs — the 8 unit-rung proofs and the 8 file-rung ones (lessons-index's 6 and
+render-byte-parity's 2) — run in one invocation with no isolation flag. The reporter is TAP (`#`,
+older Node's default), which is the second branch the hook's summary line already parses; the FLOOR
+is what confirms the count, and it is version-independent because it enumerates the tracked files
+rather than the runner's output.
+
+## What is NOT measured here, stated rather than implied
+
+Node **18** itself is not installed on this machine, so the pinned `node-version: "18"` in
+`.github/workflows/ci.yml` (task 2.6) is probed on 20 rather than on 18. The class of the answer is
+the same — the flag is absent before the release that added it — but the CLAIM that 18 lacks it rests
+on v20 lacking it, not on a v18 measurement. Task 2.6 says the same thing in its own commit.
