@@ -9754,7 +9754,7 @@
         "8fe0a3b79621b7e251b47f053febc2a42d9e61ca"
       ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-21T16:49:12.182Z",
+      "touchedAt": "2026-09-22T04:49:29.994Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -9777,7 +9777,7 @@
         }
       },
       "startedAt": "2026-09-21T03:55:42.343Z",
-      "release": "0.47.0",
+      "release": "0.48.0",
       "disposition": {
         "outcome": "unknown",
         "recordedAt": "2026-09-21T16:49:12.179Z",
@@ -9869,6 +9869,26 @@
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:07:20.863Z",
       "touchedAt": "2026-09-21T13:07:20.867Z"
+    },
+    {
+      "id": "unit-rung-and-fixture-snapshots",
+      "title": "0.48.0: a unit test rung over in-memory state; fixture snapshots for integration-shaped tests; sub-10s pre-commit",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "functional-assertion-test-split",
+          "reason": "continues its architecture to the unit rung"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-22T04:49:43.433Z",
+      "touchedAt": "2026-09-22T04:49:44.012Z",
+      "release": "0.48.0"
     }
   ],
   "detourStack": [],
@@ -9879,7 +9899,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1222,
+  "revision": 1225,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10268,6 +10288,11 @@
         ],
         "reviewer": "INLINE review by the applying agent, NOT fresh-context lenses — this run's discipline forbids subagent dispatch, and that limitation is recorded here rather than papered over. Six questions over the release's two spec files (engine-invocation, suite-certification): (1) contradiction — none; the near-miss (one-process assertion half vs two-independent-invocations) is mutual dependency, not conflict. (2) double ownership — none; conductor.mjs's covers referencing the conformance set is a reference, and engine-invocation explicitly declines to restate verb-surface's refusal classes. (3) unmeetable — none in the specs. (4) gaps against proposal What-Changes — one: ci.yml's non-descending syntax loop has no requirement; declined as POLISH. (5) vocabulary forks — two, change-internal: \"double\" vs \"fake\", \"change-triggered bucket\" vs \"sweeps bucket\"; declined, renaming churns a passed Gate 1 contract for no behaviour change. (6) shared chokepoint — the single-process assertion half with injected streams is load-bearing for BOTH specs; guarded on each side (1.2 exits, 3.5 roots, 5.2 spawns). FINDING raised against the TASK LIST, not the specs: git.mjs's resolvedCommitCache is keyed by VALUE ONLY (unreachedCache by head+commits), so two invocations in one process against two roots share it and a hex abbreviation resolving in one repository and not the other gets the first repository's answer — engine-invocation forbids observing another invocation's values, and no task keys those caches; handled in the gateway work (4.2) rather than by amending a spec that is already correct. Verdict pass: no BLOCK found in either spec file; one BLOCK-level finding against tasks.md, acted on. 2026-09-20"
       }
+    },
+    {
+      "id": "0.48.0",
+      "intent": "Make assertions actually assertions: a unit rung over in-memory state and fixture snapshots, so the pre-commit hook is seconds and the dev loop is sub-second",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
