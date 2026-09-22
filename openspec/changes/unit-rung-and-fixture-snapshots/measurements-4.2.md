@@ -375,3 +375,52 @@ file with a large sum and no value-observing tests stays on the file rung by des
 here is the record of a decision that was made rather than skipped." No commit was made for it, and
 none should be: a commit whose only content was a comment would be bookkeeping wearing a migration's
 name.
+
+## Batch 8 — the three FIXABLE seam edges worked, and only one of them landed as written
+
+Not a batch of migrated files: 4.1's ordered worklist is exhausted at row 61, and the thirty rows that
+remain (62–91) carry **1,795 ms — 2.5% of the baseline — between them**, so none of them holds tests
+whose time is material and none were migrated. What was worked instead is the three edges the batch-7
+measurement named as the only path to the acceptance.
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 29.22 s | 29.28 s | 1,269 | 1,269 | 0 |
+| 2 | 28.45 s | 28.51 s | 1,269 | 1,269 | 0 |
+| 3 | 29.40 s | 29.46 s | 1,269 | 1,269 | 0 |
+
+**Median 29.22 s**, against batch 7's 29.03 s — a **+0.19 s** movement, inside the spread of these
+three runs (0.95 s) and inside batch 7's (0.64 s). **The half has not moved, and the honest reading is
+that it could not have:** three tests migrating from the file rung to the unit rung, where the same
+three cost ~10 ms in total, cannot show up in a 29 s run. Reported as a number rather than as a
+direction, because it is not one.
+
+**Command note.** The command above is the pre-commit hook's — BOTH rungs in ONE process — which is
+what every batch in this file is measured with, so these numbers stay comparable with the 73.2 s
+baseline and with each other. Task 0.3(a) named `scripts/test/assert/*.test.mjs` alone, which was the
+whole half before 0.48.0 gave the half a second rung.
+
+### THE THREE EDGES, AND WHAT EACH COST
+
+| edge | outcome | tests | commit |
+| --- | --- | --- | --- |
+| E2 — `verifyState()`'s raw reads (`worktree-hygiene.mjs:120`/`:130`) | **SHIPPED** | 2 | `ee6778e` |
+| E3 — `clearConflictsOn()` absent from the memory store's `writeRecord` | **SHIPPED** | 1 | `ba918da` |
+| E1 — the `CLAUDE.md` managed rules block | **BLOCKED — needs a spec change** | ~27 | — |
+| E3, second half — `commit-observe.json` in the `ARTIFACT` table | **BLOCKED — design D1's NOT-OWNED row** | 2 | — |
+
+Each shipped edge is its own commit and each carries the test(s) it unblocks; the RED for each is
+saved in this directory (`red-E2.txt`, `red-E3a.txt`) and named in its commit message.
+
+**E1 AND E3's SECOND HALF ARE STOPS, NOT SKIPS**, and worklist-4.1.md carries the evidence for both.
+E1 would amend the `engine-invocation` delta's boundary paragraph — the one the recorded cross-spec
+review (task 0.2) lists as a BLOCK it FIXED, and whose hashes that verdict was recorded over — so
+amending it stales the verdict and the artifacts Gate 1 reviewed. E3's second half would reverse design
+D1's explicit NOT-OWNED row for `commit-observe.json`, on a mechanical rationale (the record is written
+under an O_EXCL lock whose identity is an inode and a nonce, broken by an mtime stale-age rule).
+
+**AND THE CONSEQUENCE FOR THE ACCEPTANCE, STATED PLAINLY: sub-15 s is NOT reached.** 29.22 s against a
+29.03 s batch-7 median is 60.1% below the 73.2 s baseline and 2.0× the 12.2 s all-flush-removed control
+— the control remains an upper bound that removes the file rung's flushes too, so it never licensed a
+sub-15 s claim for the whole half. The gap between 29.2 s and 12.2 s is E1's ~27 tests, and E1 needs a
+spec decision this apply loop is not authorised to make. A miss is reported as a miss with the number.

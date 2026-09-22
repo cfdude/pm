@@ -359,3 +359,79 @@ shape — fixture record in, store read out — and the commits were already car
 `git show --stat`-verifiable units each. It is recorded here because the worklist's own preamble says
 "one commit per file", and a deviation that is not written down reads as a rule that was never in
 force. The attribution and the `git show --stat` verification were done per commit as usual.
+
+## ROWS 62–91 — RECORDED BY COST, NOT ATTEMPTED, AND 4.1 IS NOT TICKED BECAUSE OF IT
+
+The thirty rows below row 61 are the tail of the same descending table: `conductor-11` at the top of
+them carries **203 ms across 5 tests**, `outcome-vocabulary` at the bottom carries **1 ms across 3**,
+and the thirty sum to **1,795 ms — 2.5% of the 71,040 ms baseline** (batch 7's arithmetic, unchanged
+and re-stated rather than re-derived). No row's tests are material on their own, and migrating every
+one of them perfectly moves the half to roughly 27 s against a 29.2 s measured today — so none was
+migrated, and no commit was made for any of them.
+
+**THEIR PER-FILE DECISIONS ARE NOT RECORDED, AND THAT IS THE HONEST STATE.** 4.1 requires a per-file
+decision for a file that STAYS, and the four shapes the sixty-one attempted rows established (the
+subject is the filesystem; a fixture that writes a path; a file the store does not own; a verb whose
+side effect writes a path) are the reasons a file stays — but they were established by ATTEMPTING each
+move, and this batch was not attempted. Several of these files document in their own headers that they
+are file-rung by construction — `store-seam` (two stores in one process), `fixture-snapshot` (the
+shared-template hazard), `assert-half-has-no-spawn`, `drift-script`, `render-byte-parity`,
+`no-inline-exit`, `ci-workflow`, `hermetic-git`, `git-gateway-guard`, `parity`, `lessons-index`,
+`outcome-vocabulary`, `emitted-invocations`, `engine-resolution` and `hooks-schema` are all guards,
+walks or scanners over SHIPPED surfaces, which is a read the store does not own — but "documented as a
+guard" is not the same evidence as a move that was attempted and filed, and at least
+`state-write-verification`, `per-call-roots`, `delivered-obligations`, `unknown-status-integrity` and
+`conductor-11` may hold a movable minority.
+
+**So task 4.1 is NOT ticked**, on its own rule rather than on taste: the worklist is dispositioned by
+COST, and 4.1 asks for a decision per FILE. Task 4.2 is not ticked either, and its own record is in
+`measurements-4.2.md` (batch 8): the half is at **29.22 s median** from 73.2 s, and the acceptance's
+remaining gap is not these rows.
+
+## THE THREE FIXABLE EDGES — DISPOSITIONED: ONE HALF OF TWO SHIPPED, TWO STOPS
+
+Recorded here because the section above calls them "the only path to the acceptance", and the working
+of them changed what that sentence means.
+
+**E2 — SHIPPED.** `worktree-hygiene.mjs:120`/`:130` now read the render stamp and the record's mtime
+through `storeOps()`, so the reader is behind the same door `render.mjs:382`/`:387` write through. The
+two `verify-state` success tests moved to `scripts/test/unit/conductor-07.test.mjs` in the same commit
+(`ee6778e`), RED saved as `red-E2.txt`. `worktree-hygiene.mjs` is a certified module AND an
+engine-source trigger, so that commit carries a re-certified record (`certify functional` 1181/1181,
+`certify sweeps` 25/25) — a cost the other two edges do not have.
+
+**E3, FIRST HALF — SHIPPED.** `clearConflictsOn(this)` is now called from the memory store's
+`writeRecord()` as well (`ba918da`), in the disk store's position: after the write lands, and not on
+the `unchanged` early return. `assert/conductor-12.test.mjs`'s "a successful state write clears the
+conflict log" moved with it, RED saved as `red-E3a.txt`.
+
+**E1 — A STOP, AND IT NEEDS A SPEC DECISION THIS APPLY LOOP IS NOT AUTHORISED TO MAKE.** Making the
+managed-block write store-mediated means the store OWNS `CLAUDE.md`, and three reviewed artifacts say
+it does not:
+
+1. `specs/engine-invocation/spec.md:22–29` — the delta this change proposes states it in bold: "a verb
+   that also refreshes a repository file the store does not own — the `CLAUDE.md` managed rules block,
+   `.gitignore` — still writes that file, **through the same code path as before, whichever store it
+   was handed**."
+2. Task 0.2's RECORDED cross-spec review verdict names that paragraph as a BLOCK IT FIXED: "the
+   scenario was unreachable — init() writes CLAUDE.md (rules.mjs:1097) and .gitignore through raw fs,
+   both deliberately outside the store per design D1, so the scenario was narrowed to the store's own
+   footprint and an explicit boundary paragraph was added", and it closes "Recorded AFTER the amendment
+   above, so the recorded hashes cover the amended text." Amending it stales that verdict, which is
+   the release's required-task-item-5 record.
+3. `design.md:160–165` (the NOT-OWNED table) and `:178` ("Those 251 CLAUDE.md-observing tests
+   therefore stay on the file rung") state the boundary as a decision with its reason.
+
+The code side is one line: `rules.mjs:1112`'s `fs.writeFileSync(target, next)`, reached by
+`set-tracker` (`tracker.mjs:98`/`:120`/`:194`), `set-review-mode`, `init`, `upgrade` and `write-rules`.
+That makes it a spec change, not an unimplementable fix — which is why it stops here rather than being
+silently done or silently dropped.
+
+**E3, SECOND HALF — ALSO A STOP, ON DESIGN D1 RATHER THAN ON THE SPEC.** `commit-observe.json` is
+carried in `design.md:165` as explicitly NOT OWNED, with a mechanical reason: the record is written
+under an O_EXCL lock whose identity is an inode and a nonce and broken by an mtime stale-age rule
+(`commit-watch.mjs:173–200`, `:242`), so a store that took the record and left the lock would split
+one from the other — "the anchor without its lock is a lost update waiting to happen". Its two tests
+are `assert/commit-observation.test.mjs`'s corrupt-observation-record case and the adjacent "no anchor
+is written" case; both are 353 ms of the half between them. Reversing a reviewed design decision for
+2 tests is not a trade this loop should make unasked.
