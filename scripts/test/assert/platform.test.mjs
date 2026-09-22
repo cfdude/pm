@@ -4,47 +4,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, runCombined, invokeEngine } from "../fixtures/assert-harness.mjs";
 
+// 4.1 (0.48.0) moved SIX of this file's tests to the unit rung — the whole `rules`-verb family, whose
+// observables are the resolved platform and the emitted text, both values. `scripts/test/unit/
+// platform.test.mjs` holds them. What remains here needs a PATH: `write-rules`/`init` WRITE the rules
+// block through raw fs (the seam edge "a VERB whose side effect writes a path"), `rules-target` READS
+// the filesystem to resolve first-existing-wins, and the shipped-hooks test reads hooks/hooks.json.
+
 // ────────────── platform resolution + rules target ──────────────
-
-test("resolvePlatform prefers an explicit --platform flag over everything", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const out = run(["rules", "--platform", "codex"], { cwd });
-  assert.match(out, /\/pm-status/, "codex form should appear when --platform codex is passed");
-  assert.doesNotMatch(out, /\/pm:status/, "the claude-code form must not leak through");
-});
-
-test("resolvePlatform rejects an unknown --platform instead of silently defaulting", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const r = invokeEngine(["rules", "--platform", "nope"], { cwd });
-  assert.equal(r.status, 1);
-  assert.match(r.stderr, /--platform must be one of claude-code\|hermes\|codex/);
-});
-
-test("resolvePlatform falls back to claude-code when nothing declares a platform", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  // CLAUDECODE is blanked to prove the TERMINAL DEFAULT is doing the work. (This comment used
-  // to claim it distinguished the default from an "env rung" -- it never could, because that
-  // rung also returned "claude-code". The rung is gone; the blanking stays, so the assertion
-  // cannot be satisfied by an env var that happens to be set in the runner's environment.)
-  const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
-  assert.match(out, /\/pm:status/);
-});
-
-test("an unrecognised recorded platform falls back rather than corrupting the block", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const p = path.join(cwd, ".conductor", "state.json");
-  const state = JSON.parse(fs.readFileSync(p, "utf8"));
-  state.platform = "not-a-real-platform";          // hand-edited or written by a future version
-  fs.writeFileSync(p, JSON.stringify(state, null, 2));
-
-  const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
-  assert.match(out, /\/pm:status/, "a garbage recorded platform must resolve to the base platform");
-  assert.doesNotMatch(out, /not-a-real-platform/);
-});
 
 test("rulesTarget returns CLAUDE.md for claude-code regardless of a stray AGENTS.md", () => {
   const cwd = tmpRepo();
@@ -53,34 +19,6 @@ test("rulesTarget returns CLAUDE.md for claude-code regardless of a stray AGENTS
   assert.ok(fs.existsSync(path.join(cwd, "CLAUDE.md")), "claude-code has no chain; CLAUDE.md is written");
   const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
   assert.doesNotMatch(agents, /BEGIN pm-conductor rules/, "the stray file must be left alone");
-});
-
-// ────────────── per-platform command form ──────────────
-
-test("rules block uses the platform's command form, and the body stays identical otherwise", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-
-  const cc = run(["rules", "--platform", "claude-code"], { cwd });
-  const hermes = run(["rules", "--platform", "hermes"], { cwd });
-  const codex = run(["rules", "--platform", "codex"], { cwd });
-
-  assert.match(cc, /\/pm:status/);
-  assert.match(hermes, /\/pm:status/, "Hermes preserves ':' in plugin command names");
-  assert.match(codex, /\/pm-status/, "Codex command names come from prompt-file stems: flat");
-  assert.doesNotMatch(codex, /\/pm:/, "no namespaced form may leak into the codex block");
-
-  // The BODY is platform-neutral: normalising the command form makes the blocks equal.
-  const norm = (s) => s.replace(/\/pm[-:]/g, "/pm§");
-  assert.equal(norm(codex), norm(cc), "only command strings may differ between platforms");
-  assert.equal(norm(hermes), norm(cc));
-});
-
-test("rulesBlock defaults to the claude-code command form when no platform is given", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
-  assert.match(out, /\/pm:status/);
 });
 
 // ── regression: the block ANCHOR must tolerate older decoration ──
