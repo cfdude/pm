@@ -304,3 +304,58 @@ FIXTURE FILE** (`fixtures/state-0.26.0.json`) and a **corpus the subject reads**
 neither is the test's observable — they are what the test had to build to be about what it is about.
 The five seam edges below do not cover them, and by the change's own rule they do not need to: the
 file rung is where a test that needs bytes on disk belongs.
+
+
+## BATCH 7 — the decision recorded PER FILE (rows 51–60), and the acceptance's REAL bound
+
+| # | file | tests | moved | stayed | what the file-rung remainder is, and why |
+|---|---|---|---|---|---|
+| 51 | `gate-guard-write-paths` | 33 | 27 | 6 | 1.3's two source scans (the closed list must appear in `gate-guard.mjs` and no other engine source); 2.5's three (an unreadable record is RAW BYTES with a conflict marker); 3.1 (the shipped `hooks/hooks.json` matcher). The 27 that moved include the whole HOOK family, whose fixture was `fixtureOnce`-snapshotted at a measured 133 ms — over the memory store the same five verbs build the same RECORD in about a millisecond. |
+| 52 | `commit-observation` | 10 | 6 | 4 | the shipped hooks.json registration; the unreadable-state row (raw bytes); and TWO about `.conductor/commit-observe.json`, which is deliberately NOT in the store's ARTIFACT table — so neither its presence nor its absence has a store sibling. |
+| 53 | `verb-surface` | 8 | 2 | 6 | `dispatchKeys()` (the dispatch table read out of conductor.mjs) and `WATCHED`, a four-path snapshot that includes `CLAUDE.md`. Watching the paths a refusal must leave alone IS those tests' assertion. |
+| 54 | `commit-resolution` | 7 | 5 | 2 | g2-1 asserts NO file was created at an ABSOLUTE path outside the repository (`/tmp/pm-should-never-exist`); g2-M17 is a source scan for `GIT_NO_LAZY_FETCH`. |
+| 55 | `conductor-26` | 6 | 5 | 1 | the unreadable-state rung — raw bytes that cannot parse. |
+| 56 | `unconsidered-outcomes` | 16 | 15 | 1 | 4.4's second half writes 47 unticked-task PLAN FILES under `docs/superpowers/plans/`, which is what `epicProgress()` reads — the file produces the number. |
+| 57 | `detached-warning` | 5 | 5 | 0 | — the file is GONE. Over the memory store there is NO REPOSITORY AT ALL, which is this half's fixture rather than a limitation. |
+| 58 | `hook-verbs-e2e` | 4 | **0** | 4 | — NOTHING TO MOVE, and it is the first such row. Every test derives the registration set by READING `hooks/hooks.json` — that derivation IS the subject — and then drives the argv against an `init`ed tree. Both halves of every test are file-rung by construction. |
+| 59 | `detached-suppression` | 5 | 5 | 0 | — the file is GONE. Every artefact the suppression rule covers is a store-owned artifact, so "it was still written" is `store.exists(...)`. |
+| 60 | `head-attachment` | 3 | 3 | 0 | — the file is GONE. `hasState(cwd)` becomes `store.exists("state.json")`, and the two two-root tests become TWO MEMORY STORES in one process, which is exactly the property they assert. |
+| 61 | `positional-and-help-tokens` | 5 | 5 | 0 | — the file is GONE (row 61 belongs to batch 8; migrated in the same run, see the note below). |
+
+**~80 tests in rows 51–60; 45 moved.** Four rows are GONE from the file rung. The rung is at 63 files,
+the file rung is down to 74 from 78, and the half is at 29.0 s from 32.9 s (measurements-4.2.md,
+batch 7).
+
+### THE ACCEPTANCE'S REAL BOUND, IN ARITHMETIC RATHER THAN IN HOPE
+
+Batch 7's ten files carried 2,661 ms of the half's 71,040 ms of per-test time — **3.7%** — and the batch
+took the half down by 0.6 s. The worklist is ordered by cost, so the migration has reached the cheap
+tail, and the numbers that follow are the ones the acceptance actually turns on:
+
+* **the thirty rows that remain (62–91) carry 1,795 ms between them — 2.5% of the baseline.** Migrating
+  EVERY one of them perfectly could take the half to roughly **27 s** and no further;
+* the change's acceptance is **sub-15 s**, and the control that bounds it is **12.2 s with every flush
+  removed** (task 0.3(d)).
+
+**So the remaining worklist rows cannot reach the change's own acceptance criterion, and that is a
+measurement rather than a forecast.** What stands between 29.0 s and 12.2 s is not unmigrated files: it
+is the fsync-bearing tests RETAINED inside the thirty-one files already migrated and the twenty-eight
+never touched, every one of them held there by a seam edge. **The three FIXABLE edges are the only path
+to the acceptance**, and they are now a quantified obligation rather than a tidy-up:
+
+1. the store could own `CLAUDE.md`'s managed block (~27 tests across conductor-04, -05, -10 and -14,
+   because `set-tracker` and `set-review-mode` both refresh it — and `init` writes it, which is what
+   keeps most of `conformance` and `hook-verbs-e2e` on the file rung);
+2. `verifyState()` could read its stamp and mtime through `storeOps()` (2 tests, plus whatever else
+   reaches verify-state);
+3. the memory store could call `clearConflictsOn()` (1 test), and — found in batch 7 — the store's
+   ARTIFACT table could own `commit-observe.json`, which would move two more.
+
+### TWO DEVIATIONS FROM `one commit per file`, STATED RATHER THAN BURIED
+
+Rows 56+57 and rows 59+60+61 were migrated in ONE COMMIT EACH (two commits for five files) instead of
+one commit per file. The reason is that each file's change in those five was a translation of the same
+shape — fixture record in, store read out — and the commits were already carrying two or three
+`git show --stat`-verifiable units each. It is recorded here because the worklist's own preamble says
+"one commit per file", and a deviation that is not written down reads as a rule that was never in
+force. The attribution and the `git show --stat` verification were done per commit as usual.

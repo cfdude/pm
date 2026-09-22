@@ -315,3 +315,63 @@ Across these ten the retained tests fall into four shapes, and only the first is
 
 The third shape is new to this batch and is the one to watch: a checked-in FIXTURE FILE is not the
 store's business at all, and no seam change would move it.
+
+## Batch 7 — ten more files migrated (worklist rows 51–60)
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 28.67 s | 28.78 s | 1,269 | 1,269 | 0 |
+| 2 | 29.31 s | 29.43 s | 1,269 | 1,269 | 0 |
+| 3 | 29.03 s | 29.18 s | 1,269 | 1,269 | 0 |
+
+**THE SEVEN-BATCH TOTAL IS 73.2 s → 29.0 s, a 44.2 s (60%) reduction of the FULL assertion half**, and
+this batch's own delta is **−0.6 s** — the smallest of the seven, and the tightest spread (0.64 s
+across three runs).
+
+**WHY IT IS SMALL, AND THIS IS THE BATCH'S FINDING RATHER THAN A DISAPPOINTMENT.** These ten files
+carried 2,661 ms of the half's 71,040 ms of per-test time — **3.7%** — and 45 of their ~80 tests moved.
+The worklist is ordered by cost, so the migration has reached the cheap tail: **the thirty rows that
+remain carry 1,795 ms between them, 2.5% of the baseline.** ARITHMETIC, stated plainly because it is
+the acceptance's real bound:
+
+* migrating EVERY remaining row perfectly, deleting every remaining file from the file rung, could
+  take the half to roughly **27 s** at best;
+* the change's acceptance is **sub-15 s**, and the control that bounds it is **12.2 s with every flush
+  removed** (task 0.3(d)).
+
+**So the remaining worklist rows CANNOT reach the acceptance on their own, and the measurement says so
+before Gate 2 has to.** What stands between 29.0 s and 12.2 s is not unmigrated files — it is the
+fsync-bearing tests RETAINED inside the thirty-one files already migrated plus the twenty-eight never
+touched, every one of them held there by a seam edge. The three FIXABLE edges (worklist-4.1.md) are
+therefore not a tidy-up: they are the only path to the change's own acceptance criterion.
+
+**In the worklist's own units, per file:**
+
+| # | file | tests | moved | stayed | what decided it |
+| --- | --- | --- | --- | --- | --- |
+| 51 | `gate-guard-write-paths` | 33 | 27 | 6 | 1.3's two source scans, 2.5's three (raw conflict-marked bytes), and 3.1 (shipped hooks.json) |
+| 52 | `commit-observation` | 10 | 6 | 4 | hooks.json; raw bytes; `commit-observe.json` — not in the store's ARTIFACT table, so its absence is not expressible |
+| 53 | `verb-surface` | 8 | 2 | 6 | `dispatchKeys()` plus `WATCHED`, a four-path snapshot including CLAUDE.md |
+| 54 | `commit-resolution` | 7 | 5 | 2 | an absolute path OUTSIDE the repository (`/tmp/pm-should-never-exist`), and a source scan |
+| 55 | `conductor-26` | 6 | 5 | 1 | raw unparseable bytes |
+| 56 | `unconsidered-outcomes` | 16 | 15 | 1 | 47 unticked-task PLAN FILES — the fixture that produces the number |
+| 57 | `detached-warning` | 5 | 5 | 0 | **file GONE** |
+| 58 | `hook-verbs-e2e` | 4 | **0** | 4 | **THE FIRST ROW WITH NOTHING TO MOVE**: every test derives the registration set by READING `hooks/hooks.json` and drives it against an `init`ed tree |
+| 59 | `detached-suppression` | 5 | 5 | 0 | **file GONE** |
+| 60 | `head-attachment` | 3 | 3 | 0 | **file GONE** |
+| 61 | `positional-and-help-tokens` | 5 | 5 | 0 | **file GONE** (row 61 of batch 8, migrated in the same run) |
+
+**THE RUNG IS NOW 63 FILES** (58 at batch 6) and the FILE rung is down to **74 files from 78**. The
+floor in `assert-half-has-no-spawn.test.mjs` was raised with this measurement, in the same commit.
+
+### ROW 58 — THE FIRST FILE WITH NOTHING TO MOVE, AND WHY THAT IS A RESULT
+
+`hook-verbs-e2e` is four tests and none of them could leave. Every one derives the registration set by
+READING `hooks/hooks.json` — the derivation is the subject, because "the fast half learns everything
+about the registrations except the boundary itself" is what the file is FOR — and then drives those
+argv against an `init`ed tree. Both halves of every test are file-rung by construction: the source read
+and the `init`. Its row is recorded as **moved 0**, which the worklist's own preamble authorises: "a
+file with a large sum and no value-observing tests stays on the file rung by design, and its presence
+here is the record of a decision that was made rather than skipped." No commit was made for it, and
+none should be: a commit whose only content was a comment would be bookkeeping wearing a migration's
+name.
