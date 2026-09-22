@@ -137,3 +137,52 @@ each one: the four seam edges decide how much of a file can leave, not the file'
 
 This file is the record of that, and it exists so the shortfall is a measurement rather than an
 impression.
+
+## Batch 4 — the last nine files of rows 21–30
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 38.65 s | 38.73 s | 1,269 | 1,269 | 0 |
+| 2 | 38.64 s | 38.72 s | 1,269 | 1,269 | 0 |
+| 3 | 37.67 s | 37.76 s | 1,269 | 1,269 | 0 |
+
+**THE FOUR-BATCH TOTAL IS THE NUMBER NOW: 73.2 s → 38.0 s, a 35.2 s (48%) reduction of the FULL assertion
+half** — 1,269 tests, two globs, one process, every run green. Row 30 of this batch (`flag-parsing`) was
+already migrated in batch 1, so this batch is nine files, not ten; the row is counted once.
+
+**In the worklist's own units:** these nine files carried 9,653 ms of the half's 71,040 ms of per-test
+time (13.6%), and 101 of their 155 tests moved — the lowest ratio of any batch, because three of the nine
+are files whose SUBJECT is the filesystem: `conductor-20` (the plan-resolution ladder) moved 2 of 19,
+`cross-spec-review` 2 of 17, `conductor-20` 2 of 19 and `conductor-23` 11 of 26 in the batch before it.
+The migrated 101 tests cost 478 ms of wall clock in total.
+
+**The rung is now 33 files and 515 test declarations**, from 4 files at the pilot. The FILE rung is down
+to 85 files from 91.
+
+| batch | files | half's wall (`ℹ duration_ms`, three runs) | delta |
+| --- | --- | --- | --- |
+| 1 (pilot) | 1 | 72.40 / 73.04 / 73.56 s | — |
+| 2 | 10 | 55.36 / 57.15 / 57.28 s | −16.4 s |
+| 3 | 10 | 45.59 / 43.21 / 43.17 s | −11.5 s |
+| 4 | 9 | 38.65 / 38.64 / 37.67 s | −5.5 s |
+
+**The per-batch deltas are NOT proportional to the files' per-test cost, and the reason is the split
+ratio rather than the migration.** Batch 2's ten files carried 39.1% of the half's per-test time and gave
+16.4 s; batch 4's nine carried 13.6% and gave 5.5 s. What predicts the delta is how much of each file
+the four seam edges allow to leave — and the four edges are: a fixture that writes a path, a file the
+store does not own, a VERB whose side effect writes a path, and a subject that really is the filesystem.
+
+## What the acceptance still needs, stated against the new number
+
+The change's acceptance is **sub-15-second pre-commit for the FULL assertion half**, and the control that
+bounds it is 12.2 s with every flush removed against 73.2 s (task 0.3(d), 6.0×). Four batches put the half
+at **38.0 s — 48% of the way to the control's floor, with 30 of the worklist's 91 files migrated.**
+
+**The remaining 61 files carry the other half of the time, and the four seam edges above are what decide
+how much of it can leave.** Two of the four are FIXABLE and neither is fixed here: the store could own
+the artifacts those fixtures write (`CLAUDE.md`'s managed block is the largest single one — it is what
+keeps `set-tracker`'s and `set-review-mode`'s tests on the file rung), and `verifyState()`'s raw reads
+are a two-line change that would move two more tests plus whatever else reaches verify-state.
+
+This file is the record of that, and it exists so the shortfall is a measurement rather than an
+impression.

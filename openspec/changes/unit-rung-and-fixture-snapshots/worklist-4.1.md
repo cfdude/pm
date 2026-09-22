@@ -192,3 +192,48 @@ artifact the store owns never appears in. **The fix is two lines** (read the sta
 `storeOps()`) and it is NOT taken in a per-file migration commit: it changes what an engine verb reads,
 so it wants its own commit, its own suite run and its own review. It is named here rather than fixed
 quietly, and it is the first thing the remaining nineteen rows would benefit from.
+
+## BATCH 4 — the decision recorded PER FILE (rows 21–30), and ROWS 1–30 ARE DONE
+
+| # | file | tests | moved | stayed | what the file-rung remainder is, and why |
+|---|---|---|---|---|---|
+| 21 | `conductor-14` | 17 | 12 | 5 | ONE edge, five tests: every one runs `set-tracker`, which rewrites CLAUDE.md. The four `--direction` tests that install a tracker straight into the RECORD moved — the contrast is the edge stated twice in one file. |
+| 22 | `conductor-09` | 21 | 17 | 4 | two doc-drift walks reading `conductor.mjs`/`SKILL.md`/`README.md`; `sync`'s README/INDEX filter (a plans fixture); the pre-commit hook's SHAPE (exact-line runner assertion). |
+| 23 | `conductor-20` | 19 | 2 | 17 | SIXTEEN are one population: `withPlan()` puts a plan file on disk, and a plan file is what gh-64/69's five-rung resolution ladder resolves ABOUT. The seventeenth reads `commands/epic.md`. |
+| 24 | `conductor-36` | 15 | 15 | 0 | — the file is GONE. |
+| 25 | `conductor-13` | 20 | 12 | 8 | six lifecycle tests (`openspec/changes/feat-x/tasks.md` is what the count is read from); the `add-many` batch file; `update-epic.mjs`'s call-site source read. |
+| 26 | `gate-verdict-withdrawal` | 16 | 16 | 0 | — the file is GONE. |
+| 27 | `conductor-22` | 18 | 13 | 5 | four `withArchivedTasks()` fixtures (`openspec/changes/archive/<date>-<id>/tasks.md` is what the backfill reads); the 0.32.0 migration test (`fixturePluginRoot` + `upgrade` + a byte comparison). |
+| 28 | `cross-spec-review` | 17 | 2 | 15 | ONE population of fifteen: the feature's premise is that the spec set is DERIVED FROM DISK, so every fixture writes `openspec/changes/<id>/specs/<cap>/spec.md`. |
+| 29 | `stored-value-integrity` | 12 | 12 | 0 | — the file is GONE. |
+| 30 | `flag-parsing` | 14 | 14 | 0 | — migrated in BATCH 1 (the pilot); counted once here for the row's sake. |
+
+**ROWS 1–30 OF THIS WORKLIST ARE MIGRATED.** 30 rows, 29 commits of my own plus the pilot's: **540 of the
+760 tests in those thirty files moved** (the file rung keeps 220, each with a reason recorded above), the
+unit rung is at 33 files / 515 declarations, the file rung is down to 85 files from 91, and the half is at
+38.0 s from 73.2 s.
+
+### THE FOUR SEAM EDGES, AS THE THIRTY ROWS MEASURE THEM
+
+Every file-rung decision in these thirty rows is one of four things, and the table above shows they are
+not evenly distributed:
+
+1. **The subject really is the filesystem** (mtimes, `chmod`, conflict injection, a directory's absence,
+   a resolution ladder over files). ~30% of the retained tests; irreducible without changing what the
+   tests are about (`conductor-20`, `cross-spec-review`, conductor-23's `verify-specs` family).
+2. **A fixture that writes a path** — `fixturePluginRoot`, `fixtureCache`, `writeBatch`, a plan file, an
+   `openspec/changes/**` tree. Fixable only by giving those fixtures a non-file form.
+3. **A file the store does not own** — `CLAUDE.md`'s managed block, `.gitignore`, `commands/*.md`,
+   `skills/**`, `lib/*.mjs`, `.githooks/pre-commit`. Some are correctly outside the store (the shipped
+   docs, the source reads); `CLAUDE.md` is the one worth a second look.
+4. **A VERB whose side effect writes a path** — `set-tracker` and `set-review-mode` both refresh the
+   managed rules block, which is what keeps 27 tests on the file rung across conductor-04, -05, -10 and
+   -14. **This is the largest single fixable population in the worklist**, and it is the same root cause
+   as edge 3's `CLAUDE.md`.
+
+### THE FINDING THAT OUTLIVES THE BATCH: `verifyState()` reads what `render()` writes, through the wrong door
+
+Recorded in full under batch 3. Restated here because it is the first thing the remaining 61 rows should
+be given: `worktree-hygiene.mjs:120`/`:130` read the render stamp and state.json's mtime through RAW
+PATHS while `render.mjs:382`/`:387` write both through the store. Two lines fix it, and until they land
+the unit rung cannot test `verify-state` at all.
