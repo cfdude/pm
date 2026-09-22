@@ -25,55 +25,11 @@ const repo = () => {
 const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
 // ─────────────────── gh-149: a valueless occurrence is refused ───────────────────
-
-test("gh-149: add-epic --plan with no value is refused — the asymmetry this issue is about", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  const before = stateBytes(cwd);
-  const err = expectFail(() => run(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code", "--plan"], { cwd }));
-  assert.ok(err, "a value-bearing flag with no value must refuse, not silently take nothing");
-  assert.match(String(err.stderr || ""), /--plan requires/);
-  assert.equal(stateBytes(cwd), before, "and it refuses BEFORE any state is written");
-});
-
-test("gh-149: every value-bearing flag on add-epic refuses a valueless occurrence", () => {
-  // The population is short and named here, because the sweep over EVERY registered flag lives in
-  // the functional half; these are the ones whose refusal text the sharpest cases depend on.
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  for (const flag of ["--title", "--lane", "--priority", "--notes", "--description"]) {
-    const err = expectFail(() => run(["add-epic", "--id", "e1", flag], { cwd }));
-    assert.ok(err, `${flag} with no value must be refused`);
-    assert.match(String(err.stderr || ""), new RegExp(`${flag} requires`));
-  }
-});
-
-test("gh-149: a REPEATABLE flag is refused when ANY occurrence is valueless, not just the first", () => {
-  const cwd = repo();
-  const before = stateBytes(cwd);
-  const err = expectFail(() => run(["update-epic", "e1", "--add-story", "one", "--add-story"], { cwd }));
-  assert.ok(err, "the SECOND occurrence is what makes this a sweep rather than a first-token check");
-  assert.equal(stateBytes(cwd), before);
-});
-
-test("gh-149: the refusal lands BEFORE any state is loaded or written, on every surface", () => {
-  for (const argv of [
-    ["add-epic", "--id", "e1", "--title"],
-    ["update-epic", "e1", "--priority"],
-    ["set-autonomy", "e1", "--level"],
-    ["release", "1.0", "--intent"],
-  ]) {
-    const cwd = repo();
-    const before = stateBytes(cwd);
-    const err = expectFail(() => run(argv, { cwd }));
-    assert.ok(err, `${argv.join(" ")} must be refused`);
-    assert.equal(stateBytes(cwd), before, `${argv[0]} wrote state while refusing`);
-  }
-});
-
-test("gh-152's sharpest case: `set-autonomy --level` with no value writes no autonomy block", () => {
-  const cwd = repo();
-  assert.ok(expectFail(() => run(["set-autonomy", "e1", "--level"], { cwd })));
-  assert.equal(readState(cwd).epics.find(e => e.id === "e1").autonomy, undefined);
-});
+//
+// THE FIVE gh-149/gh-152 TESTS THAT STOOD HERE MOVED TO THE UNIT RUNG in 4.1 (`scripts/test/unit/
+// conductor-30.test.mjs`): they assert on the refusal text, the exit status and the record's bytes,
+// and none of them needs a path. What is left in this file is the gh-148 family, whose subject is
+// `openspec/` ON DISK, and the two `add-many` tests, whose fixture is a batch file.
 
 // ─────────────────── gh-148: verify-specs ───────────────────
 
