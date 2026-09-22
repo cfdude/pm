@@ -202,6 +202,12 @@ function runInvocation(argv, io = {}) {
     // fake); when it is absent, `gitOps()` builds the real one over THIS context, so an in-process
     // invocation without a fake still reads the invocation's root rather than the process's.
     git: io.git,
+    // 1.2 (0.48.0) — the RECORD STORE, supplied on exactly the same terms and by exactly the same
+    // rule as the gateway above: `io.store` is how a caller hands over an IN-MEMORY store, and when
+    // it is absent `storeOps()` builds the DISK store over this context. The default is what keeps
+    // the CLI contract untouched — the command line has always written the record to `.conductor/`
+    // and still does, byte for byte.
+    store: io.store,
   };
   setInvocation(ctx);
   // The engine's per-process git caches are per-INVOCATION in fact: this process may serve many

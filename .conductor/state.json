@@ -9754,7 +9754,7 @@
         "8fe0a3b79621b7e251b47f053febc2a42d9e61ca"
       ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-22T04:49:29.994Z",
+      "touchedAt": "2026-09-22T06:11:39.190Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -9779,10 +9779,16 @@
       "startedAt": "2026-09-21T03:55:42.343Z",
       "release": "0.48.0",
       "disposition": {
-        "outcome": "unknown",
-        "recordedAt": "2026-09-21T16:49:12.179Z",
-        "recordedBy": "archive-drift-heal"
-      }
+        "outcome": "delivered",
+        "recordedAt": "2026-09-22T06:11:39.187Z",
+        "reason": "0.47.0 shipped this change's two spec deltas and every engine change they describe; the epic was archived by render()'s drift heal, which stamps outcome 'unknown' with NO reason, so it read as a live unexplained finding to integrity and to the conductor-15 day-one record. This records the disposition the ordinary end of the documented workflow owes. Found pre-existing (it fails on the pre-1.2 tree too) while certifying 1.2's commit."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-22T06:11:39.168Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-22T06:11:39.187Z"
     },
     {
       "id": "alpha",
@@ -9887,10 +9893,11 @@
       "reconcileNeeded": false,
       "attributedCommits": [
         "2eff64d3484d8559d0f0518003ba11ce5de1263b",
-        "bf748ac7c753266cb211726cbf3217717bff9068"
+        "bf748ac7c753266cb211726cbf3217717bff9068",
+        "d833159aa69b9210b3dd9c1908ec812b7743c9fb"
       ],
       "createdAt": "2026-09-22T04:49:43.433Z",
-      "touchedAt": "2026-09-22T05:43:10.362Z",
+      "touchedAt": "2026-09-22T05:44:40.788Z",
       "release": "0.48.0",
       "gateReview": {
         "gate1": {
@@ -9912,7 +9919,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1232,
+  "revision": 1234,
   "reviewMode": "thorough",
   "releases": [
     {

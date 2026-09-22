@@ -1,0 +1,77 @@
+✖ scripts/test/assert/store-seam.test.mjs (0.253209ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21.317959
+
+✖ failing tests:
+
+test at scripts/test/assert/store-seam.test.mjs:1:1
+✖ scripts/test/assert/store-seam.test.mjs (0.253209ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-48/pre-green/scripts/lib/store.mjs' imported from /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-48/pre-green/scripts/test/assert/store-seam.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+      at #resolve (node:internal/modules/esm/loader:690:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+      at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33)
+      at ModuleJob.link (node:internal/modules/esm/module_job:389:17) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-48/pre-green/scripts/lib/store.mjs'
+  }
+
+
+═══════ STAGE 2: store.mjs PRESENT, state.mjs/conductor.mjs still pre-GREEN ═══════
+
+✖ 1.1 the same invocation returns the same status and the same record through either store (51.195541ms)
+✖ 1.1 two stores in one process do not observe each other (1.0035ms)
+✔ 1.5 a STALE revision, a NO-OP write and an UNREADABLE record meet the same door in both stores (1.864958ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 78.813959
+
+✖ failing tests:
+
+test at scripts/test/assert/store-seam.test.mjs:66:1
+✖ 1.1 the same invocation returns the same status and the same record through either store (51.195541ms)
+  AssertionError [ERR_ASSERTION]: the accepted invocation must succeed through the memory store too: conductor: run /pm:init first
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-48/pre-green/scripts/test/assert/store-seam.test.mjs:80:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/store-seam.test.mjs:102:1
+✖ 1.1 two stores in one process do not observe each other (1.0035ms)
+  AssertionError [ERR_ASSERTION]: the second invocation must succeed: conductor: run /pm:init first
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-48/pre-green/scripts/test/assert/store-seam.test.mjs:116:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)

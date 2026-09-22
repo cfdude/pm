@@ -77,12 +77,12 @@ The pre-commit hook runs the whole assertion half, so a RED test lands in the SA
 task that turns it green; before that commit, the failing run against the pre-GREEN engine is saved in
 this change directory as `red-<task>.txt`, and the GREEN commit message names that file.
 
-- [ ] 1.1 RED — a seam test that makes the same accepted invocation twice in one process, once through
+- [x] 1.1 RED — a seam test that makes the same accepted invocation twice in one process, once through
       the store the command line builds and once through an in-memory store, and asserts the returned
       STATUS is equal and the record is equal. Fails today: there is no store, and `loadState()` reads
       `getPaths()` (`scripts/lib/state.mjs:21`) which reads `engineRoot()` — the invocation's root, not
       a caller-supplied record.
-- [ ] 1.2 GREEN — `scripts/lib/store.mjs`: one interface (read the record, write the record, read a
+- [x] 1.2 GREEN — `scripts/lib/store.mjs`: one interface (read the record, write the record, read a
       record-directory artifact, append to one, write a rendered artifact, AND remove/rotate one —
       I2: the engine removes or rotates artifacts the store owns, at `write-conflicts.mjs:35` (rotate
       to `.prev`), `:65`/`:68` (`clearConflicts`), `purge-logs.mjs:181`, `activity-log.mjs:127`,

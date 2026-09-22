@@ -153,12 +153,29 @@ the sites that today call `write-conflicts.mjs:35` (rotate to `.prev`), `:65`/`:
 `purge-logs.mjs:181`, `activity-log.mjs:127` and `claims.mjs:110` move onto it. A removal left on raw
 `fs` is named with its reason rather than silently omitted.
 
-**What the store does NOT own, stated so the omission is deliberate and not an oversight**: `CLAUDE.md`
-and its managed rules block (written by `scripts/lib/rules.mjs`; it is a repository file and not part
-of the conductor record), `.gitignore` line management (`scripts/lib/platform.mjs`), `.changesets/`,
-and every read of the repo the engine performs rather than writes (openspec `tasks.md` checkboxes,
-`docs/lessons/`, plugin metadata). Those 251 CLAUDE.md-observing tests and the 23 `.changesets/` ones
-therefore stay on the file rung — they are a minority and they are genuinely integration-shaped.
+**What the store does NOT own, stated so the omission is deliberate and not an oversight** (task 1.2's
+I1: the three artifacts the first pass of this table missed each get a DECISION here rather than an
+omission, because a table that claims derivation from the write sites cannot silently drop one):
+
+| not owned | written by | why not |
+| --- | --- | --- |
+| `CLAUDE.md` and its managed rules block | `scripts/lib/rules.mjs` | a REPOSITORY file the engine writes into the repository, not into the conductor record; widening the store to include it re-opens the boundary this seam closes |
+| `.gitignore` line management | `scripts/lib/platform.mjs` | same argument — a repository file, not a record |
+| `.changesets/` | nothing (read only) | a repository directory this engine READS and never writes |
+| `.conductor/commit-observe.json` and its `.lock` | `commit-watch.mjs:191`, `:223`, `:242-243` | the commit hook's observation record is written under an exclusive-create lock whose IDENTITY is an inode and a nonce and broken by a stale-age rule reading the file's mtime. A lock is a filesystem primitive with no in-memory meaning: there is nothing for a memory store to take, nothing to break, and a record that cannot be locked cannot be written safely by the two hooks that race for it. Record and lock are also useless apart — the anchor without its lock is a lost update waiting to happen |
+| `.conductor/state.json.lock` and its `.break` sibling | the disk store (`store.mjs`) | the mechanism by which the disk store is atomic, held and released INSIDE `writeRecord()`. It is not an artifact of the record, and a memory store has no section to serialise |
+| every read of the repository the engine performs rather than writes | — | openspec `tasks.md` checkboxes, `docs/lessons/`, plugin metadata |
+
+Each of the three the first pass missed is decided rather than left hanging:
+`.conductor/session-claim.json` (`claims.mjs:104-110`) is **BROUGHT BEHIND THE STORE** — a plain
+record-directory artifact with no lock and no inode, so leaving it on raw `fs` would have been a
+sibling left unguarded beside five siblings moved (its temp-file-plus-rename atomicity moves with it
+as the store's own `writeAtomic`); `.conductor/write-conflicts.log.prev`
+(`write-conflicts.mjs:35`) is the store's `rotate` operation; and
+`.conductor/commit-observe.json` and its `.lock` are **NOT OWNED**, for the reason in the table.
+
+Those 251 CLAUDE.md-observing tests and the 23 `.changesets/` ones therefore stay on the file rung —
+they are a minority and they are genuinely integration-shaped.
 
 **What changes signature.** The seam is a `Store` value carried by the invocation, and the ~20 verb
 modules change ONE thing: how they obtain it. Concretely, the functions that keep their names and

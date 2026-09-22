@@ -268,10 +268,8 @@ x("claims.mjs", "refuseHeld", {
   "verb": 1,
 }, "passthrough", "callers pass literal verbs and `this repository` or an escaped epic id");
 x("claims.mjs", "writeRepoClaim", {
-  "p": 1,
-  "process.pid": 1,
-  "Date.now()": 1,
-}, "not-output", "a temporary file name");
+  "JSON.stringify(claim, null, 2)": 1,
+}, "not-output", "the claim record's file BODY — the temp-file name it used to build (and interpolate) moved into the store's writeAtomic operation, so this declaration now holds only the body");
 x("commit-watch.mjs", "beginObservation", {
   "target": 1,
   "process.pid": 1,
@@ -405,11 +403,26 @@ x("self-hosting.mjs", "delegateToCheckout", {
   "r.error.message": 1,
   "r.error ? r.error.message : \"the child never started\"": 1,
 }, "engine", "spawn errors of the node binary, and a literal for the one unreachable arm (2.6: the child has always started whenever this text is reached — it is defensive, not a value from git); the target path is escaped");
-x("state.mjs", "describeHolder", {
+// ── 0.48.0 task 1.2: the record's persistence MOVED from state.mjs into the store (lib/store.mjs).
+// These judgments moved WITH the shape they describe, in the same commit — the rule the sweep
+// exists to enforce about itself. A judgment left keyed on `state.mjs` reads STALE, which is the
+// loud half; the quiet half would have been a judgment that silently stopped covering anything.
+x("store.mjs", "ROOT_ARTIFACTS", {
+  "expected": 1,
+  "found": 1,
+  "reason": 2,
+  "verb": 1,
+}, "engine", "the StateConflictError / StateUnreadableError / StatePersistError constructors: revision numbers, an engine verb name and an engine-composed reason. They are judged under this name, not under a class name, because the sweep's enclosing-declaration heuristic attributes a `class X { constructor() {} }` to the last top-level declaration above it");
+x("store.mjs", "recordConflictOn", {
+  "verb": 1,
+  "expected": 1,
+  "found": 1,
+}, "engine", "an engine verb name and two revision numbers, in the conflict sidecar's own log line");
+x("store.mjs", "describeHolder", {
   "info.kind": 1,
   "c.pid": 1,
 }, "engine", "an integer pid and an engine holder kind (host and time are escaped)");
-x("state.mjs", "lockRefusalMessage", {
+x("store.mjs", "lockRefusalMessage", {
   "shown": 4,
   "bShown": 2,
   "expected": 3,
@@ -417,31 +430,39 @@ x("state.mjs", "lockRefusalMessage", {
   "rm": 2,
   "describeHolder(lock.holder)": 1,
 }, "engine", "revision numbers, stale seconds and the engine's own lock paths relative to the project directory");
-x("state.mjs", "persistFailure", {
+x("store.mjs", "lockPaths", {
+  "STATE_PATH": 2,
+}, "not-output", "lock and break-lock FILE paths; lockRefusalMessage prints a lock path only relative to the root it was built from");
+x("store.mjs", "persistFailure", {
   "expectedRevision": 1,
   "diskRevision === null || diskRevision === undefined ? \"unreadable\" : diskRevision": 1,
 }, "engine", "revision numbers");
-x("state.mjs", "revisionOfText", {
-  "reason": 1,
-}, "engine", "an engine reason string");
-x("state.mjs", "saveState", {
-  "process.pid": 1,
-  "Date.now()": 1,
-  "expected": 1,
-  "JSON.stringify(next, null, 2)": 1,
-}, "not-output", "the state file body, a temporary name, and a revision number in an engine message");
-x("state.mjs", "seedCreationFields", {
-  "expected": 1,
-  "found": 1,
-  "verb": 1,
-  "reason": 1,
-}, "engine", "StateConflictError/StatePersistError constructors: revision numbers, an engine verb name and an engine-composed reason");
-x("state.mjs", "shapeProblem", {
+x("store.mjs", "shapeProblem", {
   "bad": 1,
 }, "engine", "an array index");
-x("state.mjs", "unreadableStateMessage", {
+x("store.mjs", "unreadableStateMessage", {
   "err.message": 1,
-}, "passthrough", "StateUnreadableError message: an engine display path and a reason escaped where readStateFile() builds it");
+}, "passthrough", "StateUnreadableError message: an engine display path and a reason escaped where the strict read builds it");
+x("store.mjs", "diskStore", {
+  "STATE_PATH": 1,
+  "process.pid": 2,
+  "Date.now()": 2,
+}, "not-output", "TWO temporary file names, neither ever printed: the one the state is written to and renamed from, and the one writeAtomic builds for an artifact (the second pair of pid/timestamp is that one)");
+x("store.mjs", "diskStore", {
+  "expected": 1,
+}, "engine", "a revision number in the lock-taken-over refusal");
+x("store.mjs", "diskStore", {
+  "JSON.stringify(next, null, 2)": 1,
+}, "not-output", "the state file body");
+x("store.mjs", "diskStore", {
+  "p": 1,
+}, "not-output", "the artifact path writeAtomic derives its temp name from");
+x("store.mjs", "memoryStore", {
+  "ARTIFACT.RECORD": 1,
+}, "engine", "the LOGICAL artifact name (never a path — a memory store has none), in the unreadable-record error");
+x("store.mjs", "memoryStore", {
+  "name": 1,
+}, "not-output", "the artifact key of a rotated entry in the memory map");
 x("subcommands.mjs", "appendHonchoMemory", {
   "line": 1,
 }, "escaped", "honchoMemoryLine() escapes the epic id and reason (design D7)");
@@ -634,12 +655,6 @@ x("remove-epic.mjs", "removeEpic", {
 
 // ── Gate 2 W-I2: ALL_CAPS names are no longer literal by their spelling. Each below lost that trust because
 // its declaration is not a literal (the resolver in output-interpolations.mjs reads it), and is judged here.
-x("state.mjs", "lockPaths", {
-  "STATE_PATH": 2,
-}, "not-output", "lock and break-lock FILE paths; lockRefusalMessage prints a lock path only relative to the root it was built from");
-x("state.mjs", "saveState", {
-  "STATE_PATH": 1,
-}, "not-output", "the temporary file name the state is written to and renamed from");
 x("commit-watch.mjs", "observeLockPaths", {
   "LOCK": 1,
 }, "not-output", "a lock file path (LOCK is commitObservePath(root) + \".lock\")");
