@@ -46,12 +46,26 @@ const VIRTUAL_ROOT = "/pm-unit-rung/no-such-directory";
  *                           itself rather than on the success path
  *
  *  Returns the memory store as well as the invocation, so a test reads the values a verb wrote back
- *  out of the object it supplied — which is the `engine-invocation` scenario, not a convenience. */
+ *  out of the object it supplied — which is the `engine-invocation` scenario, not a convenience.
+ *
+ *  THREE ACCESSORS AND AN OPTIONS BAG, all three added by 4.1's migration rather than by design on
+ *  paper — the same way the pilot found the throwing default: a migrated file must not have to
+ *  rewrite the call shapes it already uses.
+ *
+ *    engine(args, { env })   → the options bag, because `{ cwd, env: { PM_SESSION } }` is how the
+ *                              file rung supplies an identity, and a migration that had to
+ *                              re-spell that would be changing the test rather than its mechanism
+ *    engine.combined(args)   → the file rung's `runCombined`: both streams, at ANY status
+ *    engine.result(args)     → the raw `{ status, stdout, stderr }`
+ *
+ *  `combined` does NOT throw and `engine(args)` DOES, which is `run`/`runCombined`'s split exactly:
+ *  a test asserting on a refusal uses `expectFail(() => engine([...]))`, and a test asserting on a
+ *  message a SUCCESSFUL verb printed uses `engine.combined([...])`. */
 export function memoryEngine(seed) {
   const store = memoryStore(seed);
-  const result = (args) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store });
-  const run = (args) => {
-    const r = result(args);
+  const result = (args, { env } = {}) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store, env });
+  const run = (args, opts) => {
+    const r = result(args, opts);
     if (r.status !== 0) {
       const e = new Error(r.stderr || `conductor exited ${r.status}: ${args.join(" ")}`);
       e.status = r.status;
@@ -62,9 +76,13 @@ export function memoryEngine(seed) {
     return r.stdout;
   };
   run.result = result;
+  run.combined = (args, opts) => { const r = result(args, opts); return r.stdout + r.stderr; };
   run.store = store;
   return run;
 }
+
+/** Re-exported so a migrated file imports ONE module, exactly as it imported one before. */
+export { expectFail } from "./assert-harness.mjs";
 
 /** The record a unit test starts from: an initialised conductor with no epics. */
 export const emptyRecord = () => ({ version: 1, revision: 0, active: null, epics: [], detourStack: [] });
