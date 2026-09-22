@@ -82,8 +82,9 @@ export function memoryEngine(seed) {
   return run;
 }
 
-/** Re-exported so a migrated file imports ONE module, exactly as it imported one before. */
-export { expectFail } from "./assert-harness.mjs";
+/** Re-exported so a migrated file imports ONE module, exactly as it imported one before. `manyEpics`
+ *  is a pure VALUE builder — an array of epics — so it belongs on both rungs unchanged. */
+export { expectFail, manyEpics } from "./assert-harness.mjs";
 
 /** The record a unit test starts from: an initialised conductor with no epics. */
 export const emptyRecord = () => ({ version: 1, revision: 0, active: null, epics: [], detourStack: [] });
