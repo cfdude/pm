@@ -2,7 +2,7 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** — two fresh-context lenses over these artifacts BY PATH (lens A: is every
+- [x] 0.1 **Gate 1** — two fresh-context lenses over these artifacts BY PATH (lens A: is every
       WHEN/THEN in both spec files reachable and testable against today's 0.47.0 engine, and does any
       of it restate a requirement `suite-certification` or `engine-invocation` already owns; lens B:
       absent edits — every write site the store's ownership table misses (`scripts/lib/constants.mjs`
@@ -18,7 +18,7 @@
       openspec/changes/unit-rung-and-fixture-snapshots/tasks.md --artifact
       openspec/changes/unit-rung-and-fixture-snapshots/specs/suite-certification/spec.md --artifact
       openspec/changes/unit-rung-and-fixture-snapshots/specs/engine-invocation/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.48.0 holds this change's two spec
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.48.0 holds this change's two spec
       files — `suite-certification` and `engine-invocation` — counted FLAT, so it qualifies. Run the
       `cross-spec-review` skill against the release's whole spec set after Gate 1 and again after any
       later round of concurrent amendment; ask the six questions and record

@@ -19,12 +19,22 @@ hidden in its persistence.
 Two invocations in one process that supply different stores SHALL be independent: neither SHALL
 observe or be affected by the other's record, and neither SHALL write the other's paths.
 
+**The in-memory store covers the RECORD and the artifacts the store owns — not every byte a verb may
+write.** The store owns the record directory and the rendered artifact, and that boundary is stated
+where it is drawn rather than inferred from this requirement: a verb that also refreshes a
+repository file the store does not own — the `CLAUDE.md` managed rules block, `.gitignore` — still
+writes that file, through the same code path as before, whichever store it was handed. So a
+verb's disk footprint under an in-memory store is its STORE-OWNED footprint only: no record, no
+rendered artifact, no stamp, no log a forwarding site appends to. A verb's non-store writes are
+outside this requirement's subject and are neither forbidden here nor excused by it.
+
 #### Scenario: A verb produces the same result through an in-memory store as through the disk store
 
 - **WHEN** the same accepted invocation is made twice in one process, once with the store the command
   line builds and once with a store that keeps the record in memory
 - **THEN** the status is the same, the record the caller can read afterwards holds the same values,
-  and the invocation that used the in-memory store created no file
+  and the invocation that used the in-memory store wrote none of the artifacts the store owns — no
+  record, no rendered artifact, no stamp, no log
 
 #### Scenario: An in-memory store means an in-memory record, and nothing is flushed
 
