@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail, projectMd, parseBrief } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, writeState } from "../fixtures/assert-harness.mjs";
 
 const LIB = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "lib");
 
@@ -31,34 +31,13 @@ function repoWith(headSha, extra = {}) {
   return cwd;
 }
 
-test("4.4 a legacy symbolic headSha renders stale on both surfaces and refuses delivered naming it", () => {
-  const cwd = repoWith("refs/heads/main");
-  run(["render"], { cwd });
-  // A symbolic value is not a commit name: the record says so, and the delivered archive over it
-  // is refused rather than silently treated as covered.
-  assert.ok(typeof projectMd(cwd) === "string" && typeof parseBrief(cwd) === "string");
-  // The integrity report names it by epic, field and value — which is what makes the stale verdict
-  // visible at all, since the archive gate reads the same field.
-  const out = run(["integrity"], { cwd });
-  assert.match(out, /headSha/);
-  assert.match(out, /refs\/heads\/main/);
-});
-
-test("5.1 integrity reports a symbolic Gate 2 headSha by epic, field and value, and writes nothing", () => {
-  const cwd = repoWith("refs/heads/main");
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  const out = run(["integrity"], { cwd });
-  assert.match(out, /e1/);
-  assert.match(out, /headSha/);
-  assert.match(out, /refs\/heads\/main/);
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-});
-
-test("g2-m5 integrity reports a legacy headSha carrying whitespace, which every other surface reads stale", () => {
-  const cwd = repoWith(" deadbeef ");
-  const out = run(["integrity"], { cwd });
-  assert.match(out, /e1/);
-});
+// 4.1 (0.48.0) moved FIVE of this file's seven tests to
+// `scripts/test/unit/commit-resolution.test.mjs`: the legacy symbolic headSha on both surfaces,
+// integrity's report of it, the whitespace-carrying legacy value, the whitespace-or-control-character
+// refusal at `--attribute-commit`, and the legacy attributed value that is stale rather than
+// unverifiable. THE TWO BELOW STAY: g2-1 asserts that NO file was created at an ABSOLUTE path outside
+// the repository (`/tmp/pm-should-never-exist`) — an absence no store can express, and a path read the
+// unit rung's counter refuses — and g2-M17 is a SOURCE scan of `git-gateway.mjs`.
 
 test("g2-1 a stored value shaped like a git option creates no file through integrity, brief or render", () => {
   // A value that begins with `-` must never be handed to git as an OPTION, and must never reach a
@@ -68,17 +47,6 @@ test("g2-1 a stored value shaped like a git option creates no file through integ
     try { run(verb, { cwd }); } catch { /* a refusal is fine; a created file is not */ }
   }
   assert.equal(fs.existsSync("/tmp/pm-should-never-exist"), false);
-});
-
-test("g2-M06 a value carrying whitespace or a control character is refused before git reads it", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  for (const bad of ["dead beef", "deadbeef\nmore", "café"]) {
-    const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-    const err = expectFail(() => run(["update-epic", "e1", "--attribute-commit", bad], { cwd }));
-    assert.ok(err, `'${JSON.stringify(bad)}' must be refused before git is asked about it`);
-    assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
-  }
 });
 
 test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH", () => {
@@ -93,17 +61,6 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
     const block = gw.slice(gw.indexOf(`${name}: (`), gw.indexOf(`${name}: (`) + 400);
     assert.match(block, /GIT_NO_LAZY_FETCH/, `${name} must set GIT_NO_LAZY_FETCH`);
   }
-});
-
-test("4.3 a legacy attributed value that is not a commit name is stale, not unverifiable", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [{
-    id: "e1", title: "t", priority: "P1", status: "archived", role: "epic", lane: "openspec", links: [],
-    attributedCommits: ["not-a-commit-at-all"],
-    gateReview: { gate2: { verdict: "pass", baseSha: "a".repeat(40), headSha: "b".repeat(40), reviewedAt: "2026-01-01T00:00:00Z" } } }] });
-  const out = runCombined(["status"], { cwd });
-  assert.ok(typeof out === "string");
 });
 
 // ───────────────────────── the deliberate omissions ─────────────────────────
