@@ -222,12 +222,12 @@ test("2.1 the unit rung performs no filesystem work at all, and lives in one pro
   //   is meant to grow as test 4.1's migration moves value-observing tests onto it, and a number left
   //   at its first value while the rung grows still catches the one thing it is here for — a rung
   //   that has been emptied, moved, or silently stopped being walked.
-  assert.ok(files.length >= 33,
+  assert.ok(files.length >= 43,
     `the unit rung holds ${files.length} file(s); it started with three hand-written proofs (design ` +
     "D7: a state verb, a render verb and an append-only log verb) and RAISES this floor as it fills. " +
-    "RAISED TO 14 BY 4.1'S BATCH 2 (255 unitTest declarations), 24 BY BATCH 3 (414) AND 33 BY BATCH 4 " +
-    "(515), which completes the worklist's first thirty rows: a number left below the rung's real size " +
-    "is still doing its job; a walk over an empty rung is not");
+    "RAISED TO 14 BY 4.1'S BATCH 2 (255 unitTest declarations), 24 BY BATCH 3 (414), 33 BY BATCH 4 " +
+    "(515, the worklist's first thirty rows) AND 43 BY BATCH 5 (rows 31-40): a number left below the " +
+    "rung's real size is still doing its job; a walk over an empty rung is not");
   const found = files.flatMap(f => violations(f, fs.readFileSync(path.join(UNIT, f), "utf8"), "unit"));
   assert.deepEqual(found, [],
     "a unit-rung file asks the engine for the VALUES it decided and gets them through the store it " +

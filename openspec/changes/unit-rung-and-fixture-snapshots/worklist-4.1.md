@@ -239,3 +239,40 @@ Recorded in full under batch 3. Restated here because it is the first thing the 
 be given: `worktree-hygiene.mjs:120`/`:130` read the render stamp and state.json's mtime through RAW
 PATHS while `render.mjs:382`/`:387` write both through the store. Two lines fix it, and until they land
 the unit rung cannot test `verify-state` at all.
+
+## BATCH 5 — the decision recorded PER FILE (rows 31–40)
+
+| # | file | tests | moved | stayed | what the file-rung remainder is, and why |
+|---|---|---|---|---|---|
+| 31 | `platform` | 25 | 6 | 19 | `write-rules` and `init` WRITE the rules block through raw fs (`writeRules()` on CLAUDE.md/AGENTS.md) — the seam edge "a VERB whose side effect writes a path"; `rules-target` READS the platform chain to resolve first-existing-wins (that walk IS its mechanism, and one of the four asserts the resolved path by exact equality); the shipped-hooks test reads `hooks/hooks.json` through a URL. |
+| 32 | `conductor-08` | 15 | 15 | 0 | — the file is GONE. The honcho-memories log is store-owned, `laneRouting` is a record field, the suggest-lane trio reads stdout, and the two auto-detour tests assert the store's detour log. |
+| 33 | `conductor-30` | 11 | 5 | 6 | gh-148's `verify-specs` family (an absent root, a metadata block, a directory of spec documents — a walk is that verb's subject); the two `add-many` batch-file tests. |
+| 34 | `state-file-refuses-to-guess` | 14 | 2 | 12 | ONE structural edge, twelve tests: the family is about a state file that CANNOT BE PARSED, and the memory store holds an OBJECT — it answers `{kind:"unreadable"}` only through `shapeProblem()`, never through bytes that fail to parse. Same boundary as conductor-33's raw-bytes tests. The thirteenth (a dormant hook) asserts a DIRECTORY's absence. |
+| 35 | `disposition-references` | 10 | 10 | 0 | — the file is GONE. A stored reference's validation is a value, and the fixture wrote nothing but the record. |
+| 36 | `conductor-19` | 5 | 5 | 0 | — the file is GONE. The brief is PRINTED by the verb and PROJECT.md is a store-owned artifact; the fixture's direct `writeState` became the store's own `writeRecord`. |
+| 37 | `archive-gate-order` | 10 | 10 | 0 | — the file is GONE. Every case is state and argv; the gate compares shas only in the attesting half. |
+| 38 | `triage` | 19 | 19 | 0 | — the file is GONE. The fixture is a record and both surfaces are values (stdout JSON, the rules block, PROJECT.md). |
+| 39 | `conductor-29` | 19 | 15 | 4 | four SOURCE reads: gh#100's own `rg 'KNOWN_[A-Z_]+ =' constants.mjs` reproduction (the assertion IS the grep), the two drift guards (one walks every engine source, one opens each file a declaration claims), and `commands/epic.md`. |
+| 40 | `conductor-12` | 14 | 4 | 10 | five `.gitignore` tests (a file the store does not own, and its entries are the subject) and four `injectConflictOnce()` tests, whose seam IS a filesystem write — plus the SECOND SEAM GAP (below). |
+
+**142 tests in these ten files; 91 moved.** Five of the ten are GONE from the file rung
+(`conductor-08`, `disposition-references`, `conductor-19`, `archive-gate-order`, `triage`). The rung is
+at 43 files, the file rung is down to 80 from 85, and the half is at 32.9 s from 38.0 s
+(measurements-4.2.md, batch 5).
+
+### THE SECOND SEAM GAP — found by attempting the move, not by reading
+
+`conductor-12`'s "a successful state write clears the conflict log" was written for the unit rung
+FIRST, and it FAILED: the planted `write-conflicts.log` survived a landing `add-epic`. The mechanism is
+that `clearConflictsOn(this)` is called inside the **disk** store's own `writeRecord`
+(`scripts/lib/store.mjs:822`) and the **memory** store's `writeRecord` does not call it — so the reset
+is a behaviour of one implementation rather than of the interface, and the unit rung structurally
+cannot see it. The test stays on the file rung and the gap is named rather than fixed: the fix changes
+what an engine write DOES, so it wants its own commit, its own suite run and its own review, exactly
+as `verifyState()`'s raw reads do.
+
+**The FIXABLE edges are therefore three, and they are the whole of what the remaining rows' `stayed`
+columns are made of:** the store could own `CLAUDE.md`'s managed block (~27 tests across conductor-04,
+-05, -10 and -14, because `set-tracker` and `set-review-mode` both refresh it), `verifyState()` could
+read its stamp and mtime through `storeOps()` (2 tests, plus whatever else reaches verify-state), and
+the memory store could call `clearConflictsOn()` (1 test).

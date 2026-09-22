@@ -186,3 +186,78 @@ are a two-line change that would move two more tests plus whatever else reaches 
 
 This file is the record of that, and it exists so the shortfall is a measurement rather than an
 impression.
+
+## Batch 5 — ten more files migrated (worklist rows 31–40)
+
+| run | `ℹ duration_ms` | wall | tests | pass | fail |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 33.49 s | 33.58 s | 1,269 | 1,269 | 0 |
+| 2 | 32.00 s | 32.09 s | 1,269 | 1,269 | 0 |
+| 3 | 33.09 s | 33.18 s | 1,269 | 1,269 | 0 |
+
+**FIVE MORE SECONDS OFF THE SAME SUITE (38.65/38.64/37.67 → 33.49/32.00/33.09, −5.2 s), and the
+cumulative number is the one that matters: 73.2 s → 32.9 s, a 40.3 s (55%) reduction of the FULL
+assertion half.** 1,269 tests, two globs, one process, every run green — the same 1,269 as batch 4,
+so nothing left the suite and nothing entered it.
+
+**In the worklist's own units:** these ten files carried 7,636 ms of the half's 71,040 ms of per-test
+time (10.7%) — the smallest tranche of any batch so far, and they gave the second-largest delta
+because the SPLIT RATIO was high rather than the cost: **91 of their 142 tests moved**. Five of the
+ten moved WHOLE (conductor-08, disposition-references, conductor-19, archive-gate-order, triage — 68
+tests and five files deleted from the file rung outright), and the five that split did so at 4/14
+(conductor-12), 5/11 (conductor-30), 6/25 (platform), 15/19 (conductor-29) and 2/14
+(state-file-refuses-to-guess).
+
+**The right-hand column, which is what the batch actually measured:**
+
+| # | file | tests | moved | stayed | what decided it |
+| --- | --- | --- | --- | --- | --- |
+| 31 | `platform` | 25 | 6 | 19 | `write-rules`/`init` WRITE the block through raw fs; `rules-target` READS the chain to resolve first-existing-wins; the shipped-hooks test reads `hooks/hooks.json` |
+| 32 | `conductor-08` | 15 | 15 | 0 | file GONE — the honcho log, `laneRouting`, the suggest-lane payload and the detour log are all values |
+| 33 | `conductor-30` | 11 | 5 | 6 | ONE edge, six tests: gh-148's `verify-specs` parses a directory walk, and the two `add-many` batch-file tests |
+| 34 | `state-file-refuses-to-guess` | 14 | 2 | 12 | the UNREADABLE-FILE family — the memory store holds an object and cannot express bytes that fail to parse (the same boundary as conductor-33's raw-bytes tests); plus a directory's absence |
+| 35 | `disposition-references` | 10 | 10 | 0 | file GONE — a stored reference's validation is a value |
+| 36 | `conductor-19` | 5 | 5 | 0 | file GONE — the brief is printed and PROJECT.md is store-owned |
+| 37 | `archive-gate-order` | 10 | 10 | 0 | file GONE — every case is state and argv |
+| 38 | `triage` | 19 | 19 | 0 | file GONE — the fixture is a record and PROJECT.md is store-owned |
+| 39 | `conductor-29` | 19 | 15 | 4 | four SOURCE reads: gh#100's own `rg` reproduction, the two drift guards, and `commands/epic.md` |
+| 40 | `conductor-12` | 14 | 4 | 10 | five `.gitignore` tests (a file the store does not own) and four `injectConflictOnce()` tests (the seam IS a filesystem write) |
+
+**THE RUNG IS NOW 43 FILES** (33 files / 515 declarations at batch 4), and the FILE rung is down to
+**80 files from 85** — five of them deleted outright rather than shrunk. The floor in
+`assert-half-has-no-spawn.test.mjs` was raised with this measurement, in the same commit as batch 4's.
+
+### THE SECOND SEAM GAP, and it was FOUND BY ATTEMPTING THE MOVE
+
+`conductor-12`'s "a successful state write clears the conflict log" was written for the unit rung
+FIRST and it FAILED — the planted `write-conflicts.log` survived a landing `add-epic`. The reason is
+mechanical: `clearConflictsOn(this)` is called inside the **disk** store's own `writeRecord`
+(`scripts/lib/store.mjs:822`), and the **memory** store's `writeRecord` does not call it. The reset
+is therefore a behaviour of one store implementation and not of the interface, which is the same
+class as `verifyState()`'s raw reads — a capability the unit rung structurally cannot test — and it
+is the first one this migration has found outside `verifyState()`.
+
+It is named rather than fixed, for the reason the first one was: the fix changes what an engine write
+DOES, so it wants its own commit, its own suite run and its own review rather than a rider on a test
+move.
+
+**The FIXABLE edges are therefore three, not two**, and they are now the whole of what the remaining
+files' `stayed` columns are made of: the store could own `CLAUDE.md`'s managed block (27 tests across
+four files), `verifyState()` could read its stamp and mtime through `storeOps()` (2 tests plus
+whatever else reaches verify-state), and the memory store could call `clearConflictsOn()` (1 test).
+
+## What the acceptance still needs, stated against the new number
+
+The change's acceptance is **sub-15-second pre-commit for the FULL assertion half**, and the control
+that bounds it is 12.2 s with every flush removed against 73.2 s (task 0.3(d), 6.0×). Five batches put
+the half at **32.9 s — 40 of the worklist's 91 files migrated, and the reduction is now 55% of the
+baseline.**
+
+**The remaining 51 files carry the other 45%, and the five seam edges above are what decide how much
+of it can leave** — the four from batch 4's reckoning plus the memory store's missing
+`clearConflictsOn()`. Batch 5 is evidence for the shape rather than against it: the batch with the
+LEAST per-test cost of any so far gave the second-largest delta, because the files that moved whole
+were files whose every observable was already a value.
+
+This file is the record of that, and it exists so the shortfall is a measurement rather than an
+impression.
