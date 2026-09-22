@@ -52,9 +52,10 @@ const VIRTUAL_ROOT = "/pm-unit-rung/no-such-directory";
  *  paper — the same way the pilot found the throwing default: a migrated file must not have to
  *  rewrite the call shapes it already uses.
  *
- *    engine(args, { env })   → the options bag, because `{ cwd, env: { PM_SESSION } }` is how the
- *                              file rung supplies an identity, and a migration that had to
- *                              re-spell that would be changing the test rather than its mechanism
+ *    engine(args, { env, input })  → the options bag. `env` because `{ cwd, env: { PM_SESSION } }`
+ *                              is how the file rung supplies an identity; `input` because
+ *                              `gate-guard` reads argv AND a JSON payload off STDIN, and that is a
+ *                              value the invocation is handed rather than a path
  *    engine.combined(args)   → the file rung's `runCombined`: both streams, at ANY status
  *    engine.result(args)     → the raw `{ status, stdout, stderr }`
  *
@@ -63,7 +64,7 @@ const VIRTUAL_ROOT = "/pm-unit-rung/no-such-directory";
  *  message a SUCCESSFUL verb printed uses `engine.combined([...])`. */
 export function memoryEngine(seed) {
   const store = memoryStore(seed);
-  const result = (args, { env } = {}) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store, env });
+  const result = (args, { env, input } = {}) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store, env, input });
   const run = (args, opts) => {
     const r = result(args, opts);
     if (r.status !== 0) {
