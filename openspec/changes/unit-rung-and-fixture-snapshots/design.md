@@ -20,12 +20,15 @@ scratch scripts and raw output are in this change directory.
 | tests over 100 ms / over 200 ms | 133 / 22 |
 | slowest single test | 1,177.9 ms (`gh-84: re-claiming as the SAME session …`) |
 | `fsyncSync` calls in one run | **12,524** |
-| same run, `fs.fsyncSync` replaced by a no-op | **6.47 s, 1,243/1,243 pass** |
+| same run, `fs.fsyncSync` replaced by a no-op | **9.11 s, 1,243/1,243 pass** |
 
 ### The causal control, and why the received explanation does not survive it
 
 Replacing one syscall with a no-op — changing nothing else, with all 1,243 tests still passing — takes
-the half from 73.8 s to 6.47 s. That is the whole result. The received explanation (`each test rebuilds
+the half from 73.9 s to 9.11 s. That is the whole result. (The **6.47 s** this document first carried
+does not reproduce: Gate 1 measured the control and got 9.11 s, an 8.1× rather than a ≥10× difference,
+and D10 states the acceptance against the reproducible number. The mechanism is unchanged by the
+correction; only the margin is.) The received explanation (`each test rebuilds
 a repository; ~6 engine round trips; ~60–95 ms per test`) is not what the numbers show:
 
 | operation | today | with `fsyncSync` a no-op | fsyncs |
@@ -33,23 +36,26 @@ a repository; ~6 engine round trips; ~60–95 ms per test`) is not what the numb
 | `init`, fresh dir | 37.2 ms | 2.62 ms | 8 |
 | `add-epic`, 0 epics present | 11.2 ms | 0.92 ms | 2 |
 | `add-epic`, 260 epics present | 17.5 ms | — | 2 |
-| `owingRepo()` — init + 2 add-epic + set-active + push-detour + pop-detour | 124.9 ms | 6.65 ms | 14 |
-| `render`, initialised dir | 0.30 ms | — | 1 |
+| `owingRepo()` — init + 2 add-epic + set-active + push-detour + pop-detour | 124.9 ms | 6.65 ms | 18 |
+| `render`, initialised dir | 0.30 ms | — | 0 |
 | `brief`, initialised dir | 0.66 ms | — | 0 |
 | `sync`, initialised dir | 0.39 ms | — | 0 |
 | `mkdtemp` | 0.32 ms | — | 0 |
 | one `open`+`write`+`fsync`+`close` | 3.3 ms (tmpdir) / 3.5 ms (this repo) | — | 1 |
 
 (medians; n=7–20 for the verbs, n=60 for the raw syscall; a separate n=200 run of the raw syscall read
-4.88 ms.) So *engine setup* is not the cost: a state load is sub-millisecond and a render is 0.30 ms.
+4.88 ms. The **fsync counts are structural, not sampled** — `init` 8, `add-epic` 2, `owingRepo()` 18
+(8 + five further verbs × 2), `render` 0 — and were corrected at Gate 1; the millisecond values are
+drafting medians that task 0.3(f) re-measures on the day.) So *engine setup* is not the cost: a state
+load is sub-millisecond and a render is 0.30 ms.
 `init` performs EIGHT flushes and `add-epic` two — `saveState()` fsyncs the temp file before its rename
 (`scripts/lib/state.mjs:702`) and then fsyncs the directory (`:726`), and every verb in this engine ends
 by calling it — and with those flushes removed `init` costs 2.62 ms and `add-epic` 0.92 ms. **The half's
 cost is durability paid on tests that assert on a value.**
 
 **Honest arithmetic, because the two figures do not reconcile exactly.** 12,524 flushes at the measured
-3.3 ms is 41 s, while the observed delta between the baseline (73.8 s) and the control (6.47 s) is
-67 s. The per-syscall median was taken on an idle-ish loop of one call at a time; at 12,524 calls
+3.3 ms is 41 s, while the observed delta between the baseline (73.9 s) and the control (9.11 s) is
+65 s. The per-syscall median was taken on an idle-ish loop of one call at a time; at 12,524 calls
 interleaved with writes, renames and directory opens the effective cost is higher. The CONTROLLED
 number — same command, same tests, one syscall replaced — is the load-bearing one; the per-call median
 is why it is large, not a prediction of it.
@@ -58,6 +64,19 @@ Nothing here proposes weakening that guarantee. It is exactly right for a real i
 exactly wrong for a test that hands in a state object and reads a result back.
 
 ### What the tests actually observe
+
+**The rung division is by OBSERVABLE, and the numbers say which observable dominates.** 60 of the
+assertion half's 88 files — **1,016 of its 1,243 tests (82%)** — assert on the VALUES in
+`.conductor/state.json` (derived with `rg -l 'state\.json' scripts/test/assert` and a per-file
+`rg -o '^test\('` count, not typed). Those tests' observable is a VALUE the engine produced, so they
+belong to the UNIT rung and reach their values through the store rather than by reading a path; only
+tests that need BYTES on disk (a rendered `PROJECT.md`'s parity, a write-conflict log's bytes, the
+record FILE itself) sit on the file rung. A file-rung rule that named "the `.conductor/` record" would
+leave those 1,016 tests disk-backed with their fsyncs intact, and make the target rest on a control
+that no-op'd every flush.
+
+The table below is a different sizing — what the seam must OWN — and is the reason the store is the
+whole `.conductor/` store rather than a state-file wrapper:
 
 Sizing the migration from today's disk, because it decides what the seam must own:
 
@@ -76,8 +95,9 @@ Sizing the migration from today's disk, because it decides what the seam must ow
 | (files that observe no filesystem at all) | 3 | 12 |
 
 (overlapping; a file appears once per artifact it reads.) A seam that covered `state.json` alone would
-reach under half the half. That table is the reason the store below is the `.conductor/` store and not
-a state-file wrapper.
+reach under half the half — which is why the store owns the record directory and `PROJECT.md` rather
+than wrapping one file, and why the rung that consumes it is defined by the value a test observes and
+not by which artifact the value came from.
 
 ### What 0.47.0 already established, and what must not move
 
@@ -120,10 +140,18 @@ derived from the write sites rather than listed from memory:
 | `PROJECT.md` | `scripts/lib/render.mjs:325` |
 | `.conductor/render-stamp.json` | `scripts/lib/render.mjs:366` |
 | `.conductor/detours.log` | `scripts/lib/git.mjs:134`, `:193` (append) |
-| `.conductor/write-conflicts.log` (+ `.latch`) | `scripts/lib/write-conflicts.mjs:48`, `:98` |
+| `.conductor/write-conflicts.log` (+ `.latch`, + `.prev`) | `scripts/lib/write-conflicts.mjs:48`, `:98`; rotated to `.prev` at `:35`; removed at `:65`/`:68` |
 | `.conductor/honcho-memories.log` | `scripts/lib/subcommands.mjs:1037` |
-| `.conductor/activity/*` | `scripts/lib/activity-log.mjs:171` |
+| `.conductor/activity/*` | `scripts/lib/activity-log.mjs:171`; pruned at `:127` |
 | `.conductor/brief.txt` | `scripts/lib/subcommands.mjs:156` (the `snapshot` verb) |
+| `.conductor/session-claim.json` | `scripts/lib/claims.mjs:104-110` (tmp write + rename; removed at `:110`) |
+| `.conductor/commit-observe.json` (+ `.lock`) | `scripts/lib/commit-watch.mjs:191` (lock), `:242-243` (tmp write + rename), `:223` (lock removed) |
+
+**The table carries the REMOVALS as well as the writes** (I2), because an operation without its
+inverse is half a seam: the store's interface carries a remove/rotate alongside read/write/append, and
+the sites that today call `write-conflicts.mjs:35` (rotate to `.prev`), `:65`/`:68` (`clearConflicts`),
+`purge-logs.mjs:181`, `activity-log.mjs:127` and `claims.mjs:110` move onto it. A removal left on raw
+`fs` is named with its reason rather than silently omitted.
 
 **What the store does NOT own, stated so the omission is deliberate and not an oversight**: `CLAUDE.md`
 and its managed rules block (written by `scripts/lib/rules.mjs`; it is a repository file and not part
@@ -139,12 +167,22 @@ change where their I/O comes from:
 - `scripts/lib/state.mjs`: `loadState()` `:272`, `saveState(state, opts)` `:630`, `readStateFile(p)`
   `:258` — every call site stops reading `getPaths()` (`:21`) and takes the store's record operations.
   **137 call sites of `loadState()`/`saveState()`** across `scripts/lib/` and `conductor.mjs` (19 in
-  `update-epic.mjs`, 11 in `subcommands.mjs`, 9 in `detour-stack.mjs`), derived with
-  `rg -c -e '\bloadState\(\)' -e '\bsaveState\('`.
+  `update-epic.mjs`, 12 in `subcommands.mjs`, 9 in `detour-stack.mjs`), derived with
+  `rg -o -e '\bloadState\(\)' -e '\bsaveState\('` (`-o`, not `-c`: `-c` counts LINES and reports 135
+  and 11 respectively).
 - `scripts/lib/render.mjs`: `render()` `:32`, `writeRenderStamp()` `:354` — the render becomes
   "produce the artifact's text from this state", and the store decides whether it lands on disk, in
-  memory, or nowhere. The text-producing code is unchanged, which is what makes the byte-parity
-  requirement in this change's `engine-invocation` delta checkable.
+  memory, or nowhere. **Its READS move too** (I3), because render reads disk to decide behaviour and an
+  output-only move would leave a render-verb doing `fs` work through a store that "produces no path":
+  the pre-image `fs.readFileSync(projectMd())` (`:306`) that drives the skip-rewrite and
+  `--diff-summary` becomes a store read of the artifact's previous text, and `writeRenderStamp()`'s
+  "state unchanged since the last render" test (`fs.statSync(statePath()).mtimeMs`, `:356`) becomes a
+  store question about the STATE the stamp was taken from — an mtime cannot be answered by a store
+  with no path, so the stamp records a state identity both implementations can supply. The
+  text-producing code is unchanged, which is what makes the byte-parity requirement in this change's
+  `engine-invocation` delta checkable. The one consumer that is a filesystem check BY CONSTRUCTION is
+  `verify-state` (`worktree-hygiene.mjs:120-140`), which reads the stamp against `state.json`'s live
+  mtime: it stays on the file rung, stated here rather than left implicit.
 - the four append-only logs (`git.mjs`, `write-conflicts.mjs`, `subcommands.mjs`, `activity-log.mjs`)
   become store appends.
 
@@ -198,32 +236,43 @@ must stay.
 both are reused rather than reinvented:
 
 - **A source scan** (`violations()`, `:76`) over the rung's directory, extended with a second
-  predicate: an import of the filesystem module, or a bare call to a write/open/create/remove/flush
-  name. It keeps the existing properties that made the first guard survivable — comments are stripped
+  predicate: an import of the filesystem module, or a bare call to a **read**/write/open/create/remove/
+  flush name (I4). The spec forbids a unit file to "read, write, create or remove a path", so a
+  predicate that named only the write side would refuse less than the requirement states — and the
+  read it would miss (`render`'s `fs.readFileSync(projectMd())` at `render.mjs:306`) is a real one. It
+  keeps the existing properties that made the first guard survivable — comments are stripped
   (`stripComments`, `:52`) so documenting the rule is not a violation, and the forbidden tokens are
   BUILT FROM PARTS so the guard is not its own first violation.
 - **A run-time counter**, the same trick as the git PATH shim (`fixtures/assert-git-shim.mjs`): a
-  preload (or a shim module imported by the unit rung's harness) that wraps `fs`'s write-side entry
-  points and fails the run when the count is not zero. The source scan cannot see a write reached
-  three modules away — that is exactly the hole 0.47.0's Gate 2 found in the git guard (`G-I4`, the
-  reason the run-time shim exists at all) — so the same two-layer answer is used here, and the
-  reasoning is not re-derived from scratch.
+  preload (or a shim module imported by the unit rung's harness) that wraps `fs`'s READ-side entry
+  points as well as its write side, and fails when a unit test performed one. The source scan cannot
+  see a call reached three modules away — that is exactly the hole 0.47.0's Gate 2 found in the git
+  guard (`G-I4`, the reason the run-time shim exists at all) — so the same two-layer answer is used
+  here, and the reasoning is not re-derived from scratch.
 - **Discrimination** as a test, not a hope: the guard's check is exercised directly against a source
-  that imports `node:fs`, one that calls a write, and one that only names either in a comment. 0.47.0
-  wrote this lesson down (`docs/lessons/a-guard-can-check-the-wrong-half.md`); this change inherits it.
+  that imports `node:fs`, one that calls a write, ONE THAT CALLS A READ, and one that only names any
+  of them in a comment. 0.47.0 wrote this lesson down
+  (`docs/lessons/a-guard-can-check-the-wrong-half.md`); this change inherits it.
 
 `fs` is a singleton across the whole single-process half (`helpers.mjs:73` says so in as many words,
-which is why `injectConflictOnce` has to restore it), so the counter is process-wide and its
-assertion has to be read the same way the git shim's is: as a fact about the run, plus a listener that
-fails the half.
+which is why `injectConflictOnce` has to restore it). That makes a PROCESS-WIDE "the count MUST be
+zero" assertion impossible here (I7): the file rung does real writing in the SAME
+`--test-isolation=none` invocation, so a run-wide counter is always red once the file rung runs a
+test, and is vacuous if it is never asserted. The counter is therefore scoped PER TEST — reset before
+and asserted after each unit-rung test — which is the shape D4's own intent (catch a unit test that
+did filesystem work) actually requires. Its known limit is unchanged: a call reached through a module
+that captured `fs`'s functions before the wrapper was installed is missed, and that limit is named in
+Risk 7 rather than claimed closed.
 
 ### D5 — Fixture snapshots: build once per file, restore by copy
 
 `owingRepo()` is defined three times — `assert/gate-guard-write-paths.test.mjs:277`,
 `assert/reconcile-obligation.test.mjs:48`, `functional/conformance.test.mjs:60` — and each rebuilds a
 four-verb repository per call. Measured: **124.9 ms** per build today, **6.65 ms** with the flushes
-removed but the engine still running, and **8.80 ms** median (min 1.79, p90 14.57, n=20) to restore a
-built six-file, 34,607-byte fixture with `fs.cpSync`.
+removed but the engine still running, and **~1.0 ms** median (measured 1.03–1.15, min 0.78, p90 1.26,
+n=20) to restore a built six-file fixture of **≈34.7 KB** (34,711–34,712 bytes across runs; the count
+moves with the timestamps the fixture records) with `fs.cpSync`. (The **34,607 bytes / 8.80 ms** first
+written here did not reproduce — Gate 1 re-measured, and both corrections favour the design.)
 
 The design is a `fixtureOnce()` helper in `scripts/test/fixtures/`:
 
@@ -279,10 +328,12 @@ a render verb, an append-only log verb), each asserting that the same invocation
 status and the same record through the memory store and the disk store. Their job is to make the seam
 provable to a reviewer in one screen, which is what lets the 88 per-file commits be small.
 
-They also carry the **byte-parity check**: render the same record through both stores and compare the
-bytes. That is the one regression the seam can hide best — a render that changed because it now reads
-from an injected object rather than a path — and it is the failure mode named in this change's own
-risk list.
+They also carry the **byte-parity check**: render the same record through both stores, strip the
+`> Last rendered:` stamp line from both sides (C2 — the engine stamps it from the wall clock at
+`render.mjs:57`, so a raw comparison of two renders is never equal; the stamp is asserted present and
+well-formed separately), and compare the remaining bytes. That is the one regression the seam can hide
+best — a render that changed because it now reads from an injected object rather than a path — and it
+is the failure mode named in this change's own risk list.
 
 ### D8 — The drift script gains exactly one check, and the enumeration moves in one place
 
@@ -290,15 +341,23 @@ risk list.
 coupling and record freshness. The new rung needs **no new check** — it is a member of the assertion
 half, so twin coverage and record freshness do not reach it, and the diff-coupling rule is keyed on
 the functional half. What the rung changes is one CONSTANT: `homeOf()`'s regex
-(`certification.mjs:63`), which is the single derivation both `drift.mjs` and its tests read.
+(`certification.mjs:63`). But `homeOf()` is NOT the single derivation everything reads (I5): check 1's
+REFUSAL message (`drift.mjs:158`) names the three homes in hand-written prose — "move it under
+scripts/test/assert/, scripts/test/functional/ or scripts/test/sweeps/" — and stays wrong once the
+fourth home exists. That message is derived from `homeOf`'s alternatives in the same edit, and the
+missing positive assertion `homeOf("scripts/test/unit/<id>.test.mjs") === "unit"` is added beside the
+three at `assert/drift-script.test.mjs:60-64`, which assert only the three homes and two null cases.
 
 What it DOES need is a **guard that the rung did not silently empty**. Check 1 refuses a file with no
 home; it does not notice a rung that has become empty, and an empty rung runs zero tests while every
 floor passes, because the declared count is enumerated from the same empty set. 0.47.0 already met
-this exact failure in the spawn guard, whose first assertion is
+this exact failure in the spawn guard, whose first assertion is the SHAPE
 `assert.ok(files.length > 40, "a walk over an empty or nearly-empty directory is not a check")`
-(`assert/assert-half-has-no-spawn.test.mjs:94`). The same non-vacuity assertion is added for the unit
-rung, with its floor raised as the rung fills — a number in the test, not a rule in a document.
+(`assert/assert-half-has-no-spawn.test.mjs:94`) — its NUMBER is the file rung's floor and does not
+transfer (I11): the unit rung starts, per D7, with a handful of hand-written proofs, so the assertion
+states the rung's ACTUAL starting count and the rule that RAISES it as the rung fills — a number in
+the test, not a rule in a document. Copying `> 40` would make the check unable to pass on a young
+rung, which is the opposite of what it is for.
 
 ### D9 — CI: add the rung's step, and probe the isolation flag on the pinned Node first
 
@@ -321,13 +380,18 @@ The change's own acceptance is a number, and both ends of it are captured in thi
 
 - **before**: the three wall-clock runs above, the 1,243-per-test duration distribution (median
   51.4 ms, p90 101.5 ms, 133 tests over 100 ms), the fsync count (12,524), and the no-op control
-  (6.47 s);
+  (9.11 s — measured at Gate 1; the 6.47 s first carried here does not reproduce);
 - **after**: the same four measurements, plus the hook's wall clock (today: the drift script is
   0.115 s, and the half is 67.8–86.0 s, so the hook is the half).
 
-The target is **sub-10-second pre-commit** and **~1 ms unit tests**. The 6.47 s control says the target
-is reachable without changing a single assertion, which is why it is stated as an acceptance rather
-than an aspiration. The commit that reports each measurement is named in `tasks.md`.
+The acceptance is **sub-15-second pre-commit for the FULL assertion half** and **~1 ms per unit-rung
+test**, with the value-observing population that migrates expected under 10 s on its own. It is stated
+this way, and not as the **sub-10-second pre-commit** first drafted, because the reproducible control
+is 9.11 s (8.1×, not the 6.47 s / ≥10× first written) and that control is an UPPER bound: it removes
+EVERY flush, including the file rung's, while the migration moves only the tests whose observable is a
+value. A sub-10 s target for the whole half would rest on a control that no-op'd flushes the shipped
+tree still performs, so the honest target for the full half is sub-15 s and the migrated population
+carries the sub-10 s figure. The commit that reports each measurement is named in `tasks.md`.
 
 ### D11 — The dev inner loop is documented, not built
 
@@ -394,7 +458,7 @@ makes explicitly rather than a step it assumes.
    whose test implementation is not next to the interface is a seam nobody finds — and say so in the
    release notes so the shipped-surface change is deliberate.
 
-2. **`CLAUDE.md`'s managed rules block: 251 tests.** It is 30,911 of a built fixture's 34,607 bytes and
+2. **`CLAUDE.md`'s managed rules block: 251 tests.** It is 30,911 of a built fixture's ≈34,712 bytes and
    it is written by `rules.mjs`, not the store. Giving it a seam too would move those 251 tests into
    the unit rung; leaving it on the file rung costs ~0.9 MB of copy per restored fixture. Neither
    dominates. Recommend: leave it — it is a repository file the engine writes to the repo, not into

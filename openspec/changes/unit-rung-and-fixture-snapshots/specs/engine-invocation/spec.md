@@ -51,16 +51,25 @@ The store the engine builds for a command-line invocation SHALL write the same a
 paths, with the same bytes, as the engine wrote before this seam existed. A seam that changed what the
 command line persists would leave every consumer of those artifacts — a hook, a command document, an
 evaluator, a user reading `PROJECT.md` — observing a different record while every test that happened to
-use the in-memory store stayed green.
+use the in-memory store stayed green. (The command line's own observable behaviour is owned by this
+capability's existing *"The command-line binary's observable behaviour is unchanged"* requirement;
+this requirement owns the ARTIFACTS and does not restate the CLI contract.)
 
 The rendered artifact SHALL in particular be produced by the same code path and at the same moment as
 before: it SHALL still be rendered when the verb that renders it runs, and it SHALL be byte-identical
-for the same record.
+for the same record **once the render timestamp is held constant**. The rendered text carries a
+`> Last rendered: <timestamp>` line the engine stamps from the wall clock, so a raw byte comparison
+of two renders of the same record is never equal; the comparison SHALL therefore strip that line —
+using the engine's own stamp pattern — from BOTH sides before comparing, and the stamp line's
+presence and format SHALL be asserted separately. (Injecting a clock is the alternative; the
+stripped comparison is the choice this change makes.)
 
 #### Scenario: The rendered artifact is byte-identical across the seam
 
 - **WHEN** the same record, in the same repository state, is rendered before and after the seam exists
-- **THEN** the two artifacts are byte-identical
+- **THEN** the two artifacts are byte-identical once their `> Last rendered:` stamp lines are stripped
+  (the stamp being asserted present and well-formed separately), because the stamp is the only
+  difference between two renders of the same record
 
 #### Scenario: A store supplies the record but does not take over rendering
 
@@ -68,11 +77,3 @@ for the same record.
   command line builds
 - **THEN** the record and the rendered artifact are both written where they were written before, and
   the artifact's bytes depend on the record's content and not on which store produced it
-
-#### Scenario: The command line's observable behaviour is still unchanged
-
-- **WHEN** every invocation registered in the plugin's hook configuration is run as the process it
-  registers
-- **THEN** each still exits with the status it is documented to produce and writes the bytes it wrote
-  before, because the store is internal and the command line is not a caller that can tell which one
-  it was given

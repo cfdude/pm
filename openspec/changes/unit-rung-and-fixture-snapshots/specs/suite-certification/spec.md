@@ -14,9 +14,14 @@ module added to the certified set later cannot silently fall outside it.
 
 **The assertion half SHALL itself be divided into two RUNGS, and the division SHALL be by what a
 test OBSERVES rather than by how fast it is.** The **unit rung** holds tests whose observable is a
-value the engine produced — a state object, a result, a refusal — and whose subject needs neither a
-repository on disk nor a file to have been written. The **file rung** holds tests whose observable is
-a file the engine wrote: `PROJECT.md`, the `.conductor/` record, the managed rules block. Both rungs
+**VALUE** the engine produced — a verb's result, a refusal, or any value the record holds — obtained
+through the store the test supplies rather than by reading a path. A test asserting what the record
+**SAYS** (the values in `state.json`) belongs to this rung and runs over an in-memory store; the rung
+is the home of the record's values, not of its file. The **file rung** holds tests whose observable
+is **BYTES on disk** — the rendered `PROJECT.md`, the record file itself, the write-conflict log, the
+managed rules block — that is, a test that needs the bytes the engine WROTE to exist at a path. A
+test whose observable is a value the store could hand it does not belong on the file rung merely
+because that value is persisted in the record. Both rungs
 are members of the assertion half by TRIGGER and by PROCESS: they run on every commit, and a commit
 runs both in one invocation of one Node process. A rung is not a half — the functional trigger, the
 functional half's membership and the change-triggered bucket are unchanged by this division, and

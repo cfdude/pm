@@ -10,8 +10,10 @@ the explanation in circulation (`each test rebuilds a repository: init + N add-e
 round trips, ~60–95 ms`) does not survive measurement.
 
 **What the time actually is: `fsync`. One run performs 12,524 `fsyncSync` calls.** With
-`fs.fsyncSync` replaced by a no-op as a causal control, the SAME 1,243 tests all pass in **6.47 s** —
-a **≥10×** difference, and the only thing changed was the syscall. On this machine one
+`fs.fsyncSync` replaced by a no-op as a causal control, the SAME 1,243 tests all pass in **9.11 s**
+against a **73.9 s** baseline — **8.1×** — and the only thing changed was the syscall. (The **6.47 s
+/ ≥10×** first written here does NOT reproduce; Gate 1 measured the control twice and got 9.11 s. See
+design D10 for what that does to the acceptance.) On this machine one
 write+`fsync`+close costs a median **3.3 ms in a tmpdir and 3.5 ms in this repo's own directory**
 (n=60 each), so the 12,524 calls are the wall clock and the engine's decisions are not.
 
@@ -22,8 +24,8 @@ The engine's own verbs confirm it, and the picture is the opposite of the one as
 | `init`, fresh dir | 37.2 ms | 2.62 ms | 8 |
 | `add-epic` (0 epics present) | 11.2 ms | 0.92 ms | 2 |
 | `add-epic` (260 epics present) | 17.5 ms | — | 2 |
-| `owingRepo()` — init + 2 add-epic + set-active + push + pop | 124.9 ms | 6.65 ms | 14 |
-| `render` / `brief` / `sync`, initialised dir | 0.30 / 0.66 / 0.39 ms | — | 1 / 0 / 0 |
+| `owingRepo()` — init + 2 add-epic + set-active + push + pop | 124.9 ms | 6.65 ms | 18 |
+| `render` / `brief` / `sync`, initialised dir | 0.30 / 0.66 / 0.39 ms | — | 0 / 0 / 0 |
 | `mkdtemp` | 0.32 ms | — | 0 |
 
 (medians, n=7–20, in-process through the assertion half's own harness and git double.) **A state load,
@@ -39,26 +41,35 @@ one.
 
 ## What Changes
 
-- **A UNIT RUNG — a fourth home, `scripts/test/unit/`, for tests whose observable is a value.** The
+- **A UNIT RUNG — a fourth home, `scripts/test/unit/`, for tests whose observable is a VALUE the
+  engine produced — a verb's result, a refusal, or any value the record holds.** The
   engine's DECISIONS are separated from its PERSISTENCE by a **store seam**, the same dependency-
   injection move the git gateway made in 0.47.0: a verb reads a state object, produces a result, and
   the layer that loads / saves / renders is **injected** rather than reached through module-scope
   paths. A unit test hands in a state object and gets a result back — no tmpdir, no `fsync`, no
   render, no disk. An in-memory store is the seam's test implementation, and it is why the rung's
-  tests cost ~1 ms instead of ~70.
+  tests cost ~1 ms instead of ~70. **The rung's home is the record's VALUES, not its file** (C1):
+  **60 of the assertion half's 88 files — 1,016 of its 1,243 tests, 82% — assert on the values in
+  `state.json`**, and a file-rung rule that named "the `.conductor/` record" would strand all of them
+  on disk with their fsyncs intact.
 - **FIXTURE SNAPSHOTS for what stays integration-shaped.** A repository is built ONCE per file
   (`owingRepo()` and friends), its state captured, and restored per test. Measured: restoring a built
-  six-file, 34,607-byte fixture with `fs.cpSync` costs a median **8.80 ms** (min 1.79, p90 14.57,
-  n=20) against **124.9 ms** to rebuild it — and rebuilding it is what the 1,200 tests do today.
-  Restore is a copy: no `fsync`, no engine, no render.
+  six-file fixture of **≈34.7 KB** (34,711–34,712 bytes across runs — the count moves with the
+  timestamps the fixture records) with `fs.cpSync` costs a median **~1.0 ms** (measured 1.03–1.15,
+  min 0.78, p90 1.26, n=20) against **124.9 ms** to rebuild it — and rebuilding it is what the 1,200
+  tests do today. (The **34,607 bytes / 8.80 ms** first written here did not reproduce; the
+  re-measurement favours the design.) Restore is a copy: no `fsync`, no engine, no render.
 - **The store seam is the `.conductor/` store, not just `state.json`.** Sizing the migration from
   today's disk shows why a state-only seam would strand the half: of 1,243 tests, **1,098 live in
   files that read `.conductor/state.json`** (67 files), **543 read `PROJECT.md`** (30), **251 read
   `CLAUDE.md`** (14), 134 read `detours.log` (7), 79 the activity log (4), 72 `write-conflicts.log`
   (2), 61 `honcho-memories.log` (2), 44 `render-stamp.json` (2), 23 `.changesets/` (1), 19 `brief.txt`
   (2). A seam that covered only `state.json` would reach under half of them. So the store owns every
-  file the engine WRITES into the record directory plus `PROJECT.md`, and a statement of what it does
-  NOT own (below).
+  file the engine WRITES into the record directory plus `PROJECT.md` — including the three the first
+  pass of the ownership table missed (C1/I1): **`.conductor/session-claim.json`**
+  (`claims.mjs:104-110`), **`.conductor/commit-observe.json` and its `.lock`**
+  (`commit-watch.mjs:191`, `:242-243`), and **`.conductor/write-conflicts.log.prev`**
+  (`write-conflicts.mjs:35`) — and a statement of what it does NOT own (below).
 - **The unit rung is a home, not a third half.** Its files run in the SAME single Node process and on
   the SAME per-commit trigger as the assertion half, so nothing about the two-halves contract or the
   functional trigger moves. What changes is the enrolment enumeration (four directories, not three), the
@@ -73,8 +84,10 @@ one.
 
 Measured results this change commits to, both captured in this change directory: the assertion half's
 per-file and per-test baseline BEFORE, and the same table AFTER, with the pre-commit hook's wall time
-named at both ends. The acceptance number is **sub-10-second pre-commit** and unit-rung tests at
-**~1 ms**.
+named at both ends. The acceptance is **sub-15-second pre-commit for the FULL assertion half** and
+unit-rung tests at **~1 ms**, with the value-observing population that migrates expected under 10 s
+on its own (design D10 — the reproducible control is 9.11 s, 8.1×, and it is an UPPER bound because it
+removes every flush, so it does not license a sub-10 s target for the whole half).
 
 ## Capabilities
 
@@ -109,8 +122,9 @@ named at both ends. The acceptance number is **sub-10-second pre-commit** and un
   (`:1037`), `scripts/lib/git.mjs` (`:134`, `:193`), `scripts/lib/write-conflicts.mjs` (`:48`, `:98`),
   `scripts/lib/activity-log.mjs` (`:171`), and the ~20 verb modules that call `loadState()`/`saveState()`
   — **137 call sites of `loadState()`/`saveState()`** across `scripts/lib/` and `conductor.mjs`, of
-  which 19 are in `update-epic.mjs`, 11 in `subcommands.mjs` and 9 in `detour-stack.mjs` (derived with
-  `rg -c -e '\bloadState\(\)' -e '\bsaveState\('`, not typed).
+  which 19 are in `update-epic.mjs`, 12 in `subcommands.mjs` and 9 in `detour-stack.mjs` (derived with
+  `rg -o -e '\bloadState\(\)' -e '\bsaveState\('`, not typed — `-o`, not `-c`, which counts LINES and
+  reports 135 and 11 respectively).
 - **CLI contract**: unchanged. Same verbs, same flags, same exit statuses, same bytes. `main(argv, io)`
   stays synchronous and keeps returning its status (`openspec/specs/engine-invocation/spec.md`).
 - **Repo tooling**: `.githooks/pre-commit` (a second glob and its floor), `.github/workflows/ci.yml`
@@ -128,7 +142,7 @@ Measurement commands behind every number above, all run 2026-09-21 at `ab171b7`:
 ```
 node --test --test-isolation=none scripts/test/assert/*.test.mjs        # tests 1243, duration_ms 86000/67759
 preload: fs.fsyncSync = wrapped counter; then the same command          # fsyncSync calls in this run: 12524
-preload: fs.fsyncSync = () => {};       then the same command          # duration_ms 6470, 1243/1243 pass
+preload: fs.fsyncSync = () => {};       then the same command          # duration_ms 9112, 1243/1243 pass
 node scripts/test/drift.mjs --root "$PWD"                              # 0.115 s wall
 ```
 

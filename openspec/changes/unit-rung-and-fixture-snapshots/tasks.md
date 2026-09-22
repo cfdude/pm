@@ -39,8 +39,9 @@
       51.4 ms, p25 37.8, p75 71.3, p90 101.5, p99 213.7, max 1,177.9; 133 tests ≥100 ms, 22 ≥200 ms;
       the 1,243 durations SUM to 73.7 s**, i.e. the tests are the wall clock;
       (c) the `fsyncSync` count for one run, via a preload that wraps it — measured: **12,524**;
-      (d) the CAUSAL CONTROL: the same command with `fs.fsyncSync` replaced by a no-op — measured:
-      **6.47 s, 1,243/1,243 pass**, which is the ≥10× this change's acceptance rests on;
+      (d) the CAUSAL CONTROL: the same command with `fs.fsyncSync` replaced by a no-op — measured at
+      Gate 1 as **9.11 s, 1,243/1,243 pass** against a **73.9 s** baseline, i.e. **8.1×**. The
+      **6.47 s / ≥10×** first written here does NOT reproduce (see design D10); re-measure on the day;
       (e) the pre-commit hook's wall clock end to end (measured: `node scripts/test/drift.mjs` **0.115 s**
       and the half at 67.8–86.0 s, so the hook is the half);
       (f) the per-verb table in `design.md`'s Context — `init` 37.2 ms / 8 fsyncs, `add-epic` 11.2 ms /
@@ -82,40 +83,75 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       `getPaths()` (`scripts/lib/state.mjs:21`) which reads `engineRoot()` — the invocation's root, not
       a caller-supplied record.
 - [ ] 1.2 GREEN — `scripts/lib/store.mjs`: one interface (read the record, write the record, read a
-      record-directory artifact, append to one, write a rendered artifact), the DISK implementation
+      record-directory artifact, append to one, write a rendered artifact, AND remove/rotate one —
+      I2: the engine removes or rotates artifacts the store owns, at `write-conflicts.mjs:35` (rotate
+      to `.prev`), `:65`/`:68` (`clearConflicts`), `purge-logs.mjs:181`, `activity-log.mjs:127`,
+      `claims.mjs:110`, so the interface ships the inverse as an operation rather than leaving those
+      sites on raw `fs`; one left off the interface is named with its reason), the DISK implementation
       that keeps `saveState()`'s existing behaviour EXACTLY — the strict read before the revision
       comparison, `--force` read from `currentArgv()` (`state.mjs:663`), the lock, the temp-file write,
       the fsync before the rename (`:702`), the directory fsync (`:726`), the read-back
-      (`persistFailure`, `:743`) — and the IN-MEMORY implementation that reproduces the same revision
-      and no-op comparisons against the object it holds. `main(argv, io)` builds the disk store; no
-      verb's decision changes.
+      (`persistFailure`, `:743`) — and the IN-MEMORY implementation that reproduces the SAME
+      normalisation the disk load applies (I6): the strict read's shape check (`shapeProblem`,
+      `state.mjs:268`, thrown as `StateUnreadableError`), the `defaultState()` merge and the integer
+      coercion of `revision` (`:277-281`), plus the revision and no-op comparisons against the object
+      it holds. A memory store that skipped the shape check would let a unit test assert a record
+      shape a real disk load refuses. `main(argv, io)` builds the disk store; no verb's decision
+      changes.
+
+      The three `.conductor/` artifacts the ownership table missed gain a DECISION here, not an
+      omission (I1): `.conductor/session-claim.json` (`claims.mjs:104-110`, write + rename + rm),
+      `.conductor/commit-observe.json` and its `.lock` (`commit-watch.mjs:191`, `:242-243`, `:223` rm),
+      and `.conductor/write-conflicts.log.prev` (`write-conflicts.mjs:35` rotate). Each is either
+      brought behind the store's interface or named in design D1's does-NOT-own list WITH its reason —
+      a table that claims derivation from the write sites cannot silently omit a write site.
 - [ ] 1.3 GREEN — `scripts/lib/render.mjs` produces `PROJECT.md` and `render-stamp.json`
-      (`:325`, `:366`) through the store. The markdown-building code is NOT edited — only where its
-      output goes — because that is what makes 1.8's byte parity checkable.
+      (`:325`, `:366`) through the store, AND its READS move with them (I3): the pre-image
+      `fs.readFileSync(projectMd())` (`:306`) that decides the skip-rewrite and answers
+      `--diff-summary` becomes a store read of the artifact's previous text, and `writeRenderStamp()`'s
+      "state unchanged since the last render" test (`fs.statSync(statePath()).mtimeMs`, `:356`)
+      becomes a store question about the state the stamp was taken FROM — an mtime is not something a
+      store that "produces no path on disk" can answer, so the stamp records a state identity the
+      store can supply for both implementations, and the skip-rewrite/write decision is made from the
+      store's pre-image rather than from a path read. The markdown-building code is NOT edited — only
+      where its inputs come from and its output goes — because that is what makes 1.8's byte parity
+      checkable. `verify-state` (`worktree-hygiene.mjs:120-140`) READS the stamp and state.json's
+      mtime and is a filesystem check by construction: it stays on the file rung, stated here rather
+      than left implicit.
 - [ ] 1.4 GREEN — the four append-only record writes move behind the store: `detours.log`
       (`scripts/lib/git.mjs:134`, `:193`), `write-conflicts.log` and its latch
       (`write-conflicts.mjs:48`, `:98`), `honcho-memories.log` (`subcommands.mjs:1037`), the activity
       segments (`activity-log.mjs:171`), and `brief.txt` (`subcommands.mjs:156`). Each keeps its
       existing guard-then-write shape; the failure policy on a write that cannot land does not change.
 - [ ] 1.5 RED — a seam test that a STALE revision is still refused through the in-memory store, and
-      that a no-op write is still a no-op, both with the same status the disk store produces. Guards the
-      likeliest way the seam quietly weakens the engine: a memory implementation that skips the
-      comparison it inherited.
+      that a no-op write is still a no-op, both with the same status the disk store produces; AND a
+      third case for the normalisation the disk load also applies (I6): a seeded record whose SHAPE
+      the strict read refuses (`shapeProblem`) is refused through the memory store too, rather than
+      passing as a plain object. Guards the likeliest way the seam quietly weakens the engine: a
+      memory implementation that skips the comparison — or the shape check — it inherited.
 - [ ] 1.6 GREEN — the ~20 verb modules read the store from the invocation instead of calling
       `loadState()`/`saveState()` against module-scope paths. **137 call sites** across `scripts/lib/`
       and `conductor.mjs`, derived mechanically with
-      `rg -c -e '\bloadState\(\)' -e '\bsaveState\(' scripts/lib/*.mjs scripts/conductor.mjs` and not
-      from a list in this document — 19 in `update-epic.mjs`, 11 in `subcommands.mjs`, 9 in
-      `detour-stack.mjs`. No verb body changes otherwise.
+      `rg -o -e '\bloadState\(\)' -e '\bsaveState\(' scripts/lib/*.mjs scripts/conductor.mjs` and not
+      from a list in this document — 19 in `update-epic.mjs`, 12 in `subcommands.mjs`, 9 in
+      `detour-stack.mjs`. (`rg -o`, not `rg -c`: `-c` counts LINES, and reports 135 here and 11 for
+      `subcommands.mjs`, because a line can hold two matches — M1.) No verb body changes otherwise.
 - [ ] 1.7 REGRESSION GUARD — the conformance set (§`scripts/test/functional/conformance.test.mjs`)
       still passes UNCHANGED: every refusal class's returned status still equals the status the binary
       exits with. It is the same check 0.47.0 shipped and it is the reason a seam this wide is safe to
       land at all. Verified by a deliberate violation, not by a green run.
-- [ ] 1.8 REGRESSION GUARD — byte parity of the rendered artifact: the same record, rendered through
-      the disk store and through the memory store, produces byte-identical text; and the same record in
-      the same repository state renders byte-identically to a capture taken before the seam landed. The
-      capture is committed in this change directory, not regenerated at assert time — a test that
-      re-derives its own expectation cannot catch a change in it.
+- [ ] 1.8 REGRESSION GUARD — byte parity of the rendered artifact, compared with the render STAMP
+      held constant (C2): `render()` stamps `> Last rendered: <now>` (`render.mjs:57`), so two renders
+      of the same record are never byte-identical as raw text — the comparison strips the stamp line
+      (the engine's own `STAMP_RE`, `:57`/`:304`) from BOTH sides before comparing, and the stamp
+      line's presence and format are asserted separately, which is the one choice this makes and the
+      other (an injected clock) is not taken. With the stamp held constant: the same record, rendered
+      through the disk store and through the memory store, produces byte-identical text; and the same
+      record in the same repository state renders byte-identically to a capture taken before the seam
+      landed. The capture is committed under `scripts/test/fixtures/` — NOT in this change directory,
+      because task 7.2 MOVES this directory under `archive/` and the test's path would break (I8) —
+      and is read, not regenerated at assert time: a test that re-derives its own expectation cannot
+      catch a change in it.
 - [ ] 1.9 MUTATION, saved here as `red-1.x-mutation-evidence.txt` — for 1.7, change one class's
       returned status by hand and confirm ONLY that class's row goes red; for 1.8, change one byte of
       the render and confirm the parity check names it rather than the whole suite failing.
@@ -124,17 +160,33 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
 
 - [ ] 2.1 RED — the unit rung's guard, and its discrimination. Extend
       `scripts/test/assert/assert-half-has-no-spawn.test.mjs`'s source scan
-      (`violations()`, `:76`; `stripComments()`, `:52`) with the filesystem predicate, and add the
-      run-time counter in the shape of `fixtures/assert-git-shim.mjs`. Fails today: nothing refuses a
-      unit-rung file that reads or writes. Three direct exercises as tests, not a hope: a source that
-      imports the filesystem module is refused, one that calls a write is refused, and one that names
-      either only inside a comment is NOT refused.
+      (`violations()`, `:76`; `stripComments()`, `:52`) with the filesystem predicate — and the
+      predicate covers READS as well as writes (I4): the spec forbids a unit file to "read, write,
+      create or remove a path", so the token set includes read names and not only
+      write/open/create/remove/flush. Add the run-time counter in the shape of
+      `fixtures/assert-git-shim.mjs`, wrapping `fs`'s READ-side entry points as well as its write side
+      — a read reached three modules away (render's `fs.readFileSync(projectMd())`,
+      `render.mjs:306`) is exactly the hole the run-time layer exists for. The counter cannot be a
+      process-wide "count MUST be zero" (I7): the file rung does real writing in the SAME
+      `--test-isolation=none` invocation, so the counter is RESET and ASSERTED around each unit test
+      (per-test scope) — process-wide it is always-red once the file rung writes, or vacuous. Fails
+      today: nothing refuses a unit-rung file that reads or writes. Four direct exercises as tests,
+      not a hope: a source that imports the filesystem module is refused, one that calls a write is
+      refused, one that calls a READ is refused, and one that names any of them only inside a comment
+      is NOT refused.
 - [ ] 2.2 GREEN — `scripts/test/unit/` becomes the fourth home. `scripts/test/certification.mjs:63`'s
       `homeOf()` regex gains `unit` as a fourth alternative and nothing else; `EXCLUSIONS` (`:53`)
       stays empty; the comment at `:50` that states the three homes is corrected to four in the same
       edit, because a comment that under-counts the homes is how the next file gets filed in none.
-      `drift.mjs`'s four checks are unchanged (`:111`) — the rung reaches them as a member of the
-      assertion half.
+      The enrolment REFUSAL is derived rather than hand-written (I5): `drift.mjs:158`'s message names
+      the three homes in prose ("move it under scripts/test/assert/, scripts/test/functional/ or
+      scripts/test/sweeps/"), which is NOT derived from `homeOf()` and stays wrong once the fourth
+      home exists — derive the named homes from `homeOf`'s alternatives so the message cannot go
+      stale, and add the missing POSITIVE assertion
+      `homeOf("scripts/test/unit/<id>.test.mjs") === "unit"` beside the three at
+      `assert/drift-script.test.mjs:60-64`, which today assert only `assert`/`functional`/`sweeps`
+      (and the two null cases). `drift.mjs`'s four checks are otherwise unchanged (`:111`) — the rung
+      reaches them as a member of the assertion half.
 - [ ] 2.3 GREEN — the pre-commit hook runs BOTH rungs in ONE process and its floor enumerates exactly
       those two globs (`.githooks/pre-commit:125`, `:154`). The declaration becomes
       `git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs'` piped through the
@@ -147,12 +199,17 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
       Node-18 fallback still runs both rungs correctly. The probe is per-clone and cached; a two-glob
       runner on a Node without `--test-isolation` must still run every file, which the floor then
       confirms.
-- [ ] 2.5 REGRESSION GUARD — a NON-VACUITY assertion for the new rung, in the shape
-      `assert/assert-half-has-no-spawn.test.mjs:94` already uses
-      (`assert.ok(files.length > 40, "a walk over an empty or nearly-empty directory is not a check")`).
-      An empty rung runs zero tests and every floor passes, because the floor's declared count is
-      enumerated from the same empty set — so the count is asserted in the guard, and raised as the
-      rung fills. Verified by emptying the directory and confirming the guard fails.
+- [ ] 2.5 REGRESSION GUARD — a NON-VACUITY assertion for the new rung, in the SHAPE
+      `assert/assert-half-has-no-spawn.test.mjs:94` uses — but NOT with that assertion's number (I11):
+      `files.length > 40` is the FILE rung's floor, and the unit rung starts, per D7, with a handful
+      of hand-written proofs (one per verb family — a state verb, a render verb, an append-only log
+      verb). So the assertion states the rung's ACTUAL starting count (the D7 proofs — three, or
+      whatever the rung holds when the assertion lands) and the rule that RAISES it as the rung fills,
+      which is a number in the test and not a rule in a document. Written with the file rung's 40, the
+      check cannot go green on a young rung, which is the opposite of what it is for. An empty rung
+      runs zero tests and every floor passes, because the floor's declared count is enumerated from
+      the same empty set — so the count is asserted in the guard. Verified by emptying the directory
+      and confirming the guard fails.
 - [ ] 2.6 GREEN — CI runs the rung in the SAME step as the assertion half, one runner invocation given
       both globs and one floor over both (`.github/workflows/ci.yml:74`), and the syntax-check loop
       (`:72`) gains `scripts/test/unit/*.mjs`. The pinned `node-version: "18"` (`:33`) is PROBED for
@@ -178,6 +235,12 @@ this change directory as `red-<task>.txt`, and the GREEN commit message names th
 - [ ] 3.4 GREEN — the three `owingRepo()` definitions collapse onto the helper, and the helper's own
       rule is stated where it lives: use it for a fixture more than one test in a file uses, NOT for a
       one-shot build, where the copy costs more than the build.
+- [ ] 3.5 GREEN — the template's DISPOSAL is shipped, not merely named (M4): 5.3 says the template is
+      "removed with the file's run", but no task performs it. The helper removes its per-file
+      `mkdtemp` template when the file's run ends (a process-exit or file-teardown hook), so a
+      template does not outlive the file that built it and accumulate under the temp dir across files
+      — a leak the per-test copy/remove discipline in 3.2 does not cover. State the reason if the
+      template is instead kept for the file's whole lifetime and removed by the OS temp cleaner.
 
 ## 4. The per-file migration
 
@@ -190,7 +253,14 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       its assertions unchanged and only the mechanism they obtain their values through moved.
       A file whose tests assert on `CLAUDE.md`'s managed rules block, `.changesets/`, or any repo file
       the store does not own (design D1) stays on the file rung — that is a decision recorded per file,
-      not a gap.
+      not a gap. The rule in the OTHER direction is what makes the rung reach the half at all (C1): a
+      test asserting what the RECORD SAYS — `state.json`'s values, a verb's result, a refusal — moves
+      to the unit rung over the memory store, and only a test that needs BYTES on disk (the rendered
+      `PROJECT.md`'s parity, the write-conflict log's bytes, the record FILE itself) stays on the file
+      rung. **60 of the 88 assertion files — 1,016 of the 1,243 tests — assert on `state.json`'s
+      values**, so a file-rung rule that named "the `.conductor/` record" would strand 82% of the half
+      on disk with its fsyncs intact and leave the acceptance resting on a control that no-op'd every
+      flush.
 - [ ] 4.2 The migration is measured AS IT GOES, not only at the end: the half's wall clock and the two
       rungs' counts are recorded at the end of each batch of ten files in this change directory, so a
       regression is attributed to the batch that caused it rather than discovered at Gate 2.
@@ -229,12 +299,16 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       the table does not name — an ownership table maintained by hand is exactly the stale enumeration
       this repository's lesson set is built on.
 - [ ] 5.3 **Every operation has an inverse** (required task item 1) — enumerate the inverse of each new
-      operation and name each one deliberately not shipped: the store's write against a read and
-      against a removal; the fixture build against its discard (shipped — the template is removed with
-      the file's run); the rung's guard against a bypass (not shipped — the source scan and the
-      run-time counter are the two halves, and the run-time counter's blind spot is named in design D7
-      risk 7 rather than claimed closed); the migration's per-file move against a move back (not
-      shipped — say why a rung decision is not re-derived automatically).
+      operation and name each one shipped or deliberately not shipped: the store's write against a
+      read, and against a REMOVAL (**shipped** — I2: the engine removes/rotates artifacts the store
+      owns at `write-conflicts.mjs:35`/`:65`/`:68`, `purge-logs.mjs:181`, `activity-log.mjs:127`,
+      `claims.mjs:110`, so 1.2's interface carries a remove/rotate operation and those sites move onto
+      it; any one that stays on raw `fs` is named with its reason); the fixture build against its
+      discard (**shipped** — task 3.5 ships the template's disposal); the rung's guard against a
+      bypass (not shipped — the source scan and the run-time counter are the two halves, and the
+      run-time counter's blind spot is named in design's Risk 7 rather than claimed closed); the
+      migration's per-file move against a move back (not shipped — say why a rung decision is not
+      re-derived automatically).
 - [ ] 5.4 **Verify against the commit, not the working tree** (required task item 2) — for every task
       above, run `git show --stat <that task's sha>` and assert every file the task claims to change
       appears in THAT commit. A verb module claiming to read the store but absent from the commit
@@ -280,11 +354,14 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       `commands/`, `agents/`, `skills/`, `hooks/` or `.claude-plugin/`. State it rather than assume it.
 - [ ] 6.5 **THE AFTER MEASUREMENT, and it is the change's acceptance.** Re-run 0.3's (a)–(f) on the
       final commit and write `baseline-after.md` beside `baseline-before.md`. The acceptance is
-      **sub-10-second pre-commit** and **~1 ms unit-rung tests**; the control measured at drafting
-      (6.47 s with all 1,243 tests passing and only the flush removed) says the target is reachable
-      without changing an assertion. A miss is reported as a miss with the number, not rounded into a
-      pass. **This task's commit is the one that reports the change's headline number**, and the
-      CHANGELOG entry quotes it.
+      **sub-15-second pre-commit for the FULL assertion half** and **~1 ms per unit-rung test**, with
+      the value-observing population that migrates expected **under 10 s** on its own (design D10).
+      The reproducible control — 9.11 s with all 1,243 tests passing and only the flush removed,
+      against a 73.9 s baseline = 8.1× — is an UPPER bound: it removes EVERY flush, including the file
+      rung's, so it does not license a sub-10 s target for the whole half, and the sub-10 s figure the
+      proposal first carried rested on a 6.47 s control that does not reproduce. A miss is reported as
+      a miss with the number, not rounded into a pass. **This task's commit is the one that reports the
+      change's headline number**, and the CHANGELOG entry quotes it.
 
 ## 7. Close
 
