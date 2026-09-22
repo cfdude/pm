@@ -29,7 +29,7 @@
       membership rule belongs to `suite-certification`, and neither restates the other. The second is
       CONTRADICTION: `suite-certification`'s "two halves" now carries rungs, and no scenario anywhere
       may still speak of the assertion half as one on-disk directory.
-- [ ] 0.3 **BASELINE, measured BEFORE any code lands, and kept in this change directory** (this
+- [x] 0.3 **BASELINE, measured BEFORE any code lands, and kept in this change directory** (this
       change's acceptance is a number, so the number exists at both ends). Capture and write
       `baseline-before.md`:
       (a) `node --test --test-isolation=none scripts/test/assert/*.test.mjs` three times, recording

@@ -9885,9 +9885,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "2eff64d3484d8559d0f0518003ba11ce5de1263b"
+      ],
       "createdAt": "2026-09-22T04:49:43.433Z",
-      "touchedAt": "2026-09-22T05:22:52.793Z",
+      "touchedAt": "2026-09-22T05:41:43.126Z",
       "release": "0.48.0",
       "gateReview": {
         "gate1": {
@@ -9909,7 +9911,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1230,
+  "revision": 1231,
   "reviewMode": "thorough",
   "releases": [
     {
