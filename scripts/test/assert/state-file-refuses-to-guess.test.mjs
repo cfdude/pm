@@ -156,22 +156,10 @@ test("G2-I5 shape: a non-object epics element and a non-array detourStack are ea
   }
 });
 
-test("5.1: an oversized TTL is refused at input, for an epic claim and the repository claim", () => {
-  const cwd = initRepo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const r = (() => { try { run(["claim", "e1", "--ttl", "99999999"], { cwd }); return null; } catch (e) { return e; } })();
-  assert.ok(r, "an absurd TTL is an input error, not a lock nobody can break");
-});
-
-test("3.1: a save that changes nothing does not rewrite the record", () => {
-  const cwd = initRepo();
-  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
-  const before = bytes(cwd);
-  run(["render"], { cwd });
-  run(["brief"], { cwd });
-  assert.equal(bytes(cwd), before, "reads do not stamp a touch or bump a revision");
-  assert.ok(readState(cwd).epics.some(e => e.id === "e1"));
-});
+// 4.1 (0.48.0) moved TWO of this file's tests to `scripts/test/unit/state-file-refuses-to-guess.test.mjs`
+// — the oversized-TTL input refusal and the no-op-save guard. What remains is the UNREADABLE-FILE
+// family, which the memory store cannot express: it holds an object and answers "unreadable" only
+// through `shapeProblem()`, never through bytes that fail to parse.
 
 // ───────────────────────── the deliberate omissions ─────────────────────────
 //
