@@ -412,10 +412,25 @@ the seam, and the test-side move is a decision about what each test reads. A reg
       because it never named a command. The documentation-currency check is therefore answered: a
       user reading the plugin's docs sees no stale command, and the four repo-internal files that did
       are corrected in this change.
-- [ ] 6.3 `CHANGELOG.md` — an entry under `## [Unreleased]`, stating the before/after numbers from 0.3
+- [x] 6.3 `CHANGELOG.md` — an entry under `## [Unreleased]`, stating the before/after numbers from 0.3
       and the final measurement, and saying whether the memory store ships (design Open Question 1).
       The release cut folds it into `0.48.0`; Mintlify's Changelog page and Introduction's Real Numbers
       table belong to that cut via the `release-checklist` skill, NOT to this change.
+      **DONE — `## [Unreleased]` / `### Changed`**, with the before/after table (`72.3 / 73.2 s` →
+      `27.20 / 27.83 / 27.40 s`; per-test median `67.4 ms` → `2.46 ms`; `12,524` → `3,430`
+      `fsyncSync`, `0` of them in the unit rung; the all-flush-removed control `12.2 s` → `5.30 s`).
+      **THE MISS IS THE HEADLINE, not a footnote:** the acceptance is sub-15 s and **27.40 s does not
+      meet it**, and the entry says so in its first sentence with the cause (the control still runs
+      5.3 s, so ~22 of the 27.4 s is durability flushing; the file rung's 517 tests issue every one of
+      the 3,430 flushes, and the largest seam edge that would move ~27 of them needs a spec change this
+      release did not make). The unit rung's own bound is stated where it IS met: **0.73–0.87 ms** per
+      engine invocation over the memory store, the rung's 752 tests in **3.67 s with zero `fsyncSync`**,
+      inside the 10 s the value-observing population was given.
+      **The memory store SHIPS** — design Open Question 1 resolved as it recommended: `memoryStore()`
+      lives in `scripts/lib/store.mjs` beside the interface it implements. It has no production caller
+      and the disk store is still what a real invocation gets; the entry says both, so the shipped-
+      surface change is deliberate rather than noticed. `package.json` is still absent and `npm i`'
+      failure is stated as deliberate.
 - [ ] 6.4 Confirm `docs/parity-ledger.json` still claims every touched path and adds none — the store
       lives under `scripts/lib/`, which the ledger does not walk, and nothing new is added under
       `commands/`, `agents/`, `skills/`, `hooks/` or `.claude-plugin/`. State it rather than assume it.

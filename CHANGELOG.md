@@ -6,6 +6,55 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+* **The assertion half runs in 27 s, down from 73 s — and it MISSES its own sub-15-second
+  acceptance.** The half gained a second **rung**: a **unit rung** (`scripts/test/unit/`) for
+  tests whose observable is a **value** the engine produced — a verb's result, a refusal, an exit
+  status, anything `state.json` holds — running over an in-memory store with no tmpdir, no fsync
+  and no render to disk, and the **file rung** (`scripts/test/assert/`) for tests whose observable
+  is **bytes** on disk. Both rungs are one Node process, and the pre-commit hook runs both in one
+  invocation. A store seam (`scripts/lib/store.mjs`) is what makes the read-back a value: the
+  engine's record and `PROJECT.md` are reached through an injected store rather than through path
+  constants, and 137 load/save sites now obtain it from the invocation. Fixture snapshots
+  (`scripts/test/fixtures/fixture-snapshot.mjs`) build once per file and restore per test.
+
+  | | before 0.48.0 | after 0.48.0 |
+  |---|---|---|
+  | the full assertion half (both rungs, one process) | **72.3 / 73.2 s** | **27.20 / 27.83 / 27.40 s** (median **27.40 s**) |
+  | tests | 1,243 | 1,269, 0 failing |
+  | per-test median | 67.4 ms | **2.46 ms** |
+  | tests ≥ 100 ms / ≥ 200 ms | 378 / 67 | **37 / 6** |
+  | `fsyncSync` calls per run | 12,524 | **3,430** — and **0** of them in the unit rung |
+  | with every flush removed (the control) | 12.2 s | **5.22 / 5.30 / 5.44 s** |
+
+  **The acceptance was sub-15 seconds for the full half, and 27.40 s is a miss — reported as a
+  miss.** The cause is stated rather than rounded: the control that removes EVERY flush still runs
+  5.3 s, so ~22 of the 27.4 s is durability flushing — the file rung's 517 tests issue all 3,430
+  `fsyncSync` calls, and the unit rung's 752 issue none. The file rung is down to 74 files from 91,
+  with 63 files now on the unit rung. The gap between
+  27 s and 15 s is the file-rung population held there by four seam edges, the largest of which
+  (`CLAUDE.md`'s managed rules block, ~27 tests) needs a spec change this release did not make: the
+  `engine-invocation` delta states in bold that the block is a repository file the store does NOT
+  own. **What IS met is the unit rung's own bound:** one engine invocation over the memory store is
+  **0.73–0.87 ms** (n = 200), and the rung's 752 tests run in **3.67 s with zero `fsyncSync`**
+  — the migrated, value-observing population is well inside the 10 s it was given.
+
+  The memory store ships (design Open Question 1, resolved as recommended): it lives in
+  `scripts/lib/store.mjs` beside the interface it implements, so a seam whose test implementation
+  is not next to the interface is not a seam anyone finds. It has no production caller; the disk
+  store is still what every real invocation gets. The engine remains zero-runtime-dependency —
+  no `package.json` was added, and `npm i` in a fresh clone still fails, deliberately.
+
+  Contributor-facing: `CONTRIBUTING.md` gains **The dev inner loop** — the clone-to-test quickstart
+  (verified by running it: 1,269 tests in 26 s with no install step), `node --test --watch` on the
+  half or on a named file, which rung a new test belongs in and how to tell, and what the unit
+  rung's guard refuses.
+
+---
+
 ## [0.47.0] — 2026-09-21
 
 ### Changed
