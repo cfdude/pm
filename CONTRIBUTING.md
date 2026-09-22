@@ -6,9 +6,10 @@
 
 - No direct pushes to `main` — all changes land via pull request.
 - Required status check: the `test` job in `.github/workflows/ci.yml` — a syntax check, then
-  all THREE buckets, each with its own count floor: `node --test scripts/test/assert/*.test.mjs`
-  (the per-commit half), `… functional/*.test.mjs` (real git), `… sweeps/*.test.mjs` (the
-  change-triggered bucket).
+  all THREE buckets, each with its own count floor: `node --test scripts/test/unit/*.test.mjs
+  scripts/test/assert/*.test.mjs` (the per-commit assertion half — two RUNGS, one process),
+  `… functional/*.test.mjs` (real git), `… sweeps/*.test.mjs` (the change-triggered bucket).
+  See [The dev inner loop](#the-dev-inner-loop) for which rung a new test belongs in.
 - 0 required approving reviews — this is a solo-maintainer repo, so PRs merge once CI is
   green, without waiting on a second reviewer.
 - Merge method is squash-only (`allow_squash_merge: true`, `allow_merge_commit: false`,
@@ -48,15 +49,116 @@ git config core.hooksPath .githooks
 
 After that, `git commit` runs `.githooks/pre-commit` automatically, which runs the DRIFT SCRIPT
 (`node scripts/test/drift.mjs`, four checks over the index — enrolment, twin coverage, diff
-coupling, record freshness) and then the ASSERTION HALF,
-`node --test --test-isolation=none scripts/test/assert/*.test.mjs`, and blocks the commit on any
-failure. The drift script refuses, naming the file: a tracked test file in NEITHER half
+coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE process:
+`node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
+— and blocks the commit on any failure. The drift script refuses, naming the file: a tracked
+test file in NEITHER half
 (no test runs it — enrol it), a functional test with no assertion twin of the same id, a
 functional test or its twin changed without a fresh certification record, or a certified
 module whose staged content no longer matches the record. The functional half and the sweep
 bucket are triggered, not per-commit: CI runs them, and
 `node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when
 you ran one locally. To satisfy a refusal, run the command it names.
+
+## The dev inner loop
+
+### Quickstart — clone, then test. There is no install step, and that is a decision
+
+```bash
+git clone https://github.com/cfdude/pm && cd pm
+git config core.hooksPath .githooks        # the one-time setup above
+node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
+```
+
+**`npm i` is not a step here, and it FAILS if you run it**: `npm error code ENOENT … Could not
+read package.json`. `package.json` does not exist in this repository, and adding one so that the
+quickstart could read `clone → npm i → test` was considered and declined — the engine is
+zero-runtime-dependency (a hard constraint in `CLAUDE.md`), the suite is plain `node --test` over
+Node's own built-ins, and a manifest added to make an install a no-op would carry nothing but its
+own existence while removing the evidence that the zero-dependency claim is still true. Dev-only
+dependencies ARE permitted by the amended hard constraint; if one is ever needed, the manifest
+lands with it, and this section is where the install step appears.
+
+**Verified by running it rather than described.** On Node v26.9.0 a fresh clone reaches
+`ℹ tests 1269 / ℹ pass 1269 / ℹ fail 0` in **26.1 s** with no install of any kind — clone,
+`config`, test in well under a minute, and the 26 s is the per-commit half itself rather than any
+setup around it.
+
+### `node --test --watch` — the loop
+
+Both rungs in one process, which is exactly what the pre-commit hook runs:
+
+```bash
+node --test --watch --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
+```
+
+That re-runs the whole half (~26 s) on every save. **While you are working on one file, name it**
+— the unit rung's files are sub-second and most of the file rung's are too, so the loop is fast
+enough to leave running:
+
+```bash
+node --test --watch --test-isolation=none scripts/test/assert/<file>.test.mjs
+```
+
+`--test-isolation=none` is not optional. Without it Node gives every file its own process, which
+is the cost the rung split exists to remove. The hook probes for the flag once per clone and falls
+back to plain `node --test` on a Node too old to accept it.
+
+### Which rung does my new test belong in?
+
+**By what the test OBSERVES, never by how fast it is.** The assertion half has two rungs, and a
+test's rung is derived from its PATH — `scripts/test/unit/` or `scripts/test/assert/` — never
+declared inside the file.
+
+| the test's observable | rung | where |
+| --- | --- | --- |
+| a VALUE the engine produced — a verb's result, a refusal's wording, an exit status, anything `state.json` holds | **unit** | `scripts/test/unit/` |
+| BYTES on disk — a rendered file's parity, the write-conflict log, the record FILE itself, a file that must be unparseable, a file the store does not own | **file** | `scripts/test/assert/` |
+
+**The direction that is easy to get backwards:** a test asserting what the RECORD SAYS belongs to
+the unit rung even though the value is persisted in a file. Reading `state.json`'s values back out
+of an object is the unit rung's job; it is the test that needs BYTES that stays on the file rung.
+This is not a nicety — 1,016 of the half's 1,243 tests (82%) assert on `state.json`'s values, and
+a rule that put them on the file rung would leave the suite paying a durability flush per assertion.
+
+The two are written differently and assert identically:
+
+- **unit** — `memoryEngine(emptyRecord())` from `scripts/test/fixtures/unit-harness.mjs`, driven
+  with `engine(args)` / `engine.result(args)` / `engine.combined(args)`. Declare the test with
+  `unitTest(name, fn)` rather than `node:test`'s `test()`: the wrapper resets and then asserts the
+  filesystem-work counter around each test, and a test that did that itself could forget the assert.
+- **file** — `tmpRepo()` and `run(args, { cwd })` from `scripts/test/fixtures/assert-harness.mjs`.
+
+Both hang off the same git double and the same in-process invocation, because the unit rung IS the
+assertion half — a rung, not a third half. **Moving a test between rungs keeps its assertions
+unchanged**; only the mechanism it obtains its values through moves.
+
+### What the unit rung's guard refuses
+
+`scripts/test/assert/assert-half-has-no-spawn.test.mjs` walks both rung directories on every run
+and fails, naming the file and the call shape it found, when one:
+
+- **imports `node:child_process` or calls a spawner** — `spawnSync`, `spawn`, `execFileSync`,
+  `execFile`, `execSync`, `exec` — in EITHER rung. The assertion half is one Node process running
+  no real git; a single `spawnSync` added "just for one real git call" takes that back for the
+  whole half, and nothing else would say so.
+- **performs filesystem work AT ALL** — this one is the unit rung's alone. A file under
+  `scripts/test/unit/` may not import `node:fs`, may not read, write, create or remove a path, and
+  may not flush a file to disk. That is the property the rung exists for (the half's cost was
+  measured as durability flushing, ~12,524 `fsyncSync` calls per run), so a unit file that has
+  drifted into disk work fails loudly instead of merely running slowly.
+
+The guard strips comments first, so naming the prohibition in a header is not a violation — a
+guard a comment can trip is a guard that gets weakened the first time someone documents it — and
+it is exercised directly by its own second test against a source that imports the module, one that
+calls a write, and one that mentions either only in a comment. A second, run-time counter
+(`scripts/test/fixtures/fs-work-counter.mjs`) catches a call reached three modules away, which no
+scan of the test file can see.
+
+`scripts/test/functional/` and `scripts/test/sweeps/` are NOT rungs of the assertion half — they
+are the two TRIGGERED buckets. They do not run per commit: CI runs them, and
+`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when you ran
+one locally. A drift-script refusal names the command to run.
 
 ## Developing pm with pm (required one-time setup)
 
@@ -134,7 +236,8 @@ conflicts, resolve them the normal way (`git status` shows the conflicting files
 
 ## Running the EDD evaluation corpus (optional)
 
-pm's engine is covered by `node --test scripts/test/assert/*.test.mjs` (per commit),
+pm's engine is covered by the assertion half — `node --test scripts/test/unit/*.test.mjs
+scripts/test/assert/*.test.mjs`, both rungs in one process, once per commit — then
 `… scripts/test/functional/*.test.mjs` (real git, on the trigger) and
 `… scripts/test/sweeps/*.test.mjs` (the output sweep). That suite cannot cover
 pm's *agent-facing* artifacts — command docs, skills, the rules block, hooks — because their

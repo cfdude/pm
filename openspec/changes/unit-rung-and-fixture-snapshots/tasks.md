@@ -355,12 +355,28 @@ the seam, and the test-side move is a decision about what each test reads. A reg
 
 ## 6. Docs (after Gate 2)
 
-- [ ] 6.1 `CONTRIBUTING.md` — the dev inner loop (this change's GOAL 4): `node --test --watch` on the
+- [x] 6.1 `CONTRIBUTING.md` — the dev inner loop (this change's GOAL 4): `node --test --watch` on the
       assertion half or on a named file, which rung a new test belongs in and how to tell, and what the
       unit rung's guard refuses. The contributor quickstart (clone → install → test) is VERIFIED by
       running it, not described — and `package.json` does not exist in this repository today (the
       certify runner's header says so at `scripts/test/certify.mjs:5`), so if the quickstart needs one,
       adding it is a decision stated here rather than a step assumed.
+      **DONE — `CONTRIBUTING.md` gains "The dev inner loop"** (quickstart / `--watch` / which rung /
+      what the guard refuses), and the two stale commands in the file are corrected with it: the
+      pre-commit section now names BOTH rungs in ONE process (the hook's real command, `.githooks/
+      pre-commit:134`), and the EDD section's bucket list gains the unit rung.
+      **THE `package.json` DECISION IS DECLINED, and the quickstart was RUN rather than described.**
+      In a fresh clone `npm i` fails outright — `npm error code ENOENT … Could not read package.json`
+      (exit 254, 1 s) — confirming the certify runner's header. Declined rather than added: the engine
+      is zero-runtime-dependency, the suite is plain `node --test` over Node's built-ins, and a
+      manifest added only to make an install a no-op would carry nothing but its own existence while
+      removing the evidence that the zero-dependency claim is true. Dev-only dependencies stay
+      permitted; the section is where the install step appears if one is ever needed.
+      **MEASURED, in the clone:** clone → `git config core.hooksPath .githooks` → the per-commit
+      command reaches `ℹ tests 1269 / pass 1269 / fail 0` in **26.1 s**, no install of any kind —
+      inside the "under a minute" the task asks for, and the 26 s is the half itself. Both `--watch`
+      forms were exercised rather than assumed: a named file (19 tests, then "Restarted at …" on
+      change) and both globs in one process (1,269 tests, then a restart).
 - [ ] 6.2 The other files that quote the suite's commands are checked as a SET, not one at a time —
       `rg -n --hidden 'node --test' --glob '!scripts/**'` is the enumeration (`--hidden` is required:
       some live under `.claude/skills/`). Correct: this repo's own `CLAUDE.md`'s `Tests:` bullet
