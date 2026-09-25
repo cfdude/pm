@@ -1322,14 +1322,14 @@ structurally could not place the other two — the many-to-one cases `specPath` 
 <details>
 <summary><code>verify-state</code> — Detect an undetected hand-edit of state.json</summary>
 
-Compares `state.json`'s revision and filesystem mtime against the stamp recorded at the last
-`render()`. Every engine save advances the revision and a hand-edit does not, so it fails loudly
-(non-zero exit) when the file changed after the last render at the SAME revision, or when the
-revision went backwards — mechanical evidence of a hand-edit, which is against the rules
-(`state.json` should only change through the engine's own subcommands). A revision AHEAD of the
-stamp is the engine's own save by a verb that does not re-render (a claim, `set-activity-log`):
-that exits 0 and says PROJECT.md may be stale. It cannot see a hand-edit followed by an engine
-save, which advances the revision over it.
+Compares `state.json`'s revision and filesystem mtime against the engine's last recorded write:
+the stamp the last `render()` wrote, or the `lastSave` every engine save adds to it, whichever is
+later. A hand-edit advances neither, so it fails loudly (non-zero exit) when the file changed at the
+same revision as that write, when the revision went backwards, or when it moved past any revision
+the engine recorded — mechanical evidence of a hand-edit, which is against the rules (`state.json`
+should only change through the engine's own subcommands). Saves by verbs that do not re-render (a
+claim, `set-activity-log`) exit 0 and say PROJECT.md may be stale. It cannot see a hand-edit
+followed by an engine save, which re-baselines over it; `commands/verify-state.md` lists the rest.
 
 </details>
 

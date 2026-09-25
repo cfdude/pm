@@ -155,34 +155,52 @@ export function verifyState() {
     "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
     "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
     "review the diff, and reconcile before trusting PROJECT.md again.\n";
-  // WHO WROTE IT IS THE REVISION'S QUESTION; WHETHER ANYTHING MOVED IS THE MTIME'S (code review
-  // 0.43.0, C2). Every engine save advances `revision`; a hand-edit does not. Comparing the mtime
-  // alone accused the engine of a hand-edit after every verb that SAVES WITHOUT RENDERING —
-  // `set-activity-log`, a claim, platform recording. So: a revision AHEAD of the stamp is the
-  // engine's own write (PROJECT.md may be stale, nothing was hand-edited); a revision BEHIND it is
-  // a rewound file; an EQUAL revision with a newer mtime is bytes that changed with no engine save.
-  // What this cannot see, and the README says so: a hand-edit followed by an engine
-  // save before anyone runs this — the save advances the revision over it.
+  // THE BASELINE IS THE ENGINE'S LAST KNOWN WRITE, and the stamp records two of them (code review
+  // 0.43.0, C2, and its branch review): the render (`stateRevision`/`stateMtimeMs`) and, since
+  // saveState() began stamping it, the last engine SAVE (`lastSave: {revision, mtimeMs}`) — the
+  // write a verb that saves WITHOUT rendering (`set-activity-log`, a claim) makes. Comparing mtime
+  // to the render alone called every such save a hand-edit; trusting any revision ahead of the
+  // render instead made a hand-edit after one invisible. So, against the later of the two:
+  //   revision BEHIND it       → rewound or hand-edited (the engine only advances it)      exit 1
+  //   revision AHEAD of it     → a revision no engine save recorded: cannot rule out one    exit 1
+  //   same revision, newer mtime → bytes changed with no engine save: a hand-edit          exit 1
+  //   same revision, same mtime  → clean; "PROJECT.md may be stale" if saves followed the render.
+  // What this cannot see, and commands/verify-state.md says so: a hand-edit followed by an engine
+  // save (the save re-baselines over it), and one within the filesystem's mtime resolution of a save.
   // A stamp written before `stateRevision` existed has only the mtime, and keeps the old check.
+  // At an EQUAL revision the render is the later observation of the same bytes (a save always
+  // advances the revision, so a render at the saved revision came after it), and its mtime is the one
+  // to trust — a copy that preserved timestamps imprecisely is re-observed by its render.
   const currentMtimeMs = storeOps().mtimeMs(ARTIFACT.RECORD);
   if (hasRevision) {
     const current = storeOps().recordIdentity();
-    if (Number.isInteger(current) && current < stamp.stateRevision) {
+    const saved = stamp.lastSave && Number.isInteger(stamp.lastSave.revision) &&
+      stamp.lastSave.revision > stamp.stateRevision ? stamp.lastSave : null;
+    const base = saved ? saved : { revision: stamp.stateRevision, mtimeMs: stamp.stateMtimeMs };
+    if (Number.isInteger(current) && current < base.revision) {
       die(
-        `conductor: state.json's revision went backwards since the last render (rendered at ` +
-        `revision ${escapeControls(String(stamp.stateRevision))}, now ${escapeControls(String(current))}) — the file was rewound or hand-edited; ` +
+        `conductor: state.json's revision went backwards since the engine last wrote it (last written at ` +
+        `revision ${escapeControls(String(base.revision))}, now ${escapeControls(String(current))}) — the file was rewound or hand-edited; ` +
         "the engine only ever advances it. Run `/pm:status` to re-render, review the diff, and " +
         "reconcile before trusting PROJECT.md again.\n"
       );
     }
-    if (Number.isInteger(current) && current > stamp.stateRevision) {
+    if (Number.isInteger(current) && current > base.revision) {
+      die(
+        `conductor: state.json is at revision ${escapeControls(String(current))}, past the last engine write this ` +
+        `stamp recorded (revision ${escapeControls(String(base.revision))}) — cannot rule out a hand-edit (or a save by ` +
+        "a pm older than this check). Review the diff of state.json, then run `/pm:status` to re-render " +
+        "and re-baseline.\n"
+      );
+    }
+    if (typeof base.mtimeMs === "number" && currentMtimeMs > base.mtimeMs) die(handEdit);
+    if (saved && saved.revision > stamp.stateRevision) {
       errStream().write(
-        `conductor: state.json has ${escapeControls(String(current - stamp.stateRevision))} engine write(s) since the last ` +
+        `conductor: state.json has ${escapeControls(String(saved.revision - stamp.stateRevision))} engine write(s) since the last ` +
         "render — no hand-edit detected, but PROJECT.md may be stale. Run `/pm:status` to re-render.\n"
       );
       return;
     }
-    if (typeof stamp.stateMtimeMs === "number" && currentMtimeMs > stamp.stateMtimeMs) die(handEdit);
   } else if (currentMtimeMs > stamp.stateMtimeMs) {
     die(handEdit);
   }

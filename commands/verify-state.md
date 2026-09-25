@@ -17,14 +17,18 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 ## What it compares
 
 Every render records a stamp (`.conductor/render-stamp.json`) holding the record's `revision` and
-`state.json`'s mtime at that moment. Every engine save advances the revision; a hand-edit does not.
+`state.json`'s mtime at that moment, and every engine save adds its own `lastSave` (revision and
+mtime) to the same stamp — including the saves of verbs that do not re-render, such as a claim or
+`set-activity-log`. A hand-edit advances neither. The check compares the file against the engine's
+LAST recorded write, whichever of the two is later.
 
 | What it finds | Exit | Meaning |
 | --- | --- | --- |
-| same revision, file unchanged | 0 | `state.json matches the last render — no hand-edit detected` |
-| revision AHEAD of the stamp | 0 | the engine saved since the render (a claim, `set-activity-log`, …) — no hand-edit, but `PROJECT.md` may be stale: run `/pm:status` |
-| same revision, file changed after the render | 1 | bytes moved with no engine save — an undetected hand-edit |
-| revision BEHIND the stamp | 1 | the file was rewound or hand-edited; the engine only ever advances it |
+| same revision as the last engine write, file unchanged, nothing saved since the render | 0 | `state.json matches the last render — no hand-edit detected` |
+| same revision as the last engine SAVE, file unchanged, saves after the render | 0 | no hand-edit, but `PROJECT.md` may be stale: run `/pm:status` |
+| same revision as the last engine write, file changed after it | 1 | bytes moved with no engine save — an undetected hand-edit |
+| revision AHEAD of the last recorded engine write | 1 | cannot rule out a hand-edit (or a save by an older pm that did not stamp it) |
+| revision BEHIND the last engine write | 1 | the file was rewound or hand-edited; the engine only ever advances it |
 | no stamp at all | 1 | never rendered, so a hand-edit cannot be ruled out — run `/pm:status` for a baseline |
 
 On exit 1, run `/pm:status` to re-render, review the diff of `state.json`, and reconcile before
@@ -32,8 +36,12 @@ trusting `PROJECT.md` again. Never "fix" a finding by hand-editing the file back
 
 ## What it cannot see
 
-A hand-edit followed by an engine save before `verify-state` runs: the save advances the revision
-over the edit, and from then on the file reads as the engine's own. Nor a merge, rebase or checkout
-that brings in a `state.json` at a HIGHER revision: that reads as engine saves (exit 0, "may be
-stale"). What it does catch after one is a file rewound to a lower revision, or changed at the same
-one — so run it right after anything that touched the file outside the engine.
+- A hand-edit followed by an engine save before `verify-state` runs: the save stamps the edited
+  file as its own, so from then on it reads as the engine's.
+- A hand-edit within the filesystem's mtime resolution of the last engine save, at the same
+  revision.
+- A merge, rebase or checkout that brings in `state.json` AND `render-stamp.json` together from
+  another clone: the pair is internally consistent, so it reads as that clone's engine writes. One
+  that brings in `state.json` alone is caught (its revision or mtime no longer matches the stamp).
+
+Run it right after anything that touched the file outside the engine.

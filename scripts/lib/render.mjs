@@ -385,5 +385,8 @@ export function writeRenderStamp() {
   if (existingRead.kind === "ok") { try { existing = JSON.parse(existingRead.text); } catch { existing = null; } }
   if (existing && existing.stateRevision === stateIdentity && existing.stateMtimeMs === stateMtimeMs) return;
   const stamp = { renderedAt: new Date().toISOString(), stateRevision: stateIdentity, stateMtimeMs };
+  // `lastSave` belongs to saveState() (state.mjs recordEngineSave) and is carried through a render,
+  // never recomputed here: a render does not save.
+  if (existing && existing.lastSave) stamp.lastSave = existing.lastSave;
   store.write(ARTIFACT.RENDER_STAMP, JSON.stringify(stamp, null, 2) + "\n");
 }

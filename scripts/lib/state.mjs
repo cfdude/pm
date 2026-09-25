@@ -25,7 +25,7 @@ import {
   StateConflictError, StatePersistError, StateUnreadableError,
   breakStaleLock, breakStaleLockAt, conflictExitCode, defaultState, inspectLock, isStaleLock,
   lockContent, lockHolderAlive, persistFailure, revisionOfText, sameLock, shapeProblem, storeOps,
-  TIMEKEEPING_FIELDS, unreadableStateMessage,
+  TIMEKEEPING_FIELDS, unreadableStateMessage, ARTIFACT,
 } from "./store.mjs";
 
 // RE-EXPORTED, so every existing importer of these from state.mjs is unchanged: `refusal.mjs`
@@ -181,5 +181,26 @@ export class InvalidEpicIdError extends Error {
  *  verbs. The in-memory store reproduces the comparisons and the normalisation and drops the
  *  durability — a different sink, never a weaker engine. */
 export function saveState(state, opts = {}) {
-  return storeOps().writeRecord(state, opts);
+  const result = storeOps().writeRecord(state, opts);
+  if (result && result.ok && !result.unchanged) recordEngineSave(result.revision);
+  return result;
+}
+
+/** Stamp the engine's OWN save onto the render stamp as `lastSave: {revision, mtimeMs}` — the
+ *  baseline `verify-state` compares a later mtime against (code review 0.43.0 C2, branch review).
+ *  Without it, a revision ahead of the render could only be TRUSTED (blind to a hand-edit made after
+ *  a non-rendering save) or DISTRUSTED (the false "hand-edit" after every claim). The render fields
+ *  (`renderedAt`, `stateRevision`, `stateMtimeMs`) are untouched, so the stamp still says what
+ *  PROJECT.md was rendered from. Only when a stamp exists — before the first render there is no
+ *  baseline to extend. Observability: it never breaks the save it records. */
+function recordEngineSave(revision) {
+  try {
+    const store = storeOps();
+    const read = store.read(ARTIFACT.RENDER_STAMP);
+    if (read.kind !== "ok" || !Number.isInteger(revision)) return;
+    const stamp = JSON.parse(read.text);
+    if (!stamp || typeof stamp !== "object") return;
+    stamp.lastSave = { revision, mtimeMs: store.mtimeMs(ARTIFACT.RECORD) };
+    store.write(ARTIFACT.RENDER_STAMP, JSON.stringify(stamp, null, 2) + "\n");
+  } catch { /* the save already landed; a missed stamp reads as "cannot rule out", never as clean */ }
 }

@@ -82,13 +82,39 @@ test("verify-state does not call an engine write that saved without rendering a 
   run(["set-activity-log", "on"], { cwd });
   run(["add-epic", "--id", "c", "--lane", "claude-code"], { cwd });
   run(["claim", "c", "--session", "s1"], { cwd });
-  const statePath = path.join(cwd, ".conductor", "state.json");
-  const future = new Date(Date.now() + 60_000);
-  fs.utimesSync(statePath, future, future);
   const out = runCombined(["verify-state"], { cwd });
-  assert.doesNotMatch(out, /looks like an undetected hand-edit/i);
+  assert.doesNotMatch(out, /hand-edit(?! detected)|cannot rule out/i);
   assert.match(out, /no hand-edit detected/);
   assert.match(out, /\/pm:status/, "a record written since the render still says PROJECT.md may be stale");
+});
+
+// Branch review of the fix above: trusting ANY revision ahead of the render stamp as the engine's
+// own made the check blind to a hand-edit made after a non-rendering save — `init`,
+// `set-activity-log on`, hand-edit → exit 0, where the old mtime check caught it. Every engine save
+// now records `{revision, mtimeMs}` on the stamp as `lastSave`, so a hand-edit after it is bytes that
+// moved at the last SAVED revision, exactly as one after a render is at the rendered revision.
+test("verify-state catches a hand-edit made AFTER an engine save that did not render", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-activity-log", "on"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const state = readState(cwd);
+  state.epics.push({ id: "hand-edited", title: "Hand edited", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false });
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  const future = new Date(Date.now() + 60_000);
+  fs.utimesSync(statePath, future, future);
+  assert.ok(expectFail(() => run(["verify-state"], { cwd })), "the hand-edit is reported");
+  assert.match(runCombined(["verify-state"], { cwd }), /undetected hand-edit/);
+});
+test("verify-state cannot rule out a hand-edit when the revision moved past the last recorded save", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const state = readState(cwd);
+  state.revision += 5;   // no engine save recorded this revision
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  assert.ok(expectFail(() => run(["verify-state"], { cwd })), "an unrecorded revision is not trusted");
+  assert.match(runCombined(["verify-state"], { cwd }), /cannot rule out a hand-edit/);
 });
 test("verify-state fails loudly when state.json's revision went BACKWARDS since the last render", () => {
   const cwd = tmpRepo();
