@@ -455,7 +455,7 @@ Commit mechanics, which bind every section below:
 
 ## 5. cfdude/pm#220 — a bounded wait on every awaited child (design D9)
 
-- [ ] 5.1 RED — `assert/state-file-refuses-to-guess.test.mjs`, the functional file's twin, gains
+- [x] 5.1 RED — `assert/state-file-refuses-to-guess.test.mjs`, the functional file's twin, gains
       a source scan.
       - Every ASYNCHRONOUS wait on a child's `"close"` or `"exit"` under `scripts/test/**/*.mjs`, in
         all three forms — `.on(…)`, `.once(…)`, and the events module's `once(child, …)` promise form
@@ -468,7 +468,7 @@ Commit mechanics, which bind every section below:
         token would refuse itself, and exempting it by name is the first exemption of many.
       - Fails today naming `functional/state-file-refuses-to-guess.test.mjs:299`.
       - Save `red-5.1.txt`.
-- [ ] 5.2 GREEN, in the same commit as 5.1 (the drift script's coupling requires the twin staged
+- [x] 5.2 GREEN, in the same commit as 5.1 (the drift script's coupling requires the twin staged
       anyway).
       - `spawnAll` (`functional/state-file-refuses-to-guess.test.mjs:291-301`) arms a 30 s timer per
         child. That is the bound `verb-surface.test.mjs:611` already uses. On expiry the timer
@@ -477,7 +477,7 @@ Commit mechanics, which bind every section below:
         bound.
       - Run `certify.mjs functional` before the commit.
       - Verify: the functional file passes on the three bench binaries.
-- [ ] 5.3 MUTATION — a scratch copy of the file whose `spawnAll` is handed one never-exiting child
+- [x] 5.3 MUTATION — a scratch copy of the file whose `spawnAll` is handed one never-exiting child
       (`node -e "setInterval(() => {}, 1e9)"`).
       - The test must fail within the bound, naming the argv.
       - The run must continue to the file's next test.

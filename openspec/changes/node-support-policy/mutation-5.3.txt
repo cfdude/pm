@@ -1,0 +1,88 @@
+# mutation-5.3 — scratch copy (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m53/tree); node v26.9.0. spawnAll in 3.1's first run is handed one never-exiting child
+# (node -e "setInterval(() => {}, 1e9)", argv tagged __hang__ never exits). Expected: 3.1 FAILS within the 30 s bound naming the argv, and the
+# run continues to the file's next tests.
+303c303
+<     const child = spawn("node", [ENGINE, ...args], {
+---
+>     const child = spawn("node", args[0] === "__hang__" ? ["-e", "setInterval(() => {}, 1e9)"] : [ENGINE, ...args], {
+363c363
+<     const results = await spawnAll(cwd, ids.map((id) => ["add-epic", "--id", id, "--lane", "claude-code"]));
+---
+>     const results = await spawnAll(cwd, [["__hang__", "never", "exits"], ...ids.map((id) => ["add-epic", "--id", id, "--lane", "claude-code"])]);
+
+✔ 1.1: a conflict marker does not wipe the record — add-epic exits 11 and writes nothing (693.685875ms)
+✔ 1.1: a truncated file is not replaced by sync, upgrade or init (1254.8505ms)
+✔ 1.1: a reading verb refuses rather than reporting an empty record (539.233542ms)
+✔ 1.1: a wrong-shape file is refused, naming the member (570.22675ms)
+✔ 1.1: verify-state and activity do not depend on the content and do not refuse (806.216583ms)
+✔ 1.1: --force does not overwrite a file that became unreadable after the load (206.114208ms)
+✔ 1.3: with no state.json every hook exits 0, prints nothing and creates no file (1167.662083ms)
+✔ 2.1(a): gate-guard blocks on a conflicted state file, naming the file and a git command (634.643583ms)
+✔ 2.1(b): gate-guard does not crash on a wrong-shape file — exit 2, not a TypeError (369.225458ms)
+✔ 2.1(c): the session brief carries the warning instead of a guessed record, and writes nothing (489.13275ms)
+✔ 2.1(d): commit-nudge writes nothing after a commit lands over an unreadable file, and exits 2 (1073.864333ms)
+✔ 2.1(e) REGRESSION GUARD: a pre-compaction snapshot writes nothing and does not block compaction (491.180459ms)
+✔ 2.1(f) sweep: every hook verb is settled — in the status table or named as taking the default (0.295333ms)
+✔ 2.1(f): a refusal raised by code a hook calls still takes the hook's exit status (0.190792ms)
+✖ 3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs (30193.428208ms)
+✔ 3.1: the temp file is fsynced before it is renamed over state.json (547.547916ms)
+✔ 3.2 REGRESSION GUARD: every way out of a save held the lock and releases it (2196.126875ms)
+✔ 3.3: a live, fresh lock is waited for then refused — interactive, --force, hook, detached (13165.582542ms)
+✔ 3.5: a holder that no longer owns the lock does not rename (209.710833ms)
+✔ 4.1: a lock left by a dead process on this host and pid namespace does not wedge the repository (943.754666ms)
+✔ 4.1: a lock older than the maximum age is broken, even when its content cannot be read (632.173875ms)
+✔ 4.1: a holder in an unconfirmed pid namespace, or on another host, is judged by age only (5957.756417ms)
+conductor: repository marked busy by 's1' until 2026-09-25T03:58:44.380Z
+✔ 4.3(a): several breakers on one stale lock lose no update — 8 concurrent, three runs (5824.993792ms)
+✔ 4.3(b): a breaker that judged a lock stale removes nothing once another breaker has replaced it (425.319916ms)
+✔ 5.1: an oversized TTL is refused at input, for an epic claim and the repository claim (883.797666ms)
+✔ 5.1: the maximum itself is accepted and the report names its expiry (431.850208ms)
+✔ 5.3: a poisoned epic claim already on disk reads as expired, and no reader throws (1067.974958ms)
+✔ 5.3: a poisoned repository claim already on disk reads as expired (467.823959ms)
+✔ 5.5: the repository claim is written by temp file plus rename, never directly (193.778292ms)
+✔ G2-C1: a lock path that exists but cannot be read ends in a bounded refusal naming it, never a spin (7537.577292ms)
+✔ G2-C1/I2: an old directory at the lock or break path cannot be removed, so the save refuses at once naming it (517.207ms)
+✔ G2-C1: a hook save on an unopenable lock path skips within the bounded wait (2140.877625ms)
+✔ G2-I3: a lock whose content write fails is removed, not left for every writer to wait out (191.178041ms)
+✔ G2-I4: a temp file whose fsync or rename fails is removed (274.239375ms)
+✔ G2-I1: the repository claim's detached check asks about the repository being written, not the import-time root (320.581208ms)
+✔ G2-I5 shape: a top-level array, a non-object epics element and a non-array detourStack are each refused (2.893625ms)
+✔ G2-I5 read error: a state.json that exists but cannot be read is refused, never read as absent (99.305083ms)
+✔ G2-I5 liveness: EPERM from the pid probe means the holder is alive (0.162208ms)
+✔ G2-I5 age: a lock dated past the stale age in the FUTURE is stale (0.104792ms)
+✔ G2-I5 break file: the break is exclusive, and a dead breaker's file is recovered by age (175.429625ms)
+✔ G2-I5 claims: claimedAt plus the TTL beyond the representable dates reads expired and never throws (0.169791ms)
+✔ G2-minor: activity on an unreadable state.json reports the log's on/off state as unknown, not as on (300.034875ms)
+✔ G2-7: a FIFO at the lock path, or a symlink to one, never blocks a save — the verb refuses within the bound, the heal skips (13604.68875ms)
+✔ G2-8: an OLD unreadable lock — a mode-000 file or a dangling symlink — is broken by the next save, which lands (775.991375ms)
+✔ G2-minor: a stale lock that cannot be broken because the break path is held names the break path, never undefined fields (4702.815625ms)
+✔ G2-7 layers: a non-regular lock path is never opened, and an open that races a swap to a FIFO does not block (214.325416ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 45
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 102726.613875
+
+✖ failing tests:
+
+test at scripts/test/functional/state-file-refuses-to-guess.test.mjs:358:1
+✖ 3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs (30193.428208ms)
+  AssertionError [ERR_ASSERTION]: `node conductor.mjs __hang__ never exits` did not finish within 30 s and was killed
+  
+  true !== false
+  
+      at assertFinished (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m53/tree/scripts/test/functional/state-file-refuses-to-guess.test.mjs:318:12)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m53/tree/scripts/test/functional/state-file-refuses-to-guess.test.mjs:364:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1 wall_s=103
