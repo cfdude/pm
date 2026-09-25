@@ -71,7 +71,7 @@ trigger fires, not before.
 each was a **bare regex** where the contract wants a JSON object, the engine skipped it silently,
 and nothing reported it. The classifier now REJECTS a malformed matcher with a named reason
 (not JSON, an unknown key, a tool the hook is never sent, no positive predicate, a regex that does
-not compile, a control character, a nested unbounded quantifier), and the index test fails listing
+not compile, a control character, a group like `(a+)+` whose whole body is one repeated atom), and the index test fails listing
 each one. All six were judged on precision: `a-silent-noop-edit-…`, `an-unused-active-pointer-…`,
 `cite-a-symbol-…` and `stacked-background-commits-…` now carry a working first-line Bash matcher;
 `a-fixture-reconstructed-…` and `second-resolution-timestamps-…` matched SOURCE TEXT being written,

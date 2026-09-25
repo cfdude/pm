@@ -243,3 +243,24 @@ the rule holds there.
   before any flake: 25 characters (about 13 s unguarded) against bounds of 2 s and 4 s. The existing
   `explaining-a-cost-needs-a-control-not-a-story` and `a-static-guard-over-dynamic-code-needs-declared-limits`
   lessons already cover what this change practised.
+
+## Amendments after review (2026-09-25)
+
+Both review lenses passed. These minors were then fixed, and they supersede the plan text above
+where the two disagree:
+
+- **Budget.** It is now per regex: `REGEX_BUDGET_MS = 50`, clipped to a per-call
+  `REGEX_CEILING_MS = 1000`. It was one 100 ms budget shared across the call, which let a runaway
+  lesson sorted first silence every lesson after it. The worst case is
+  min(50 ms × runaway regexes, 1 s). (`aa4cd2c`)
+- **Nesting check narrowed.** It now flags only a repeated group whose whole body is one repeated
+  atom (`(a+)+`). The broader rule rejected linear matchers like `^git (\S+\s+)*--no-verify`.
+  Relaxing was preferred to documenting the over-rejection, because a false reject silences a
+  consumer lesson with no report until #228. (`aa4cd2c`)
+- **Fail closed.** `matchLessons` returns no match when a command predicate has no compiled regex.
+  (`d130f49`)
+- **Path with any command predicate is rejected.** Previously only `pathEndsWith` with
+  `commandMatches` was rejected; `pathEndsWith` with `commandLacks` is now too. (`d130f49`)
+- **One frontmatter reader.** `frontmatterBlock()` is exported and used by the index test, so
+  both accept CRLF. (`d130f49`)
+- **Evidence.** The RED files moved to `2026-09-25-lesson-detect-matcher-hardening-evidence/`.

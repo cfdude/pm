@@ -79,8 +79,9 @@ A JSON object on one line. Every key present must match; an absent key is not ch
 is not a JSON object, holds any other key (a typo like `commandMatch` used to match EVERY tool
 call), has a non-string or empty value (a `tool` array), names a tool the hook is never sent,
 has no positive predicate (`pathEndsWith` or `commandMatches`), pairs a command predicate with a
-non-Bash tool or a path with Bash, or holds a regex that does not compile, contains a control
-character, or nests an unbounded quantifier (`(a+)+`). Regexes are JSON strings, so write every
+non-Bash tool, a path with Bash or a path with any command predicate, or holds a regex that does
+not compile, contains a control character, or repeats a group whose whole body is one repeated
+atom (`(a+)+`, `(\s*)*`). A delimited repetition such as `(\S+\s+)*` is fine. Regexes are JSON strings, so write every
 backslash twice: `"\\s"`, `"\\b"` (a single `\b` decodes to a backspace). The file may use LF or
 CRLF line endings.
 
@@ -92,9 +93,10 @@ yet (cfdude/pm#228), so after writing a `detect:`, fire it once by hand before t
 silence means it did not match, or it was rejected:
 `echo '{"tool_name":"Bash","tool_input":{"command":"<a command it should catch>"}}' | node "$ENGINE" lesson-advice --platform claude-code`
 
-**The hook cannot stall a tool call.** Every regex of one hook run shares a 100 ms budget and
-sees at most the first 4096 characters of the command's first line; a regex that runs out of
-budget counts as not matched. A pathological matcher therefore costs its advice, never time.
+**The hook cannot stall a tool call.** Each regex gets its own 50 ms budget, one hook run spends
+at most 1 s on regexes in total, and every regex sees at most the first 4096 characters of the
+command's first line. A regex that runs out of time counts as not matched, so a pathological
+matcher costs its own advice, never time and never another lesson's advice.
 
 **PRECISION, NOT COVERAGE.** A hook firing on false positives gets ignored; a warning wrong 7
 times in 8 trains people to ignore the one time it is right. So:
