@@ -30,3 +30,14 @@ unitTest("a lock that is a special file is described as one, not as 'a other'", 
   assert.equal(describeHolder({ kind: "directory" }), "not a lock file at all — a directory");
   assert.equal(describeHolder({ kind: "file" }), "a writer whose lock content could not be read");
 });
+
+unitTest("the newer-revision conflict names both ways out: re-run, or --force to overwrite deliberately", async () => {
+  // `--force` is accepted on every mutating verb, and the one refusal it answers never mentioned it.
+  const { StateConflictError } = await import(STORE);
+  const e = new StateConflictError(3, 4);
+  assert.match(e.message, /read revision 3, found 4/);
+  assert.match(e.message, /re-run the command/);
+  assert.match(e.message, /--force only if you mean to overwrite that newer revision/);
+  assert.doesNotMatch(new StateConflictError(3, 4, "a lock was held").message, /--force/,
+    "a caller's own message is not rewritten — a held lock is not a newer revision --force answers");
+});

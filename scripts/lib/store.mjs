@@ -112,7 +112,11 @@ export class StateConflictError extends Error {
     // `message` is for the two conflicts that are not a newer revision — a lock held past the wait,
     // and a lock this writer no longer owns at its rename. Same class, so they share the conflict
     // exit code: both are "someone else is writing; retry", and neither wrote anything.
-    super(message || `state.json changed under this process (read revision ${expected}, found ${found})`);
+    // The default names the way out (code review 0.43.0 minors: `--force` was described as working on
+    // every mutating verb and the one message it answers never mentioned it).
+    super(message || `state.json changed under this process (read revision ${expected}, found ${found}) — ` +
+      "another write landed first; re-run the command to apply yours on top of it, or pass --force " +
+      "only if you mean to overwrite that newer revision");
     this.name = "StateConflictError";
     this.expected = expected;
     this.found = found;

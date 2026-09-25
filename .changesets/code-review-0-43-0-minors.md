@@ -33,3 +33,7 @@
   flag fell through to the merge: bare it exited 0 having removed nothing, and with a valid `--repo`
   it replaced the recorded repo. It now refuses and writes nothing; `--role secondary … --remove`
   is unchanged.
+* **A write conflict says how to get past it.** When another write lands first, the refusal now adds
+  "re-run the command to apply yours on top of it, or pass --force only if you mean to overwrite
+  that newer revision" — `--force` is accepted on every mutating verb, and the one message it
+  answers never mentioned it.
