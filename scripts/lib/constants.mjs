@@ -13,10 +13,11 @@ import { VERB_EFFECTS } from "./verb-effects.mjs";
 // ── the invocation's paths, as FUNCTIONS OF A CURRENT ROOT ────────────────────────────────────
 //
 // These were `export const` VALUES, computed once when this module first loaded. engine-invocation
-// forbids that, and the reason is mechanical rather than tidy: the assertion half runs every one of
-// its files in ONE process (`--test-isolation=none`), so a module-scope root is captured by
-// whichever test file loaded the engine first and every later file's reads and writes land in the
-// FIRST file's directory. gh#175 is this repository's own instance of the same defect one level
+// forbids that, and the reason is mechanical rather than tidy: an in-process caller may serve many
+// invocations over many roots in ONE process (a single test file drives several — `conformance`,
+// `per-call-roots`, `conductor-12`), so a module-scope root is captured by whichever invocation
+// loaded the engine first and every later one's reads and writes land in the FIRST one's
+// directory. gh#175 is this repository's own instance of the same defect one level
 // down — guarding one tree while writing to another.
 //
 // THE COUNT IS THIRTEEN, and it is derived rather than remembered:

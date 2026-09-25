@@ -1,0 +1,42 @@
+# mutation-3.3 — scratch copy (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m33/tree); node v26.9.0
+# mutation: `import net from "node:net"` added to scripts/lib/runtime-support.mjs -> assert/conductor-35's widened no-network walk refuses it
+23a24
+> import net from "node:net";
+
+✔ every batch-key command is a real dispatched verb (0.753333ms)
+✔ no verb's help advertises a flag that verb's parser refuses (1.83425ms)
+✔ every dispatched verb renders help, exits 0, and names itself (56.8025ms)
+✖ the engine still opens no network connection — the pointer is an INSTRUCTION (3.970958ms)
+✔ USAGE and the dispatch table agree in BOTH directions (0.265417ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 197.119416
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-35.test.mjs:118:1
+✖ the engine still opens no network connection — the pointer is an INSTRUCTION (3.970958ms)
+  AssertionError [ERR_ASSERTION]: the engine must never open a connection (matched /node:(?:https?|http2|net|tls|dgram)\b/) — pm is an instruction layer
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m33/tree/scripts/test/assert/conductor-35.test.mjs:129:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+exit=1
+
+# control: the same walk with the PRE-3.3 forbidden set (fetch, node:https?, require('https?')) PASSES that mutation — the widening is what refuses it:
+old set matches: [ false, false, false ]

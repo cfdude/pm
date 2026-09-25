@@ -1,0 +1,56 @@
+# red-2.1 — captured 2026-09-24 against the pre-GREEN tree (7b5dcaa + the new walk); node v26.9.0
+# command: node --test scripts/test/assert/assert-half-has-no-spawn.test.mjs
+✔ 5.2 the assertion half spawns no child process and runs no git (11.647625ms)
+✔ G-I4 the assertion half makes ZERO real git calls — a PATH shim counts them (0.134625ms)
+✖ 2.1 every file in both rungs installs the git shim itself — the counter is per process (10.583541ms)
+✔ 2.1 the shim-install walk DISCRIMINATES — imports install it, a mention in a comment does not (0.118958ms)
+✔ 5.2 the guard DISCRIMINATES — each shape it refuses is refused for the stated reason (0.180042ms)
+✔ 2.1 the unit rung performs no filesystem work at all, and lives in one process with the half (22.282916ms)
+✔ 2.1 the filesystem predicate DISCRIMINATES — reads and writes are both refused, comments are not (0.18625ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 146.662417
+
+✖ failing tests:
+
+test at scripts/test/assert/assert-half-has-no-spawn.test.mjs:195:1
+✖ 2.1 every file in both rungs installs the git shim itself — the counter is per process (10.583541ms)
+  AssertionError [ERR_ASSERTION]: these rung files do not install the run-time git counter: assert/ci-workflow.test.mjs, assert/conductor-29.test.mjs, assert/conductor-37.test.mjs, assert/drift-script.test.mjs, assert/engine-resolution.test.mjs, assert/git-gateway-guard.test.mjs, assert/hermetic-git.test.mjs, assert/hooks-schema.test.mjs, assert/lessons-index.test.mjs, assert/no-inline-exit.test.mjs, assert/outcome-vocabulary.test.mjs, assert/parity.test.mjs, assert/store-ownership.test.mjs. Under the runner's per-file isolation each file is its own process, so a file that relies on another file having installed the shim runs with the real `git` reachable and nothing counting. Add `import "../fixtures/assert-git-shim.mjs";` as its first import (or import one of the two harnesses).
+  + actual - expected
+  
+  + [
+  +   'assert/ci-workflow.test.mjs',
+  +   'assert/conductor-29.test.mjs',
+  +   'assert/conductor-37.test.mjs',
+  +   'assert/drift-script.test.mjs',
+  +   'assert/engine-resolution.test.mjs',
+  +   'assert/git-gateway-guard.test.mjs',
+  +   'assert/hermetic-git.test.mjs',
+  +   'assert/hooks-schema.test.mjs',
+  +   'assert/lessons-index.test.mjs',
+  +   'assert/no-inline-exit.test.mjs',
+  +   'assert/outcome-vocabulary.test.mjs',
+  +   'assert/parity.test.mjs',
+  +   'assert/store-ownership.test.mjs'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/assert-half-has-no-spawn.test.mjs:201:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'assert/ci-workflow.test.mjs', 'assert/conductor-29.test.mjs', 'assert/conductor-37.test.mjs', 'assert/drift-script.test.mjs', 'assert/engine-resolution.test.mjs', 'assert/git-gateway-guard.test.mjs', 'assert/hermetic-git.test.mjs', 'assert/hooks-schema.test.mjs', 'assert/lessons-index.test.mjs', 'assert/no-inline-exit.test.mjs', 'assert/outcome-vocabulary.test.mjs', 'assert/parity.test.mjs', 'assert/store-ownership.test.mjs' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

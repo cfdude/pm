@@ -1,0 +1,5 @@
+# verify-5.2 — functional/state-file-refuses-to-guess.test.mjs on each bench binary (PATH-prefixed), 2026-09-24, with 5.2's bounded spawnAll
+# command: PATH=<bench>/bin:$PATH FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/functional/state-file-refuses-to-guess.test.mjs
+v22.23.3 exit=0 ℹ tests 46 ℹ pass 46 ℹ fail 0 
+v24.21.0 exit=0 ℹ tests 46 ℹ pass 46 ℹ fail 0 
+v26.10.0 exit=0 ℹ tests 46 ℹ pass 46 ℹ fail 0 

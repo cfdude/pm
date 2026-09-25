@@ -23,13 +23,31 @@ skip straight to the branch dance at the bottom.
 ## The checklist
 
 1. **Engine + tests.** All THREE buckets green, including any new tests for the change:
-   `node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
-   (what the hook runs — BOTH rungs of the assertion half, one process),
+   `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
+   (what the hook runs — BOTH rungs of the assertion half, one runner invocation),
    `node --test scripts/test/functional/*.test.mjs` (real git) and
    `node --test scripts/test/sweeps/*.test.mjs`. The two triggered buckets are also recorded by
    `node scripts/test/certify.mjs functional` and `… sweeps`. No `--no-verify`, ever — the
    pre-commit hook already enforces the assertion half, but re-run explicitly before touching
    version/changelog files so a failure is caught here, not mid-release.
+
+   **The support floor — checked every release (0.49.0, runtime-support).** pm supports exactly
+   the Node LTS lines that are not end-of-life, and the lowest is the support floor. Fetch the
+   schedule and compute the set as of the RELEASE DATE:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/nodejs/Release/main/schedule.json -o /tmp/schedule.json
+   node scripts/test/node-majors.mjs --schedule /tmp/schedule.json --today <release date, YYYY-MM-DD> \
+     --fallback "$(rg 'PM_NODE_FALLBACK:' .github/workflows/ci.yml | rg -o '\[[0-9,]+\]')"
+   ```
+   It prints the set (exit 0) or names the computed set and the committed one (exit 1). If the
+   oldest major's `end` is on or before the release date, or the set otherwise differs, move ONE
+   UNIT in this release: `NODE_FLOOR_MAJOR` (`scripts/lib/runtime-support.mjs`),
+   `PM_NODE_FALLBACK` (`.github/workflows/ci.yml`), the README's `Node N+` lines, CONTRIBUTING.md's,
+   CLAUDE.md's and the engine header's (`scripts/conductor.mjs`), and the docs-site pages
+   (installation, index, introduction, llms.txt). The per-commit suite holds all but the site
+   together (`assert/ci-workflow`, `assert/support-floor`);
+   the site is this step's alone. Look one release ahead too: the next `end` date on the schedule
+   (2027-04-30 for Node 22) turns CI red on that day until such a release lands, by design.
 
 2. **Version + CHANGELOG.md.** Bump `.claude-plugin/plugin.json`. Add a `## [x.y.z] — <date>`
    entry (`Added`/`Changed`/`Fixed` sections as needed). Get the date from the `datetimeday` MCP
@@ -59,9 +77,13 @@ skip straight to the branch dance at the bottom.
      # NOT `grep -c '^## \['` — that counts the [Unreleased] placeholder as a release, and
      # did, publishing a number one too high on every release up to 0.39.0 before anyone checked.
      # tests in the engine: all three buckets — the assertion half's BOTH rungs, then the
-     # two triggered ones — one invocation, one total
-     node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs \
-       scripts/test/functional/*.test.mjs scripts/test/sweeps/*.test.mjs 2>&1 | grep '^ℹ tests'
+     # two triggered ones — one invocation, one total. The reporter is FORCED and colour is OFF,
+     # so the summary line is `ℹ tests N` on every supported Node (22's default is TAP's `# tests`,
+     # and a forced colour breaks the `^ℹ` anchor):
+     FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs \
+       scripts/test/functional/*.test.mjs scripts/test/sweeps/*.test.mjs 2>&1 | grep -m1 '^ℹ tests '
+     # STOP if that printed nothing, or `ℹ tests 0`: the count could not be read, or nothing ran.
+     # Do NOT publish a number — find out why first.
      wc -l scripts/conductor.mjs scripts/lib/*.mjs | tail -1         # engine LOC — the dispatcher is ~360
      # lines since the module split; the site's row counts the dispatcher plus scripts/lib (0.43.0).
      # external dependencies is always 0 — enforced by the zero-dependency hard constraint
@@ -71,7 +93,15 @@ skip straight to the branch dance at the bottom.
      that fails the "pulled from git log" claim the section itself makes doesn't belong in it,
      regardless of whether it was ever accurate.
 
-5. **The `pm` repo's own branch dance.** Follow the `pr-workflow` skill — commit on `dev`, PR
+5. **Archive the release's changes, then the branch dance.** Each change in the release is
+   archived (`/opsx:archive <id>`) after its Gate 2 and before the squash-merge. When committing
+   that archive, stage openspec/ whole (or everything `git status --short openspec/` lists) — the archive rewrites openspec/specs too.
+   Staging only `openspec/changes` leaves the main specs' edits in the working tree, where the next
+   hard reset discards them (0.48.0 lost four requirements that way —
+   `docs/lessons/an-archive-writes-outside-the-change-dir.md`). The archive commit is lifecycle
+   bookkeeping and is never attributed to the epic.
+
+   Then the `pm` repo's own branch dance. Follow the `pr-workflow` skill — commit on `dev`, PR
    into `main`, wait for CI green, squash-merge, sync both branches. Never commit a version
    bump directly to `main` — this bit a session once already.
    **Gate 2 for every change in the release is recorded before that squash-merge, from the

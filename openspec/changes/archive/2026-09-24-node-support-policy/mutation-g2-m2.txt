@@ -1,0 +1,9 @@
+=== M2: a second default re-added in runInvocation ===
+217c217
+<     nodeVersion: io.nodeVersion,
+---
+>     nodeVersion: io.nodeVersion ?? process.version,
+ℹ pass 0
+ℹ fail 1
+  +   'scripts/conductor.mjs: nodeVersion: io.nodeVersion ?? process.version,'
+(the M2 test: ℹ fail 1 above — refused)

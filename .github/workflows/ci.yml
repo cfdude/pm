@@ -12,13 +12,69 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # THE COMMITTED FALLBACK (0.49.0, design D2) — the Node majors CI tests when the release schedule
+  # cannot be fetched. It is also the ONE list that ties the schedule to the engine: its minimum must
+  # equal NODE_FLOOR_MAJOR in scripts/lib/runtime-support.mjs (asserted per commit by
+  # scripts/test/assert/ci-workflow.test.mjs), and whenever the schedule IS fetched the computed set
+  # must equal it (asserted here, by scripts/test/node-majors.mjs). So a line reaching end-of-life
+  # turns this workflow red until one release moves the fallback, the constant and the documented
+  # support floor together — deliberately (decided 2026-09-24: disagreement FAILS CI).
+  PM_NODE_FALLBACK: "[22,24,26]"
+
 jobs:
-  test:
-    name: test
+  # ─────────── THE SUPPORTED MAJORS, COMPUTED (0.49.0, design D2) ───────────
+  # pm supports, and CI tests, exactly the Node LTS lines that are not end-of-life: a schedule entry
+  # with an `lts` date, `start <= today < end` (UTC). The set is COMPUTED here from Node's own
+  # release schedule, never typed. The fetch is the only network step and it stays in this workflow;
+  # every decision is scripts/test/node-majors.mjs's, which the per-commit suite tests clause by clause:
+  #   * the fetch fails        -> the committed fallback, with a ::warning:: on the run and its summary;
+  #   * the body is unreadable -> ::error::, never the fallback (that is for an unreachable host);
+  #   * computed != fallback   -> ::error:: naming both;
+  #   * an empty set           -> ::error::.
+  node-majors:
+    name: node-majors
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      majors: ${{ steps.compute.outputs.majors }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js (the support floor)
+        # The script runs on a SUPPORTED Node: the fallback's first entry, which the per-commit guard
+        # holds equal to the support floor.
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ fromJSON(env.PM_NODE_FALLBACK)[0] }}
+
+      - name: Compute the supported majors
+        id: compute
+        run: |
+          set -e
+          if curl -fsSL --retry 3 --max-time 30 -o /tmp/schedule.json https://raw.githubusercontent.com/nodejs/Release/main/schedule.json; then
+            node scripts/test/node-majors.mjs --schedule /tmp/schedule.json --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"
+          else
+            node scripts/test/node-majors.mjs --fetch-failed --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"
+          fi
+
+  # ─────────── ONE LEG PER SUPPORTED MAJOR ───────────
+  # `fail-fast: false`, so a failure names EVERY major it occurs on rather than cancelling the rest.
+  # `timeout-minutes` is the backstop for a hung synchronous spawn (design D9 bounds only the awaited
+  # ones). Each leg reports as `test (node N)`; the required check is the aggregate below.
+  test-node:
+    name: test (node ${{ matrix.node }})
+    needs: node-majors
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.node-majors.outputs.majors) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
           # Full history, not the default shallow clone. Several integrity tests are evaluated
           # against THIS repository's real git history (`git merge-base --is-ancestor` on real
@@ -28,9 +84,9 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "18"
+          node-version: ${{ matrix.node }}
 
       # ─────────── THE THREE BUCKETS (6.5) ───────────
       #
@@ -58,6 +114,13 @@ jobs:
       # that ran and passed. `set -o pipefail` would also work; the explicit gate is used because it
       # also puts the failing output in the log, and because `grep -m1` closing the pipe early would
       # otherwise make a PASSING suite's `tee` a status source too.
+      #
+      # ONE REPORTER, NO COLOUR, ONE PARSE, AND A COUNT THAT MUST BE READ (0.49.0, design D4). Every
+      # runner is `FORCE_COLOR=0 node --test --test-reporter=spec …`: the default reporter differs by
+      # major (TAP on 22, spec on 24 and 26) and a forced colour breaks the `^ℹ` anchor, so the reporter
+      # and the colour are both fixed and only `ℹ` is parsed. Then, in order: an unreadable count fails;
+      # the floor (`total < declared`) fails naming both counts; and a run of ZERO tests fails on its
+      # own, whatever `declared` says — `[ "$total" -lt "$declared" ]` alone is green at 0/0.
 
       - name: Syntax check
         # RE-POINTED WITH THE SPLIT (5.3), in the same commit as the first file that leaves
@@ -85,29 +148,28 @@ jobs:
         # its tests to `total`, and a unit file that stopped running would drop from one side of the
         # floor and not the other.
         #
-        # NO `--test-isolation=none` HERE, AND IT IS NOW A CLOSED DECISION RATHER THAN A DEFERRAL
-        # (this replaces the "bump and add once probed" TODO 0.47.0 left). THE PROBE WAS RUN on the
-        # oldest binary available on the development machine — nvm's v20.19.4 — and the flag is
-        # ABSENT there: `node --test --test-isolation=none …` is refused outright, while v26.9.0
-        # accepts it. The flag is therefore a recent-major feature, and `node-version: "18"` pinned
-        # above cannot have it. CI keeps per-file isolation: strictly slower, strictly correct on
-        # every version this repository runs, and — the property that matters more here than the wall
-        # clock — it attributes a failure to the FILE that failed. Bumping the pin to a version that
-        # supports the flag is a real option and a different change: it would buy CI wall clock at
-        # the cost of that attribution, and it is not this change's acceptance. Evidence and the
-        # measurement: openspec/changes/unit-rung-and-fixture-snapshots/node-version-fallback-2.4.txt
+        # THE RUNNER'S DEFAULT PER-FILE ISOLATION, exactly as the pre-commit hook runs it (0.49.0,
+        # design D3): the single-process mode is retired everywhere. Per-file isolation attributes a
+        # failure to the FILE that failed, and on every supported major it measured about half the wall
+        # clock of the single-process mode on a 16-CPU machine.
         run: |
           set -e
-          node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
             cat /tmp/assert.out
             echo "::error::the assertion half FAILED — the runner's output is above"
             exit 1
           }
-          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')
+          total=$(grep -m1 -E '^ℹ tests ' /tmp/assert.out | awk '{print $3}')
           declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "assertion half: ran ${total}, declared ${declared}"
-          if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
+          if [ -z "$total" ]; then
+            echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+          fi
+          if [ "$total" -lt "$declared" ]; then
             echo "::error::the assertion half ran ${total} tests but ${declared} are declared in its two rungs"; exit 1
+          fi
+          if [ "$total" -eq 0 ]; then
+            echo "::error::the assertion half ran zero tests — a run of nothing is never a pass"; exit 1
           fi
 
       - name: Functional half
@@ -115,16 +177,22 @@ jobs:
         # present in CI and none can be exchanged for this run.
         run: |
           set -e
-          node --test scripts/test/functional/*.test.mjs > /tmp/functional.out 2>&1 || {
+          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/functional/*.test.mjs > /tmp/functional.out 2>&1 || {
             cat /tmp/functional.out
             echo "::error::the functional half FAILED — the runner's output is above"
             exit 1
           }
-          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')
+          total=$(grep -m1 -E '^ℹ tests ' /tmp/functional.out | awk '{print $3}')
           declared=$(git ls-files 'scripts/test/functional/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "functional half: ran ${total}, declared ${declared}"
-          if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
+          if [ -z "$total" ]; then
+            echo "::error::the functional half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+          fi
+          if [ "$total" -lt "$declared" ]; then
             echo "::error::the functional half ran ${total} tests but ${declared} are declared in scripts/test/functional/"; exit 1
+          fi
+          if [ "$total" -eq 0 ]; then
+            echo "::error::the functional half ran zero tests — a run of nothing is never a pass"; exit 1
           fi
 
       - name: Sweep bucket
@@ -132,14 +200,42 @@ jobs:
         # per-commit half. Its own floor, from its own tracked files.
         run: |
           set -e
-          node --test scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
             cat /tmp/sweeps.out
             echo "::error::the sweep bucket FAILED — the runner's output is above"
             exit 1
           }
-          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')
+          total=$(grep -m1 -E '^ℹ tests ' /tmp/sweeps.out | awk '{print $3}')
           declared=$(git ls-files 'scripts/test/sweeps/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "sweep bucket: ran ${total}, declared ${declared}"
-          if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
+          if [ -z "$total" ]; then
+            echo "::error::the sweep bucket's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+          fi
+          if [ "$total" -lt "$declared" ]; then
             echo "::error::the sweep bucket ran ${total} tests but ${declared} are declared in scripts/test/sweeps/"; exit 1
+          fi
+          if [ "$total" -eq 0 ]; then
+            echo "::error::the sweep bucket ran zero tests — a run of nothing is never a pass"; exit 1
+          fi
+
+  # ─────────── THE REQUIRED CHECK: ONE CONTEXT NAMED `test` ───────────
+  # Branch protection requires the single context `test`. A matrix leg reports as `test (node N)`,
+  # so a bare matrix would leave every PR waiting on a check that never reports; this aggregate keeps
+  # the name. `if: always()` IS LOAD-BEARING: a job whose `needs` failed is SKIPPED, and GitHub treats
+  # a skipped required check as passing — without it, a failed compute job would skip every leg and
+  # this job, and the PR would merge green. So it always runs, and it passes only when the set was
+  # computed (or fell back) AND every leg passed.
+  test:
+    name: test
+    if: always()
+    needs: [node-majors, test-node]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every supported major passed
+        run: |
+          echo "node-majors: ${{ needs.node-majors.result }}; test-node: ${{ needs.test-node.result }}"
+          if [ "${{ needs.node-majors.result }}" != "success" ] || [ "${{ needs.test-node.result }}" != "success" ]; then
+            echo "::error::the required check fails: computing the supported majors was '${{ needs.node-majors.result }}' and the per-major legs were '${{ needs.test-node.result }}' — both must be 'success'"
+            exit 1
           fi

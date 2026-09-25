@@ -70,9 +70,9 @@ export function manyEpics(n) {
  *  writer landed between this read and this write". It fires ONCE, so the retry lands; only
  *  `revision` is touched, so the retry still has something to heal.
  *
- *  THE RETURNED RESTORE IS NOT OPTIONAL. `fs` is ONE object for the whole assertion half — every
- *  file shares it under --test-isolation=none — so a caller that leaves the patch installed turns
- *  every later test's saveState into a conflict. It returns whether it FIRED, which is the
+ *  THE RETURNED RESTORE IS NOT OPTIONAL. `fs` is ONE object for the whole process — every test in
+ *  a file shares it — so a caller that leaves the patch installed turns every later test's saveState
+ *  into a conflict. It returns whether it FIRED, which is the
  *  non-vacuity proof the callers assert on: a seam that silently did not fire would otherwise make
  *  a green run mean "no conflict ever happened". */
 export function injectConflictOnce(dir) {
@@ -284,8 +284,21 @@ export function nudgeAndReadLog(cwd, command) {
  *  scripts/conductor.test.mjs (either passing or failing), so the hook's actual noise-control
  *  logic (capture-to-tempfile, exit-code check, cat-only-on-failure) is exercised against the
  *  shipped file — not a re-implementation of it — without paying the ~30s cost of the real
- *  236-test suite for both the success and failure cases. */
-export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
+ *  236-test suite for both the success and failure cases.
+ *
+ *  FOUR OPTIONS BEYOND THE FILES (0.49.0 tasks 1.1-1.5), each one a condition the hook must meet that
+ *  a plain fixture cannot build:
+ *    * `env` — overlaid on the inherited environment (1.1: `FORCE_COLOR=1`, the setting that used to
+ *      disable the floor silently);
+ *    * `pathPrepend` — a directory put IN FRONT of PATH, never in place of it (1.2: a stub `node`
+ *      that prints no summary; `sh`, `git`, `grep` and `awk` must still resolve);
+ *    * `withFixture: false` — omit the default `scripts/test/assert/fixture.test.mjs`, so the rungs
+ *      hold only what `extraFiles` puts there (1.3: both rungs hold only `.keep`);
+ *    * `setup(cwd)` — runs after `git init` and before the hook (1.5: a stale `pm-isolation-flag`).
+ *  The result carries `cwd`, so a caller can inspect the fixture after the hook ran. */
+export function runHookAgainstFixture(testFileBody, {
+  extraFiles = {}, env: envOverlay = {}, pathPrepend = null, withFixture = true, setup = null,
+} = {}) {
   const cwd = tmpRepo();
   execFileSync("git", ["init", "-q"], { cwd });
   execFileSync("git", ["config", "user.email", "test@example.com"], { cwd });
@@ -296,13 +309,15 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
   // -- an indented fixture would report 0 declared tests and silently skip the very guard this
   // fixture exists to exercise.
   fs.mkdirSync(path.join(cwd, "scripts", "test", "assert"), { recursive: true });
-  const deindented = testFileBody.replace(/^[ \t]+/gm, "");
-  const needsHeader = !/^import /m.test(deindented);
-  const fixturePath = path.join(cwd, "scripts", "test", "assert", "fixture.test.mjs");
-  fs.writeFileSync(fixturePath,
-    (needsHeader
-      ? 'import { test } from "node:test";\nimport assert from "node:assert/strict";\n'
-      : "") + deindented);
+  if (withFixture) {
+    const deindented = testFileBody.replace(/^[ \t]+/gm, "");
+    const needsHeader = !/^import /m.test(deindented);
+    const fixturePath = path.join(cwd, "scripts", "test", "assert", "fixture.test.mjs");
+    fs.writeFileSync(fixturePath,
+      (needsHeader
+        ? 'import { test } from "node:test";\nimport assert from "node:assert/strict";\n'
+        : "") + deindented);
+  }
   for (const [rel, content] of Object.entries(extraFiles)) {
     const dest = path.join(cwd, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -335,7 +350,8 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
   // index — so it is declared — and NOT reachable by the shell's expansion of the runner's own glob,
   // which is the one shape that separates "what the runner ran" from "what the runner was given".
   // A fixture could not express that while only one path was addable.
-  execFileSync("git", ["add", "--", "scripts/test/assert/fixture.test.mjs", ...Object.keys(extraFiles)], { cwd });
+  const tracked = [...(withFixture ? ["scripts/test/assert/fixture.test.mjs"] : []), ...Object.keys(extraFiles)];
+  if (tracked.length) execFileSync("git", ["add", "--", ...tracked], { cwd });
   const realHookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
   const hookDestPath = path.join(cwd, ".githooks", "pre-commit");
   fs.copyFileSync(realHookPath, hookDestPath);
@@ -344,10 +360,13 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
   // inherited by the hook's own nested `node --test` invocation, node treats it as an
   // already-child test-runner worker and short-circuits rather than actually running the
   // fixture suite — a real hook invocation via `git commit` never has these set.
-  const env = { ...process.env };
+  const env = { ...process.env, ...envOverlay };
   delete env.NODE_TEST_CONTEXT;
   delete env.NODE_TEST_WORKER_ID;
-  return spawnSync("sh", [hookDestPath], { cwd, encoding: "utf8", env });
+  if (pathPrepend) env.PATH = `${pathPrepend}${path.delimiter}${env.PATH || ""}`;
+  if (setup) setup(cwd);
+  const r = spawnSync("sh", [hookDestPath], { cwd, encoding: "utf8", env });
+  return Object.assign(r, { cwd });
 }
 
 // ────────────── multi-tracker-primary-secondary-support: secondaryTrackers[] ──────────────

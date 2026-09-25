@@ -1,0 +1,34 @@
+# red-4.4 — captured 2026-09-24 against the pre-GREEN tree (a09b2fe + the new test file); node v26.9.0
+# command: node --test scripts/test/assert/certify-count.test.mjs — fails: certify.mjs exports no parser (and its regex at :65 accepts '#')
+✖ 4.4 certify's count parser reads the forced spec summary, and nothing else (0.645667ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.069375
+
+✖ failing tests:
+
+test at scripts/test/assert/certify-count.test.mjs:19:1
+✖ 4.4 certify's count parser reads the forced spec summary, and nothing else (0.645667ms)
+  AssertionError [ERR_ASSERTION]: certify.mjs exports no summaryCount(): its count parser cannot be exercised, so which formats it accepts is unknown
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/certify-count.test.mjs:20:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

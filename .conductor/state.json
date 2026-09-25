@@ -10058,17 +10058,115 @@
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
       "touchedAt": "2026-09-22T11:09:54.633Z"
+    },
+    {
+      "id": "node-support-policy",
+      "title": "Node support policy: support the oldest non-EOL Node major (floor 22 today, 24 after 2027-04-30); CI matrix 22/24/26; retire Node 18 pin, stale actions (v4 on EOL node20 runtime), and old-Node workarounds; correct every 'Node 18+' claim",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [
+        "d750b35f8850a502a77207253c949b9fe6069a30",
+        "8a73f75539e33537d1bb131c310ae66fb2693b20",
+        "9fa4163fa1ff7012d8f0a19714c6ae9cf2e44947",
+        "7b5dcaacde92cb0aa113e4039489cd1ef2cbe59d",
+        "6b07a089a8e9175a373f224f12834dbe6245bf0c",
+        "93e25e2a383365d4c3781e17feca5c842157851e",
+        "cb946ebfa6986d7e11215c664591c29a38d5f5bd",
+        "0831d90597ac62c70fb50ea4f7276eda5f48cd94",
+        "b7ba061a837ff4d2f93d0734d52556d604f96604",
+        "ada05a398bf8e87b843ebcc7beda5c8f4a262e62",
+        "d45ee0e011a7065a2ad9b68aed01876fba4f3a4c",
+        "0449e9e4119acdab76f60407ba2c014973100598",
+        "a09b2fe8e8d6eaecf9b8da989ca8b548383d4260",
+        "85670f812a07a525d7e004572e160868785ac8d4",
+        "ccc00e7e4012f7bace54d29b7fd8a4baf57e5588",
+        "a8489884f5e19a0ec581d26a6555baff6885b8b7",
+        "fe96401f9b672b008e88bd21a9cfc073b84b3243",
+        "4c30f5a573d7c7c10983913adc5f05893549fd0a",
+        "c312be3869e0a5b50570d423294824b1e6ff9f59",
+        "5788acadb217a726b4e3c4d03245092d7a7dc6e7",
+        "cd093fe65dad9ca89aebb5aa12663a2fbf90e430",
+        "7f1e35dc7703cce9dfcf658ad5d35eccf129a602",
+        "9e722f1cc82e5492d90950f10719bbb3bd812110",
+        "0e65863d653a53fd966554aa15e0556dc877d1cf",
+        "f84fe9d389291bdba542cc6771cd29c02a98dbcb",
+        "045d728208037c3d87257031a0d443e2baf251bb",
+        "d266971ca07369461ea108f0e0c9f7512c3d7a9d",
+        "a3ab5d778d0bf6f6521e11d6f2256cd0b03dbe81",
+        "7fa0b5d3ac09a419f9d4a92ec9522a302331dc2a",
+        "9b94c9adfc5c01003f22c8c02d2cbf713cef8f0a",
+        "86f74c43239bed7e91a8b0a5ff8bc6349274d9a7",
+        "2fdd74d807eff852998b015e2c87b6a83e8a8c7c",
+        "f230e85fce761844dc53b2c8a8d38623045ce8f7"
+      ],
+      "createdAt": "2026-09-23T20:29:57.349Z",
+      "touchedAt": "2026-09-25T04:46:07.448Z",
+      "notes": [
+        {
+          "at": "2026-09-23T20:29:58.242Z",
+          "actor": "agent",
+          "text": "lane: openspec not (none routed) — changes the hook/CI contract the suite-certification spec governs, plus a user-facing requirement across README and pm-plugin.dev; needs a spec record, not a claude-code tweak. Policy stated by Rob 2026-09-23: 'support the oldest version of Node that isn't end-of-life'; test at least 22, 24, 26."
+        },
+        {
+          "at": "2026-09-23T20:31:00.595Z",
+          "actor": "agent",
+          "text": "Benchmark 2026-09-23 (16 CPUs, darwin-arm64, clone 61a75a5, logs scratchpad/node-bench/logs): assertion half P-mode (process-per-file) 13.0-14.9s on 18/20/22/24/26 — version barely matters; S-mode (--test-isolation=none) 24-27s, ~2x SLOWER than P on every version that has it. Engine cold start (brief): 18=65.8ms, 22/24/26=48-50ms. Homebrew node 26.9 cold start 107.7ms vs nodejs.org 26.10 49.9ms (bare startup 83ms vs 24ms; brew links libnode dynamically). Node 22 accepts only --experimental-test-isolation. Node 18 hung test 3.1 (filed as issue)."
+        },
+        {
+          "at": "2026-09-25T00:50:47.952Z",
+          "actor": "agent",
+          "text": "Rob 2026-09-24: approved — drop single-process (per-file mode), CI matrix from schedule.json, actions v7, delete isolation probe + reporter dual-parse + [ -f ] loop where the floor allows, EOL warning in brief, fix Node 18+ claims, fix #220. Leave Homebrew node alone (out of scope)."
+        }
+      ],
+      "release": "0.49.0",
+      "startedAt": "2026-09-25T00:50:49.159Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-25T01:49:24.566Z",
+          "baseSha": "aa48c885fd965d091ebb804a1e379fd79b47bd24",
+          "headSha": "9fa4163fa1ff7012d8f0a19714c6ae9cf2e44947",
+          "reviewer": "two fresh-context lenses (A correctness/testability reproduced on 22/24/26 binaries; B absent-edit sweep) + confirmation: round 1 fail (2 C: zero-count CI pass, unfalsifiable scenario; 9 I), fixed 8a73f75; confirmation fail (2 I), fixed 9fa4163; 2026-09-24"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-25T04:45:17.139Z",
+          "baseSha": "aa48c885fd965d091ebb804a1e379fd79b47bd24",
+          "headSha": "f230e85fce761844dc53b2c8a8d38623045ce8f7",
+          "reviewer": "two fresh-context lenses (A spec alignment + ~60 mutations on 22/26; B absent-edit sweep + commit integrity) + confirmation: round 1 A fail (3 I: CI unreadable-count refusal untested, certify count guards untested, harness shim install trusted) / B pass (6 M); all 11 fixed f84fe9d..f230e85 with mutation proofs; confirmation pass (original mutations now fail, 1305/1305 on 22 and 26, drift ok); 2026-09-24"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-25T04:46:07.444Z",
+        "reason": "pm supports the oldest non-EOL Node LTS line (support floor 22, NODE_FLOOR_MAJOR); CI tests every supported LTS line computed from nodejs/Release schedule.json with a committed, schedule-checked fallback (22/24/26 today); the assertion half runs per-file (hook 33.6s -> 24.0s on 16 cores; 28% slower on 4-core CI, accepted); every count site forces the spec reporter and refuses an unreadable or zero count; old-Node workarounds removed; brief warns below the floor; actions v7; #220 bounded; Gate 2 pass at f230e85"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-25T04:46:07.422Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "bounding synchronous child spawns in tests",
+            "reason": "out of scope by design D9 - no synchronous hang observed; CI timeout-minutes bounds them; the observed hang (#220) was the async class, now bounded"
+          }
+        ]
+      },
+      "completedAt": "2026-09-25T04:46:07.444Z"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.47.0",
+  "pmVersion": "0.48.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1329,
+  "revision": 1373,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10507,6 +10605,30 @@
           ],
           "reviewer": "inline foreground cross-spec review of the 0.48.0 spec set (2 spec files: suite-certification, engine-invocation) — no fresh-context subagents were available in this run, so the reviewer is the applying agent, which read both deltas in full and answered the six questions. BLOCKS (fixed in this commit): engine-invocation's 'the invocation that used the in-memory store created no file' scenario was unreachable — init() writes CLAUDE.md (rules.mjs:1097) and .gitignore through raw fs, both deliberately outside the store per design D1, so the scenario was narrowed to the store's own footprint with an explicit boundary paragraph added. Contradiction: none — suite-certification's rungs and engine-invocation's per-call store agree; the rung's process claim ('both rungs, one invocation, one process') does not collide with 'two invocations in one process are independent' because they are different claims about different things. Double ownership: none — engine-invocation owns the caller's contract and states the store boundary; suite-certification owns rung membership and names the store only as the mechanism a unit test obtains a value through. Unmeetable: the one above, now fixed. Gaps vs the proposal's What Changes: none found — the three artifacts I1 added (session-claim.json, commit-observe.json+.lock, write-conflicts.log.prev) and the render's three reads (projectMd pre-image :306, the stamp's mtime test :356, detoursLog :276) are each carried by a task (1.2, 1.3). Vocabulary: ok within the spec set; POLISH declined — the file rung's directory is still named assert/ (the half's own name) while the unit rung's is unit/, and the spec's 'the two rungs SHALL be named on disk' is satisfied but the names are not parallel; renaming is out of this change's scope. Chokepoints: homeOf() (certification.mjs:63) and the two-glob runner invocation shared by the hook and ci.yml are each owned by exactly one capability. Recorded after the amendment above, so the hash covers the amended text."
         }
+      }
+    },
+    {
+      "id": "0.49.0",
+      "intent": "Node support policy: support the oldest non-EOL Node major; CI matrix from Node's schedule; per-file test mode; old-Node workarounds retired",
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-25T01:49:23.900Z",
+        "specs": [
+          {
+            "key": "node-support-policy/specs/engine-invocation/spec.md",
+            "sha256": "401d86fff77dbbd5e770551120a6b1f44b30e6525485449e73cd70416c8a677f"
+          },
+          {
+            "key": "node-support-policy/specs/runtime-support/spec.md",
+            "sha256": "8e45f8d91c5777626f4229b52dc9b6659a444a6fa69cfff08bdb5d8b8724b9a3"
+          },
+          {
+            "key": "node-support-policy/specs/suite-certification/spec.md",
+            "sha256": "70101f30c3ac802656c19a2221e60e514e5dc9865246c77dcdf81ff88a6526b4"
+          }
+        ],
+        "reviewer": "two fresh-context lenses (coherence; falsifiability) + one confirmation: round 1 fail (BLOCKS: 'supported' R1/R2 contradiction over 23/25/27; bounded-wait over-wide; schedule filter unfalsifiable; zero-count CI pass; unfalsifiable version-default scenario; collapsed-half message; unit fs ban vs shim), fixed at 8a73f75; confirmation fail (end clause untested; twin coupling), fixed at 9fa4163; 2026-09-24"
       }
     }
   ],

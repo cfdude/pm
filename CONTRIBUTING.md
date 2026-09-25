@@ -5,11 +5,14 @@
 `main` is protected on GitHub (`cfdude/pm`):
 
 - No direct pushes to `main` — all changes land via pull request.
-- Required status check: the `test` job in `.github/workflows/ci.yml` — a syntax check, then
-  all THREE buckets, each with its own count floor: `node --test scripts/test/unit/*.test.mjs
-  scripts/test/assert/*.test.mjs` (the per-commit assertion half — two RUNGS, one process),
-  `… functional/*.test.mjs` (real git), `… sweeps/*.test.mjs` (the change-triggered bucket).
-  See [The dev inner loop](#the-dev-inner-loop) for which rung a new test belongs in.
+- Required status check: `test`, an AGGREGATE job in `.github/workflows/ci.yml`. It passes only
+  when `node-majors` computed the supported Node majors (every LTS line that is not end-of-life,
+  from Node's release schedule; 22, 24 and 26 today) AND every leg of the `test (node N)` matrix
+  passed. Each leg runs a syntax check, then all THREE buckets, each with its own count floor:
+  `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs` (the per-commit
+  assertion half — two RUNGS, one runner invocation), `… functional/*.test.mjs` (real git),
+  `… sweeps/*.test.mjs` (the change-triggered bucket). See
+  [The dev inner loop](#the-dev-inner-loop) for which rung a new test belongs in.
 - 0 required approving reviews — this is a solo-maintainer repo, so PRs merge once CI is
   green, without waiting on a second reviewer.
 - Merge method is squash-only (`allow_squash_merge: true`, `allow_merge_commit: false`,
@@ -49,9 +52,12 @@ git config core.hooksPath .githooks
 
 After that, `git commit` runs `.githooks/pre-commit` automatically, which runs the DRIFT SCRIPT
 (`node scripts/test/drift.mjs`, four checks over the index — enrolment, twin coverage, diff
-coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE process:
-`node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
-— and blocks the commit on any failure. The drift script refuses, naming the file: a tracked
+coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
+invocation:
+`FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
+— and blocks the commit on any failure. The reporter is forced and colour is off so the summary is
+the same bytes on every supported Node, and a count the hook cannot read, or a run of zero tests, is
+a refusal rather than a pass. The drift script refuses, naming the file: a tracked
 test file in NEITHER half
 (no test runs it — enrol it), a functional test with no assertion twin of the same id, a
 functional test or its twin changed without a fresh certification record, or a certified
@@ -67,8 +73,11 @@ you ran one locally. To satisfy a refusal, run the command it names.
 ```bash
 git clone https://github.com/cfdude/pm && cd pm
 git config core.hooksPath .githooks        # the one-time setup above
-node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
+node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
 ```
+
+pm supports the Node LTS lines that are not end-of-life — **Node 22+** today. The engine's own
+`NODE_FLOOR_MAJOR` (`scripts/lib/runtime-support.mjs`) is where that number lives.
 
 **`npm i` is not a step here, and it FAILS if you run it**: `npm error code ENOENT … Could not
 read package.json`. `package.json` does not exist in this repository, and adding one so that the
@@ -79,30 +88,35 @@ own existence while removing the evidence that the zero-dependency claim is stil
 dependencies ARE permitted by the amended hard constraint; if one is ever needed, the manifest
 lands with it, and this section is where the install step appears.
 
-**Verified by running it rather than described.** On Node v26.9.0 a fresh clone reaches
-`ℹ tests 1269 / ℹ pass 1269 / ℹ fail 0` in **26.1 s** with no install of any kind — clone,
-`config`, test in well under a minute, and the 26 s is the per-commit half itself rather than any
-setup around it.
+**Verified by running it rather than described** (2026-09-24, a fresh clone of `a848988`, 16 CPUs,
+darwin-arm64): on the support floor, Node v22.23.3, the command above reaches
+`# tests 1296 / # pass 1296 / # fail 0` in **14.0 s**; on Node v26.9.0 (Homebrew) it reaches
+`ℹ tests 1296 / ℹ pass 1296 / ℹ fail 0` in **18.0 s**. No install of any kind — clone, `config`,
+test in well under a minute, and the time is the per-commit half itself rather than any setup
+around it. (22's default reporter is TAP, 24's and 26's is spec; add `--test-reporter=spec` for the
+same summary on every major.)
 
 ### `node --test --watch` — the loop
 
-Both rungs in one process, which is exactly what the pre-commit hook runs:
+Both rungs in one runner invocation, the same file set the pre-commit hook runs:
 
 ```bash
-node --test --watch --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
+node --test --watch scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
 ```
 
-That re-runs the whole half (~26 s) on every save. **While you are working on one file, name it**
+That re-runs the whole half (~14–18 s on 16 CPUs) on every save. **While you are working on one file, name it**
 — the unit rung's files are sub-second and most of the file rung's are too, so the loop is fast
 enough to leave running:
 
 ```bash
-node --test --watch --test-isolation=none scripts/test/assert/<file>.test.mjs
+node --test --watch scripts/test/assert/<file>.test.mjs
 ```
 
-`--test-isolation=none` is not optional. Without it Node gives every file its own process, which
-is the cost the rung split exists to remove. The hook probes for the flag once per clone and falls
-back to plain `node --test` on a Node too old to accept it.
+The runner gives every file its own process and runs up to CPUs−1 of them at once — on every
+supported Node that measured about half the wall clock of the single-process mode 0.47.0 used,
+which 0.49.0 retired. On a small machine, or to leave cores free, throttle it with
+`--test-concurrency=<n>` (e.g. `node --test --test-concurrency=2 scripts/test/unit/*.test.mjs
+scripts/test/assert/*.test.mjs`).
 
 ### Which rung does my new test belong in?
 
@@ -139,9 +153,13 @@ unchanged**; only the mechanism it obtains its values through moves.
 and fails, naming the file and the call shape it found, when one:
 
 - **imports `node:child_process` or calls a spawner** — `spawnSync`, `spawn`, `execFileSync`,
-  `execFile`, `execSync`, `exec` — in EITHER rung. The assertion half is one Node process running
-  no real git; a single `spawnSync` added "just for one real git call" takes that back for the
-  whole half, and nothing else would say so.
+  `execFile`, `execSync`, `exec` — in EITHER rung. No TEST in the assertion half starts a process
+  or runs real git (only the runner starts one process per file); a single `spawnSync` added "just
+  for one real git call" takes that back for the whole half, and nothing else would say so.
+- **does not install the run-time git counter itself** — every file in either rung imports
+  `scripts/test/fixtures/assert-git-shim.mjs` (directly, or through `assert-harness.mjs` /
+  `unit-harness.mjs`). Each file runs in its own process, so a counter another file installed
+  covers nothing here.
 - **performs filesystem work AT ALL** — this one is the unit rung's alone. A file under
   `scripts/test/unit/` may not import `node:fs`, may not read, write, create or remove a path, and
   may not flush a file to disk. That is the property the rung exists for (the half's cost was
@@ -237,7 +255,7 @@ conflicts, resolve them the normal way (`git status` shows the conflicting files
 ## Running the EDD evaluation corpus (optional)
 
 pm's engine is covered by the assertion half — `node --test scripts/test/unit/*.test.mjs
-scripts/test/assert/*.test.mjs`, both rungs in one process, once per commit — then
+scripts/test/assert/*.test.mjs`, both rungs in one runner invocation, once per commit — then
 `… scripts/test/functional/*.test.mjs` (real git, on the trigger) and
 `… scripts/test/sweeps/*.test.mjs` (the output sweep). That suite cannot cover
 pm's *agent-facing* artifacts — command docs, skills, the rules block, hooks — because their

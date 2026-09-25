@@ -1,0 +1,4 @@
+# verify-2.4 — pm-assert-no-git-* directories in os.tmpdir() (/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T), across one full run of the half
+# node /opt/homebrew/bin/node v26.9.0, 2026-09-24, working tree = 6b07a08 + 2.3/2.4
+per-file (default isolation): before=4705 after=4705 runner_rc=0 ℹ tests 1272 ℹ fail 0
+single-process (--test-isolation=none): before=4705 after=4705 runner_rc=0 ℹ tests 1272 ℹ fail 0

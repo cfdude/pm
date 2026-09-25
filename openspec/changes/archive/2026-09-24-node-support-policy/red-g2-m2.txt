@@ -1,0 +1,36 @@
+# red-g2-m2 — Gate 2 M2, captured against 7fa0b5d + the new test; node v26.9.0
+✖ M2 the engine reads process.version at exactly ONE code site — runtimeVersion()'s default (4.938875ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 118.38425
+
+✖ failing tests:
+
+test at scripts/test/assert/conformance.test.mjs:156:1
+✖ M2 the engine reads process.version at exactly ONE code site — runtimeVersion()'s default (4.938875ms)
+  AssertionError [ERR_ASSERTION]: the runtime version must default in ONE place — runtimeVersion() — so two defaults can never disagree
+  + actual - expected
+  
+    [
+  +   'scripts/lib/invocation.mjs: get nodeVersion() { return process.version; },',
+      'scripts/lib/invocation.mjs: export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;',
+  +   'scripts/conductor.mjs: nodeVersion: io.nodeVersion ?? process.version,'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/conformance.test.mjs:167:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scripts/lib/invocation.mjs: get nodeVersion() { return process.version; },', 'scripts/lib/invocation.mjs: export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;', 'scripts/conductor.mjs: nodeVersion: io.nodeVersion ?? process.version,' ],
+    expected: [ 'scripts/lib/invocation.mjs: export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

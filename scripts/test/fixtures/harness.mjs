@@ -30,10 +30,13 @@ import os from "node:os";
 import path from "node:path";
 import { main } from "../../conductor.mjs";
 import { fakeGit } from "./fake-git.mjs";
+import { removeAtExit } from "./temp-dir.mjs";
 
 /** One empty version cache for the whole process, as before: `pluginVersion()`/tool-currency read
- *  it, and a per-call one would be a filesystem allocation per assertion. */
-export const EMPTY_CACHE = fs.mkdtempSync(path.join(os.tmpdir(), "pm-empty-cache-"));
+ *  it, and a per-call one would be a filesystem allocation per assertion. REMOVED AT PROCESS EXIT
+ *  (0.49.0, design D3 row 3b): under per-file isolation this is one directory per file, and it was
+ *  never removed — 6,877 `pm-empty-cache-*` directories had accumulated by the Gate 1 fix round. */
+export const EMPTY_CACHE = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-empty-cache-")));
 
 // ─────────── which half's `run` the shared helpers should use ───────────
 //
@@ -57,7 +60,7 @@ export function runner() {
 /** One in-process invocation, with the caller's streams, the caller's stdin and (optionally) a
  *  double for git. Returns the captured streams and the returned status rather than throwing, so
  *  `runCombined` and a caller that wants the status can both be built on it. */
-export function invokeEngine(args, { cwd, env = {}, input, git, store } = {}) {
+export function invokeEngine(args, { cwd, env = {}, input, git, store, nodeVersion } = {}) {
   let out = "", err = "", leaked = "";
   const io = {
     cwd,
@@ -72,6 +75,8 @@ export function invokeEngine(args, { cwd, env = {}, input, git, store } = {}) {
     // 1.2 (0.48.0) — the invocation's STORE, on the same terms as the gateway above it: absent
     // means the disk store, which is what every existing caller gets without changing.
     ...(store ? { store } : {}),
+    // 0.49.0 — the invocation's RUNTIME VERSION, on the same terms: absent means the process's own.
+    ...(nodeVersion !== undefined ? { nodeVersion } : {}),
   };
   // THE PROCESS'S OWN WRITERS ARE PATCHED-AND-FORWARDED FOR THE CALL (G-M4, Gate 2). "Everything the
   // engine prints lands on the streams the CALLER supplied, and nothing on the process's own" is a

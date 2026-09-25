@@ -16,8 +16,10 @@
 
 ## The `pm` engine — hard constraints (must follow)
 
-- **The ENGINE is ZERO-RUNTIME-DEPENDENCY.** `scripts/conductor.mjs` + `scripts/lib/*.mjs` use Node 18+
-  built-ins only (`node:fs`, `node:path`, `node:os`, `node:child_process`, `node:url`) — the code users
+- **The ENGINE is ZERO-RUNTIME-DEPENDENCY.** `scripts/conductor.mjs` + `scripts/lib/*.mjs` use Node
+  built-ins only (Node 22+ — pm supports the oldest Node LTS line that is not end-of-life;
+  `NODE_FLOOR_MAJOR` in `scripts/lib/runtime-support.mjs`): `node:child_process`, `node:crypto`,
+  `node:fs`, `node:os`, `node:path`, `node:tty`, `node:url` — the code users
   run in real time ships with no `node_modules` and nothing to install. **Never** add an npm package to
   the engine. If a format needs parsing, prefer JSON (native) over pulling a parser.
   **Dev-only dependencies are permitted**: anything used only to develop and test the source
@@ -26,9 +28,10 @@
   Anything added here must earn its place against a measured problem, not preference.
 - **Tests:** three buckets, each on its own trigger, and FOUR homes — the assertion half's two
   rungs, then the two triggered buckets. Every commit: the drift script
-  (`node scripts/test/drift.mjs`) then the assertion half — BOTH its rungs in ONE process,
-  `node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
-  — which spawns nothing and runs no git; it is driven by the git double in
+  (`node scripts/test/drift.mjs`) then the assertion half — BOTH its rungs in ONE runner invocation,
+  `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs` (the hook adds
+  `FORCE_COLOR=0 … --test-reporter=spec` so it can read the count) — whose TESTS spawn nothing and
+  run no git (the runner itself starts one process per file); it is driven by the git double in
   `scripts/test/fixtures/`. A test's rung follows what it OBSERVES, never how fast it is: a VALUE
   the engine produced (a verb's result, a refusal, anything `state.json` holds) is the UNIT rung,
   over an in-memory store, and only BYTES on disk are the FILE rung. On a trigger (CI, and

@@ -7,9 +7,10 @@
 // modules. engine-invocation requires two invocations in ONE process to be independent: each acts
 // on its own working directory, reads its own arguments, writes to its own streams. `constants.mjs`
 // used to freeze `ROOT` at module load and eleven path constants derived from it in the same pass,
-// which makes the FIRST caller's root the only root any module can ever see — and under the
-// assertion half's `--test-isolation=none`, where every test file shares one module graph, that is
-// every later test writing into the first test's directory. Threading six values through ~2,500
+// which makes the FIRST caller's root the only root any module can ever see — and wherever one
+// process serves several invocations (an in-process caller, or several tests in one test file, which
+// share one module graph), that is every later invocation writing into the first one's directory.
+// Threading six values through ~2,500
 // call sites to fix it would be a rewrite; the engine is a library with exactly one entry point, so
 // the values belong to the invocation, not to the call graph.
 //
@@ -17,8 +18,8 @@
 // `PROCESS_CONTEXT` below is a LIVE view (getters), so a caller that never enters through `main()`
 // — a test importing `state.mjs` directly and moving `CLAUDE_PROJECT_DIR` — sees exactly today's
 // behaviour, while a caller that does enter through `main()` is handed a snapshot for the duration
-// of that one call. `setInvocation()` is called once per invocation and never concurrently: the
-// assertion half is a SINGLE process running tests in sequence.
+// of that one call. `setInvocation()` is called once per invocation and never concurrently: an
+// in-process caller serves its invocations one at a time (a test file's tests run in sequence).
 //
 // Depends on Node built-ins and one leaf: `git-gateway.mjs`, which imports NOTHING from the engine,
 // so the cycle this module's own note warns about — anything imported here cycles back into
@@ -48,6 +49,8 @@ const PROCESS_CONTEXT = {
   get stdout() { return process.stdout; },
   get stderr() { return process.stderr; },
   get root() { return process.env.CLAUDE_PROJECT_DIR || process.cwd(); },
+  // 0.49.0: NO `nodeVersion` here — runtimeVersion()'s own default is the one authoritative answer
+  // for a context that carries none, this one included (Gate 2 M2).
 };
 
 /** The invocation in force. Never null: outside `main()` it is a live view of the process. */
@@ -65,8 +68,9 @@ export const installedInvocation = () => CURRENT;
  *  the PREVIOUS value back when it returns (see `installedInvocation`).
  *
  *  Deliberately NOT re-entrant and deliberately not refcounted: the engine has one entry point and
- *  the assertion half runs tests in sequence, so "the current invocation" is a stack of one. What
- *  it is NOT is permanent — an in-process invocation that stayed installed after returning made
+ *  an in-process caller serves its invocations one at a time, so "the current invocation" is a
+ *  stack of one. What it is NOT is permanent — an in-process invocation that stayed installed after
+ *  returning made
  *  every DIRECT lib call that followed read the invocation's temporary directory, where a child
  *  process had left the caller's own process view alone. */
 export function setInvocation(ctx) {
@@ -95,6 +99,15 @@ export const currentEnv = (ctx = invocation()) => ctx.env;
  *  `CLAUDE_PROJECT_DIR` at a project from anywhere, and the divergence warning exists precisely
  *  because those two can differ. */
 export const currentCwd = (ctx = invocation()) => ctx.cwd;
+
+/** The version of the Node runtime this invocation consults (0.49.0, engine-invocation's "The
+ *  runtime version the engine consults is supplied per call"). `main()` sets it from `io.nodeVersion`
+ *  and nothing else; THIS accessor is the ONE authoritative default — a context with no
+ *  `nodeVersion` (the command line, an in-process call that omits it, PROCESS_CONTEXT, a context
+ *  installed directly with `setInvocation({ … })`) answers with the running process's. Never read
+ *  `process.version` at the point of use — this accessor is the seam that lets a test exercise a Node
+ *  below the support floor without one installed. */
+export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;
 
 /** The streams this invocation writes to. `die()` already goes through `errStream()`; 3.4 routes the
  *  rest, so an in-process caller receives everything on its own streams and nothing reaches the

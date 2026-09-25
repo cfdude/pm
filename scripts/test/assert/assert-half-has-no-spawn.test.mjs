@@ -1,10 +1,11 @@
 // scripts/test/assert/assert-half-has-no-spawn.test.mjs
-// 5.2 — THE ASSERTION-HALF GUARD (design D5, suite-certification's "The assertion half spawns no
-// process and runs no git").
+// 5.2 — THE ASSERTION-HALF GUARD (design D5, suite-certification's "No test in the assertion half
+// spawns a process or runs git" — 0.49.0's restatement of the requirement this file enforces).
 //
-// WHAT IT IS FOR. The assertion half's whole value is that it runs in ONE process on every commit,
-// on the git double, without booting Node once per assertion. A single `spawnSync` added to one file
-// takes that back for the whole half — and the way it happens is not malice, it is a test that needs
+// WHAT IT IS FOR. The assertion half's whole value is that it runs on every commit, on the git
+// double, without booting Node or git once per assertion — the runner may start one process per
+// FILE, but no TEST starts one. A single `spawnSync` added to one file takes that back for the whole
+// half — and the way it happens is not malice, it is a test that needs
 // "just one real git call": the file goes on passing, the half goes on passing, and the property the
 // half was split out for is gone with nothing to say so. The suite-certification capability states
 // the guard as a SHALL for exactly that reason.
@@ -140,7 +141,7 @@ test("5.2 the assertion half spawns no child process and runs no git", () => {
   assert.ok(files.length > 40, `the assertion half holds ${files.length} files; a walk over an empty or nearly-empty directory is not a check`);
   const found = files.flatMap(f => violations(f, fs.readFileSync(path.join(HERE, f), "utf8")));
   assert.deepEqual(found, [],
-    "the assertion half runs in ONE process, on the git double, and starts no engine subprocess. A " +
+    "no test in the assertion half starts a process: it runs on the git double and starts no engine subprocess. A " +
     "file that needs real git belongs in scripts/test/functional/ — it runs on the trigger there, " +
     "which is what makes a real git call affordable. Do not weaken this guard: add the test to the " +
     "functional half instead, or extend fixtures/fake-git.mjs if the call is scenery.");
@@ -155,16 +156,131 @@ test("G-I4 the assertion half makes ZERO real git calls — a PATH shim counts t
   // still passed, because a shim that merely fails is tolerated by every caller.
   //
   // So the enforcement is a shim that does not fail anything — it COUNTS, and an `exit` listener
-  // installed with it fails the whole half when the count is not zero. That listener is what makes
-  // this hold for the files that run AFTER this one; the assertion here is the same fact, read
-  // directly, so a spawn is reported as a named test failure as well as a process status.
+  // installed with it fails the process's file when the count is not zero.
+  //
+  // RE-SCOPED FOR PER-FILE ISOLATION (0.49.0, design D3 row 2). THE PER-PROCESS EXIT LISTENER IS THE
+  // MECHANISM: the runner gives every file its own process, every rung file installs the shim itself
+  // (the walk below refuses one that does not), and each process's listener fails its own file —
+  // verified on Node 22, 24 and 26 that such a file is reported `✖ <file> … 'test failed'` and the run
+  // exits 1. What this test reads DIRECTLY is therefore THIS process only: that the shim is first on
+  // PATH here, and that this file has made no real git call so far. It no longer speaks for "the half
+  // up to this point", because no other file shares its process.
   assert.equal(process.env.PATH.split(path.delimiter)[0], SHIM_DIR,
-    "the git shim must be first on PATH, or a real `git` is reachable and this guard counts nothing");
+    "the git shim must be first on PATH in THIS process, or a real `git` is reachable and this " +
+    "guard counts nothing");
   const spawns = gitSpawns();
   assert.deepEqual(spawns, [],
-    `the assertion half ran ${spawns.length} real git invocation(s) up to this point: ${spawns.join(" | ")}. ` +
-    "The half runs in one process on the injected double; a real git call means something reached " +
-    "the gateway through the PROCESS context instead of through an installed invocation.");
+    `this file's process ran ${spawns.length} real git invocation(s): ${spawns.join(" | ")}. ` +
+    "The half runs on the injected double; a real git call means something reached the gateway " +
+    "through the PROCESS context instead of through an installed invocation.");
+});
+
+// ─────────────── 0.49.0 task 2.1 — EVERY RUNG FILE INSTALLS THE RUN-TIME COUNTER ITSELF ───────────────
+//
+// THE COUNTER ABOVE IS PER PROCESS. While the half shared one process, the shim one file installed
+// covered every file after it — and 13 file-rung files imported neither the shim nor a harness that
+// installs it, relying on the unit rung (handed first, every file importing `unit-harness`) to have
+// done it for them. Once the runner gives every file its own process, those 13 would run with the real
+// `git` reachable and nothing counting (design D3 row 1). So every rung file installs it ITSELF: a
+// direct import of the shim, or an import of one of the two harnesses that import it.
+//
+// THE MATCH IS ON AN IMPORT STATEMENT, NOT A MENTION: comments are stripped first, and the statement
+// must open a line with `import` and may span lines (`import { a,\n  b } from "…harness.mjs"`, the
+// shape `assert/conductor-33.test.mjs` uses) — a line-based match could not see the specifier there.
+
+/** The specifiers that install the shim at import time, built from parts so this file's own import of
+ *  the shim is not the only evidence a sample could lean on. */
+const SHIM_INSTALLERS = ["assert-git-shim", "assert-harness", "unit-harness"].map((m) => `../fixtures/${m}.mjs`);
+
+/** True when `src` installs the git shim at import time: an `import` statement (side-effect or
+ *  named, one line or several) whose specifier is the shim or one of the two harnesses. */
+export function installsShim(src) {
+  const code = stripComments(src);
+  const escaped = SHIM_INSTALLERS.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return new RegExp(`^\\s*import\\s*(?:[^;]*?\\bfrom\\s*)?["'](?:${escaped})["']`, "m").test(code);
+}
+
+test("2.1 every file in both rungs installs the git shim itself — the counter is per process", () => {
+  const rungs = [["unit", UNIT], ["assert", HERE]];  // UNIT is declared below; read at run time
+  const files = rungs.flatMap(([rung, dir]) =>
+    fs.readdirSync(dir).filter((f) => f.endsWith(".test.mjs")).sort().map((f) => [`${rung}/${f}`, path.join(dir, f)]));
+  assert.ok(files.length > 100, `both rungs hold ${files.length} files; a walk over nearly nothing is not a check`);
+  const missing = files.filter(([, p]) => !installsShim(fs.readFileSync(p, "utf8"))).map(([n]) => n);
+  assert.deepEqual(missing, [],
+    `these rung files do not install the run-time git counter: ${missing.join(", ")}. Under the ` +
+    "runner's per-file isolation each file is its own process, so a file that relies on another file " +
+    'having installed the shim runs with the real `git` reachable and nothing counting. Add `import ' +
+    '"../fixtures/assert-git-shim.mjs";` as its first import (or import one of the two harnesses).');
+});
+
+// ─────────────── Gate 2 I3 — A HARNESS IS AN INSTALLER ONLY WHILE IT INSTALLS ───────────────
+//
+// The walk above trusts two harnesses as installers, and 124 of the 141 rung files install ONLY through
+// one of them. So each listed harness must itself be seen to install the shim — directly, or through
+// another listed harness (unit-harness reaches it through assert-harness). Without this, removing the
+// shim import from `fixtures/assert-harness.mjs` left 1298/1298 green while nothing counted.
+
+const FIXTURES = path.join(HERE, "..", "fixtures");
+const SHIM_MODULE = "assert-git-shim";
+
+/** True when fixture module `name` (e.g. "assert-harness") installs the shim at import time: it IS the
+ *  shim, it imports `./assert-git-shim.mjs`, or it imports another fixture that does. `read(name)`
+ *  returns that fixture's source. Cycles terminate: a module already being walked installs nothing. */
+export function fixtureInstallsShim(name, read, seen = new Set()) {
+  if (name === SHIM_MODULE) return true;
+  if (seen.has(name)) return false;
+  seen.add(name);
+  const code = stripComments(read(name));
+  for (const m of code.matchAll(/^\s*import\s*(?:[^;]*?\bfrom\s*)?["']\.\/([\w-]+)\.mjs["']/gm)) {
+    if (fixtureInstallsShim(m[1], read, seen)) return true;
+  }
+  return false;
+}
+
+test("I3 every harness the walk trusts as an installer does install the git shim itself", () => {
+  const read = (name) => fs.readFileSync(path.join(FIXTURES, `${name}.mjs`), "utf8");
+  const trusted = SHIM_INSTALLERS.map((s) => /\/([\w-]+)\.mjs$/.exec(s)[1]).filter((n) => n !== SHIM_MODULE);
+  assert.deepEqual(trusted, ["assert-harness", "unit-harness"], "the walk's trusted harnesses changed — review this list");
+  const notInstalling = trusted.filter((n) => !fixtureInstallsShim(n, read));
+  assert.deepEqual(notInstalling, [],
+    `these harnesses are trusted as shim installers by the walk above but no longer install it: ${notInstalling.join(", ")}. ` +
+    "Every rung file that imports one of them would run with the real git reachable and nothing counting.");
+});
+
+test("I3 the harness check DISCRIMINATES — direct, transitive, neither, and a comment", () => {
+  const src = {
+    direct: 'import "./assert-git-shim.mjs";\n',
+    transitive: 'import { invokeEngine } from "./direct.mjs";\n',
+    neither: 'import { fakeGit } from "./fake-git.mjs";\n',
+    "fake-git": "export const fakeGit = 1;\n",
+    comment: '// import "./assert-git-shim.mjs";\nconst a = 1;\n',
+  };
+  const read = (n) => src[n];
+  assert.equal(fixtureInstallsShim("direct", read), true);
+  assert.equal(fixtureInstallsShim("transitive", read), true, "unit-harness's shape: through another harness");
+  assert.equal(fixtureInstallsShim("neither", read), false);
+  assert.equal(fixtureInstallsShim("comment", read), false, "a comment naming the shim is not an install");
+});
+
+test("2.1 the shim-install walk DISCRIMINATES — imports install it, a mention in a comment does not", () => {
+  const spec = (m) => `"../fixtures/${m}.mjs"`;
+  const SHIM = "assert-git-shim";
+  // Installs: a side-effect import, a named import, each harness, and a TWO-LINE import.
+  assert.equal(installsShim(`import ${spec(SHIM)};\nimport { test } from "node:test";\n`), true,
+    "a side-effect import of the shim installs it");
+  assert.equal(installsShim(`import { SHIM_DIR } from ${spec(SHIM)};\n`), true, "a named import installs it");
+  assert.equal(installsShim(`import { run } from ${spec(["assert", "harness"].join("-"))};\n`), true,
+    "the file-rung harness installs it");
+  assert.equal(installsShim(`import { memoryEngine } from ${spec(["unit", "harness"].join("-"))};\n`), true,
+    "the unit-rung harness installs it");
+  assert.equal(installsShim(`import { tmpRepo, run,\n  readState } from ${spec(["assert", "harness"].join("-"))};\n`), true,
+    "a TWO-LINE import installs it — the shape assert/conductor-33 uses, which a line-based match misses");
+  // Does not install: nothing at all, a mention only in comments, and an unrelated fixture.
+  assert.equal(installsShim(`import { test } from "node:test";\n`), false, "no import installs nothing");
+  assert.equal(installsShim(`// import ${spec(SHIM)};\n/* import ${spec(SHIM)}; */\nconst a = 1;\n`), false,
+    "a comment naming the shim is NOT an install");
+  assert.equal(installsShim(`import { x } from ${spec("helpers")};\n`), false,
+    "an unrelated fixture does not install the shim");
 });
 
 test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the stated reason", () => {
@@ -194,8 +310,8 @@ test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the s
 //
 // A unit-rung file SHALL perform no filesystem work at all: it SHALL NOT import the filesystem module,
 // SHALL NOT read, write, create or remove a path, and SHALL NOT flush a file to disk
-// (suite-certification's "The assertion half spawns no process and runs no git", whose UNIT RUNG
-// paragraph this is the enforcement of).
+// (suite-certification's "No test in the assertion half spawns a process or runs git", whose UNIT
+// RUNG paragraph this is the enforcement of).
 //
 // WHY IT IS A SEPARATE WALK FROM THE ONE ABOVE. The two checks are the same FUNCTION and different
 // SUBJECTS: the half's walk hands `violations()` no rung, because a spawn is a violation anywhere in
@@ -205,7 +321,7 @@ test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the s
 
 const UNIT = path.join(HERE, "..", "unit");
 
-test("2.1 the unit rung performs no filesystem work at all, and lives in one process with the half", () => {
+test("2.1 the unit rung performs no filesystem work at all, and is a rung of the half", () => {
   const files = fs.readdirSync(UNIT).filter(f => f.endsWith(".test.mjs")).sort();
   // ─── 2.5 — THE NON-VACUITY ASSERTION, AND ITS NUMBER IS THIS RUNG'S OWN ───
   //

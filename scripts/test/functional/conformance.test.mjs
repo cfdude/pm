@@ -355,8 +355,9 @@ test("conformance: the entry point never ends the calling process, whatever it i
 });
 
 test("conformance: main() RETURNS its status — it is not a promise", () => {
-  // WHY THIS IS A REQUIREMENT AND NOT A STYLE CHOICE. The assertion half runs one process for the
-  // whole suite, and 1,624 of the suite's 1,852 `test(...)` callbacks are SYNCHRONOUS. `await` inside
+  // WHY THIS IS A REQUIREMENT AND NOT A STYLE CHOICE. The assertion half calls the engine IN PROCESS,
+  // many invocations per test file, and 1,624 of the suite's 1,852 `test(...)` callbacks are
+  // SYNCHRONOUS. `await` inside
   // a sync callback is a syntax error, so an entry point that answered with a Promise would leave two
   // options, both bad: convert 1,624 callbacks, or keep spawning a child — which is the process
   // boundary the assertion half exists to remove. A sync status is what makes the in-process `run()`
@@ -459,8 +460,9 @@ test("conformance: the engine registers no process exit handler", () => {
   // 2.5 moved the activity log's instrumentation out of `process.on("exit")` and into main()'s own
   // control flow. The exit-handler shape was argued for in a comment that is now false — refusals
   // are THROWN and caught, so the `finally` it feared losing runs on every path — and leaving it
-  // would be a defect specific to the assertion half: in one shared process every call would
-  // register another listener, none would fire until the runner exited, and main() would have
+  // would be a defect for any in-process caller: in one process serving many invocations (each
+  // assertion-half test file's, under per-file isolation) every call would register another
+  // listener, none would fire until that process exited, and main() would have
   // returned long before the diff it owes. A source guard, so the shape cannot come back silently.
   const src = fs.readFileSync(path.join(HERE, "..", "..", "conductor.mjs"), "utf8")
     .replace(/\/\/[^\n]*/g, "")

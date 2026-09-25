@@ -12,6 +12,7 @@
 // `"git"` without importing the hermetic module, because the double's canned answers are git's
 // output. Without that, the narrowing looks like a convenience.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import "../fixtures/hermetic-git.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";

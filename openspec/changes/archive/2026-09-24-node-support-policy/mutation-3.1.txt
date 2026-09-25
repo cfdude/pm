@@ -1,0 +1,253 @@
+# mutation-3.1 — each mutation in a SCRATCH COPY (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree), originals restored after each; node v26.9.0.
+# Each regression guard of 3.1 is SEEN to fail on its mutation (exit=1):
+#  (a) line emitted always -> the at/above guard; (b) unparseable read as 0 -> the unparseable guard;
+#  (c) line emitted before brief()'s dormancy return -> the uninitialized guard;
+#  (d) line built in buildBrief() instead of brief() -> the render/snapshot guard.
+# (A first attempt at (d) failed to insert its import and is not shown; the run below is the corrected one.)
+
+=== (a) the line emitted ALWAYS (both null returns removed) -> the at/above-floor guard ===
+33,34d32
+<   if (!m) return null;
+<   if (Number(m[1]) >= NODE_FLOOR_MAJOR) return null;
+✖ below the support floor, brief's context STARTS with one line naming the version and the floor (4.149875ms)
+✔ two invocations in one process under two different below-floor versions each name their own (0.785458ms)
+✔ no supplied version: the invocation carries the PROCESS's version while the call is in progress (0.40725ms)
+✖ at or above the support floor — an unsupported odd major above it included — there is no line (0.44525ms)
+✖ a version that cannot be parsed gets no line — cannot tell is not below the floor (0.391292ms)
+✔ an uninitialized repository stays silent below the support floor (0.210041ms)
+✔ the rendered PROJECT.md and the PreCompact snapshot never carry the line (2.490667ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.938458
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ below the support floor, brief's context STARTS with one line naming the version and the floor (4.149875ms)
+  AssertionError [ERR_ASSERTION]: everything after the line is exactly what a supported Node prints
+  + actual - expected
+  
+  + '⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n' +
+  - "⚠ Node v22.23.3 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n" +
+  -   '⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n' +
+      '\n' +
+      "CONDUCTOR STATE — where we are and what's next\n" +
+      'Progress is claimed completion — ticked checkboxes, not verified delivery.\n' +
+      '\n' +
+      'NOW: (no active epic set)\n' +
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/unit/runtime-support.test.mjs:47:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n\nCONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.",
+    expected: "⚠ Node v22.23.3 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n\nCONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.",
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ at or above the support floor — an unsupported odd major above it included — there is no line (0.44525ms)
+  AssertionError [ERR_ASSERTION]: no runtime-support line under v22.23.3
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/unit/runtime-support.test.mjs:79:12
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "⚠ Node v22.23.3 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n\nCONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.",
+    expected: /^⚠ Node .* is below pm's support floor \(Node \d+, the oldest supported LTS line\)/m,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a version that cannot be parsed gets no line — cannot tell is not below the floor (0.391292ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /^⚠ Node .* is below pm's support floor \(Node \d+, the oldest supported LTS line\)/m. Input:
+  
+  "⚠ Node garbage is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n" +
+    '⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n' +
+    '\n' +
+    "CONDUCTOR STATE — where we are and what's next\n" +
+    'Progress is claimed completion — ticked checkboxes, not verified delivery.\n' +
+    '\n' +
+    'NOW: (no active epic set)\n' +
+    '\n' +
+    "LIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n" +
+    '\n' +
+    'RULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n' +
+    '\n' +
+    'Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.'
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/unit/runtime-support.test.mjs:85:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "⚠ Node garbage is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n\nCONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.",
+    expected: /^⚠ Node .* is below pm's support floor \(Node \d+, the oldest supported LTS line\)/m,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+exit=1
+=== (b) an unparseable major read as 0 -> the unparseable guard ===
+33,34c33
+<   if (!m) return null;
+<   if (Number(m[1]) >= NODE_FLOOR_MAJOR) return null;
+---
+>   if (Number(m ? m[1] : 0) >= NODE_FLOOR_MAJOR) return null;
+✔ below the support floor, brief's context STARTS with one line naming the version and the floor (3.576625ms)
+✔ two invocations in one process under two different below-floor versions each name their own (0.74025ms)
+✔ no supplied version: the invocation carries the PROCESS's version while the call is in progress (0.386875ms)
+✔ at or above the support floor — an unsupported odd major above it included — there is no line (0.930792ms)
+✖ a version that cannot be parsed gets no line — cannot tell is not below the floor (0.727208ms)
+✔ an uninitialized repository stays silent below the support floor (0.212709ms)
+✔ the rendered PROJECT.md and the PreCompact snapshot never carry the line (2.130041ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.191833
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a version that cannot be parsed gets no line — cannot tell is not below the floor (0.727208ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /^⚠ Node .* is below pm's support floor \(Node \d+, the oldest supported LTS line\)/m. Input:
+  
+  "⚠ Node garbage is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n" +
+    '⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n' +
+    '\n' +
+    "CONDUCTOR STATE — where we are and what's next\n" +
+    'Progress is claimed completion — ticked checkboxes, not verified delivery.\n' +
+    '\n' +
+    'NOW: (no active epic set)\n' +
+    '\n' +
+    "LIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n" +
+    '\n' +
+    'RULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n' +
+    '\n' +
+    'Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.'
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/unit/runtime-support.test.mjs:85:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "⚠ Node garbage is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n\nCONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.",
+    expected: /^⚠ Node .* is below pm's support floor \(Node \d+, the oldest supported LTS line\)/m,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+exit=1
+=== (c) the line emitted BEFORE brief()'s dormancy return -> the uninitialized guard ===
+130a131
+>   { const early = supportFloorLine(runtimeVersion()); if (early && !isInitialized()) { outStream().write(early + "\n"); return; } }
+✔ below the support floor, brief's context STARTS with one line naming the version and the floor (3.6715ms)
+✔ two invocations in one process under two different below-floor versions each name their own (0.712167ms)
+✔ no supplied version: the invocation carries the PROCESS's version while the call is in progress (0.411208ms)
+✔ at or above the support floor — an unsupported odd major above it included — there is no line (1.031667ms)
+✔ a version that cannot be parsed gets no line — cannot tell is not below the floor (0.52525ms)
+✖ an uninitialized repository stays silent below the support floor (0.919ms)
+✔ the rendered PROJECT.md and the PreCompact snapshot never carry the line (3.290125ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.612375
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an uninitialized repository stays silent below the support floor (0.919ms)
+  AssertionError [ERR_ASSERTION]: brief must print nothing before /pm:init, whatever the Node: ⚠ Node v20.20.2 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.
+  
+  + actual - expected
+  
+  + "⚠ Node v20.20.2 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n"
+  - ''
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/unit/runtime-support.test.mjs:92:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "⚠ Node v20.20.2 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n",
+    expected: '',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (d) the line built in buildBrief() instead of brief() -> the render/snapshot guard ===
+140,141c140
+<   const floorLine = supportFloorLine(runtimeVersion());
+<   const context = floorLine ? [floorLine, brief].join("\n") : brief;
+---
+>   const context = brief;
+5a6,8
+> import { supportFloorLine } from "./runtime-support.mjs";
+> import { runtimeVersion as __rv } from "./invocation.mjs";
+> const runtimeVersion = __rv;
+69a73
+>   { const fl = supportFloorLine(runtimeVersion()); if (fl) L.push(fl); }
+✔ below the support floor, brief's context STARTS with one line naming the version and the floor (3.492ms)
+✔ two invocations in one process under two different below-floor versions each name their own (0.725709ms)
+✔ no supplied version: the invocation carries the PROCESS's version while the call is in progress (0.387958ms)
+✔ at or above the support floor — an unsupported odd major above it included — there is no line (1.009042ms)
+✔ a version that cannot be parsed gets no line — cannot tell is not below the floor (0.374ms)
+✔ an uninitialized repository stays silent below the support floor (0.206916ms)
+✖ the rendered PROJECT.md and the PreCompact snapshot never carry the line (2.11875ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.34125
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the rendered PROJECT.md and the PreCompact snapshot never carry the line (2.11875ms)
+  AssertionError [ERR_ASSERTION]: PROJECT.md is a tracked file: one machine's runtime must never be written into it
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/unit/runtime-support.test.mjs:99:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m31/tree/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "# PROJECT — Conductor Index\n\n> GENERATED by the `pm` plugin — do not hand-edit. Source of truth is\n> `.conductor/state.json` (ordering, detours, links) + OpenSpec `tasks.md` (stories).\n> Regenerate: `/pm:status` (or `node scripts/conductor.mjs render`).\n> Last rendered: 2026-09-25T02:44:28.666Z\n\n## Now\n\n_No active epic set._\n\n## Detour stack\n\n_Empty — no work is paused._\n\n## Epics\n\n> Progress is claimed completion — ticked checkboxes, not verified delivery.\n\n| Priority | Epic | Lane | Role | Status | Progress | Links |\n|----------|------|------|------|--------|----------|-------|\n\n## Recent detours\n\n_None logged._\n\n## Briefing (what a fresh session sees)\n\n```\n⚠ Node v20.20.2 is below pm's support floor (Node 22, the oldest supported LTS line) — pm still runs, but this Node no longer receives security fixes; upgrade it.\n⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n\nCONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.\n```\n",
+    expected: /^⚠ Node .* is below pm's support floor \(Node \d+, the oldest supported LTS line\)/m,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+exit=1

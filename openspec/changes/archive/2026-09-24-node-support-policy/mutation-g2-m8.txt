@@ -1,0 +1,17 @@
+# mutation-g2-m8 — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/g2m8/tree; node v26.9.0.
+# The old spawnAll's 3.1 test took 20.2 s with a 3 s bound (the grandchild held the pipe); the new one fails at 3.05 s naming the bound.
+# (wall_s is the whole file's process, which still waits for the orphaned sleep; the TEST duration is the bound.)
+
+=== RED: the new M8 guard against HEAD (9b94c9a)'s spawnAll, which resolves only on close ===
+exit=1
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the timer must RESOLVE { timedOut: true } itself, not wait for close
+=== BEHAVIOUR (old spawnAll, bound shortened to 3 s): a child whose backgrounded grandchild (sleep 20) holds stdout open ===
+exit=1 wall_s=20
+✖ 3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs (20213.746459ms)
+✖ 3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs (20213.746459ms)
+=== BEHAVIOUR (new spawnAll, bound shortened to 3 s): a child whose backgrounded grandchild (sleep 20) holds stdout open ===
+exit=1 wall_s=21
+✖ 3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs (3054.72075ms)
+✖ 3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs (3054.72075ms)

@@ -1,0 +1,36 @@
+# mutation-g2-i2 — Gate 2 I2: each of certify.mjs's count guards removed in a scratch copy (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/g2i2/tree); node v26.9.0. Before the fix lens A showed all four stayed green; now each is refused (exit=1).
+
+=== (i) --test-reporter=spec removed from the runner argv ===
+72c72
+<   return { args: ["--test", "--test-reporter=spec", ...files], env: { ...env, FORCE_COLOR: "0" } };
+---
+>   return { args: ["--test", ...files], env: { ...env, FORCE_COLOR: "0" } };
+ℹ fail 1
+✖ I2 the bucket runner is started with --test-reporter=spec and FORCE_COLOR=0, whatever the environment says (0.696667ms)
+ℹ pass 2
+exit=1
+=== (ii) FORCE_COLOR: "0" removed from the runner env ===
+72c72
+<   return { args: ["--test", "--test-reporter=spec", ...files], env: { ...env, FORCE_COLOR: "0" } };
+---
+>   return { args: ["--test", "--test-reporter=spec", ...files], env: { ...env } };
+ℹ fail 1
+✖ I2 the bucket runner is started with --test-reporter=spec and FORCE_COLOR=0, whatever the environment says (0.648584ms)
+ℹ pass 2
+exit=1
+=== (iii) the null (unreadable) refusal removed ===
+92,94d91
+<   if (counts.tests === null || counts.pass === null) {
+<     return `certify: the ${label} passed but its count could not be read (no '^ℹ tests' / '^ℹ pass' line). Nothing recorded.\n`;
+<   }
+ℹ fail 1
+✖ I2 countRefusal() records nothing over a null, zero, TAP-read or coloured count, and passes a real one (0.335084ms)
+ℹ pass 2
+exit=1
+=== (iv) the zero refusal removed ===
+95d94
+<   if (counts.tests === 0) return `certify: the ${label} ran ZERO tests. Nothing recorded — a run of nothing is not a pass.\n`;
+ℹ fail 1
+✖ I2 countRefusal() records nothing over a null, zero, TAP-read or coloured count, and passes a real one (0.349375ms)
+ℹ pass 2
+exit=1

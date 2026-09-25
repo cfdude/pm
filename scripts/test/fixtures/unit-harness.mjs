@@ -64,7 +64,10 @@ const VIRTUAL_ROOT = "/pm-unit-rung/no-such-directory";
  *  message a SUCCESSFUL verb printed uses `engine.combined([...])`. */
 export function memoryEngine(seed) {
   const store = memoryStore(seed);
-  const result = (args, { env, input } = {}) => invokeEngine(args, { cwd: VIRTUAL_ROOT, store, env, input });
+  // `nodeVersion` (0.49.0): the runtime version this ONE invocation consults — how the unit rung
+  // exercises a Node below the support floor without one installed. Absent, the process's own.
+  const result = (args, { env, input, nodeVersion } = {}) =>
+    invokeEngine(args, { cwd: VIRTUAL_ROOT, store, env, input, nodeVersion });
   const run = (args, opts) => {
     const r = result(args, opts);
     if (r.status !== 0) {

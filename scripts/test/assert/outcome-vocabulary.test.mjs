@@ -15,6 +15,7 @@
 // derivation above it. The literal is the point: growing the vocabulary must be a conscious edit
 // here, stating what the new value means, rather than a filter that quietly changes shape.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { KNOWN_OUTCOMES } from "../../lib/disposition.mjs";

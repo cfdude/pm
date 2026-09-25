@@ -1,0 +1,51 @@
+# mutation-2.4c — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m24c/tree (never this checkout); node v26.9.0
+# mutation: the exit listener's 'process.exitCode = 1;' removed from fixtures/assert-git-shim.mjs
+# expected: functional/git-shim.test.mjs FAILS (the run no longer fails on a real git call)
+# diff:
+89d88
+<   process.exitCode = 1;
+
+✖ 2.4c a real git call in a file's OWN process fails the run — the exit listener reports the argv (368.754375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 509.566042
+
+✖ failing tests:
+
+test at scripts/test/functional/git-shim.test.mjs:26:1
+✖ 2.4c a real git call in a file's OWN process fails the run — the exit listener reports the argv (368.754375ms)
+  AssertionError [ERR_ASSERTION]: a file whose process reached the real git must fail the run, and the run exited 0: ✔ reaches git through a library call, and tolerates its failure like every real caller (117.629334ms)
+  
+  assertion half: 1 REAL 'git' invocation(s) reached the shim — the half must run no git (suite-certification's 'No test in the assertion half spawns a process or runs git'):
+    git --version
+  A direct lib call outside `main()` leaves invocation() on the live process context, so gitOps() builds the real gateway. Drive it through the harness, or hand it a fake.
+  ℹ tests 1
+  ℹ suites 0
+  ℹ pass 1
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 235.571917
+  
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m24c/tree/scripts/test/functional/git-shim.test.mjs:45:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1

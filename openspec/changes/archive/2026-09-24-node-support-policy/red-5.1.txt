@@ -1,0 +1,51 @@
+# red-5.1 — captured 2026-09-24 against the pre-GREEN tree (ccc00e7 + the new scan in the assert twin); node v26.9.0
+# command: node --test scripts/test/assert/state-file-refuses-to-guess.test.mjs — the scan names functional/state-file-refuses-to-guess.test.mjs:299
+✔ 1.1: a conflict marker does not wipe the record — add-epic exits 11 and writes nothing (53.663791ms)
+✔ 1.1: a truncated file is not replaced by sync, upgrade or init (121.267875ms)
+✔ 1.1: the session brief WARNS instead of reporting an empty record, and writes nothing (46.422333ms)
+✔ 1.1: a mutating verb refuses a wrong-shape file, naming the member (39.572917ms)
+✔ 1.1: an EMPTY file is refused, not read as an empty record (52.109958ms)
+✔ 1.3: with no state.json every hook exits 0, prints nothing and creates no file (1.992625ms)
+✔ 2.1(a): gate-guard blocks on a conflicted state file, naming the file and a git command (54.645ms)
+✔ 2.1(b): gate-guard does not crash on a wrong-shape file — exit 2, not a TypeError (54.227833ms)
+✔ 2.1(c): the session brief carries the warning instead of a guessed record, and writes nothing (57.207875ms)
+✔ 2.1(d): commit-nudge writes nothing after a commit lands over an unreadable file, and exits 2 (60.316708ms)
+✔ 2.1(e) REGRESSION GUARD: a pre-compaction snapshot writes nothing and does not block compaction (54.734875ms)
+✔ G2-I5 shape: a non-object epics element and a non-array detourStack are each refused (131.547417ms)
+✖ 5.1 #220: every asynchronous wait on a child's close or exit is bounded by a timer that kills it (131.282417ms)
+✔ 5.1 the unbounded-wait scan DISCRIMINATES — each form is refused unbounded and accepted bounded (0.19ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 999.311792
+
+✖ failing tests:
+
+test at scripts/test/assert/state-file-refuses-to-guess.test.mjs:279:1
+✖ 5.1 #220: every asynchronous wait on a child's close or exit is bounded by a timer that kills it (131.282417ms)
+  AssertionError [ERR_ASSERTION]: these helpers wait on a child's close/exit event with no bound, so a hung child hangs the run forever (#220). Arm a timer in the same function that kills the child and fails the test naming the invocation and the bound — the shape functional/verb-surface.test.mjs's 30 s wait uses.
+  + actual - expected
+  
+  + [
+  +   'scripts/test/functional/state-file-refuses-to-guess.test.mjs:299'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/state-file-refuses-to-guess.test.mjs:283:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scripts/test/functional/state-file-refuses-to-guess.test.mjs:299' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

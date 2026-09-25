@@ -291,7 +291,7 @@ test("every dispatch-table subcommand is mentioned somewhere in README.md", () =
 // ---------- pre-commit hook: THE THREE TESTS THAT MUST SPAWN ----------
 //
 // THE HOOK'S SHAPE IS ASSERTED IN THE ASSERTION TWIN, and it moved there in 6.4: the test
-// that checked the hook EXISTS, is EXECUTABLE, runs the assertion half in one process, derives
+// that checked the hook EXISTS, is EXECUTABLE, runs the assertion half in one runner invocation, derives
 // the floor's `declared` from the index and hands the enrolment rule to the drift script reads
 // FILES AND SPAWNS NOTHING — so by D5's placement rule it belongs on the per-commit path, and
 // the fast half is where a hook that lost its drift step or took the enrolment check back
@@ -408,44 +408,156 @@ test(".githooks/pre-commit dumps full node --test output and fails the commit wh
   assert.doesNotMatch(combined, /^pre-commit: \d+\/\d+ passing/m, "must not print the success summary on failure");
 });
 
-test(".githooks/pre-commit runs the half when a rung holds no test file — an unresolved glob must never reach node --test", () => {
-  // THE NODE-18 DIVERGENCE, and this is the test for it. Found on CI (PR #217), reproduced against
-  // v18.20.8 before it was fixed: the hook's runner is handed TWO rung globs, `/bin/sh` leaves a
-  // pattern that matches NOTHING as a LITERAL (POSIX sh has no nullglob -- dash on the CI runner and
-  // bash-as-sh on macOS both do it), and the two Node majors then DISAGREE about the literal:
+test(".githooks/pre-commit runs the half when a rung holds no test file — one unmatched rung does not stop the other", () => {
+  // SUITE-CERTIFICATION'S "ONE RUNG THAT MATCHES NOTHING DOES NOT STOP THE OTHER" (0.49.0), and the
+  // test that has guarded it since it was a Node-18 bug. The fixture's unit rung holds only `.keep`,
+  // so `/bin/sh` hands `scripts/test/unit/*.test.mjs` to the runner as a LITERAL (POSIX sh has no
+  // nullglob), while the file rung's pattern expands to one real file.
   //
-  //   * v18.20.8 REFUSES it -- `Could not find '/tmp/…/scripts/test/unit/*.test.mjs'`, exit 1 -- so
-  //     the commit fails and the hook's own message says "tests FAILED", which blames the suite for
-  //     a pattern that never resolved.
-  //   * v26.9.0 ignores a pattern it cannot resolve and runs the files that DID match.
-  //
-  // Same tree, same commit, opposite verdicts from the gate every commit passes through -- and on the
-  // CI runner (Node 18) it took the five hook tests in this file down with it. The divergence is the
-  // defect, not the fixture: the hook's own comment claims the floor is version-independent, and a
-  // gate that answers differently on the runner than on the developer's machine is exactly what that
-  // claim forbids.
+  // ITS HISTORY. Found on CI (PR #217) and reproduced against v18.20.8: Node 18 REFUSED the literal —
+  // `Could not find '/tmp/…/scripts/test/unit/*.test.mjs'`, exit 1 — so the commit failed with a
+  // message that blamed the suite, while v26.9.0 ran the files that did match. 0.48.x answered it with
+  // a `[ -f ]` loop that resolved the file set before the runner saw it. 0.49.0 dropped Node 18 and 20
+  // and deleted the loop: every supported Node (22, 24, 26, measured on the real binaries) runs an
+  // unmatched literal pattern as zero files, so the runner's command line carries the two globs again.
+  // The assertions are unchanged, and they now hold on whatever supported major runs them: no
+  // `Could not find`, exit 0, and the file that exists still ran.
   //
   // THE FIXTURE'S TREE IS A SHAPE THE SUITE ALREADY CALLS LEGITIMATE. certification.mjs's `testIdsIn`
   // states it: "A MISSING DIRECTORY IS AN EMPTY ONE, not a crash … the functional half's hook tests
   // build a throwaway tree with only the directories their subject needs". So the rung directory here
   // EXISTS and holds no test file, which is the sharper of the two cases: the property is that the
   // PATTERN resolves, never that the directory is present.
-  //
-  // THIS TEST IS RED ON NODE 18 AND GREEN ON NODE 26 BEFORE THE FIX, and that is not a weakness in
-  // it -- the divergence IS the subject. Under v18.20.8 it failed on `Could not find`; under v26.9.0
-  // it passed, which is why the bug reached a release at all.
   const r = runHookAgainstFixture(
     `test("the one that does exist", () => { assert.ok(true); });`,
     { extraFiles: { "scripts/test/unit/.keep": "" } },
   );
   const combined = (r.stdout || "") + (r.stderr || "");
   assert.doesNotMatch(combined, /Could not find/,
-    "a rung glob that resolves to nothing was handed to node --test. On the Node the CI runner uses " +
-    "(18) that is a hard refusal, so the commit fails with a message that blames the suite: the " +
-    `runner's file set must be resolved before it is handed over. Output was: ${combined}`);
+    "a rung glob that resolves to nothing made the runner refuse: on a supported Node an unmatched " +
+    "pattern runs as zero files, and one empty rung must not stop the other. " +
+    `Output was: ${combined}`);
   assert.equal(r.status, 0, `the hook must run the half that exists: ${combined}`);
   assert.match(combined, /pre-commit: 1\/1 passing/,
     "and the file that DOES exist must still have run — the fix must not be 'run nothing'");
+});
+
+test("1.1 the floor compares a count when the environment forces colour — FORCE_COLOR=1 does not skip it", () => {
+  // THE LATENT DEFECT 0.49.0 FOUND (design D4). The spec reporter colours its summary when the
+  // environment forces colour, every summary line then begins `ESC[34mℹ`, and a `^ℹ tests ` anchor
+  // matches NOTHING. The old hook read that as "summary line not found", printed "tests passing" and
+  // exited 0 WITH THE FLOOR SKIPPED — so any colour-forcing environment disabled the floor silently.
+  // It reproduces only where the runner's default non-TTY reporter is spec (Node 24+); on 22 the
+  // default is TAP, which is never coloured. The hook now forces the reporter AND `FORCE_COLOR=0`, so
+  // the count is read — which is what `2/2 passing` proves: the line prints only from a parsed count.
+  const r = runHookAgainstFixture(
+    `test("a passing test", () => { assert.ok(true); });\ntest("another passing test", () => { assert.ok(true); });`,
+    { env: { FORCE_COLOR: "1" } },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.equal(r.status, 0, `the hook must pass a passing half under FORCE_COLOR=1: ${combined}`);
+  assert.match(combined, /pre-commit: 2\/2 passing/,
+    "under FORCE_COLOR=1 the hook did not read the runner's count, so the floor compared nothing — " +
+    `the colour setting disabled the gate. Output was: ${combined}`);
+});
+
+test("1.2 a runner that exits 0 and prints no summary is REFUSED — 'the count could not be read'", () => {
+  // THE UNREADABLE-COUNT REFUSAL, durable (Gate 1 I2). A stub `node` goes first on PATH: a shell
+  // script that exits 0 and prints nothing. It answers the drift step too (exit 0, so drift passes),
+  // which is why the assertion is on the RUNNER's refusal text and never on the exit status alone —
+  // a non-zero exit from drift would satisfy "non-zero" and prove nothing about the floor.
+  const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-stub-node-"));
+  try {
+    fs.writeFileSync(path.join(stubDir, "node"), "#!/bin/sh\nexit 0\n");
+    fs.chmodSync(path.join(stubDir, "node"), 0o755);
+    const r = runHookAgainstFixture(
+      `test("a passing test", () => { assert.ok(true); });`,
+      { pathPrepend: stubDir },
+    );
+    const combined = (r.stdout || "") + (r.stderr || "");
+    assert.notEqual(r.status, 0,
+      `a runner whose count cannot be read must not pass the commit. Output was: ${combined}`);
+    assert.match(combined, /pre-commit: ABORT -- the count could not be read/,
+      `the refusal must say the COUNT could not be read, not that the tests failed. Output was: ${combined}`);
+    assert.doesNotMatch(combined, /tests passing/,
+      "the hook reported the tests as passing on a run it could not count");
+  } finally {
+    fs.rmSync(stubDir, { recursive: true, force: true });
+  }
+});
+
+test("1.3 both rungs empty is REFUSED naming both rungs, and default discovery is never reached", () => {
+  // REGRESSION GUARD, and it passes before 1.4 through the resolved-list loop's empty-list abort.
+  // After 1.4 there is no loop: the runner is handed the two globs literally, runs zero files, and the
+  // hook refuses on the COUNT — `declared = 0` — with the same message. Either way the property is
+  // the one the spec names: at no point does `node --test` run without a path, because its default
+  // discovery walks the tree and would reach the triggered buckets. The marker sits in the sweep
+  // bucket (a functional-half marker would need an assertion twin, and that twin would be a rung file,
+  // which is the one thing this fixture must not hold); default discovery would run it, and its title
+  // must never appear.
+  const r = runHookAgainstFixture("", {
+    withFixture: false,
+    extraFiles: {
+      "scripts/test/unit/.keep": "",
+      "scripts/test/assert/.keep": "",
+      "scripts/test/sweeps/marker.test.mjs":
+        'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+        'test("1.3 MARKER default discovery ran a triggered bucket", () => {\n' +
+        '  assert.fail("default discovery reached the sweep bucket");\n});\n',
+    },
+  });
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.notEqual(r.status, 0, `two empty rungs must refuse the commit: ${combined}`);
+  assert.match(combined, /neither rung of the assertion half holds a \*\.test\.mjs file/,
+    `the refusal must say neither rung holds a test file. Output was: ${combined}`);
+  assert.match(combined, /scripts\/test\/unit\//, "the refusal must name the unit rung");
+  assert.match(combined, /scripts\/test\/assert\//, "the refusal must name the file rung");
+  assert.doesNotMatch(combined, /1\.3 MARKER/,
+    "default discovery ran: the marker in a triggered bucket reached the hook's output");
+});
+
+test("1.4 a COLLAPSED run — the index declares tests, the runner reports 0 — is a shortfall, not an empty rung", () => {
+  // SUITE-CERTIFICATION'S "A collapsed run is a shortfall, not an empty rung" (Gate 1 B6). The only
+  // test file sits in the file rung behind a dot, so it is DECLARED (git ls-files matches a leading
+  // dot) and UNREACHABLE (neither the shell's glob nor node's matches it): the runner reports 0 while
+  // the index declares 1. The floor is checked FIRST, so the refusal names both counts, and the
+  // empty-rung message — which is for an index that declares nothing — never appears.
+  const r = runHookAgainstFixture("", {
+    withFixture: false,
+    extraFiles: {
+      "scripts/test/unit/.keep": "",
+      "scripts/test/assert/.collapsed.test.mjs":
+        'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+        'test("declared, and unreachable by either glob", () => { assert.ok(true); });\n',
+    },
+  });
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.notEqual(r.status, 0, `a run of zero tests against a declared count must refuse: ${combined}`);
+  assert.match(combined, /pre-commit: ABORT -- the assertion half ran 0 tests but 1 are declared in/,
+    `a collapsed run must be the shortfall naming both counts. Output was: ${combined}`);
+  assert.doesNotMatch(combined, /neither rung of the assertion half holds/,
+    "a collapsed run was reported as an empty rung — the floor must be compared before that message");
+});
+
+test("1.5 the retired probe's pm-isolation-flag is removed from a clone that still holds one", () => {
+  // THE INVERSE OF THE OLD PROBE'S WRITE (0.49.0 task 1.5, design D3). Until 0.49.0 the hook cached
+  // its isolation probe's answer in `$(git rev-parse --git-common-dir)/pm-isolation-flag`. The probe
+  // is gone; one hook run must leave no such file behind in a clone that ran the old hook.
+  let flag;
+  const r = runHookAgainstFixture(
+    `test("a passing test", () => { assert.ok(true); });`,
+    {
+      setup: (cwd) => {
+        flag = path.join(cwd, ".git", "pm-isolation-flag");
+        fs.writeFileSync(flag, "stale answer from a pre-0.49.0 hook");
+      },
+    },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.equal(r.status, 0, `the hook must pass a passing half: ${combined}`);
+  assert.ok(flag, "the fixture's setup never ran, so there was no stale file to remove");
+  assert.equal(fs.existsSync(flag), false,
+    `the hook left the retired probe's cache file behind at ${flag}`);
 });
 
 // ---------- sync must not register a directory's own index file as a plan (#87) ----------

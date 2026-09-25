@@ -1,0 +1,190 @@
+# red-4.2 — captured 2026-09-24: the NEW assert/ci-workflow.test.mjs run against the PRE-GREEN ci.yml (0449e9e's), in a scratch copy (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree); node v26.9.0
+# command: node --test scripts/test/assert/ci-workflow.test.mjs — every 4.2 (a)-(g) test fails on the old workflow
+✔ G-C1 CI: every bucket step can go red on a failing suite (1.346042ms)
+✔ G-C1 CI: the guard DISCRIMINATES — the shape that shipped is refused, for the stated reason (0.47125ms)
+✖ 4.2 (a)(b) the required check is one aggregate named test that cannot pass on a leg that did not run (1.033292ms)
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.229666ms)
+✖ 4.2 (d) the set is computed from the pinned schedule by node-majors.mjs, with today and the fallback (0.151708ms)
+✖ 4.2 (e) the minimum of CI's committed fallback equals the engine's support floor (0.197292ms)
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.396167ms)
+✖ 4.2 (g) actions/checkout@v7 and actions/setup-node@v7, and no Node 18 pin (0.367125ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 2
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.341084
+
+✖ failing tests:
+
+test at scripts/test/assert/ci-workflow.test.mjs:359:1
+✖ 4.2 (a)(b) the required check is one aggregate named test that cannot pass on a leg that did not run (1.033292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   "job 'test' has no 'if: always()' — a failed dependency SKIPS it, and a skipped required check passes",
+  +   "job 'test' does not need 'node-majors'",
+  +   "job 'test' does not need 'test-node'",
+  +   "job 'test' does not fail unless needs.node-majors.result is 'success'",
+  +   "job 'test' does not fail unless needs.test-node.result is 'success'"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree/scripts/test/assert/ci-workflow.test.mjs:360:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ "job 'test' has no 'if: always()' — a failed dependency SKIPS it, and a skipped required check passes", "job 'test' does not need 'node-majors'", "job 'test' does not need 'test-node'", "job 'test' does not fail unless needs.node-majors.result is 'success'", "job 'test' does not fail unless needs.test-node.result is 'success'" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/ci-workflow.test.mjs:363:1
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.229666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   "no job 'test-node' — nothing runs the suite per major"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree/scripts/test/assert/ci-workflow.test.mjs:364:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ "no job 'test-node' — nothing runs the suite per major" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/ci-workflow.test.mjs:367:1
+✖ 4.2 (d) the set is computed from the pinned schedule by node-majors.mjs, with today and the fallback (0.151708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   "no job 'node-majors' — nothing computes the supported majors"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree/scripts/test/assert/ci-workflow.test.mjs:368:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ "no job 'node-majors' — nothing computes the supported majors" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/ci-workflow.test.mjs:371:1
+✖ 4.2 (e) the minimum of CI's committed fallback equals the engine's support floor (0.197292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'the workflow carries no readable PM_NODE_FALLBACK list'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree/scripts/test/assert/ci-workflow.test.mjs:372:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'the workflow carries no readable PM_NODE_FALLBACK list' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/ci-workflow.test.mjs:378:1
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.396167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'Assertion half: the runner does not force --test-reporter=spec',
+  +   'Assertion half: the runner does not set FORCE_COLOR=0',
+  +   "Assertion half: the count parse does not read '^ℹ tests': total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')",
+  +   "Assertion half: the count parse still reads the TAP '#' format: total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')",
+  +   `Assertion half: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0`,
+  +   'Functional half: the runner does not force --test-reporter=spec',
+  +   'Functional half: the runner does not set FORCE_COLOR=0',
+  +   "Functional half: the count parse does not read '^ℹ tests': total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')",
+  +   "Functional half: the count parse still reads the TAP '#' format: total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')",
+  +   `Functional half: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0`,
+  +   'Sweep bucket: the runner does not force --test-reporter=spec',
+  +   'Sweep bucket: the runner does not set FORCE_COLOR=0',
+  +   "Sweep bucket: the count parse does not read '^ℹ tests': total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')",
+  +   "Sweep bucket: the count parse still reads the TAP '#' format: total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')",
+  +   `Sweep bucket: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0`
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree/scripts/test/assert/ci-workflow.test.mjs:387:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Assertion half: the runner does not force --test-reporter=spec', 'Assertion half: the runner does not set FORCE_COLOR=0', "Assertion half: the count parse does not read '^ℹ tests': total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')", "Assertion half: the count parse still reads the TAP '#' format: total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')", `Assertion half: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0`, 'Functional half: the runner does not force --test-reporter=spec', 'Functional half: the runner does not set FORCE_COLOR=0', "Functional half: the count parse does not read '^ℹ tests': total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')", "Functional half: the count parse still reads the TAP '#' format: total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')", `Functional half: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0`, 'Sweep bucket: the runner does not force --test-reporter=spec', 'Sweep bucket: the runner does not set FORCE_COLOR=0', "Sweep bucket: the count parse does not read '^ℹ tests': total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')", "Sweep bucket: the count parse still reads the TAP '#' format: total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')", `Sweep bucket: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0` ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/ci-workflow.test.mjs:390:1
+✖ 4.2 (g) actions/checkout@v7 and actions/setup-node@v7, and no Node 18 pin (0.367125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'actions/checkout@v4 — expected @v7',
+  +   'actions/setup-node@v4 — expected @v7',
+  +   'the workflow still pins node-version: "18"'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/r42/tree/scripts/test/assert/ci-workflow.test.mjs:391:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'actions/checkout@v4 — expected @v7', 'actions/setup-node@v4 — expected @v7', 'the workflow still pins node-version: "18"' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

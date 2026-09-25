@@ -1,0 +1,128 @@
+# call-site-sweep-6.1 — required task item 1, on the final tree (9e722f1), 2026-09-24
+
+Every list below was derived MECHANICALLY by the command named, on the tree as committed, and each
+omission is justified.
+
+## (a) Every place that runs `node --test` for a COUNT
+
+Command: rg -n --hidden -e 'node --test' -e '"--test"' --glob '!openspec/changes/**' --glob '!docs/superpowers/**' --glob '!.conductor/**' --glob '!CHANGELOG.md' --glob '!.git/**'
+
+COUNT SITES — each FORCES `--test-reporter=spec` + `FORCE_COLOR=0` AND REFUSES an unreadable or zero count:
+
+| Site | Forces reporter + no colour | Unreadable refused | Zero refused |
+|---|---|---|---|
+| .githooks/pre-commit:140 (the runner) | yes | yes — check 1 "the count could not be read" | yes — check 3 (`declared = 0`), after the floor (check 2, `total < declared`, zero included) |
+| .github/workflows/ci.yml:157 (assertion half) | yes | yes — `[ -z "$total" ]` ::error:: | yes — `[ "$total" -eq 0 ]` ::error:: |
+| .github/workflows/ci.yml:180 (functional half) | yes | yes | yes |
+| .github/workflows/ci.yml:203 (sweep bucket) | yes | yes | yes |
+| scripts/test/certify.mjs:70 (`spawnSync` argv + env) | yes | yes — countRefusal(): nothing recorded, exit 1 | yes — same |
+| .claude/skills/release-checklist/SKILL.md:82 (Real Numbers recipe) | yes | yes — the STOP line (line missing) | yes — the STOP line (`ℹ tests 0`) |
+| scripts/test/functional/git-shim.test.mjs:42 (new in 2.4c — a test that reads `ℹ fail 1`) | yes | yes — it asserts an exact `^ℹ fail 1$`, so an unreadable summary fails the test | n/a — it asserts a count of exactly 1 |
+
+The hook's old probe (`pre-commit:126`) is DELETED (1.4). No count site is omitted.
+
+NON-COUNT mentions, each classified:
+- "tests green" commands a human runs and reads: CLAUDE.md:32, :40; CONTRIBUTING.md:12, :57 (quotes
+  the hook's forced line), :76, :85, :99, :104, :112, :118, :257; .claude/skills/pr-workflow/SKILL.md:24,
+  :99; .claude/skills/release-checklist/SKILL.md:26-29 (step 1's green run; the count is step 4's
+  recipe, above).
+- The hook's own prose: .githooks/pre-commit:27, :38, :131.
+- functional/conductor-09's fixtures RUN THE HOOK (they read the hook's `pre-commit: N/N passing`
+  line, which the hook itself only prints from a parsed count): conductor-09.test.mjs:397, :493.
+- scripts/wt-preflight.sh:22 — a `pgrep -f "node --test"`, not a run.
+- scripts/test/fixtures/helpers.mjs:359-360 — a comment about the hook's nested runner.
+- Guards that READ runner lines as text: assert/conductor-09.test.mjs:40-43, :116-137;
+  assert/ci-workflow.test.mjs:5, :59-70, :81, :94, :159-212; assert/git-shim.test.mjs:14.
+- Test data for gate-guard's write-path parser: unit/gate-guard-write-paths.test.mjs:46, :118, :218,
+  :367; scripts/lib/gate-guard.mjs:202 and commands/gate-guard.md:231 (a comment and a doc example).
+- scripts/lib/store.mjs:621 — a comment naming a command to read.
+- RECORDS, not rewritten: docs/lessons/filter-at-read-time-not-at-capture-time.md:8-27;
+  docs/reviews/** and docs/feedback/** (review/feedback documents); PROJECT.md (generated);
+  scripts/test/fixtures/state-pre-disposition-walk.json (fixture data).
+
+## (b) Every READER and every WRITER of the runtime version
+
+Readers — rg -n 'runtimeVersion\(|process\.version' scripts:
+- scripts/lib/subcommands.mjs:140 — `supportFloorLine(runtimeVersion())` in brief(): THE one engine
+  consumer.
+- scripts/lib/invocation.mjs:109 — `runtimeVersion(ctx) = ctx.nodeVersion ?? process.version`: the
+  accessor and its fallback (a context-default read, required by 3.2's text).
+- scripts/lib/invocation.mjs:53 — PROCESS_CONTEXT's live getter (a context default).
+- scripts/conductor.mjs:215 — `nodeVersion: io.nodeVersion ?? process.version` (a context default).
+- Comments only: subcommands.mjs:139, runtime-support.mjs:28, invocation.mjs:107.
+- Tests: unit/runtime-support.test.mjs:69 (asserts the no-supplied-version read equals
+  process.version); functional/runtime-support.test.mjs:8, :46.
+So `process.version` is read by engine code at exactly THREE places, all context defaults. DEVIATION
+from design D6's "exactly two": D6 counts PROCESS_CONTEXT's getter and runInvocation's default; task
+3.2's own text also puts the fallback `?? process.version` inside runtimeVersion(), which is the third.
+All three are defaults of the seam; none is a point-of-use read.
+
+Writers — rg -n 'nodeVersion' scripts:
+- scripts/conductor.mjs:215 — runInvocation's context (from io.nodeVersion, else the process).
+- scripts/lib/invocation.mjs:53 — PROCESS_CONTEXT's getter.
+- scripts/test/fixtures/harness.mjs:63, :79 — invokeEngine passes `nodeVersion` through when given.
+- scripts/test/fixtures/unit-harness.mjs:69-70 — memoryEngine's `result(args, { nodeVersion })`.
+- Callers supplying it: unit/runtime-support.test.mjs:28, :90, :97, :101.
+
+Contexts installed DIRECTLY with no nodeVersion — rg -n -U 'setInvocation\(\s*[\{\w]' scripts —
+each covered by runtimeVersion()'s `?? process.version` fallback (it behaves like the process, as
+engine-invocation states for "a context installed directly"):
+- scripts/test/assert/gate-artifact-evidence.test.mjs:32, :45
+- scripts/test/assert/delivered-obligations.test.mjs:31, :41
+- scripts/test/fixtures/assert-harness.mjs:42, :61
+- scripts/test/functional/per-call-roots.test.mjs:116, :132, :139 (contexts built by hand)
+- scripts/conductor.mjs:182 (restores the previous context) and :217 (the entry point's own).
+
+## (c) Every reader of NODE_FLOOR_MAJOR
+
+rg -n 'NODE_FLOOR_MAJOR' --glob '!openspec/**' --glob '!CHANGELOG.md':
+- scripts/lib/runtime-support.mjs:26 (the declaration), :34, :35 (supportFloorLine) — the ONLY engine
+  reader; brief() reaches it through supportFloorLine().
+- scripts/test/assert/ci-workflow.test.mjs:28, :319 — the fallback minimum (4.2(e)).
+- scripts/test/assert/support-floor.test.mjs:23, :118 — the documented copies (4.2b / 7.2 / 7.3).
+- Prose naming it: CLAUDE.md:21, CONTRIBUTING.md:80, scripts/conductor.mjs:78,
+  scripts/test/node-majors.mjs:88 (its mismatch message).
+
+## (d) Every rung file against the shim install
+
+The mechanism is 2.1's walk (assert/assert-half-has-no-spawn.test.mjs, "2.1 every file in both rungs
+installs the git shim itself"), green on the final tree. Its derivation, re-run: 141 rung files —
+17 import `fixtures/assert-git-shim.mjs` directly (the 13 of 2.2; assert-half-has-no-spawn, which
+imports the counter it reads; and git-shim, support-floor and certify-count, added by this change), 60 through `assert-harness.mjs`, 64
+through `unit-harness.mjs`; **0** install it neither way.
+
+## (e) Every awaited child close/exit, and the synchronous class
+
+rg -n -e '\.(on|once)\("(close|exit)"' -e '\bonce\(' scripts/test:
+- functional/state-file-refuses-to-guess.test.mjs:311 — spawnAll: BOUNDED (5.2: 30 s, SIGKILL,
+  `timedOut` asserted by every caller).
+- functional/verb-surface.test.mjs:612 — BOUNDED (its own 30 s timer, SIGKILL), unchanged.
+- NOT waits on a child: fixtures/assert-git-shim.mjs:78, fixtures/fixture-snapshot.mjs:72,
+  fixtures/temp-dir.mjs:34 (the PROCESS's own exit); functional/conformance.test.mjs:460 and
+  assert/state-file-refuses-to-guess.test.mjs:175-196 (comments).
+The source scan (5.1) covers all three forms mechanically and is green.
+
+THE SEPARATE CLASS, NAMED AND NOT FIXED (design D9): synchronous spawns without a per-call timeout.
+`rg -c -P '(?<![\w.$])(spawnSync|execFileSync|execSync)\(' scripts/test` → 45 files, 136 call lines,
+of which 1 line carries `timeout` on the same line (others are bounded by an options object a few
+lines down: functional/state-file-refuses-to-guess's shBounded, hook-verbs-e2e, git-shim,
+runtime-support). Among them `scripts/test/certify.mjs:70`, whose functional run legitimately takes
+minutes. A hung synchronous spawn blocks one file's process; in CI every one of them is bounded by the
+matrix job's `timeout-minutes: 30`. Outside the bounded-wait requirement by its own text.
+
+## (f) D8's version-claim sweep, line-based AND multiline, on the final tree
+
+Line-based (D8's command verbatim, with its exclusions) → 27 lines; multiline
+(`rg -n -i -U --hidden 'node\s*1[0-9]\b|test-\s*isolation'`, same exclusions) → 13 lines. Every hit,
+classified:
+- ci.yml:50, :89 — `node-version:` of the new jobs (the support floor; the matrix).
+- CONTRIBUTING.md:92-93 — the quickstart MEASUREMENT's Nodes (v22.23.3, v26.9.0), not a floor.
+- HISTORY, deliberately kept: .githooks/pre-commit:120; functional/conductor-09.test.mjs:417-420;
+  assert/conductor-09.test.mjs:108; functional/state-file-refuses-to-guess.test.mjs:297;
+  assert/state-file-refuses-to-guess.test.mjs:175.
+- GUARDS that name what they refuse: assert/conductor-09.test.mjs:121, :136-137;
+  assert/ci-workflow.test.mjs:232, :355, :390; assert/support-floor.test.mjs:137-138 (a stale sample).
+- TEST DATA: unit/runtime-support.test.mjs:23-24, :54, :78; functional/runtime-support.test.mjs:36-41.
+- RECORD: docs/lessons/worktrees-with-claude-agents.md:17 (a past incident; D8 excludes it).
+No live support-floor claim other than 22 remains. The wrapped "Node\n18 REFUSES" (Gate 1 I8,
+assert/conductor-09) is gone with 1.4's rewrite.

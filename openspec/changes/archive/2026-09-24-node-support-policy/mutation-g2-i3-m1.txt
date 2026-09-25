@@ -1,0 +1,29 @@
+# mutation-g2-i3-m1 — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/g2i3/tree; node v26.9.0. Each mutation refused (exit=1); the CONTROL shows the pre-fix walk passing the I3 mutation.
+
+=== I3: the shim import AND re-export removed from fixtures/assert-harness.mjs ===
+20,21d19
+< import "./assert-git-shim.mjs";
+< export { gitSpawns, GIT_SPAWN_LOG, SHIM_DIR } from "./assert-git-shim.mjs";
+--- the I3 harness check (assert-half-has-no-spawn):
+exit=1
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: these harnesses are trusted as shim installers by the walk above but no longer install it: assert-harness, unit-harness. Every rung file that imports one of them would run with the real git reachable and nothing counting.
+--- CONTROL: the pre-fix 2.1 walk alone (still passes — the gap lens A found):
+exit=0
+ℹ pass 1
+ℹ fail 0
+=== M1(a): drainAndRemove() no longer removes the directory ===
+84d83
+<   removeTempDir(dir);
+exit=1
+ℹ pass 2
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: drainAndRemove() left /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-shim-drain-wFirB8 behind
+=== M1(b): the exit listener no longer registered ===
+102d101
+< process.on("exit", onExit);
+exit=1
+ℹ pass 2
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the shim's exit listener is not registered in this process

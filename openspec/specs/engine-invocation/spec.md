@@ -106,3 +106,137 @@ directly, with no build step and no runtime dependency.
 - **THEN** each exits with the status that invocation is documented to produce — including the
   blocking status a hook relies on — and nothing in the invocation requires a caller other than the
   process itself
+
+### Requirement: The record store is supplied per call, and a verb's decision is separable from its persistence
+
+The engine's persistence SHALL be reachable only through a store the CURRENT INVOCATION supplies,
+in the same way and by the same rule as the working directory, the argument list, the environment,
+the input and the streams. No module SHALL reach a record or a rendered artifact through a value
+captured when the module was first loaded.
+
+A caller SHALL be able to supply a store that keeps the record **in memory** — one that answers reads
+from the state handed to it, returns writes to that same state, and produces no path on disk — and the
+engine SHALL behave identically through it: the same verbs, the same refusals, the same statuses. This
+is not a test-only mode bolted on: it is the assertion that the engine's DECISIONS and its
+PERSISTENCE are separable, and a verb whose result changes when the store changes has a decision
+hidden in its persistence.
+
+Two invocations in one process that supply different stores SHALL be independent: neither SHALL
+observe or be affected by the other's record, and neither SHALL write the other's paths.
+
+**The in-memory store covers the RECORD and the artifacts the store owns — not every byte a verb may
+write.** The store owns the record directory and the rendered artifact, and that boundary is stated
+where it is drawn rather than inferred from this requirement: a verb that also refreshes a
+repository file the store does not own — the `CLAUDE.md` managed rules block, `.gitignore` — still
+writes that file, through the same code path as before, whichever store it was handed. So a
+verb's disk footprint under an in-memory store is its STORE-OWNED footprint only: no record, no
+rendered artifact, no stamp, no log a forwarding site appends to. A verb's non-store writes are
+outside this requirement's subject and are neither forbidden here nor excused by it.
+
+#### Scenario: A verb produces the same result through an in-memory store as through the disk store
+
+- **WHEN** the same accepted invocation is made twice in one process, once with the store the command
+  line builds and once with a store that keeps the record in memory
+- **THEN** the status is the same, the record the caller can read afterwards holds the same values,
+  and the invocation that used the in-memory store wrote none of the artifacts the store owns — no
+  record, no rendered artifact, no stamp, no log
+
+#### Scenario: An in-memory store means an in-memory record, and nothing is flushed
+
+- **WHEN** a verb that writes the record is invoked with an in-memory store
+- **THEN** no file is created, opened, written or flushed for that record, and the caller reads the
+  written values back from the object it supplied
+
+#### Scenario: Two stores in one process do not observe each other
+
+- **WHEN** two invocations in one process are given two different stores, the first having been seeded
+  with a record and the second with none
+- **THEN** the first acts on the record it was given and the second on its own, and neither's writes
+  reach the other
+
+#### Scenario: A refusal through the in-memory store is the same refusal
+
+- **WHEN** an invocation the engine refuses is made through an in-memory store
+- **THEN** it returns the same status the command line exits with, and the refusal names the same
+  thing, because the refusal is decided by the record's content rather than by where the record lives
+
+### Requirement: The store the command line builds writes the record the command line has always written
+
+The store the engine builds for a command-line invocation SHALL write the same artifacts, at the same
+paths, with the same bytes, as the engine wrote before this seam existed. A seam that changed what the
+command line persists would leave every consumer of those artifacts — a hook, a command document, an
+evaluator, a user reading `PROJECT.md` — observing a different record while every test that happened to
+use the in-memory store stayed green. (The command line's own observable behaviour is owned by this
+capability's existing *"The command-line binary's observable behaviour is unchanged"* requirement;
+this requirement owns the ARTIFACTS and does not restate the CLI contract.)
+
+The rendered artifact SHALL in particular be produced by the same code path and at the same moment as
+before: it SHALL still be rendered when the verb that renders it runs, and it SHALL be byte-identical
+for the same record **once the render timestamp is held constant**. The rendered text carries a
+`> Last rendered: <timestamp>` line the engine stamps from the wall clock, so a raw byte comparison
+of two renders of the same record is never equal; the comparison SHALL therefore strip that line —
+using the engine's own stamp pattern — from BOTH sides before comparing, and the stamp line's
+presence and format SHALL be asserted separately. (Injecting a clock is the alternative; the
+stripped comparison is the choice this change makes.)
+
+#### Scenario: The rendered artifact is byte-identical across the seam
+
+- **WHEN** the same record, in the same repository state, is rendered before and after the seam exists
+- **THEN** the two artifacts are byte-identical once their `> Last rendered:` stamp lines are stripped
+  (the stamp being asserted present and well-formed separately), because the stamp is the only
+  difference between two renders of the same record
+
+#### Scenario: A store supplies the record but does not take over rendering
+
+- **WHEN** a verb that writes the record and renders an artifact is invoked through the store the
+  command line builds
+- **THEN** the record and the rendered artifact are both written where they were written before, and
+  the artifact's bytes depend on the record's content and not on which store produced it
+
+### Requirement: The runtime version the engine consults is supplied per call
+
+Where the engine's behaviour depends on the version of the Node runtime executing it, the engine SHALL
+take that version from the CURRENT INVOCATION, in the same way and by the same rule as the working
+directory, the argument list, the environment, the input, the streams and the record store — never by
+reading the running process's own version at the point of use, and never from a value captured when a
+module was first loaded.
+
+A caller SHALL be able to supply the version for one invocation. When the caller supplies none — the
+command line, an in-process call that omits it, or a context installed directly rather than through
+the entry point — the invocation SHALL carry the version of the process that is running it, so the
+command line's behaviour is exactly what it would be without this seam. Two invocations in one process
+that supply different versions SHALL be independent: each SHALL see its own, and neither SHALL observe
+the other's.
+
+This requirement owns only the SEAM — that the version is a per-call value. What the engine does with
+the version is owned by the capability whose behaviour depends on it; the one such behaviour today is
+`runtime-support`'s below-support-floor briefing line, which is the single, stated exception to this
+capability's *"The command-line binary's observable behaviour is unchanged"* — the bytes the command
+line prints are unchanged on every Node at or above the support floor.
+
+#### Scenario: A supplied version is the version the invocation consults
+
+- **WHEN** the entry point is called in-process with a runtime version that differs from the running
+  process's own
+- **THEN** every decision the engine makes from the runtime version in that invocation is made from
+  the supplied one
+
+#### Scenario: No supplied version means the running process's version, observed during the call
+
+- **WHEN** the entry point is called in-process without a supplied version, and the runtime version the
+  invocation carries is read while the call is in progress
+- **THEN** it equals the version of the Node process executing the call — not an absent value, which
+  would produce the same briefing on a supported Node and so could not be told apart by the output
+  alone
+
+#### Scenario: The command line consults the version its process reports
+
+- **WHEN** the engine is run from the command line in a process that reports a runtime version below
+  the support floor
+- **THEN** the invocation consults that reported version, so the behaviour that depends on it follows
+  the process rather than any default
+
+#### Scenario: Two invocations with different versions do not observe each other
+
+- **WHEN** two invocations in one process supply two different runtime versions
+- **THEN** each invocation's output reflects its own supplied version and not the other's

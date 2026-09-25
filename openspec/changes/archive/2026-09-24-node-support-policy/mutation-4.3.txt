@@ -1,0 +1,267 @@
+# mutation-4.3 — each mutation in a SCRATCH COPY (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m43/tree), originals restored after each; node v26.9.0.
+# Mutations (1)-(4) and (8)-(12) are of ci.yml, fed to assert/ci-workflow.test.mjs's 4.2 functions.
+# (5)-(7) — the ::warning::, the mismatch exit 1 and the empty-set check — live in scripts/test/node-majors.mjs since Gate 1 B5
+# moved every decision out of the workflow, so they are mutated THERE and refused by assert/support-floor.test.mjs.
+# Every mutation is refused (exit=1).
+
+=== (1) always() dropped from the aggregate ===
+230d229
+<     if: always()
+✖ 4.2 (a)(b) the required check is one aggregate named test that cannot pass on a leg that did not run (0.969625ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (2) an aggregate that ignores test-node's result ===
+238c238
+<           if [ "${{ needs.node-majors.result }}" != "success" ] || [ "${{ needs.test-node.result }}" != "success" ]; then
+---
+>           if [ "${{ needs.node-majors.result }}" != "success" ]; then
+✖ 4.2 (a)(b) the required check is one aggregate named test that cannot pass on a leg that did not run (0.87425ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (3) fail-fast: true ===
+63c63
+<   # `fail-fast: false`, so a failure names EVERY major it occurs on rather than cancelling the rest.
+---
+>   # `fail-fast: true`, so a failure names EVERY major it occurs on rather than cancelling the rest.
+72c72
+<       fail-fast: false
+---
+>       fail-fast: true
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.850166ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (4) a fallback of [20,22,24,26] ===
+23c23
+<   PM_NODE_FALLBACK: "[22,24,26]"
+---
+>   PM_NODE_FALLBACK: "[20,22,24,26]"
+✖ 4.2 (e) the minimum of CI's committed fallback equals the engine's support floor (0.701042ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (5) the ::warning:: removed (it lives in node-majors.mjs since Gate 1 B5, so the mutation is there, refused by support-floor) ===
+76d75
+<       warning: `the Node release schedule could not be fetched — the matrix is the committed fallback ${show(committed)}, not a computed set`,
+120d118
+<     out.write(`::warning::${d.warning}\n`);
+✖ 4.2b decide(): a failed fetch uses the committed fallback AND says so (0.421625ms)
+ℹ fail 1
+ℹ pass 6
+ℹ tests 7
+exit=1
+=== (6) the mismatch error (CI's exit 1) removed from node-majors.mjs ===
+85,90d84
+<   if (show(computed) !== show(committed)) {
+<     return {
+<       error: `the computed set of supported Node majors ${show(computed)} differs from the committed fallback ` +
+<         `PM_NODE_FALLBACK ${show(committed)} — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together`,
+<     };
+<   }
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.351ms)
+ℹ fail 1
+ℹ pass 6
+ℹ tests 7
+exit=1
+=== (7) the empty-set checks removed from node-majors.mjs ===
+73d72
+<     if (!committed.length) return { error: "the committed fallback PM_NODE_FALLBACK is empty — no major to test" };
+84d82
+<   if (!computed.length) return { error: `the computed set of supported Node majors is empty on ${today}` };
+✖ 4.2b decide(): an empty set is an error, computed or fallen back to (0.337792ms)
+ℹ fail 1
+ℹ pass 6
+ℹ tests 7
+exit=1
+=== (8) one step (Sweep bucket) without the reporter ===
+203c203
+<           FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+---
+>           FORCE_COLOR=0 node --test scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.742583ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (9) a # alternation re-added (Functional half) ===
+185c185
+<           total=$(grep -m1 -E '^ℹ tests ' /tmp/functional.out | awk '{print $3}')
+---
+>           total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.729917ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (10) one step's (Assertion half) zero-count check removed ===
+171,173d170
+<           if [ "$total" -eq 0 ]; then
+<             echo "::error::the assertion half ran zero tests — a run of nothing is never a pass"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.670375ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (11) a step rewritten as total=$(FORCE_COLOR=0 node --test … | grep … | awk …) — the G-C1 pipeline with an env prefix ===
+203,208c203
+<           FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+<             cat /tmp/sweeps.out
+<             echo "::error::the sweep bucket FAILED — the runner's output is above"
+<             exit 1
+<           }
+<           total=$(grep -m1 -E '^ℹ tests ' /tmp/sweeps.out | awk '{print $3}')
+---
+>           total=$(FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/sweeps/*.test.mjs 2>&1 | tee /tmp/sweeps.out | grep -m1 -E '^ℹ tests ' | awk '{print $3}')
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.264083ms)
+ℹ fail 2
+✖ G-C1 CI: every bucket step can go red on a failing suite (1.938792ms)
+ℹ pass 6
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: a bucket step whose status is not the runner's can report green on a failing suite, and CI is the only place the functional half and the sweep bucket run at all (6.5)
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+=== (12) the compute step no longer passing $PM_NODE_FALLBACK to the script ===
+57c57
+<             node scripts/test/node-majors.mjs --schedule /tmp/schedule.json --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"
+---
+>             node scripts/test/node-majors.mjs --schedule /tmp/schedule.json --today "$(date -u +%F)" --output "$GITHUB_OUTPUT"
+✖ 4.2 (d) the set is computed from the pinned schedule by node-majors.mjs, with today and the fallback (0.666875ms)
+ℹ fail 1
+ℹ pass 7
+ℹ tests 8
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+exit=1
+
+# ───────── Gate 2 fix round (2026-09-24): I1, M3, M6 — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/g2c1/tree; ci.yml restored after each ─────────
+# CONTROL: with the PRE-fix guard (0e65863's ci-workflow.test.mjs) mutation (13-assertion) passes 8/8 — the gap lens A found. With the fix, every mutation below is refused (exit=1).
+
+=== (13-assertion) the unreadable-count (-z) refusal removed from the assertion step (Gate 2 I1) ===
+165,167d164
+<           if [ -z "$total" ]; then
+<             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.604458ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (13-functional) the unreadable-count (-z) refusal removed from the functional step (Gate 2 I1) ===
+188,190d187
+<           if [ -z "$total" ]; then
+<             echo "::error::the functional half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.637542ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (13-sweep) the unreadable-count (-z) refusal removed from the sweep step (Gate 2 I1) ===
+211,213d210
+<           if [ -z "$total" ]; then
+<             echo "::error::the sweep bucket's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.74475ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (14) the floor (-lt declared) removed from the functional step (Gate 2 I1) ===
+191,193d190
+<           if [ "$total" -lt "$declared" ]; then
+<             echo "::error::the functional half ran ${total} tests but ${declared} are declared in scripts/test/functional/"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.625875ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (15) zero-count refusal moved BEFORE the floor in the sweep step (order, Gate 2 I1) ===
+214,216d213
+<           if [ "$total" -lt "$declared" ]; then
+<             echo "::error::the sweep bucket ran ${total} tests but ${declared} are declared in scripts/test/sweeps/"; exit 1
+<           fi
+219a217,219
+>           if [ "$total" -lt "$declared" ]; then
+>             echo "::error::the sweep bucket ran ${total} tests but ${declared} are declared in scripts/test/sweeps/"; exit 1
+>           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.602833ms)
+ℹ fail 1
+ℹ pass 7
+'Sweep bucket: the refusals are out of order — unreadable, then the floor, then zero'
+exit=1
+=== (16) the floor moved BEFORE the unreadable check in the assertion step (order, Gate 2 I1) ===
+165,167d164
+<           if [ -z "$total" ]; then
+<             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+170a168,170
+>           if [ -z "$total" ]; then
+>             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+>           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.697292ms)
+ℹ fail 1
+ℹ pass 7
+'Assertion half: the refusals are out of order — unreadable, then the floor, then zero'
+exit=1
+=== (17) --test-isolation=none added (Gate 2 M3) ===
+157c157
+<           FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+---
+>           FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs --test-isolation=none > /tmp/assert.out 2>&1 || {
+✖ 4.2 (g) actions/checkout@v7 and actions/setup-node@v7, and no Node 18 pin (0.695458ms)
+ℹ fail 1
+ℹ pass 7
+'the workflow names --test-isolation — the single-process mode is retired (0.49.0, D3)'
+exit=1
+=== (18) if: on the test-node job (Gate 2 M6) ===
+67a68
+>     if: ${{ false }}
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.732292ms)
+ℹ fail 1
+ℹ pass 7
+' carries '
+exit=1
+=== (19) if: on a bucket step (Gate 2 M6) ===
+175a176
+>         if: github.event_name == 'push'
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.829458ms)
+ℹ fail 1
+ℹ pass 7
+' carries '
+exit=1
+=== (20) continue-on-error on a bucket step (Gate 2 M6) ===
+198a199
+>         continue-on-error: true
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.7275ms)
+ℹ fail 1
+ℹ pass 7
+' carries '
+exit=1
+=== (21) exclude: under the matrix (Gate 2 M6) ===
+74a75,76
+>         exclude:
+>           - node: 26
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.761708ms)
+ℹ fail 1
+ℹ pass 7
+'s matrix carries '
+exit=1
+=== (22) include: under the matrix (Gate 2 M6) ===
+74a75,76
+>         include:
+>           - node: 20
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.768667ms)
+ℹ fail 1
+ℹ pass 7
+'s matrix carries '
+exit=1

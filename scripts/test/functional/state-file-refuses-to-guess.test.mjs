@@ -287,17 +287,42 @@ test("2.1(f): a refusal raised by code a hook calls still takes the hook's exit 
 const lockPath = (cwd) => path.join(cwd, ".conductor", "state.json.lock");
 const CONFLICT = 9;
 
-/** Start `n` engine children at once — spawned, never sequential — and collect every outcome. */
+/** How long one engine child may take before it is killed — the bound verb-surface.test.mjs's own
+ *  awaited child already uses. */
+const CHILD_BOUND_MS = 30_000;
+
+/** Start `n` engine children at once — spawned, never sequential — and collect every outcome.
+ *
+ *  EVERY CHILD IS BOUNDED (0.49.0 task 5.2, cfdude/pm#220). This used to resolve only when a child
+ *  closed, so ONE hung child hung the whole functional half forever — on Node 18 one hung for about 13
+ *  minutes. A timer per child now SIGKILLs it at the bound and resolves `{ timedOut: true }`, and every
+ *  caller asserts `timedOut` is false naming the argv and the bound (`assertFinished`), so a hung child
+ *  costs one failed test and the run goes on. */
 function spawnAll(cwd, argvs) {
   return Promise.all(argvs.map((args) => new Promise((resolve) => {
     const child = spawn("node", [ENGINE, ...args], {
       cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
     });
     let stderr = "";
+    // THE TIMER RESOLVES ITSELF (Gate 2 M8): `close` waits for every stdio pipe to close, and a
+    // grandchild that inherited one keeps it open after the child is killed — so a bound that only
+    // killed and then waited for `close` could still hang. Whichever comes first settles the promise.
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      resolve({ args, status: null, stderr, timedOut: true });
+    }, CHILD_BOUND_MS);
     child.stderr.on("data", (d) => { stderr += d; });
     child.stdout.on("data", () => {});
-    child.on("close", (status) => resolve({ args, status, stderr }));
+    child.on("close", (status) => { clearTimeout(timer); resolve({ args, status, stderr, timedOut: false }); });
   })));
+}
+
+/** A child that hit the bound FAILS its test, naming the invocation and the bound — never a hang. */
+function assertFinished(results) {
+  for (const r of results) {
+    assert.equal(r.timedOut, false,
+      `\`node conductor.mjs ${r.args.join(" ")}\` did not finish within ${CHILD_BOUND_MS / 1000} s and was killed`);
+  }
 }
 
 /** The pid namespace this process is in, as the engine reads it — null where /proc is absent. */
@@ -341,6 +366,7 @@ test("3.1: parallel writers never lose an update — 16 concurrent add-epic, thr
     run(["init"], { cwd });
     const ids = Array.from({ length: 16 }, (_, i) => `p${runNo}-${i}`);
     const results = await spawnAll(cwd, ids.map((id) => ["add-epic", "--id", id, "--lane", "claude-code"]));
+    assertFinished(results);
     const onDisk = new Set(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.map((e) => e.id));
     for (const r of results) {
       const id = r.args[2];
@@ -550,6 +576,7 @@ test("4.3(a): several breakers on one stale lock lose no update — 8 concurrent
       acquiredAt: new Date().toISOString(), nonce: `stale-${runNo}` });
     const ids = Array.from({ length: 8 }, (_, i) => `b${runNo}-${i}`);
     const results = await spawnAll(cwd, ids.map((id) => ["add-epic", "--id", id, "--lane", "claude-code"]));
+    assertFinished(results);
     const onDisk = new Set(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.map((e) => e.id));
     for (const r of results) {
       const id = r.args[2];

@@ -1,11 +1,13 @@
 ---
 name: pr-workflow
-description: The dev→PR→CI→squash-merge→sync branch dance for the cfdude/pm repo. Use for ANY commit that needs to reach main — not just releases — since this repo's main is protected (no direct pushes, required "test" status check, required signatures). Referenced by release-checklist rather than duplicated there.
+description: The dev→PR→CI→squash-merge→sync branch dance for the cfdude/pm repo. Use for ANY commit that needs to reach main — not just releases — since this repo's main is protected (no direct pushes, required "test" status check — an aggregate over the per-Node-major matrix legs — required signatures). Referenced by release-checklist rather than duplicated there.
 ---
 
 Repo-maintenance tooling for developing `pm` itself — not part of the product `pm` ships to
 users. `main` on `cfdude/pm` is protected (see `CONTRIBUTING.md`): no direct pushes, the `test`
-CI check required (strict — must be up to date with base), commit signatures required,
+CI check required (strict — must be up to date with base; `test` is the AGGREGATE job that passes
+only when every `test (node N)` matrix leg passed, N being each supported Node LTS major computed
+from the release schedule), commit signatures required,
 enforced on admins too, squash-merge only. This is the procedure that satisfies that setup
 without a manual mistake — this session committed straight to `main` once before this skill
 existed and had to be untangled after the fact.
@@ -19,8 +21,8 @@ existed and had to be untangled after the fact.
    If you're on `main` with uncommitted work, `git checkout dev` first — working-tree changes
    carry over cleanly since `dev` and `main` share history between releases.
 
-2. **Tests green before committing.** `node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
-   — both rungs of the assertion half, one process. The `.githooks/pre-commit` hook re-runs the drift script and this half on every commit and
+2. **Tests green before committing.** `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
+   — both rungs of the assertion half, one runner invocation. The `.githooks/pre-commit` hook re-runs the drift script and this half on every commit and
    blocks on failure, but don't rely on the hook alone catching a break you already know about.
    If the change touched anything the functional half certifies, run
    `node scripts/test/certify.mjs functional` — the hook REFUSES a certified module's changed
@@ -94,7 +96,7 @@ existed and had to be untangled after the fact.
    (confirms the squash commit itself is sound, not just the pre-merge state):
    ```bash
    git checkout main && git fetch origin && git reset --hard origin/main
-   node --test --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
+   node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
    git checkout dev && git reset --hard main && git push origin dev --force-with-lease
    ```
    `git reset --hard main` (not a plain `git merge`/`--ff-only`) is required here — after a

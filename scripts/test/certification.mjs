@@ -104,7 +104,8 @@ export function functionalIds(root = REPO, readdir = readdirDefault) {
 /** The assertion half's ids — BOTH ITS RUNGS (0.48.0 task 4.1).
  *
  *  THE TWIN RULE IS ABOUT HALVES, NOT DIRECTORIES: it says every functional id has a twin in the
- *  ASSERTION half, and the unit rung is a rung of that half (design D2) — same trigger, same process.
+ *  ASSERTION half, and the unit rung is a rung of that half (design D2) — same trigger, same runner
+ *  invocation.
  *  Reading only `assert/` would refuse a functional id whose twin had MOVED to the unit rung, which
  *  is exactly what 4.1's migration does to a file whose tests assert on values: flag-parsing is the
  *  first one, and its twin is a full port of a functional file's tests. Found by attempting that

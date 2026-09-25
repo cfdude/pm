@@ -168,3 +168,154 @@ test("G2-I5 shape: a non-object epics element and a non-array detourStack are ea
 // filesystem race; the detached-claim case needs a detached checkout. They are functional-only by
 // subject (design D5). The refusal family above is the part of that surface a pre-commit gate can
 // see break on every commit.
+
+// ─────────────── 0.49.0 task 5.1 — cfdude/pm#220: EVERY AWAITED CHILD IS BOUNDED ───────────────
+//
+// THE DEFECT. The functional twin's `spawnAll` resolved only when a child CLOSED, with no bound — so a
+// hung child hung the functional half forever (on Node 18 one hung for about 13 minutes). suite-
+// certification now requires that a test waiting ASYNCHRONOUSLY on a child's close or exit event bound
+// the wait, and that a SOURCE CHECK refuse a helper that does not, so a sibling of a fixed helper
+// cannot reintroduce the hang unnoticed. Synchronous spawns are outside the requirement by its own text.
+//
+// THE CHECK, over every `scripts/test/**/*.mjs`: each wait on a child's close/exit event — in all three
+// forms, `<child>.on(…)`, `<child>.once(…)`, and the events module's `once(<child>, …)` promise form
+// (bare or `events.once`) — must sit in a FUNCTION that also arms a timer (`setTimeout(`) and kills
+// the child (`.kill(`). `process.on("exit")` is not a child and is not a wait. Comments are stripped.
+//
+// ITS TOKENS AND SAMPLES ARE BUILT FROM PARTS (the pattern assert-half-has-no-spawn uses): a scan whose
+// own source spelled the shape would refuse itself, and exempting this file by name is the first
+// exemption of many.
+
+import { fileURLToPath } from "node:url";
+
+const TEST_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const EVENTS = ["cl" + "ose", "ex" + "it"].join("|");
+const Q = `["'\`]`;
+/** `<receiver>.on|once("close"|"exit"` — the receiver is captured so `process` can be excluded. */
+const LISTENER = new RegExp(`([\\w$.\\]\\)]+)\\s*\\.\\s*(?:on|once)\\s*\\(\\s*${Q}(?:${EVENTS})${Q}`, "g");
+/** `once(<child>, "close"|"exit")` / `events.once(…)` — the promise form. */
+const PROMISE_ONCE = new RegExp(`(?<![\\w$])(?:events\\s*\\.\\s*)?${"on" + "ce"}\\s*\\(\\s*[\\w$.]+\\s*,\\s*${Q}(?:${EVENTS})${Q}`, "g");
+
+/** `src` with every comment BLANKED — each comment character replaced by a space, every newline kept —
+ *  so an index into the result is an index into the source and its line is the source's line. String
+ *  and template contents are kept (a regex literal's slashes are ordinary characters; that can only
+ *  cause a false POSITIVE here, never a false negative). */
+function blankComments(src) {
+  let out = "", i = 0;
+  const blank = (t) => t.replace(/[^\n]/g, " ");
+  while (i < src.length) {
+    const c = src[i];
+    if (c === "/" && src[i + 1] === "/") { const j = src.indexOf("\n", i); const e = j < 0 ? src.length : j; out += blank(src.slice(i, e)); i = e; continue; }
+    if (c === "/" && src[i + 1] === "*") { const j = src.indexOf("*/", i + 2); const e = j < 0 ? src.length : j + 2; out += blank(src.slice(i, e)); i = e; continue; }
+    if (c === '"' || c === "'" || c === "`") {
+      out += c; i++;
+      while (i < src.length) {
+        if (src[i] === "\\") { out += src.slice(i, i + 2); i += 2; continue; }
+        out += src[i];
+        if (src[i++] === c) break;
+      }
+      continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+/** Every function body in `code` (comments already blanked), as `[start, end)` spans of its braces:
+ *  `function … {`, and an arrow's `=> {`. Strings are skipped when matching braces. */
+function functionSpans(code) {
+  const spans = [];
+  const opener = /\bfunction\b[^{]*\{|=>\s*\{/g;
+  for (const m of code.matchAll(opener)) {
+    const open = m.index + m[0].length - 1;
+    let depth = 0, i = open, q = null;
+    for (; i < code.length; i++) {
+      const c = code[i];
+      if (q) { if (c === "\\") { i++; continue; } if (c === q) q = null; continue; }
+      if (c === '"' || c === "'" || c === "`") { q = c; continue; }
+      if (c === "{") depth++;
+      else if (c === "}" && --depth === 0) break;
+    }
+    spans.push([open, i + 1]);
+  }
+  return spans;
+}
+
+/** Every UNBOUNDED wait on a child's close/exit in `src`, as `name:line` strings. */
+export function unboundedWaits(name, src) {
+  const code = blankComments(src);
+  const spans = functionSpans(code);
+  const sites = [];
+  for (const m of code.matchAll(LISTENER)) {
+    if (/(^|\.)process$/.test(m[1])) continue;             // the process's own exit, not a child's
+    sites.push(m.index);
+  }
+  for (const m of code.matchAll(PROMISE_ONCE)) sites.push(m.index);
+  const found = [];
+  for (const at of sites) {
+    const inner = spans.filter(([s, e]) => s <= at && at < e).sort((a, b) => (a[1] - a[0]) - (b[1] - b[0]))[0];
+    const body = inner ? code.slice(inner[0], inner[1]) : code;
+    const bounded = /\bsetTimeout\s*\(/.test(body) && /\.kill\s*\(/.test(body);
+    if (!bounded) found.push(`${name}:${lineOf(code, at)}`);
+  }
+  return found;
+}
+
+/** The 1-based line of `index` — blankComments keeps every character's position. */
+function lineOf(code, index) {
+  return code.slice(0, index).split("\n").length;
+}
+
+function testSources(dir, rel = "") {
+  const out = [];
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const r = rel ? `${rel}/${ent.name}` : ent.name;
+    if (ent.isDirectory()) out.push(...testSources(path.join(dir, ent.name), r));
+    else if (ent.name.endsWith(".mjs")) out.push([r, path.join(dir, ent.name)]);
+  }
+  return out;
+}
+
+test("5.1 #220: every asynchronous wait on a child's close or exit is bounded by a timer that kills it", () => {
+  const files = testSources(TEST_ROOT);
+  assert.ok(files.length > 150, `the scan reached ${files.length} files under scripts/test; a scan of nearly nothing is not a check`);
+  const found = files.flatMap(([rel, p]) => unboundedWaits(`scripts/test/${rel}`, fs.readFileSync(p, "utf8")));
+  assert.deepEqual(found, [],
+    "these helpers wait on a child's close/exit event with no bound, so a hung child hangs the run " +
+    "forever (#220). Arm a timer in the same function that kills the child and fails the test naming " +
+    "the invocation and the bound — the shape functional/verb-surface.test.mjs's 30 s wait uses.");
+});
+
+test("M8 spawnAll's bound RESOLVES from its own timer — a grandchild holding a pipe cannot outlast it", () => {
+  // Gate 2 M8. `close` fires only when every stdio pipe has closed, and a grandchild that inherited one
+  // holds it open after the child is SIGKILLed — so a timer that only kills, and leaves the promise to
+  // `close`, is still unbounded. The twin's spawnAll timer must settle the promise itself.
+  const src = blankComments(fs.readFileSync(path.join(TEST_ROOT, "functional", "state-file-refuses-to-guess.test.mjs"), "utf8"));
+  const at = src.indexOf("function spawnAll(");
+  assert.ok(at >= 0, "functional/state-file-refuses-to-guess.test.mjs no longer defines spawnAll");
+  const body = src.slice(at, functionSpans(src).find(([s]) => s > at)[1]);
+  const timer = /setTimeout\(\s*\(\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*CHILD_BOUND_MS\s*\)/.exec(body);
+  assert.ok(timer, "spawnAll arms no CHILD_BOUND_MS timer");
+  assert.match(timer[1], /\.kill\(/, "the timer must kill the child");
+  assert.match(timer[1], /resolve\(\{[^}]*timedOut:\s*true/, "the timer must RESOLVE { timedOut: true } itself, not wait for close");
+});
+
+test("5.1 the unbounded-wait scan DISCRIMINATES — each form is refused unbounded and accepted bounded", () => {
+  const ev = "cl" + "ose";
+  const unbounded = [
+    `function a(c) { return new Promise((r) => { c.${"on"}("${ev}", r); }); }`,
+    `function b(c) { return new Promise((r) => { c.${"on" + "ce"}("${"ex" + "it"}", r); }); }`,
+    `async function d(c) { await ${"on" + "ce"}(c, "${ev}"); }`,
+    `async function e(c) { await events.${"on" + "ce"}(c, "${ev}"); }`,
+  ];
+  for (const src of unbounded) {
+    assert.equal(unboundedWaits("x.mjs", src).length, 1, `an unbounded wait must be refused: ${src}`);
+  }
+  const bounded = `function f(c) { return new Promise((r) => { const t = setTimeout(() => c.kill("SIGKILL"), 30000); ` +
+    `c.${"on"}("${ev}", (s) => { clearTimeout(t); r(s); }); }); }`;
+  assert.deepEqual(unboundedWaits("x.mjs", bounded), [], "a wait whose function arms a killing timer is bounded");
+  assert.deepEqual(unboundedWaits("x.mjs", `process.${"on"}("${"ex" + "it"}", () => {});`), [],
+    "the process's own exit listener is not a wait on a child");
+  assert.deepEqual(unboundedWaits("x.mjs", `// c.${"on"}("${ev}", r);\nconst a = 1;\n`), [],
+    "a comment naming the shape is not a wait");
+});

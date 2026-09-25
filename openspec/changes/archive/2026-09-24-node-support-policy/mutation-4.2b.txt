@@ -1,0 +1,277 @@
+# mutation-4.2b — scratch copy (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree); node v26.9.0. Each mutation of scripts/test/node-majors.mjs is refused by assert/support-floor.test.mjs (exit=1); the original restored after each.
+
+=== (1) the START clause removed ===
+43d42
+<     if (!(entry.start <= today)) continue;    // it has started
+✖ 4.2b each of the three clauses decides one entry of a canned schedule on its own (1.203333ms)
+✔ 4.2b the live 2026-09-24 shape yields [22,24,26] — not 18, 20 (ended), 23, 25 (no lts) or 27 (not started) (0.187084ms)
+✔ 4.2b decide(): a failed fetch uses the committed fallback AND says so (0.176333ms)
+✔ 4.2b decide(): a fetched body that is not a readable schedule is an ERROR, never the fallback (0.137709ms)
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.125584ms)
+✔ 4.2b decide(): an empty set is an error, computed or fallen back to (0.1735ms)
+✔ 4.2b decide(): an agreeing schedule yields the computed set with no warning (0.139458ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 275.296958
+
+✖ failing tests:
+
+test at scripts/test/assert/support-floor.test.mjs:37:1
+✖ 4.2b each of the three clauses decides one entry of a canned schedule on its own (1.203333ms)
+  AssertionError [ERR_ASSERTION]: only the entry that has an lts date, has started, and has not ended is supported
+  + actual - expected
+  
+    [
+  +   30,
+      33
+    ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:38:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 30, 33 ],
+    expected: [ 33 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/support-floor.test.mjs:72:1
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.125584ms)
+  AssertionError [ERR_ASSERTION]: the error names the computed set: the computed set of supported Node majors [30,33] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:74:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'the computed set of supported Node majors [30,33] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together',
+    expected: /\[33\]/,
+    operator: 'match',
+    diff: 'simple'
+  }
+exit=1
+=== (2) the LTS clause removed ===
+42d41
+<     if (!("lts" in entry)) continue;          // an LTS line — the date may be in the future
+✖ 4.2b each of the three clauses decides one entry of a canned schedule on its own (1.075667ms)
+✔ 4.2b the live 2026-09-24 shape yields [22,24,26] — not 18, 20 (ended), 23, 25 (no lts) or 27 (not started) (0.1775ms)
+✔ 4.2b decide(): a failed fetch uses the committed fallback AND says so (0.161625ms)
+✔ 4.2b decide(): a fetched body that is not a readable schedule is an ERROR, never the fallback (0.123833ms)
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.106125ms)
+✔ 4.2b decide(): an empty set is an error, computed or fallen back to (0.082167ms)
+✔ 4.2b decide(): an agreeing schedule yields the computed set with no warning (0.071416ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 174.249916
+
+✖ failing tests:
+
+test at scripts/test/assert/support-floor.test.mjs:37:1
+✖ 4.2b each of the three clauses decides one entry of a canned schedule on its own (1.075667ms)
+  AssertionError [ERR_ASSERTION]: only the entry that has an lts date, has started, and has not ended is supported
+  + actual - expected
+  
+    [
+  +   31,
+      33
+    ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:38:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 31, 33 ],
+    expected: [ 33 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/support-floor.test.mjs:72:1
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.106125ms)
+  AssertionError [ERR_ASSERTION]: the error names the computed set: the computed set of supported Node majors [31,33] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:74:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'the computed set of supported Node majors [31,33] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together',
+    expected: /\[33\]/,
+    operator: 'match',
+    diff: 'simple'
+  }
+exit=1
+=== (3) the END clause removed ===
+44d43
+<     if (!(entry.end > today)) continue;       // and it has not ended
+✖ 4.2b each of the three clauses decides one entry of a canned schedule on its own (12.428542ms)
+✖ 4.2b the live 2026-09-24 shape yields [22,24,26] — not 18, 20 (ended), 23, 25 (no lts) or 27 (not started) (0.3295ms)
+✔ 4.2b decide(): a failed fetch uses the committed fallback AND says so (0.254958ms)
+✔ 4.2b decide(): a fetched body that is not a readable schedule is an ERROR, never the fallback (0.146875ms)
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.082625ms)
+✖ 4.2b decide(): an empty set is an error, computed or fallen back to (0.065375ms)
+✔ 4.2b decide(): an agreeing schedule yields the computed set with no warning (0.133083ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 240.785209
+
+✖ failing tests:
+
+test at scripts/test/assert/support-floor.test.mjs:37:1
+✖ 4.2b each of the three clauses decides one entry of a canned schedule on its own (12.428542ms)
+  AssertionError [ERR_ASSERTION]: only the entry that has an lts date, has started, and has not ended is supported
+  + actual - expected
+  
+    [
+  +   32,
+      33
+    ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:38:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 32, 33 ],
+    expected: [ 33 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/support-floor.test.mjs:42:1
+✖ 4.2b the live 2026-09-24 shape yields [22,24,26] — not 18, 20 (ended), 23, 25 (no lts) or 27 (not started) (0.3295ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   18,
+  +   20,
+      22,
+      24,
+      26
+    ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:53:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 18, 20, 22, 24, 26 ],
+    expected: [ 22, 24, 26 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/support-floor.test.mjs:72:1
+✖ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.082625ms)
+  AssertionError [ERR_ASSERTION]: the error names the computed set: the computed set of supported Node majors [32,33] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:74:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'the computed set of supported Node majors [32,33] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together',
+    expected: /\[33\]/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/support-floor.test.mjs:79:1
+✖ 4.2b decide(): an empty set is an error, computed or fallen back to (0.065375ms)
+  AssertionError [ERR_ASSERTION]: an empty computed set must fail: the computed set of supported Node majors [18] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:82:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'the computed set of supported Node majors [18] differs from the committed fallback PM_NODE_FALLBACK [22,24,26] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together',
+    expected: /empty/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+exit=1
+=== (4) a malformed body routed to the FALLBACK ===
+80,82c80
+<   if (!schedule) {
+<     return { error: "the fetched Node release schedule is unreadable (not a JSON object with any start/end entry) — refusing to fall back on a schedule that answered" };
+<   }
+---
+>   if (!schedule) return { majors: committed, warning: "unreadable schedule — using the fallback" };
+✔ 4.2b each of the three clauses decides one entry of a canned schedule on its own (1.330834ms)
+✔ 4.2b the live 2026-09-24 shape yields [22,24,26] — not 18, 20 (ended), 23, 25 (no lts) or 27 (not started) (0.1825ms)
+✔ 4.2b decide(): a failed fetch uses the committed fallback AND says so (0.313625ms)
+✖ 4.2b decide(): a fetched body that is not a readable schedule is an ERROR, never the fallback (0.661833ms)
+✔ 4.2b decide(): a computed set that differs from the committed list fails, naming both (0.2815ms)
+✔ 4.2b decide(): an empty set is an error, computed or fallen back to (0.254708ms)
+✔ 4.2b decide(): an agreeing schedule yields the computed set with no warning (0.190417ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 147.184417
+
+✖ failing tests:
+
+test at scripts/test/assert/support-floor.test.mjs:64:1
+✖ 4.2b decide(): a fetched body that is not a readable schedule is an ERROR, never the fallback (0.661833ms)
+  AssertionError [ERR_ASSERTION]: body "<html>404</html>" must be refused as unreadable
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m42b/tree/scripts/test/assert/support-floor.test.mjs:67:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /unreadable/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+exit=1

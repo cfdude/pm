@@ -47,6 +47,9 @@ const initializedRepo = fixtureOnce(() => {
 // the memory store does not share (probed: the same fixture returns 0 there, not 9).
 
 test("conformance: main() RETURNS its status — it is not a promise", () => {
+  // The half calls the engine in process, many invocations per file, from SYNCHRONOUS test callbacks;
+  // an entry point that answered with a Promise could not be called from them at all (the functional
+  // twin carries the full argument).
   const cwd = initializedRepo();
   const r = invokeEngine(["init"], { cwd });
   assert.equal(typeof r.status, "number", `main() must return a numeric status; got ${typeof r.status}`);
@@ -141,3 +144,26 @@ test("conformance: a write conflict returns 9, and the caller survives it", () =
 });
 
 void main;
+
+// ─────────────── Gate 2 M2 — the runtime version has ONE authoritative default ───────────────
+//
+// engine-invocation: when the caller supplies no runtime version, the invocation carries the running
+// process's. That default is `runtimeVersion()`'s `ctx.nodeVersion ?? process.version`
+// (scripts/lib/invocation.mjs) — the ONE place the engine reads `process.version`. The entry point
+// passes `io.nodeVersion` through unchanged and PROCESS_CONTEXT carries none, so a second default can
+// never disagree with the first. Comments are stripped before counting.
+
+test("M2 the engine reads process.version at exactly ONE code site — runtimeVersion()'s default", () => {
+  const LIB = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "lib");
+  const sources = [
+    ...fs.readdirSync(LIB).filter((f) => f.endsWith(".mjs")).map((f) => [`scripts/lib/${f}`, path.join(LIB, f)]),
+    ["scripts/conductor.mjs", path.join(LIB, "..", "conductor.mjs")],
+  ];
+  const sites = [];
+  for (const [rel, p] of sources) {
+    const code = fs.readFileSync(p, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    for (const line of code.split("\n")) if (/\bprocess\.version\b/.test(line)) sites.push(`${rel}: ${line.trim()}`);
+  }
+  assert.deepEqual(sites, ["scripts/lib/invocation.mjs: export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;"],
+    "the runtime version must default in ONE place — runtimeVersion() — so two defaults can never disagree");
+});

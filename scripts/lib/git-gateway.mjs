@@ -2,7 +2,7 @@
 // ONE injected gateway over every git invocation the engine makes. 4.2 of
 // functional-assertion-test-split (design D4).
 //
-// WHY A GATEWAY AT ALL. The assertion half runs the whole engine IN ONE PROCESS (design D5), and
+// WHY A GATEWAY AT ALL. The assertion half runs the whole engine IN PROCESS (design D5), and
 // the repository it runs against is a temporary directory rather than a git checkout. A half that
 // ran real git would be the functional half — slow, and the thing the split exists to move off the
 // per-commit path. So the assertion half passes a DOUBLE (scripts/test/fake-git.mjs), the functional

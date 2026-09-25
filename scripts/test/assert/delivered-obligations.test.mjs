@@ -23,7 +23,7 @@ import { tmpRepo } from "../fixtures/assert-harness.mjs";
 
 /** `deliveredObligations(epic, opts)` computed in-process, with THIS half's double as the gateway.
  *  The previous invocation is restored afterwards, so a direct lib call here cannot leak a context
- *  into the next test in the shared process. */
+ *  into the next test in this file's process. */
 function obligations(epic, opts) {
   const cwd = tmpRepo();
   const before = installedInvocation();
