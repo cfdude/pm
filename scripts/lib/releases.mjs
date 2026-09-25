@@ -301,7 +301,24 @@ export function release() {
     if (epic.release === id) delete epic.release;
     const record = releaseDeferral({ epic: deferred.epic, reason: deferred.reason });
     const at = rel.deferred.findIndex(d => d && d.epic === deferred.epic);
-    if (at === -1) rel.deferred.push(record); else rel.deferred[at] = record;
+    if (at === -1) {
+      rel.deferred.push(record);
+    } else if (rel.deferred[at].reason !== record.reason) {
+      // A CHANGED REASON (release-member-moves-silently, 0.43.0 review A2). Re-deferring used to
+      // replace the record outright, so "depends on X landing" became "cut for scope" and the
+      // first judgment was gone. `deferred[]` keeps its shape and holds the CURRENT reason; the
+      // one it replaces goes to the release's `amendments[]` — the one history a release has,
+      // already swept on remove-epic and already rendered by `release show` — as `was`.
+      const prior = rel.deferred[at];
+      amend(rel, { op: "redefer", epic: deferred.epic, reason: record.reason, was: prior.reason,
+        ...(prior.recordedAt ? { wasRecordedAt: prior.recordedAt } : {}) });
+      errStream().write(
+        `conductor: '${escapeControls(deferred.epic)}' was already deferred from '${escapeControls(id)}' — the reason now ` +
+        `reads: ${escapeControls(record.reason)} (it read: ${escapeControls(prior.reason)}, kept in the amendments)\n`);
+      rel.deferred[at] = record;
+    }
+    // The IDENTICAL reason re-run is a no-op: the existing record, its `recordedAt` included,
+    // stays exactly as it was, so the write reports "unchanged" rather than a change nobody made.
   }
 
   if (unmember) {

@@ -11,3 +11,12 @@ M2 (Task 1) — `if (prev && prev !== id)` → `if (prev)` (same-release re-memb
   ✖ re-membering into the SAME release writes nothing
   pass 5 / fail 1
 
+M3 (Task 2) — `amend(rel, { op: "redefer", … })` → `void ({ op: "redefer", … })`
+  ✖ re-deferring with a NEW reason keeps the old one in the amendments trail
+  ✖ a re-defer names the reason it replaced on stderr, and `release show` renders both
+  ✖ three reasons in a row leave a readable chain: each amendment's `was` is the one before
+  pass 7 / fail 3
+
+M4 (Task 2) — `else if (rel.deferred[at].reason !== record.reason)` → `else if (true)`
+  ✖ re-deferring with the IDENTICAL reason writes nothing — not even a fresh recordedAt
+  pass 9 / fail 1

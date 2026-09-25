@@ -89,3 +89,45 @@ unitTest("one --member that undefers on the new release AND moves off the old on
   assert.deepEqual(rel(engine, "r2").amendments.map(strip),
     [{ op: "undefer", epic: "e0", was: "not yet", via: "member" }]);
 });
+
+// ─────────────────── decision (b): a re-defer keeps the reason it replaces ───────────────────
+
+unitTest("re-deferring with a NEW reason keeps the old one in the amendments trail", () => {
+  const engine = repo();
+  engine(["release", "r1", "--intent", "one", "--defer", "e1:depends on X landing"]);
+  const first = rel(engine, "r1").deferred[0];
+  engine(["release", "r1", "--defer", "e1:cut for scope"]);
+  const r = rel(engine, "r1");
+  assert.equal(r.deferred.length, 1);
+  assert.equal(r.deferred[0].reason, "cut for scope", "deferred[] holds the CURRENT reason");
+  assert.deepEqual(r.amendments.map(strip), [{
+    op: "redefer", epic: "e1", reason: "cut for scope", was: "depends on X landing",
+    wasRecordedAt: first.recordedAt,
+  }]);
+});
+
+unitTest("a re-defer names the reason it replaced on stderr, and `release show` renders both", () => {
+  const engine = repo();
+  engine(["release", "r1", "--intent", "one", "--defer", "e1:depends on X landing"]);
+  const out = engine.combined(["release", "r1", "--defer", "e1", "--reason", "cut for scope"]);
+  assert.match(out, /depends on X landing/);
+  const shown = engine(["release", "show", "r1"]);
+  assert.match(shown, /redefer `e1` — cut for scope \[it read: depends on X landing\]/);
+});
+
+unitTest("re-deferring with the IDENTICAL reason writes nothing — not even a fresh recordedAt", () => {
+  const engine = repo();
+  engine(["release", "r1", "--intent", "one", "--defer", "e1:depends on X landing"]);
+  const before = bytes(engine);
+  engine(["release", "r1", "--defer", "e1:depends on X landing"]);
+  assert.equal(bytes(engine), before);
+});
+
+unitTest("three reasons in a row leave a readable chain: each amendment's `was` is the one before", () => {
+  const engine = repo();
+  engine(["release", "r1", "--intent", "one", "--defer", "e1:a"]);
+  engine(["release", "r1", "--defer", "e1:b"]);
+  engine(["release", "r1", "--defer", "e1:c"]);
+  assert.deepEqual(rel(engine, "r1").amendments.map(a => [a.op, a.was, a.reason]),
+    [["redefer", "a", "b"], ["redefer", "b", "c"]]);
+});
