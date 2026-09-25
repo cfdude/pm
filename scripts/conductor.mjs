@@ -74,7 +74,8 @@
  * `brief` is the read; `render` writes PROJECT.md and the render stamp whenever there is
  * anything to render, so it is not the verb to reach for when inspecting a repo you do not own.
  *
- * No external dependencies. Node 18+. OpenSpec optional (uses the filesystem).
+ * No external dependencies. Node 22+ — pm supports the oldest Node LTS line that is not end-of-life
+ * (NODE_FLOOR_MAJOR, lib/runtime-support.mjs). OpenSpec optional (uses the filesystem).
  *
  * The plugin's hooks run in EVERY project at user scope, so brief/snapshot/
  * commit-nudge stay silent until a project runs `/pm:init` (presence of
@@ -208,6 +209,10 @@ function runInvocation(argv, io = {}) {
     // the CLI contract untouched — the command line has always written the record to `.conductor/`
     // and still does, byte for byte.
     store: io.store,
+    // 0.49.0 — the RUNTIME VERSION, per call and by the same rule: `io.nodeVersion` is how a caller
+    // supplies one (the unit rung exercises a Node below the support floor without one installed);
+    // absent, it is this process's own, so the command line behaves exactly as it did.
+    nodeVersion: io.nodeVersion ?? process.version,
   };
   setInvocation(ctx);
   // The engine's per-process git caches are per-INVOCATION in fact: this process may serve many

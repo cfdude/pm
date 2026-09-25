@@ -1,0 +1,78 @@
+# red-3.1 — captured 2026-09-24 against the pre-GREEN tree (b7ba061 + the new unit file); node v26.9.0
+# command: node --test scripts/test/unit/runtime-support.test.mjs
+# The first three are RED (no seam, no line); the four regression guards pass today.
+✖ below the support floor, brief's context STARTS with one line naming the version and the floor (6.038292ms)
+✖ two invocations in one process under two different below-floor versions each name their own (2.234042ms)
+✖ no supplied version: the invocation carries the PROCESS's version while the call is in progress (1.425834ms)
+✔ at or above the support floor — an unsupported odd major above it included — there is no line (2.887459ms)
+✔ a version that cannot be parsed gets no line — cannot tell is not below the floor (1.075667ms)
+✔ an uninitialized repository stays silent below the support floor (0.23ms)
+✔ the rendered PROJECT.md and the PreCompact snapshot never carry the line (3.991792ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.370375
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:124:3
+✖ below the support floor, brief's context STARTS with one line naming the version and the floor (6.038292ms)
+  AssertionError [ERR_ASSERTION]: the first line must name the running version: ⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/runtime-support.test.mjs:42:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:128:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).',
+    expected: /20\.20\.2/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:124:3
+✖ two invocations in one process under two different below-floor versions each name their own (2.234042ms)
+  AssertionError [ERR_ASSERTION]: the first invocation names its own version: ⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/runtime-support.test.mjs:55:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:128:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '⚠ pm 0.0.0 → 0.48.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).',
+    expected: /20\.20\.2/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:124:3
+✖ no supplied version: the invocation carries the PROCESS's version while the call is in progress (1.425834ms)
+  AssertionError [ERR_ASSERTION]: an invocation that supplies no version must carry the running process's own, not an absent value
+  + actual - expected
+  
+    [
+  +   undefined
+  -   'v26.9.0'
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/runtime-support.test.mjs:69:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:128:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined ],
+    expected: [ 'v26.9.0' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

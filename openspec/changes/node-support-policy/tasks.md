@@ -278,7 +278,7 @@ Commit mechanics, which bind every section below:
 
 ## 3. The engine: the support floor, the runtime-version seam, the brief line (design D1, D6)
 
-- [ ] 3.1 A new unit-rung file, `scripts/test/unit/runtime-support.test.mjs`, driven through
+- [x] 3.1 A new unit-rung file, `scripts/test/unit/runtime-support.test.mjs`, driven through
       `memoryEngine()` with `nodeVersion`. It is split by what fails TODAY (Gate 1 I1):
       **RED** (fails today — no seam, no line; save `red-3.1.txt`):
       - `brief` in an initialized record under `v20.20.2` → the `additionalContext` starts with one
@@ -296,7 +296,7 @@ Commit mechanics, which bind every section below:
       - not initialized → no output (mutation: the line emitted before `brief()`'s dormancy return);
       - `render`'s PROJECT.md artifact and `snapshot`'s brief artifact under `v20.20.2` → neither
         contains the line (mutation: the line built in `buildBrief()` instead of `brief()`).
-- [ ] 3.2 GREEN — the engine side.
+- [x] 3.2 GREEN — the engine side.
       - New `scripts/lib/runtime-support.mjs`: `NODE_FLOOR_MAJOR = 22`, and a pure function from a
         version to the line or `null`.
       - `invocation.mjs`: `PROCESS_CONTEXT` gains a live `nodeVersion` getter, and a

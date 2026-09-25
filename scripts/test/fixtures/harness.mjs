@@ -60,7 +60,7 @@ export function runner() {
 /** One in-process invocation, with the caller's streams, the caller's stdin and (optionally) a
  *  double for git. Returns the captured streams and the returned status rather than throwing, so
  *  `runCombined` and a caller that wants the status can both be built on it. */
-export function invokeEngine(args, { cwd, env = {}, input, git, store } = {}) {
+export function invokeEngine(args, { cwd, env = {}, input, git, store, nodeVersion } = {}) {
   let out = "", err = "", leaked = "";
   const io = {
     cwd,
@@ -75,6 +75,8 @@ export function invokeEngine(args, { cwd, env = {}, input, git, store } = {}) {
     // 1.2 (0.48.0) — the invocation's STORE, on the same terms as the gateway above it: absent
     // means the disk store, which is what every existing caller gets without changing.
     ...(store ? { store } : {}),
+    // 0.49.0 — the invocation's RUNTIME VERSION, on the same terms: absent means the process's own.
+    ...(nodeVersion !== undefined ? { nodeVersion } : {}),
   };
   // THE PROCESS'S OWN WRITERS ARE PATCHED-AND-FORWARDED FOR THE CALL (G-M4, Gate 2). "Everything the
   // engine prints lands on the streams the CALLER supplied, and nothing on the process's own" is a

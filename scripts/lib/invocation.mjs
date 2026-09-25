@@ -49,6 +49,8 @@ const PROCESS_CONTEXT = {
   get stdout() { return process.stdout; },
   get stderr() { return process.stderr; },
   get root() { return process.env.CLAUDE_PROJECT_DIR || process.cwd(); },
+  // 0.49.0 (engine-invocation's per-call runtime version) — LIVE, like the rest of this object.
+  get nodeVersion() { return process.version; },
 };
 
 /** The invocation in force. Never null: outside `main()` it is a live view of the process. */
@@ -67,8 +69,8 @@ export const installedInvocation = () => CURRENT;
  *
  *  Deliberately NOT re-entrant and deliberately not refcounted: the engine has one entry point and
  *  an in-process caller serves its invocations one at a time, so "the current invocation" is a
- *  stack of one. What
- *  it is NOT is permanent — an in-process invocation that stayed installed after returning made
+ *  stack of one. What it is NOT is permanent — an in-process invocation that stayed installed after
+ *  returning made
  *  every DIRECT lib call that followed read the invocation's temporary directory, where a child
  *  process had left the caller's own process view alone. */
 export function setInvocation(ctx) {
@@ -97,6 +99,14 @@ export const currentEnv = (ctx = invocation()) => ctx.env;
  *  `CLAUDE_PROJECT_DIR` at a project from anywhere, and the divergence warning exists precisely
  *  because those two can differ. */
 export const currentCwd = (ctx = invocation()) => ctx.cwd;
+
+/** The version of the Node runtime this invocation consults (0.49.0, engine-invocation's "The
+ *  runtime version the engine consults is supplied per call"). `main()` sets it from `io.nodeVersion`
+ *  or the process's own; a context installed DIRECTLY with `setInvocation({ … })` and no
+ *  `nodeVersion` falls back to the running process's, so it behaves like the process. Never read
+ *  `process.version` at the point of use — this accessor is the seam that lets a test exercise a Node
+ *  below the support floor without one installed. */
+export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;
 
 /** The streams this invocation writes to. `die()` already goes through `errStream()`; 3.4 routes the
  *  rest, so an in-process caller receives everything on its own streams and nothing reaches the
