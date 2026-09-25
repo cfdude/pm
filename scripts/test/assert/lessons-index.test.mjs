@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { ADVISED_TOOLS, classifyLessons } from "../../lib/lessons.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const DIR = path.join(ROOT, "docs", "lessons");
@@ -58,42 +59,35 @@ test("every lesson carries the four contract fields", () => {
   }
 });
 
-// A `detect:` that does not parse is skipped by `matchableLessons()` and the lesson silently
-// becomes retrieval-only — how six of them died. This test does NOT require a lesson to have a
-// matcher (most correctly do not); it requires that one WRITTEN DOWN actually works. Six are
-// grandfathered while #194 decides whether the fix is a lint surface, a content matcher, or both;
-// the list is closed, so a seventh fails here rather than joining them.
-const INERT_PENDING_194 = new Set([
-  "a-fixture-reconstructed-from-live-data-dies-when-the-data-improves",
-  "a-silent-noop-edit-reports-success",
-  "an-unused-active-pointer-turns-a-true-check-into-noise",
-  "cite-a-symbol-not-a-line-number",
-  "second-resolution-timestamps-collide-on-fast-machines",
-  "stacked-background-commits-collide-on-the-lock",
-]);
-
-test("a declared detect: matcher parses as a JSON object, or is a known-inert one", () => {
-  for (const n of lessons) {
-    const txt = fs.readFileSync(path.join(DIR, `${n}.md`), "utf8");
-    const raw = txt.match(/^---\n([\s\S]*?)\n---/)[1].match(/^detect: (.+)$/m);
-    if (!raw) continue;                       // no matcher is a design choice, not a defect
-    if (INERT_PENDING_194.has(n)) continue;
-    let parsed;
-    assert.doesNotThrow(() => { parsed = JSON.parse(raw[1]); },
-      `${n}: \`detect:\` must be a JSON object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`);
-    assert.equal(typeof parsed, "object", `${n}: \`detect:\` parsed to a non-object`);
-    assert.ok(parsed !== null, `${n}: \`detect:\` is null`);
-  }
+// THE REPORTER FOR REJECTED MATCHERS (#194). `classifyLessons()` is the engine's own verdict — the
+// one the `lesson-advice` hook projects — so this test can never disagree with what actually
+// fires. A `detect:` written down that cannot work fails HERE, on the commit that wrote it, naming
+// the lesson and the rule it breaks. The hook itself stays silent: an advisor that printed on a
+// malformed corpus would print on every tool call.
+//
+// This replaced a closed grandfather list of six inert lessons (INERT_PENDING_194). All six were
+// judged against the new rules: four now carry a working matcher, two had regexes over SOURCE TEXT
+// being written — which no `detect` key can see — and are retrieval-only by design.
+test("every declared detect: matcher is accepted by the engine's classifier", () => {
+  const { rejected } = classifyLessons(DIR);
+  assert.deepEqual(rejected.map(r => `${r.file}: ${r.reason}`), [],
+    "a lesson's detect: is rejected — fix it, or remove it if the trigger cannot be matched precisely");
 });
 
-test("the grandfathered-inert list names only lessons that exist and are still inert", () => {
-  for (const n of INERT_PENDING_194) {
-    assert.ok(lessons.includes(n), `${n}: listed as inert but there is no such lesson`);
-    const txt = fs.readFileSync(path.join(DIR, `${n}.md`), "utf8");
-    const raw = txt.match(/^---\n([\s\S]*?)\n---/)[1].match(/^detect: (.+)$/m);
-    assert.ok(raw, `${n}: listed as inert but declares no \`detect:\` — drop it from the list`);
-    let ok = false;
-    try { const d = JSON.parse(raw[1]); ok = !!d && typeof d === "object"; } catch {}
-    assert.equal(ok, false, `${n}: \`detect:\` now parses — remove it from INERT_PENDING_194`);
-  }
+// The 🔔 column claims "carries a `detect:` matcher that actually parses". Held equal to the
+// classifier, so the claim cannot drift from what the hook fires on in either direction.
+test("the README index's 🔔 column names exactly the lessons the hook can fire", () => {
+  const src = fs.readFileSync(README, "utf8");
+  const belled = [...src.matchAll(/^\| \[`([a-z0-9-]+)`\]\(\1\.md\) \|.*\| 🔔 \|\s*$/gm)].map(m => m[1]).sort();
+  const matchable = classifyLessons(DIR).matchable.map(l => l.file.replace(/\.md$/, "")).sort();
+  assert.deepEqual(belled, matchable);
+});
+
+// ADVISED_TOOLS is what the classifier accepts as a `tool`; the hook's subscription is what the
+// shipped hooks.json sends it. A tool added to one and not the other is a matcher that validates
+// and can never fire, or one that could fire and is refused.
+test("ADVISED_TOOLS equals the lesson-advice matcher in hooks/hooks.json", () => {
+  const hooks = JSON.parse(fs.readFileSync(path.join(ROOT, "hooks", "hooks.json"), "utf8"));
+  const entry = hooks.hooks.PreToolUse.find(e => (e.hooks || []).some(h => String(h.command).includes("lesson-advice")));
+  assert.deepEqual(entry.matcher.split("|").sort(), [...ADVISED_TOOLS].sort());
 });

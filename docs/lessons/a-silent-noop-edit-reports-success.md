@@ -4,8 +4,8 @@ date: 2026-09-08
 trigger: About to apply an edit by string substitution — `str.replace`, `sed s///`, a scripted patch — to a file you are not going to read back, especially several edits in one script.
 cost: Two of three fixes in a Gate 1 fix pass changed ZERO BYTES and the script printed "C1, I4, I6 applied". Both patterns had missed on line wrapping alone. The miss was invisible for an hour and was caught only because a reviewer quoted, as an open finding, the exact text believed already replaced — and the review that caught it was already running when the fix was written, so nothing would have caught it otherwise. A downstream `openspec validate --strict` passed on both the fixed and unfixed content, because valid was never the property in question.
 rule: A substitution that misses is a no-op, and a no-op is indistinguishable from success unless you count matches. Assert the count — `re.subn` and compare, `grep -c` after `sed` — and make a miss exit non-zero. Never print "applied" from a line the substitution cannot reach.
-enforced_in: habit — assert-the-match-count; no mechanism. The nearest mechanical cousin is the read-back verification `update-epic` performs after writing.
-detect: (str\.replace|\.replace\(|sed -i|s\|.*\|.*\|)
+enforced_in: habit — assert-the-match-count; no mechanism. The nearest mechanical cousin is the read-back verification `update-epic` performs after writing. The `detect:` matcher fires on an in-place `sed -i` on a Bash command's first line; a `.replace(` inside a script is source text no matcher can see, so that half stays a habit.
+detect: {"tool":"Bash","commandMatches":"(^|[;&|]\\s*)sed -i"}
 tags: [verification, false-signal, tooling, silent-failure]
 ---
 

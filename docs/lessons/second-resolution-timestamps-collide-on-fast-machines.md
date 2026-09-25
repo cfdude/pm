@@ -11,7 +11,6 @@ rule: Never assert that two timestamps merely differ. Set the times explicitly â
 enforced_in: scripts/test/conductor-39.test.mjs â€” the fixture now sets GIT_AUTHOR_DATE and
   GIT_COMMITTER_DATE explicitly, spaced a minute apart, and asserts each record against its OWN
   commit rather than merely against "not the other one".
-detect: (notStrictEqual|notEqual)\([^)]*(createdAt|touchedAt|recordedAt|reviewedAt|assertedAt|%cI)
 ---
 
 ## What happened
