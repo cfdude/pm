@@ -7040,9 +7040,20 @@
       "externalId": "194",
       "externalUrl": "https://github.com/cfdude/pm/issues/194",
       "externalUpdatedAt": "2026-09-12T06:31:42Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cb9a61035102aa30a895627badb5056280051515",
+        "1199f9faf5dc4dc99dd8f86a872747618ac87115",
+        "63690ef069610b69e9a9f99b7ed6b88de1c0a6a5",
+        "3d69524c4dfb1dd543622982290bcba5637c9730",
+        "77eff5de72385ed14352af641b14e9a25a8cade5",
+        "b3b75df16f459cd5238e6157f9ec042208b603dd",
+        "b9ff15415794a10a41eefe55be2cef0a0b33a2d0",
+        "d130f4974cdfccb2fdb227022411394671a4d195",
+        "aa4cd2c3aeb196a9f56030d7406beaf2da99ba21",
+        "19756a8f2b37466c61083b641d3f177c76bd3d58"
+      ],
       "createdAt": "2026-09-14T18:18:22.066Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:03:31.044Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:24.032Z",
@@ -8046,9 +8057,20 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (C1, C2). lessons.mjs matchLessons compiles commandMatches with no complexity or input bound: detect {tool:Bash, commandMatches:'^(a+)+$'} on a 31-char command burned 60.4s CPU in the hook, on every Bash/Edit/Write call. An unknown key applies no predicate: {tool:Bash, commandMatch:'gh pr merge'} matched `ls`. CRLF frontmatter (/^---\\n/), a tool array and a bad regex are silently inert. Fix: allowlist detect keys, reject nested quantifiers or cap the matched text, accept CRLF, report rejects outside the hook.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cb9a61035102aa30a895627badb5056280051515",
+        "1199f9faf5dc4dc99dd8f86a872747618ac87115",
+        "63690ef069610b69e9a9f99b7ed6b88de1c0a6a5",
+        "3d69524c4dfb1dd543622982290bcba5637c9730",
+        "77eff5de72385ed14352af641b14e9a25a8cade5",
+        "b3b75df16f459cd5238e6157f9ec042208b603dd",
+        "b9ff15415794a10a41eefe55be2cef0a0b33a2d0",
+        "d130f4974cdfccb2fdb227022411394671a4d195",
+        "aa4cd2c3aeb196a9f56030d7406beaf2da99ba21",
+        "19756a8f2b37466c61083b641d3f177c76bd3d58"
+      ],
       "createdAt": "2026-09-15T05:11:20.243Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:03:09.923Z",
       "release": "0.50.0"
     },
     {
@@ -8356,9 +8378,17 @@
           "text": "0.46.0's call-site sweep adds a THIRD instance to this epic's scope, found at an unedited sibling site: drop-detour reduces detourStack depth, so diffEvents' depth comparison records it as kind 'detour-pop'. Verified in-process against the shipped diffEvents on 2026-09-18 — a buried drop (p below, q on top) returns {kind:'detour-pop', epic:null, depth:1}. The drop ENDS a pause; the pop RESUMES one, and they differ in status, active pointer and obligation. The record is not wholly wrong (every event carries verb:'drop-detour'), which is why it was left rather than fixed inside operations-ship-their-inverses: activity-log.mjs is outside that change's stated Impact and no spec of it binds the log. Fix alongside the epic:null key fix — a 'detour-drop' kind, keyed on which frame left rather than on depth alone, plus an activity-report vocabulary row."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "41282ec79f77f1a246ab183f5e50bcb29919a1c2",
+        "dbb50a49d6bbfa87cc463124e49692a8e6f25fb1",
+        "b16cb798d987b394595508b0c14bee6ddd793464",
+        "d23e57892631471dd134e7b1e4ad02472bf0ce4f",
+        "4f66d044178d9ed8b85b21334058a83e4c43ed47",
+        "ee54fec53f12f15caceaea5e3df36fc5f79c5464",
+        "1eae6586f353dbd9903c1beae70899fa3b4dac60"
+      ],
       "createdAt": "2026-09-15T05:11:36.863Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:02:49.056Z",
       "release": "0.50.0"
     },
     {
@@ -10327,7 +10357,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1407,
+  "revision": 1434,
   "reviewMode": "thorough",
   "releases": [
     {
