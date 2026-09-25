@@ -222,12 +222,12 @@ Commit mechanics, which bind every section below:
       - **If any of the 13 goes red, that file was reaching the real `git` undetected.** That is a
         FINDING, not a regression. The test moves to the functional half with a twin, and it is
         named in this task rather than exempted.
-- [ ] 2.3 RED — a file-rung test calls the shim module's exported directory-removal function on a
+- [x] 2.3 RED — a file-rung test calls the shim module's exported directory-removal function on a
       scratch directory, then asserts the directory is gone.
       - Fails today: the module exports no such function, and `assert-git-shim.mjs:64-74` removes
         nothing.
       - Save `red-2.3.txt`.
-- [ ] 2.4 GREEN — `assert-git-shim.mjs`'s exit listener reads the log and then removes `shimDir`
+- [x] 2.4 GREEN — `assert-git-shim.mjs`'s exit listener reads the log and then removes `shimDir`
       through that function.
       - The G-I4 test (`assert-half-has-no-spawn.test.mjs:149-168`) is re-scoped per design D3
         row 2. Its comment says the per-process listener is the mechanism, and its direct check is

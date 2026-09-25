@@ -15,16 +15,23 @@
 // and exits 128. Two things then hold the property:
 //
 //   * an `exit` listener that sets `process.exitCode = 1` and says so when the log is not empty, so
-//     ONE spawn anywhere in the half fails the half — measured, not assumed: with
-//     `--test-isolation=none` a passing `node --test` run whose exit listener sets `exitCode` exits
-//     1 (probed before this file was written);
+//     ONE spawn anywhere in a file's process fails that file, and the file's failure fails the run —
+//     measured on Node 22, 24 and 26 under the runner's default per-file isolation: a file whose exit
+//     listener sets `exitCode = 1` is reported `✖ <file> … 'test failed'` and the run exits 1
+//     (0.49.0, design D3 row 2);
 //   * `gitSpawns()`, which the guard test reads directly, so the same fact is also an assertion in
 //     the half rather than only a process status.
 //
-// IT IS IMPORTED BY `assert-harness.mjs`, and that is the whole installation: every assertion-half
-// file that drives the engine imports the harness, so the shim is in place before any test body
-// runs. The functional half imports `functional-harness.mjs` instead and must never load this file —
+// THE COUNTER IS PER PROCESS, SO EVERY RUNG FILE INSTALLS IT ITSELF (0.49.0, design D3 row 1). The
+// runner gives each file its own process, and a shim another file installed covers nothing here.
+// Every unit- and file-rung file imports this module directly or through `assert-harness.mjs` /
+// `unit-harness.mjs`, and `assert/assert-half-has-no-spawn.test.mjs` refuses, by name, one that does
+// neither. The functional half imports `functional-harness.mjs` instead and must never load this file —
 // it runs the real git by design.
+//
+// THE DIRECTORY IS REMOVED AT EXIT (0.49.0, design D3 row 3). One `pm-assert-no-git-*` directory is
+// made per process that imports this file; the exit listener reads the log and THEN removes it, through
+// `removeTempDir()`, which `fixtures/harness.mjs` uses for its own per-process directory too.
 //
 // THE SHIM IS NOT A FAILURE INJECTION. Exiting 128 is what a missing repository looks like, and it is
 // TOLERATED by every caller (`headAttachment` answers "unknown", `appendEvents` returns): the suite
@@ -53,6 +60,14 @@ export const SHIM_DIR = shimDir;
 
 process.env.PATH = `${shimDir}${path.delimiter}${process.env.PATH}`;
 
+/** Remove a per-process temp directory and everything under it. Synchronous, because its caller is
+ *  an `exit` listener, and silent on a directory that is already gone, because an exit listener must
+ *  never throw. Exported so a test can exercise it (`assert/git-shim.test.mjs`): the listener itself
+ *  runs after every test has finished, where nothing can observe it. */
+export function removeTempDir(dir) {
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
 /** Every real git invocation the process has made since the shim was installed. Empty is the
  *  property; a non-empty list is the evidence, including the argv that was run. */
 export function gitSpawns() {
@@ -62,11 +77,13 @@ export function gitSpawns() {
 }
 
 process.on("exit", () => {
+  // READ FIRST, THEN REMOVE: the log lives in the directory being removed.
   const spawns = gitSpawns();
+  removeTempDir(shimDir);
   if (!spawns.length) return;
   process.stderr.write(
     `\nassertion half: ${spawns.length} REAL 'git' invocation(s) reached the shim — the half must run ` +
-    "no git (design D5, suite-certification's 'spawns no process and runs no git'):\n" +
+    "no git (suite-certification's 'No test in the assertion half spawns a process or runs git'):\n" +
     spawns.slice(0, 10).map((s) => `  git ${s}\n`).join("") +
     "A direct lib call outside `main()` leaves invocation() on the live process context, so gitOps() " +
     "builds the real gateway. Drive it through the harness, or hand it a fake.\n");

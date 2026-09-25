@@ -1,0 +1,34 @@
+# red-2.3 — captured 2026-09-24 against the pre-GREEN tree (6b07a08 + the new test file); node v26.9.0
+# command: node --test scripts/test/assert/git-shim.test.mjs
+✖ 2.3 the shim module exports a directory-removal function, and it removes a directory tree (0.653042ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 96.105292
+
+✖ failing tests:
+
+test at scripts/test/assert/git-shim.test.mjs:24:1
+✖ 2.3 the shim module exports a directory-removal function, and it removes a directory tree (0.653042ms)
+  AssertionError [ERR_ASSERTION]: fixtures/assert-git-shim.mjs exports no removeTempDir(): nothing can remove the directory the shim creates, so every process that installs it leaks one pm-assert-no-git-* directory
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/git-shim.test.mjs:25:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

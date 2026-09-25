@@ -1,6 +1,6 @@
 // scripts/test/assert/assert-half-has-no-spawn.test.mjs
-// 5.2 — THE ASSERTION-HALF GUARD (design D5, suite-certification's "The assertion half spawns no
-// process and runs no git").
+// 5.2 — THE ASSERTION-HALF GUARD (design D5, suite-certification's "No test in the assertion half
+// spawns a process or runs git" — 0.49.0's restatement of the requirement this file enforces).
 //
 // WHAT IT IS FOR. The assertion half's whole value is that it runs in ONE process on every commit,
 // on the git double, without booting Node once per assertion. A single `spawnSync` added to one file
@@ -155,16 +155,23 @@ test("G-I4 the assertion half makes ZERO real git calls — a PATH shim counts t
   // still passed, because a shim that merely fails is tolerated by every caller.
   //
   // So the enforcement is a shim that does not fail anything — it COUNTS, and an `exit` listener
-  // installed with it fails the whole half when the count is not zero. That listener is what makes
-  // this hold for the files that run AFTER this one; the assertion here is the same fact, read
-  // directly, so a spawn is reported as a named test failure as well as a process status.
+  // installed with it fails the process's file when the count is not zero.
+  //
+  // RE-SCOPED FOR PER-FILE ISOLATION (0.49.0, design D3 row 2). THE PER-PROCESS EXIT LISTENER IS THE
+  // MECHANISM: the runner gives every file its own process, every rung file installs the shim itself
+  // (the walk below refuses one that does not), and each process's listener fails its own file —
+  // verified on Node 22, 24 and 26 that such a file is reported `✖ <file> … 'test failed'` and the run
+  // exits 1. What this test reads DIRECTLY is therefore THIS process only: that the shim is first on
+  // PATH here, and that this file has made no real git call so far. It no longer speaks for "the half
+  // up to this point", because no other file shares its process.
   assert.equal(process.env.PATH.split(path.delimiter)[0], SHIM_DIR,
-    "the git shim must be first on PATH, or a real `git` is reachable and this guard counts nothing");
+    "the git shim must be first on PATH in THIS process, or a real `git` is reachable and this " +
+    "guard counts nothing");
   const spawns = gitSpawns();
   assert.deepEqual(spawns, [],
-    `the assertion half ran ${spawns.length} real git invocation(s) up to this point: ${spawns.join(" | ")}. ` +
-    "The half runs in one process on the injected double; a real git call means something reached " +
-    "the gateway through the PROCESS context instead of through an installed invocation.");
+    `this file's process ran ${spawns.length} real git invocation(s): ${spawns.join(" | ")}. ` +
+    "The half runs on the injected double; a real git call means something reached the gateway " +
+    "through the PROCESS context instead of through an installed invocation.");
 });
 
 // ─────────────── 0.49.0 task 2.1 — EVERY RUNG FILE INSTALLS THE RUN-TIME COUNTER ITSELF ───────────────
@@ -253,8 +260,8 @@ test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the s
 //
 // A unit-rung file SHALL perform no filesystem work at all: it SHALL NOT import the filesystem module,
 // SHALL NOT read, write, create or remove a path, and SHALL NOT flush a file to disk
-// (suite-certification's "The assertion half spawns no process and runs no git", whose UNIT RUNG
-// paragraph this is the enforcement of).
+// (suite-certification's "No test in the assertion half spawns a process or runs git", whose UNIT
+// RUNG paragraph this is the enforcement of).
 //
 // WHY IT IS A SEPARATE WALK FROM THE ONE ABOVE. The two checks are the same FUNCTION and different
 // SUBJECTS: the half's walk hands `violations()` no rung, because a spawn is a violation anywhere in
