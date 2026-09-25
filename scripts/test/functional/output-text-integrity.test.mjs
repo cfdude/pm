@@ -1076,7 +1076,7 @@ for (const verb of ["brief", "commit-nudge", "gate-guard", "init", "lesson-advic
 // ── read verbs ──
 recipe("activity --since", { notRendered: "an unparseable --since filters nothing and is printed by no surface", run: (c, v) => pm(c.cwd, ["activity", "--since", v]) });
 recipe("activity --epic", { notRendered: "--epic only filters the events read; the report does not echo it", run: (c, v) => pm(c.cwd, ["activity", "--epic", v]) });
-recipe("changelog --since", { notRendered: "--since selects changelog sections and is not echoed", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
+recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and anything else is refused", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
 recipe("rules --epic", { notRendered: "--epic selects the review mode the block states and is not echoed", run: (c, v) => pm(c.cwd, ["rules", "--epic", v]) });
 recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });

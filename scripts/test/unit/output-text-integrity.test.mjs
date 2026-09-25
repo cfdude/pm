@@ -128,3 +128,10 @@ unitTest("the priority and watermark refusals quote a poisoned value on one line
     assert.doesNotMatch(err.stderr, FORGED, `${flag}: the value cannot start a line`);
   }
 });
+
+// `changelog --since` joined them: its recipe is `exempt` now, and its refusal quotes the value.
+unitTest("the changelog --since refusal quotes a poisoned value on one line", () => {
+  const err = expectFail(() => memoryEngine(emptyRecord())(["changelog", "--since", "x\nconductor: FORGED"]));
+  assert.ok(err, "refused");
+  assert.doesNotMatch(err.stderr, FORGED);
+});

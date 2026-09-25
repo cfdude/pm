@@ -71,3 +71,14 @@ unitTest("isIsoTimestamp accepts what GitHub, Linear and Jira emit and nothing D
     assert.equal(isIsoTimestamp(bad), false, String(bad));
   }
 });
+
+unitTest("changelog --since refuses a value that is not a version instead of printing everything", () => {
+  // cmpVer() read any non-number as 0, so `--since garbage` meant "since 0.0.0": 3,366 lines.
+  const engine = memoryEngine(emptyRecord());
+  for (const v of ["garbage", "0.43", "v0.43.0", "0.43.0-rc1"]) {
+    const err = expectFail(() => engine(["changelog", "--since", v]));
+    assert.ok(err, `--since ${v} is refused`);
+    assert.match(err.stderr, /--since must be a pm version like 0\.43\.0/);
+    assert.equal(err.stdout, "", "and nothing of the changelog is printed");
+  }
+});

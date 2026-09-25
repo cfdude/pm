@@ -10,3 +10,6 @@
   such as February 30. `record-tracker-refresh` also refuses a watermark older than the one already
   recorded (a tracker's updated time only moves forward) and names `update-epic
   --external-updated-at` as the correction path when the recorded one is wrong.
+* **`changelog --since` refuses a value that is not a version.** Any non-version read as `0.0.0`,
+  so `--since garbage` printed the entire changelog — about 3,400 lines — instead of saying the
+  value was wrong. It now takes only `x.y.z`.
