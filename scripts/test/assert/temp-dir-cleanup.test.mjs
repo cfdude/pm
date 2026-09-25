@@ -45,10 +45,6 @@ const KNOWN = [
   { file: "assert/conductor-33.test.mjs", token: "tmpRepo())), prefix", tail: true,
     how: "LEAKS (pm-seg*) — scratchDir() was out of gh-cfdude-pm-224's scope: another agent owned conductor-33 in 0.50.0" },
   // PENDING — scheduled by a later task of gh-cfdude-pm-224 and removed from this table as it lands.
-  { file: "assert/parity.test.mjs", token: "pm-parity-", pending: true },
-  { file: "assert/engine-resolution.test.mjs", token: "pm-gh139-", pending: true },
-  { file: "assert/drift-script.test.mjs", token: "pm-cert-record-", pending: true },
-  { file: "assert/drift-script.test.mjs", token: "pm-cert-covers-", pending: true },
   { file: "functional/hermetic-git.test.mjs", token: "os.tmpdir(), p)", pending: true },
   { file: "functional/commit-resolution.test.mjs", token: "pm-optinject-", pending: true },
   { file: "functional/emitted-invocations.test.mjs", token: "pm-emitted-docs-", pending: true },

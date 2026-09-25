@@ -56,6 +56,15 @@ const PROBE = [
   "",
 ].join("\n");
 
+/** Real site files, each run in a hermetic TMPDIR of its own. Every entry is a site `rg -n mkdtemp`
+ *  found that a PASSING run reaches; a site that leaked only when its own assertion failed (removal
+ *  inline, not in a `finally`) is covered by the twin's enrolment instead, since a passing run cannot
+ *  show it. `namePattern` keeps a large file to the tests that reach its site. */
+const SITE_RUNS = [
+  { file: "assert/parity.test.mjs" },
+  { file: "assert/engine-resolution.test.mjs" },
+];
+
 function hermeticRoot() {
   // The guard's own scratch is scheduled too — a guard against leaks must not be one.
   const root = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-leak-guard-")));
@@ -99,4 +108,16 @@ test("temp-dir-cleanup: the fixture helpers' directories are all gone once the p
   assert.deepEqual(leftovers(tmp), [],
     `these temp directories outlived the process that made them — schedule each with removeAtExit() ` +
     `(fixtures/temp-dir.mjs):\n  ${leftovers(tmp).join("\n  ")}`);
+});
+
+test("temp-dir-cleanup: each enrolled site file leaves nothing behind", () => {
+  assert.ok(SITE_RUNS.length > 0, "no site files enrolled — this test would pass having run nothing");
+  const left = {};
+  for (const { file, namePattern = null } of SITE_RUNS) {
+    const { tmp } = hermeticRoot();
+    nestedRun([path.join(TEST_DIR, "..", file)], { tmp, namePattern });
+    if (leftovers(tmp).length) left[file + (namePattern ? ` /${namePattern}/` : "")] = leftovers(tmp);
+  }
+  assert.deepEqual(left, {},
+    "these site files left temp directories behind once their process exited — schedule each with removeAtExit()");
 });
