@@ -175,7 +175,10 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // TRACKED files of the half the runner was GIVEN (the index, via git ls-files), never from the
   // shell's expansion of the runner's own pattern — the two shrinking in lockstep is exactly how a
   // file renamed out of the glob used to drop from both sides at once and leave the floor blind.
-  assert.match(hookText, /declared=\$\(git ls-files 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
+  // RE-POINTED IN 0.50.0: the list is read from the index git HANDED the hook
+  // (`GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files …`), because the hook now runs from inside
+  // its index snapshot, and `.git/index` is stale under `commit -a` and `commit <path>`.
+  assert.match(hookText, /declared=\$\(GIT_INDEX_FILE="\$INDEX_FILE" git -C "\$ROOT" ls-files 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
     ".githooks/pre-commit's floor does not enumerate the tracked files of the RUNG SET its runner " +
     "was given — and the set is a LIST now, so a floor still naming one rung would count a subset");
   assert.doesNotMatch(hookText, /declared=\$\(grep /,
@@ -185,10 +188,12 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // assertion above is a prefix match, so it still passed — while in the real repository it aborts
   // every commit that has a functional half at all. This is the invariant D8 states, asserted in the
   // direction that breaks the commit rather than the direction that only mis-counts.
-  assert.doesNotMatch(hookText, /declared=\$\(git ls-files[^\n]*functional/,
+  // `[^\n]*` BEFORE `ls-files` since 0.50.0 — the line now opens with the index env assignment, and a
+  // pattern anchored on `declared=$(git ls-files` would match nothing and pass vacuously.
+  assert.doesNotMatch(hookText, /declared=\$\([^\n]*ls-files[^\n]*functional/,
     "the hook's floor enumerates the functional half as well as the assertion half: it is a superset " +
     "of what this runner was given, and it aborts every commit that has a functional half at all");
-  assert.doesNotMatch(hookText, /declared=\$\(git ls-files[^\n]*sweeps/,
+  assert.doesNotMatch(hookText, /declared=\$\([^\n]*ls-files[^\n]*sweeps/,
     "the hook's floor enumerates the sweep bucket as well — same superset, same refusal");
   // The enrolment check landed INLINE in 5.3, because a file in neither half is run by nothing and
   // counted by nothing and the floor alone cannot see it. 6.4 RETIRED THAT COPY, handing all four
@@ -200,4 +205,58 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   assert.doesNotMatch(hookText, /grep -v -E '\^scripts\/test\//,
     "the hook has taken the enrolment check back inline — the drift script owns it, and two " +
     "implementations of one rule is the shape 6.4 exists to remove");
+});
+
+test("IX the hook verifies the INDEX: captured before the scrub, exported with checkout-index, and run from the export", () => {
+  // THE SHAPE HALF of the functional IX-a…IX-f fixtures (0.50.0, commit-gate-tests-working-tree-not-index).
+  // Those fixtures prove the behaviour through a real shell; this pins the lines that produce it, on
+  // the per-commit path, so a hook edit that quietly goes back to the working tree fails here first.
+  const lines = fs.readFileSync(HOOK, "utf8").split("\n");
+  const at = (re) => lines.findIndex((l) => re.test(l));
+  const RUNNER_AT = at(/^if FORCE_COLOR=0 node --test /);
+  assert.ok(RUNNER_AT > 0, "the runner line was not found");
+
+  // 1. THE INDEX IS CAPTURED BEFORE THE SCRUB. After `unset GIT_INDEX_FILE` the value git handed the
+  //    hook is gone, and `.git/index` is STALE under `commit -a` and `commit <path>`.
+  const captureAt = at(/^INDEX_FILE=\$\{GIT_INDEX_FILE:-\}$/);
+  const unsetAt = at(/^unset [^\n]*\bGIT_INDEX_FILE\b/);
+  assert.ok(captureAt >= 0 && unsetAt > captureAt, "GIT_INDEX_FILE must be captured BEFORE the hook unsets it");
+  assert.equal(at(/^case "\$INDEX_FILE" in "" \| \/\*\) ;; \*\) INDEX_FILE="\$PWD\/\$INDEX_FILE" ;; esac$/), captureAt + 1,
+    "a relative GIT_INDEX_FILE (a plain commit's `.git/index`) must be made absolute against the cwd git gave the hook");
+  assert.ok(at(/^\[ -n "\$INDEX_FILE" \] \|\| INDEX_FILE=\$\(git rev-parse --path-format=absolute --git-path index\)$/) > unsetAt,
+    "with no GIT_INDEX_FILE the hook must fall back to the repository's own index, absolutely");
+
+  // 2. THE INDEX IS EXPORTED, AND THE RUNNER RUNS FROM THE EXPORT.
+  const snapAt = at(/^SNAP=\$\(mktemp -d /);
+  const exportAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" git checkout-index -a --prefix="\$SNAP\/"; then$/);
+  const cdAt = at(/^cd "\$SNAP"$/);
+  assert.ok(exportAt > 0, "the hook must export the captured index with `git checkout-index -a --prefix=\"$SNAP/\"`");
+  assert.ok(snapAt < exportAt && exportAt < cdAt && cdAt < RUNNER_AT,
+    "the order must be snapshot dir → export → cd into the snapshot → runner, or the runner reads the working tree");
+  assert.match(lines[snapAt], /^SNAP=\$\(mktemp -d "\$\{TMPDIR:-\/tmp\}\/pm-precommit-index\.XXXXXX"\)$/,
+    "the snapshot must be a private temp dir under $TMPDIR");
+
+  // 3. THE RUNNER NEVER SEES THE INDEX VARIABLE — the leak the scrub exists to stop. (Its line is pinned
+  //    by equality in the test above; this names the property.) The drift script does see it.
+  assert.doesNotMatch(lines[RUNNER_AT], /GIT_INDEX_FILE/, "the test runner must never inherit GIT_INDEX_FILE");
+  assert.ok(at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node scripts\/test\/drift\.mjs --root "\$ROOT"; then$/) > 0,
+    "the drift script reads the index too, so it must be handed the one this commit is made from");
+
+  // 4. `declared` COUNTS THE SNAPSHOT'S BYTES, never the working tree's copy of a partially staged file.
+  assert.ok(lines.some((l) => l.includes(`grep -cE '^(test|unitTest)\\(' "$SNAP/$f"`)),
+    "the floor's per-file count must read the snapshot's copy ($SNAP/$f)");
+
+  // 5. NOTHING THE USER OWNS IS WRITTEN, AND THE CLEANUP REACHES EVERYTHING IT CREATED.
+  const text = lines.join("\n");
+  assert.doesNotMatch(text, /^[^#\n]*\bgit stash\b/m,
+    "the hook must not stash: a stash writes the working tree, fails before the first commit, and uses a stack every worktree shares");
+  // (`checkout-index --prefix=` writes only under the prefix, so it is excluded by the lookahead.)
+  assert.doesNotMatch(text, /^[^#\n]*\bgit (?:checkout|reset|restore|apply)(?![-\w])/m,
+    "the hook must not rewrite the working tree or the index");
+  assert.match(text, /^LOCKDIR="\$\(git rev-parse --path-format=absolute --git-common-dir\)\/pm-suite\.lock"$/m,
+    "the lock path must be absolute — the cleanup runs from inside the snapshot");
+  assert.match(text, /^  if \[ -n "\$SNAP" \]; then rm -rf "\$SNAP"; fi$/m, "the cleanup must remove the snapshot");
+  for (const [sig, code] of [["INT", 130], ["TERM", 143], ["HUP", 129]]) {
+    assert.match(text, new RegExp(`^trap 'exit ${code}' ${sig}$`, "m"), `${sig} must become an exit so the EXIT cleanup runs`);
+  }
 });

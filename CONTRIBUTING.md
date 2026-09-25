@@ -55,7 +55,14 @@ After that, `git commit` runs `.githooks/pre-commit` automatically, which runs t
 coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
 invocation:
 `FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
-— and blocks the commit on any failure. The reporter is forced and colour is off so the summary is
+— and blocks the commit on any failure. **It tests the INDEX, not your working tree** (0.50.0): the
+hook exports exactly what is staged — `git checkout-index -a` into a private directory under
+`$TMPDIR` — and runs the half there, so a failing test you staged cannot pass on the strength of a
+fixed copy you left unstaged, an untracked test file neither runs nor counts, and a partially
+staged file is tested as its staged half. It honours the index git hands it, so `git commit -a`
+and `git commit <path>` are tested as what they commit. It never writes your working tree or your
+index, so an interrupted hook cannot lose work; the snapshot is removed on exit, Ctrl-C included.
+To run the suite over your working tree instead, run the command above yourself. The reporter is forced and colour is off so the summary is
 the same bytes on every supported Node, and a count the hook cannot read, or a run of zero tests, is
 a refusal rather than a pass. The drift script refuses, naming the file: a tracked
 test file in NEITHER half

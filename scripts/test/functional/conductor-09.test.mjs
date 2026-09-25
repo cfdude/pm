@@ -560,6 +560,156 @@ test("1.5 the retired probe's pm-isolation-flag is removed from a clone that sti
     `the hook left the retired probe's cache file behind at ${flag}`);
 });
 
+// ---------- the hook verifies the INDEX, never the working tree (commit-gate-tests-working-tree-not-index) ----------
+//
+// THE COMMIT IS THE UNIT OF VERIFICATION (required item 2), and until 0.50.0 the per-commit gate broke
+// it: the hook ran the suite over the CHECKOUT, so a failing test staged and a passing copy restored
+// unstaged committed green while HEAD held the failing test. The hook now exports the commit's index
+// with `git checkout-index -a --prefix=<snapshot>/` into a private temp dir and runs the half THERE,
+// never writing the working tree or the index. Every fixture below asserts BOTH directions it can:
+// what ran, and that the user's bytes are exactly as they were.
+//
+// Setup git calls are hermetic — no global or system config reaches them.
+
+const HERMETIC_GIT_ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
+delete HERMETIC_GIT_ENV.GIT_INDEX_FILE;
+const IX_FILE = "scripts/test/assert/fixture.test.mjs";
+const IX_HEADER = 'import { test } from "node:test";\nimport assert from "node:assert/strict";\n';
+const IX_PASSING = IX_HEADER + 'test("IX the working-tree copy that passes", () => { assert.ok(true); });\n';
+const IX_FAILING = IX_HEADER + 'test("IX the STAGED copy that fails", () => { assert.fail("staged bytes ran"); });\n';
+const ixGit = (cwd, args, env = HERMETIC_GIT_ENV) => execFileSync("git", args, { cwd, env, encoding: "utf8" });
+const ixOut = (r) => (r.stdout || "") + (r.stderr || "");
+/** A private TMPDIR per fixture, so "the hook left nothing behind" is observable. */
+const ixTmpdir = () => fs.mkdtempSync(path.join(os.tmpdir(), "pm-ix-tmpdir-"));
+
+test("IX-a a STAGED failing test with a PASSING copy unstaged ABORTS the commit, and the tree is untouched", () => {
+  // THE EPIC'S REPRODUCTION, as a fixture that must abort. The fixture's body is the failing copy and
+  // is what `runHookAgainstFixture` stages; `setup` then overwrites the working tree with a passing
+  // copy and leaves it unstaged. The old hook ran the working tree: 1/1 passing, exit 0.
+  const r = runHookAgainstFixture(IX_FAILING, {
+    setup: (cwd) => fs.writeFileSync(path.join(cwd, IX_FILE), IX_PASSING),
+  });
+  const combined = ixOut(r);
+  assert.notEqual(r.status, 0,
+    `the index holds a failing test, so the commit must abort — the hook ran the working tree. Output: ${combined}`);
+  assert.match(combined, /IX the STAGED copy that fails/, "the failure reported must be the STAGED test's");
+  assert.doesNotMatch(combined, /^pre-commit: \d+\/\d+ passing/m, "a failing index must never print the success line");
+  assert.equal(fs.readFileSync(path.join(r.cwd, IX_FILE), "utf8"), IX_PASSING,
+    "the unstaged working-tree copy was changed by the hook");
+  assert.equal(ixGit(r.cwd, ["show", `:${IX_FILE}`]), IX_FAILING, "the index was changed by the hook");
+});
+
+test("IX-b the converse: a STAGED passing test with a FAILING copy unstaged passes, and the tree is untouched", () => {
+  // PRECISION. A failure that exists only in the working tree is not in the commit, so it must not
+  // block it — the hook verifies the commit, not the checkout, in both directions.
+  const r = runHookAgainstFixture(IX_PASSING, {
+    setup: (cwd) => fs.writeFileSync(path.join(cwd, IX_FILE), IX_FAILING),
+  });
+  const combined = ixOut(r);
+  assert.equal(r.status, 0, `the index holds only a passing test: ${combined}`);
+  assert.match(combined, /pre-commit: 1\/1 passing/);
+  assert.equal(fs.readFileSync(path.join(r.cwd, IX_FILE), "utf8"), IX_FAILING,
+    "the unstaged working-tree copy was changed by the hook");
+});
+
+test("IX-c an UNTRACKED failing test file in a rung never runs, and is still on disk afterwards", () => {
+  // An untracked file is not in the commit: it must neither block it nor be counted, and the hook must
+  // not move, stash or delete it to get it out of the way.
+  const untracked = "scripts/test/assert/untracked.test.mjs";
+  const body = IX_HEADER + 'test("IX-c UNTRACKED MARKER", () => { assert.fail("an untracked file ran"); });\n';
+  const r = runHookAgainstFixture(IX_PASSING, {
+    setup: (cwd) => fs.writeFileSync(path.join(cwd, untracked), body),
+  });
+  const combined = ixOut(r);
+  assert.equal(r.status, 0, `an untracked file is not in the commit: ${combined}`);
+  assert.doesNotMatch(combined, /IX-c UNTRACKED MARKER/, "the untracked test file ran");
+  assert.match(combined, /pre-commit: 1\/1 passing/, "and it must not have been counted either");
+  assert.equal(fs.readFileSync(path.join(r.cwd, untracked), "utf8"), body, "the untracked file was moved or changed");
+});
+
+test("IX-d the index git HANDS the hook is the one verified — `commit -a` / `commit <path>` use their own", () => {
+  // Measured with git 2.55: `git commit -a` runs the hook with GIT_INDEX_FILE=<abs>/.git/index.lock and
+  // `git commit <path>` with GIT_INDEX_FILE=<abs>/.git/next-index-<pid>.lock, while `.git/index` still
+  // holds the STALE content. The hook scrubs GIT_INDEX_FILE (so the suite's child gits cannot reach the
+  // outer repo) — so it must capture it FIRST. Here `.git/index` holds the passing copy and the index
+  // git hands the hook holds the failing one; the path is RELATIVE, as git gives it for a plain commit,
+  // so the capture must also be absolutised before the hook moves into its snapshot.
+  const alt = ".git/alt-index";
+  const r = runHookAgainstFixture(IX_PASSING, {
+    env: { GIT_INDEX_FILE: alt },
+    setup: (cwd) => {
+      fs.copyFileSync(path.join(cwd, ".git", "index"), path.join(cwd, alt));
+      fs.writeFileSync(path.join(cwd, IX_FILE), IX_FAILING);
+      ixGit(cwd, ["add", "--", IX_FILE], { ...HERMETIC_GIT_ENV, GIT_INDEX_FILE: alt });
+      fs.writeFileSync(path.join(cwd, IX_FILE), IX_PASSING);
+    },
+  });
+  const combined = ixOut(r);
+  assert.equal(ixGit(r.cwd, ["show", `:${IX_FILE}`]), IX_PASSING, "fixture: .git/index must hold the passing copy");
+  assert.notEqual(r.status, 0,
+    `the index git handed the hook holds a failing test; the hook verified .git/index instead. Output: ${combined}`);
+  assert.match(combined, /IX the STAGED copy that fails/);
+});
+
+test("IX-g a PARTIALLY staged test file is counted by its STAGED half — the floor reads the snapshot", () => {
+  // The index holds one test; the working tree adds a second, unstaged. The runner runs the index's
+  // one, so the floor's `declared` must be read from the index's bytes too — counting the working
+  // tree's copy would declare 2 against 1 ran and refuse a correct commit as a shortfall.
+  const twoTests = IX_PASSING + 'test("IX-g an UNSTAGED second test", () => { assert.ok(true); });\n';
+  const r = runHookAgainstFixture(IX_PASSING, {
+    setup: (cwd) => fs.writeFileSync(path.join(cwd, IX_FILE), twoTests),
+  });
+  const combined = ixOut(r);
+  assert.equal(r.status, 0, `the index declares and runs one test: ${combined}`);
+  assert.match(combined, /pre-commit: 1\/1 passing/);
+  assert.doesNotMatch(combined, /IX-g an UNSTAGED second test/, "the unstaged half ran");
+  assert.equal(fs.readFileSync(path.join(r.cwd, IX_FILE), "utf8"), twoTests, "the working tree was changed");
+});
+
+test("IX-e the hook leaves nothing behind — no snapshot, no temp file, no suite lock — after a pass AND a failure", () => {
+  for (const [label, body, ok] of [["pass", IX_PASSING, true], ["failure", IX_FAILING, false]]) {
+    const tmp = ixTmpdir();
+    try {
+      const r = runHookAgainstFixture(body, { env: { TMPDIR: tmp } });
+      assert.equal(r.status === 0, ok, `${label}: unexpected hook status ${r.status}: ${ixOut(r)}`);
+      assert.deepEqual(fs.readdirSync(tmp), [], `${label}: the hook left files in TMPDIR`);
+      // THE LOCK IS REMOVED AFTER THE HOOK HAS MOVED INTO ITS SNAPSHOT, so its path must be absolute:
+      // in a main checkout `git rev-parse --git-common-dir` prints the RELATIVE `.git`.
+      assert.equal(fs.existsSync(path.join(r.cwd, ".git", "pm-suite.lock")), false,
+        `${label}: the suite lock outlived the hook`);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }
+});
+
+test("IX-f an INTERRUPTED hook (SIGTERM mid-suite) leaves the tree, the index, TMPDIR and the lock clean", () => {
+  // A stub `node` goes first on PATH. Given `--test` it signals its parent — the hook — and exits;
+  // anything else (the drift step) is handed to the real node, so the hook reaches its suite.
+  const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-stub-node-"));
+  const tmp = ixTmpdir();
+  try {
+    fs.writeFileSync(path.join(stubDir, "node"),
+      `#!/bin/sh\nif [ "$1" = "--test" ]; then kill -TERM "$PPID"; exit 0; fi\nexec "${process.execPath}" "$@"\n`);
+    fs.chmodSync(path.join(stubDir, "node"), 0o755);
+    const r = runHookAgainstFixture(IX_FAILING, {
+      pathPrepend: stubDir,
+      env: { TMPDIR: tmp },
+      setup: (cwd) => fs.writeFileSync(path.join(cwd, IX_FILE), IX_PASSING),
+    });
+    const combined = ixOut(r);
+    assert.notEqual(r.status, 0, `an interrupted hook must not pass the commit: ${combined}`);
+    assert.doesNotMatch(combined, /passing/, "an interrupted hook reported a pass");
+    assert.equal(fs.readFileSync(path.join(r.cwd, IX_FILE), "utf8"), IX_PASSING, "the working tree was changed");
+    assert.equal(ixGit(r.cwd, ["show", `:${IX_FILE}`]), IX_FAILING, "the index was changed");
+    assert.deepEqual(fs.readdirSync(tmp), [], "the interrupted hook left files in TMPDIR");
+    assert.equal(fs.existsSync(path.join(r.cwd, ".git", "pm-suite.lock")), false, "the interrupted hook left its lock");
+  } finally {
+    fs.rmSync(stubDir, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 // ---------- sync must not register a directory's own index file as a plan (#87) ----------
 
 test("sync ignores README.md/INDEX.md in the plans directory — they are not plans", () => {

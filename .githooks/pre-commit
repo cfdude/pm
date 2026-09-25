@@ -19,15 +19,46 @@ fi
 # those child processes inherit this hook's git env vars, they operate on the outer repo's
 # locked index instead of their own tmp repo, and fail with cryptic "index file open failed"
 # errors that look like a test bug but are actually an environment leak. Unset them first.
+#
+# ─────────── BUT CAPTURE THE INDEX FIRST (0.50.0, commit-gate-tests-working-tree-not-index) ───────────
+# GIT_INDEX_FILE names the index THIS COMMIT IS MADE FROM, and it is not always `.git/index`. Measured
+# with git 2.55: a plain commit hands the hook `.git/index` (RELATIVE to the hook's cwd, the top
+# level); `git commit -a` hands it `<abs>/.git/index.lock`; `git commit <path>` hands it
+# `<abs>/.git/next-index-<pid>.lock`; a linked worktree hands it `<common>/worktrees/<name>/index`. In
+# the `-a` and `<path>` forms `.git/index` still holds the STALE content, so a hook that read the
+# default index after the scrub verified something other than the commit. So: capture it, make it
+# absolute against the cwd git gave us, and hand it back to exactly the three readers of the index
+# below — the drift script, the snapshot export and the floor's `declared` — and NEVER to the test
+# runner, which is the leak this scrub exists to stop.
+INDEX_FILE=${GIT_INDEX_FILE:-}
+case "$INDEX_FILE" in "" | /*) ;; *) INDEX_FILE="$PWD/$INDEX_FILE" ;; esac
 unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
 set -e
 cd "$(git rev-parse --show-toplevel)"
+ROOT=$PWD
+[ -n "$INDEX_FILE" ] || INDEX_FILE=$(git rev-parse --path-format=absolute --git-path index)
 
 # df-precommit-hook-too-noisy-on-success: quiet on success (one summary line); only dump the
 # full node --test output (every test name, the engine banner, etc.) when something actually
 # fails. Capture to a temp file, check the real exit code, cat the temp file only on failure.
+#
+# ONE CLEANUP, AND IT RUNS ON A SIGNAL TOO. It removes only what this hook created: the output file,
+# the index snapshot (below) and the suite lock once it is held. INT/TERM/HUP are turned into an
+# `exit`, so the EXIT trap runs under every /bin/sh — a Ctrl-C mid-suite must not leave the lock for
+# the next commit to wait on. Nothing it removes is the user's: the working tree and the index are
+# never written by this hook, which is what makes an interrupted hook safe by construction.
 tmpfile=$(mktemp)
-trap 'rm -f "$tmpfile"' EXIT
+SNAP=""
+LOCK_HELD=""
+cleanup() {
+  rm -f "$tmpfile"
+  if [ -n "$SNAP" ]; then rm -rf "$SNAP"; fi
+  if [ -n "$LOCK_HELD" ]; then rm -rf "$LOCKDIR"; fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 # The suite this hook runs is the ASSERTION HALF -- TWO RUNG GLOBS in ONE runner invocation,
 # scripts/test/unit/*.test.mjs and scripts/test/assert/*.test.mjs, under the runner's DEFAULT
@@ -54,7 +85,9 @@ trap 'rm -f "$tmpfile"' EXIT
 #
 # mkdir is the atomic primitive: it succeeds for exactly one caller and fails for the rest, with
 # no read-then-write window. macOS ships no flock(1), and a lockfile written with > is not atomic.
-LOCKDIR="$(git rev-parse --git-common-dir)/pm-suite.lock"
+# ABSOLUTE, because the hook later moves into its index snapshot and the cleanup runs from there: in
+# a main checkout `--git-common-dir` prints the RELATIVE `.git`, and a relative lock path would miss.
+LOCKDIR="$(git rev-parse --path-format=absolute --git-common-dir)/pm-suite.lock"
 waited=0
 while ! mkdir "$LOCKDIR" 2>/dev/null; do
   # A lock whose owner is gone is stale — a killed agent must not block every later commit.
@@ -72,8 +105,8 @@ while ! mkdir "$LOCKDIR" 2>/dev/null; do
     exit 1
   fi
 done
+LOCK_HELD=1
 echo $$ > "$LOCKDIR/pid"
-trap 'rm -f "$tmpfile"; rm -rf "$LOCKDIR"' EXIT
 [ "$waited" -gt 0 ] && echo "pre-commit: acquired the suite lock after ${waited}s"
 
 # ─────────── THE DRIFT SCRIPT (6.4) ───────────
@@ -101,7 +134,7 @@ trap 'rm -f "$tmpfile"; rm -rf "$LOCKDIR"' EXIT
 #
 # `-C "$PWD"` rather than a `cd`, and the git env vars are already unset above -- a drift run against
 # an inherited GIT_DIR would read the wrong index and answer about the wrong tree.
-if ! node scripts/test/drift.mjs --root "$PWD"; then
+if ! GIT_INDEX_FILE="$INDEX_FILE" node scripts/test/drift.mjs --root "$ROOT"; then
   echo "pre-commit: ABORT -- the drift script refused this commit (see above)." >&2
   echo "pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness." >&2
   exit 1
@@ -138,6 +171,31 @@ rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 # a `^ℹ tests ` anchor matches nothing. `NO_COLOR=1` does not rescue it (FORCE_COLOR wins). So the
 # reporter is FORCED and colour is switched OFF, which makes the summary the same bytes on every
 # supported major under any colour setting, and the parse below reads that one format and no other.
+
+# ─────────── THE SUITE RUNS OVER THE INDEX, NOT THE WORKING TREE (0.50.0) ───────────
+# The commit is the unit of verification. Until 0.50.0 the runner ran over the CHECKOUT, so a failing
+# test staged and a passing copy restored unstaged committed green while HEAD held the failing test.
+# So the index is EXPORTED — `git checkout-index -a --prefix=` into a private temp dir — and the suite
+# runs there: over exactly the bytes being committed, the engine and docs included, with untracked
+# files absent and a partially staged file present as its staged half.
+#
+# WHY AN EXPORT AND NOT `git stash --keep-index` (the plan compares four options with measurements:
+# docs/superpowers/plans/2026-09-25-commit-gate-tests-working-tree-not-index.md). A stash WRITES the
+# working tree twice, fails outright before the first commit ("You do not have the initial commit
+# yet"), and uses the stash stack every worktree of a repo shares — parallel agents push and pop it
+# concurrently. The export writes nothing the user owns: an interrupted hook can lose no work, and the
+# worst leftover of a SIGKILL is a directory under $TMPDIR. It lives in $TMPDIR rather than the git
+# common dir so that orphan is the OS's to reap, not a permanent directory inside every clone.
+#
+# THE CERTIFICATION RECORD AND THE LOCK stay in the git common dir: the drift script above ran in the
+# real checkout and read them there. The snapshot has no `.git`, and needs none — no assertion test
+# runs git or reads the record.
+SNAP=$(mktemp -d "${TMPDIR:-/tmp}/pm-precommit-index.XXXXXX")
+if ! GIT_INDEX_FILE="$INDEX_FILE" git checkout-index -a --prefix="$SNAP/"; then
+  echo "pre-commit: ABORT -- could not export the index ($INDEX_FILE) to $SNAP to test it" >&2
+  exit 1
+fi
+cd "$SNAP"
 if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
   total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')
   passed=$(grep -m1 -E '^ℹ pass ' "$tmpfile" | awk '{print $3}')
@@ -187,8 +245,12 @@ if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs s
   # run-time filesystem counter. Counting only `test(` would give every unit file a declared count of
   # ZERO, so a unit file that stopped running would drop from both sides of the floor at once and the
   # floor would go blind in exactly the case it exists for.
-  declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
-    | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$f" || true; done | awk '{s+=$1} END {print s+0}')
+  #
+  # AND BOTH HALVES OF IT READ THE INDEX (0.50.0): the list from the index git handed this hook, and
+  # each file's declarations from the SNAPSHOT's copy — never the working tree's, where a partially
+  # staged file would be counted by its unstaged half.
+  declared=$(GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
+    | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$SNAP/$f" || true; done | awk '{s+=$1} END {print s+0}')
   # CHECK 2 -- THE FLOOR, compared BEFORE the empty-rung check (Gate 1 B6). A run that reports fewer
   # tests than are declared -- ZERO INCLUDED -- is a shortfall naming both counts: `total = 0` while the
   # index still declares tests is a COLLAPSED run, and it must never be reported as an empty rung.
