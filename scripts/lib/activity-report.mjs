@@ -112,6 +112,17 @@ const DETOUR_KINDS = {
   "detour-push": "push", "detour-pop": "pop", "detour-drop": "drop", "detour-removed": "removed",
 };
 
+/** Kinds that name an epic without being evidence that it entered the queue: a detour event names an
+ *  epic already in flight, and a reconcile verdict or a priority/autonomy/review-mode change is a
+ *  setting on an epic, not work on it. Before this change none of them carried an `epic` at all, so
+ *  excluding them keeps TIME TO PICKUP's population exactly what it was — an epic the window
+ *  mentions ONLY through one of these is not reported as "never picked up". The events still reach
+ *  DETOURS, GATES and SETTINGS, and `--epic` still finds them. */
+const NOT_PICKUP_EVIDENCE = new Set([
+  "detour-push", "detour-pop", "detour-drop", "detour-removed",
+  "reconcile-recorded", "epic-priority", "epic-autonomy", "review-mode",
+]);
+
 /** The kinds the SETTINGS section lists: priority, autonomy and review-intensity changes. */
 const SETTINGS_KINDS = new Set(["epic-priority", "epic-autonomy", "review-mode"]);
 
@@ -145,7 +156,7 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
   const pickedUp = new Map();
   for (const e of events) {
     if (!e.epic) continue;
-    if (!firstSeen.has(e.epic)) firstSeen.set(e.epic, e.at);
+    if (!firstSeen.has(e.epic) && !NOT_PICKUP_EVIDENCE.has(e.kind)) firstSeen.set(e.epic, e.at);
     if (e.kind === "epic-status" && e.to === "active" && !pickedUp.has(e.epic)) {
       pickedUp.set(e.epic, e.at);
     }

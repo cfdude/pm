@@ -314,14 +314,17 @@ export function diffEvents(before, after, meta = {}) {
     for (const w of nw.slice(pw)) {
       out.push(ev("gate-withdrawn", { epic: id, gate: `gate${w && w.gate}` }));
     }
-    // A RECONCILE VERDICT, keyed on the `reconciledAt` record-reconcile stamps on the may-invalidate
-    // link — a new stamp is a verdict recorded now; one that REPLACED an earlier verdict is a correction.
+    // A RECONCILE VERDICT, keyed on the CONTENT of the may-invalidate link's verdict record — the
+    // verdict, its amendments and the `superseded` record a correction moves the old one into — never
+    // on `reconciledAt` alone: a correction stamped in the same millisecond as the verdict it replaces
+    // carries the same stamp (second-resolution-timestamps-collide-on-fast-machines). A verdict that
+    // REPLACED an earlier one is a correction.
     const prevLinks = Array.isArray(prev.links) ? prev.links : [];
     for (const l of Array.isArray(epic.links) ? epic.links : []) {
       if (!l || l.type !== "may-invalidate" || !l.reconciled || typeof l.reconciled !== "object") continue;
       const pl = prevLinks.find(x => x && x.type === "may-invalidate" && x.epic === l.epic);
       const was = pl && pl.reconciled && typeof pl.reconciled === "object" ? pl.reconciled : null;
-      if (was && was.reconciledAt === l.reconciled.reconciledAt) continue;
+      if (pl && JSON.stringify([pl.reconciled, pl.superseded]) === JSON.stringify([l.reconciled, l.superseded])) continue;
       out.push(ev("reconcile-recorded", {
         epic: id, detour: l.epic || null, verdict: l.reconciled.verdict || null, correction: !!was,
       }));

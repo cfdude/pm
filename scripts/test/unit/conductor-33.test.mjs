@@ -769,6 +769,42 @@ unitTest("activity-log-detour-events-lose-epic: a control character in a GATES o
   assert.match(text, /autonomy off/);
 });
 
+unitTest("activity-log-detour-events-lose-epic: a reconcile correction in the SAME millisecond is still logged", async () => {
+  // second-resolution-timestamps-collide-on-fast-machines: keyed on `reconciledAt` alone, a
+  // correction stamped in the same millisecond as the verdict it replaces was invisible.
+  const { diffEvents } = await import(ALOG);
+  const T = "2026-01-01T00:00:00.000Z";
+  const epicWith = (link) => ({ id: "e1", status: "active", links: [{ type: "may-invalidate", epic: "e2", ...link }] });
+  const first = { verdict: "valid", amendments: [], reconciledAt: T };
+  const ev = diffEvents(
+    { revision: 1, epics: [epicWith({ reconciled: first })] },
+    { revision: 2, epics: [epicWith({ reconciled: { verdict: "invalidated", amendments: ["x"], reconciledAt: T }, superseded: first })] },
+    { verb: "record-reconcile" });
+  assert.deepEqual(ev.map(e => [e.kind, e.verdict, e.correction]), [["reconcile-recorded", "invalidated", true]]);
+  const same = diffEvents(
+    { revision: 2, epics: [epicWith({ reconciled: first })] },
+    { revision: 3, epics: [epicWith({ reconciled: { ...first } })] }, { verb: "update-epic" });
+  assert.deepEqual(same.map(e => e.kind), ["state-write"], "an unchanged verdict is not a new one");
+});
+
+unitTest("activity-log-detour-events-lose-epic: detour and settings events do not start an epic's pickup clock", async () => {
+  // TIME TO PICKUP measures queued → active. An epic the window mentions ONLY through a detour, a
+  // reconcile verdict, a priority, autonomy or review-mode change must not be counted as waiting —
+  // before these kinds carried an epic it was not counted at all, and the population stays that.
+  const { buildReport } = await import(AREPORT);
+  const at = "2026-01-01T00:00:00.000Z";
+  const r = buildReport([
+    { at, kind: "detour-push", epic: "p1", detour: "d1" },
+    { at, kind: "reconcile-recorded", epic: "p2", detour: "d1", verdict: "valid" },
+    { at, kind: "epic-priority", epic: "p3", from: "P2", to: "P0" },
+    { at, kind: "epic-autonomy", epic: "p4", from: "off", to: "autonomous", granted: 0, revoked: 0, notified: 0 },
+    { at, kind: "review-mode", epic: "p5", from: null, to: "thorough" },
+    { at, kind: "epic-created", epic: "w1", lane: "claude-code", status: "queued" },
+  ]);
+  assert.deepEqual(r.pickup.map(p => p.epic), ["w1"]);
+  assert.equal(r.neverPickedUp, 1);
+});
+
 unitTest("activity-log-detour-events-lose-epic: the repo-wide review-mode dial is a review-mode event with epic null", async () => {
   const { diffEvents } = await import(ALOG);
   const { buildReport, formatReport } = await import(AREPORT);
