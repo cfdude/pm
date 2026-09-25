@@ -210,13 +210,16 @@ function runInvocation(argv, io = {}) {
     // and still does, byte for byte.
     store: io.store,
     // 0.49.0 — the RUNTIME VERSION, per call and by the same rule: `io.nodeVersion` is how a caller
-    // supplies one (the unit rung exercises a Node below the support floor without one installed);
-    // absent, it is this process's own, so the command line behaves exactly as it did.
-    nodeVersion: io.nodeVersion ?? process.version,
+    // supplies one (the unit rung exercises a Node below the support floor without one installed).
+    // Absent, it stays absent HERE: the ONE authoritative default is runtimeVersion()'s
+    // (lib/invocation.mjs), which answers with this process's own, so the command line behaves
+    // exactly as it did and no second default can disagree with the first (Gate 2 M2).
+    nodeVersion: io.nodeVersion,
   };
   setInvocation(ctx);
   // The engine's per-process git caches are per-INVOCATION in fact: this process may serve many
-  // (0.47.0's assertion half serves all of them). See resetGitCaches' own note.
+  // (an in-process caller does — one assertion-half test file serves all of its tests' invocations).
+  // See resetGitCaches' own note.
   resetGitCaches();
   // ---------- self-hosting handoff (gh-134) ----------
   //
@@ -352,9 +355,10 @@ function runInvocation(argv, io = {}) {
   // sound at the time and is now false: `process.exit()` skips `finally`, so the exit-handler shape
   // was the only one that recorded update-epic's post-write attribution refusal. Refusals are
   // THROWN and caught now (lib/command-exit.mjs), so a `finally` runs on every path including that
-  // one. Keeping the handler would be a defect specific to this change: in the assertion half's ONE
-  // shared process every call would register another listener, none would fire until the runner
-  // exited, and main() would have returned long before the diff it owes.
+  // one. Keeping the handler would be a defect for any in-process caller: in one process serving many
+  // invocations (each assertion-half test file's, under per-file isolation) every call would
+  // register another listener, none would fire until that process exited, and main() would have
+  // returned long before the diff it owes.
   //
   // Placed AFTER the --help short-circuit (a help flag must have no side effect, and there is
   // nothing to diff) and BEFORE dispatch, so the snapshot is genuinely the pre-verb state.

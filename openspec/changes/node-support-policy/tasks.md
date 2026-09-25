@@ -321,6 +321,10 @@ Commit mechanics, which bind every section below:
         green: escape or judge `<N>` as the sweep requires.
       - `conductor.mjs:77`'s "Node 18+" is corrected in the same commit.
       Run `certify.mjs sweeps` and `certify.mjs functional` before the commit.
+      **Amended at Gate 2 (M2):** ONE authoritative default — `runtimeVersion()`'s
+      `ctx.nodeVersion ?? process.version`. `runInvocation` now passes `io.nodeVersion` through
+      unchanged and `PROCESS_CONTEXT` carries no getter; `assert/conformance.test.mjs` "M2" pins
+      `process.version` to that one engine code site.
       Verify:
       - 3.1 is green;
       - `rg -n 'process\.version' scripts/lib scripts/conductor.mjs` returns only the context

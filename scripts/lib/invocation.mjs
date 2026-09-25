@@ -49,8 +49,8 @@ const PROCESS_CONTEXT = {
   get stdout() { return process.stdout; },
   get stderr() { return process.stderr; },
   get root() { return process.env.CLAUDE_PROJECT_DIR || process.cwd(); },
-  // 0.49.0 (engine-invocation's per-call runtime version) — LIVE, like the rest of this object.
-  get nodeVersion() { return process.version; },
+  // 0.49.0: NO `nodeVersion` here — runtimeVersion()'s own default is the one authoritative answer
+  // for a context that carries none, this one included (Gate 2 M2).
 };
 
 /** The invocation in force. Never null: outside `main()` it is a live view of the process. */
@@ -102,8 +102,9 @@ export const currentCwd = (ctx = invocation()) => ctx.cwd;
 
 /** The version of the Node runtime this invocation consults (0.49.0, engine-invocation's "The
  *  runtime version the engine consults is supplied per call"). `main()` sets it from `io.nodeVersion`
- *  or the process's own; a context installed DIRECTLY with `setInvocation({ … })` and no
- *  `nodeVersion` falls back to the running process's, so it behaves like the process. Never read
+ *  and nothing else; THIS accessor is the ONE authoritative default — a context with no
+ *  `nodeVersion` (the command line, an in-process call that omits it, PROCESS_CONTEXT, a context
+ *  installed directly with `setInvocation({ … })`) answers with the running process's. Never read
  *  `process.version` at the point of use — this accessor is the seam that lets a test exercise a Node
  *  below the support floor without one installed. */
 export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;

@@ -41,3 +41,8 @@ scripts/test/unit/head-attachment.test.mjs:55	in-process caller: test title
 scripts/test/unit/conductor-12.test.mjs:9	in-process caller: a second root in one process
 scripts/test/unit/conformance.test.mjs:14	in-process caller: five brief invocations in one process
 scripts/test/unit/state-verb.test.mjs:39	in-process caller: test title
+
+## Gate 2 M7 — D3's sweep widened to scripts/conductor.mjs, on the fix tree
+rg -n -i 'isolation|single process|one process|same process|shared process|process-wide|singleton' scripts/conductor.mjs scripts/lib scripts/test
+scripts/conductor.mjs:217-219 and :356-360 and functional/conformance.test.mjs:463-465 REWRITTEN to per-file / in-process wording.
+Every remaining hit is one of: an in-process caller serving several invocations; 'per-file isolation' describing the new mode; history (subcommands.mjs:1015); the pm-isolation-flag inverse and its guards; or an unrelated sense of the word (worktree-isolation, the fs singleton, lock-breaking between processes, per-test snapshot isolation, fixture JSON titles).
