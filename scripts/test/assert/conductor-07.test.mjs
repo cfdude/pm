@@ -70,3 +70,35 @@ test("verify-state fails loudly when state.json is hand-edited after the last re
   const out = runCombined(["verify-state"], { cwd });
   assert.match(out, /hand-edit|re-render|\/pm:status/i);
 });
+
+// verify-state-false-hand-edit (code review 0.43.0, C2). A verb that SAVES without rendering —
+// `set-activity-log`, a claim — advances the record's revision and moves its mtime past the stamp.
+// Comparing mtime alone called that a hand-edit. The revision is what an engine write advances and
+// a hand-edit does not, so a newer mtime with a NEWER revision is the engine's own write. The mtime
+// is forced forward after the engine writes, so the old comparison fails however coarse the clock.
+test("verify-state does not call an engine write that saved without rendering a hand-edit", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-activity-log", "on"], { cwd });
+  run(["add-epic", "--id", "c", "--lane", "claude-code"], { cwd });
+  run(["claim", "c", "--session", "s1"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const future = new Date(Date.now() + 60_000);
+  fs.utimesSync(statePath, future, future);
+  const out = runCombined(["verify-state"], { cwd });
+  assert.doesNotMatch(out, /looks like an undetected hand-edit/i);
+  assert.match(out, /no hand-edit detected/);
+  assert.match(out, /\/pm:status/, "a record written since the render still says PROJECT.md may be stale");
+});
+test("verify-state fails loudly when state.json's revision went BACKWARDS since the last render", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  const state = readState(cwd);
+  state.revision = 0;
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  const err = expectFail(() => run(["verify-state"], { cwd }));
+  assert.ok(err, "a rewound revision must fail verify-state");
+  assert.match(runCombined(["verify-state"], { cwd }), /revision went backwards/i);
+});

@@ -360,8 +360,8 @@ export function normalizeForDiffSummary(content) {
 }
 
 /** Records when PROJECT.md was last generated FROM the current state.json content, so
- *  `verify-state` can catch an undetected hand-edit: if state.json's mtime is newer than
- *  this stamp, someone modified it outside the render pipeline (CLAUDE.md forbids
+ *  `verify-state` can catch an undetected hand-edit: bytes newer than this stamp at the SAME
+ *  revision were written by something other than the engine (CLAUDE.md forbids
  *  hand-editing state.json/PROJECT.md — the state of record must go through the engine's
  *  subcommands so ordering/detour-stack/link invariants stay consistent). Sidecar file
  *  (not a state.json field) so stamping never itself perturbs the content being verified. */
@@ -373,10 +373,10 @@ export function writeRenderStamp() {
   // same statement in a form both implementations can supply: writeRecord() advances the revision
   // on every save that changes content and returns early without writing when nothing changed, so
   // "the revision moved" and "the record was written" are the same fact. The observed behaviour is
-  // unchanged: nothing reads stateRevision back for correctness, and the stamp is still rewritten
-  // only when the record it was taken from has moved.
+  // unchanged, and the stamp is still rewritten only when the record it was taken from has moved.
+  // `verify-state` reads stateRevision back, to tell an engine save from a hand-edit.
   const stateIdentity = store.recordIdentity();
-  // stateMtimeMs is KEPT and is still what `verify-state` reads (worktree-hygiene.mjs), which is a
+  // stateMtimeMs is KEPT: `verify-state` (worktree-hygiene.mjs) reads it at an EQUAL revision, which is a
   // filesystem check by construction and stays on the file rung. Null when the store has no path —
   // a memory store writes no stamp anybody verifies.
   const stateMtimeMs = store.mtimeMs(ARTIFACT.RECORD);

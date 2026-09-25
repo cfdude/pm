@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState } from "./state.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
-import { engineRoot, jsonText } from "./constants.mjs";
+import { engineRoot, escapeControls, jsonText } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
 import { errStream, gitOps, outStream } from "./invocation.mjs";
 
@@ -112,9 +112,9 @@ export function changesets() {
 
 /** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md
  *  forbids hand-editing it; PROJECT.md must only ever be regenerated from it). Compares
- *  state.json's mtime against the stamp `writeRenderStamp()` records every render(): if
- *  state.json was modified AFTER the last recorded render, that mtime delta is evidence
- *  something wrote to it outside `/pm:status`/the engine's subcommands. BOTH SIDES OF THAT
+ *  state.json's revision and mtime against the stamp `writeRenderStamp()` records every
+ *  render(): bytes that moved while the revision did NOT are evidence something wrote to it
+ *  outside the engine's subcommands (see the comment in the body). BOTH SIDES OF THAT
  *  COMPARISON COME FROM THE STORE — the stamp that `render.mjs` writes it with and the mtime it
  *  stamps — because a reader on a raw path beside a writer on the store is a verb whose result
  *  depends on which store it was handed. Pure read — never modifies state.json or PROJECT.md
@@ -132,21 +132,49 @@ export function verifyState() {
   const stampRead = storeOps().read(ARTIFACT.RENDER_STAMP);
   let stamp = null;
   if (stampRead.kind === "ok") { try { stamp = JSON.parse(stampRead.text); } catch { stamp = null; } }
-  if (!stamp || typeof stamp.stateMtimeMs !== "number") {
+  const hasRevision = !!stamp && Number.isInteger(stamp.stateRevision);
+  if (!stamp || (!hasRevision && typeof stamp.stateMtimeMs !== "number")) {
     die(
       "conductor: no render stamp found (.conductor/render-stamp.json) — state.json has never " +
       "been rendered, so an accidental hand-edit can't be ruled out. Run `/pm:status` to render " +
       "and establish a baseline.\n"
     );
   }
+  const handEdit =
+    "conductor: state.json was modified AFTER the last render — this looks like an " +
+    "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
+    "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
+    "review the diff, and reconcile before trusting PROJECT.md again.\n";
+  // WHO WROTE IT IS THE REVISION'S QUESTION; WHETHER ANYTHING MOVED IS THE MTIME'S (code review
+  // 0.43.0, C2). Every engine save advances `revision`; a hand-edit does not. Comparing the mtime
+  // alone accused the engine of a hand-edit after every verb that SAVES WITHOUT RENDERING —
+  // `set-activity-log`, a claim, platform recording. So: a revision AHEAD of the stamp is the
+  // engine's own write (PROJECT.md may be stale, nothing was hand-edited); a revision BEHIND it is
+  // a rewound file; an EQUAL revision with a newer mtime is bytes that changed with no engine save.
+  // What this cannot see, and the README says so: a hand-edit followed by an engine
+  // save before anyone runs this — the save advances the revision over it.
+  // A stamp written before `stateRevision` existed has only the mtime, and keeps the old check.
   const currentMtimeMs = storeOps().mtimeMs(ARTIFACT.RECORD);
-  if (currentMtimeMs > stamp.stateMtimeMs) {
-    die(
-      "conductor: state.json was modified AFTER the last render — this looks like an " +
-      "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
-      "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
-      "review the diff, and reconcile before trusting PROJECT.md again.\n"
-    );
+  if (hasRevision) {
+    const current = storeOps().recordIdentity();
+    if (Number.isInteger(current) && current < stamp.stateRevision) {
+      die(
+        `conductor: state.json's revision went backwards since the last render (rendered at ` +
+        `revision ${escapeControls(String(stamp.stateRevision))}, now ${escapeControls(String(current))}) — the file was rewound or hand-edited; ` +
+        "the engine only ever advances it. Run `/pm:status` to re-render, review the diff, and " +
+        "reconcile before trusting PROJECT.md again.\n"
+      );
+    }
+    if (Number.isInteger(current) && current > stamp.stateRevision) {
+      errStream().write(
+        `conductor: state.json has ${escapeControls(String(current - stamp.stateRevision))} engine write(s) since the last ` +
+        "render — no hand-edit detected, but PROJECT.md may be stale. Run `/pm:status` to re-render.\n"
+      );
+      return;
+    }
+    if (typeof stamp.stateMtimeMs === "number" && currentMtimeMs > stamp.stateMtimeMs) die(handEdit);
+  } else if (currentMtimeMs > stamp.stateMtimeMs) {
+    die(handEdit);
   }
   errStream().write("conductor: state.json matches the last render — no hand-edit detected.\n");
 }

@@ -62,7 +62,7 @@
  *                  record a disposition. The spec says an agent ASKS the engine; this is the ask
  *   integrity      READ-ONLY audit of the record itself — shapes that cannot be true
  *                  (reports; never writes state, never blocks a command)
- *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
+ *   verify-state   fail loudly if state.json changed since the last render without an engine save
  *                  (a mechanical check for an undetected hand-edit)
  *   verify-specs   READ-ONLY inventory: for every design document under a root (default
  *                  docs/superpowers/specs, override with --root), how many epics were drawn

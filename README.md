@@ -1315,10 +1315,14 @@ structurally could not place the other two — the many-to-one cases `specPath` 
 <details>
 <summary><code>verify-state</code> — Detect an undetected hand-edit of state.json</summary>
 
-Compares `state.json`'s filesystem mtime against the timestamp recorded at the last
-`render()`. Fails loudly (non-zero exit) if `state.json` was modified after the last render —
-mechanical evidence of a hand-edit, which is against the rules (`state.json` should only
-change through the engine's own subcommands).
+Compares `state.json`'s revision and filesystem mtime against the stamp recorded at the last
+`render()`. Every engine save advances the revision and a hand-edit does not, so it fails loudly
+(non-zero exit) when the file changed after the last render at the SAME revision, or when the
+revision went backwards — mechanical evidence of a hand-edit, which is against the rules
+(`state.json` should only change through the engine's own subcommands). A revision AHEAD of the
+stamp is the engine's own save by a verb that does not re-render (a claim, `set-activity-log`):
+that exits 0 and says PROJECT.md may be stale. It cannot see a hand-edit followed by an engine
+save, which advances the revision over it.
 
 </details>
 

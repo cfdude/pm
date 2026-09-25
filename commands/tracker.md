@@ -60,7 +60,7 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 block is found by whole marker lines; an orphan BEGIN or END line, or two blocks, is refused with
 every marker's line number, and the rules file is not touched. The refusal comes at the block
 write, so the tracker change is already in `state.json` while `CLAUDE.md` and `PROJECT.md` are not
-written, and `verify-state` reports a hand-edit until they are. Delete the stray marker lines from
+written, and `verify-state` reports PROJECT.md as stale until they are. Delete the stray marker lines from
 the shell, then run `write-rules` and `render` (or `/pm:status`) — the refusal says exactly that.
 Do not simply re-run `set-tracker`: `set-tracker --role secondary --remove …` run a second time
 finds no matching tracker and exits 1 before its block write, so the block would keep the removed
