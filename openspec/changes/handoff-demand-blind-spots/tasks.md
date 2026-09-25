@@ -187,8 +187,8 @@ These rules bind every section below.
       - the `integrity` remedies for `heal-archived-epic-passed-gate-2` and
         `delivered-release-epic-left-open` (`emitted-instructions`).
       **TDD** RED `red-2.3.txt`, ASSERT rung, a mixed epic with one open story and one open task:
-      - the archive refusal names BOTH remedies, each against its part, and the printed invocation
-        carries `--carried-to`;
+      - the archive refusal names BOTH per-part remedies, each against its part, as a conjunction
+        (both must be done, never joined by "or"), and the printed invocation carries `--carried-to`;
       - `unconsidered-outcomes` on the same epic: after `--story <n> --done` alone the entry STILL
         names the handoff; following it with the `--carried-to` archive exits zero and removes it
         (`epic-disposition`'s both-parts scenario);
@@ -216,9 +216,20 @@ These rules bind every section below.
           decoded from the capture;
         - `scripts/test/fixtures/git-gateway-capture.json`: the operation's `noRepository` entry and
           an arg-keyed case whose value is stored base64 under an explicit encoding tag, refreshed by
-          the capture's own procedure;
-        - `scripts/test/fixtures/git-gateway-repo.mjs`: `casesFor()` gains the operation's case,
-          including a multi-byte spec and two paths in one call;
+          the capture's own procedure (base64 guards invalid UTF-8, design D5);
+        - `scripts/test/fixtures/git-gateway-repo.mjs`, THREE functions, each keyed on this
+          operation's name so no existing capture entry changes:
+          - `casesFor()` gains the operation's case, including a multi-byte spec and two paths in
+            one call;
+          - `callReal()` returns this operation's `Buffer` undecoded (today it turns every `Buffer`
+            into a UTF-8 string);
+          - `buildCapture()` stores that `Buffer` base64 under the encoding tag, and does not pass it
+            through `rootToToken()` (today it stores strings);
+        - `scripts/test/functional/git-gateway-double.test.mjs`: the byte-identity comparator
+          (`callFake()` and the `describeDifference()` call) compares this operation's answers as
+          bytes, not as `String()`-decoded text;
+        - `scripts/test/assert/git-gateway-double.test.mjs`: that functional file's twin, EDITED in
+          the same commit;
         - `scripts/test/assert/git-gateway-guard.test.mjs`: its hardcoded site count 23 → 24;
         - `scripts/test/functional/git-gateway-guard.test.mjs`: its asserted count 23 → 24 (a
           functional file, so its assertion twin above is edited in the same commit).
@@ -307,9 +318,22 @@ These rules bind every section below.
           edited in the same commit, in a hermetic repository: `integrity` names
           the epic and exits as for every other check; and the staged-then-reset SEQUENCE — commit
           the archive move, stage the rewritten main spec (integrity names nothing), then
-          `git reset --hard` (integrity names the lost header).
+          `git reset --hard` (integrity names the lost header); and the REMEDY case (gate-integrity,
+          "The printed remedy clears a lost header on an archived change"): follow the printed
+          sequence in that repository (copy the block from the archived delta into the main spec's
+          `## Requirements` section, then `git add openspec/`), re-run `integrity`, and assert the
+          finding clears and the epic still exists;
+        - FUNCTIONAL, `scripts/test/functional/emitted-invocations.test.mjs`: an
+          `INTEGRITY_BUILDERS` entry keyed by the new check id, declaring `prints: "none"` (the
+          `archived-with-zero-ticked-tasks` precedent: the remedy is an edit plus `git add`, not an
+          engine invocation). Without it, that file's registry test fails for a `CHECKS` id with no
+          builder. `UNCONSTRUCTABLE` stays 0: the condition is constructable in `remedyRepo()`'s
+          hermetic repository, so declaring it unconstructable would be false (design D6). Check
+          the drafted remedy text against `engineInvocations()` so `prints: "none"` holds. Its twin
+          `scripts/test/assert/emitted-invocations.test.mjs` is EDITED in the same commit.
       - GREEN: `specSyncFindings()` in `spec-sync.mjs` with the reader as a parameter defaulting to
-        the `git.mjs` wrapper; a `CHECKS` entry in `integrity.mjs` that calls it.
+        the `git.mjs` wrapper; a `CHECKS` entry in `integrity.mjs` that calls it and prints the
+        remedy sequence gate-integrity specifies.
 - [ ] 5.2 **TDD** — the briefing block and `render`'s output.
       - RED: `red-5.2.txt`, FUNCTIONAL, in `functional/spec-sync-surfaces.test.mjs` (twin
         `assert/spec-sync-surfaces.test.mjs` edited in the same commit), over a
@@ -374,8 +398,8 @@ These rules bind every section below.
       - a new gateway read: a read has no inverse, so say so.
 - [ ] 6.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
       check that every file the task claims is in THAT commit. Record the results in
-      `commit-verification-6.4.txt`. Pay particular attention to 3.1's SEVEN files, 1.2's
-      `conductor-15` pair, and every functional test's twin.
+      `commit-verification-6.4.txt`. Pay particular attention to 3.1's NINE files, 1.2's
+      `conductor-15` pair, 5.1's `emitted-invocations` pair, and every functional test's twin.
 - [ ] 6.5 **Declare lifecycle bookkeeping** (item 3). The disposition task 9.2 and the archive task
       9.3 each carry `<!-- pm:lifecycle -->` on their own first line. They were marked when this
       source was authored. This matters more here than anywhere else: this change makes the
@@ -402,11 +426,17 @@ These rules bind every section below.
 ## 7. Docs
 
 - [ ] 7.1 `commands/status.md`: the new integrity check id and title; the briefing block; that
-      the `render` verb PRINTS the block on its output rather than writing it into `PROJECT.md`, so the status
-      procedure reads that output as well as the file (design D6); the index reading, the reason for
-      it, and the archive-to-`git add` window; and the archived-`tasks.md` and union rules for
-      progress. Verify: `docs/parity-ledger.json` still claims the file
-      (`scripts/test/parity.test.mjs` green).
+      the `render` verb PRINTS the block on its output rather than writing it into `PROJECT.md`; the
+      index reading, the reason for it, and the archive-to-`git add` window; and the
+      archived-`tasks.md` and union rules for progress.
+      **Rewrite the procedure step itself, not only add a paragraph.** At HEAD it reads "Then read
+      `PROJECT.md` and summarize for the user", and it names no other input. Change that step so
+      the reader reads the `render` output it just ran AS WELL AS `PROJECT.md` (design D6). Adding a
+      paragraph elsewhere while that step stays as it is leaves `/pm:status` printing the block and
+      the procedure ignoring it.
+      Verify: `rg -n "read \`PROJECT.md\`" commands/status.md` shows the step now names the `render`
+      output too; `docs/parity-ledger.json` still claims the file (`scripts/test/parity.test.mjs`
+      green).
 - [ ] 7.2 `README.md`: the progress rule (stories plus tasks, and the archived tasks read) and the
       new standing condition, wherever the README describes integrity or progress
       (`rg -n "integrity|outstanding|progress" README.md`).

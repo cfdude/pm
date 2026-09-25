@@ -201,8 +201,23 @@ when the index holds what the deltas require.
 
 Each finding names the epic, the archived change directory, the capability, every offending header,
 and which way it fails (absent where it should be present, or present where it should be absent).
-The remedy it names is to restore the missing spec edits (`openspec archive` rewrites them, and
-`/opsx:sync` re-applies deltas) and to stage `openspec/` whole.
+The remedy it names SHALL run against a change that is already archived. Neither
+`openspec archive` nor `/opsx:sync` does: both act on active changes only, and `openspec archive`
+answers "not found" for an archived id. Restoring the main spec from a commit is not the remedy
+either, because the loss this check exists for was never committed, so no such commit exists. The
+remedy is one sequence, printed in this order:
+
+1. Edit `openspec/specs/<capability>/spec.md` so that its `## Requirements` section holds what the
+   archived delta `openspec/changes/archive/<dir>/specs/<capability>/spec.md` requires. For each
+   header reported absent, copy its requirement block from that delta. For each header reported
+   present, delete its block. For a RENAMED pair, rename the `FROM` header to the `TO` name.
+2. Run `git add openspec/`.
+
+In the window between `openspec archive` and `git add`, the main spec already holds the deltas, so
+step 1 changes nothing and step 2 alone clears the finding. Followed in order, the sequence clears
+every presence and absence finding. An unpaired RENAMED line is a defect in the archived delta
+itself, so its remedy adds a step 0 before the two above: complete the `FROM:`/`TO:` pair in that
+archived delta file, which the check reads from disk.
 
 #### Scenario: A lost ADDED requirement is reported
 
@@ -211,6 +226,15 @@ The remedy it names is to restore the missing spec edits (`openspec archive` rew
   neither header, which is the state 0.48.0's main specs were in for two days
 - **THEN** the integrity report and the briefing each name that epic, the change directory,
   `engine-invocation` and both headers as absent
+
+#### Scenario: The printed remedy clears a lost header on an archived change
+
+- **WHEN** the integrity report names a `delivered` epic whose archived change ADDED a requirement
+  that was never committed to the main spec, and the remedy it prints is followed in order: the
+  requirement block copied from the archived delta into the main spec's `## Requirements` section,
+  then `git add openspec/`
+- **THEN** every step succeeds, the next integrity report no longer names the epic, and the epic
+  still exists
 
 #### Scenario: A REMOVED requirement still in the main spec is reported
 

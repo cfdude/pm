@@ -259,11 +259,23 @@ in ONE process. The briefing reads it at SessionStart, and integrity scans every
   presence or absence findings, which mirrors how the integrity checks already treat an unanswerable
   git ("`null` means git could not answer at all ... must never be reported as a finding").
 - The same `batchCheckCommits` precedent sets `GIT_NO_LAZY_FETCH=1`.
-- **The capture carries bytes.** Every existing gateway operation returns a UTF-8 string and the
-  capture stores strings. This operation's capture entry stores its value base64-encoded under an
-  explicit encoding tag, `fake-git.mjs` decodes it to a `Buffer`, and the capture's byte-identity
-  check compares bytes. A string-valued entry would agree with real git on ASCII and disagree on
-  exactly the multi-byte case the capture must pin.
+- **The capture carries bytes.** Every existing gateway operation returns a UTF-8 string, and the
+  capture pipeline decodes to strings at three points: `callReal()` in
+  `fixtures/git-gateway-repo.mjs` turns any `Buffer` answer into a UTF-8 string, `buildCapture()`
+  stores that string (after `rootToToken()`), and the comparator in
+  `functional/git-gateway-double.test.mjs` (`callFake()`, `describeDifference()`) compares strings.
+  For THIS operation, keyed on its name so no existing entry changes, each of the three keeps the
+  `Buffer`: `callReal()` returns it undecoded, `buildCapture()` stores it base64-encoded under an
+  explicit encoding tag, `fake-git.mjs` decodes the tag back to a `Buffer`, and the comparator
+  compares bytes.
+  - **Why the double returns a `Buffer` at all:** the wrapper's byte-offset parse is the thing under
+    test, and a string-valued double would never exercise it.
+  - **Why base64, stated correctly:** NOT multi-byte text. Valid UTF-8 round-trips losslessly
+    through a JSON string (checked 2026-09-25: a multi-byte string decoded, stored and re-encoded is
+    byte-equal). Base64 is kept for INVALID UTF-8 only: a blob holding a stray `0xff` byte decodes
+    to U+FFFD and re-encodes 3 bytes longer (3 bytes in, 5 out, checked the same day), which would
+    shift every later `<size>` frame. A spec file should never hold such bytes, but the capture is
+    the one place that must not assume it.
 
 **Where it lives.**
 
@@ -306,6 +318,26 @@ case on the file rung.
 ### D6. Surfaces
 
 - An integrity check with a stable id (working name `delivered-epic-spec-deltas-absent`).
+- **Its remedy runs against an ARCHIVED change.** Neither OpenSpec command can re-apply an archived
+  delta: checked 2026-09-25 in a scratch repository, `openspec archive <id> -y` answers "Change
+  '<id>' not found" for both the dated directory name and the bare id, and `/opsx:sync` works on
+  active changes only. `git checkout <sha> -- openspec/specs/<cap>/spec.md` was rejected too: the
+  0.48.0 edits were never committed, so for the case that motivates the check no such sha exists
+  (the same scratch run: `git log -S` over the spec's history found none). The printed remedy is one
+  sequence: make the main spec's `## Requirements` section hold what the delta requires (copy each
+  header reported absent with its block from `openspec/changes/archive/<dir>/specs/<cap>/spec.md`,
+  delete each block reported present, rename a RENAMED `FROM` header to its `TO`), then
+  `git add openspec/`. In the archive-to-`git add` window the first step is already true, so the
+  same sequence clears that case too. The scratch run confirmed the sequence: the index held the
+  header afterwards, read through `cat-file --batch` with a `:./` path.
+- **Its emitted-instructions builder is constructable, so it is not declared unconstructable.**
+  `emitted-invocations`' registry test fails for any `CHECKS` id with no builder, and
+  `UNCONSTRUCTABLE` is 0. That functional file's `remedyRepo()` is a hermetic real-git fixture, and
+  5.1 already builds this exact condition in one, so a declared "cannot be constructed" would be
+  false. The builder declares `prints: "none"`, following the `archived-with-zero-ticked-tasks`
+  precedent, because the remedy is an edit plus `git add`, not an engine invocation, and the
+  harness follows engine invocations only. `prints: "none"` alone never runs the remedy, so 5.1 adds
+  the case that follows it and checks the finding clears.
 - A briefing block under its own heading, fed by the same exported function (the
   `ungatedArchives()` pattern), so the two cannot name different sets. Its overflow line points at
   `integrity`, never at `PROJECT.md`.
@@ -316,8 +348,11 @@ case on the file rung.
   file. `render()` itself runs in-process under `snapshot`, `commit-nudge`, `sync`, `upgrade` and most
   mutating verbs, several of them hooks, so printing there would put the block (and a git process)
   into every one of those outputs; and `render --diff-summary`'s stdout is a machine-read line, so
-  it never carries the block. `/pm:status` runs `render` and reads its output as
-  well as `PROJECT.md` (`commands/status.md` says so), so status still shows it. Why not the file:
+  it never carries the block. `/pm:status` runs `render`, so status can still show it, but ONLY once
+  `commands/status.md` tells the reader to read that output. At HEAD it does not: its procedure step
+  says "Then read `PROJECT.md` and summarize for the user", and nothing else. Task 7.1 rewrites that
+  step to read the `render` output as well as `PROJECT.md`; until 7.1 lands, a `/pm:status` run
+  would print the block and the procedure would not look at it. Why not the file:
   - the condition depends on the INDEX, and a render between `openspec archive` and `git add` would
     write a finding about a correct archive into `PROJECT.md`, which pm's closeout then commits;
   - `PROJECT.md` would change with staging state rather than with the record, which defeats
@@ -333,8 +368,8 @@ case on the file rung.
   `cat-file --batch` for all capabilities. The delta files are read only for in-scope epics. Task 5.3
   measures the briefing's wall time before and after.
 - **[The index differs from `HEAD` while a user has staged unrelated spec edits]** → the check
-  answers "what the next commit records", which is the question that matters. It is documented in
-  `commands/status.md`.
+  answers "what the next commit records", which is the question that matters. Task 7.1 documents it
+  in `commands/status.md`, which says nothing about it at HEAD.
 - **[The two live delivered epics now render open work]** → correct, and each is a Mintlify task
   that was really left open. Nothing refuses. Task 1.1 re-measures them, and task 1.4
   names them in its commit body so the orchestrator can decide whether to verify the two Mintlify
