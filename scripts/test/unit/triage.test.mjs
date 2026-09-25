@@ -333,3 +333,26 @@ unitTest("a decomposed accent is the same word as the composed one — NFC befor
   // "a" + COMBINING DIAERESIS: without NFC the mark is a separate code point; without \p{M} it splits the word.
   assert.deepEqual(tokenize(cp(0x61, 0x308) + "ndern"), tokenize(cp(0xe4) + "ndern"));
 });
+
+// Branch review: Chinese, Japanese and Korean put no spaces between words, so a whole phrase was ONE
+// token — the identical title matched, any rewording matched nothing. Split into character bigrams.
+// 导出报告功能 "export-report feature" vs the ask 报告导出 "report export": no shared phrase, two
+// shared words.
+const HAN_TITLE = cp(0x5bfc, 0x51fa, 0x62a5, 0x544a, 0x529f, 0x80fd);
+const HAN_ASK = cp(0x62a5, 0x544a, 0x5bfc, 0x51fa);
+
+unitTest("a reworded Chinese ask still finds the epic that shares its words", () => {
+  const engine = repoWith([
+    { id: "report-export", title: HAN_TITLE },
+    { id: "unrelated", title: "render the backlog table" },
+  ]);
+  const got = triage(engine, HAN_ASK);
+  assert.deepEqual(got.candidates.map(c => c.id), ["report-export"]);
+});
+
+unitTest("tokenize splits a Han run into bigrams and leaves the Latin words around it alone", async () => {
+  const { tokenize } = await import(TRIAGE);
+  assert.deepEqual(tokenize(HAN_ASK), [cp(0x62a5, 0x544a), cp(0x544a, 0x5bfc), cp(0x5bfc, 0x51fa)]);
+  assert.deepEqual(tokenize("export " + cp(0x5bfc, 0x51fa) + "api"), ["export", cp(0x5bfc, 0x51fa), "api"]);
+  assert.deepEqual(tokenize(cp(0x5bfc)), [cp(0x5bfc)], "a single Han character is a word, not noise");
+});

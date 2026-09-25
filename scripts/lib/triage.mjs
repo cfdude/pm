@@ -53,9 +53,31 @@ const COMMON_TOKEN_MIN_EPICS = 8;
  *  digits (`\p{N}`) are word characters; NFC first, so a composed and a decomposed spelling of one
  *  word agree. The length floor counts CODE POINTS, not UTF-16 units. */
 export function tokenize(text) {
-  return String(text || "").normalize("NFC").toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)
-    .filter(t => [...t].length >= MIN_TOKEN_LENGTH);
+  const out = [];
+  for (const word of String(text || "").normalize("NFC").toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)) {
+    // CHINESE, JAPANESE AND KOREAN ARE SPLIT INTO CHARACTER BIGRAMS (branch review). Han and kana
+    // put no spaces between words, so the split above made a whole phrase ONE token: an identical
+    // title matched, and any rewording of it matched nothing. Overlapping bigrams are the standard
+    // lexical answer for these scripts (the approach of Lucene's CJK analyzer) and need no
+    // dictionary, which the engine could not ship. They skip the 3-character floor, which exists to
+    // drop short Latin words, and the idf weighting below already discounts a bigram that is
+    // everywhere. Hangul is included: its spaced words still run two or three syllables long.
+    for (const run of word.split(CJK_RUN)) {
+      if (!run) continue;
+      if (CJK_ONLY.test(run)) {
+        const chars = [...run];
+        if (chars.length === 1) out.push(run);
+        for (let i = 0; i + 1 < chars.length; i++) out.push(chars[i] + chars[i + 1]);
+      } else if ([...run].length >= MIN_TOKEN_LENGTH) {
+        out.push(run);
+      }
+    }
+  }
+  return out;
 }
+const CJK = "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}";
+const CJK_RUN = new RegExp(`([${CJK}]+)`, "u");
+const CJK_ONLY = new RegExp(`^[${CJK}]+$`, "u");
 
 /** The token SET of one epic — its id, title and description together. The id is included
  *  deliberately: a slug is often the most faithful statement of what an epic is, and in this

@@ -4,3 +4,5 @@
   while an umlaut cut a German word in two. Letters, combining marks and digits of every script
   are now word characters, and text is NFC-normalised first so a composed and a decomposed
   spelling of one word match.
+  Chinese, Japanese and Korean text, which puts no spaces between words, is split into
+  overlapping two-character tokens, so a reworded ask still finds the epic whose words it shares.
