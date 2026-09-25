@@ -1,0 +1,58 @@
+# data-refs-and-inverses — required task item 1, tasks 6.2 and 6.3, on the final tree (9e722f1)
+
+## 6.2 — Data references
+
+### PM_NODE_FALLBACK -> NODE_FLOOR_MAJOR (its minimum IS the support floor)
+
+Derived with `rg -n --hidden 'PM_NODE_FALLBACK' .github .claude scripts` and
+`rg -n 'NODE_FLOOR_MAJOR' --glob '!openspec/**' --glob '!CHANGELOG.md'`.
+
+| Holder | Written | Read | Removed / moved |
+|---|---|---|---|
+| `.github/workflows/ci.yml:23` `PM_NODE_FALLBACK: "[22,24,26]"` | by hand, at a release (the release-checklist support-floor step) | ci.yml:50 (the compute job's Node), :57/:59 (node-majors.mjs `--fallback`); assert/ci-workflow.test.mjs:313 `fallbackOf()`; the release-checklist step's command (SKILL.md:40) | moved together with the constant and the docs, as ONE unit, by the release-checklist step (SKILL.md:42-49); never removed |
+| `scripts/lib/runtime-support.mjs:26` `NODE_FLOOR_MAJOR = 22` | by hand, same release step | runtime-support.mjs:34-35 (the brief line); assert/ci-workflow.test.mjs:28/:319 (4.2(e)); assert/support-floor.test.mjs:23/:118 (the doc copies) | same |
+| `scripts/test/assert/ci-workflow.test.mjs:319` `floorRefusals()` | — | reads both: fails per commit when min(fallback) != constant, naming both | — |
+| `scripts/test/node-majors.mjs` `decide()` | — | reads the fallback in CI: computed set must EQUAL it, naming both | — |
+| Documented copies: `README.md:51`, `:119`, `CONTRIBUTING.md:79`, `CLAUDE.md:20` (each `Node 22+`) | by hand, same release step | assert/support-floor.test.mjs `floorCopyRefusals()` — each must equal the constant, and each file must still hold its copies (README ≥ 2, CONTRIBUTING ≥ 1, CLAUDE.md ≥ 1), so a copy DELETED instead of corrected fails too | same |
+| Docs site (installation, index, introduction, llms.txt) | the release cut (7.6) | nothing per-commit — the release-checklist step names them | same |
+
+A dangling reference is impossible per commit for everything but the site: each holder is read by a
+test that names both values on a mismatch.
+
+### The `pm-isolation-flag` file
+
+- WRITER: the old hook's probe (`printf … > "$ISOFLAGFILE"`) — DELETED in 1.4 (`b7ba061`).
+- READER: the old hook's `ISOFLAG=$(cat "$ISOFLAGFILE")` — DELETED in 1.4.
+- REMOVAL: `.githooks/pre-commit:116`, `rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"`,
+  every run — SHIPPED in 1.4, proven by functional/conductor-09's "1.5 the retired probe's
+  pm-isolation-flag is removed" and its mutation (mutation-1.5.txt). Observed on this clone: the file
+  existed before `b7ba061` and was gone after that commit's own hook run.
+- Its sunset (removing the `rm -f` line in 0.50.0) is a 6.8 deferral candidate for the archive.
+
+### A requirement name is a data reference too
+
+The REMOVED requirement *"The assertion half spawns no process and runs no git"* is restated as
+*"No test in the assertion half spawns a process or runs git"*. Its live citations, derived with
+`rg -n -U --hidden 'spawns no\s*(//\s*)?process and runs no' --glob '!openspec/changes/**' --glob '!.git/**' --glob '!.conductor/**' --glob '!CHANGELOG.md'`:
+- scripts/test/assert/assert-half-has-no-spawn.test.mjs:2-3 — re-pointed in `93e25e2` (2.4), the
+  next commit to touch the file (2.1 + 2.2's commit `6b07a08` touched it first and did NOT re-point
+  it: a one-commit lag, closed in the following row).
+- the same file's unit-rung section (:197 at drafting) — re-pointed in `93e25e2`.
+- scripts/test/fixtures/assert-git-shim.mjs:69 (the text the exit listener PRINTS) — re-pointed in
+  `93e25e2` (2.4), as tasks.md schedules.
+Re-run on the final tree: ONE hit, `openspec/specs/suite-certification/spec.md:102` — the main spec's
+own header, which the archive (9.2) rewrites. No live citation remains.
+
+## 6.3 — Every operation has an inverse
+
+| Operation | Inverse | Shipped? | Reason |
+|---|---|---|---|
+| The probe cache's write (`pm-isolation-flag`) | `rm -f` of it on every hook run | **SHIPPED** (1.4, `b7ba061`; proven 1.5) | an untracked file whose writer is gone reads as a live mechanism |
+| The shim's `mkdtempSync` (`pm-assert-no-git-*`) | `removeTempDir(shimDir)` in its exit listener | **SHIPPED** (2.4, `93e25e2`) | one directory per process under per-file isolation |
+| The harness's `mkdtempSync` (`pm-empty-cache-*`) | `removeAtExit()` → `removeTempDir()` | **SHIPPED** (2.4b, `cb946eb`) | same leak, second site (Gate 1 I6) |
+| `removeAtExit(dir)` (schedule) | none — a scheduled removal is not unscheduled | not shipped | nothing in the suite needs to keep a per-process temp dir past exit; an unschedule would only ever be used to leak |
+| Raising the support floor | lowering it | **NOT shipped** | the policy only moves the floor up; a lowered floor would claim support for an end-of-life Node |
+| Emitting the below-floor warning | suppressing it | **NOT shipped** | one line, only below the floor; the remedy is upgrading Node, and a switch to hide it would hide an end-of-life runtime |
+| A matrix major added | a matrix major removed | **BOTH computed** | the same schedule filter (`supportedMajors`) adds a line when its `start` passes and drops it when its `end` does |
+| `spawnAll`'s SIGKILL of a hung child | — | no inverse applies | a kill at the bound is terminal by design: the test fails naming the argv, and there is nothing to restore |
+| The CI fallback taking over on a failed fetch | the computed set on the next successful fetch | **automatic** | `decide()` falls back only while the fetch fails; the next run with a working fetch computes and agreement-checks again |

@@ -485,7 +485,7 @@ Commit mechanics, which bind every section below:
 
 ## 6. Required task items
 
-- [ ] 6.1 **Call-site completeness sweep** (required task item 1). Enumerate MECHANICALLY and record
+- [x] 6.1 **Call-site completeness sweep** (required task item 1). Enumerate MECHANICALLY and record
       in `call-site-sweep-6.1.txt`. For each part, state where the rule holds, where it does not,
       and the justification for each omission.
       - (a) **Every place that runs `node --test` for a COUNT**, from
@@ -516,7 +516,7 @@ Commit mechanics, which bind every section below:
       - (f) D8's version-claim `rg`, re-run on the final tree BOTH line-based and multiline
         (`rg -U` with `\s+` for each literal space), because wrapped text escapes the line-based form
         (Gate 1 I8).
-- [ ] 6.2 **Data references** (required task item 1). `PM_NODE_FALLBACK` is a data reference to
+- [x] 6.2 **Data references** (required task item 1). `PM_NODE_FALLBACK` is a data reference to
       `NODE_FLOOR_MAJOR`. Record where each is written, where it is read, and where it is removed:
       - `ci.yml`'s env;
       - `ci-workflow.test.mjs`;
@@ -541,7 +541,7 @@ Commit mechanics, which bind every section below:
         so it re-points in 2.4's commit.
       The main spec's own header is rewritten by the archive. Verify: re-run the `rg` on the final
       tree. It returns only records and the archived change.
-- [ ] 6.3 **Every operation has an inverse** (required task item 1). Name each, shipped or not,
+- [x] 6.3 **Every operation has an inverse** (required task item 1). Name each, shipped or not,
       with its reason:
       - the probe cache's write against its `rm -f`: **shipped**;
       - the shim's `mkdtemp` against its removal: **shipped**, in 2.4;
@@ -552,7 +552,7 @@ Commit mechanics, which bind every section below:
         runtime;
       - a matrix major added against one removed: **both computed**, by the same schedule filter;
       - `spawnAll`'s kill: no inverse applies. Say so.
-- [ ] 6.4 **Verify against the commit, not the working tree** (required task item 2). For every task
+- [x] 6.4 **Verify against the commit, not the working tree** (required task item 2). For every task
       above, run `git show --stat <sha>`. Assert that every file the task claims to change is in
       THAT commit. Pay particular attention to:
       - 2.2's thirteen files;
@@ -560,12 +560,14 @@ Commit mechanics, which bind every section below:
       - 3.2's engine files and BOTH harnesses — `fixtures/harness.mjs` and
         `fixtures/unit-harness.mjs` (Gate 1 I7).
       Record in `commit-verification-6.4.txt`.
-- [ ] 6.5 **Declare lifecycle bookkeeping** (required task item 3). The archive task, 9.2, carries
+- [x] 6.5 **Declare lifecycle bookkeeping** (required task item 3). The archive task, 9.2, carries
       `<!-- pm:lifecycle -->` on its task line. It was marked when this source was authored.
       `3256cc2`'s sync of 0.48.0's deltas is 0.48.0's bookkeeping, recorded as done in 0.4. It is
       not a task of this change's work.
 - [ ] 6.6 **Attribute every commit to its epic** (required task item 4). Run
-      `update-epic node-support-policy --attribute-commit <sha>` as each commit is made. It is NOT
+      `update-epic node-support-policy --attribute-commit <sha>` as each commit is made. (Apply run:
+      every commit 7b5dcaa…9e722f1 attributed as it landed, 23 in all with the three proposal commits,
+      in landing order; the three throwaway-branch commits of 4.5/8.3 deliberately NOT.) It is NOT
       attributed for:
       - the commit that moves this change under `archive/`;
       - 2.6's machine cleanup, which is not a commit at all;
@@ -582,7 +584,7 @@ Commit mechanics, which bind every section below:
       - the hook's `rm -f pm-isolation-flag` line's sunset: removed in 0.50.0 (design D3), recorded
         as `--deferral` against an epic registered for it, or declined with a reason.
       `store-owns-claude-md-managed-block` is NOT dispositioned by this change (design D10).
-- [ ] 6.9 **Route what the work taught you** (required task item 7). Name each finding as one of
+- [x] 6.9 **Route what the work taught you** (required task item 7). Name each finding as one of
       three kinds before the change closes. Candidates carried in from drafting:
       - **FRICTION**: 0.48.0 was archived and its spec deltas never reached `openspec/specs/`, and
         nothing in pm's archive gate noticed. File it: `/pm:feedback bug "…"`, with the `rg` counts
@@ -600,6 +602,23 @@ Commit mechanics, which bind every section below:
       - **FRICTION**: `openspec validate --strict` refuses a MODIFIED block that drops a scenario, so
         a requirement whose scenario became false had to be REMOVED and restated under a new name.
         Decide whether that is worth an upstream filing.
+      **Routed (apply, 2026-09-24):**
+      - FRICTION → **filed as cfdude/pm#222** (local copy
+        `.conductor/feedback/2026-09-24-archive-gate-misses-unsynced-main-specs.md`): the archive gate
+        accepts `delivered` over main specs that never received the change's deltas.
+      - PROCESS → **lesson written**: `docs/lessons/a-guard-installed-by-import-covers-only-its-process.md`
+        (no existing lesson covered it; `a-guard-is-only-as-wide-as-the-events-it-is-wired-to` is the
+        nearest and is about hook subscriptions), indexed in `docs/lessons/README.md`.
+      - PRACTICE → **decided: not registered as a pm epic.** A CI matrix computed from Node's schedule
+        is this repository's CI, not a conductor behaviour; pm is an instruction layer with no CI
+        surface to ship it through. The reusable shape (committed fallback + agreement check +
+        per-commit tie to an engine constant) is recorded in design D2 for anyone who wants it.
+      - FRICTION (openspec `validate --strict`) → **not filed by this run**: an upstream filing is an
+        outward action on a third-party repository, left to the maintainer. REMOVED + ADDED under a new
+        name worked, and 6.2 re-pointed every citation.
+      - FRICTION found while applying → **filed as cfdude/pm#223**: the commit-watch attribution
+        nudge told the agent to attribute three commits on the throwaway `ci-verify-049` branch
+        (4.5/8.3); obeying it would have made Gate 2 unrecordable. Not attributed.
 
 ## 7. Docs
 

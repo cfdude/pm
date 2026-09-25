@@ -1,0 +1,23 @@
+# commit-verification-6.4 — required task item 2: every file a task claims is in THAT commit
+# method: `git show --stat --name-only --format= <sha>` per commit (the commit, never the working tree)
+7b5dcaa  0.1 0.2 0.3 1.1 1.2 1.3                  claimed  8  in commit  8  OK
+6b07a08  2.1 2.2                                  claimed 16  in commit 16  OK
+93e25e2  2.3 2.4                                  claimed  6  in commit  6  OK
+cb946eb  2.4b 2.4c                                claimed  9  in commit  9  OK
+0831d90  2.5                                      claimed 13  in commit 13  OK
+b7ba061  1.4 1.5 (2.6's record)                   claimed  8  in commit  8  OK
+ada05a3  3.1 3.2                                  claimed 11  in commit 11  OK
+d45ee0e  3.3                                      claimed  3  in commit  3  OK
+0449e9e  4.1 4.2b                                 claimed  6  in commit  6  OK
+a09b2fe  4.2 4.3                                  claimed  5  in commit  5  OK
+85670f8  4.4                                      claimed  4  in commit  4  OK
+ccc00e7  4.5                                      claimed  2  in commit  2  OK
+a848988  5.1 5.2 5.3                              claimed  6  in commit  6  OK
+fe96401  7.1                                      claimed  2  in commit  2  OK
+4c30f5a  7.2 (+4.2b README/CONTRIBUTING copies)   claimed  3  in commit  3  OK
+c312be3  7.3 (+4.2b CLAUDE.md copy)               claimed  3  in commit  3  OK
+5788aca  7.4                                      claimed  3  in commit  3  OK
+cd093fe  7.8                                      claimed  4  in commit  4  OK
+7f1e35d  7.5 7.7                                  claimed  2  in commit  2  OK
+9e722f1  8.1 8.2 8.3                              claimed  2  in commit  2  OK
+# total missing: 0
