@@ -9,7 +9,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
-import { CONTROL_CHARACTER, KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
+import { CONTROL_CHARACTER, KNOWN_STATUSES, KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream } from "./invocation.mjs";
 
@@ -91,6 +91,15 @@ export function setTracker() {
   }
 
   if (role === "secondary") {
+    // A SECONDARY takes no --intent (branch review): the branch below never reads it, so the value
+    // was dropped with exit 0. It is refused rather than stored because a status intent is what an
+    // OUTWARD mirror transitions an item to, and a secondary tracker is inward-only (pinned above) —
+    // there is no transition for it to drive.
+    if (f.intent !== undefined) {
+      die("conductor: --intent is not accepted with --role secondary — a status intent maps pm statuses onto " +
+        "the transitions an OUTWARD mirror makes, and a secondary tracker is inward-only. Set it on the " +
+        "primary tracker instead. Nothing was written.\n");
+    }
     const system = str(f.system);
     const repo = str(f.repo);
     const projectKey = str(f.project);
@@ -192,6 +201,12 @@ export function setTracker() {
       if (i <= 0 || i === pair.length - 1 || !pair.slice(0, i).trim() || !pair.slice(i + 1).trim()) {
         die(`conductor: --intent ${escapeControls(JSON.stringify(pair))} must be <pm-status>:<tracker-state>, ` +
           "both halves non-empty — e.g. --intent \"active:In Progress\"\n");
+      }
+      // The pm-status half names one of pm's OWN statuses (branch review): `banana:Open` was stored, a
+      // mapping no epic can ever reach, so the outward transition it was meant to drive never fires.
+      if (!KNOWN_STATUSES.includes(pair.slice(0, i).trim())) {
+        die(`conductor: --intent ${escapeControls(JSON.stringify(pair))} — the part before ':' must be a pm status, ` +
+          `one of ${KNOWN_STATUSES.join("|")}. Nothing was written.\n`);
       }
       si[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
     }

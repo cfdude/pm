@@ -83,6 +83,27 @@ unitTest("set-tracker refuses an --intent that is not <status>:<target> instead 
   assert.equal(engine.store.record().tracker, undefined, "and no tracker was written");
 });
 
+unitTest("set-tracker refuses an --intent whose status half is not a pm status", () => {
+  // `banana:Open` was stored: a mapping no epic's status can ever reach.
+  const engine = memoryEngine(emptyRecord());
+  const err = expectFail(() => engine(["set-tracker", "--system", "jira", "--intent", "banana:Open"]));
+  assert.ok(err, "refused");
+  assert.match(err.stderr, /before ':' must be a pm status/);
+  assert.equal(engine.store.record().tracker, undefined, "and no tracker was written");
+});
+
+unitTest("set-tracker refuses --intent on the SECONDARY role instead of dropping it", () => {
+  // The secondary branch never read --intent: a well-formed pair exited 0 and was recorded nowhere.
+  const engine = memoryEngine(emptyRecord());
+  for (const pair of ["active:In Progress", "badpair"]) {
+    const err = expectFail(() => engine(["set-tracker", "--role", "secondary", "--system", "jira",
+      "--project", "AB", "--intent", pair]));
+    assert.ok(err, `--role secondary --intent ${pair} is refused`);
+    assert.match(err.stderr, /--intent is not accepted with --role secondary/);
+  }
+  assert.equal(engine.store.record().secondaryTrackers, undefined, "and no secondary tracker was written");
+});
+
 unitTest("changelog --since refuses a value that is not a version instead of printing everything", () => {
   // cmpVer() read any non-number as 0, so `--since garbage` meant "since 0.0.0": 3,366 lines.
   const engine = memoryEngine(emptyRecord());
