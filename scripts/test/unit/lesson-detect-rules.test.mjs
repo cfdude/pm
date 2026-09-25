@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 import {
-  ADVISED_TOOLS, DETECT_KEYS, MATCH_TEXT_CAP, REGEX_BUDGET_MS,
+  ADVISED_TOOLS, DETECT_KEYS, MATCH_TEXT_CAP, REGEX_BUDGET_MS, REGEX_CEILING_MS,
   checkDetect, frontmatterBlock, matchLessons, nestedUnboundedQuantifier,
 } from "../../lib/lessons.mjs";
 
@@ -121,11 +121,19 @@ unitTest("a nested unbounded quantifier is rejected before it can reach the hook
   rejected('{"tool":"Bash","commandMatches":"^(a+)+$"}', /nests an unbounded quantifier.*\(a\+\)\+/);
 });
 
-unitTest("nestedUnboundedQuantifier names the group; bounded, flat and literal forms are not flagged", () => {
+unitTest("nestedUnboundedQuantifier names only a repeated group whose whole body is one repeated atom", () => {
+  // The unambiguous catastrophic shape: nothing delimits one repetition from the next.
   assert.equal(nestedUnboundedQuantifier("^(a+)+$"), "(a+)+");
-  assert.equal(nestedUnboundedQuantifier("(?:\\s+x){2,}"), "(?:\\s+x){2,}");
-  assert.equal(nestedUnboundedQuantifier("((a)*b)*"), "((a)*b)*");
-  assert.equal(nestedUnboundedQuantifier("(x(?:y+))*"), "(x(?:y+))*");
+  assert.equal(nestedUnboundedQuantifier("(\\s*)*"), "(\\s*)*");
+  assert.equal(nestedUnboundedQuantifier("x([a-z]+)*y"), "([a-z]+)*");
+  assert.equal(nestedUnboundedQuantifier("(?:\\d+)+"), "(?:\\d+)+");
+  assert.equal(nestedUnboundedQuantifier("(a+?){2,}"), "(a+?){2,}");
+  // Review minor 3: a DELIMITED repetition is linear and must not be rejected — this matcher
+  // takes about 0.02 ms on 4 KB. The per-regex budget, not this check, covers what it misses.
+  assert.equal(nestedUnboundedQuantifier("^git (\\S+\\s+)*--no-verify"), "");
+  assert.equal(nestedUnboundedQuantifier("(?:\\s+x){2,}"), "");
+  assert.equal(nestedUnboundedQuantifier("((a)*b)*"), "");
+  assert.equal(nestedUnboundedQuantifier("(x(?:y+))*"), "");
   assert.equal(nestedUnboundedQuantifier("(a+){2,5}"), "");
   assert.equal(nestedUnboundedQuantifier("(a+)?"), "");
   assert.equal(nestedUnboundedQuantifier("(^|[;&|]\\s*)git"), "");
@@ -155,6 +163,34 @@ unitTest("a catastrophic regex the static check cannot see is cut off inside the
   assert.ok(ms < REGEX_BUDGET_MS + 1900, `regex phase took ${ms.toFixed(0)} ms`);
   assert.deepEqual(hits.map(h => h.file), ["a-good.md"],
     "the lesson evaluated before the budget ran out still fires; the runaway one does not");
+});
+
+unitTest("a delimited repetition is accepted as a matcher (review minor 3)", () => {
+  const v = checkDetect('{"tool":"Bash","commandMatches":"^git (\\\\S+\\\\s+)*--no-verify"}');
+  assert.ok(v.ok, v.reason);
+});
+
+unitTest("a runaway lesson listed FIRST cannot silence a benign lesson after it — each regex has its own budget", () => {
+  const bad = lessonOf("a-bad.md", '{"tool":"Bash","commandMatches":"^(a|a)*$"}');
+  const good = lessonOf("z-good.md", '{"tool":"Bash","commandMatches":"^a"}');
+  const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
+  const t0 = performance.now();
+  const hits = matchLessons(event, [bad, good]);
+  const ms = performance.now() - t0;
+  assert.deepEqual(hits.map(h => h.file), ["z-good.md"]);
+  assert.ok(ms < REGEX_BUDGET_MS + 1900, `regex phase took ${ms.toFixed(0)} ms`);
+});
+
+unitTest("the whole hook call is bounded by REGEX_CEILING_MS however many lessons run away", () => {
+  // Twelve runaways at 300 ms each would be 3.6 s without the ceiling; with a 100 ms ceiling the
+  // whole phase stops at ~100 ms. The 1.5 s bound separates the two with room for a loaded machine.
+  const bads = Array.from({ length: 12 }, (_, i) => lessonOf(`bad-${i}.md`, '{"tool":"Bash","commandMatches":"^(a|a)*$"}'));
+  const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
+  const t0 = performance.now();
+  assert.deepEqual(matchLessons(event, bads, { budgetMs: 300, ceilingMs: 100 }), []);
+  const ms = performance.now() - t0;
+  assert.ok(ms < 1500, `regex phase took ${ms.toFixed(0)} ms`);
+  assert.ok(REGEX_CEILING_MS >= REGEX_BUDGET_MS);
 });
 
 unitTest("only the first MATCH_TEXT_CAP characters of the command line are matched", () => {

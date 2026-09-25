@@ -82,21 +82,31 @@ function unboundedAt(src, i) {
   return m ? m[0].length : 0;
 }
 
-/** The first group that holds an unbounded quantifier AND is itself unboundedly quantified —
- *  `(a+)+`, `(?:\s+x)*`, `((a)*b){2,}` — or "" when there is none.
+/** ONE atom — an escape, a character class, or a plain character — followed by an unbounded
+ *  quantifier (optionally lazy), and nothing else. */
+const SINGLE_REPEATED_ATOM = /^(?:\\.|\[\^?\]?(?:\\.|[^\]\\])*\]|[^\\[\]()|*+?{}])(?:[*+]|\{\d+,\})\??$/;
+
+/** The first unboundedly repeated group whose WHOLE BODY is one unboundedly repeated atom —
+ *  `(a+)+`, `(\s*)*`, `(?:[a-z]+){2,}` — or "" when there is none.
  *
  *  This is the textbook catastrophic-backtracking shape and the one a repository author writes by
  *  accident: `^(a+)+$` against a 31-character command burned 60.4 s of CPU in the hook, on every
- *  Bash/Edit/Write call (C1). It is a HEURISTIC and says so: overlapping alternation under one
- *  quantifier (`(a|a)*`) is just as catastrophic and is not statically decidable here, which is
- *  why the regex phase ALSO runs under a time budget. The check exists to NAME the common case at
- *  classification time, where a reason can be reported; the budget exists so the uncommon case
- *  still cannot stall a tool call.
+ *  Bash/Edit/Write call (C1). Nothing delimits one repetition from the next, so a failing match
+ *  tries every way of splitting the input — exponential by construction.
+ *
+ *  NARROW ON PURPOSE (review minor 3). An earlier version flagged ANY unbounded quantifier inside
+ *  a repeated group, which rejected linear matchers such as `^git (\S+\s+)*--no-verify` (about
+ *  0.02 ms on 4 KB): the `\s+` delimits each repetition. A false reject is the costlier error,
+ *  because it silences a working lesson in a consumer repository and nothing there reports it yet
+ *  (#228), while a missed catastrophic regex now costs at most its own per-regex budget and its
+ *  own advice. Overlapping alternation (`(a|a)*`), a nested group (`((a+))+`) and other ambiguous
+ *  shapes are not statically decidable here; the per-regex budget is what bounds them. This check
+ *  exists to NAME the unambiguous case at classification time, where a reason can be reported.
  *
  *  A scanner, not a parser: escapes and character classes are skipped as literals, a group's `(?`
- *  prefix is not a quantifier, and a bounded `{n,m}` or `?` never counts. */
+ *  prefix is not part of its body, and a bounded `{n,m}` or `?` on the group never counts. */
 export function nestedUnboundedQuantifier(src) {
-  const stack = [];          // open groups: { start, inner } — inner: holds an unbounded quantifier
+  const stack = [];          // open groups: { start, body } — body: where the group's content begins
   let i = 0;
   while (i < src.length) {
     const c = src[i];
@@ -110,27 +120,28 @@ export function nestedUnboundedQuantifier(src) {
       continue;
     }
     if (c === "(") {
-      stack.push({ start: i, inner: false });
+      const start = i;
       i++;
       if (src[i] === "?") {                            // (?: (?= (?! (?<= (?<! (?<name>
         i++;
         if (src[i] === "<" && src[i + 1] !== "=" && src[i + 1] !== "!") {
           while (i < src.length && src[i] !== ">") i++;
+        } else if (src[i] === "<") {
+          i++;                                         // the `=`/`!` of a lookbehind
         }
         i++;
       }
+      stack.push({ start, body: i });
       continue;
     }
     if (c === ")") {
       const g = stack.pop();
+      const bodyText = g ? src.slice(g.body, i) : "";
       i++;
       const q = unboundedAt(src, i);
-      if (g && g.inner && q) return src.slice(g.start, i + q);
-      if (stack.length && g && (g.inner || q)) stack[stack.length - 1].inner = true;
+      if (g && q && SINGLE_REPEATED_ATOM.test(bodyText)) return src.slice(g.start, i + q);
       continue;
     }
-    const q = unboundedAt(src, i);
-    if (q) { if (stack.length) stack[stack.length - 1].inner = true; i += q; continue; }
     i++;
   }
   return "";
@@ -267,12 +278,12 @@ export function matchableLessons(dir = lessonsDir()) {
  *
  *  THE PATH is `file_path`, or `notebook_path` for NotebookEdit — the field that tool actually
  *  sends; reading only `file_path` left every NotebookEdit path matcher inert. */
-export function matchLessons(event, lessons, { budgetMs = REGEX_BUDGET_MS } = {}) {
+export function matchLessons(event, lessons, { budgetMs = REGEX_BUDGET_MS, ceilingMs = REGEX_CEILING_MS } = {}) {
   const tool = event.tool_name || "";
   const ti = event.tool_input || {};
   const cmdLine = String(ti.command || "").split("\n")[0].slice(0, MATCH_TEXT_CAP);
   const filePath = String(ti.file_path || ti.notebook_path || "");
-  const test = boundedTester(budgetMs);
+  const test = boundedTester(budgetMs, ceilingMs);
   return lessons.filter(l => {
     const d = l.detect;
     if (d.tool && d.tool !== tool) return false;
@@ -290,25 +301,36 @@ export function matchLessons(event, lessons, { budgetMs = REGEX_BUDGET_MS } = {}
   });
 }
 
-/** The TOTAL time every regex of one hook invocation may take, in milliseconds. The hook runs
- *  before every Bash/Edit/Write/NotebookEdit call and `hooks/hooks.json` gives it no timeout of
- *  its own, so without this a catastrophic regex held each tool call until Claude Code's 60 s hook
- *  timeout killed it (C1). An exhausted budget costs ADVICE, never time. */
-export const REGEX_BUDGET_MS = 100;
+/** The time ONE regex may take, in milliseconds. PER REGEX, not shared: a runaway lesson costs its
+ *  own advice and nobody else's. With one budget shared across the call, a catastrophic lesson
+ *  sorted first spent all of it and every lesson after it went silent (review minor 2).
+ *
+ *  The hook runs before every Bash/Edit/Write/NotebookEdit call and `hooks/hooks.json` gives it no
+ *  timeout of its own, so without a budget a catastrophic regex held each tool call until Claude
+ *  Code's 60 s hook timeout killed it (C1). An exhausted budget costs ADVICE, never time. */
+export const REGEX_BUDGET_MS = 50;
+
+/** The time EVERY regex of one hook call may take together. The per-regex budget alone scales with
+ *  the corpus (50 ms × every regex predicate); this caps it. WORST CASE for the regex phase:
+ *  min(REGEX_BUDGET_MS × runaway regexes, REGEX_CEILING_MS) = at most 1 s, reached only when twenty
+ *  regexes all run away on one call — the only case in which a lesson can lose its advice to
+ *  another's runaway. A benign regex costs microseconds against either bound. */
+export const REGEX_CEILING_MS = 1000;
 
 /** The most of the command's first line any regex sees. Bounds the polynomial blow-up of an
  *  ordinary `.*.*` on a pasted 100 kB one-liner; the catastrophic cases are the budget's job. */
 export const MATCH_TEXT_CAP = 4096;
 
 /** `(re, text) => true | false | null` — `re.test(text)` run inside a `node:vm` context whose
- *  timeout interrupts even a backtracking regex (the only built-in way to stop one), sharing ONE
- *  deadline across every call. `null` means the budget ran out before an answer. The context is
- *  created lazily, so a tool call no regex lesson reaches pays nothing for it. */
-function boundedTester(budgetMs) {
-  const deadline = performance.now() + budgetMs;
+ *  timeout interrupts even a backtracking regex (the only built-in way to stop one). Each call
+ *  gets `budgetMs`, clipped to what is left of the call's `ceilingMs`. `null` means the regex ran
+ *  out of time before an answer. The context is created lazily, so a tool call no regex lesson
+ *  reaches pays nothing for it. */
+function boundedTester(budgetMs, ceilingMs) {
+  const deadline = performance.now() + ceilingMs;
   let ctx = null;
   return (re, text) => {
-    const left = Math.floor(deadline - performance.now());
+    const left = Math.floor(Math.min(budgetMs, deadline - performance.now()));
     if (left < 1) return null;
     ctx ??= vm.createContext({});
     ctx.re = re;

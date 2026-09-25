@@ -1,0 +1,93 @@
+✔ the contract names four keys and the four tools the hook is wired to (1.223167ms)
+✔ every matcher shape pm ships is accepted (0.7365ms)
+✔ an empty or non-JSON detect is rejected — the six bare-regex lessons of #194 (0.311166ms)
+✔ a detect that is not a plain object is rejected, naming what it is (0.185333ms)
+✔ a typo'd key is rejected, not a match-everything matcher (C2) (0.624375ms)
+✔ every value must be a non-empty string — a tool array is rejected (0.360917ms)
+✔ a tool the hook is never sent is rejected (0.213708ms)
+✔ a matcher with no positive predicate would fire on every call and is rejected (0.18ms)
+✔ a predicate its tool can never satisfy is rejected (0.207ms)
+✔ a lesson with a command predicate but no compiled regex never matches — it fails closed (1.263041ms)
+✔ frontmatterBlock is the one frontmatter reader, and it accepts CRLF (0.29075ms)
+✔ a regex that does not compile is rejected with the engine's reason (0.492125ms)
+✔ a control character in a regex is rejected — JSON's \b is a backspace, not a word boundary (0.084709ms)
+✔ a nested unbounded quantifier is rejected before it can reach the hook (0.082416ms)
+✖ nestedUnboundedQuantifier names only a repeated group whose whole body is one repeated atom (0.611209ms)
+✔ a NotebookEdit path matcher reads notebook_path, the field that tool sends (0.105958ms)
+✔ a catastrophic regex the static check cannot see is cut off inside the budget (170.227125ms)
+✖ a delimited repetition is accepted as a matcher (review minor 3) (0.292416ms)
+✖ a runaway lesson listed FIRST cannot silence a benign lesson after it — each regex has its own budget (100.759125ms)
+✔ the whole hook call is bounded by REGEX_CEILING_MS however many lessons run away (50.798708ms)
+✔ only the first MATCH_TEXT_CAP characters of the command line are matched (1.471584ms)
+✔ a suppression regex that runs out of budget suppresses — it never fires as though it had finished (101.034958ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 19
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 954.544209
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ nestedUnboundedQuantifier names only a repeated group whose whole body is one repeated atom (0.611209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '(\\S+\\s+)*' !== ''
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/unit/lesson-detect-rules.test.mjs:133:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '(\\S+\\s+)*',
+    expected: '',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a delimited repetition is accepted as a matcher (review minor 3) (0.292416ms)
+  AssertionError [ERR_ASSERTION]: "commandMatches" nests an unbounded quantifier — "(\\S+\\s+)*" backtracks catastrophically
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/unit/lesson-detect-rules.test.mjs:170:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a runaway lesson listed FIRST cannot silence a benign lesson after it — each regex has its own budget (100.759125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'z-good.md'
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/unit/lesson-detect-rules.test.mjs:180:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'z-good.md' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
