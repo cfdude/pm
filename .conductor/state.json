@@ -8466,9 +8466,19 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (E2). .githooks/pre-commit runs node --test against the checkout: staging a failing test and restoring a passing copy unstaged commits green, and HEAD holds the failing test — required item 2 (the commit is the unit of verification) applied to the suite. The declared count uses the same glob as the runner, so renaming a test out of the glob drops it from both (repro: 1/1 passing with 5 tests present); conductor-09's test for the guard asserts status 0, and mutants flipping the comparison survive. ci.yml has no count guard and tests Node 18 only. Fix: run against the index (stash --keep-index or a worktree of the index), count declared tests across scripts/test/** by content, a fixture that must abort, and the same guard in CI.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "11a714b2eabf776df1d0ab29db6eab2c4b456d8d",
+        "f39a12f1fa98b6ec3d3f9cb918b9ab6481adb1ce",
+        "5b47ffa4887cab967d0edcd9464b48e4cfd14851",
+        "6f975abe8bb46496253be3c93189a731597b6dc6",
+        "617ae90513cd19dfcd73eabde18c3edcbda2ac69",
+        "b00940f4740a818f3bf5636d3e394641bd374383",
+        "cbcb182f6525359ae992da1c2ad06e258a176d81",
+        "0682f33fd2d8eeaa77c319650cf338607f5d043b",
+        "2094b1c60a6bc6a63ed60c5537929401ead19343"
+      ],
       "createdAt": "2026-09-15T05:11:42.968Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:24:56.830Z",
       "release": "0.50.0"
     },
     {
@@ -10132,7 +10142,7 @@
     },
     {
       "id": "store-owns-claude-md-managed-block",
-      "title": "0.49.0 candidate: make the managed rules block a store-owned artifact (removes the last fsync wall in the assertion half's file rung)",
+      "title": "Make init's repository-file writes (the CLAUDE.md managed block AND .gitignore) store-owned, so the tests that reach them can leave the disk (last lever on the per-commit gate)",
       "priority": "P3",
       "status": "planned",
       "role": "epic",
@@ -10147,7 +10157,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-25T19:29:36.373Z"
+      "touchedAt": "2026-09-25T21:14:34.667Z",
+      "notes": [
+        {
+          "at": "2026-09-25T21:14:34.648Z",
+          "actor": "agent",
+          "text": "Re-justified by measurement 2026-09-25 (profile-50, provisional n<=2 quiet runs at load <16): quiet hook ~15.4 s (the 24 s at 0.49.0 was contention); unit rung 3.4 s; file rung ~14.9 s. 323/546 file-rung tests reach init's CLAUDE.md or .gitignore write (318 CLAUDE.md alone; .gitignore adds 5) and carry 173 of ~180 s summed file-rung test time (96%); 54 files fsync, 23 of them fully reaching. Concurrency is not a lever (4/8 ~2.5x slower; 16 = default). Floor it cannot remove: gh-85 in assert/conductor-25 (~8.3 s, checks bytes/mtimes). Scope widened to .gitignore. Planned as the lead of 0.51.0 (0.50.0 is already 17 epics in flight); first task: decision-grade n=3 quiet measurement with an empty-preload control."
+        }
+      ]
     },
     {
       "id": "node-support-policy",
@@ -10344,9 +10361,19 @@
       "externalId": "219",
       "externalUrl": "https://github.com/cfdude/pm/issues/219",
       "externalUpdatedAt": "2026-09-22T12:11:09Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "11a714b2eabf776df1d0ab29db6eab2c4b456d8d",
+        "f39a12f1fa98b6ec3d3f9cb918b9ab6481adb1ce",
+        "5b47ffa4887cab967d0edcd9464b48e4cfd14851",
+        "6f975abe8bb46496253be3c93189a731597b6dc6",
+        "617ae90513cd19dfcd73eabde18c3edcbda2ac69",
+        "b00940f4740a818f3bf5636d3e394641bd374383",
+        "cbcb182f6525359ae992da1c2ad06e258a176d81",
+        "0682f33fd2d8eeaa77c319650cf338607f5d043b",
+        "2094b1c60a6bc6a63ed60c5537929401ead19343"
+      ],
       "createdAt": "2026-09-25T19:25:05.286Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:25:03.601Z",
       "release": "0.50.0"
     }
   ],
@@ -10358,7 +10385,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1435,
+  "revision": 1454,
   "reviewMode": "thorough",
   "releases": [
     {
