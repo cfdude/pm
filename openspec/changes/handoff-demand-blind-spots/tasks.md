@@ -151,7 +151,7 @@ These rules bind every section below.
 
 ## 2. Stories and the checkbox source count together (conductor-record, epic-disposition, emitted-instructions, design D2)
 
-- [ ] 2.1 **TDD** — the union.
+- [x] 2.1 **TDD** — the union.
       - RED: `red-2.1.txt`, split by rung:
         - UNIT (`scripts/test/unit/`, no path touched): a story-only epic → unchanged; a disposed
           story leaves both sides; `excludedLabel` over stories alone;
@@ -164,13 +164,13 @@ These rules bind every section below.
         is single-valued for one part and two-part (e.g. `stories+openspec`) for both, with a parts
         list consumers test membership on, and each part's own open count.
       Verify: the half is green.
-- [ ] 2.2 **TDD** — the reproduction from the 0.43.0 review (A2).
+- [x] 2.2 **TDD** — the reproduction from the 0.43.0 review (A2).
       - RED: `red-2.2.txt`, an ASSERT-rung verb test: `tasks.md` at 1/3, `update-epic --add-story x`,
         then `update-epic --story 1 --done --status archived --outcome delivered --no-deferrals`.
         It asserts exit non-zero, a refusal naming 2 outstanding, and the store unchanged.
       - GREEN: 2.1, plus 2.3's consumers.
       Mutation proof `mutation-2.2.txt`: reinstate the stories-first early return in a scratch copy.
-- [ ] 2.3 **Every consumer of `source`, in the same commit as 2.1 or immediately after it.** Enumerate
+- [x] 2.3 **Every consumer of `source`, in the same commit as 2.1 or immediately after it.** Enumerate
       with `rg -n "\.source\b|source ===|source:" scripts/lib` and record the list in the commit
       body. At drafting:
       - `outstandingSummary`: `items` whenever stories contribute;

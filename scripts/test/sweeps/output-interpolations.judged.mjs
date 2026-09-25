@@ -226,7 +226,13 @@ x("archive-gate.mjs", "archiveGate", {
 x("archive-gate.mjs", "archiveGate", {
   "outcomeOf(epic)": 1,
   "i.n": 1,
-}, "engine", "outcomeOf() answers from KNOWN_OUTCOMES or `unknown`; a story number");
+  "storiesOpen": 1,
+  "tasksOpen": 1,
+}, "engine", "outcomeOf() answers from KNOWN_OUTCOMES or `unknown`; a story number; each union part's open count (handoff-demand-blind-spots D2)");
+x("archive-gate.mjs", "archiveGate", {
+  "storyRemedy": 2,
+  "taskRemedy": 1,
+}, "passthrough", "the handoff's per-part remedy prose, composed in archiveGate() from an asCode() remedy line, engine flag text and the LIFECYCLE_MARKER constant");
 x("argv-surface.mjs", "checkCommandLine", {
   "badFlag.name": 2,
   "verb": 1,

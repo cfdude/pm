@@ -259,7 +259,8 @@ export function countCheckboxes(absPath) {
   return { done, total, excluded, exists };
 }
 
-/** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none.
+/** Resolve an epic's progress: the UNION of its story part and its checkbox source (planPath, else
+ *  an openspec change's tasks.md, live then archived), each also returned with its own counts.
  *
  *  A missing progress SOURCE must never be reported as an em dash, because `bar()` also renders
  *  an em dash for "this epic legitimately has no source" and for "the source exists and is
@@ -282,30 +283,41 @@ export function countCheckboxes(absPath) {
 export function epicProgress(epic) {
   // An archived epic's source is SUPPOSED to be gone; suppress rather than cry wolf.
   const archived = epic.status === "archived";
+
+  // THE UNION (conductor-record; design D2). An epic's progress source is TWO PARTS, computed
+  // independently and summed, and neither may hide the other. Before this, the presence of any
+  // inline story made the checkbox source unread: a tasks.md at 1/3, one `--add-story`, one
+  // `--story 1 --done` and an archive recorded `delivered` with two tasks open, rendering `1/1`.
+  // The union counts; it does not refuse a second source — an item counted twice is visible in the
+  // rendered record, and an item never counted is not.
+
+  // THE STORY PART. A DISPOSED story leaves BOTH sides of the ratio, exactly as a
+  // `<!-- pm:lifecycle -->` task does in countCheckboxes() (which `continue`s before `total++`).
+  // Three renderings were possible and two of them are wrong: counting a dropped story as `done`
+  // would claim completion for work nobody did, and counting it as outstanding would leave the
+  // archive gate refusing forever with no honest key. Excluding it says what happened — the work is
+  // not outstanding AND was not delivered — and the reason stays on the row either way.
+  let stories = null;
   if (Array.isArray(epic.stories)) {
-    // A DISPOSED story leaves BOTH sides of the ratio, exactly as a `<!-- pm:lifecycle -->`
-    // task does in countCheckboxes() (which `continue`s before `total++`). Three renderings
-    // were possible and two of them are wrong: counting a dropped story as `done` would claim
-    // completion for work nobody did, and counting it as outstanding would leave the archive
-    // gate refusing forever with no honest key. Excluding it says what happened — the work is
-    // not outstanding AND was not delivered — and the reason stays on the row either way.
     const counted = epic.stories.filter(s => s && !isStoryDisposed(s));
-    const excluded = epic.stories.length - counted.length;
-    const total = counted.length;
     const done = counted.filter(s => s.done).length;
-    // `excludedLabel` exists because bar() would otherwise call these "lifecycle", which is a
-    // different declaration made by a different mechanism in a different place.
-    return { done, total, excluded, excludedLabel: "disposed", source: "stories", warn: null };
+    stories = { done, total: counted.length, excluded: epic.stories.length - counted.length,
+      open: counted.length - done };
   }
+
+  // THE CHECKBOX SOURCE: the plan file where the epic records one, otherwise — for an openspec-lane
+  // epic, an absent lane read as openspec — the change's tasks.md, live or archived. `expected`
+  // without `exists` is the missing-source case, decided by this part ALONE: a story no longer
+  // suppresses the warning, because a source that stops being read because another one appeared is
+  // the missing-source defect reached by a different path.
+  let checkbox = null;
+  let warn = null;
   if (epic.planPath) {
     const c = countCheckboxes(path.join(engineRoot(), epic.planPath));
-    if (!c.exists) {
-      return { done: 0, total: 0, excluded: 0, source: "plan", warn: archived ? null : "planPath missing" };
-    }
-    return { done: c.done, total: c.total, excluded: c.excluded, source: "plan", warn: null };
-  }
-  if ((epic.lane || "openspec") === "openspec") {
-    const c = countCheckboxes(path.join(changesDir(), epic.id, "tasks.md"));
+    checkbox = { kind: "plan", done: c.done, total: c.total, excluded: c.excluded, open: c.total - c.done, exists: c.exists };
+    if (!c.exists && !archived) warn = "planPath missing";
+  } else if (isOpenspecLane(epic)) {
+    let c = countCheckboxes(path.join(changesDir(), epic.id, "tasks.md"));
     if (!c.exists) {
       // The checkbox source of an ARCHIVED change is its archived tasks.md, for EVERY epic
       // (conductor-record; design D1). `openspec archive` moves `changes/<id>/`, so a reader of
@@ -317,13 +329,37 @@ export function epicProgress(epic) {
       //
       // The LIVE path still wins while it exists: it is authoritative for a change in flight, and
       // a change can be un-archived and re-proposed under the same id.
-      const a = countCheckboxes(archivedTasksPath(epic.id));
-      if (a.exists) return { done: a.done, total: a.total, excluded: a.excluded, source: "openspec", warn: null };
-      return { done: 0, total: 0, excluded: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
+      c = countCheckboxes(archivedTasksPath(epic.id));
     }
-    return { done: c.done, total: c.total, excluded: c.excluded, source: "openspec", warn: null };
+    checkbox = { kind: "openspec", done: c.done, total: c.total, excluded: c.excluded, open: c.total - c.done, exists: c.exists };
+    if (!c.exists && !archived) warn = "tasks.md missing";
   }
-  return { done: 0, total: 0, excluded: 0, source: "none", warn: null };
+
+  // WHICH PARTS CONTRIBUTE. A checkbox source that cannot be read contributes nothing, and an EMPTY
+  // story list contributes only where no checkbox source was read (a story-only epic whose stories
+  // were never added still reads `stories`, as it always did). `source` stays the single value it
+  // always was when one part contributes, and is two-part (`stories+openspec`, `stories+plan`) when
+  // both do; `parts` is the list a consumer tests MEMBERSHIP on, and each part carries its OWN open
+  // count — a consumer choosing a remedy keys on that count, never on `source`.
+  const hasBox = !!(checkbox && checkbox.exists);
+  const parts = [];
+  if (stories && (stories.total + stories.excluded > 0 || !hasBox)) parts.push("stories");
+  if (hasBox) parts.push(checkbox.kind);
+  const source = parts.length ? parts.join("+") : (checkbox ? checkbox.kind : "none");
+  const storyPart = parts.includes("stories") ? stories : null;
+  const boxPart = hasBox ? checkbox : null;
+  const sum = (k) => (storyPart ? storyPart[k] : 0) + (boxPart ? boxPart[k] : 0);
+  // `excludedLabel` exists because bar() would otherwise call a disposed story "lifecycle", which is
+  // a different declaration made by a different mechanism in a different place. It names BOTH kinds
+  // when both are present, and bar() then counts each.
+  const storyExcl = storyPart ? storyPart.excluded : 0;
+  const boxExcl = boxPart ? boxPart.excluded : 0;
+  const excludedLabel = storyExcl && boxExcl ? "disposed+lifecycle" : storyExcl ? "disposed" : undefined;
+  return {
+    done: sum("done"), total: sum("total"), excluded: sum("excluded"),
+    ...(excludedLabel ? { excludedLabel } : {}),
+    source, parts, stories: storyPart, checkbox: boxPart, warn,
+  };
 }
 
 /** THE definition of an epic's OUTSTANDING WORK, and the only counter. Every consumer keys on
@@ -475,7 +511,15 @@ export function bar(p) {
   // `<!-- pm:lifecycle -->` marker) and an inline story says "disposed" (a recorded --wont-do).
   // Defaulted here rather than required, so a progress object built before this field existed
   // renders exactly as it always did.
-  const lifecycle = p.excluded ? ` · ${p.excluded} ${p.excludedLabel || "lifecycle"}` : "";
-  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}${lifecycle}`;
+  // Both kinds at once (the union, design D2) are counted separately, so a disposed story is never
+  // called lifecycle bookkeeping and a declared task is never called disposed.
+  const lifecycle = !p.excluded ? ""
+    : p.excludedLabel === "disposed+lifecycle" && p.stories && p.checkbox
+      ? ` · ${p.stories.excluded} disposed · ${p.checkbox.excluded} lifecycle`
+      : ` · ${p.excluded} ${p.excludedLabel || "lifecycle"}`;
+  // The unit word is unchanged for a single part; a two-part source counts "items", because its
+  // total holds stories and tasks together.
+  const unit = p.source === "plan" ? "tasks" : String(p.source || "").includes("+") ? "items" : "stories";
+  if (p.total > 0) return `${p.done}/${p.total} ${unit}${lifecycle}`;
   return p.excluded ? `0/0${lifecycle}` : "—";
 }

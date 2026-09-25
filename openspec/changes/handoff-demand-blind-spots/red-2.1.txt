@@ -1,0 +1,132 @@
+✖ 2.1 tasks.md at 1/3 plus one done story → 2/4, outstanding 2 (3.878875ms)
+✖ 2.1 a disposed story plus tasks.md at 2/2 plus a done story → 3/3, excludedLabel naming both kinds (2.096042ms)
+✖ 2.1 an openspec epic that is not archived, with stories and no tasks.md anywhere → the missing-source warning (1.0925ms)
+✖ 2.1 a story-only epic is unchanged: 3 stories, 1 done → 1/3, source stories (2.398292ms)
+✔ 2.1 a disposed story leaves both sides of the ratio (0.218083ms)
+✔ 2.1 excludedLabel over stories alone says disposed, never lifecycle (0.24375ms)
+✖ 2.1 each part carries its OWN open count, so a consumer never keys on a single label (0.171916ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 2
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 325.663833
+
+✖ failing tests:
+
+test at scripts/test/assert/progress-union.test.mjs:29:1
+✖ 2.1 tasks.md at 1/3 plus one done story → 2/4, outstanding 2 (3.878875ms)
+  AssertionError [ERR_ASSERTION]: a story added to an epic with a tasks.md does not hide the tasks
+  + actual - expected
+  
+    [
+  +   1,
+  +   1
+  -   2,
+  -   4
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:35:12
+      at withAssertInvocation (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/fixtures/assert-harness.mjs:59:18)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:32:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 1, 1 ],
+    expected: [ 2, 4 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/progress-union.test.mjs:44:1
+✖ 2.1 a disposed story plus tasks.md at 2/2 plus a done story → 3/3, excludedLabel naming both kinds (2.096042ms)
+  AssertionError [ERR_ASSERTION]: the disposed story is in neither side; the tasks still are
+  + actual - expected
+  
+    [
+  +   1,
+  +   1
+  -   3,
+  -   3
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:50:12
+      at withAssertInvocation (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/fixtures/assert-harness.mjs:59:18)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:47:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 1, 1 ],
+    expected: [ 3, 3 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/progress-union.test.mjs:59:1
+✖ 2.1 an openspec epic that is not archived, with stories and no tasks.md anywhere → the missing-source warning (1.0925ms)
+  AssertionError [ERR_ASSERTION]: a story no longer suppresses a missing checkbox source
+  + actual - expected
+  
+  + null
+  - 'tasks.md missing'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:64:12
+      at withAssertInvocation (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/fixtures/assert-harness.mjs:59:18)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:61:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'tasks.md missing',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.1 a story-only epic is unchanged: 3 stories, 1 done → 1/3, source stories (2.398292ms)
+  AssertionError [ERR_ASSERTION]: one part contributes, so the parts list names one
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'stories'
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/unit/progress-union.test.mjs:17:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'stories' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.1 each part carries its OWN open count, so a consumer never keys on a single label (0.171916ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'open')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/unit/progress-union.test.mjs:40:26
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
