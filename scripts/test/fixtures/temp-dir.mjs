@@ -7,6 +7,14 @@
 // (4,041 and 6,877 of them sat in `os.tmpdir()` at the Gate 1 fix round). Both are removed at process
 // exit through `removeTempDir()`.
 //
+// WIDENED BY gh-cfdude-pm-224 — the one mechanism for EVERY fixture directory, not only the per-process
+// two. `tmpRepo()`, `fixtureCache()`, `fixturePluginRoot()`, `addHierarchyWorktree()`, the git-gateway
+// fixture and the test files' own scratch directories are scheduled here too; measured before, one
+// assertion-half run left 436 directories behind and one functional-half run 1,517. A directory made
+// many times per process is still ONE `exit` listener: `scheduled` is a Set, and the listener walks it.
+// There is no unschedule, deliberately — no caller keeps a fixture past the process that made it.
+// `assert/temp-dir-cleanup.test.mjs` enrols every `mkdtempSync` site in the tree against this module.
+//
 // A SEPARATE MODULE, NOT THE SHIM, because `fixtures/harness.mjs` is imported by the FUNCTIONAL half as
 // well, and importing the shim there would put the git shim first on PATH in a half that runs the real
 // git by design. The shim re-exports these, so "the shim's removal function" and "the harness's" are
