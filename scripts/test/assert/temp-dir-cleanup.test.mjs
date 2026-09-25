@@ -47,8 +47,9 @@ const SITE = new RegExp("(^|[^\"'`/\\w])" + NAME + "(Sync)?\\b");
 const SCHEDULED = new RegExp("removeAtExit\\(\\s*fs\\." + NAME + "Sync\\(");
 
 /** Sites that are removed some other way, each with how. `token` is text on the call's line, so an
- *  entry names ONE site and survives the file's lines moving. `tail: true` marks a site known to leak
- *  that this change deliberately did not touch. */
+ *  entry names ONE site and survives the file's lines moving. There is NO exemption: every entry must
+ *  name a live site and a cleanup found near it. conductor-33's `pm-seg*` scratch directories, the
+ *  last known leak, were closed by scheduling them, and the flag that exempted them went too. */
 const KNOWN = [
   { file: "fixtures/fixture-snapshot.mjs", token: "-template-`", cleanup: "TEMPLATES.add(template)", within: 4,
     how: "registered in TEMPLATES, which the file's after() hook and the module's exit hook dispose" },
@@ -68,8 +69,6 @@ const KNOWN = [
     how: "removed in the test's finally" },
   { file: "functional/runtime-support.test.mjs", token: "pm-node-version-preload-", cleanup: "fs.rmSync(dir", within: 15,
     how: "removed in the test's finally" },
-  { file: "assert/conductor-33.test.mjs", token: "tmpRepo())), prefix", tail: true,
-    how: "LEAKS (pm-seg*) — scratchDir() was out of gh-cfdude-pm-224's scope: another agent owned conductor-33 in 0.50.0" },
 ];
 
 /** Every `.mjs` under scripts/test, repo-relative to it. */
@@ -134,11 +133,10 @@ test("temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its 
 
 test("temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site", () => {
   // THE INVERSE OF ENROLMENT. An entry whose site was deleted or has since been scheduled would read
-  // as a documented exception to nothing. The tail entry is exempt from the "still live" half only:
-  // when its owner closes it, deleting the entry is the owner's step, and the next line says so.
+  // as a documented exception to nothing. Every entry is held to this; none is exempt.
   const sites = callSites();
-  const stale = KNOWN.filter((k) => !k.tail
-    && !sites.some((s) => s.file === k.file && s.text.includes(k.token) && !SCHEDULED.test(s.text)));
+  const stale = KNOWN.filter((k) =>
+    !sites.some((s) => s.file === k.file && s.text.includes(k.token) && !SCHEDULED.test(s.text)));
   assert.deepEqual(stale.map((k) => `${k.file} ${k.token}`), [],
     "these KNOWN entries name no live unscheduled site — delete them");
 });
@@ -188,7 +186,7 @@ test("temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site", 
 
 test("temp-dir-cleanup: every KNOWN entry's cleanup is present near its site", () => {
   const missing = [];
-  for (const k of KNOWN.filter((e) => !e.tail)) {
+  for (const k of KNOWN) {
     const src = fs.readFileSync(path.join(TEST_ROOT, k.file), "utf8");
     const site = sitesIn(src).find((x) => x.text.includes(k.token));
     if (!site) continue;  // a dead entry is the previous test's finding, not this one's

@@ -38,6 +38,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, expectFail, invokeEngine, injectConflictOnce,
   withAssertInvocation } from "../fixtures/assert-harness.mjs";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";
 
 /** A repo with two claimable epics and one archived one. */
 function claimRepo() {
@@ -117,8 +118,9 @@ function loggingRepo() {
   run(["set-activity-log", "on"], { cwd });
   return cwd;
 }
+/** A scratch directory (pm-seg*), scheduled for removal at exit like every fixture directory. */
 function scratchDir(prefix) {
-  return fs.mkdtempSync(path.join(fs.realpathSync(path.dirname(tmpRepo())), prefix));
+  return removeAtExit(fs.mkdtempSync(path.join(fs.realpathSync(path.dirname(tmpRepo())), prefix)));
 }
 
 test("gh-111: OFF by default — no directory, no events, and .conductor gains nothing", () => {
