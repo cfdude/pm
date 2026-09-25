@@ -20,7 +20,7 @@ env:
   # must equal it (asserted here, by scripts/test/node-majors.mjs). So a line reaching end-of-life
   # turns this workflow red until one release moves the fallback, the constant and the documented
   # support floor together — deliberately (decided 2026-09-24: disagreement FAILS CI).
-  PM_NODE_FALLBACK: "[22,24,26]"
+  PM_NODE_FALLBACK: "[22,24]"
 
 jobs:
   # ─────────── THE SUPPORTED MAJORS, COMPUTED (0.49.0, design D2) ───────────
@@ -53,7 +53,7 @@ jobs:
         id: compute
         run: |
           set -e
-          if curl -fsSL --retry 3 --max-time 30 -o /tmp/schedule.json https://raw.githubusercontent.com/nodejs/Release/main/schedule-404-ci-verify-049.json; then
+          if curl -fsSL --retry 3 --max-time 30 -o /tmp/schedule.json https://raw.githubusercontent.com/nodejs/Release/main/schedule.json; then
             node scripts/test/node-majors.mjs --schedule /tmp/schedule.json --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"
           else
             node scripts/test/node-majors.mjs --fetch-failed --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"

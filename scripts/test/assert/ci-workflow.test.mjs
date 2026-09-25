@@ -233,7 +233,7 @@ test("G-C1 CI: the guard DISCRIMINATES — the shape that shipped is refused, fo
 
 /** The pinned schedule URL. A throwaway branch that points CI at a 404 edits THIS and the workflow in
  *  the same commit (task 4.5, design D2 option (b)); on `main` the two must agree. */
-export const SCHEDULE_URL = "https://raw.githubusercontent.com/nodejs/Release/main/schedule-404-ci-verify-049.json";
+export const SCHEDULE_URL = "https://raw.githubusercontent.com/nodejs/Release/main/schedule.json";
 export const COMPUTE_JOB = "node-majors";
 export const MATRIX_JOB = "test-node";
 export const AGGREGATE_JOB = "test";
