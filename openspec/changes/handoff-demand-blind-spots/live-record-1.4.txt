@@ -1,0 +1,21 @@
+1.4 — live-record fallout after 1.2's change (8c62f47), re-measured 2026-09-25
+
+1.1(b) `node scripts/conductor.mjs integrity`: unchanged — 6 findings across 21 checks
+  (archived-openspec-epic-with-no-gate-1: 2, change-registered-under-two-lanes: 4, every other check 0).
+  archived-with-zero-ticked-tasks gains 17 CANDIDATES (the managed archived openspec epics whose
+  archived tasks.md is now read) and 0 FINDINGS: none of them has zero ticked, as design D1 predicted.
+
+1.1(c) `node scripts/conductor.mjs unconsidered-outcomes`: unchanged — {"count": 0, "unconsidered": []}.
+
+1.1(d) the live-record tests (the two files defining liveState()):
+  node --test --test-reporter=spec scripts/test/functional/conductor-15.test.mjs scripts/test/functional/conductor-18.test.mjs
+  ℹ tests 98 / ℹ pass 98 / ℹ fail 0 — unchanged from the baseline. No expectation moved, so no test is
+  edited by this task (conductor-15's 8.3 case moved in 1.2's own commit, because it asserted D1's opposite
+  on a FIXTURE, not on the live record).
+
+The two live delivered records that now render open work, reported truthfully and NOT corrected here
+(design Non-Goals; a separate decision on each record):
+  gate-verdict-withdrawal            53/54 — open task 8.7, a Mintlify sync
+  archive-gate-reads-what-it-writes  46/47 — open task 5.4, a Mintlify sync
+Nothing refuses on them: deliveredRegression() compares before and after, and both were already failing
+the handoff obligation before any update, so an update to either is not refused for it.

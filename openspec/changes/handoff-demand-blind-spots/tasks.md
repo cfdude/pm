@@ -143,7 +143,7 @@ These rules bind every section below.
       - GREEN: 1.2's change. If nothing further is needed, say so in the commit message.
       Mutation proof `mutation-1.3.txt`: restore the backfill scope in a scratch copy and show the
       refusal test fails.
-- [ ] 1.4 **Live-record fallout.** Re-run 1.1(b), (c) and (d). For every expectation that moves, fix it
+- [x] 1.4 **Live-record fallout.** Re-run 1.1(b), (c) and (d). For every expectation that moves, fix it
       in this commit and justify each movement in the commit body. At drafting:
       `archived-with-zero-ticked-tasks` gains candidates but no findings, and the two delivered epics
       render 53/54 and 46/47. Name those two epics in the commit body. Verify: the live-record tests
