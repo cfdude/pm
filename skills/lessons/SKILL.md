@@ -87,8 +87,10 @@ CRLF line endings.
 **Where a reject is reported.** The hook stays silent — an advisor that printed on a malformed
 corpus would print on every tool call. `classifyLessons()` in the engine's `lessons.mjs` returns
 each rejected lesson with its reason; pm's own repository asserts it is empty on every commit
-(`scripts/test/assert/lessons-index.test.mjs`), and a repository that wants the same can do
-likewise. After writing a `detect:`, fire it once by hand before trusting it.
+(`scripts/test/assert/lessons-index.test.mjs`). Nothing reports a reject in another repository
+yet (cfdude/pm#228), so after writing a `detect:`, fire it once by hand before trusting it —
+silence means it did not match, or it was rejected:
+`echo '{"tool_name":"Bash","tool_input":{"command":"<a command it should catch>"}}' | node "$ENGINE" lesson-advice --platform claude-code`
 
 **The hook cannot stall a tool call.** Every regex of one hook run shares a 100 ms budget and
 sees at most the first 4096 characters of the command's first line; a regex that runs out of

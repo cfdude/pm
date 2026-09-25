@@ -85,8 +85,9 @@ test("the hook stays silent about rejects — a malformed corpus is not advice",
 test("a catastrophic matcher on disk cannot stall the hook (C1)", () => {
   const cwd = initRepo();
   // Passes the static nesting check — overlapping alternation is not statically decidable — so
-  // only the regex budget stands between this lesson and every Bash call. Unbounded it takes ~13 s
-  // on this command (6.7 s at 24 characters, measured unloaded); the budget is 100 ms, and the bound leaves room for a loaded machine.
+  // only the regex budget stands between this lesson and every Bash call. Unbounded it should take on the order of 10 s
+  // on this command (6.7 s was observed at 24 characters); the budget is 100 ms, and the bound
+  // leaves room for a loaded machine.
   lesson(cwd, "a-good", { detect: '{"tool":"Bash","commandMatches":"^a"}', rule: "good rule fires" });
   lesson(cwd, "z-runaway", { detect: '{"tool":"Bash","commandMatches":"^(a|a)*$"}', rule: "runaway" });
   const t0 = performance.now();

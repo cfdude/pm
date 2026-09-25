@@ -120,8 +120,9 @@ unitTest("a NotebookEdit path matcher reads notebook_path, the field that tool s
 // ─────────────── the regex phase is bounded (C1) ───────────────
 
 unitTest("a catastrophic regex the static check cannot see is cut off inside the budget", () => {
-  // `^(a|a)*$` nests nothing, so checkDetect accepts it; unguarded it takes ~13 s on this input
-  // (6.7 s at 24 characters, doubling per character, measured unloaded), so a mutant without the budget FAILS the time assertion
+  // `^(a|a)*$` nests nothing, so checkDetect accepts it; unguarded it should take on the order of 10 s on this input
+  // (6.7 s was observed at 24 characters, and each character roughly doubles it), so a mutant
+  // without the budget FAILS the time assertion
   // rather than hanging the run.
   const good = lessonOf("a-good.md", '{"tool":"Bash","commandMatches":"^a"}');
   const bad = lessonOf("z-bad.md", '{"tool":"Bash","commandMatches":"^(a|a)*$"}');
