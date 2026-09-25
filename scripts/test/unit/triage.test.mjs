@@ -298,3 +298,38 @@ unitTest("U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JS
   assert.equal(hit.status, status, "the parsed value is exactly the stored value");
   assert.equal(parsed.backlog.byStatus[status], 1);
 });
+
+// ───────────── triage-ignores-non-latin-text (code review 0.43.0, D1) ─────────────
+// tokenize() split on [^a-z0-9], so every letter outside ASCII was a separator: an epic titled in
+// Cyrillic and the identical ask both reduced to ZERO tokens and triage answered `candidates: []` —
+// the same answer as "no overlap" at intake's mandatory first step. The titles are built from code
+// points so this file carries no literal it has to trust an editor to have preserved.
+const cp = (...ns) => String.fromCodePoint(...ns);
+// "Экспорт отчётов" — "export of reports"
+const CYRILLIC_TITLE = cp(0x42d, 0x43a, 0x441, 0x43f, 0x43e, 0x440, 0x442) + " " +
+  cp(0x43e, 0x442, 0x447, 0x451, 0x442, 0x43e, 0x432);
+// "Größe ändern" — letters with diacritics inside an otherwise Latin word
+const GERMAN_TITLE = "Gr" + cp(0xf6, 0xdf) + "e " + cp(0xe4) + "ndern";
+
+unitTest("a Cyrillic epic is a candidate for the identical ask", () => {
+  const engine = repoWith([
+    { id: "reports-export", title: CYRILLIC_TITLE },
+    { id: "unrelated", title: "render the backlog table" },
+  ]);
+  const got = triage(engine, CYRILLIC_TITLE);
+  assert.deepEqual(got.candidates.map(c => c.id), ["reports-export"]);
+});
+
+unitTest("tokenize keeps letters outside ASCII inside their word, and still splits on punctuation", async () => {
+  const { tokenize } = await import(TRIAGE);
+  assert.deepEqual(tokenize(GERMAN_TITLE), [("Gr" + cp(0xf6, 0xdf) + "e").toLowerCase(), cp(0xe4) + "ndern"],
+    "an umlaut is a letter, not a separator that cuts a word in two");
+  assert.deepEqual(tokenize("Epic-Hierarchy Orchestration"), ["epic", "hierarchy", "orchestration"]);
+  assert.deepEqual(tokenize(CYRILLIC_TITLE).length, 2);
+});
+
+unitTest("a decomposed accent is the same word as the composed one — NFC before the split", async () => {
+  const { tokenize } = await import(TRIAGE);
+  // "a" + COMBINING DIAERESIS: without NFC the mark is a separate code point; without \p{M} it splits the word.
+  assert.deepEqual(tokenize(cp(0x61, 0x308) + "ndern"), tokenize(cp(0xe4) + "ndern"));
+});

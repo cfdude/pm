@@ -1,0 +1,6 @@
+* **`triage` finds candidates in any script, not only ASCII.** Its tokenizer treated every letter
+  outside `a-z` as a separator, so an epic titled in Cyrillic and the identical ask both reduced to
+  no words at all and `triage` returned `candidates: []` — the same answer as "nothing overlaps" —
+  while an umlaut cut a German word in two. Letters, combining marks and digits of every script
+  are now word characters, and text is NFC-normalised first so a composed and a decomposed
+  spelling of one word match.

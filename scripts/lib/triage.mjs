@@ -43,10 +43,18 @@ const COMMON_TOKEN_MIN_EPICS = 8;
  *  separator, so `2026-07-14-epic-hierarchy-orchestration`, `conductor.mjs Module Split` and
  *  "Epic-Hierarchy Orchestration" all reduce to the same vocabulary — which is the whole point:
  *  the four duplicate pairs in this repository's own record differ in punctuation, date prefix
- *  and casing, and agree on words. */
+ *  and casing, and agree on words.
+ *
+ *  A LETTER IS ANY SCRIPT'S LETTER (code review 0.43.0, D1). The split was `[^a-z0-9]`, which made
+ *  every letter outside ASCII a separator: a Cyrillic title and the identical ask both reduced to
+ *  zero tokens, and triage answered `candidates: []` — indistinguishable from "no overlap" at
+ *  intake's mandatory first step — while an umlaut cut a German word in two. Letters (`\p{L}`),
+ *  their combining marks (`\p{M}`, which Devanagari and decomposed accents need inside a word) and
+ *  digits (`\p{N}`) are word characters; NFC first, so a composed and a decomposed spelling of one
+ *  word agree. The length floor counts CODE POINTS, not UTF-16 units. */
 export function tokenize(text) {
-  return String(text || "").toLowerCase().split(/[^a-z0-9]+/)
-    .filter(t => t.length >= MIN_TOKEN_LENGTH);
+  return String(text || "").normalize("NFC").toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)
+    .filter(t => [...t].length >= MIN_TOKEN_LENGTH);
 }
 
 /** The token SET of one epic — its id, title and description together. The id is included
