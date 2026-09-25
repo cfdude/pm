@@ -56,7 +56,7 @@ Commit mechanics, which bind every section below:
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1**, under review mode `thorough`: two fresh-context lenses over these artifacts BY
+- [x] 0.1 **Gate 1**, under review mode `thorough`: two fresh-context lenses over these artifacts BY
       PATH.
       - Lens A: is every WHEN/THEN in the three spec files reachable and testable against today's
         0.48.0 engine and CI? Does any of it restate what `suite-certification` or
@@ -73,7 +73,7 @@ Commit mechanics, which bind every section below:
       `specs/suite-certification/spec.md`, `specs/engine-invocation/spec.md` and
       `specs/runtime-support/spec.md`, all under `openspec/changes/node-support-policy/`.
       Verify: the verdict appears in `node scripts/conductor.mjs status`.
-- [ ] 0.2 **Cross-spec review** (required task item 5). Release 0.49.0 holds THREE spec files,
+- [x] 0.2 **Cross-spec review** (required task item 5). Release 0.49.0 holds THREE spec files,
       counted flat: `suite-certification`, `engine-invocation`, `runtime-support`.
       - Run the `cross-spec-review` skill after Gate 1 with two lenses (mode `thorough`), and again
         after any later round of concurrent amendment.
@@ -87,7 +87,7 @@ Commit mechanics, which bind every section below:
       - **Contradiction.** Do `runtime-support`'s "a per-major run that did not run counts as a
         failure" and `suite-certification`'s "a run of zero tests refuses" state one rule or two?
       Verify: the verdict is recorded and not rendered stale.
-- [ ] 0.3 **BASELINE, measured BEFORE any code lands**, written to `baseline-before.md` in this
+- [x] 0.3 **BASELINE, measured BEFORE any code lands**, written to `baseline-before.md` in this
       directory. Each number is measured on the day and never carried forward from `design.md`.
       - (a) The hook's end-to-end wall clock, three runs, in a hermetic clone of `HEAD` under the
         session scratchpad, never in this checkout. Record `command -v node` and `node --version` for
@@ -116,7 +116,7 @@ Commit mechanics, which bind every section below:
 
 ## 1. The hook: one reporter, a count that must be read, no probe, no loop
 
-- [ ] 1.1 RED — `functional/conductor-09.test.mjs` gains a fixture run of the hook with
+- [x] 1.1 RED — `functional/conductor-09.test.mjs` gains a fixture run of the hook with
       `FORCE_COLOR=1` in its environment, over a passing two-test fixture. It asserts the hook
       prints `pre-commit: 2/2 passing`, which proves the floor compared a count.
       - It fails today on the machine's Node 24+: the spec reporter colours its summary, `^ℹ tests `
@@ -128,7 +128,7 @@ Commit mechanics, which bind every section below:
       - Save `red-1.1.txt`.
       - Twin: `assert/conductor-09.test.mjs` is staged in the same commit, since 1.2 re-points it.
       - Run `certify.mjs functional` before the commit.
-- [ ] 1.2 GREEN — the hook's runner becomes
+- [x] 1.2 GREEN — the hook's runner becomes
       `FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES`, still with the probe at
       this step.
       - `total` and `passed` are parsed from `^ℹ ` only, and the `#` branch is deleted.
@@ -152,7 +152,7 @@ Commit mechanics, which bind every section below:
       - (ii) `FORCE_COLOR=0` removed, run with `FORCE_COLOR=1` → ABORT, not pass;
       - (iii) the re-pointed `conductor-09` guard, fed a hook text whose runner line lacks
         `--test-reporter=spec` → the guard fails.
-- [ ] 1.3 REGRESSION GUARD — `functional/conductor-09.test.mjs` gains a fixture whose two rung
+- [x] 1.3 REGRESSION GUARD — `functional/conductor-09.test.mjs` gains a fixture whose two rung
       directories hold only `.keep`.
       - The hook must refuse, naming both rungs.
       - The output must carry no line from the fixture's functional marker, so default discovery was

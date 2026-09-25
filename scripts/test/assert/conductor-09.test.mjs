@@ -37,6 +37,11 @@ import { tmpRepo, run, readState, expectFail, ENGINE } from "../fixtures/assert-
 
 const HOOK = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
 
+/** A `node --test` COMMAND line of the hook — anchored at the start of a command, optionally after
+ *  `if`, and after any `NAME=value` environment assignments (0.49.0: the runner carries
+ *  `FORCE_COLOR=0`). Prose that merely mentions `node --test` is not matched. */
+const NODE_TEST_LINE = /^\s*(?:if\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*node --test/;
+
 /** The dispatch table's keys, extracted from conductor.mjs EXACTLY as the functional file extracts
  *  them — the `}({ … }[cmd]` object literal, re-pointed for the `main(argv, io)` wrapper. Kept
  *  identical so the two halves cannot disagree about what the table holds. */
@@ -126,12 +131,19 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   //   * the runner CONSUMES that list, so a glob added at the runner itself cannot escape the
   //     equality below, and a glob added at the enumeration cannot escape this one;
   //   * the only other `node --test` is the tiny-file probe, and it carries no glob at all.
-  const RUNNER_LINE = 'if node --test $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then';
+  // RE-POINTED A FOURTH TIME WITH ONE REPORTER (0.49.0 task 1.2), in the same commit as the shape it
+  // reads: the runner FORCES `--test-reporter=spec` and `FORCE_COLOR=0`, so its summary is one format
+  // on every supported major under any colour setting (design D4).
+  const RUNNER_LINE = 'if FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then';
   const ENUMERATION_LINE = 'for f in scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs; do';
   const runnerLines = hookText.split("\n").filter((l) => l.trim() === RUNNER_LINE);
   assert.equal(runnerLines.length, 1,
     `the hook must run exactly ONE test runner over the assertion half's rungs, and it runs ${runnerLines.length}`);
-  const nodeTestLines = hookText.split("\n").filter((l) => /^\s*(?:if\s+)?node --test/.test(l));
+  // AN ENV PREFIX DOES NOT HIDE A RUNNER (0.49.0 task 1.2). The runner line now opens with
+  // `FORCE_COLOR=0`, and a pattern anchored on `node --test` alone would have stopped counting it — and
+  // would equally miss a SECOND runner written with a prefix, which is the one this count exists to
+  // catch. Any `NAME=value` assignments before `node --test` are accepted.
+  const nodeTestLines = hookText.split("\n").filter((l) => NODE_TEST_LINE.test(l));
   assert.equal(nodeTestLines.length, 2,
     `the hook's only two node --test lines are its runner and the isolation probe, and it has ` +
     `${nodeTestLines.length}: ${nodeTestLines.join(" | ")}`);
@@ -165,6 +177,21 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   assert.match(hookText, /neither rung of the assertion half holds a \*\.test\.mjs file/,
     "the empty-list refusal must name what it could not find");
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
+  // A COUNT THAT CANNOT BE READ IS REFUSED, AND ONLY ONE FORMAT IS READ (0.49.0 task 1.2, design D4).
+  // Until 0.49.0 an unparsed summary printed "tests passing (summary line not found)" and exited 0
+  // with the floor skipped. The refusal must be present, the old pass-through must be gone, and the
+  // parse must name `ℹ` and never the TAP `#` — a second format read is a second format that can
+  // silently stop matching.
+  assert.match(hookText, /pre-commit: ABORT -- the count could not be read/,
+    "the hook no longer refuses a run whose count it cannot read — the floor would be skipped silently");
+  assert.doesNotMatch(hookText, /summary line not found/,
+    "the hook still reports an unreadable count as passing");
+  const parseLines = hookText.split("\n").filter((l) => /^\s*(?:total|passed)=\$\(grep/.test(l));
+  assert.equal(parseLines.length, 2, `the hook must parse exactly total and passed: ${parseLines.join(" | ")}`);
+  for (const l of parseLines) {
+    assert.match(l, /'\^ℹ (?:tests|pass) '/, `the count parse must anchor on ℹ: ${l}`);
+    assert.doesNotMatch(l, /#/, `the count parse must not read the TAP '#' format: ${l}`);
+  }
   // The floor makes partial-suite runs possible in a way the single file did not, so the hook must
   // cross-check the ran count against the declared count. WHAT IT MUST BE DERIVED FROM is the whole
   // invariant and the reason the old `grep -Hc` assertion is gone: `declared` has to come from the

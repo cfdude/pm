@@ -10068,9 +10068,13 @@
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "d750b35f8850a502a77207253c949b9fe6069a30",
+        "8a73f75539e33537d1bb131c310ae66fb2693b20",
+        "9fa4163fa1ff7012d8f0a19714c6ae9cf2e44947"
+      ],
       "createdAt": "2026-09-23T20:29:57.349Z",
-      "touchedAt": "2026-09-25T00:50:49.164Z",
+      "touchedAt": "2026-09-25T01:49:24.570Z",
       "notes": [
         {
           "at": "2026-09-23T20:29:58.242Z",
@@ -10089,7 +10093,16 @@
         }
       ],
       "release": "0.49.0",
-      "startedAt": "2026-09-25T00:50:49.159Z"
+      "startedAt": "2026-09-25T00:50:49.159Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-25T01:49:24.566Z",
+          "baseSha": "aa48c885fd965d091ebb804a1e379fd79b47bd24",
+          "headSha": "9fa4163fa1ff7012d8f0a19714c6ae9cf2e44947",
+          "reviewer": "two fresh-context lenses (A correctness/testability reproduced on 22/24/26 binaries; B absent-edit sweep) + confirmation: round 1 fail (2 C: zero-count CI pass, unfalsifiable scenario; 9 I), fixed 8a73f75; confirmation fail (2 I), fixed 9fa4163; 2026-09-24"
+        }
+      }
     }
   ],
   "detourStack": [],
@@ -10100,7 +10113,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1336,
+  "revision": 1341,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10544,7 +10557,26 @@
     {
       "id": "0.49.0",
       "intent": "Node support policy: support the oldest non-EOL Node major; CI matrix from Node's schedule; per-file test mode; old-Node workarounds retired",
-      "deferred": []
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-25T01:49:23.900Z",
+        "specs": [
+          {
+            "key": "node-support-policy/specs/engine-invocation/spec.md",
+            "sha256": "401d86fff77dbbd5e770551120a6b1f44b30e6525485449e73cd70416c8a677f"
+          },
+          {
+            "key": "node-support-policy/specs/runtime-support/spec.md",
+            "sha256": "8e45f8d91c5777626f4229b52dc9b6659a444a6fa69cfff08bdb5d8b8724b9a3"
+          },
+          {
+            "key": "node-support-policy/specs/suite-certification/spec.md",
+            "sha256": "70101f30c3ac802656c19a2221e60e514e5dc9865246c77dcdf81ff88a6526b4"
+          }
+        ],
+        "reviewer": "two fresh-context lenses (coherence; falsifiability) + one confirmation: round 1 fail (BLOCKS: 'supported' R1/R2 contradiction over 23/25/27; bounded-wait over-wide; schedule filter unfalsifiable; zero-count CI pass; unfalsifiable version-default scenario; collapsed-half message; unit fs ban vs shim), fixed at 8a73f75; confirmation fail (end clause untested; twin coupling), fixed at 9fa4163; 2026-09-24"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"

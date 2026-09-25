@@ -168,13 +168,28 @@ if [ -z "$RUNG_FILES" ]; then
   exit 1
 fi
 
+# ONE REPORTER, NO COLOUR, ONE PARSE (0.49.0, design D4). The runner's DEFAULT reporter differs by
+# Node major -- TAP (`# tests N`) on 22, spec (`ℹ tests N`) on 24 and 26 -- and the spec reporter
+# COLOURS its summary whenever the environment forces colour: every line then begins `ESC[34mℹ`, and
+# a `^ℹ tests ` anchor matches nothing. `NO_COLOR=1` does not rescue it (FORCE_COLOR wins). So the
+# reporter is FORCED and colour is switched OFF, which makes the summary the same bytes on every
+# supported major under any colour setting, and the parse below reads that one format and no other.
 # shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag; RUNG_FILES is a file list
-if node --test $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then
-  # node --test's default reporter (and therefore this summary line's leading marker) differs
-  # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,
-  # older Node (e.g. the CI runner's Node 18) defaults to the "tap" reporter (#). Match both.
-  total=$(grep -m1 -E '^(ℹ|#) tests ' "$tmpfile" | awk '{print $3}')
-  passed=$(grep -m1 -E '^(ℹ|#) pass ' "$tmpfile" | awk '{print $3}')
+if FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then
+  total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')
+  passed=$(grep -m1 -E '^ℹ pass ' "$tmpfile" | awk '{print $3}')
+
+  # CHECK 1 -- A COUNT THAT CANNOT BE READ IS A REFUSAL (0.49.0, D4/D5). Until 0.49.0 an unparsed
+  # summary still printed "tests passing" and exited 0 WITH THE FLOOR SKIPPED, so
+  # any colour-forcing environment disabled the floor silently. The floor is only as good as the
+  # count it reads: a floor skipped because the count was unreadable is a floor that did not run.
+  if [ -z "$total" ] || [ -z "$passed" ]; then
+    echo "pre-commit: ABORT -- the count could not be read: the runner exited 0 but its output holds no" >&2
+    echo "pre-commit: '^ℹ tests' / '^ℹ pass' summary line, so the floor has nothing to compare." >&2
+    echo "pre-commit: runner output follows" >&2
+    cat "$tmpfile" >&2
+    exit 1
+  fi
 
   # ─────────── THE FLOOR (5.3), AND ITS INVARIANT ───────────
   # What it compares is what the runner RAN against what the runner was GIVEN, and never against a
@@ -211,18 +226,26 @@ if node --test $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then
   # floor would go blind in exactly the case it exists for.
   declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
     | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$f" || true; done | awk '{s+=$1} END {print s+0}')
-  if [ -n "$total" ] && [ -n "$declared" ] && [ "$total" -lt "$declared" ]; then
+  # CHECK 2 -- THE FLOOR, compared BEFORE the empty-rung check (Gate 1 B6). A run that reports fewer
+  # tests than are declared -- ZERO INCLUDED -- is a shortfall naming both counts: `total = 0` while the
+  # index still declares tests is a COLLAPSED run, and it must never be reported as an empty rung.
+  if [ "$total" -lt "$declared" ]; then
     echo "pre-commit: ABORT -- the assertion half ran ${total} tests but ${declared} are declared in" >&2
     echo "pre-commit: its two rungs (scripts/test/unit/ and scripts/test/assert/)." >&2
     echo "pre-commit: A test file is not being picked up; the suite is passing on a subset." >&2
     exit 1
   fi
 
-  if [ -n "$total" ] && [ -n "$passed" ]; then
-    echo "pre-commit: ${passed}/${total} passing"
-  else
-    echo "pre-commit: tests passing (summary line not found in test-runner output)"
+  # CHECK 3 -- NOTHING DECLARED, SO NOTHING RAN. Only when the index itself declares no test is the
+  # refusal "neither rung holds a test file".
+  if [ "$declared" -eq 0 ]; then
+    echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
+    echo "pre-commit: (scripts/test/unit/ and scripts/test/assert/ both declare no test) -- a run of" >&2
+    echo "pre-commit: zero tests is a refusal, never a pass." >&2
+    exit 1
   fi
+
+  echo "pre-commit: ${passed}/${total} passing"
   exit 0
 else
   status=$?

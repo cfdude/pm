@@ -1,0 +1,230 @@
+# mutation-1.2 — each mutation applied to a SCRATCH COPY of the working tree (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m12/tree), never to this checkout.
+# node: /opt/homebrew/bin/node v26.9.0. Every mutation is REFUSED (exit=1); the original hook was restored after each.
+# (i)  --test-reporter=spec -> --test-reporter=tap        : the hook ABORTs 'the count could not be read' instead of passing
+# (ii) FORCE_COLOR=0 removed, fixture run with FORCE_COLOR=1: ABORT, not pass
+# (iii) runner line without --test-reporter=spec          : assert/conductor-09's re-pointed guard fails
+# (iv) (extra, advisor) a second env-prefixed node --test line: the widened node --test count catches it
+
+=== (i) reporter swapped for tap ===
+✖ .githooks/pre-commit is quiet on success -- one summary line, no per-test noise, no engine banner (492.002ms)
+✖ 1.1 the floor compares a count when the environment forces colour — FORCE_COLOR=1 does not skip it (496.7795ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1111.731042
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:383:1
+✖ .githooks/pre-commit is quiet on success -- one summary line, no per-test noise, no engine banner (492.002ms)
+  AssertionError [ERR_ASSERTION]: expected the hook to exit 0 on a passing suite: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: ABORT -- the count could not be read: the runner exited 0 but its output holds no
+  pre-commit: '^ℹ tests' / '^ℹ pass' summary line, so the floor has nothing to compare.
+  pre-commit: runner output follows
+  TAP version 13
+  # Subtest: a passing test
+  ok 1 - a passing test
+    ---
+    duration_ms: 0.28725
+    type: 'test'
+    ...
+  # Subtest: another passing test
+  ok 2 - another passing test
+    ---
+    duration_ms: 0.050875
+    type: 'test'
+    ...
+  1..2
+  # tests 2
+  # suites 0
+  # pass 2
+  # fail 0
+  # cancelled 0
+  # skipped 0
+  # todo 0
+  # duration_ms 92.808458
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m12/tree/scripts/test/functional/conductor-09.test.mjs:391:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:451:1
+✖ 1.1 the floor compares a count when the environment forces colour — FORCE_COLOR=1 does not skip it (496.7795ms)
+  AssertionError [ERR_ASSERTION]: the hook must pass a passing half under FORCE_COLOR=1: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: ABORT -- the count could not be read: the runner exited 0 but its output holds no
+  pre-commit: '^ℹ tests' / '^ℹ pass' summary line, so the floor has nothing to compare.
+  pre-commit: runner output follows
+  TAP version 13
+  # Subtest: a passing test
+  ok 1 - a passing test
+    ---
+    duration_ms: 0.287042
+    type: 'test'
+    ...
+  # Subtest: another passing test
+  ok 2 - another passing test
+    ---
+    duration_ms: 0.051958
+    type: 'test'
+    ...
+  1..2
+  # tests 2
+  # suites 0
+  # pass 2
+  # fail 0
+  # cancelled 0
+  # skipped 0
+  # todo 0
+  # duration_ms 99.470292
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m12/tree/scripts/test/functional/conductor-09.test.mjs:464:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (ii) FORCE_COLOR=0 removed, fixture run with FORCE_COLOR=1 (test 1.1) ===
+✖ 1.1 the floor compares a count when the environment forces colour — FORCE_COLOR=1 does not skip it (510.28625ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 620.732666
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:451:1
+✖ 1.1 the floor compares a count when the environment forces colour — FORCE_COLOR=1 does not skip it (510.28625ms)
+  AssertionError [ERR_ASSERTION]: the hook must pass a passing half under FORCE_COLOR=1: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: ABORT -- the count could not be read: the runner exited 0 but its output holds no
+  pre-commit: '^ℹ tests' / '^ℹ pass' summary line, so the floor has nothing to compare.
+  pre-commit: runner output follows
+  [32m✔ a passing test [90m(0.28175ms)[39m[39m
+  [32m✔ another passing test [90m(0.051291ms)[39m[39m
+  [34mℹ tests 2[39m
+  [34mℹ suites 0[39m
+  [34mℹ pass 2[39m
+  [34mℹ fail 0[39m
+  [34mℹ cancelled 0[39m
+  [34mℹ skipped 0[39m
+  [34mℹ todo 0[39m
+  [34mℹ duration_ms 97.907709[39m
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m12/tree/scripts/test/functional/conductor-09.test.mjs:464:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (iii) runner line lacks --test-reporter=spec, the assert/conductor-09 guard ===
+✔ every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md (1.78175ms)
+✔ every dispatch-table subcommand is mentioned somewhere in README.md (1.520167ms)
+✔ sync ignores README.md/INDEX.md in the plans directory — they are not plans (70.99775ms)
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.706583ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 187.403417
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-09.test.mjs:94:1
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.706583ms)
+  AssertionError [ERR_ASSERTION]: the hook must run exactly ONE test runner over the assertion half's rungs, and it runs 0
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m12/tree/scripts/test/assert/conductor-09.test.mjs:140:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (iv) a SECOND env-prefixed node --test line appended, the assert/conductor-09 guard ===
+✔ every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md (1.226042ms)
+✔ every dispatch-table subcommand is mentioned somewhere in README.md (1.000833ms)
+✔ sync ignores README.md/INDEX.md in the plans directory — they are not plans (50.320666ms)
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.718875ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 164.659
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-09.test.mjs:94:1
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.718875ms)
+  AssertionError [ERR_ASSERTION]: the hook's only two node --test lines are its runner and the isolation probe, and it has 3:   if node --test --test-isolation=none scripts/test/unit/state-verb.test.mjs scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1; then | if FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then | FORCE_COLOR=0 node --test scripts/test/functional/*.test.mjs
+  
+  3 !== 2
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m12/tree/scripts/test/assert/conductor-09.test.mjs:147:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1

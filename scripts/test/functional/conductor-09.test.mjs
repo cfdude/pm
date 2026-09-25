@@ -448,6 +448,80 @@ test(".githooks/pre-commit runs the half when a rung holds no test file — an u
     "and the file that DOES exist must still have run — the fix must not be 'run nothing'");
 });
 
+test("1.1 the floor compares a count when the environment forces colour — FORCE_COLOR=1 does not skip it", () => {
+  // THE LATENT DEFECT 0.49.0 FOUND (design D4). The spec reporter colours its summary when the
+  // environment forces colour, every summary line then begins `ESC[34mℹ`, and a `^ℹ tests ` anchor
+  // matches NOTHING. The old hook read that as "summary line not found", printed "tests passing" and
+  // exited 0 WITH THE FLOOR SKIPPED — so any colour-forcing environment disabled the floor silently.
+  // It reproduces only where the runner's default non-TTY reporter is spec (Node 24+); on 22 the
+  // default is TAP, which is never coloured. The hook now forces the reporter AND `FORCE_COLOR=0`, so
+  // the count is read — which is what `2/2 passing` proves: the line prints only from a parsed count.
+  const r = runHookAgainstFixture(
+    `test("a passing test", () => { assert.ok(true); });\ntest("another passing test", () => { assert.ok(true); });`,
+    { env: { FORCE_COLOR: "1" } },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.equal(r.status, 0, `the hook must pass a passing half under FORCE_COLOR=1: ${combined}`);
+  assert.match(combined, /pre-commit: 2\/2 passing/,
+    "under FORCE_COLOR=1 the hook did not read the runner's count, so the floor compared nothing — " +
+    `the colour setting disabled the gate. Output was: ${combined}`);
+});
+
+test("1.2 a runner that exits 0 and prints no summary is REFUSED — 'the count could not be read'", () => {
+  // THE UNREADABLE-COUNT REFUSAL, durable (Gate 1 I2). A stub `node` goes first on PATH: a shell
+  // script that exits 0 and prints nothing. It answers the drift step too (exit 0, so drift passes),
+  // which is why the assertion is on the RUNNER's refusal text and never on the exit status alone —
+  // a non-zero exit from drift would satisfy "non-zero" and prove nothing about the floor.
+  const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-stub-node-"));
+  try {
+    fs.writeFileSync(path.join(stubDir, "node"), "#!/bin/sh\nexit 0\n");
+    fs.chmodSync(path.join(stubDir, "node"), 0o755);
+    const r = runHookAgainstFixture(
+      `test("a passing test", () => { assert.ok(true); });`,
+      { pathPrepend: stubDir },
+    );
+    const combined = (r.stdout || "") + (r.stderr || "");
+    assert.notEqual(r.status, 0,
+      `a runner whose count cannot be read must not pass the commit. Output was: ${combined}`);
+    assert.match(combined, /pre-commit: ABORT -- the count could not be read/,
+      `the refusal must say the COUNT could not be read, not that the tests failed. Output was: ${combined}`);
+    assert.doesNotMatch(combined, /tests passing/,
+      "the hook reported the tests as passing on a run it could not count");
+  } finally {
+    fs.rmSync(stubDir, { recursive: true, force: true });
+  }
+});
+
+test("1.3 both rungs empty is REFUSED naming both rungs, and default discovery is never reached", () => {
+  // REGRESSION GUARD, and it passes before 1.4 through the resolved-list loop's empty-list abort.
+  // After 1.4 there is no loop: the runner is handed the two globs literally, runs zero files, and the
+  // hook refuses on the COUNT — `declared = 0` — with the same message. Either way the property is
+  // the one the spec names: at no point does `node --test` run without a path, because its default
+  // discovery walks the tree and would reach the triggered buckets. The marker sits in the sweep
+  // bucket (a functional-half marker would need an assertion twin, and that twin would be a rung file,
+  // which is the one thing this fixture must not hold); default discovery would run it, and its title
+  // must never appear.
+  const r = runHookAgainstFixture("", {
+    withFixture: false,
+    extraFiles: {
+      "scripts/test/unit/.keep": "",
+      "scripts/test/assert/.keep": "",
+      "scripts/test/sweeps/marker.test.mjs":
+        'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+        'test("1.3 MARKER default discovery ran a triggered bucket", () => {\n' +
+        '  assert.fail("default discovery reached the sweep bucket");\n});\n',
+    },
+  });
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.notEqual(r.status, 0, `two empty rungs must refuse the commit: ${combined}`);
+  assert.match(combined, /neither rung of the assertion half holds a \*\.test\.mjs file/,
+    `the refusal must say neither rung holds a test file. Output was: ${combined}`);
+  assert.match(combined, /scripts\/test\/unit\//, "the refusal must name the unit rung");
+  assert.match(combined, /scripts\/test\/assert\//, "the refusal must name the file rung");
+  assert.doesNotMatch(combined, /1\.3 MARKER/,
+    "default discovery ran: the marker in a triggered bucket reached the hook's output");
+});
+
 // ---------- sync must not register a directory's own index file as a plan (#87) ----------
 
 test("sync ignores README.md/INDEX.md in the plans directory — they are not plans", () => {
