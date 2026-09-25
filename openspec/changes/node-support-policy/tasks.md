@@ -340,7 +340,7 @@ Commit mechanics, which bind every section below:
 
 ## 4. CI: the schedule matrix, the aggregate check, one reporter, current actions (design D2, D4, D7)
 
-- [ ] 4.1 Read `actions/checkout`'s and `actions/setup-node`'s v5, v6 and v7 release notes.
+- [x] 4.1 Read `actions/checkout`'s and `actions/setup-node`'s v5, v6 and v7 release notes.
       - Record every changed default in `actions-notes-4.1.md`.
       - Confirm `fetch-depth: 0` (`ci.yml:28`) keeps its meaning.
       - Re-confirm the latest tags with `gh api repos/actions/{checkout,setup-node}/releases/latest`.
@@ -372,7 +372,7 @@ Commit mechanics, which bind every section below:
       **4.2 and 4.3 are ONE commit** (the RED lands with its GREEN), and it lands AFTER 4.2b's
       commit: 4.2(d) asserts the compute step calls `scripts/test/node-majors.mjs`, which 4.2b
       creates, and 4.2(e) imports `NODE_FLOOR_MAJOR`, which 3.2 creates.
-- [ ] 4.2b RED then GREEN, one commit — the schedule filter as a committed dev script (design D2,
+- [x] 4.2b RED then GREEN, one commit — the schedule filter as a committed dev script (design D2,
       Gate 1 B5) and the support-floor copies (Gate 1 I10).
       - New `scripts/test/node-majors.mjs`: plain Node, no dependency, not shipped, not a test file
         (so outside the enrolment rule; `ci.yml:72`'s syntax loop already covers `scripts/test/*.mjs`).
