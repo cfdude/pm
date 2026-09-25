@@ -1,0 +1,142 @@
+### R0 unmutated copy
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (2.449ms)
+✔ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (54.02275ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (15.262833ms)
+✔ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.216375ms)
+✔ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.098ms)
+✔ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (0.665ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 341.580166
+### R1 conductor-09's rmSync(stubDir) cleanup removed (the reviewer's mutation)
+rmSync(stubDir occurrences: 0
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (3.024916ms)
+✔ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (19.241084ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (15.22725ms)
+✔ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.231333ms)
+✔ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.104166ms)
+✖ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (1.324583ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 252.591291
+
+✖ failing tests:
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:189:1
+✖ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (1.324583ms)
+  AssertionError [ERR_ASSERTION]: these KNOWN sites no longer carry the cleanup their entry names
+  + actual - expected
+  
+  + [
+  +   `functional/conductor-09.test.mjs:469 — expected "fs.rmSync(stubDir" within 20 lines (removed in the test's finally)`
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-224/mut2/scripts/test/assert/temp-dir-cleanup.test.mjs:199:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ `functional/conductor-09.test.mjs:469 — expected "fs.rmSync(stubDir" within 20 lines (removed in the test's finally)` ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+### R2 an aliased mkdtempSync added to a test file
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (2.747166ms)
+✖ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (35.952542ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (26.635666ms)
+✔ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.499542ms)
+✔ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.241375ms)
+✔ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (1.345708ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 447.270917
+
+✖ failing tests:
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:125:1
+✖ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (35.952542ms)
+  AssertionError [ERR_ASSERTION]: these temp directories are made and never removed — wrap the call in removeAtExit() (fixtures/temp-dir.mjs), or remove it in a finally and enrol it in KNOWN with how
+  + actual - expected
+  
+  + [
+  +   'assert/parity.test.mjs:171  const mkAlias = fs.mkdtempSync;'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-224/mut2/scripts/test/assert/temp-dir-cleanup.test.mjs:130:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'assert/parity.test.mjs:171  const mkAlias = fs.mkdtempSync;' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+### R3 fs.promises.mkdtemp added instead
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (14.253542ms)
+✖ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (69.108208ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (21.919083ms)
+✔ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.198958ms)
+✔ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.101708ms)
+✔ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (1.304459ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 421.749583
+
+✖ failing tests:
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:125:1
+✖ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (69.108208ms)
+  AssertionError [ERR_ASSERTION]: these temp directories are made and never removed — wrap the call in removeAtExit() (fixtures/temp-dir.mjs), or remove it in a finally and enrol it in KNOWN with how
+  + actual - expected
+  
+  + [
+  +   'assert/parity.test.mjs:171  export const leakAsync = () => fs.promises.mkdtemp(path.join(os.tmpdir(), "pm-async-"));'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-224/mut2/scripts/test/assert/temp-dir-cleanup.test.mjs:130:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'assert/parity.test.mjs:171  export const leakAsync = () => fs.promises.mkdtemp(path.join(os.tmpdir(), "pm-async-"));' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

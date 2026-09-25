@@ -31,6 +31,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import {
   ENGINE_ENTRY, ENGINE_SOURCE, REPO, assertionIds, certifiedModules, certifiedSet, contentHash,
   conformanceRows, couplingRefusals, coversFor, describeRefusal, engineSourceFiles, enrolmentRefusals,
@@ -365,7 +366,7 @@ test("6.3: the engine-source trigger is a TRIGGER entry, and its subject is the 
 test("6.2: the record is written beside the suite lock, and a fresh clone reads as EMPTY rather than as an error", () => {
   // A fresh clone having no record is CORRECT (6.2's verify): the first commit touching a certified
   // module demands a run. It must not read as a crash, and it must not read as a pass.
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-record-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-record-")));
   const record = readRecord(dir);
   assert.deepEqual(record, { version: 1, entries: {} }, "no record is an empty record, not a failure");
   assert.deepEqual(Object.keys(readRecord(dir).entries), [], "and it certifies nothing");
@@ -418,7 +419,7 @@ test("G-M1 the refusal says WHICH KIND of thing changed — the trigger is not a
 });
 
 test("G-M2 the record writer REFUSES an entry with an empty covers, and writes nothing", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-covers-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-covers-")));
   const written = [];
   const fakeIo = {
     readFileSync: () => { const e = new Error("ENOENT"); e.code = "ENOENT"; throw e; },

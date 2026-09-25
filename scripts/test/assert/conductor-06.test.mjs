@@ -55,6 +55,7 @@ test("0.5.0 migration repairs colon-string links, drops unrecoverable, is idempo
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), first);
 });
 
+// (The functional test's scratch parent is scheduled with removeAtExit(); this twin makes no temp dir of its own.)
 // The twin of the functional "reports the WHOLE path of a worktree whose directory name holds a line
 // feed". This half cannot create a worktree, but it can hand the engine the listing git would print:
 // the double's no-repository gateway with the one listing answered, NUL-terminated as `-z` prints it.

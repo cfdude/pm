@@ -5,6 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { tmpRepo, run, runCombined, readState, writeState, parseBrief, expectFail, fixturePluginRoot, setupHierarchy, gitInitWithCommit, addHierarchyWorktree } from "../fixtures/functional-harness.mjs";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // the line-feed worktree test's parent dir is removed at exit
 
 // ───────────────────────── 0.5.0: link migration ─────────────────────────
 
@@ -315,7 +316,7 @@ test("verify-worktrees reports the WHOLE path of a worktree whose directory name
   run(["init"], { cwd });
   gitInitWithCommit(cwd);
   run(["add-epic", "--id", "lf-child", "--lane", "claude-code", "--status", "archived"], { cwd });
-  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "pm-wt-lf-"));
+  const parent = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-wt-lf-")));
   const wtPath = path.join(parent, "line\nfeed");
   execFileSync("git", ["worktree", "add", "-b", "hierarchy-child/lf-child", wtPath], { cwd });
   const out = JSON.parse(run(["verify-worktrees"], { cwd }));

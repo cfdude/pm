@@ -169,11 +169,62 @@ export function appendEvents(events) {
 // ───────────────────────── the diff ─────────────────────────
 
 const byId = (state) => new Map((state && state.epics ? state.epics : []).map(e => [e.id, e]));
-const topOf = (state) => {
-  const st = state && Array.isArray(state.detourStack) ? state.detourStack : [];
-  return st.length ? st[st.length - 1] : null;
-};
-const frameEpic = (f) => (f && typeof f === "object" ? (f.epic || f.epicId || f.id || null) : null);
+const framesOf = (state) => (state && Array.isArray(state.detourStack) ? state.detourStack : []);
+/** THE FIELDS push-detour WRITES — `{ pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }`,
+ *  the only frame shape any verb or migration has ever produced (`git log -S pausedEpic` reaches the
+ *  initial commit). This used to read `f.epic || f.epicId || f.id`, keys nothing writes, so every detour
+ *  event carried `epic: null` and its unit test passed only against a hand-built `{ epic }` frame. A
+ *  fallback to a key nobody writes is not tolerance; it is the defect. */
+const frameField = (f, k) => (f && typeof f === "object" && typeof f[k] === "string" && f[k] ? f[k] : null);
+/** A frame's IDENTITY across one invocation. push-detour refuses to pause an epic already on the stack,
+ *  so `pausedEpic` is unique among live frames; `pausedAt` separates a pop and re-push of the same
+ *  epic. Serialised with JSON.stringify so no separator character can collide. */
+const frameKey = (f) => JSON.stringify([frameField(f, "pausedEpic"), frameField(f, "pausedAt")]);
+/** The frames in `from` that `to` does not hold, as a MULTISET difference — two malformed frames share a
+ *  key, and a set difference would report one of them. Order is `from`'s. */
+function framesMissing(from, to) {
+  const left = new Map();
+  for (const f of framesOf(to)) left.set(frameKey(f), (left.get(frameKey(f)) || 0) + 1);
+  const out = [];
+  for (const f of framesOf(from)) {
+    const k = frameKey(f);
+    if (left.get(k)) left.set(k, left.get(k) - 1);
+    else out.push(f);
+  }
+  return out;
+}
+
+/** What one invocation changed in an epic's `autonomy` block, or null when nothing did. The level
+ *  (absent reads as `off`, set-autonomy's own default) and COUNTS of what moved — grants added, grants
+ *  newly revoked, notifications added. Counts, not contents: the block itself is in state.json, and
+ *  the question here is WHEN trust was granted or taken back and when a decision was made in the
+ *  user's absence, not a second copy of what was decided. */
+function autonomyDelta(prev, next) {
+  if (JSON.stringify(prev || null) === JSON.stringify(next || null)) return null;
+  const p = prev && typeof prev === "object" ? prev : {};
+  const n = next && typeof next === "object" ? next : {};
+  const arr = (v) => (Array.isArray(v) ? v : []);
+  const revokedCount = (a) => arr(a.preAuthorized).filter(g => g && g.revoked).length;
+  return {
+    from: typeof p.level === "string" ? p.level : "off",
+    to: typeof n.level === "string" ? n.level : "off",
+    granted: Math.max(0, arr(n.preAuthorized).length - arr(p.preAuthorized).length),
+    revoked: Math.max(0, revokedCount(n) - revokedCount(p)),
+    notified: Math.max(0, arr(n.notifications).length - arr(p.notifications).length),
+  };
+}
+
+/** WHICH KIND OF REMOVAL a frame's departure was — BY VERB, because the diff alone cannot tell.
+ *  `set-active` accepts an epic that is on the stack, so after `set-active e1` on a paused e1, a
+ *  `pop-detour e1` and a `drop-detour e1` (pushed --no-reconcile) make byte-identical changes to the
+ *  stack, the pointer and the status. The pop RESUMES a pause and the drop ENDS one, and the reader
+ *  must not count one as the other. A frame removed by any OTHER verb is still recorded — the diff
+ *  cannot forget it — under `detour-removed`, which does not claim to know which of the two it was. */
+function removedKind(verb) {
+  if (verb === "pop-detour") return "detour-pop";
+  if (verb === "drop-detour") return "detour-drop";
+  return "detour-removed";
+}
 
 /** Every state transition this invocation caused, as event objects.
  *
@@ -187,8 +238,17 @@ const frameEpic = (f) => (f && typeof f === "object" ? (f.epic || f.epicId || f.
  *                                                 was picked up, and what is its lifecycle
  *    epic-lane                                  → which lane was chosen, and was it re-routed
  *                                                 later (i.e. did the work prove it wrong)
- *    detour-push / detour-pop                   → how many detours interrupted an epic
+ *    detour-push / detour-pop / detour-drop     → how many detours interrupted an epic (pushes), and
+ *                                                 whether each pause was resumed (pop) or ended (drop);
+ *                                                 each names the paused `epic` and its `detour`.
+ *                                                 `detour-removed`: a frame another verb removed
  *    gate-review                                → when a gate verdict was recorded, in sequence
+ *    reconcile-recorded                         → when a reconcile verdict was recorded against which
+ *                                                 detour, and whether it corrected an earlier one —
+ *                                                 read in the same GATES sequence
+ *    epic-priority / epic-autonomy / review-mode → what was re-prioritised, what trust was granted or
+ *                                                 revoked (and what was notified in the user's
+ *                                                 absence), and when review intensity changed
  *    gate-withdrawn                             → when a recorded verdict was taken back, in the
  *                                                 same sequence (growth of withdrawnGateReviews)
  *    epic-claimed / epic-released               → which session did which work (#84's secondary
@@ -254,13 +314,44 @@ export function diffEvents(before, after, meta = {}) {
     for (const w of nw.slice(pw)) {
       out.push(ev("gate-withdrawn", { epic: id, gate: `gate${w && w.gate}` }));
     }
+    // A RECONCILE VERDICT, keyed on the CONTENT of the may-invalidate link's verdict record — the
+    // verdict, its amendments and the `superseded` record a correction moves the old one into — never
+    // on `reconciledAt` alone: a correction stamped in the same millisecond as the verdict it replaces
+    // carries the same stamp (second-resolution-timestamps-collide-on-fast-machines). A verdict that
+    // REPLACED an earlier one is a correction.
+    const prevLinks = Array.isArray(prev.links) ? prev.links : [];
+    for (const l of Array.isArray(epic.links) ? epic.links : []) {
+      if (!l || l.type !== "may-invalidate" || !l.reconciled || typeof l.reconciled !== "object") continue;
+      const pl = prevLinks.find(x => x && x.type === "may-invalidate" && x.epic === l.epic);
+      const was = pl && pl.reconciled && typeof pl.reconciled === "object" ? pl.reconciled : null;
+      if (pl && JSON.stringify([pl.reconciled, pl.superseded]) === JSON.stringify([l.reconciled, l.superseded])) continue;
+      out.push(ev("reconcile-recorded", {
+        epic: id, detour: l.epic || null, verdict: l.reconciled.verdict || null, correction: !!was,
+      }));
+    }
+    if ((prev.priority || null) !== (epic.priority || null)) {
+      out.push(ev("epic-priority", { epic: id, from: prev.priority || null, to: epic.priority || null }));
+    }
+    if ((prev.reviewMode || null) !== (epic.reviewMode || null)) {
+      out.push(ev("review-mode", { epic: id, from: prev.reviewMode || null, to: epic.reviewMode || null }));
+    }
+    const autonomyChange = autonomyDelta(prev.autonomy, epic.autonomy);
+    if (autonomyChange) out.push(ev("epic-autonomy", { epic: id, ...autonomyChange }));
   }
   for (const id of b.keys()) if (!a.has(id)) out.push(ev("epic-removed", { epic: id }));
 
-  const beforeDepth = before && Array.isArray(before.detourStack) ? before.detourStack.length : 0;
-  const afterDepth = after && Array.isArray(after.detourStack) ? after.detourStack.length : 0;
-  if (afterDepth > beforeDepth) out.push(ev("detour-push", { epic: frameEpic(topOf(after)), depth: afterDepth }));
-  else if (afterDepth < beforeDepth) out.push(ev("detour-pop", { epic: frameEpic(topOf(before)), depth: afterDepth }));
+  // BY FRAME IDENTITY, NOT BY DEPTH. A depth comparison names the TOP frame, which is the wrong frame
+  // whenever the one that left was buried, and it cannot see a write that removes one frame and adds
+  // another. Each frame that appeared is a push; each that left is a removal.
+  const depth = framesOf(after).length;
+  const about = (f) => ({ epic: frameField(f, "pausedEpic"), detour: frameField(f, "spawnedDetour"), depth });
+  for (const f of framesMissing(after, before)) out.push(ev("detour-push", about(f)));
+  for (const f of framesMissing(before, after)) out.push(ev(removedKind(meta.verb), about(f)));
+
+  // The REPO-WIDE dial; an epic's own override is logged in the loop above, under its epic.
+  const pm = before ? (before.reviewMode || null) : null;
+  const nm = after ? (after.reviewMode || null) : null;
+  if (pm !== nm) out.push(ev("review-mode", { epic: null, from: pm, to: nm }));
 
   const pa = before ? (before.active || null) : null;
   const na = after ? (after.active || null) : null;

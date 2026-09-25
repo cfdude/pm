@@ -1,0 +1,101 @@
+# RED for the branch-review round: the NEW IX tests (IX-h rewritten, IX-i, IX-j, IX-k) and the re-pointed
+# assert-twin shape checks, run against the hook and drift.mjs as committed at 617ae90, in a worktree copy.
+# IX-h passes here: 617ae90's hook already read declared from the captured index — IX-h is its mutation guard
+# (mutation-5.txt, minor1b). IX-j is the review's [I] reproduction; IX-k is minor 2 (drift from the snapshot).
+✖ IX the hook verifies the INDEX: captured before the scrub, exported with checkout-index, and run from the export (33.348583ms)
+✔ IX-a a STAGED failing test with a PASSING copy unstaged ABORTS the commit, and the tree is untouched (2714.941125ms)
+✔ IX-b the converse: a STAGED passing test with a FAILING copy unstaged passes, and the tree is untouched (3115.342917ms)
+✔ IX-c an UNTRACKED failing test file in a rung never runs, and is still on disk afterwards (2567.101416ms)
+✔ IX-d the index git HANDS the hook is the one verified — `commit -a` / `commit <path>` use their own (994.4165ms)
+✔ IX-g a PARTIALLY staged test file is counted by its STAGED half — the floor reads the snapshot (614.907833ms)
+✔ IX-h the floor's `declared` list is read from the index git HANDS the hook, not `.git/index` (496.959208ms)
+✖ IX-i the drift script is handed the index git HANDS the hook — an unpaired functional file staged there refuses (509.949125ms)
+✖ IX-j drift judges the STAGED engine: an uncertified module staged and deleted from disk still refuses (567.015792ms)
+✖ IX-k the drift script that judges a commit is the COMMIT's copy — an unstaged edit to drift.mjs cannot pass it (458.284917ms)
+✔ IX-e the hook leaves nothing behind — no snapshot, no temp file, no suite lock — after a pass AND a failure (941.993084ms)
+✔ IX-f an INTERRUPTED hook (SIGTERM mid-suite) leaves the tree, the index, TMPDIR and the lock clean (446.113542ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 8
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15132.578083
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-09.test.mjs:211:1
+✖ IX the hook verifies the INDEX: captured before the scrub, exported with checkout-index, and run from the export (33.348583ms)
+  AssertionError [ERR_ASSERTION]: the drift script reads the index too, so it must be handed the one this commit is made from
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/assert/conductor-09.test.mjs:244:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:694:1
+✖ IX-i the drift script is handed the index git HANDS the hook — an unpaired functional file staged there refuses (509.949125ms)
+  AssertionError [ERR_ASSERTION]: an unpaired functional id is in the commit: drift: ok — 2 tracked test files, 0 functional ids, 2 staged paths
+  pre-commit: 1/1 passing
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:709:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:713:1
+✖ IX-j drift judges the STAGED engine: an uncertified module staged and deleted from disk still refuses (567.015792ms)
+  AssertionError [ERR_ASSERTION]: a staged, uncertified engine module must refuse the commit: drift: ok — 1 tracked test files, 0 functional ids, 2 staged paths
+  pre-commit: 1/1 passing
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:726:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:731:1
+✖ IX-k the drift script that judges a commit is the COMMIT's copy — an unstaged edit to drift.mjs cannot pass it (458.284917ms)
+  AssertionError [ERR_ASSERTION]: the commit's own drift.mjs must judge it, and it refuses: pre-commit: 1/1 passing
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:746:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

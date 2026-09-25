@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import { execFileSync, spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, parseBrief, fixtureCommits, fixtureCommit } from "../fixtures/functional-harness.mjs";
 
@@ -270,7 +271,7 @@ test("5.2 REGRESSION GUARD: re-recording the verdict clears the finding, and a r
 test("g2-1 a stored value shaped like a git option creates no file through integrity, brief or render", () => {
   const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
   run(["add-epic", "--id", "f", "--lane", "openspec"], { cwd });
-  const outDir = fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-"));
+  const outDir = removeAtExit(fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-")));
   const viaAttributed = path.join(outDir, "via-attributed");
   const viaHead = path.join(outDir, "via-head");
   const s = readState(cwd);

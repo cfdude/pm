@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "handoff-demand-blind-spots",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -7040,9 +7040,20 @@
       "externalId": "194",
       "externalUrl": "https://github.com/cfdude/pm/issues/194",
       "externalUpdatedAt": "2026-09-12T06:31:42Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cb9a61035102aa30a895627badb5056280051515",
+        "1199f9faf5dc4dc99dd8f86a872747618ac87115",
+        "63690ef069610b69e9a9f99b7ed6b88de1c0a6a5",
+        "3d69524c4dfb1dd543622982290bcba5637c9730",
+        "77eff5de72385ed14352af641b14e9a25a8cade5",
+        "b3b75df16f459cd5238e6157f9ec042208b603dd",
+        "b9ff15415794a10a41eefe55be2cef0a0b33a2d0",
+        "d130f4974cdfccb2fdb227022411394671a4d195",
+        "aa4cd2c3aeb196a9f56030d7406beaf2da99ba21",
+        "19756a8f2b37466c61083b641d3f177c76bd3d58"
+      ],
       "createdAt": "2026-09-14T18:18:22.066Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:03:31.044Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:24.032Z",
@@ -8046,9 +8057,20 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (C1, C2). lessons.mjs matchLessons compiles commandMatches with no complexity or input bound: detect {tool:Bash, commandMatches:'^(a+)+$'} on a 31-char command burned 60.4s CPU in the hook, on every Bash/Edit/Write call. An unknown key applies no predicate: {tool:Bash, commandMatch:'gh pr merge'} matched `ls`. CRLF frontmatter (/^---\\n/), a tool array and a bad regex are silently inert. Fix: allowlist detect keys, reject nested quantifiers or cap the matched text, accept CRLF, report rejects outside the hook.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cb9a61035102aa30a895627badb5056280051515",
+        "1199f9faf5dc4dc99dd8f86a872747618ac87115",
+        "63690ef069610b69e9a9f99b7ed6b88de1c0a6a5",
+        "3d69524c4dfb1dd543622982290bcba5637c9730",
+        "77eff5de72385ed14352af641b14e9a25a8cade5",
+        "b3b75df16f459cd5238e6157f9ec042208b603dd",
+        "b9ff15415794a10a41eefe55be2cef0a0b33a2d0",
+        "d130f4974cdfccb2fdb227022411394671a4d195",
+        "aa4cd2c3aeb196a9f56030d7406beaf2da99ba21",
+        "19756a8f2b37466c61083b641d3f177c76bd3d58"
+      ],
       "createdAt": "2026-09-15T05:11:20.243Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:03:09.923Z",
       "release": "0.50.0"
     },
     {
@@ -8195,9 +8217,15 @@
           "text": "lane: superpowers not claude-code — refuse-vs-record and a reason-history shape are design decisions; inventory 2026-09-25"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "12b226e02b0c4577ca6fcd764c8727150c2173b2",
+        "b99969043fe7c0f431a17b74e123e58b6c8e2b44",
+        "439f7fb10fafb483f67ed4ba102a2df19a404d24",
+        "2d8c574bedb6ba63d2f440e20421b3e700917c66",
+        "5db02b52c9dc29339a191425cc98948bb7b2c869"
+      ],
       "createdAt": "2026-09-15T05:11:28.637Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:01:37.469Z",
       "release": "0.50.0"
     },
     {
@@ -8247,7 +8275,7 @@
       "id": "handoff-demand-blind-spots",
       "title": "The handoff demand reads 0/0 once /opsx:archive moves tasks.md, and adding one inline story hides every unticked tasks.md item",
       "priority": "P2",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8255,13 +8283,23 @@
           "type": "relates-to",
           "epic": "comprehensive-code-review-after-0-43-0",
           "reason": "found by it"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-222",
+          "reason": "#222 (spec deltas never synced) is delivered by this change's spec-deltas standing report; one change, one carrier epic"
         }
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (A1, A2). (1) epic-progress.mjs epicProgress: after the change moves under archive/, tasks.md is not found and archive-as-delivered is accepted with 2 of 3 tasks unticked; archivedTasksPath() exists but is used only for backfilled epics (the gate-integrity spec currently permits reading zero — a spec-level check that cannot fail). (2) Array.isArray(epic.stories) is preferred over the tasks source: tasks.md at 1/3, `--add-story x`, `--story 1 --done --status archived --outcome delivered` archives with PROJECT.md showing 1/1. Fix: read the archived tasks.md when the live one is gone (amend the spec); count tasks and stories together or refuse to switch source.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6fe6b3d43150b80fdd87d56b0b42ce34b57127ff",
+        "0471ac3f081cca992f79dd0c2e32aeef96c1d753",
+        "a6e49014a754bba9a23aaace7f0d3fb6c270477c",
+        "101ebb777cbdd2a2b98a11a859a207d500d97c71"
+      ],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T20:53:46.246Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:09.437Z",
@@ -8269,7 +8307,17 @@
           "text": "lane: openspec not superpowers — the fix amends gate-integrity and conductor-record ('Outstanding work is a defined quantity'); inventory 2026-09-25. Built together with gh-cfdude-pm-222 in one openspec change, which also removes the stale duplicate openspec/changes/functional-assertion-test-split/."
         }
       ],
-      "release": "0.50.0"
+      "release": "0.50.0",
+      "startedAt": "2026-09-25T19:55:47.220Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-25T20:53:46.239Z",
+          "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+          "headSha": "101ebb777cbdd2a2b98a11a859a207d500d97c71",
+          "reviewer": "two fresh-context lenses (A correctness: monorepo index paths, byte-vs-char sizes, no injectable reader, unreachable reset scenario; B absent edits: a functional test asserting the old behaviour, missed deliveredObligations readers, PROJECT.md leak) round 1 fail (14 I); fixed a6e4901; confirmation fail (1 BLOCK); fixed 101ebb7; final narrow check pass; minors (git -C <root> in the remedy, 5.1 asserts the printed text + REMOVED/RENAMED cases) folded into apply; 2026-09-25"
+        }
+      }
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -8330,9 +8378,17 @@
           "text": "0.46.0's call-site sweep adds a THIRD instance to this epic's scope, found at an unedited sibling site: drop-detour reduces detourStack depth, so diffEvents' depth comparison records it as kind 'detour-pop'. Verified in-process against the shipped diffEvents on 2026-09-18 — a buried drop (p below, q on top) returns {kind:'detour-pop', epic:null, depth:1}. The drop ENDS a pause; the pop RESUMES one, and they differ in status, active pointer and obligation. The record is not wholly wrong (every event carries verb:'drop-detour'), which is why it was left rather than fixed inside operations-ship-their-inverses: activity-log.mjs is outside that change's stated Impact and no spec of it binds the log. Fix alongside the epic:null key fix — a 'detour-drop' kind, keyed on which frame left rather than on depth alone, plus an activity-report vocabulary row."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "41282ec79f77f1a246ab183f5e50bcb29919a1c2",
+        "dbb50a49d6bbfa87cc463124e49692a8e6f25fb1",
+        "b16cb798d987b394595508b0c14bee6ddd793464",
+        "d23e57892631471dd134e7b1e4ad02472bf0ce4f",
+        "4f66d044178d9ed8b85b21334058a83e4c43ed47",
+        "ee54fec53f12f15caceaea5e3df36fc5f79c5464",
+        "1eae6586f353dbd9903c1beae70899fa3b4dac60"
+      ],
       "createdAt": "2026-09-15T05:11:36.863Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:02:49.056Z",
       "release": "0.50.0"
     },
     {
@@ -8410,9 +8466,19 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (E2). .githooks/pre-commit runs node --test against the checkout: staging a failing test and restoring a passing copy unstaged commits green, and HEAD holds the failing test — required item 2 (the commit is the unit of verification) applied to the suite. The declared count uses the same glob as the runner, so renaming a test out of the glob drops it from both (repro: 1/1 passing with 5 tests present); conductor-09's test for the guard asserts status 0, and mutants flipping the comparison survive. ci.yml has no count guard and tests Node 18 only. Fix: run against the index (stash --keep-index or a worktree of the index), count declared tests across scripts/test/** by content, a fixture that must abort, and the same guard in CI.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "11a714b2eabf776df1d0ab29db6eab2c4b456d8d",
+        "f39a12f1fa98b6ec3d3f9cb918b9ab6481adb1ce",
+        "5b47ffa4887cab967d0edcd9464b48e4cfd14851",
+        "6f975abe8bb46496253be3c93189a731597b6dc6",
+        "617ae90513cd19dfcd73eabde18c3edcbda2ac69",
+        "b00940f4740a818f3bf5636d3e394641bd374383",
+        "cbcb182f6525359ae992da1c2ad06e258a176d81",
+        "0682f33fd2d8eeaa77c319650cf338607f5d043b",
+        "2094b1c60a6bc6a63ed60c5537929401ead19343"
+      ],
       "createdAt": "2026-09-15T05:11:42.968Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:24:56.830Z",
       "release": "0.50.0"
     },
     {
@@ -10076,7 +10142,7 @@
     },
     {
       "id": "store-owns-claude-md-managed-block",
-      "title": "0.49.0 candidate: make the managed rules block a store-owned artifact (removes the last fsync wall in the assertion half's file rung)",
+      "title": "Make init's repository-file writes (the CLAUDE.md managed block AND .gitignore) store-owned, so the tests that reach them can leave the disk (last lever on the per-commit gate)",
       "priority": "P3",
       "status": "planned",
       "role": "epic",
@@ -10091,7 +10157,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-25T19:29:36.373Z"
+      "touchedAt": "2026-09-25T21:14:34.667Z",
+      "notes": [
+        {
+          "at": "2026-09-25T21:14:34.648Z",
+          "actor": "agent",
+          "text": "Re-justified by measurement 2026-09-25 (profile-50, provisional n<=2 quiet runs at load <16): quiet hook ~15.4 s (the 24 s at 0.49.0 was contention); unit rung 3.4 s; file rung ~14.9 s. 323/546 file-rung tests reach init's CLAUDE.md or .gitignore write (318 CLAUDE.md alone; .gitignore adds 5) and carry 173 of ~180 s summed file-rung test time (96%); 54 files fsync, 23 of them fully reaching. Concurrency is not a lever (4/8 ~2.5x slower; 16 = default). Floor it cannot remove: gh-85 in assert/conductor-25 (~8.3 s, checks bytes/mtimes). Scope widened to .gitignore. Planned as the lead of 0.51.0 (0.50.0 is already 17 epics in flight); first task: decision-grade n=3 quiet measurement with an empty-preload control."
+        }
+      ]
     },
     {
       "id": "node-support-policy",
@@ -10195,7 +10268,7 @@
       "id": "gh-cfdude-pm-222",
       "title": "pm's archive gate does not notice when an archived change's spec deltas never reached openspec/specs/",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -10211,7 +10284,7 @@
       "externalUpdatedAt": "2026-09-25T03:54:58Z",
       "attributedCommits": [],
       "createdAt": "2026-09-25T19:03:32.224Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T20:10:25.749Z",
       "notes": [
         {
           "at": "2026-09-25T19:03:34.734Z",
@@ -10219,7 +10292,23 @@
           "text": "lane: openspec not (none routed) — changes the archive gate's refusal set, which the gate-integrity spec governs"
         }
       ],
-      "release": "0.50.0"
+      "release": "0.50.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-09-25T19:53:59.271Z",
+        "externalUpdatedAt": "2026-09-25T03:54:58Z"
+      },
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-25T20:10:25.713Z",
+        "reason": "consolidated into handoff-demand-blind-spots, whose openspec change carries #222's fix (the delivered-epic spec-deltas standing report); issue #222 closes when that change ships"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-25T20:10:25.701Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-25T20:10:25.713Z"
     },
     {
       "id": "gh-cfdude-pm-224",
@@ -10239,9 +10328,18 @@
       "externalId": "224",
       "externalUrl": "https://github.com/cfdude/pm/issues/224",
       "externalUpdatedAt": "2026-09-25T04:16:37Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c3781ab9f5adc1037371b82abf0c216759eb260c",
+        "462750ea38495bbeca083b3726876a63631b9aae",
+        "3ffe0842ff3f1013dce5acff62333a6231a65f5b",
+        "76daee34c5bbd5b085b4fbc8457141cf8092c275",
+        "01c6e6ee2fa094473fe35a31840dd1bf2d57942f",
+        "bab22f9f52ef912c172d268ff17b3bcbbd451ad8",
+        "ec042256c3d4c32fe4b33fe111ef48e493082ac1",
+        "e061248bab406d4c0abff0ea79785fa4af3286b9"
+      ],
       "createdAt": "2026-09-25T19:03:34.037Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:08:14.307Z",
       "notes": [
         {
           "at": "2026-09-25T19:03:35.444Z",
@@ -10263,9 +10361,19 @@
       "externalId": "219",
       "externalUrl": "https://github.com/cfdude/pm/issues/219",
       "externalUpdatedAt": "2026-09-22T12:11:09Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "11a714b2eabf776df1d0ab29db6eab2c4b456d8d",
+        "f39a12f1fa98b6ec3d3f9cb918b9ab6481adb1ce",
+        "5b47ffa4887cab967d0edcd9464b48e4cfd14851",
+        "6f975abe8bb46496253be3c93189a731597b6dc6",
+        "617ae90513cd19dfcd73eabde18c3edcbda2ac69",
+        "b00940f4740a818f3bf5636d3e394641bd374383",
+        "cbcb182f6525359ae992da1c2ad06e258a176d81",
+        "0682f33fd2d8eeaa77c319650cf338607f5d043b",
+        "2094b1c60a6bc6a63ed60c5537929401ead19343"
+      ],
       "createdAt": "2026-09-25T19:25:05.286Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:25:03.601Z",
       "release": "0.50.0"
     }
   ],
@@ -10277,7 +10385,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1384,
+  "revision": 1454,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10751,7 +10859,30 @@
           "reason": "the 0.50.0 inventory undercut its premise — owning CLAUDE.md alone moves ~22 content-checking tests, not the 323 file-rung tests that reach the write, because init also writes .gitignore outside the store; and the 24.0s per-file hook has not been profiled since 0.49.0 changed the mode. Re-justify from a measurement first",
           "recordedAt": "2026-09-25T19:29:36.364Z"
         }
-      ]
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-25T20:53:44.874Z",
+        "specs": [
+          {
+            "key": "handoff-demand-blind-spots/specs/conductor-record/spec.md",
+            "sha256": "6ab1724f006e2c5d13d47259102d68ce591d9bea601901839e8f02c1381f655e"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/emitted-instructions/spec.md",
+            "sha256": "de625db2bab19e0c0b729bee9caf9626b200edd35d8755fb3734b20302363d55"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/epic-disposition/spec.md",
+            "sha256": "5a81d70345af25427ea2a9c60267b2a33a71cd6ecacf2fac5107321329116d07"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/gate-integrity/spec.md",
+            "sha256": "9eb6a08bef812fecae812f68dbe63bad5f1348f4f3dee1e85c4786f2c62795d8"
+          }
+        ],
+        "reviewer": "one fresh-context reviewer over coherence+falsifiability, then two confirmations: round 1 fail (BLOCK: epic-disposition story remedy vs the stories+tasks union); fixed a6e4901 (+epic-disposition, emitted-instructions deltas, 4 specs); confirmation fail (BLOCK: spec-deltas remedy named commands that cannot run on an archived change); fixed 101ebb7 (edit main spec to match delta, then git add openspec/ — run literally in a scratch repo for ADDED/REMOVED/RENAMED); final check pass with 3 minors folded into apply; 2026-09-25"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"

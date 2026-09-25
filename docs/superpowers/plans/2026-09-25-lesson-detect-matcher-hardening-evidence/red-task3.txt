@@ -1,0 +1,49 @@
+✔ a CRLF-saved lesson fires exactly like its LF twin (C1) (1883.078208ms)
+✔ a typo'd detect key no longer matches every tool call (C2 repro) (1673.625292ms)
+✔ classifyLessons names every rejected matcher and why, apart from retrieval-only lessons (#194) (1465.132167ms)
+✔ the hook stays silent about rejects — a malformed corpus is not advice (1286.711375ms)
+✖ a catastrophic matcher on disk cannot stall the hook (C1) (3632.720875ms)
+✔ a NotebookEdit path matcher fires through the hook (1594.068333ms)
+file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/unit/lesson-detect-rules.test.mjs:14
+  ADVISED_TOOLS, DETECT_KEYS, MATCH_TEXT_CAP, REGEX_BUDGET_MS,
+                              ^^^^^^^^^^^^^^
+SyntaxError: The requested module '../../lib/lessons.mjs' does not provide an export named 'MATCH_TEXT_CAP'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:105:5)
+
+Node.js v26.10.0
+✖ scripts/test/unit/lesson-detect-rules.test.mjs (766.357125ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12734.903916
+
+✖ failing tests:
+
+test at scripts/test/assert/lesson-detect-corpus.test.mjs:85:1
+✖ a catastrophic matcher on disk cannot stall the hook (C1) (3632.720875ms)
+  AssertionError [ERR_ASSERTION]: the hook took 2454 ms
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/assert/lesson-detect-corpus.test.mjs:95:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/unit/lesson-detect-rules.test.mjs:1:1
+✖ scripts/test/unit/lesson-detect-rules.test.mjs (766.357125ms)
+  'test failed'

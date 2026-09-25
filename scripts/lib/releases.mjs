@@ -266,6 +266,30 @@ export function release() {
       // than the absence.
       amend(rel, { op: "undefer", epic: epicId, was: wasDeferred.reason, via: "member" });
     }
+    // THE MOVE, recorded on the release it LEAVES (release-member-moves-silently, 0.43.0 review
+    // A1). Membership is one-way, so re-associating an epic moves it — documented, and kept. What
+    // was wrong was that the move left the old release with no trace it had ever held the epic:
+    // `release show <old>` read "members (0)" and nothing on stderr said why. It is the same class
+    // as the implicit undefer just above — a removal `--member` performs without being asked — so
+    // it is recorded the same way: announced, appended with `via: "member"`, and NO reason
+    // invented. `to` stands where a reason would: the move IS the decision, and where the epic
+    // went is what a later reader of the old release needs.
+    const prev = knownEpic(epicId).release;
+    if (prev && prev !== id) {
+      const old = findRelease(state, prev);
+      if (old) {
+        amend(old, { op: "unmember", epic: epicId, via: "member", to: id });
+        errStream().write(
+          `conductor: '${escapeControls(epicId)}' moved from '${escapeControls(prev)}' to '${escapeControls(id)}' — ` +
+          `'${escapeControls(prev)}' records the move in its amendments (read it with \`release show\`)\n`);
+      } else {
+        // A pointer to a release object that is not there (hand-edited or legacy). There is no
+        // record to amend, so say what was replaced rather than throw or stay silent.
+        errStream().write(
+          `conductor: '${escapeControls(epicId)}' pointed at release '${escapeControls(prev)}', which does not exist — ` +
+          `the pointer now names '${escapeControls(id)}'\n`);
+      }
+    }
     knownEpic(epicId).release = id;
   }
 
@@ -277,7 +301,24 @@ export function release() {
     if (epic.release === id) delete epic.release;
     const record = releaseDeferral({ epic: deferred.epic, reason: deferred.reason });
     const at = rel.deferred.findIndex(d => d && d.epic === deferred.epic);
-    if (at === -1) rel.deferred.push(record); else rel.deferred[at] = record;
+    if (at === -1) {
+      rel.deferred.push(record);
+    } else if (rel.deferred[at].reason !== record.reason) {
+      // A CHANGED REASON (release-member-moves-silently, 0.43.0 review A2). Re-deferring used to
+      // replace the record outright, so "depends on X landing" became "cut for scope" and the
+      // first judgment was gone. `deferred[]` keeps its shape and holds the CURRENT reason; the
+      // one it replaces goes to the release's `amendments[]` — the one history a release has,
+      // already swept on remove-epic and already rendered by `release show` — as `was`.
+      const prior = rel.deferred[at];
+      amend(rel, { op: "redefer", epic: deferred.epic, reason: record.reason, was: prior.reason,
+        ...(prior.recordedAt ? { wasRecordedAt: prior.recordedAt } : {}) });
+      errStream().write(
+        `conductor: '${escapeControls(deferred.epic)}' was already deferred from '${escapeControls(id)}' — the reason now ` +
+        `reads: ${escapeControls(record.reason)} (it read: ${escapeControls(prior.reason)}, kept in the amendments)\n`);
+      rel.deferred[at] = record;
+    }
+    // The IDENTICAL reason re-run is a no-op: the existing record, its `recordedAt` included,
+    // stays exactly as it was, so the write reports "unchanged" rather than a change nobody made.
   }
 
   if (unmember) {
@@ -402,7 +443,11 @@ export function releaseShow(rest) {
     for (const a of amendments) {
       const via = a.via ? ` (via --${a.via})` : "";
       const was = a.was ? ` [it read: ${a.was}]` : "";
-      out.push(`    • ${a.op} \`${a.epic}\`${via} — ${a.reason || "no reason given"}${was}` +
+      // A move carries its destination where a reason would sit — see the member loop.
+      // Escaped where built (idempotent under the out.map below) so the interpolation sweep can
+      // classify it without a judgment row.
+      const why = a.reason || (a.to ? `moved to \`${escapeControls(a.to)}\`` : "no reason given");
+      out.push(`    • ${a.op} \`${a.epic}\`${via} — ${why}${was}` +
         `${a.at ? ` (${a.at})` : ""}`);
     }
   }

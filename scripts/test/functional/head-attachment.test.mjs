@@ -17,6 +17,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 
@@ -40,7 +41,7 @@ function probeIn(dir, { env = {}, cwd } = {}) {
 const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8" });
 
 function repo() {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "pm-head-"));
+  const d = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-head-")));
   git(d, "init", "-q", "-b", "main");
   git(d, "config", "user.email", "t@example.com");
   git(d, "config", "user.name", "t");
@@ -73,7 +74,7 @@ test("an UNBORN HEAD is `attached`, not unknown — a fresh repository is a work
 });
 
 test("a directory that is not a repository is `unknown`, NOT detached", () => {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "pm-nogit-"));
+  const d = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-nogit-")));
   assert.equal(probeIn(d), "unknown",
     "status 128 is 'git cannot answer', and the safe direction is to treat the tree as a " +
     "workspace — a false record is visible and removable, a false SUPPRESSION silently disables " +

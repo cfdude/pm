@@ -391,6 +391,21 @@ j("worktree-hygiene.mjs", "verifyWorktrees", ALL, "json", "one JSON document; th
 x("lessons.mjs", "adviceText", {
   "body": 1,
 }, "escaped", "body is built from escapeControls(rule) and escapeControls(file)");
+x("lessons.mjs", "checkDetect", {
+  "e.message": 2,
+  "typeName(d)": 1,
+  "unknown.map(k => JSON.stringify(k)).join(\", \")": 1,
+  "k": 5,
+  "d[k] === \"\" ? \"an empty string\" : typeName(d[k])": 1,
+  "JSON.stringify(d.tool)": 1,
+  "d.tool": 2,
+  "code": 1,
+  "JSON.stringify(nested)": 1,
+  "cp.toString(16).toUpperCase().padStart(4, \"0\")": 1,
+}, "not-output", "a rejected detect's `reason` is returned as DATA by checkDetect()/classifyLessons() and printed by nothing in the engine — the lesson-advice hook never reports a reject, and the one reader is lessons-index.test.mjs. Several values are workspace-authored (a lesson's keys, tool, regex text, a parse error quoting it), so a surface that ever PRINTS a reason must pass it through escapeControls at that site, where this sweep will see the new interpolation");
+x("lessons.mjs", "classifyLessons", {
+  "e.code || e.message": 1,
+}, "not-output", "an unreadable lesson's `reason`, returned as data by classifyLessons() and printed by nothing in the engine (see checkDetect)");
 x("links.mjs", "ordinal", {
   "n": 2,
   "{ 1: \"st\", 2: \"nd\", 3: \"rd\" }[n % 10] || \"th\"": 1,

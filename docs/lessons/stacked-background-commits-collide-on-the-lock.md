@@ -4,8 +4,8 @@ date: 2026-09-08
 trigger: About to start a background `git commit` in a repository whose pre-commit hook runs a test suite, when a previous commit may still be running one.
 cost: Three commits in a row failed and were reported to the user as landed. The pre-commit suite here takes about two minutes; every commit fired inside that window died on `.git/index.lock`. The wrapper still exited 0 and `git log` printed the PRIOR head, so the failure read as success at every surface checked. It also produced a false diagnosis — the lock was briefly attributed to another session, and ten minutes went into investigating a concurrent writer that was in fact this session's own earlier commit.
 rule: Serialize commits when the hook is slow. Before committing, wait until `.git/index.lock` is absent AND no `git commit` and no `hooks/pre-commit` process is running. Then verify the new SHA — `git log --oneline -1` before and after — because a failed commit leaves the old head in place and says nothing.
-enforced_in: habit — the wait-then-verify wrapper at `scratchpad/final-commit.sh`; pm's own pre-commit hook already holds a suite lock and prints "another worktree is running the suite — waiting", which is the mechanism this lesson wants and which does NOT cover the index lock.
-detect: (run_in_background.*git commit|git commit.*&\s*$)
+enforced_in: habit — the wait-then-verify wrapper at `scratchpad/final-commit.sh`; pm's own pre-commit hook already holds a suite lock and prints "another worktree is running the suite — waiting", which is the mechanism this lesson wants and which does NOT cover the index lock. The `detect:` matcher fires on a `git commit` backgrounded with a trailing `&`; a commit started with the Bash tool's `run_in_background` is a tool-input field no matcher reads, so that half stays a habit.
+detect: {"tool":"Bash","commandMatches":"(^|[;&|]\\s*)git commit\\b.*[^&]&\\s*$"}
 tags: [git, concurrency, false-signal, silent-failure]
 ---
 

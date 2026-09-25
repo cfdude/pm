@@ -126,5 +126,11 @@ export function main(argv, { env = process.env, out = process.stdout } = {}) {
   return 0;
 }
 
-const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+// REALPATHS ON BOTH SIDES (0.50.0): Node resolves the main module to its REAL path, so a script run
+// through a symlinked directory — macOS $TMPDIR is /var/… -> /private/var/…, where the pre-commit hook
+// now runs drift from its index snapshot — compared unequal, did nothing, and exited 0.
+const invokedDirectly = (() => {
+  try { return fs.realpathSync(path.resolve(process.argv[1])) === fs.realpathSync(fileURLToPath(import.meta.url)); }
+  catch { return false; }  // no argv[1], or one that is not a file: imported, not run
+})();
 if (invokedDirectly) process.exitCode = main(process.argv.slice(2));

@@ -17,10 +17,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 
 // Set BEFORE importing anything that reads it: constants.mjs binds ROOT at module scope, and a
 // stray write from an in-process test would otherwise land in this repository's own .conductor.
-const CWD = fs.mkdtempSync(path.join(os.tmpdir(), "pm-persist-"));
+const CWD = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-persist-")));
 process.env.CLAUDE_PROJECT_DIR = CWD;
 fs.mkdirSync(path.join(CWD, ".conductor"), { recursive: true });
 

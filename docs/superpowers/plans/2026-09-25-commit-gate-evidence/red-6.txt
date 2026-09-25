@@ -1,0 +1,46 @@
+✖ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (0.87425ms)
+✖ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.1935ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.524708
+
+✖ failing tests:
+
+test at scripts/test/assert/release-checklist-recipe.test.mjs:34:1
+✖ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (0.87425ms)
+  AssertionError [ERR_ASSERTION]: the log must be an ABSOLUTE, UTC-dated file under the git common dir's pm-real-numbers/, and carry the shell's PID — second resolution alone lets two runs in one second write ONE file (branch review)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ac5a0d536c2b8cce0/scripts/test/assert/release-checklist-recipe.test.mjs:38:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '**Introduction\'s "Real Numbers" table** claims to be mechanically derived — keep that true\n     every release by recomputing, never estimating:\n     ```bash\n     rg -c \'^## \\[[0-9]\' CHANGELOG.md                                 # releases shipped\n     # NOT `grep -c \'^## \\[\'` — that counts the [Unreleased] placeholder as a release, and\n     # did, publishing a number one too high on every release up to 0.39.0 before anyone checked.\n     # tests in the engine: all three buckets — the assertion half\'s BOTH rungs, then the\n     # two triggered ones — one invocation, one total. The reporter is FORCED and colour is OFF,\n     # so the summary line is `ℹ tests N` on every supported Node (22\'s default is TAP\'s `# tests`,\n     # and a forced colour breaks the `^ℹ` anchor).\n     # THE WHOLE RUN IS SAVED, and it is the file the number is read from (#219): a run piped\n     # straight into a count published a number from a run that ALSO failed, and kept nothing to\n     # diagnose the failure with. The log is dated (UTC) and lives in the git common dir, beside\n     # the certification record, so it outlives the terminal and is shared by every worktree.\n     log="$(git rev-parse --path-format=absolute --git-common-dir)/pm-real-numbers/$(date -u +%Y-%m-%dT%H%M%SZ).txt"\n     mkdir -p "$(dirname "$log")"\n     FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs \\\n       scripts/test/functional/*.test.mjs scripts/test/sweeps/*.test.mjs >"$log" 2>&1\n     code=$?\n     echo "full run saved to: $log (runner exit $code)"\n     n() { grep -m1 -E "^ℹ $1 " "$log" | awk \'{print $3}\'; }\n     tests=$(n tests); fail=$(n fail); cancelled=$(n cancelled)\n     if [ "$code" -eq 0 ] && [ "${fail:-x}" = 0 ] && [ "${cancelled:-x}" = 0 ] && [ "${tests:-0}" -gt 0 ]; then\n       echo "PUBLISH: tests $tests"\n     else\n       echo "STOP -- publish nothing: exit=$code tests=${tests:-?} fail=${fail:-?} cancelled=${cancelled:-?} -- read $log"\n     fi\n     # The inverse: the logs accumulate (a few hundred KB per run). Once the release is out and\n     # nothing in them is still owed a diagnosis: rm -rf "$(git rev-parse --git-common-dir)/pm-real-numbers"\n     wc -l scripts/conductor.mjs scripts/lib/*.mjs | tail -1         # engine LOC — the dispatcher is ~360\n     # lines since the module split; the site\'s row counts the dispatcher plus scripts/lib (0.43.0).\n     # external dependencies is always 0 — enforced by the zero-dependency hard constraint\n     ```\n     **On STOP, publish no number from that run — not even the `tests` count, which a failing run\n     still prints.** A failed run is recorded BEFORE it is re-run: find the failing or cancelled test\n     in the saved log (`grep -nE \'^✖|not ok\' "$log"`), comment it on #219 (or open an issue naming it,\n     with the log\'s path and the runner exit), and only then re-run. Re-running until green and\n     publishing the green run as if the red one never happened is the "retried silently" #219\n     describes — the flake stays unidentified, and the table\'s "mechanically derived" claim is\n     quietly false for the run that failed.\n\n     ',
+    expected: /^\s*log="\$\(git rev-parse --path-format=absolute --git-common-dir\)\/pm-real-numbers\/\$\(date -u \+%Y-%m-%dT%H%M%SZ\)-\$\$\.txt"$/m,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/release-checklist-recipe.test.mjs:55:1
+✖ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.1935ms)
+  AssertionError [ERR_ASSERTION]: the decision is missing [ "${pass:-x}" = "$tests" ]: every counted test must have PASSED — skipped and todo tests are not passes
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ac5a0d536c2b8cce0/scripts/test/assert/release-checklist-recipe.test.mjs:67:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

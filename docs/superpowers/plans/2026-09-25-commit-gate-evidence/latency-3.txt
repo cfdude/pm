@@ -1,0 +1,12 @@
+round 1 old: 26.31 s (exit 0, load1 21.78) pre-commit: 1308/1308 passing
+round 1 new: 27.63 s (exit 0, load1 23.19) pre-commit: 1308/1308 passing
+round 2 old: 27.65 s (exit 0, load1 22.82) pre-commit: 1308/1308 passing
+round 2 new: 39.44 s (exit 0, load1 20.41) pre-commit: 1308/1308 passing
+round 3 old: 58.66 s (exit 0, load1 23.21) pre-commit: 1308/1308 passing
+round 3 new: 48.61 s (exit 0, load1 48.65) pre-commit: 1308/1308 passing
+--- export overhead alone (checkout-index of the index into $TMPDIR, then rm), 5 runs
+export 1: .74 s (load1 68.08)
+export 2: .69 s (load1 68.08)
+export 3: .72 s (load1 68.08)
+export 4: .52 s (load1 68.08)
+export 5: .59 s (load1 67.60)

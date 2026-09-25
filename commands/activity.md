@@ -16,6 +16,10 @@ conductor.mjs purge-logs [--kind activity|conflicts|detours|all] [--keep <n>]
                          [--over <size>] [--older-than <days>] [--dry-run] [--yes]
 ```
 
+`--epic <id>` keeps the events whose `epic` is `<id>` **or whose `detour` is `<id>`**. A detour
+event is about two epics, the one paused (`epic`) and the one it was paused for (`detour`), so
+`--epic <detour-id>` shows the push that started that detour's work.
+
 ## The reader ships with the writer — that was the condition
 
 A log nothing reads is a data graveyard: it costs write-path complexity, rotation, retention and
@@ -25,10 +29,11 @@ nothing is recorded "in case it is useful later".
 
 | Question | Section |
 |---|---|
-| How long did an epic sit `queued` before it was picked up? | **TIME TO PICKUP** |
-| How many detours interrupted it? | **DETOURS** |
+| How long did an epic sit `queued` before it was picked up? | **TIME TO PICKUP** (the clock starts at an epic's first work event; a detour, reconcile, priority, autonomy or review-mode event alone does not start it) |
+| How many detours interrupted it? | **DETOURS** (pushes per paused epic; how many pauses were resumed by `pop-detour` vs ended by `drop-detour`) |
 | Which lane was chosen, and did the work prove it wrong? | **LANES** (registrations + re-routes) |
-| When was a gate verdict recorded — or withdrawn (`gate-withdrawn`) — relative to everything else? | **GATES** |
+| When was a gate verdict recorded — or withdrawn (`gate-withdrawn`) — relative to everything else? Reconcile verdicts (`reconcile-recorded`) sit in the same sequence. | **GATES** |
+| What was re-prioritised, granted or revoked autonomy (and what was notified in the user's absence), or given a different review mode — and when? | **SETTINGS** |
 | How often does an agent take the instructed path vs. work around it? | **OUT-OF-BAND WRITES** |
 
 **The last row is why the log earns its overhead.** Every event carries the `state.json` revision
