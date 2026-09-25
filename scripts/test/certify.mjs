@@ -65,11 +65,17 @@ export function summaryCount(output, label) {
 
 /** One bucket run. Returns `{ ok, counts, output }`; `counts` is read from the runner's own summary
  *  line, in the one format the runner is forced to print. */
+/** The runner's argv and environment for a bucket: the spec reporter FORCED and colour OFF, whatever
+ *  the caller's environment says, so the summary is the one format `summaryCount()` reads. Exported so
+ *  a test asserts what the runner is actually handed (Gate 2 I2). */
+export function runnerInvocation(files, env = process.env) {
+  return { args: ["--test", "--test-reporter=spec", ...files], env: { ...env, FORCE_COLOR: "0" } };
+}
+
 function runBucket(root, bucket) {
   const files = bucketFiles(root, bucket);
-  const r = spawnSync(process.execPath, ["--test", "--test-reporter=spec", ...files], {
-    cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0" },
-  });
+  const { args, env } = runnerInvocation(files);
+  const r = spawnSync(process.execPath, args, { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env });
   const output = `${r.stdout || ""}${r.stderr || ""}`;
   return {
     ok: r.status === 0,
@@ -81,8 +87,8 @@ function runBucket(root, bucket) {
 
 /** A passing run is recorded only over a count that was READ and is not ZERO. A record is a claim about
  *  a pass over N tests; an unreadable or empty count is a run this runner cannot vouch for. Returns
- *  the refusal text, or `null` when the count may be recorded. */
-function countRefusal(label, counts) {
+ *  the refusal text, or `null` when the count may be recorded. Exported for its test (Gate 2 I2). */
+export function countRefusal(label, counts) {
   if (counts.tests === null || counts.pass === null) {
     return `certify: the ${label} passed but its count could not be read (no '^ℹ tests' / '^ℹ pass' line). Nothing recorded.\n`;
   }

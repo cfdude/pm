@@ -29,3 +29,33 @@ test("4.4 certify's count parser reads the forced spec summary, and nothing else
   assert.equal(certify.summaryCount(coloured, "tests"), null,
     "a coloured spec summary is NOT read — the runner is started with FORCE_COLOR=0 so it never is one");
 });
+
+// ─────────────── Gate 2 I2 — the runner's argv/env and the refusal are exercised, not just the parser ───────────────
+//
+// A FUNCTION TEST, NOT A TEXT GUARD, because the property is behaviour over values: which argv and env
+// the bucket runner is started with, and what `countRefusal()` does with a null, zero, TAP-read or
+// coloured count. A text guard in the conductor-09 style would pin the spelling of one line and pass a
+// refactor that moved the flag into a variable the runner no longer reads; these assert what the
+// runner is actually handed and what is actually refused.
+
+test("I2 the bucket runner is started with --test-reporter=spec and FORCE_COLOR=0, whatever the environment says", () => {
+  assert.equal(typeof certify.runnerInvocation, "function", "certify.mjs exports no runnerInvocation()");
+  const inv = certify.runnerInvocation(["/x/a.test.mjs", "/x/b.test.mjs"], { FORCE_COLOR: "1", KEEP: "yes" });
+  assert.deepEqual(inv.args, ["--test", "--test-reporter=spec", "/x/a.test.mjs", "/x/b.test.mjs"]);
+  assert.equal(inv.env.FORCE_COLOR, "0", "colour must be forced OFF even when the caller's environment forces it ON");
+  assert.equal(inv.env.KEEP, "yes", "the rest of the environment is passed through");
+});
+
+test("I2 countRefusal() records nothing over a null, zero, TAP-read or coloured count, and passes a real one", () => {
+  assert.equal(typeof certify.countRefusal, "function", "certify.mjs exports no countRefusal()");
+  const counts = (out) => ({ tests: certify.summaryCount(out, "tests"), pass: certify.summaryCount(out, "pass") });
+  assert.match(certify.countRefusal("functional half", { tests: null, pass: null }) || "", /could not be read/);
+  assert.match(certify.countRefusal("functional half", { tests: 3, pass: null }) || "", /could not be read/);
+  assert.match(certify.countRefusal("functional half", { tests: 0, pass: 0 }) || "", /ZERO tests/);
+  assert.match(certify.countRefusal("sweeps bucket", counts("# tests 3\n# pass 3\n")) || "", /could not be read/,
+    "a TAP summary is unreadable to the runner, so it is refused, not recorded");
+  const coloured = `${ESC}[34mℹ tests 3${ESC}[39m\n${ESC}[34mℹ pass 3${ESC}[39m\n`;
+  assert.match(certify.countRefusal("sweeps bucket", counts(coloured)) || "", /could not be read/,
+    "a coloured summary is unreadable to the runner, so it is refused, not recorded");
+  assert.equal(certify.countRefusal("sweeps bucket", counts("ℹ tests 25\nℹ pass 25\n")), null, "a real count is recorded");
+});
