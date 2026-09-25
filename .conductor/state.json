@@ -7950,9 +7950,11 @@
           "text": "lane: claude-code — one-site fix plus test"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "675076ece539ac5aa62c27528a37f770c5ada125"
+      ],
       "createdAt": "2026-09-15T05:11:12.083Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T23:21:29.947Z",
       "release": "0.50.0"
     },
     {
@@ -7992,9 +7994,12 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (C1, E2). conductor.mjs warnRootDivergence / warnDetachedTree run before any isInitialized() check: snapshot (PreCompact) in a non-pm detached repo prints a 4-line 'about to write .conductor/brief.txt' and writes nothing; commit-nudge prints 'WRITING A DIFFERENT REPOSITORY' when CLAUDE_PROJECT_DIR is a non-pm repo. Breaks hooks/README.md 'silent until /pm:init'. Tests: mutating gate-guard's dormancy return to exit 2 (blocks Edit in every repo on the machine) survives 176 tests; removing snapshot's guard survives 131. Fix: skip both warnings when !isInitialized(); add dormancy tests for gate-guard, snapshot and brief like the existing commit-nudge/write-rules/lesson-advice ones.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "fc149de6cedca656e33ea75e3b8c6a3f0fe54156",
+        "106ee6fb6fe9bb0183e59fc3bebb90bfbf5bd332"
+      ],
       "createdAt": "2026-09-15T05:11:16.084Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T23:21:33.665Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:16.108Z",
@@ -8414,9 +8419,14 @@
           "text": "lane: claude-code — compare revision instead of mtime"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3b538188fabe9acf52f6165766c0cf19b97fe0a9",
+        "2252081570d918af7bd1caa7a94b5812f9f93a32",
+        "e23bb2fd013aafcb5402a9d7b9ce5b3de8b8c09c",
+        "cfa3fe5315c8cfccd62c5af4d0fd2ed6f1544b0d"
+      ],
       "createdAt": "2026-09-15T05:11:38.936Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T23:21:29.219Z",
       "release": "0.50.0"
     },
     {
@@ -8475,10 +8485,11 @@
         "b00940f4740a818f3bf5636d3e394641bd374383",
         "cbcb182f6525359ae992da1c2ad06e258a176d81",
         "0682f33fd2d8eeaa77c319650cf338607f5d043b",
-        "2094b1c60a6bc6a63ed60c5537929401ead19343"
+        "2094b1c60a6bc6a63ed60c5537929401ead19343",
+        "3f68971d40789fdb926a5d8c78180d63725a5b84"
       ],
       "createdAt": "2026-09-15T05:11:42.968Z",
-      "touchedAt": "2026-09-25T21:24:56.830Z",
+      "touchedAt": "2026-09-25T21:26:01.081Z",
       "release": "0.50.0"
     },
     {
@@ -8504,9 +8515,11 @@
           "text": "lane: claude-code — test-only change"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "810a521c523bd90f537101939969c8d96bf0f11b"
+      ],
       "createdAt": "2026-09-15T05:11:44.956Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T23:21:34.453Z",
       "release": "0.50.0"
     },
     {
@@ -8532,9 +8545,13 @@
           "text": "lane: claude-code — tokenizer change plus test"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d748fdf08787c678170f9729e584c4a95f91b13",
+        "e0093b883b81036193109baa50454a61410d449b",
+        "f1640a3b03aab72264bbbfbd65b464fe16dcbb5a"
+      ],
       "createdAt": "2026-09-15T05:11:46.984Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T23:21:32.186Z",
       "release": "0.50.0"
     },
     {
@@ -8611,9 +8628,26 @@
           "text": "carried from user-text-never-forges-output Gate 2 (pre-existing): verify-worktrees reports a truncated nonexistent path for a worktree whose name holds a line feed — scripts/lib/worktree-hygiene.mjs:44 reads git worktree list --porcelain line by line; read --porcelain -z and split on NUL. Forges no line (output is escaped JSON)."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "ef0c4f7732c4c88acdc333f5223f83cca6161b14",
+        "99d9aa1a4b10093da95bce615a36aa0e11404cad",
+        "15307d258c081714c0f2153a5859242aaab8b257",
+        "b4ffe164f7d803fb6a41e07c0d5e587621f2a2c8",
+        "24591378f073bc8d8a6556ad190c914340d8a340",
+        "0e216f2186b2baa62b17d9c04ea2782e6f703106",
+        "35577730e633920e8ec5eb28b8bca72496902a44",
+        "12c45caf9b42dcb1aa80abe750bd59e60a03429f",
+        "cfb2d7121f1f57780cb489cb7bc4636dfdd12c4c",
+        "74cf39bc41a90877d4e8821f5e8a3ced8971c85c",
+        "7d5fb6862d9fe271a9a2aad75ce137430bc1e624",
+        "c07f4aaa9b4ca3dd4849997012837afa57f15916",
+        "04a4afdb16bb3bff38f3abb2bad1b037262630ab",
+        "2fbe8995f9384509fa19fbad309c34ace75adb31",
+        "bd5e24ecf5daa7567fc13f806f1da095855bf8cb",
+        "91029e926d421b39306e864a77a1591bb77c029f"
+      ],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T23:21:46.903Z",
       "release": "0.50.0"
     },
     {
@@ -10375,6 +10409,25 @@
       "createdAt": "2026-09-25T19:25:05.286Z",
       "touchedAt": "2026-09-25T21:25:03.601Z",
       "release": "0.50.0"
+    },
+    {
+      "id": "brief-snapshot-epipe-on-large-hook-payload",
+      "title": "brief and snapshot do not drain stdin: a large hook payload can EPIPE the hook (0.43.0 review minor, left by the 0.50.0 minors pass because it is only testable at the process boundary)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "code-review-0-43-0-minors",
+          "reason": "split out of the minors pass — a hook failure deserves its own epic"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-25T21:57:39.453Z",
+      "touchedAt": "2026-09-25T21:57:39.457Z"
     }
   ],
   "detourStack": [],
@@ -10385,7 +10438,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1454,
+  "revision": 1483,
   "reviewMode": "thorough",
   "releases": [
     {
