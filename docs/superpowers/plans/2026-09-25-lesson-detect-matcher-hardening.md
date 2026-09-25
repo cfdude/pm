@@ -142,7 +142,7 @@ unitTest("nested unbounded quantifiers are named; bounded or flat ones are not",
   plus command `ls` is silence; (c) `classifyLessons(dir)` on a tmp corpus returns each malformed
   lesson in `rejected` with its reason and the good one in `matchable`, and a lesson with no
   `detect:` in `retrievalOnly`; (d) a `NotebookEdit` `pathEndsWith` matcher fires on `notebook_path`.
-- [x] **Step 3:** run both files, save the failing run as `red-task2.txt` next to this plan.
+- [x] **Step 3:** run both files, save the failing run as `2026-09-25-lesson-detect-matcher-hardening-evidence/red-task2.txt`.
 - [x] **Step 4: implement** — `frontmatterBlock(txt)` normalises `\r\n` → `\n` before
   `/^---\n([\s\S]*?)\n---/`; `detectLine(block)` distinguishes absent (`retrievalOnly`) from present;
   `checkDetect` applies the table in order and compiles each regex once; `classifyLessons` builds
@@ -162,7 +162,7 @@ unitTest("nested unbounded quantifiers are named; bounded or flat ones are not",
   Unit: a 100 000-character first line is matched only up to `MATCH_TEXT_CAP` (a matcher anchored
   `x$` on `"a".repeat(5000) + "x"` does not fire). File rung: the same catastrophic lesson on disk,
   through the hook, exits 0 in under 2 s.
-- [x] **Step 2:** save `red-task3.txt`.
+- [x] **Step 2:** save `2026-09-25-lesson-detect-matcher-hardening-evidence/red-task3.txt`.
 - [x] **Step 3: implement** — a per-invocation tester: lazily one `vm.createContext({})`, a
   deadline of `now + budgetMs`, and `vm.runInContext("re.test(s)", ctx, {timeout: remaining})`;
   a timeout or an exhausted deadline returns "no match". `cmdLine` is `.slice(0, MATCH_TEXT_CAP)`.
@@ -175,7 +175,7 @@ unitTest("nested unbounded quantifiers are named; bounded or flat ones are not",
 - [x] **Step 1: failing test** — replace the `INERT_PENDING_194` test and its companion with:
   `classifyLessons(DIR).rejected` deep-equals `[]` (message lists `file: reason`); the README's 🔔
   column names exactly `classifyLessons(DIR).matchable`; `ADVISED_TOOLS` equals the lesson-advice
-  matcher in `hooks/hooks.json` split on `|`. Save `red-task4.txt` (six rejects + 🔔 mismatch).
+  matcher in `hooks/hooks.json` split on `|`. Save `2026-09-25-lesson-detect-matcher-hardening-evidence/red-task4.txt` (six rejects + 🔔 mismatch).
 - [x] **Step 2: fix the six** (each judged on precision, per the module header):
   - `second-resolution-timestamps-…`, `a-fixture-reconstructed-…` — their regexes match SOURCE TEXT
     being written, which no `detect` key can see. Remove `detect:`; retrieval-only by design.
