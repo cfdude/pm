@@ -1322,10 +1322,14 @@ structurally could not place the other two — the many-to-one cases `specPath` 
 <details>
 <summary><code>verify-state</code> — Detect an undetected hand-edit of state.json</summary>
 
-Compares `state.json`'s filesystem mtime against the timestamp recorded at the last
-`render()`. Fails loudly (non-zero exit) if `state.json` was modified after the last render —
-mechanical evidence of a hand-edit, which is against the rules (`state.json` should only
-change through the engine's own subcommands).
+Compares `state.json`'s revision and filesystem mtime against the engine's last recorded write:
+the stamp the last `render()` wrote, or the `lastSave` every engine save adds to it, whichever is
+later. A hand-edit advances neither, so it fails loudly (non-zero exit) when the file changed at the
+same revision as that write, when the revision went backwards, or when it moved past any revision
+the engine recorded — mechanical evidence of a hand-edit, which is against the rules (`state.json`
+should only change through the engine's own subcommands). Saves by verbs that do not re-render (a
+claim, `set-activity-log`) exit 0 and say PROJECT.md may be stale. It cannot see a hand-edit
+followed by an engine save, which re-baselines over it; `commands/verify-state.md` lists the rest.
 
 </details>
 
@@ -1370,7 +1374,7 @@ conductor.mjs update-epic <id> — 31 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
-  --priority <P0|P1|P2|P3>
+  --priority <P0|P1|P2|P3|P?>
   --status <untriaged|queued|active|paused|later|blocked|planned|archived>
   --parent <a value>
   --external-id <a value>
@@ -1728,6 +1732,7 @@ pm/ (this repo)
 ├── commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync
 │                                 /pm:epic /pm:hierarchy /pm:tracker /pm:feedback /pm:lane-routing
 │                                 /pm:review-mode /pm:gate-guard /pm:changelog /pm:upgrade
+│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md
 ├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PostToolUseFailure · PreToolUse

@@ -112,7 +112,11 @@ export class StateConflictError extends Error {
     // `message` is for the two conflicts that are not a newer revision — a lock held past the wait,
     // and a lock this writer no longer owns at its rename. Same class, so they share the conflict
     // exit code: both are "someone else is writing; retry", and neither wrote anything.
-    super(message || `state.json changed under this process (read revision ${expected}, found ${found})`);
+    // The default names the way out (code review 0.43.0 minors: `--force` was described as working on
+    // every mutating verb and the one message it answers never mentioned it).
+    super(message || `state.json changed under this process (read revision ${expected}, found ${found}) — ` +
+      "another write landed first; re-run the command to apply yours on top of it, or pass --force " +
+      "only if you mean to overwrite that newer revision");
     this.name = "StateConflictError";
     this.expected = expected;
     this.found = found;
@@ -532,11 +536,17 @@ function lockRefusalMessage(lock, expected) {
     "re-run the command.";
 }
 
-/** How a lock's recorded holder reads in a refusal. */
-function describeHolder(info) {
+/** How a lock's recorded holder reads in a refusal. Exported for its unit test only. `kind` is
+ *  "directory", "symlink" or "other" (a FIFO, socket or device); "other" read "a other" in the
+ *  refusal (code review 0.43.0 minors), so it is named for what it is. */
+export function describeHolder(info) {
   const c = info && info.content;
-  if (!c) return info && info.kind && info.kind !== "file"
-    ? `not a lock file at all — a ${info.kind}` : "a writer whose lock content could not be read";
+  if (!c) {
+    if (!info || !info.kind || info.kind === "file") return "a writer whose lock content could not be read";
+    return info.kind === "other"
+      ? "not a lock file at all — a special file (a FIFO, socket or device)"
+      : `not a lock file at all — a ${info.kind}`;
+  }
   const parts = [];
   if (Number.isInteger(c.pid)) parts.push(`pid ${c.pid}`);
   if (typeof c.host === "string") parts.push(`on host ${escapeControls(c.host)}`);
@@ -820,10 +830,24 @@ export function diskStore(ctx = invocation()) {
 
         state.revision = next.revision;   // keep the caller's object usable for a subsequent save
         clearConflictsOn(this);           // consecutive skips end at the first success
+        // `opts.onWritten(revision)` runs HERE, still inside the lock (confirmation review): the save's
+        // own bookkeeping — saveState()'s `lastSave` stamp — must not interleave with another writer's
+        // save, or an older `lastSave` can land last and read as "cannot rule out a hand-edit".
+        if (typeof opts.onWritten === "function") opts.onWritten(next.revision);
         return { ok: true, revision: next.revision };
       } finally {
         releaseStateLock(lock, root());
       }
+    },
+    /** Run `fn` holding the record's lock — for a write that must not interleave with a save (the
+     *  render stamp, whose `lastSave` a save writes under this lock). Returns `fn()`'s value, or
+     *  `undefined` WITHOUT running it when the lock cannot be had in STATE_LOCK_WAIT_MS: the caller's
+     *  write is bookkeeping a later call redoes, and waiting longer on a hook path is the worse cost. */
+    withRecordLock(fn) {
+      fs.mkdirSync(conductorDir(root()), { recursive: true });
+      const lock = acquireStateLock(root());
+      if (lock.timedOut || lock.blocked) return undefined;
+      try { return fn(); } finally { releaseStateLock(lock, root()); }
     },
 
     // ── the artifacts the store owns ────────────────────────────────────────────────────────
@@ -984,8 +1008,11 @@ export function memoryStore(seed = undefined) {
       // has landed, and NOT on the `unchanged` early return above, because a no-op save is not a
       // landing write and must leave the episode where it is.
       clearConflictsOn(this);
+      if (typeof opts.onWritten === "function") opts.onWritten(next.revision);   // same position as the disk store's
       return { ok: true, revision: next.revision };
     },
+    // No lock to take in one process's memory; the interface matches the disk store's.
+    withRecordLock(fn) { return fn(); },
 
     // THE RECORD IS AN ARTIFACT TOO, and answering it from the artifacts map alone would be wrong in
     // a way a unit test would feel immediately: the map holds what the OTHER artifact operations put

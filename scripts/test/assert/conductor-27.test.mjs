@@ -58,3 +58,36 @@ test("gh#82: a MUTATING verb in the same fixture still warns — the gate is not
 // real repository, whose shas the log is keyed on — functional-only by subject (design D5). The `-`
 // rows are the same key, in the world where every value is `-`, and they are asserted on the unit
 // rung.
+
+// ───────── hooks-not-silent-before-init (code review 0.43.0, C1): dormant means SILENT ─────────
+// hooks/README.md promises the hooks are silent until /pm:init. commit-nudge fires on every Bash
+// call; with CLAUDE_PROJECT_DIR at a repository pm never initialised it is dormant and writes
+// nothing — and still printed "WRITING A DIFFERENT REPOSITORY", a warning about a write that never
+// happens. `init` is the exception by construction: it is the one verb that writes into an
+// uninitialised root, so it must keep warning when it is about to scaffold the wrong repository.
+test("gh#82: a dormant hook in a root pm never initialised does not warn about a write it will not make", () => {
+  const target = tmpRepo();                         // never initialised
+  const here = tmpRepo(); run(["init"], { cwd: here });
+  const r = invokeEngine(["commit-nudge"], { cwd: here, env: { CLAUDE_PROJECT_DIR: target },
+    input: JSON.stringify({ tool_input: { command: "ls" } }) });
+  assert.equal(r.status, 0);
+  assert.equal(r.stdout + r.stderr, "", "a dormant hook prints nothing at all");
+});
+test("gh#82: `init` into an uninitialised root still warns — it is the one verb that writes there", () => {
+  const target = tmpRepo();
+  const here = tmpRepo(); run(["init"], { cwd: here });
+  const r = invokeEngine(["init"], { cwd: here, env: { CLAUDE_PROJECT_DIR: target } });
+  assert.match(r.stdout + r.stderr, /different repository/i);
+});
+// Branch review of the init gate: standing in a pm repository with CLAUDE_PROJECT_DIR at one pm
+// never initialised, `add-epic` said only "run /pm:init first" — and following that initialises the
+// WRONG repository. A non-hook verb names both before it refuses; a hook stays silent (above).
+test("gh#82: a verb refused for an uninitialised root names BOTH repositories when the roots diverge", () => {
+  const target = tmpRepo();                         // never initialised
+  const here = tmpRepo(); run(["init"], { cwd: here });
+  const r = invokeEngine(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd: here, env: { CLAUDE_PROJECT_DIR: target } });
+  assert.notEqual(r.status, 0, "still refused — there is no record to write");
+  const text = r.stdout + r.stderr;
+  assert.match(text, /different repository/i, "and it says where it is pointed before telling you to init");
+  assert.ok(text.includes(target) && text.includes(here), "naming both paths");
+});

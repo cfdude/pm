@@ -10,6 +10,7 @@ import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
 import { errStream } from "./invocation.mjs";
+import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -111,6 +112,9 @@ export function reconcileArchived(state) {
   for (const e of state.epics) {
     if (e.status !== "archived" && isArchived(e.id)) {
       e.status = "archived";
+      // An ended epic holds no claim — the same removal `update-epic` makes, through the same helper.
+      const released = releaseClaimOfEndedEpic(e);
+      if (released) errStream().write(released);
       // ONE record for the transition, whose TWO HALVES BIND DIFFERENT SETS OF EPICS. Written
       // together on purpose: two independent writes are exactly what produces an epic carrying
       // the bypass and not the outcome.

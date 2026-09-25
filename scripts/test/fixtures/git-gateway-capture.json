@@ -336,7 +336,7 @@
         {
           "args": [],
           "status": 0,
-          "value": "worktree <ROOT>\nHEAD 8394663fe762285c21ae3e78db08ddcf362bb069\nbranch refs/heads/main\n\nworktree <ROOT>-wt\nHEAD 8394663fe762285c21ae3e78db08ddcf362bb069\nbranch refs/heads/wt-branch\n\n"
+          "value": "worktree <ROOT>\u0000HEAD 8394663fe762285c21ae3e78db08ddcf362bb069\u0000branch refs/heads/main\u0000\u0000worktree <ROOT>-wt\u0000HEAD 8394663fe762285c21ae3e78db08ddcf362bb069\u0000branch refs/heads/wt-branch\u0000\u0000"
         }
       ]
     },

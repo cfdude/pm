@@ -60,6 +60,18 @@ unitTest("an UNRECOGNISED verb is not treated as detached either — the probe a
     "the probe's answer gates the warning, and an unanswerable tree is not detached");
 });
 
+// The twin of the functional "a hook in a detached repository pm never initialised prints NOTHING".
+// Its detachment needs a real repository; what this half owns is the dormancy: over a store holding
+// NO record, the hooks are silent, whatever the tree says.
+unitTest("a hook over a record pm never initialised prints nothing at all", () => {
+  const engine = memoryEngine();
+  for (const hook of ["snapshot", "commit-nudge"]) {
+    const r = engine.result([hook], { input: JSON.stringify({ tool_input: { command: "ls" } }) });
+    assert.equal(r.status, 0, `${hook} is dormant, not refused`);
+    assert.equal(r.stdout + r.stderr, "", `${hook} prints nothing before init`);
+  }
+});
+
 unitTest("commit-nudge does not warn, and it runs on every Bash call", () => {
   const engine = memoryEngine(emptyRecord());
   const out = engine(["commit-nudge"], { input: JSON.stringify({ tool_input: { command: "ls" } }) });

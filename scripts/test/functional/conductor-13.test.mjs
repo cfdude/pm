@@ -1471,7 +1471,7 @@ test("a delivered archive with outstanding work names BOTH remedies and the same
     ["update-epic", "remainder", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
   assert.ok(err);
   const msg = String(err.stderr || err.message);
-  assert.match(msg, /3 of 78\/81/, "the refusal states the same count the record renders");
+  assert.match(msg, /3 task\(s\) outstanding \(78\/81 done\)/, "the refusal states the same count the record renders");
   assert.match(msg, /--carried-to/, "remedy one: say where the work went");
   assert.ok(msg.includes(MARKER),
     "remedy two, quoted as the literal token: declare the item as lifecycle bookkeeping. A " +

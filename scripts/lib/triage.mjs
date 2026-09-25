@@ -43,11 +43,47 @@ const COMMON_TOKEN_MIN_EPICS = 8;
  *  separator, so `2026-07-14-epic-hierarchy-orchestration`, `conductor.mjs Module Split` and
  *  "Epic-Hierarchy Orchestration" all reduce to the same vocabulary — which is the whole point:
  *  the four duplicate pairs in this repository's own record differ in punctuation, date prefix
- *  and casing, and agree on words. */
+ *  and casing, and agree on words.
+ *
+ *  A LETTER IS ANY SCRIPT'S LETTER (code review 0.43.0, D1). The split was `[^a-z0-9]`, which made
+ *  every letter outside ASCII a separator: a Cyrillic title and the identical ask both reduced to
+ *  zero tokens, and triage answered `candidates: []` — indistinguishable from "no overlap" at
+ *  intake's mandatory first step — while an umlaut cut a German word in two. Letters (`\p{L}`),
+ *  their combining marks (`\p{M}`, which Devanagari and decomposed accents need inside a word) and
+ *  digits (`\p{N}`) are word characters; NFC first, so a composed and a decomposed spelling of one
+ *  word agree. The length floor counts CODE POINTS, not UTF-16 units. */
 export function tokenize(text) {
-  return String(text || "").toLowerCase().split(/[^a-z0-9]+/)
-    .filter(t => t.length >= MIN_TOKEN_LENGTH);
+  const out = [];
+  for (const word of String(text || "").normalize("NFC").toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)) {
+    // CHINESE, JAPANESE AND KOREAN ARE SPLIT INTO CHARACTER BIGRAMS (branch review). Han and kana
+    // put no spaces between words, so the split above made a whole phrase ONE token: an identical
+    // title matched, and any rewording of it matched nothing. Overlapping bigrams are the standard
+    // lexical answer for these scripts (the approach of Lucene's CJK analyzer) and need no
+    // dictionary, which the engine could not ship. They skip the 3-character floor, which exists to
+    // drop short Latin words, and the idf weighting below already discounts a bigram that is
+    // everywhere. Hangul is included: its spaced words still run two or three syllables long.
+    for (const run of word.split(CJK_RUN)) {
+      if (!run) continue;
+      if (CJK_ONLY.test(run)) {
+        const chars = [...run];
+        if (chars.length === 1) out.push(run);
+        for (let i = 0; i + 1 < chars.length; i++) out.push(chars[i] + chars[i + 1]);
+      } else if ([...run].length >= MIN_TOKEN_LENGTH) {
+        out.push(run);
+      }
+    }
+  }
+  return out;
 }
+const CJK = "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}";
+const CJK_RUN = new RegExp(`([${CJK}]+)`, "u");
+const CJK_ONLY = new RegExp(`^[${CJK}]+$`, "u");
+const isCjkToken = (t) => CJK_ONLY.test(t);
+/** One shared bigram required per this many distinct bigrams in a CJK ask (candidateSet). Ten keeps
+ *  a short ask's floor at the minimum of two — a four-character ask has three bigrams — while a
+ *  46-character one needs five, which the measured noise (two common bigrams per unrelated epic)
+ *  never reaches and a real restatement (ten shared in the test fixture) clears easily. */
+const CJK_BIGRAMS_PER_MATCH = 10;
 
 /** The token SET of one epic — its id, title and description together. The id is included
  *  deliberately: a slug is often the most faithful statement of what an epic is, and in this
@@ -108,6 +144,7 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
   if (!askTokens.length || !list.length) return [];
   const { weight } = idfMap(list);
   const total = askTokens.reduce((s, t) => s + weight(t), 0);
+  const cjkMatchFloor = Math.max(2, Math.ceil(askTokens.filter(isCjkToken).length / CJK_BIGRAMS_PER_MATCH));
 
   // An epic superseded by another is already dead. Consolidating a fourth ask INTO it is the
   // mistake worth flagging, and it is mechanical: some other epic holds `supersedes: <this>`.
@@ -123,6 +160,17 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
     // epic and it must not appear in the trail, where it reads as evidence and is not.
     const shared = askTokens.filter(t => tokens.has(t) && weight(t) > 0);
     if (!shared.length) continue;
+    // AN EPIC SURFACED ONLY BY CJK BIGRAMS must share a number of them that GROWS WITH THE ASK
+    // (confirmation review). Chosen over a lower bigram weight, which cannot change membership — the
+    // list has no score floor, so any positive score takes a slot. A CJK ask carries one bigram per
+    // character, many spanning a word boundary, so its incidental overlap with an unrelated epic
+    // (新的 "new", 功能 "feature") grows with its length, while a Latin ask of the same meaning
+    // carries a handful of words. A restatement of an epic shares a PROPORTION of the ask's bigrams;
+    // noise shares a constant few. So: at least two (one bigram is the analogue of a sub-3-letter
+    // Latin word, which MIN_TOKEN_LENGTH already drops), and at least one per CJK_BIGRAMS_PER_MATCH
+    // of the ask's distinct bigrams. A candidate that shares any non-CJK token is untouched, so a
+    // Latin ask's results are exactly what they were.
+    if (shared.every(isCjkToken) && shared.length < cjkMatchFloor) continue;
     const earned = shared.reduce((s, t) => s + weight(t), 0);
     out.push({
       id: e.id,

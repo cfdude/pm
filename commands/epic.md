@@ -238,7 +238,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 |------|--------|-------|
 | `--title "<t>"` | `title` | |
 | `--status <s>` | `status` | validated; `archived` runs the archive gate — see below |
-| `--priority <P?>` | `priority` | |
+| `--priority <p>` | `priority` | one of `P0\|P1\|P2\|P3\|P?` (`P?` = not yet triaged); anything else is refused and nothing is written |
 | `--lane <l>` | `lane` | re-routes in place |
 | `--plan <path>` | `planPath` | attaches a plan to an epic created without one |
 | `--spec <path>` | `specPath` | the DESIGN DOCUMENT this epic's work was drawn from — provenance only, **many-to-one** |
@@ -250,7 +250,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
 | `--external-url <url>` | `externalUrl` | the globally unique dedup key |
-| `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock |
+| `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock — an ISO-8601 date-time WITH a zone (`…Z`, `…+00:00`, or Jira's `…+0000`); a bare date, a zoneless time or an impossible date is refused |
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order. Resolved at write time and stored as the FULL object name (`HEAD`, a short sha or an annotated tag records the commit it names now); a value that is not a commit in this clone refuses the whole invocation |
 | `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence (the last) of a commit this epic attributed and records why. Matched by commit IDENTITY where the value resolves — a full sha withdraws a legacy short entry of the same commit — and by exact spelling otherwise, so a legacy value that no longer resolves (`not-a-commit`, a commit this clone lost) stays withdrawable. The withdrawal records the stored entry removed. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
 | `--withdrawal-reason "<why>"` | `withdrawnCommits`, `withdrawnGateReviews` | Required by `--withdraw-commit` and by `--withdraw-gate-review`, and refused on its own; deliberately **not** `--reason` — that one is the disposition's, and sharing it made a withdrawal's reason silently become the reason the epic was delivered. |

@@ -246,6 +246,44 @@ export const PLATFORM_COMMAND_PREFIX = {
 };
 export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later", "blocked", "planned", "archived"];
 
+/** The priorities an epic may carry (code review 0.43.0 minors: `--priority banana` was stored).
+ *  `P?` is "not yet triaged", the default every registration path writes. The ranking lives in
+ *  dependency-order.mjs's PRIORITY_RANK; this is the vocabulary the WRITERS accept. Validated at
+ *  input only — a record an older engine wrote with anything else still loads and ranks last. */
+export const KNOWN_PRIORITIES = ["P0", "P1", "P2", "P3", "P?"];
+
+/** Is `s` an ISO-8601 date-time a tracker would report as an item's updated time? (code review
+ *  0.43.0 minors: a non-date `--external-updated-at` watermark was accepted, and a watermark that is
+ *  not a time compares against nothing.) The SHAPES real trackers emit, and only those:
+ *    GitHub  2026-09-25T12:00:00Z          Linear  2026-09-25T12:00:00.000Z
+ *    Jira    2026-09-25T12:00:00.000+0000  (an offset with no colon) — and `+00:00` with one.
+ *  Seconds and a fraction are optional; the zone is REQUIRED, because a zoneless time means
+ *  different instants on different machines. `Date.parse` alone is not the test: it accepts
+ *  "Sep 25 2026" and rolls 2026-02-30 over to March, so the fields are checked against the
+ *  calendar themselves. */
+export function isIsoTimestamp(s) {
+  if (typeof s !== "string") return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(Z|[+-](\d{2}):?(\d{2}))$/.exec(s);
+  if (!m) return false;
+  const [, y, mo, d, h, mi, sec = "00", , oh = "00", om = "00"] = m;
+  const days = new Date(Date.UTC(Number(y), Number(mo), 0)).getUTCDate();
+  return Number(mo) >= 1 && Number(mo) <= 12 && Number(d) >= 1 && Number(d) <= days &&
+    Number(h) <= 23 && Number(mi) <= 59 && Number(sec) <= 59 && Number(oh) <= 23 && Number(om) <= 59;
+}
+
+/** The ONE refusal text for each of the two value checks above, so add-epic, update-epic, add-many
+ *  and record-tracker-refresh cannot word them four ways. `where` prefixes a batch entry's id.
+ *  Returns null when the value is acceptable. */
+export function priorityValueError(v, where = "--priority") {
+  return KNOWN_PRIORITIES.includes(v) ? null
+    : `${escapeControls(where)} must be one of ${KNOWN_PRIORITIES.join("|")} (got ${escapeControls(JSON.stringify(v))})`;
+}
+export function timestampValueError(v, where = "--external-updated-at") {
+  return isIsoTimestamp(v) ? null
+    : `${escapeControls(where)} must be an ISO-8601 timestamp with a zone, as the tracker reports it — e.g. ` +
+      `2026-09-25T12:00:00Z or 2026-09-25T12:00:00.000+0000 (got ${escapeControls(JSON.stringify(v))})`;
+}
+
 // ─────────────────────── the shared epic-flag registry ───────────────────────
 //
 // The ONE declaration of the flag surface the epic-writing commands share. It lives here
@@ -360,7 +398,7 @@ export const EPIC_FLAGS = [
     placeholder: KNOWN_LANES.join("|"),
     setOnly: "an ABSENT lane is normalized to openspec (isOpenspecLane), so clearing it would not remove the lane — it would silently re-route the epic" },
   { flag: "priority", key: "priority", commands: ["add-epic", "update-epic", "add-many"],
-    placeholder: "P0|P1|P2|P3",
+    placeholder: KNOWN_PRIORITIES.join("|"),
     setOnly: "priority is what orders the backlog; an epic carrying none has no place in it" },
   { flag: "status", key: "status", commands: ["add-epic", "update-epic", "add-many"],
     placeholder: KNOWN_STATUSES.join("|"),

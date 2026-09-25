@@ -146,7 +146,11 @@ direction:
     --verdict unchanged|material-change --external-updated-at <iso> [--summary "<what changed>"]
   ```
 
-  `<iso>` is the **tracker's own** updated timestamp, never a local clock reading.
+  `<iso>` is the **tracker's own** updated timestamp, never a local clock reading — an ISO-8601
+  date-time with a zone. A tracker's updated time only moves forward, so a watermark OLDER than the
+  one already recorded (compared as instants, so `…Z` and `…+02:00` spellings compare correctly) is
+  refused and nothing is written; if the recorded one is the wrong one, correct it with
+  `update-epic <id> --external-updated-at <iso>`.
 - **The epic has no `externalId`** → re-read its LOCAL source: its plan document, or its OpenSpec
   proposal plus tasks. That is instruction only; nothing is recorded in state for it, and
   `record-tracker-refresh` refuses such an epic by name.

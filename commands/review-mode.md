@@ -53,10 +53,10 @@ conductor: refused to write the pm rules block into CLAUDE.md — its marker lin
 
 Unlike `init` and `upgrade`, this verb refuses AT the block write, after its state save. So
 `state.reviewMode` already reads `thorough`, while `CLAUDE.md` and `PROJECT.md` were not written —
-and `verify-state` reports a hand-edit until they are. That is why the message says to run
+and `verify-state` reports PROJECT.md as stale until they are. That is why the message says to run
 `write-rules` then `render` rather than to re-run the verb. Delete the stray marker lines (here,
 the whole second block), then `write-rules` and `render` (or `/pm:status`); after that `CLAUDE.md`
-carries `Current mode: **thorough**.` and `verify-state` reports no hand-edit.
+carries `Current mode: **thorough**.` and `verify-state` reports that the last render is current.
 
 An unreadable `.conductor/state.json` is refused before anything is written, exit 11, with the git
 remedies (see `/pm:gate-guard`).

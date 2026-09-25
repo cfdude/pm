@@ -67,7 +67,7 @@ export const VERB_EFFECTS = {
   // rather than special-cased in the test, so "this verb fails by design" and "this verb
   // crashed before it ran" stay distinguishable: a crash writes nothing either, and a check
   // that accepted any non-zero exit would prove nothing for the other twelve.
-  "verify-state": { effect: "read-only", exercise: [], expectsFailure: true, note: "compares state.json's mtime against the render stamp; exits non-zero on drift and writes nothing" },
+  "verify-state": { effect: "read-only", exercise: [], expectsFailure: true, note: "compares state.json's revision and mtime against the render stamp; exits non-zero on drift and writes nothing" },
   "verify-worktrees": { effect: "read-only", exercise: [], note: "reports stale git worktrees" },
   // 0.40.0's ASK-THE-ENGINE surface for the unconsidered-outcome walker. Read-only in the strict
   // sense this table's behavioural check enforces: it loads state and prints, exactly as `triage`

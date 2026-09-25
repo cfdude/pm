@@ -166,8 +166,8 @@ set the top-level active epic · `set-autonomy <id>` grant an epic broad executi
 `set-autonomy <id> --revoke <action> --revoke-reason "<why>"` take a grant back (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
-hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
-the last render's stamp (a mechanical check for an undetected hand-edit) · `render --diff-summary`
+hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json changed since
+the last render without an engine save (a mechanical check for an undetected hand-edit) · `render --diff-summary`
 prints `epic-relevant: yes|no` — normalizes away the "Last rendered" timestamp and "Recent
 detours" table rotation (both change on nearly every render without meaning anything actually
 changed) so deciding whether a PROJECT.md diff is safe to discard as noise is mechanical
@@ -188,7 +188,8 @@ file a bug report or feature request for `pm` itself against `cfdude/pm` — wri
 (deduping against open issues), else a prefilled `issues/new` URL, else `bugs@pm-plugin.dev`;
 `gh` is an OPTIONAL dependency and the command checks for it rather than assuming it (#105) ·
 `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules + run migrations
-+ print the changelog delta.
++ print the changelog delta · `/pm:verify-state`, `/pm:verify-worktrees`, `/pm:verify-specs` the
+read-only checks of the record, whose engine verbs are listed above.
 
 ## Writing state — exit codes, the lock, and what the engine refuses to guess
 

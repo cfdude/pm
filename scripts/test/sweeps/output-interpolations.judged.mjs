@@ -33,9 +33,12 @@ x("render.mjs", "normalizeForDiffSummary", {
   "out.slice(0, afterHeading)": 1,
   "out.slice(end)": 1,
 }, "not-output", "slices PROJECT.md text for a diff comparison; prints nothing");
-x("render.mjs", "writeRenderStamp", {
+x("render.mjs", "writeRenderStampLocked", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the render stamp's file body — an ISO timestamp, a revision number and an mtime. It was automatically `not-output` while it sat inside the fs.writeFileSync the sweep recognises; task 1.3 moved the write onto the store, so the sink is no longer visible to the scanner and the judgment has to be explicit");
+x("state.mjs", "recordEngineSave", {
+  "JSON.stringify(stamp, null, 2)": 1,
+}, "not-output", "the same render-stamp file body writeRenderStamp writes, with `lastSave: {revision, mtimeMs}` added — numbers and the stamp's own fields, written through the store, never printed");
 j("integrity.mjs", "CHECKS", ALL, "sink-flow", "every finding detail is printed only by formatIntegrity(), whose L joins through L.map(escapeControls); runIntegrity's sole caller is integrity(). Ids in commands go through printedId/orNoRemedy/asCode/commandValue, and the secondary tracker's shellQuote(t.repo) is reached only when CONTROL_CHARACTER.test(t.repo) is false");
 j("integrity.mjs", "recordedShas", ALL, "sink-flow", "`where` labels (gate1/gate2 + engine key) feed CHECKS details only");
 x("integrity.mjs", "integrity", {

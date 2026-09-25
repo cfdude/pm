@@ -10,7 +10,7 @@ import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 import { currentArgv } from "./invocation.mjs";
@@ -110,6 +110,12 @@ export function addMany() {
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) refuse(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
     if (!KNOWN_STATUSES.includes(status)) refuse(`epic '${escapeControls(id)}': status must be one of ${KNOWN_STATUSES.join("|")}`);
+    if (e.priority !== undefined && priorityValueError(e.priority, "priority")) {
+      refuse(`epic '${escapeControls(id)}': ${escapeControls(priorityValueError(e.priority, "priority"))}`);
+    }
+    if (e.externalUpdatedAt !== undefined && timestampValueError(e.externalUpdatedAt, "externalUpdatedAt")) {
+      refuse(`epic '${escapeControls(id)}': ${escapeControls(timestampValueError(e.externalUpdatedAt, "externalUpdatedAt"))}`);
+    }
     // The SIBLING write path. `--link` reaches the store through parseLinkFlags for add-epic and
     // update-epic; a batch entry's `links` is a JSON array copied verbatim by the registry loop
     // below, so a rule added only at parseLinkFlags would hold at two of three write paths and

@@ -53,14 +53,18 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker \
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-tracker …`
 
-`--intent` is repeatable; each `<status>:<target>` adds one entry to the map. Re-running
+`--intent` is repeatable; each `<status>:<target>` adds one entry to the map. `<status>` must be
+one of pm's statuses (`untriaged|queued|active|paused|later|blocked|planned|archived`); a value
+with no `:`, an empty half or an unknown status is refused and nothing is written. `--intent` is
+for the PRIMARY tracker only — it maps statuses onto an outward mirror's transitions, and a
+secondary tracker is inward-only, so `--role secondary … --intent` is refused. Re-running
 `set-tracker` merges (only the flags you pass change). It refreshes the CLAUDE.md rules block.
 
 **If the rules block cannot be located, `set-tracker` exits 11 after saving the tracker.** The
 block is found by whole marker lines; an orphan BEGIN or END line, or two blocks, is refused with
 every marker's line number, and the rules file is not touched. The refusal comes at the block
 write, so the tracker change is already in `state.json` while `CLAUDE.md` and `PROJECT.md` are not
-written, and `verify-state` reports a hand-edit until they are. Delete the stray marker lines from
+written, and `verify-state` reports PROJECT.md as stale until they are. Delete the stray marker lines from
 the shell, then run `write-rules` and `render` (or `/pm:status`) — the refusal says exactly that.
 Do not simply re-run `set-tracker`: `set-tracker --role secondary --remove …` run a second time
 finds no matching tracker and exits 1 before its block write, so the block would keep the removed
@@ -238,8 +242,10 @@ the primary and a secondary alike, because the value lands in a shell line:
 - **`--remove` is exempt on the SECONDARY role only.** `set-tracker --role secondary --system
   github-issues --repo <recorded value> --remove` matches the recorded value exactly and writes
   nothing new, so a malformed secondary recorded before this rule stays removable. The primary
-  has no remove handler — `--remove` there falls through to the merge — so a primary `--remove`
-  with a malformed `--repo` is refused like any other.
+  has no remove handler, so a primary `--remove` is refused outright — with a malformed `--repo`
+  on that repo's shape first, and otherwise because there is no primary removal (it used to fall
+  through to the merge, exit 0 having removed nothing, and with a valid `--repo` REPLACE the
+  recorded one). Change the primary with `set-tracker --system …` instead.
 - **A repo recorded before the rule still loads**, and no emitter places it in a shell line: that
   tracker gets the vendor-neutral "list open items with your own tooling" step instead of `gh`.
   That loss is not silent — `integrity` reports `tracker-repo-not-a-github-repository` for it,

@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
+  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -16,6 +16,7 @@ import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocatio
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
+import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
 import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours, storedEpicIdError } from "./links.mjs";
 import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
@@ -400,6 +401,13 @@ export function updateEpic() {
   const status = str(f.status);
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     die(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`);
+  }
+  // The same vocabulary and timestamp checks add-epic and add-many make, from the same helpers.
+  if (str(f.priority) !== undefined && priorityValueError(str(f.priority))) {
+    die(`conductor: ${escapeControls(priorityValueError(str(f.priority)))}\n`);
+  }
+  if (str(f["external-updated-at"]) !== undefined && timestampValueError(str(f["external-updated-at"]))) {
+    die(`conductor: ${escapeControls(timestampValueError(str(f["external-updated-at"])))}\n`);
   }
   // --lane: re-route an epic in place. Validated against the SAME KNOWN_LANES creation validates
   // against, so a lane addEpic() would refuse cannot arrive through this door instead. Tested on
@@ -993,14 +1001,15 @@ export function updateEpic() {
   // two directions close the loop without either of them blocking real work.
   //
   // The sibling removal sites, enumerated mechanically (`rg -n '\.claim' scripts/lib/`): the
-  // holder's own `unclaim` (claims.mjs), and `remove-epic`, which needs no edit because the
+  // archive-drift heal (`reconcileArchived`, epic-progress.mjs), which archives through the SAME
+  // helper — it once had no removal, and integrity blamed a hand-edit for the claim it left; the
+  // holder's own `unclaim` (claims.mjs); and `remove-epic`, which needs no edit because the
   // claim is nested INSIDE the epic object and leaves with it. A detour PUSH/POP deliberately
   // does not clear it — parking an epic does not change who owns it, and the owner is exactly
   // who resumes it.
-  if (status === "archived" && epic.claim) {
-    errStream().write(
-      `conductor: cleared the advisory claim held by '${escapeControls(epic.claim.session)}' — '${escapeControls(id)}' has ended\n`);
-    delete epic.claim;
+  if (status === "archived") {
+    const released = releaseClaimOfEndedEpic(epic);
+    if (released) errStream().write(released);
   }
 
   // Keep .active consistent with status — the two must never disagree.

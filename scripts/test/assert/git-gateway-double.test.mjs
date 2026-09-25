@@ -83,5 +83,16 @@ test("4.4 the fake-vs-live check is a FUNCTIONAL test, and the capture says so",
   assert.match(doubled, /byte-identical/i, "the live check lives in the functional half");
 });
 
+test("the worktree listing is captured NUL-terminated — the shape verify-worktrees parses", () => {
+  // code-review-0-43-0-minors: the gateway reads `git worktree list --porcelain -z`, so a path
+  // holding a line feed stays one field. A capture still in the newline form would feed the
+  // NUL-splitting reader one giant field and every verify-worktrees test in this half would pass
+  // against nothing.
+  const { value } = CAPTURE.operations.worktreeList.cases[0];
+  assert.ok(value.includes("\0worktree "), "records are NUL-separated");
+  assert.ok(!value.includes("\n"), "and no field ends in a line feed");
+  assert.match(GIT_OPERATIONS.find(o => o.name === "worktreeList").command, / -z$/);
+});
+
 void run;
 void path;
