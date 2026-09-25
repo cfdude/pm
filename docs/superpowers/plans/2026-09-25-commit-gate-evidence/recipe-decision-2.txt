@@ -1,0 +1,25 @@
+## decision block, extracted verbatim from SKILL.md:
+n() { grep -m1 -E "^ℹ $1 " "$log" | awk '{print $3}'; }
+tests=$(n tests); fail=$(n fail); cancelled=$(n cancelled)
+if [ "$code" -eq 0 ] && [ "${fail:-x}" = 0 ] && [ "${cancelled:-x}" = 0 ] && [ "${tests:-0}" -gt 0 ]; then
+  echo "PUBLISH: tests $tests"
+else
+  echo "STOP -- publish nothing: exit=$code tests=${tests:-?} fail=${fail:-?} cancelled=${cancelled:-?} -- read $log"
+fi
+
+clean.log          exit=0 -> PUBLISH: tests 2476
+fail1.log          exit=1 -> STOP -- publish nothing: exit=1 tests=2476 fail=1 cancelled=0 -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/fail1.log
+cancelled1.log     exit=1 -> STOP -- publish nothing: exit=1 tests=2476 fail=0 cancelled=1 -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/cancelled1.log
+cancelled1.log     exit=0 -> STOP -- publish nothing: exit=0 tests=2476 fail=0 cancelled=1 -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/cancelled1.log
+nosummary.log      exit=0 -> STOP -- publish nothing: exit=0 tests=? fail=? cancelled=? -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/nosummary.log
+zero.log           exit=0 -> STOP -- publish nothing: exit=0 tests=0 fail=0 cancelled=0 -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/zero.log
+
+## mutation: the fail clause removed from a COPY of SKILL.md, then the recipe guard run against it
+95:     if [ "$code" -eq 0 ] && [ "${cancelled:-x}" = 0 ] && [ "${tests:-0}" -gt 0 ]; then
+  AssertionError [ERR_ASSERTION]: the decision is missing [ "${fail:-x}" = 0 ]: a run with a failing test must never publish a count (and an unreadable fail line is not 0)
+✔ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (0.816ms)
+✖ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (1.23125ms)
+## mutation 2: the pipe restored (grep -m1 on the runner's output)
+  AssertionError [ERR_ASSERTION]: the run is still piped straight into a count: its output is discarded, and a failing run still yields a number
+✖ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (2.361459ms)
+✔ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.343292ms)

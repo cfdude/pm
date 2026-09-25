@@ -1,0 +1,46 @@
+✖ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (1.575833ms)
+✖ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.197459ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1933.284167
+
+✖ failing tests:
+
+test at scripts/test/assert/release-checklist-recipe.test.mjs:34:1
+✖ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (1.575833ms)
+  AssertionError [ERR_ASSERTION]: the run is still piped straight into a count: its output is discarded, and a failing run still yields a number
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ac5a0d536c2b8cce0/scripts/test/assert/release-checklist-recipe.test.mjs:36:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '**Introduction\'s "Real Numbers" table** claims to be mechanically derived — keep that true\n     every release by recomputing, never estimating:\n     ```bash\n     rg -c \'^## \\[[0-9]\' CHANGELOG.md                                 # releases shipped\n     # NOT `grep -c \'^## \\[\'` — that counts the [Unreleased] placeholder as a release, and\n     # did, publishing a number one too high on every release up to 0.39.0 before anyone checked.\n     # tests in the engine: all three buckets — the assertion half\'s BOTH rungs, then the\n     # two triggered ones — one invocation, one total. The reporter is FORCED and colour is OFF,\n     # so the summary line is `ℹ tests N` on every supported Node (22\'s default is TAP\'s `# tests`,\n     # and a forced colour breaks the `^ℹ` anchor):\n     FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs \\\n       scripts/test/functional/*.test.mjs scripts/test/sweeps/*.test.mjs 2>&1 | grep -m1 \'^ℹ tests \'\n     # STOP if that printed nothing, or `ℹ tests 0`: the count could not be read, or nothing ran.\n     # Do NOT publish a number — find out why first.\n     wc -l scripts/conductor.mjs scripts/lib/*.mjs | tail -1         # engine LOC — the dispatcher is ~360\n     # lines since the module split; the site\'s row counts the dispatcher plus scripts/lib (0.43.0).\n     # external dependencies is always 0 — enforced by the zero-dependency hard constraint\n     ```\n     ',
+    expected: /\|\s*grep -m1 '\^ℹ tests '/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/release-checklist-recipe.test.mjs:54:1
+✖ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.197459ms)
+  AssertionError [ERR_ASSERTION]: the recipe has no decision on the runner's exit status
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ac5a0d536c2b8cce0/scripts/test/assert/release-checklist-recipe.test.mjs:57:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -79,15 +79,38 @@ skip straight to the branch dance at the bottom.
      # tests in the engine: all three buckets — the assertion half's BOTH rungs, then the
      # two triggered ones — one invocation, one total. The reporter is FORCED and colour is OFF,
      # so the summary line is `ℹ tests N` on every supported Node (22's default is TAP's `# tests`,
-     # and a forced colour breaks the `^ℹ` anchor):
+     # and a forced colour breaks the `^ℹ` anchor).
+     # THE WHOLE RUN IS SAVED, and it is the file the number is read from (#219): a run piped
+     # straight into a count published a number from a run that ALSO failed, and kept nothing to
+     # diagnose the failure with. The log is dated (UTC) and lives in the git common dir, beside
+     # the certification record, so it outlives the terminal and is shared by every worktree.
+     log="$(git rev-parse --path-format=absolute --git-common-dir)/pm-real-numbers/$(date -u +%Y-%m-%dT%H%M%SZ).txt"
+     mkdir -p "$(dirname "$log")"
      FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs \
-       scripts/test/functional/*.test.mjs scripts/test/sweeps/*.test.mjs 2>&1 | grep -m1 '^ℹ tests '
-     # STOP if that printed nothing, or `ℹ tests 0`: the count could not be read, or nothing ran.
-     # Do NOT publish a number — find out why first.
+       scripts/test/functional/*.test.mjs scripts/test/sweeps/*.test.mjs >"$log" 2>&1
+     code=$?
+     echo "full run saved to: $log (runner exit $code)"
+     n() { grep -m1 -E "^ℹ $1 " "$log" | awk '{print $3}'; }
+     tests=$(n tests); fail=$(n fail); cancelled=$(n cancelled)
+     if [ "$code" -eq 0 ] && [ "${fail:-x}" = 0 ] && [ "${cancelled:-x}" = 0 ] && [ "${tests:-0}" -gt 0 ]; then
+       echo "PUBLISH: tests $tests"
+     else
+       echo "STOP -- publish nothing: exit=$code tests=${tests:-?} fail=${fail:-?} cancelled=${cancelled:-?} -- read $log"
+     fi
+     # The inverse: the logs accumulate (a few hundred KB per run). Once the release is out and
+     # nothing in them is still owed a diagnosis: rm -rf "$(git rev-parse --git-common-dir)/pm-real-numbers"
      wc -l scripts/conductor.mjs scripts/lib/*.mjs | tail -1         # engine LOC — the dispatcher is ~360
      # lines since the module split; the site's row counts the dispatcher plus scripts/lib (0.43.0).
      # external dependencies is always 0 — enforced by the zero-dependency hard constraint
      ```
+     **On STOP, publish no number from that run — not even the `tests` count, which a failing run
+     still prints.** A failed run is recorded BEFORE it is re-run: find the failing or cancelled test
+     in the saved log (`grep -nE '^✖|not ok' "$log"`), comment it on #219 (or open an issue naming it,
+     with the log's path and the runner exit), and only then re-run. Re-running until green and
+     publishing the green run as if the red one never happened is the "retried silently" #219
+     describes — the flake stays unidentified, and the table's "mechanically derived" claim is
+     quietly false for the run that failed.
+
      If a metric can't be recomputed this way (e.g. a historical count with no durable log to
      re-derive it from), don't estimate or carry it forward unverified — drop the row. A number
      that fails the "pulled from git log" claim the section itself makes doesn't belong in it,
