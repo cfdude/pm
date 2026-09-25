@@ -327,13 +327,16 @@ Commit mechanics, which bind every section below:
         defaults;
       - `assert/conductor-35.test.mjs:117-126`'s no-network walk covers the new module, which it
         does by construction because it reads every `scripts/lib/*.mjs`.
-- [ ] 3.3 REGRESSION GUARD — the no-network walk. `conductor-35`'s forbidden set is `fetch(`,
+- [x] 3.3 REGRESSION GUARD — the no-network walk. `conductor-35`'s forbidden set is `fetch(`,
       `node:http(s)` and `require('http(s)')`. It does not name `node:net`, `node:tls` or
       `node:dgram`. Decide, and record here, whether to widen it in this change. Recommended: widen
       it, because this change adds a module whose subject is an external schedule, which is exactly
       the temptation the law guards against. Mutation: add
       `import net from "node:net"` to a scratch copy of `runtime-support.mjs` → refused. Save
       `mutation-3.3.txt`.
+      **Decided (apply, 2026-09-24): WIDENED** — `node:net`, `node:tls`, `node:dgram` and
+      `node:http2` (the old `node:https?\b` did not catch `http2`), plus their `require(…)` forms.
+      Nothing is deferred from this item.
 
 ## 4. CI: the schedule matrix, the aggregate check, one reporter, current actions (design D2, D4, D7)
 

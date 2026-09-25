@@ -120,7 +120,12 @@ test("the engine still opens no network connection — the pointer is an INSTRUC
     .filter(f => f.endsWith(".mjs"))
     .map(f => fs.readFileSync(path.join(REPO, "scripts", "lib", f), "utf8")).join("\n")
     + fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
-  for (const forbidden of [/\bfetch\s*\(/, /node:https?\b/, /require\(['"]https?['"]\)/]) {
+  // WIDENED IN 0.49.0 (task 3.3): the set named only `fetch(` and the HTTP modules, and a raw socket
+  // (`node:net`), a TLS socket (`node:tls`), a datagram (`node:dgram`) or HTTP/2 (`node:http2`) opens
+  // a connection just as surely. It was widened in the change that added `runtime-support.mjs`, a
+  // module whose subject is an external schedule — exactly the temptation this law guards against.
+  const NET = "https?|http2|net|tls|dgram";
+  for (const forbidden of [/\bfetch\s*\(/, new RegExp(`node:(?:${NET})\\b`), new RegExp(`require\\(['"](?:node:)?(?:${NET})['"]\\)`)]) {
     assert.ok(!forbidden.test(engineSrc),
       `the engine must never open a connection (matched ${forbidden}) — pm is an instruction layer`);
   }
