@@ -7,7 +7,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { escapeControls } from "./constants.mjs";
+import { escapeControls, orNoRemedy, printedId, timestampValueError } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv } from "./invocation.mjs";
 
@@ -47,6 +47,7 @@ export function recordTrackerRefresh() {
       "conductor: record-tracker-refresh requires --external-updated-at <iso> — the item's OWN " +
       "updated timestamp, so a verdict can never be recorded without advancing the watermark\n");
   }
+  if (timestampValueError(watermark)) die(`conductor: ${escapeControls(timestampValueError(watermark))}\n`);
 
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
@@ -56,6 +57,20 @@ export function recordTrackerRefresh() {
       `conductor: epic '${escapeControls(id)}' has no external id — there is no linked item to have refreshed. ` +
       "An epic with no external origin re-reads its LOCAL source (its plan document, or its " +
       "OpenSpec proposal and tasks); that is instruction, and nothing about it is recorded here\n");
+  }
+  // A tracker's updated time only moves FORWARD, so a watermark older than the recorded one is a
+  // mis-copied value — and accepting it would re-flag an item as unread that was read. Compared as
+  // instants, not strings, because `…Z` and `…+0000` spell one instant two ways. A recorded value
+  // that is not a timestamp (a pre-validation record) is not compared: there is no instant to be
+  // behind, and this is the verb that replaces it. `update-epic --external-updated-at` stays the
+  // correction path when the RECORDED watermark is the wrong one.
+  const prev = epic.externalUpdatedAt;
+  const iso = (s) => (/[+-]\d{4}$/.test(s) ? s.replace(/([+-]\d{2})(\d{2})$/, "$1:$2") : s);
+  if (typeof prev === "string" && timestampValueError(prev) === null && Date.parse(iso(watermark)) < Date.parse(iso(prev))) {
+    die(`conductor: --external-updated-at ${escapeControls(watermark)} is OLDER than the watermark already recorded for ` +
+      `'${escapeControls(id)}' (${escapeControls(prev)}) — a tracker's updated time only moves forward. Re-read the item and ` +
+      "pass the timestamp it reports now; if the recorded one is wrong, correct it with " +
+      orNoRemedy(() => `\`update-epic ${printedId(id)} --external-updated-at <iso>\``) + "\n");
   }
 
   epic.trackerRefresh = {

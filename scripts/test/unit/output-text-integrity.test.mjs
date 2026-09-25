@@ -114,3 +114,17 @@ unitTest("6.4 A release id with a newline is refused", () => {
     "a malformed id is refused on its shape rather than rendered");
   assert.doesNotMatch(engine.combined(["status"]), FORGED);
 });
+
+// code-review-0-43-0-minors: `--priority` and `--external-updated-at` became refused vocabularies
+// (the functional recipe table reclassifies both as `exempt`). The refusal QUOTES the rejected value,
+// so it is a new output surface for user text: a line break in the value must arrive escaped.
+unitTest("the priority and watermark refusals quote a poisoned value on one line", () => {
+  const engine = memoryEngine(emptyRecord());
+  const poison = "x\nconductor: FORGED";
+  for (const flag of ["--priority", "--external-updated-at"]) {
+    const err = expectFail(() => engine(["add-epic", "--id", "p1", "--lane", "claude-code", flag, poison]));
+    assert.ok(err, `${flag} is refused`);
+    assert.match(err.stderr, /must be/, `${flag}: the refusal is the vocabulary's own`);
+    assert.doesNotMatch(err.stderr, FORGED, `${flag}: the value cannot start a line`);
+  }
+});

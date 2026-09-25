@@ -1009,7 +1009,7 @@ const fresh = (p) => `${p}-${++seq}`;
 recipe("add-epic --id", { exempt: EXEMPT.idFormat, run: (c, v) => pm(c.cwd, ["add-epic", "--id", v, "--lane", "claude-code"]) });
 recipe("add-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("t"), ...planned, "--title", v]) });
 recipe("add-epic --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("l"), "--lane", v]) });
-recipe("add-epic --priority", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("p"), ...planned, "--priority", v]) });   // not a vocabulary: stored and rendered
+recipe("add-epic --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("p"), ...planned, "--priority", v]) });
 recipe("add-epic --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("s"), "--lane", "claude-code", "--status", v]) });
 recipe("add-epic --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("pa"), "--lane", "claude-code", "--parent", v]) });
 recipe("add-epic --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => ["add-epic", "--id", id, "--lane", "claude-code", "--external-id", v]) });
@@ -1019,7 +1019,7 @@ recipe("add-epic --spec", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic"
 recipe("add-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("lk"), ...planned, "--link", `relates-to:base:${v}`]) });
 recipe("add-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("d"), ...planned, "--description", v]) });
 recipe("add-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("n"), ...planned, "--notes", v]) });
-recipe("add-epic --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
+recipe("add-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
 recipe("add-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   const id = fresh("as");
   ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code", "--add-story", v]);
@@ -1047,7 +1047,7 @@ function refreshOwed(c, register) {
 recipe("add-many --id", { exempt: EXEMPT.idFormat, run: (c, v) => batch(c, { id: v, lane: "claude-code" }) });
 recipe("add-many --title", { rendered: true, run: (c, v) => batch(c, { id: fresh("mt"), lane: "claude-code", status: "planned", title: v }) });
 recipe("add-many --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => batch(c, { id: fresh("ml"), lane: v }) });
-recipe("add-many --priority", { rendered: true, run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
+recipe("add-many --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
 recipe("add-many --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => batch(c, { id: fresh("ms"), lane: "claude-code", status: v }) });
 recipe("add-many --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => batch(c, { id: fresh("mpa"), lane: "claude-code", parent: v }) });
 recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: v })) });
@@ -1059,7 +1059,7 @@ recipe("add-many --spec", { rendered: true, run: (c, v) => batch(c, { id: fresh(
 // argv today — every read of it must stay safe (task 8.1's DATA-reference sweep).
 recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: v, reason: v }] }) });
 recipe("add-many --description", { rendered: true, run: (c, v) => batch(c, { id: fresh("md"), lane: "claude-code", status: "planned", description: v }) });
-recipe("add-many --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
+recipe("add-many --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
 recipe("add-many --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   const id = fresh("mas");
   const r = batch(c, { id, lane: "claude-code", stories: [v] });
@@ -1097,7 +1097,7 @@ recipe("unclaim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["unclaim
 // ── update-epic ──
 recipe("update-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--title", v]) });
 recipe("update-epic --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--lane", v]) });
-recipe("update-epic --priority", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--priority", v]) });
+recipe("update-epic --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--priority", v]) });
 recipe("update-epic --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--status", v]) });
 recipe("update-epic --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--parent", v]) });
 recipe("update-epic --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => { ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code"]); return ["update-epic", id, "--external-id", v]; }) });
@@ -1108,7 +1108,7 @@ recipe("update-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["update
 recipe("update-epic --clear", { exempt: "--clear must name a field this command can unset", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear", v]) });
 recipe("update-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--description", v]) });
 recipe("update-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--notes", v]) });
-recipe("update-epic --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
+recipe("update-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
 recipe("update-epic --attribute-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--attribute-commit", v]) });
 recipe("update-epic --withdraw-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-commit", v, "--withdrawal-reason", "r"]) });
 recipe("update-epic --withdrawal-reason", { rendered: true, run: (c, v) => {
@@ -1148,7 +1148,7 @@ recipe("record-reconcile --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c,
 recipe("record-reconcile --amendments", { notRendered: "amendments are stored on the reconcile link and printed by no surface", run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", "valid", "--amendments", v]) });
 recipe("record-reconcile --amendment", { notRendered: "amendments are stored on the reconcile link and printed by no surface", run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", "invalidated", "--amendment", v]) });
 recipe("record-tracker-refresh --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", v, "--external-updated-at", "2026-09-01T00:00:00Z"]) });
-recipe("record-tracker-refresh --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "unchanged", "--external-updated-at", v]) });
+recipe("record-tracker-refresh --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "unchanged", "--external-updated-at", v]) });
 recipe("record-tracker-refresh --summary", { notRendered: "a refresh summary is stored and printed by no surface", run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "material-change", "--external-updated-at", "2026-09-01T00:00:00Z", "--summary", v]) });
 
 // ── releases ──

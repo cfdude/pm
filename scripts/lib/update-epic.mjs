@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
+  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -401,6 +401,13 @@ export function updateEpic() {
   const status = str(f.status);
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     die(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`);
+  }
+  // The same vocabulary and timestamp checks add-epic and add-many make, from the same helpers.
+  if (str(f.priority) !== undefined && priorityValueError(str(f.priority))) {
+    die(`conductor: ${escapeControls(priorityValueError(str(f.priority)))}\n`);
+  }
+  if (str(f["external-updated-at"]) !== undefined && timestampValueError(str(f["external-updated-at"]))) {
+    die(`conductor: ${escapeControls(timestampValueError(str(f["external-updated-at"])))}\n`);
   }
   // --lane: re-route an epic in place. Validated against the SAME KNOWN_LANES creation validates
   // against, so a lane addEpic() would refuse cannot arrive through this door instead. Tested on
