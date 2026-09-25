@@ -178,6 +178,28 @@ are the two TRIGGERED buckets. They do not run per commit: CI runs them, and
 `node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when you ran
 one locally. A drift-script refusal names the command to run.
 
+### Temp directories — every fixture directory is removed, and a per-commit test holds it
+
+`tmpRepo()`, `fixtureCache()`, `fixturePluginRoot()`, `addHierarchyWorktree()` and the git-gateway
+fixture already schedule what they make, so a test that uses them owes nothing. **A test or fixture
+that calls `mkdtempSync` itself must do one of two things:**
+
+- **wrap it** — `removeAtExit(fs.mkdtempSync(…))`, from `scripts/test/fixtures/temp-dir.mjs`, which
+  removes the directory when the process exits. This is the default, and the only shape the scan
+  accepts as scheduled.
+- **or enrol it in `KNOWN`** in `scripts/test/assert/temp-dir-cleanup.test.mjs`, when the directory
+  is removed some other way (a `finally`, an `after()` hook, an exit listener). The entry names its
+  `cleanup` — the text of the removing call — and a `within` line count, and the test checks that the
+  cleanup appears in code within that many lines after the site. It is NOT trusted by hand: deleting
+  the cleanup fails the test. What it proves is presence near the site, not that the cleanup runs on
+  every path — the functional twin, which counts what is actually left on disk, covers that.
+
+The scan counts any code mention of the `mkdtemp` / `mkdtempSync` name — a call, an alias, a
+destructure, `fs.promises.mkdtemp(` — so an alias must be enrolled too; comments and names inside
+string or regex literals are not sites. Its stated limit: a name built at run time, or a directory a
+spawned process makes, is not seen. Before this rule (measured 2026-09-25) one assertion-half run left
+436 directories in the OS temp dir and one functional-half run left 1,517.
+
 ## Developing pm with pm (required one-time setup)
 
 **This repository is managed by the plugin it ships.** That is deliberate — pm dogfoods itself —
