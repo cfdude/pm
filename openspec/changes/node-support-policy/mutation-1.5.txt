@@ -1,0 +1,36 @@
+# mutation-1.5 — scratch copy (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree); node v26.9.0. Refused (exit=1): the stale flag survives the hook run.
+
+=== 1.5 mutation: the 'rm -f .../pm-isolation-flag' line removed from a scratch copy of the hook -> functional 1.5 ===
+116d115
+< rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
+✖ 1.5 the retired probe's pm-isolation-flag is removed from a clone that still holds one (399.76425ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 526.209875
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:542:1
+✖ 1.5 the retired probe's pm-isolation-flag is removed from a clone that still holds one (399.76425ms)
+  AssertionError [ERR_ASSERTION]: the hook left the retired probe's cache file behind at /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5hFGKn/.git/pm-isolation-flag
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree/scripts/test/functional/conductor-09.test.mjs:559:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1

@@ -29,9 +29,11 @@ cd "$(git rev-parse --show-toplevel)"
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
-# The suite this hook runs is the ASSERTION HALF -- TWO RUNG GLOBS in ONE invocation, scripts/test/
-# unit/*.test.mjs and scripts/test/assert/*.test.mjs, run in ONE process (--test-isolation=none)
-# because that is the half's whole design (0.47.0, D5; the unit rung joins it in 0.48.0, D2/D3).
+# The suite this hook runs is the ASSERTION HALF -- TWO RUNG GLOBS in ONE runner invocation,
+# scripts/test/unit/*.test.mjs and scripts/test/assert/*.test.mjs, under the runner's DEFAULT
+# process-per-file isolation (0.49.0, design D3: about half the wall clock of the single-process mode
+# 0.47.0 forced, on Node 22, 24 and 26). No TEST spawns a process or runs git; only the runner starts
+# one process per file.
 # Three notes on the shape, each of them a trap someone has already paid for:
 #   * `node --test scripts/test` does NOT work -- on Node 26 a directory argument is treated as
 #     a module to execute, so it dies with MODULE_NOT_FOUND and reports "1 test". It exits
@@ -45,9 +47,9 @@ trap 'rm -f "$tmpfile"' EXIT
 #     run here, by design: they are triggered, and this hook runs on every commit. The drift script
 #     below is what keeps the two halves aligned when only one of them ran -- it checks the record
 #     and the pairing, and it starts no runner of its own.
-# CONCURRENCY. Several agents working in separate worktrees of this repo each fire this hook,
-# and each run is a ~75s 604-test suite with --test-isolation=process. Overlapping them is the
-# exact machine load under which a previous two-agent run wedged the machine. Worktrees share
+# CONCURRENCY. Several agents working in separate worktrees of this repo each fire this hook, and
+# each run starts up to CPUs-1 test-file processes. Overlapping them is the exact machine load under
+# which a previous two-agent run wedged the machine. Worktrees share
 # one common git dir, so a lock there is a lock across all of them.
 #
 # mkdir is the atomic primitive: it succeeds for exactly one caller and fails for the rest, with
@@ -105,68 +107,29 @@ if ! node scripts/test/drift.mjs --root "$PWD"; then
   exit 1
 fi
 
-# --test-isolation does not exist on Node 18 (verified: "bad option"), and the runner MUST NOT
-# fail there for want of the flag -- single-process is an optimization, not the contract. Probe it
-# ONCE per clone and cache the answer beside the suite lock (a probe is a second `node --test`,
-# which the one-runner guard below counts, and 0.3 s of every commit is still a tax); on a Node
-# without the flag, fall back to plain node --test (process-per-file isolation), which runs the
-# same tests correctly and merely pays the spawn cost again. The floor below parses both
-# reporters, so the count is version-independent either way. The cache is keyed by re-probing
-# whenever the cached answer stops matching the binary -- cheap, because a wrong cached answer
-# self-corrects on the next commit either way.
-ISOFLAGFILE="$(git rev-parse --git-common-dir)/pm-isolation-flag"
-if [ ! -f "$ISOFLAGFILE" ]; then
-  # THE PROBE EXERCISES THE SHAPE THE RUNNER IS ACTUALLY GIVEN (0.48.0 task 2.4): TWO GLOBS, one
-  # file from each rung, in ONE invocation. Probing with a single file would answer "does this Node
-  # know the flag" while leaving "does this Node still run EVERY file when handed two patterns"
-  # untested — and that second question is the one the fallback has to answer, because on a Node
-  # without the flag the runner falls back to process-per-file isolation and must still reach both
-  # rungs. Two named files rather than the two globs, deliberately: the probe is paid once per clone
-  # and a glob here would boot the whole half to answer a yes/no.
-  if node --test --test-isolation=none scripts/test/unit/state-verb.test.mjs scripts/test/assert/lessons-index.test.mjs >/dev/null 2>&1; then
-    printf -- '--test-isolation=none' > "$ISOFLAGFILE"
-  else
-    : > "$ISOFLAGFILE"
-  fi
-fi
-ISOFLAG=$(cat "$ISOFLAGFILE")
+# THE RETIRED ISOLATION PROBE LEFT A FILE BEHIND, and this line is its inverse (0.49.0, design D3).
+# Until 0.49.0 the hook probed once per clone for the runner's single-process flag and cached the answer in
+# `pm-isolation-flag` beside the suite lock. The probe and the flag are gone; a clone that ran an
+# older hook still holds the file, and an untracked file whose only writer is gone reads as a live
+# mechanism to the next person who finds it. `rm -f` is idempotent. Sunset: removed in 0.50.0, by
+# which time every contributor clone has run this hook at least once.
+rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 
-# ─────────── THE RUNNER'S FILE SET IS RESOLVED HERE, BEFORE IT IS HANDED OVER (0.49.0) ───────────
-# THE REASON IS A VERSION DIVERGENCE THAT REACHED A RELEASE (found on CI, PR #217, and reproduced
-# against v18.20.8). `/bin/sh` leaves a pattern that matches NOTHING as a LITERAL -- POSIX sh has no
-# nullglob, and this script is `sh` (dash on the CI runner, bash-as-sh here) -- and the two Node
-# majors then disagree about that literal:
-#   * v18.20.8 REFUSES it: `Could not find '…/scripts/test/unit/*.test.mjs'`, exit 1, so the commit
-#     fails and the message printed below says "tests FAILED", blaming the SUITE for a pattern that
-#     never resolved.
-#   * v26.9.0 ignores a pattern it cannot resolve and runs whatever did match.
-# Same tree, same commit, opposite verdicts from the gate every commit passes through -- and CI runs
-# Node 18, so the version the divergence is invisible on is the developer's. `[ -f ]` on the literal
-# is false, so an unresolved pattern drops out and BOTH versions hand the runner the same file set.
-# The order is kept -- unit first, then assert -- because the floor below enumerates them in that
-# order through `git ls-files`.
+# ─────────── THE RUNNER'S COMMAND LINE CARRIES THE TWO RUNG GLOBS (0.49.0, design D5) ───────────
+# 0.48.x resolved the globs here with a `[ -f ]` loop, because `/bin/sh` leaves a pattern that matches
+# NOTHING as a literal and Node 18 REFUSED such a literal (`Could not find …`, exit 1) where Node 26
+# ignored it. That loop is HISTORY: every supported Node (22, 24, 26 -- measured on the real
+# binaries) runs an unmatched literal pattern as zero files, so one rung matching nothing no longer
+# stops the other, and the shell's expansion of a pattern that does match is handed over unchanged.
 #
-# THE GLOBS STAY THE SHELL'S, and that is not incidental: deriving this list from `git ls-files`
-# would make it the SAME expression the floor's `declared` is derived from, which is precisely the
+# THE GLOBS STAY PATTERNS ON THE COMMAND LINE, never a list derived from `git ls-files`: that would make the
+# runner's set the SAME expression the floor's `declared` is derived from, which is precisely the
 # blindness the floor was re-pointed in 0.47.0 to remove. A file that is in the index but unreachable
-# by the shell's expansion of the pattern (the dotfile G-I1's fixture builds) must still be DECLARED
-# and NOT RUN.
+# by the pattern (the dotfile G-I1's fixture builds) must still be DECLARED and NOT RUN.
 #
-# AN EMPTY LIST MUST ABORT rather than reach the runner, and this is a safety requirement, not
-# tidiness: `node --test` with no positional argument falls back to DEFAULT DISCOVERY, which walks
-# the tree. Measured against v18.20.8: a bare `node --test` in a tree holding only
-# scripts/test/functional/marker.test.mjs RAN that file. That is a triggered half, run on every
-# commit, which is the cost the split exists to remove.
-RUNG_FILES=""
-for f in scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs; do
-  if [ -f "$f" ]; then RUNG_FILES="$RUNG_FILES $f"; fi
-done
-if [ -z "$RUNG_FILES" ]; then
-  echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
-  echo "pre-commit: (scripts/test/unit/ and scripts/test/assert/ both matched nothing) -- refusing" >&2
-  echo "pre-commit: to hand the runner no path at all, which would run its default discovery instead." >&2
-  exit 1
-fi
+# AND THE RUNNER IS NEVER WITHOUT A PATH, because the two patterns are always on its command line:
+# `node --test` with no positional argument falls back to DEFAULT DISCOVERY, which walks the tree and
+# would reach the triggered halves. Both rungs empty is refused on the COUNT below (check 3).
 
 # ONE REPORTER, NO COLOUR, ONE PARSE (0.49.0, design D4). The runner's DEFAULT reporter differs by
 # Node major -- TAP (`# tests N`) on 22, spec (`ℹ tests N`) on 24 and 26 -- and the spec reporter
@@ -174,8 +137,7 @@ fi
 # a `^ℹ tests ` anchor matches nothing. `NO_COLOR=1` does not rescue it (FORCE_COLOR wins). So the
 # reporter is FORCED and colour is switched OFF, which makes the summary the same bytes on every
 # supported major under any colour setting, and the parse below reads that one format and no other.
-# shellcheck disable=SC2086  # ISOFLAG is deliberately empty or one flag; RUNG_FILES is a file list
-if FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES >"$tmpfile" 2>&1; then
+if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
   total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')
   passed=$(grep -m1 -E '^ℹ pass ' "$tmpfile" | awk '{print $3}')
 
@@ -237,7 +199,8 @@ if FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES >"$tmpfil
   fi
 
   # CHECK 3 -- NOTHING DECLARED, SO NOTHING RAN. Only when the index itself declares no test is the
-  # refusal "neither rung holds a test file".
+  # refusal "neither rung holds a test file". With both patterns unmatched the runner ran zero files
+  # (it was given paths, so it did NOT fall back to default discovery), and zero is never a pass.
   if [ "$declared" -eq 0 ]; then
     echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
     echo "pre-commit: (scripts/test/unit/ and scripts/test/assert/ both declare no test) -- a run of" >&2

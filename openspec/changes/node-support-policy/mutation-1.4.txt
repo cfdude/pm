@@ -1,0 +1,160 @@
+# mutation-1.4 — each mutation applied to a SCRATCH COPY (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree), never this checkout; the hook restored after each. node v26.9.0.
+# Every mutation is refused (exit=1).
+
+=== (i) --test-isolation=none re-added to the runner line -> assert/conductor-09 ===
+140c140
+< if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+---
+> if FORCE_COLOR=0 node --test --test-reporter=spec --test-isolation=none scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+✔ every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md (1.680542ms)
+✔ every dispatch-table subcommand is mentioned somewhere in README.md (1.382167ms)
+✔ sync ignores README.md/INDEX.md in the plans directory — they are not plans (66.528208ms)
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.606125ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 209.442666
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-09.test.mjs:94:1
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.606125ms)
+  AssertionError [ERR_ASSERTION]: the hook must run exactly ONE test runner over the assertion half's rungs, and it runs 0
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree/scripts/test/assert/conductor-09.test.mjs:125:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (ii) scripts/test/functional/*.test.mjs added to the runner line -> assert/conductor-09 ===
+140c140
+< if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+---
+> if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs scripts/test/functional/*.test.mjs >"$tmpfile" 2>&1; then
+✔ every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md (1.183ms)
+✔ every dispatch-table subcommand is mentioned somewhere in README.md (0.960625ms)
+✔ sync ignores README.md/INDEX.md in the plans directory — they are not plans (54.907292ms)
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.586542ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 175.427042
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-09.test.mjs:94:1
+✖ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.586542ms)
+  AssertionError [ERR_ASSERTION]: the hook must run exactly ONE test runner over the assertion half's rungs, and it runs 0
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree/scripts/test/assert/conductor-09.test.mjs:125:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (iii) the zero-count abort (check 3) removed -> 1.3's fixture (functional/conductor-09) ===
+204,210d203
+<   if [ "$declared" -eq 0 ]; then
+<     echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
+<     echo "pre-commit: (scripts/test/unit/ and scripts/test/assert/ both declare no test) -- a run of" >&2
+<     echo "pre-commit: zero tests is a refusal, never a pass." >&2
+<     exit 1
+<   fi
+< 
+✖ 1.3 both rungs empty is REFUSED naming both rungs, and default discovery is never reached (312.565416ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 427.762333
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:489:1
+✖ 1.3 both rungs empty is REFUSED naming both rungs, and default discovery is never reached (312.565416ms)
+  AssertionError [ERR_ASSERTION]: two empty rungs must refuse the commit: drift: ok — 1 tracked test files, 0 functional ids, 3 staged paths
+  pre-commit: 0/0 passing
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree/scripts/test/functional/conductor-09.test.mjs:510:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+exit=1
+=== (iv) an empty-rung refusal keyed on total=0 placed BEFORE the floor (the first draft's order) -> 1.4's collapsed-run fixture ===
+190a191,194
+>   if [ "$total" -eq 0 ]; then
+>     echo "pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file" >&2
+>     exit 1
+>   fi
+✖ 1.4 a COLLAPSED run — the index declares tests, the runner reports 0 — is a shortfall, not an empty rung (327.684458ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 442.917791
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:519:1
+✖ 1.4 a COLLAPSED run — the index declares tests, the runner reports 0 — is a shortfall, not an empty rung (327.684458ms)
+  AssertionError [ERR_ASSERTION]: a collapsed run must be the shortfall naming both counts. Output was: drift: ok — 1 tracked test files, 0 functional ids, 2 staged paths
+  pre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/m14/tree/scripts/test/functional/conductor-09.test.mjs:536:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'drift: ok — 1 tracked test files, 0 functional ids, 2 staged paths\npre-commit: ABORT -- neither rung of the assertion half holds a *.test.mjs file\n',
+    expected: /pre-commit: ABORT -- the assertion half ran 0 tests but 1 are declared in/,
+    operator: 'match',
+    diff: 'simple'
+  }
+exit=1

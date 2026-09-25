@@ -162,7 +162,7 @@ Commit mechanics, which bind every section below:
       - **Lands in the 1.1 + 1.2 commit** (it passes today, so it has no RED of its own): a
         separate commit would stage `functional/conductor-09` with no `assert/conductor-09` edit,
         which the drift script's coupling check refuses.
-- [ ] 1.4 GREEN — delete the single-process machinery and the Node-18 loop (design D3, D5).
+- [x] 1.4 GREEN — delete the single-process machinery and the Node-18 loop (design D3, D5).
       - Delete the probe block (`pre-commit:108-131`), `ISOFLAGFILE` (`:117`) and `ISOFLAG` (`:132`).
       - Add `rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"`, the inverse of the probe's
         write.
@@ -196,7 +196,7 @@ Commit mechanics, which bind every section below:
       - (iv) the checks re-ordered so the empty-rung message precedes the floor → a fixture whose
         index declares tests but whose runner reports 0 shows the empty-rung message, and the test
         asserting the shortfall message fails.
-- [ ] 1.5 REGRESSION GUARD — `functional/conductor-09.test.mjs`: a fixture whose git dir holds a
+- [x] 1.5 REGRESSION GUARD — `functional/conductor-09.test.mjs`: a fixture whose git dir holds a
       stale `pm-isolation-flag` has none after one hook run. This proves the inverse shipped.
       Mutation: the `rm -f` line removed from a copy → red. Save to `mutation-1.5.txt`.
       **Lands in the 1.4 commit**, whose `assert/conductor-09` re-points are the twin edit the
@@ -268,7 +268,7 @@ Commit mechanics, which bind every section below:
       Verify: `rg -n -i 'isolation=none|single process|one process|shared process' scripts/lib scripts/test`
       returns only lines about an in-process caller serving several invocations. Each surviving line
       is listed with that reason in `verify-2.5.txt`.
-- [ ] 2.6 One-time cleanup of the directories already leaked on this machine: at the fix round,
+- [x] 2.6 One-time cleanup of the directories already leaked on this machine: at the fix round,
       4,041 `pm-assert-no-git-*` and 6,877 `pm-empty-cache-*` under `os.tmpdir()`. After 2.4 and
       2.4b land, remove them with
       `rm -rf "$(node -p 'require("os").tmpdir()')"/pm-assert-no-git-* "$(node -p 'require("os").tmpdir()')"/pm-empty-cache-*`,

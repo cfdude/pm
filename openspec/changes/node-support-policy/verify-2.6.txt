@@ -1,0 +1,6 @@
+# verify-2.6 — one-time cleanup of the already-leaked directories, 2026-09-24, after 2.4 (93e25e2) and 2.4b (cb946eb) landed
+# os.tmpdir() = /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T; suite lock .git/pm-suite.lock absent (free); no 'node --test' process running (pgrep)
+# command: rm -rf "$(node -p 'require("os").tmpdir()')"/pm-assert-no-git-* "$(node -p 'require("os").tmpdir()')"/pm-empty-cache-*
+pm-assert-no-git-*: before=4705 after=0
+pm-empty-cache-*:   before=7804 after=0
+# A machine action; it commits nothing. This file lands in the next commit of the landing order (1.4 + 1.5).
