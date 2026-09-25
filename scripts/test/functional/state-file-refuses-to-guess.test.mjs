@@ -304,11 +304,16 @@ function spawnAll(cwd, argvs) {
       cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
     });
     let stderr = "";
-    let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, CHILD_BOUND_MS);
+    // THE TIMER RESOLVES ITSELF (Gate 2 M8): `close` waits for every stdio pipe to close, and a
+    // grandchild that inherited one keeps it open after the child is killed — so a bound that only
+    // killed and then waited for `close` could still hang. Whichever comes first settles the promise.
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      resolve({ args, status: null, stderr, timedOut: true });
+    }, CHILD_BOUND_MS);
     child.stderr.on("data", (d) => { stderr += d; });
     child.stdout.on("data", () => {});
-    child.on("close", (status) => { clearTimeout(timer); resolve({ args, status, stderr, timedOut }); });
+    child.on("close", (status) => { clearTimeout(timer); resolve({ args, status, stderr, timedOut: false }); });
   })));
 }
 

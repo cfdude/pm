@@ -286,6 +286,20 @@ test("5.1 #220: every asynchronous wait on a child's close or exit is bounded by
     "the invocation and the bound — the shape functional/verb-surface.test.mjs's 30 s wait uses.");
 });
 
+test("M8 spawnAll's bound RESOLVES from its own timer — a grandchild holding a pipe cannot outlast it", () => {
+  // Gate 2 M8. `close` fires only when every stdio pipe has closed, and a grandchild that inherited one
+  // holds it open after the child is SIGKILLed — so a timer that only kills, and leaves the promise to
+  // `close`, is still unbounded. The twin's spawnAll timer must settle the promise itself.
+  const src = blankComments(fs.readFileSync(path.join(TEST_ROOT, "functional", "state-file-refuses-to-guess.test.mjs"), "utf8"));
+  const at = src.indexOf("function spawnAll(");
+  assert.ok(at >= 0, "functional/state-file-refuses-to-guess.test.mjs no longer defines spawnAll");
+  const body = src.slice(at, functionSpans(src).find(([s]) => s > at)[1]);
+  const timer = /setTimeout\(\s*\(\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*CHILD_BOUND_MS\s*\)/.exec(body);
+  assert.ok(timer, "spawnAll arms no CHILD_BOUND_MS timer");
+  assert.match(timer[1], /\.kill\(/, "the timer must kill the child");
+  assert.match(timer[1], /resolve\(\{[^}]*timedOut:\s*true/, "the timer must RESOLVE { timedOut: true } itself, not wait for close");
+});
+
 test("5.1 the unbounded-wait scan DISCRIMINATES — each form is refused unbounded and accepted bounded", () => {
   const ev = "cl" + "ose";
   const unbounded = [
