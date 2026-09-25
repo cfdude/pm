@@ -33,5 +33,7 @@ trusting `PROJECT.md` again. Never "fix" a finding by hand-editing the file back
 ## What it cannot see
 
 A hand-edit followed by an engine save before `verify-state` runs: the save advances the revision
-over the edit, and from then on the file reads as the engine's own. Run it right after anything
-that might have touched the file outside the engine — a merge, a rebase, a restore.
+over the edit, and from then on the file reads as the engine's own. Nor a merge, rebase or checkout
+that brings in a `state.json` at a HIGHER revision: that reads as engine saves (exit 0, "may be
+stale"). What it does catch after one is a file rewound to a lower revision, or changed at the same
+one — so run it right after anything that touched the file outside the engine.

@@ -76,3 +76,23 @@ test("verify-worktrees parses a NUL-terminated listing: a line feed inside a pat
   assert.deepEqual(out.orphaned.map(o => o.path), [wt], "the whole path, line feed included");
   assert.deepEqual(out.orphaned[0].reasons, ["epic-archived"]);
 });
+
+// `-z` needs git 2.36+. An older git refuses the switch (status 129), and that failure used to print
+// the same `{orphaned: []}` as a clean repository — a check that could not run, reading as a pass.
+// Only "not a repository" (128) is an honest empty answer.
+test("verify-worktrees REFUSES when git cannot list worktrees for any reason but 'not a repository'", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const failing = (status, stderr) => ({
+    ...fakeGit({ noRepository: true }),
+    worktreeList: () => { const e = new Error(stderr); e.status = status; e.stderr = stderr; throw e; },
+  });
+  const old = invokeEngine(["verify-worktrees"], { cwd, git: failing(129, "error: unknown switch `z'") });
+  assert.notEqual(old.status, 0, "an old git is refused, not reported clean");
+  assert.equal(old.stdout, "", "and no JSON verdict is printed");
+  assert.match(old.stderr, /needs git 2\.36 or later/);
+  assert.match(old.stderr, /unknown switch/, "the message git printed is carried");
+  const none = invokeEngine(["verify-worktrees"], { cwd, git: failing(128, "fatal: not a git repository") });
+  assert.equal(none.status, 0);
+  assert.deepEqual(JSON.parse(none.stdout).orphaned, [], "outside a repository, empty is the true answer");
+});

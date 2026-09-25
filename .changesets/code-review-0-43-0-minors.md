@@ -26,3 +26,6 @@
 * **`verify-worktrees` reports the whole path of a worktree whose name holds a line feed.** It read
   `git worktree list` line by line, so such a path arrived truncated at the break — a directory that
   does not exist. It now reads the NUL-terminated listing (`--porcelain -z`, git 2.36 or later).
+  Where git cannot list worktrees for any reason but "not a repository" — an older git among them
+  — it now refuses with git's own message instead of printing the empty list a clean repository
+  prints.

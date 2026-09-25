@@ -27,7 +27,7 @@ import { errStream, gitOps, outStream } from "./invocation.mjs";
  *  plugin itself (checkable on any fresh install) rather than depending on a user's own
  *  personal discipline/CLAUDE.md. Zero-dependency: shells out to `git worktree list -z
  *  --porcelain` and `git merge-base --is-ancestor` only; gracefully returns no orphans if
- *  listing worktrees fails (e.g. this isn't a git repo at all). */
+ *  this isn't a git repo at all, and REFUSES on any other listing failure (an old git). */
 export function verifyWorktrees() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
@@ -35,9 +35,19 @@ export function verifyWorktrees() {
   let out;
   try {
     out = gitOps().worktreeList();
-  } catch {
-    outStream().write(jsonText({ orphaned: [] }) + "\n");
-    return;
+  } catch (e) {
+    // ONLY "not a repository" (git's status 128) is an honest empty answer: there are no worktrees
+    // to be orphaned. Any other failure — above all a git older than 2.36, which refuses `-z` as an
+    // unknown switch (status 129) — used to print the same `[]`, a check that could not run reading
+    // exactly like a clean one. Refused instead, with git's own words.
+    if (e && e.status === 128) {
+      outStream().write(jsonText({ orphaned: [] }) + "\n");
+      return;
+    }
+    const said = e && e.stderr ? String(e.stderr).trim() : "";
+    die(`conductor: verify-worktrees could not list worktrees (git exited ${escapeControls(String(e && e.status))})` +
+      (said ? `: ${escapeControls(said)}` : "") +
+      " — it reads `git worktree list --porcelain -z`, which needs git 2.36 or later. Nothing was checked.\n");
   }
   const orphaned = [];
   let currentPath = null;
