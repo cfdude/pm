@@ -36,8 +36,9 @@ test("#219 the Real Numbers run is SAVED WHOLE to a dated file in the git common
   assert.doesNotMatch(r, /\|\s*grep -m1 '\^ℹ tests '/,
     "the run is still piped straight into a count: its output is discarded, and a failing run still yields a number");
   assert.match(r,
-    /^\s*log="\$\(git rev-parse --path-format=absolute --git-common-dir\)\/pm-real-numbers\/\$\(date -u \+%Y-%m-%dT%H%M%SZ\)\.txt"$/m,
-    "the log must be an ABSOLUTE, UTC-dated file under the git common dir's pm-real-numbers/");
+    /^\s*log="\$\(git rev-parse --path-format=absolute --git-common-dir\)\/pm-real-numbers\/\$\(date -u \+%Y-%m-%dT%H%M%SZ\)-\$\$\.txt"$/m,
+    "the log must be an ABSOLUTE, UTC-dated file under the git common dir's pm-real-numbers/, and carry the " +
+    "shell's PID — second resolution alone lets two runs in one second write ONE file (branch review)");
   const runner = r.split("\n").filter((l) => /FORCE_COLOR=0 node --test --test-reporter=spec/.test(l));
   assert.equal(runner.length, 1, "exactly one runner invocation");
   const block = r.slice(r.indexOf(runner[0]));
@@ -51,7 +52,7 @@ test("#219 the Real Numbers run is SAVED WHOLE to a dated file in the git common
     "the recipe must NAME the saved file, so a failure is diagnosable after the fact");
 });
 
-test("#219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0", () => {
+test("#219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, tests > 0 and pass = tests", () => {
   const r = recipe();
   const gate = r.split("\n").find((l) => /^\s*if \[ "\$code" -eq 0 \]/.test(l));
   assert.ok(gate, "the recipe has no decision on the runner's exit status");
@@ -59,6 +60,9 @@ test("#219 the recipe publishes NOTHING unless the runner exited 0, fail and can
     ['[ "${fail:-x}" = 0 ]', "a run with a failing test must never publish a count (and an unreadable fail line is not 0)"],
     ['[ "${cancelled:-x}" = 0 ]', "a cancelled test leaves `fail 0` while the run did not pass"],
     ['[ "${tests:-0}" -gt 0 ]', "a run of zero tests is not a count"],
+    // Branch review: `tests 5 / pass 3 / skipped 2` passed every clause above. A skipped or todo test
+    // ran no assertion, so a count that includes one is not a count of tests that passed.
+    ['[ "${pass:-x}" = "$tests" ]', "every counted test must have PASSED — skipped and todo tests are not passes"],
   ]) {
     assert.ok(gate.includes(clause), `the decision is missing ${clause}: ${why}`);
   }

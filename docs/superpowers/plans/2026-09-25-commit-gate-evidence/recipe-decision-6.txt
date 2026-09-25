@@ -1,0 +1,25 @@
+## decision block, extracted verbatim from SKILL.md:
+n() { grep -m1 -E "^ℹ $1 " "$log" | awk '{print $3}'; }
+tests=$(n tests); pass=$(n pass); fail=$(n fail); cancelled=$(n cancelled)
+if [ "$code" -eq 0 ] && [ "${fail:-x}" = 0 ] && [ "${cancelled:-x}" = 0 ] && [ "${tests:-0}" -gt 0 ] && [ "${pass:-x}" = "$tests" ]; then
+  echo "PUBLISH: tests $tests"
+else
+  echo "STOP -- publish nothing: exit=$code tests=${tests:-?} pass=${pass:-?} fail=${fail:-?} cancelled=${cancelled:-?} -- read $log"
+fi
+
+clean.log      exit=0 -> PUBLISH: tests 2476
+skipped2.log   exit=0 -> STOP -- publish nothing: exit=0 tests=5 pass=3 fail=0 cancelled=0 -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/skipped2.log
+fail1.log      exit=1 -> STOP -- publish nothing: exit=1 tests=2476 pass=2475 fail=1 cancelled=0 -- read /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/gh-cfdude-pm-219/fail1.log
+
+## the log-name line, run in two shells in the same second:
+2026-09-25T211406Z-9659.txt
+2026-09-25T211406Z-9666.txt
+
+## mutation: the pass clause removed from a COPY of SKILL.md, then the recipe guard:
+  AssertionError [ERR_ASSERTION]: the decision is missing [ "${pass:-x}" = "$tests" ]: every counted test must have PASSED — skipped and todo tests are not passes
+✔ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (0.693458ms)
+✖ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.423833ms)
+## mutation: the PID removed from the log name:
+  AssertionError [ERR_ASSERTION]: the log must be an ABSOLUTE, UTC-dated file under the git common dir's pm-real-numbers/, and carry the shell's PID — second resolution alone lets two runs in one second write ONE file (branch review)
+✖ #219 the Real Numbers run is SAVED WHOLE to a dated file in the git common dir, never piped to a count (0.829125ms)
+✔ #219 the recipe publishes NOTHING unless the runner exited 0, fail and cancelled are 0, and tests > 0 (0.31775ms)
