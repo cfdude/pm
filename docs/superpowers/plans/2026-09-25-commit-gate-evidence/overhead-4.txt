@@ -1,0 +1,14 @@
+# Mechanism overhead only (the suite is identical under every option), 7 interleaved runs in a scratch
+# clone holding a partially staged README.md and an untracked file (measure-overhead.sh).
+# Started once load1 was 15.54; load1 read 17.5-17.9 during the runs (other agents).
+# B_tmp / B_gitdir = checkout-index export into $TMPDIR / the git dir, then rm   (B, chosen)
+# A_stash          = stash push --keep-index -u, reset --hard, stash apply --index <sha>, stash drop
+# C_patch          = git diff --binary > patch, git checkout -- ., git apply patch (pre-commit framework shape)
+run 1: B_tmp=.233 B_gitdir=.245 A_stash=.264 C_patch=.045 load1=17.90
+run 2: B_tmp=.229 B_gitdir=.191 A_stash=.191 C_patch=.043 load1=17.90
+run 3: B_tmp=.198 B_gitdir=.172 A_stash=.191 C_patch=.042 load1=17.51
+run 4: B_tmp=.183 B_gitdir=.185 A_stash=.217 C_patch=.044 load1=17.51
+run 5: B_tmp=.189 B_gitdir=.184 A_stash=.176 C_patch=.039 load1=17.51
+run 6: B_tmp=.177 B_gitdir=.156 A_stash=.170 C_patch=.037 load1=17.51
+run 7: B_tmp=.165 B_gitdir=.164 A_stash=.175 C_patch=.037 load1=17.51
+# end state after all runs (A and C restored every time): MM README.md / ?? untracked-probe.txt

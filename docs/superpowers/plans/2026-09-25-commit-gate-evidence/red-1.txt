@@ -1,0 +1,199 @@
+# RED for task 1: the IX tests (functional IX-a..IX-g and the assert-twin IX shape test) run against
+# the pre-0.50.0 hook (.githooks/pre-commit at 11a714b), in a copy of the worktree holding the new tests.
+# IX-e and IX-f PASS here by design: the old hook never left the repo root. They guard the NEW hook's
+# cleanup and are killed by the cleanup/lockdir mutants in mutation-1.txt.
+✖ IX the hook verifies the INDEX: captured before the scrub, exported with checkout-index, and run from the export (0.857584ms)
+✖ IX-a a STAGED failing test with a PASSING copy unstaged ABORTS the commit, and the tree is untouched (7132.341458ms)
+✖ IX-b the converse: a STAGED passing test with a FAILING copy unstaged passes, and the tree is untouched (4449.866333ms)
+✖ IX-c an UNTRACKED failing test file in a rung never runs, and is still on disk afterwards (5882.994542ms)
+✖ IX-d the index git HANDS the hook is the one verified — `commit -a` / `commit <path>` use their own (7367.499625ms)
+✖ IX-g a PARTIALLY staged test file is counted by its STAGED half — the floor reads the snapshot (7219.353291ms)
+✔ IX-e the hook leaves nothing behind — no snapshot, no temp file, no suite lock — after a pass AND a failure (17619.475625ms)
+✔ IX-f an INTERRUPTED hook (SIGTERM mid-suite) leaves the tree, the index, TMPDIR and the lock clean (4130.917375ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 2
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 55826.446083
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-09.test.mjs:210:1
+✖ IX the hook verifies the INDEX: captured before the scrub, exported with checkout-index, and run from the export (0.857584ms)
+  AssertionError [ERR_ASSERTION]: GIT_INDEX_FILE must be captured BEFORE the hook unsets it
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/assert/conductor-09.test.mjs:223:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:585:1
+✖ IX-a a STAGED failing test with a PASSING copy unstaged ABORTS the commit, and the tree is untouched (7132.341458ms)
+  AssertionError [ERR_ASSERTION]: the index holds a failing test, so the commit must abort — the hook ran the working tree. Output: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: 1/1 passing
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:593:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:602:1
+✖ IX-b the converse: a STAGED passing test with a FAILING copy unstaged passes, and the tree is untouched (4449.866333ms)
+  AssertionError [ERR_ASSERTION]: the index holds only a passing test: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: tests FAILED -- full output follows
+  ✖ IX the STAGED copy that fails (13.041166ms)
+  ℹ tests 1
+  ℹ suites 0
+  ℹ pass 0
+  ℹ fail 1
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 1346.733666
+  
+  ✖ failing tests:
+  
+  test at scripts/test/assert/fixture.test.mjs:3:1
+  ✖ IX the STAGED copy that fails (13.041166ms)
+    AssertionError [ERR_ASSERTION]: staged bytes ran
+        at TestContext.<anonymous> (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2vJD5B/scripts/test/assert/fixture.test.mjs:3:54)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+      generatedMessage: false,
+      code: 'ERR_ASSERTION',
+      actual: undefined,
+      expected: undefined,
+      operator: 'fail',
+      diff: 'simple'
+    }
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:609:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:615:1
+✖ IX-c an UNTRACKED failing test file in a rung never runs, and is still on disk afterwards (5882.994542ms)
+  AssertionError [ERR_ASSERTION]: an untracked file is not in the commit: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: tests FAILED -- full output follows
+  ✔ IX the working-tree copy that passes (0.704667ms)
+  ✖ IX-c UNTRACKED MARKER (1.93975ms)
+  ℹ tests 2
+  ℹ suites 0
+  ℹ pass 1
+  ℹ fail 1
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 1989.566625
+  
+  ✖ failing tests:
+  
+  test at scripts/test/assert/untracked.test.mjs:3:1
+  ✖ IX-c UNTRACKED MARKER (1.93975ms)
+    AssertionError [ERR_ASSERTION]: an untracked file ran
+        at TestContext.<anonymous> (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tKKhbD/scripts/test/assert/untracked.test.mjs:3:46)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+      generatedMessage: false,
+      code: 'ERR_ASSERTION',
+      actual: undefined,
+      expected: undefined,
+      operator: 'fail',
+      diff: 'simple'
+    }
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:624:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:630:1
+✖ IX-d the index git HANDS the hook is the one verified — `commit -a` / `commit <path>` use their own (7367.499625ms)
+  AssertionError [ERR_ASSERTION]: the index git handed the hook holds a failing test; the hook verified .git/index instead. Output: drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths
+  pre-commit: 1/1 passing
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:649:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:654:1
+✖ IX-g a PARTIALLY staged test file is counted by its STAGED half — the floor reads the snapshot (7219.353291ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /pre-commit: 1\/1 passing/. Input:
+  
+  'drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths\n' +
+    'pre-commit: 2/2 passing\n'
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/commit-gate-tests-working-tree-not-index/mut/scripts/test/functional/conductor-09.test.mjs:664:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'drift: ok — 1 tracked test files, 0 functional ids, 1 staged paths\npre-commit: 2/2 passing\n',
+    expected: /pre-commit: 1\/1 passing/,
+    operator: 'match',
+    diff: 'simple'
+  }

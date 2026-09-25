@@ -104,6 +104,33 @@ function stagedReader(root) {
   };
 }
 
+/** THE INDEX AS A FILESYSTEM — `readdir` and `readFile` over what is STAGED, in the shape the
+ *  certification functions already accept (0.50.0, found at branch review). Until then every SET drift
+ *  judges — the certified engine modules, the engine-source files, the functional/assertion/sweep ids,
+ *  the conformance rows — came from `fs` reads of the working tree, so a module staged into
+ *  scripts/lib/ that calls the gateway and was then deleted from disk was invisible: drift exited 0
+ *  and an uncertified engine module could be committed. Drift judges a commit, so it reads the commit.
+ *
+ *  Both take ABSOLUTE paths under `root`, as the fs defaults do. A directory the index holds nothing
+ *  under reads as EMPTY (the fs default would throw ENOENT for a missing one, and `testIdsIn` already
+ *  treats that as empty; `certifiedModules` needs `scripts/lib/` to read as empty in a tree that
+ *  stages none). A file the index does not hold reads as "" — it is not in the commit, so it calls no
+ *  gateway and carries no ROWS table, which is exactly how an absent file must be judged.
+ *  One `ls-files` for the listing; one `show :<path>` per file actually read. */
+export function indexReaders(root) {
+  const staged = gitRead(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
+  const inIndex = new Set(staged);
+  const rel = (abs) => path.relative(root, abs).split(path.sep).join("/");
+  const readdir = (abs) => {
+    const prefix = rel(abs) ? `${rel(abs)}/` : "";
+    const names = new Set();
+    for (const f of staged) if (f.startsWith(prefix)) names.add(f.slice(prefix.length).split("/")[0]);
+    return [...names].sort();
+  };
+  const readFile = (abs) => (inIndex.has(rel(abs)) ? gitRead(root, ["show", `:${rel(abs)}`]) : "");
+  return { readdir, readFile };
+}
+
 // ───────────────────────────── the checks ─────────────────────────────
 
 /** All four, as data. `set`/`record`/`conformanceRowsNow` are gathered here and checked in
@@ -111,9 +138,12 @@ function stagedReader(root) {
 export function checkAll(root = REPO) {
   const tracked = trackedTestFiles(root);
   const staged = stagedFiles(root);
-  const functional = functionalIds(root);
-  const assertion = assertionIds(root);
-  const set = certifiedSet(root);
+  // EVERY SET BELOW IS READ FROM THE INDEX (0.50.0) — see indexReaders(). The record is the one
+  // thing still read from disk: it lives in the git common dir and is not part of any commit.
+  const { readdir, readFile } = indexReaders(root);
+  const functional = functionalIds(root, readdir);
+  const assertion = assertionIds(root, readdir);
+  const set = certifiedSet(root, readFile, readdir);
   const gitCommonDir = path.resolve(root, gitRead(root, ["rev-parse", "--git-common-dir"]).trim());
   const record = readRecord(gitCommonDir, (p) => fs.readFileSync(p, "utf8"));
   const readStaged = stagedReader(root);
@@ -139,9 +169,9 @@ export function checkAll(root = REPO) {
         return h.digest("hex");
       },
       // Every id a covers entry may legitimately name: the functional half AND the sweep bucket.
-      liveIds: [...functional, ...sweepIds(root)],
+      liveIds: [...functional, ...sweepIds(root, readdir)],
       conformanceRowsNow: (() => {
-        try { return conformanceRows(root); } catch { return null; }
+        try { return conformanceRows(root, readFile); } catch { return null; }
       })(),
     }),
   };
@@ -176,7 +206,13 @@ function render(refusals) {
   return lines;
 }
 
-const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+// REALPATHS ON BOTH SIDES (0.50.0): Node resolves the main module to its REAL path, so a script run
+// through a symlinked directory — macOS $TMPDIR is /var/… -> /private/var/…, where the pre-commit hook
+// now runs drift from its index snapshot — compared unequal, did nothing, and exited 0.
+const invokedDirectly = (() => {
+  try { return fs.realpathSync(path.resolve(process.argv[1])) === fs.realpathSync(fileURLToPath(import.meta.url)); }
+  catch { return false; }  // no argv[1], or one that is not a file: imported, not run
+})();
 if (invokedDirectly) {
   let root = REPO;
   const i = process.argv.indexOf("--root");
