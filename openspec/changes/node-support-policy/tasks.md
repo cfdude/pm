@@ -613,7 +613,7 @@ Commit mechanics, which bind every section below:
         machine's Node, by RUNNING the quickstart in a fresh clone.
       - The required-check description at `:8-12` names the aggregate and the matrix.
       Verify: every command in the file runs as written.
-- [ ] 7.2 `README.md:51` and `:118` get the policy wording: "Node 22+ — pm supports the oldest Node
+- [x] 7.2 `README.md:51` and `:118` get the policy wording: "Node 22+ — pm supports the oldest Node
       LTS line that is not end-of-life". In the same commit, 4.2b's README support-floor assertion
       lands (it could not before, while the README said 18). `:51`'s "1,116 tests" is left to the release cut's Real Numbers
       recompute, and that is stated here so it is not mistaken for a miss. The change is

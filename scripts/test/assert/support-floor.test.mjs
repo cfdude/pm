@@ -16,7 +16,13 @@
 import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as majors from "../node-majors.mjs";
+import { NODE_FLOOR_MAJOR } from "../../lib/runtime-support.mjs";
+
+const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 const TODAY = "2026-09-24";
 
@@ -92,4 +98,44 @@ test("4.2b decide(): an agreeing schedule yields the computed set with no warnin
   });
   const d = majors.decide({ fetched: true, body, today: TODAY, fallback: "[22,24,26]" });
   assert.deepEqual(d, { majors: [22, 24, 26] });
+});
+
+// ─────────────── EVERY DOCUMENTED COPY OF THE SUPPORT FLOOR EQUALS THE CONSTANT (Gate 1 I10) ───────────────
+//
+// The support floor is copied into prose a user or contributor reads — "Node N+". Each copy must equal
+// NODE_FLOOR_MAJOR, and a mismatch names the file and both values (runtime-support's first
+// requirement: "A documented support floor that disagrees with the constant fails"). Each file is
+// listed with the number of copies it must hold, so a copy that is deleted — rather than corrected —
+// fails too. Added with the docs tasks that rewrote those lines (7.1 CONTRIBUTING, 7.2 README;
+// 7.3 adds CLAUDE.md), as task 4.2b schedules.
+
+/** Every `Node N+` claim in `text`, as numbers. */
+export function floorClaims(text) {
+  return [...text.matchAll(/\bNode (\d+)\+/g)].map((m) => Number(m[1]));
+}
+
+/** The refusals for one file: a copy count below `min`, and every copy that is not `floor`. */
+export function floorCopyRefusals(file, text, min, floor = NODE_FLOOR_MAJOR) {
+  const claims = floorClaims(text);
+  const out = [];
+  if (claims.length < min) out.push(`${file}: holds ${claims.length} 'Node N+' support-floor claim(s), expected at least ${min}`);
+  for (const n of claims) {
+    if (n !== floor) out.push(`${file}: states the support floor as Node ${n}+, but NODE_FLOOR_MAJOR is ${floor}`);
+  }
+  return out;
+}
+
+const FLOOR_COPIES = [["README.md", 2], ["CONTRIBUTING.md", 1]];
+
+test("the documented support floor — every 'Node N+' copy — equals NODE_FLOOR_MAJOR", () => {
+  const found = FLOOR_COPIES.flatMap(([file, min]) =>
+    floorCopyRefusals(file, fs.readFileSync(path.join(REPO, file), "utf8"), min));
+  assert.deepEqual(found, []);
+});
+
+test("the support-floor copy check DISCRIMINATES — a stale copy is named with both values", () => {
+  assert.deepEqual(floorCopyRefusals("README.md", "Requirements: Node 18+ (…)", 1, 22),
+    ["README.md: states the support floor as Node 18+, but NODE_FLOOR_MAJOR is 22"]);
+  assert.match(floorCopyRefusals("README.md", "no claim here", 1, 22).join(""), /holds 0/);
+  assert.deepEqual(floorCopyRefusals("README.md", "Node 22+ and Node 22+", 2, 22), []);
 });
