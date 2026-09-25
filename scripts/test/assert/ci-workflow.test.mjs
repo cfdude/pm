@@ -281,6 +281,15 @@ export function matrixRefusals(src) {
     found.push(`job '${MATRIX_JOB}' does not take matrix.node from needs.${COMPUTE_JOB}.outputs.majors — a typed list is not a computed one`);
   }
   if (!new RegExp(`^ {4}needs:\\s*${COMPUTE_JOB}\\s*$`, "m").test(job)) found.push(`job '${MATRIX_JOB}' does not need '${COMPUTE_JOB}'`);
+  // NOTHING MAY LET A LEG PASS WITHOUT RUNNING, OR DROP A MAJOR (Gate 2 M6). An `if:` on the job or a
+  // step can skip it (a skipped step is green); `continue-on-error` turns a red step green; and an
+  // `exclude:`/`include:` under the matrix edits the computed set by hand.
+  for (const m of job.matchAll(/^\s*(?:- )?(if|continue-on-error):/gm)) {
+    found.push(`job '${MATRIX_JOB}' carries '${m[1]}:' — a leg or bucket step could pass without running`);
+  }
+  for (const m of job.matchAll(/^\s*(exclude|include):/gm)) {
+    found.push(`job '${MATRIX_JOB}''s matrix carries '${m[1]}:' — the computed set would be edited by hand`);
+  }
   return found;
 }
 
@@ -339,14 +348,31 @@ export function reporterRefusals(stepName, stepText) {
     if (!/\^ℹ tests /.test(l)) found.push(`${stepName}: the count parse does not read '^ℹ tests': ${l.trim()}`);
     if (/#/.test(l)) found.push(`${stepName}: the count parse still reads the TAP '#' format: ${l.trim()}`);
   }
-  const zero = /if \[ "\$total" -eq 0 \]; then\s*\n\s*echo "::error::[^\n]*"; exit 1/.test(stepText);
-  if (!zero) found.push(`${stepName}: no refusal of a ZERO count on its own — '[ "$total" -lt "$declared" ]' is green at 0/0`);
+  // THE THREE REFUSALS, EACH PRESENT AND IN THIS ORDER (Gate 2 I1). Unreadable first: without it
+  // `[ "" -lt N ]` is a shell ERROR that `if` reads as false, so an unreadable count sails past the
+  // floor and the step exits 0. Then the floor, naming both counts. Then zero, which the floor alone
+  // passes at 0/0. Each must `exit 1`.
+  const refusal = (cond) => new RegExp(`if \\[ ${cond} \\]; then\\s*echo "::error::[^\\n]*"; exit 1`);
+  const checks = [
+    ["an unreadable count ('[ -z \"$total\" ]')", refusal('-z "\\$total"')],
+    ["the floor ('[ \"$total\" -lt \"$declared\" ]')", refusal('"\\$total" -lt "\\$declared"')],
+    ["a ZERO count on its own ('[ \"$total\" -eq 0 ]' — the floor is green at 0/0)", refusal('"\\$total" -eq 0')],
+  ];
+  const at = checks.map(([what, re]) => {
+    const m = re.exec(stepText);
+    if (!m) found.push(`${stepName}: no refusal of ${what} that exits 1`);
+    return m ? m.index : -1;
+  });
+  if (at.every((i) => i >= 0) && !(at[0] < at[1] && at[1] < at[2])) {
+    found.push(`${stepName}: the refusals are out of order — unreadable, then the floor, then zero`);
+  }
   return found;
 }
 
-/** (g): current actions, and the old pin gone. */
+/** (g): current actions, and the old pin gone — and no single-process flag anywhere (Gate 2 M3). */
 export function actionRefusals(src) {
   const found = [];
+  if (/--test-isolation/.test(src)) found.push("the workflow names --test-isolation — the single-process mode is retired (0.49.0, D3)");
   for (const m of src.matchAll(/uses:\s*actions\/(checkout|setup-node)@(\S+)/g)) {
     if (m[2] !== "v7") found.push(`actions/${m[1]}@${m[2]} — expected @v7`);
   }

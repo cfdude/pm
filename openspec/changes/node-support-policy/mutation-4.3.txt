@@ -145,3 +145,123 @@ exit=1
 ℹ tests 8
 AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
 exit=1
+
+# ───────── Gate 2 fix round (2026-09-24): I1, M3, M6 — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/g2c1/tree; ci.yml restored after each ─────────
+# CONTROL: with the PRE-fix guard (0e65863's ci-workflow.test.mjs) mutation (13-assertion) passes 8/8 — the gap lens A found. With the fix, every mutation below is refused (exit=1).
+
+=== (13-assertion) the unreadable-count (-z) refusal removed from the assertion step (Gate 2 I1) ===
+165,167d164
+<           if [ -z "$total" ]; then
+<             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.604458ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (13-functional) the unreadable-count (-z) refusal removed from the functional step (Gate 2 I1) ===
+188,190d187
+<           if [ -z "$total" ]; then
+<             echo "::error::the functional half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.637542ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (13-sweep) the unreadable-count (-z) refusal removed from the sweep step (Gate 2 I1) ===
+211,213d210
+<           if [ -z "$total" ]; then
+<             echo "::error::the sweep bucket's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.74475ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (14) the floor (-lt declared) removed from the functional step (Gate 2 I1) ===
+191,193d190
+<           if [ "$total" -lt "$declared" ]; then
+<             echo "::error::the functional half ran ${total} tests but ${declared} are declared in scripts/test/functional/"; exit 1
+<           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.625875ms)
+ℹ fail 1
+ℹ pass 7
+exit=1
+=== (15) zero-count refusal moved BEFORE the floor in the sweep step (order, Gate 2 I1) ===
+214,216d213
+<           if [ "$total" -lt "$declared" ]; then
+<             echo "::error::the sweep bucket ran ${total} tests but ${declared} are declared in scripts/test/sweeps/"; exit 1
+<           fi
+219a217,219
+>           if [ "$total" -lt "$declared" ]; then
+>             echo "::error::the sweep bucket ran ${total} tests but ${declared} are declared in scripts/test/sweeps/"; exit 1
+>           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.602833ms)
+ℹ fail 1
+ℹ pass 7
+'Sweep bucket: the refusals are out of order — unreadable, then the floor, then zero'
+exit=1
+=== (16) the floor moved BEFORE the unreadable check in the assertion step (order, Gate 2 I1) ===
+165,167d164
+<           if [ -z "$total" ]; then
+<             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+<           fi
+170a168,170
+>           if [ -z "$total" ]; then
+>             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+>           fi
+✖ 4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and refuses a zero count (0.697292ms)
+ℹ fail 1
+ℹ pass 7
+'Assertion half: the refusals are out of order — unreadable, then the floor, then zero'
+exit=1
+=== (17) --test-isolation=none added (Gate 2 M3) ===
+157c157
+<           FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+---
+>           FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs --test-isolation=none > /tmp/assert.out 2>&1 || {
+✖ 4.2 (g) actions/checkout@v7 and actions/setup-node@v7, and no Node 18 pin (0.695458ms)
+ℹ fail 1
+ℹ pass 7
+'the workflow names --test-isolation — the single-process mode is retired (0.49.0, D3)'
+exit=1
+=== (18) if: on the test-node job (Gate 2 M6) ===
+67a68
+>     if: ${{ false }}
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.732292ms)
+ℹ fail 1
+ℹ pass 7
+' carries '
+exit=1
+=== (19) if: on a bucket step (Gate 2 M6) ===
+175a176
+>         if: github.event_name == 'push'
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.829458ms)
+ℹ fail 1
+ℹ pass 7
+' carries '
+exit=1
+=== (20) continue-on-error on a bucket step (Gate 2 M6) ===
+198a199
+>         continue-on-error: true
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.7275ms)
+ℹ fail 1
+ℹ pass 7
+' carries '
+exit=1
+=== (21) exclude: under the matrix (Gate 2 M6) ===
+74a75,76
+>         exclude:
+>           - node: 26
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.761708ms)
+ℹ fail 1
+ℹ pass 7
+'s matrix carries '
+exit=1
+=== (22) include: under the matrix (Gate 2 M6) ===
+74a75,76
+>         include:
+>           - node: 20
+✖ 4.2 (c) the matrix job runs every computed major to completion, bounded (0.768667ms)
+ℹ fail 1
+ℹ pass 7
+'s matrix carries '
+exit=1
