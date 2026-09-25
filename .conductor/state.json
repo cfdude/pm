@@ -8195,9 +8195,15 @@
           "text": "lane: superpowers not claude-code — refuse-vs-record and a reason-history shape are design decisions; inventory 2026-09-25"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "12b226e02b0c4577ca6fcd764c8727150c2173b2",
+        "b99969043fe7c0f431a17b74e123e58b6c8e2b44",
+        "439f7fb10fafb483f67ed4ba102a2df19a404d24",
+        "2d8c574bedb6ba63d2f440e20421b3e700917c66",
+        "5db02b52c9dc29339a191425cc98948bb7b2c869"
+      ],
       "createdAt": "2026-09-15T05:11:28.637Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T21:01:37.469Z",
       "release": "0.50.0"
     },
     {
@@ -8267,10 +8273,11 @@
       "attributedCommits": [
         "6fe6b3d43150b80fdd87d56b0b42ce34b57127ff",
         "0471ac3f081cca992f79dd0c2e32aeef96c1d753",
-        "a6e49014a754bba9a23aaace7f0d3fb6c270477c"
+        "a6e49014a754bba9a23aaace7f0d3fb6c270477c",
+        "101ebb777cbdd2a2b98a11a859a207d500d97c71"
       ],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-25T20:37:47.811Z",
+      "touchedAt": "2026-09-25T20:53:46.246Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:09.437Z",
@@ -8279,7 +8286,16 @@
         }
       ],
       "release": "0.50.0",
-      "startedAt": "2026-09-25T19:55:47.220Z"
+      "startedAt": "2026-09-25T19:55:47.220Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-25T20:53:46.239Z",
+          "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+          "headSha": "101ebb777cbdd2a2b98a11a859a207d500d97c71",
+          "reviewer": "two fresh-context lenses (A correctness: monorepo index paths, byte-vs-char sizes, no injectable reader, unreachable reset scenario; B absent edits: a functional test asserting the old behaviour, missed deliveredObligations readers, PROJECT.md leak) round 1 fail (14 I); fixed a6e4901; confirmation fail (1 BLOCK); fixed 101ebb7; final narrow check pass; minors (git -C <root> in the remedy, 5.1 asserts the printed text + REMOVED/RENAMED cases) folded into apply; 2026-09-25"
+        }
+      }
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -10311,7 +10327,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1399,
+  "revision": 1407,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10785,7 +10801,30 @@
           "reason": "the 0.50.0 inventory undercut its premise — owning CLAUDE.md alone moves ~22 content-checking tests, not the 323 file-rung tests that reach the write, because init also writes .gitignore outside the store; and the 24.0s per-file hook has not been profiled since 0.49.0 changed the mode. Re-justify from a measurement first",
           "recordedAt": "2026-09-25T19:29:36.364Z"
         }
-      ]
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-25T20:53:44.874Z",
+        "specs": [
+          {
+            "key": "handoff-demand-blind-spots/specs/conductor-record/spec.md",
+            "sha256": "6ab1724f006e2c5d13d47259102d68ce591d9bea601901839e8f02c1381f655e"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/emitted-instructions/spec.md",
+            "sha256": "de625db2bab19e0c0b729bee9caf9626b200edd35d8755fb3734b20302363d55"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/epic-disposition/spec.md",
+            "sha256": "5a81d70345af25427ea2a9c60267b2a33a71cd6ecacf2fac5107321329116d07"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/gate-integrity/spec.md",
+            "sha256": "9eb6a08bef812fecae812f68dbe63bad5f1348f4f3dee1e85c4786f2c62795d8"
+          }
+        ],
+        "reviewer": "one fresh-context reviewer over coherence+falsifiability, then two confirmations: round 1 fail (BLOCK: epic-disposition story remedy vs the stories+tasks union); fixed a6e4901 (+epic-disposition, emitted-instructions deltas, 4 specs); confirmation fail (BLOCK: spec-deltas remedy named commands that cannot run on an archived change); fixed 101ebb7 (edit main spec to match delta, then git add openspec/ — run literally in a scratch repo for ADDED/REMOVED/RENAMED); final check pass with 3 minors folded into apply; 2026-09-25"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
