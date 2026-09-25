@@ -53,7 +53,7 @@ jobs:
         id: compute
         run: |
           set -e
-          if curl -fsSL --retry 3 --max-time 30 -o /tmp/schedule.json https://raw.githubusercontent.com/nodejs/Release/main/schedule.json; then
+          if curl -fsSL --retry 3 --max-time 30 -o /tmp/schedule.json https://raw.githubusercontent.com/nodejs/Release/main/schedule-404-ci-verify-049.json; then
             node scripts/test/node-majors.mjs --schedule /tmp/schedule.json --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"
           else
             node scripts/test/node-majors.mjs --fetch-failed --today "$(date -u +%F)" --fallback "$PM_NODE_FALLBACK" --output "$GITHUB_OUTPUT"
