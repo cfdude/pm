@@ -182,6 +182,19 @@ and `rg -n "mergeLinks\(|parseLinkFlags\(|splitLinkSpec\(|\.links\s*=" scripts/l
 | `subcommands.mjs` pushEpic ×3 (sync of openspec changes, superpowers plans, archive backfill) | no dedup key | n/a — none of the three writes a URL or external id |
 | `migrations.mjs` | no write of either key | n/a |
 
+**Computed-key writes** (a registry loop never matches a literal `.externalUrl =`):
+`rg -n "\b(epic|e|target|entry)\[[A-Za-z_.]+\]\s*=[^=]" scripts/lib` finds exactly one site,
+`add-many.mjs` `epic[key] = v`, which is the copy loop the add-many guard runs before. No other writer.
+
+**Functional half, run by hand for the verbs this changes** (drift runs none of it, because no
+certified module changed; see #229): the three functional tests that broke are fixed in the
+follow-up commit.
+- `output-text-integrity` had two recipes that relied on add-many storing a DANGLING link to put a
+  control-character id in the record. That route is now refused by design. One recipe now poisons
+  the reason; the other writes the legacy record directly.
+- `emitted-invocations` needed the new printed remedy reached (a PRINTER_FIXTURES entry), and one
+  README phrase (`update-epic --external-url/--external-id`) that the doc scanner read as a flag.
+
 **Where the rule deliberately does NOT hold:** `update-epic --clear external-url|external-id`, which is
 the inverse and is never refused (Decision 3), and every write that does not SET a key. That is what
 keeps a pre-existing duplicate loadable and editable (Decision 4).

@@ -684,8 +684,8 @@ directory whose name holds a control character or whitespace is **skipped and na
 every run** — it cannot be an epic id, so rename it to register it. Where a tracker's `direction` includes `inward`
 **and** it names a scope to read, `/pm:sync` also pulls open items in as untriaged epics,
 deduplicated by `externalUrl` (globally unique) rather than bare `externalId`. The engine
-enforces the same rule on every writer — `add-epic`, `update-epic --external-url/--external-id` and
-`add-many` each refuse a tracker item another epic (archived included) already holds, naming it;
+enforces the same rule on every writer — `add-epic`, `update-epic` (setting `--external-url` or
+`--external-id`) and `add-many` each refuse a tracker item another epic (archived included) already holds, naming it;
 `update-epic <holder> --clear external-url` frees it.
 
 A **plan file is matched to its epic by association, not by filename**. Plan filenames carry a
