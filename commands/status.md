@@ -249,7 +249,12 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --member <epic
   does not exist — an id with no statement of what it is for is unreadable later, which is the
   failure this records against.
 - **Membership is one-way**: it lives on the epic as `epic.release`, at most one, and the release
-  object carries no member list to fall out of step with it. Re-associating an epic MOVES it.
+  object carries no member list to fall out of step with it. Re-associating an epic MOVES it —
+  and the move is RECORDED on the release it leaves: `release r2 --member e1`, with `e1` in `r1`,
+  appends `{op: "unmember", epic: "e1", via: "member", to: "r2"}` to `r1`'s `amendments[]` and
+  says so on stderr, so `release show r1` reads "moved to `r2`" rather than silently holding one
+  epic fewer. No reason is demanded — the move is the decision and `to` records where it went.
+  Re-adding an epic to the release it is already in writes nothing.
 - **The engine proposes nothing.** No epic is auto-assigned, and adding, re-prioritizing or
   archiving epics changes membership for none of them. Grouping is a scope judgment, and the
   scope judgment is the thing being preserved.
@@ -268,7 +273,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --defer <epicI
 - **An exclusion is not an ending.** The epic keeps its status and gets no disposition of its
   own; it stays in the backlog because it is still work someone may do. What it does lose is
   membership of that release — an epic cannot be in a release it was cut from.
-- Re-deferring the same epic updates its reason. Re-adding a deferred epic with `--member`
+- Re-deferring the same epic with a NEW reason updates it and keeps the old one: `deferred[]`
+  holds the current reason, and `{op: "redefer", reason, was, wasRecordedAt}` goes to the
+  release's `amendments[]`, where `release show` renders both. The same reason again writes
+  nothing. Re-adding a deferred epic with `--member`
   removes the exclusion and says on stderr what the removed record read, so a recorded judgment
   never disappears silently.
 - **The reason can be inline**: `--defer "<epicId>:<why it was cut>"` splits on the FIRST colon —

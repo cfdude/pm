@@ -131,3 +131,28 @@ unitTest("three reasons in a row leave a readable chain: each amendment's `was` 
   assert.deepEqual(rel(engine, "r1").amendments.map(a => [a.op, a.was, a.reason]),
     [["redefer", "a", "b"], ["redefer", "b", "c"]]);
 });
+
+// ─────────────────── backward compatibility: a 0.49.0 record needs no migration ───────────────────
+
+unitTest("a 0.49.0-shaped record (no amendments; an old-shape entry) loads, renders, and takes the new entries", () => {
+  const legacy = {
+    version: 1, revision: 3, active: null, detourStack: [], pmVersion: "0.49.0",
+    epics: [
+      { id: "e0", title: "t0", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], release: "r1" },
+      { id: "e1", title: "t1", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [] },
+    ],
+    releases: [
+      { id: "r1", intent: "one", deferred: [{ epic: "e1", reason: "old", recordedAt: "2026-09-01T00:00:00.000Z" }] },
+      { id: "r2", intent: "two", deferred: [],
+        amendments: [{ op: "unmember", epic: "e9", reason: "legacy why", at: "2026-09-02T00:00:00.000Z" }] },
+    ],
+  };
+  const engine = memoryEngine(legacy);
+  assert.match(engine(["release", "show", "r2"]), /unmember `e9` — legacy why/);
+  engine(["release", "r2", "--member", "e0"]);
+  engine(["release", "r1", "--defer", "e1:new"]);
+  const r1 = rel(engine, "r1");
+  assert.deepEqual(r1.amendments.map(a => a.op), ["unmember", "redefer"]);
+  assert.equal(r1.amendments[1].wasRecordedAt, "2026-09-01T00:00:00.000Z");
+  assert.equal(rel(engine, "r2").amendments.length, 1, "the release the epic joined gains nothing");
+});

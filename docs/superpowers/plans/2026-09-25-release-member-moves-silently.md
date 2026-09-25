@@ -149,4 +149,6 @@ The amendments trail is append-only by design and has no inverse, deliberately. 
 
 ## Required item 7: what to route
 
-Filled in by the implementer's report. The candidate is the `engine-source` certification bucket, which blocks every engine-editing worktree agent that is forbidden to certify. That is tooling friction to file if it is not already tracked.
+- **Tooling friction:** the `engine-source` certification bucket covers every `scripts/lib/*.mjs`, and parallel worktrees share one entry per trigger. It is already filed as cfdude/pm#226, so nothing new was filed. The workaround was the coordinator's lock around certify plus commit. Waiting for that lock took about 40 minutes across three attempts while agents passed it around.
+- **Sweep catch:** the output-interpolation sweep flagged an unescaped `a.to` in `release show`. The unit rung could not have seen this, because the value reaches output through a const outside the sink. It was fixed by escaping where the value is built, and is recorded here so the next `release show` field follows the same rule. It is not a new lesson: the sweep worked as designed.
+- **Practice or process:** none new.
