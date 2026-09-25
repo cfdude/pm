@@ -29,3 +29,13 @@ large share of the suite would have failed. That is exactly why the refusal was 
 ## Kind
 
 A process failure: how fixtures get written. Related: a-degradation-test-can-pin-the-defect.
+
+## Recurrence — a hand-built record SHAPE, not just a placeholder value (2026-09-25)
+
+The same failure in a different form. `conductor-33`'s activity-log test built its detour frame
+by hand as `{ epic: "e1" }`. `push-detour` has always written `{ pausedEpic, spawnedDetour, … }`,
+and the log's `frameEpic` read `epic || epicId || id`, keys that nothing writes. The fixture agreed
+with the reader, not with the writer, so the test passed while every real detour event recorded
+`epic: null` from 0.35.0 until activity-log-detour-events-lose-epic. The rule covers shapes as
+well as values: when a test feeds a reader a record, have the verb that writes that record produce
+it.

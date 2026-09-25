@@ -80,24 +80,24 @@ finds only push-detour, pop-detour and drop-detour as stack writers.
 detour: <spawnedDetour|null>, depth: <after depth>}`; `buildReport(...).detours = {push, pop, drop, removed, byEpic}`
 where `byEpic[id]` = number of pushes pausing `id`.
 
-- [ ] Step 1: in the unit file, replace `"gh-111: diffEvents reports detour push/pop and a gate verdict"`
+- [x] Step 1: in the unit file, replace `"gh-111: diffEvents reports detour push/pop and a gate verdict"`
   with a test driven by REAL verbs through `loggingRepo()`: add `d1`, `update-epic e1 --status active`,
   `push-detour e1 --detour d1 --reason r --no-reconcile`, `pop-detour e1`, `push-detour e1 --detour d1
   --reason again --no-reconcile`. Assert the push/pop events carry `epic: "e1"`, `detour: "d1"`, and
   `buildReport(allEvents(engine)).detours.byEpic` deep-equals `{ e1: 2 }` (exact — a double count reads 4).
   Keep the gate-verdict and quiet-write halves of the old test as their own test, unchanged. Add a pure
   `diffEvents` case: a frame with no `pausedEpic` yields `epic: null` without throwing.
-- [ ] Step 2: file rung: write two segments' worth of events to a temp dir, including a `detour-push`
+- [x] Step 2: file rung: write two segments' worth of events to a temp dir, including a `detour-push`
   with `epic: "e1", detour: "d1"`; `readEvents({ dir, epic: "d1" })` returns it.
-- [ ] Step 3: run both files; save RED to `red-task1.txt`.
-- [ ] Step 4: implement. Frame key `JSON.stringify([f.pausedEpic, f.pausedAt])`; `framesOf(state)`
+- [x] Step 3: run both files; save RED to `red-task1.txt`.
+- [x] Step 4: implement. Frame key `JSON.stringify([f.pausedEpic, f.pausedAt])`; `framesOf(state)`
   returns the array; added = after frames whose key is not in before; removed = the reverse. One event per
   added (`detour-push`) and per removed frame (kind from Task 2; in this task, `detour-pop`). `frameEpic`
   reads `pausedEpic` only. `readEvents`: `if (epic && e.epic !== epic && e.detour !== epic) continue;`.
   `buildReport`: `byEpic` increments on push only.
-- [ ] Step 5: suite green; mutation proofs (restore `f.epic||f.epicId||f.id` → epic assertion fails;
+- [x] Step 5: suite green; mutation proofs (restore `f.epic||f.epicId||f.id` → epic assertion fails;
   count pops into byEpic → `{e1: 2}` assertion fails; drop the `e.detour` clause → file-rung test fails).
-- [ ] Step 6: commit `fix(activity): detour events name the paused epic and count interruptions once`.
+- [x] Step 6: commit `fix(activity): detour events name the paused epic and count interruptions once`.
 
 ### Task 2: `detour-drop` — a drop is not a pop
 
@@ -105,17 +105,17 @@ where `byEpic[id]` = number of pushes pausing `id`.
 (drop/removed counters, DETOURS line, header table); `commands/activity.md` (DETOURS row);
 `scripts/test/unit/conductor-33.test.mjs`.
 
-- [ ] Step 1: unit test with three epics: activate e1, push e1→e2, push e2→e3, `drop-detour e1 --reason gone`.
+- [x] Step 1: unit test with three epics: activate e1, push e1→e2, push e2→e3, `drop-detour e1 --reason gone`.
   The drop's events: exactly one detour event, `kind: "detour-drop"`, `epic: "e1"`, `detour: "e2"`; no
   `detour-pop`. `buildReport(...).detours` has `drop: 1, pop: 0`, `byEpic` unchanged by the drop.
   `formatReport` prints `1 drop(s)`. Pure case: a frame removed under `verb: "something-else"` is
   `detour-removed`.
-- [ ] Step 2: RED → `red-task2.txt`.
-- [ ] Step 3: implement `removedKind(verb)`; reader counts `detour-drop` → `drop`, `detour-removed` →
+- [x] Step 2: RED → `red-task2.txt`.
+- [x] Step 3: implement `removedKind(verb)`; reader counts `detour-drop` → `drop`, `detour-removed` →
   `removed`; format `N push(es), N pop(s), N drop(s)` plus `N removed by another verb` only when non-zero.
   Header vocabulary rows in both files; commands/activity.md DETOURS row says pushes, and pops vs drops.
-- [ ] Step 4: green; mutation proof: map every removal to `detour-pop` → the drop test fails.
-- [ ] Step 5: commit `fix(activity): a detour drop is logged as detour-drop, not detour-pop`.
+- [x] Step 4: green; mutation proof: map every removal to `detour-pop` → the drop test fails.
+- [x] Step 5: commit `fix(activity): a detour drop is logged as detour-drop, not detour-pop`.
 
 ### Task 3: Named events for record-reconcile, set-autonomy, priority, set-review-mode
 
@@ -132,25 +132,106 @@ Each is DERIVED from the diff, like every other kind. Writers read from disk:
 | `epic-autonomy` | epic, from, to (level), granted, revoked, notified (counts) | what trust was granted or taken back, and what was decided in the user's absence | SETTINGS |
 | `review-mode` | epic (null for repo-wide), from, to | when did review intensity change | SETTINGS |
 
-- [ ] Step 1: unit test via real verbs on `loggingRepo()` (+ a detour pushed `--reconcile` then popped
+- [x] Step 1: unit test via real verbs on `loggingRepo()` (+ a detour pushed `--reconcile` then popped
   for record-reconcile): each verb's newest event has the kind and fields above; `buildReport` lists the
   reconcile in `gates` and the other three in `settings`; `formatReport` prints a SETTINGS section. A
   re-recorded reconcile yields `correction: true`.
-- [ ] Step 2: RED → `red-task3.txt`.
-- [ ] Step 3: implement in `diffEvents` (per-epic loop; state-level reviewMode after it) and the reader.
-- [ ] Step 4: green; mutation proof per kind (delete its emit → its assertion fails).
-- [ ] Step 5: commit `feat(activity): name reconcile, autonomy, priority and review-mode transitions`.
+- [x] Step 2: RED → `red-task3.txt`.
+- [x] Step 3: implement in `diffEvents` (per-epic loop; state-level reviewMode after it) and the reader.
+- [x] Step 4: green; mutation proof per kind (delete its emit → its assertion fails).
+- [x] Step 5: commit `feat(activity): name reconcile, autonomy, priority and review-mode transitions`.
 
 ### Task 4: changeset fragment and this plan's closing notes
 
-- [ ] `.changesets/activity-log-detour-events-lose-epic.md`, user-facing bullets in CHANGELOG format.
-- [ ] Fill in "Required item 1" and "Required item 7" below with what execution found.
-- [ ] Commit `docs(activity): changeset and closing notes for activity-log-detour-events-lose-epic`.
+- [x] `.changesets/activity-log-detour-events-lose-epic.md`, user-facing bullets in CHANGELOG format.
+- [x] Fill in "Required item 1" and "Required item 7" below with what execution found.
+- [x] Commit `docs(activity): changeset and closing notes for activity-log-detour-events-lose-epic`.
 
 ## Required item 1 — call-site and data-reference sweep
 
-(Completed after execution — see below.)
+Derived with `rg` at the task-3 head.
+
+**Who writes the detour stack** (`rg -n "detourStack\s*=|detourStack\.(push|pop|splice|shift|filter)" scripts/lib scripts/conductor.mjs`):
+- `detour-stack.mjs:156`: push-detour pushes a frame. Logged as `detour-push`.
+- `detour-stack.mjs:246`: pop-detour pops a frame. Logged as `detour-pop`.
+- `detour-stack.mjs:362`: drop-detour splices a frame out. Logged as `detour-drop`.
+- There is no other writer. A future one is logged as `detour-removed` and is never guessed to be a
+  pop or a drop.
+- The old code had a second site with the same bug: the pop branch took its epic from
+  `topOf(before)`. That branch is gone. Both directions now go through `framesMissing` and the same
+  `frameField` read, so the rule holds on every path.
+
+**Readers of the frame fields.** The following all read `pausedEpic` / `spawnedDetour` already, and
+this change leaves them untouched:
+- `reconciler-writeback.mjs:83`
+- `update-epic.mjs:942`
+- `remove-epic.mjs:93`
+- `detour-stack.mjs:133,221,256,349,359`
+- `store.mjs:217`
+
+`activity-log.mjs` was the only reader keyed on something else.
+
+**Detour events and every reader of them.**
+- Event kinds: `detour-push`, `detour-pop`, `detour-drop`, `detour-removed`. `diffEvents` is their
+  only writer. It is called from `conductor.mjs:506` (per invocation) and from tests.
+- Readers, from `rg -n "\.kind\b|e\.epic\b|e\.detour\b" scripts/lib`:
+  - `activity-report.mjs readEvents`: the `--epic` filter, which now matches `epic` or `detour`.
+  - `buildReport` pickup `firstSeen`: detour events now carry an epic, so an epic's first push can
+    start its clock. That is correct, because the epic existed at that moment.
+  - `buildReport` DETOURS: counters come from the `DETOUR_KINDS` table, and `byEpic` counts pushes
+    only.
+  - `formatReport` DETOURS line.
+  - `purge-logs.mjs` reads segment names, never event kinds, so the new kinds cannot affect it.
+
+**Data references added.** Each is listed with where it is written, read and removed:
+- `event.detour`: written by `diffEvents`. Read by the `readEvents` filter and by the GATES rows for
+  reconcile. Removed only with its segment, by `pruneToCap` or `purge-logs`.
+- `event.epic` on the new kinds: same as above.
+- `event.correction` (reconcile): read by `formatGate`.
+- The `epic-autonomy` counts: read by `formatSetting`.
+- `remove-epic` does not scrub log lines that name the removed epic. **That missing inverse is
+  justified.** The log is append-only by design (activity-log.mjs header), and a line naming a
+  deleted epic records history rather than a dangling pointer. Nothing resolves `event.epic` against
+  the live record.
+
+**Inverses.**
+- `detour-push` against `detour-pop` / `detour-drop`: both directions shipped.
+- `reconcile-recorded`: its inverse would be withdrawing a verdict. No engine verb does that today;
+  a re-record is a correction, and it is logged with `correction: true`. Nothing to ship.
+- `epic-autonomy`: grants and revokes are both counted, so both directions are covered.
+- `epic-priority` and `review-mode`: each is a from→to change and is symmetric by construction.
+
+**Named-event verbs from the finding: where the rule holds.**
+- record-reconcile: holds.
+- set-autonomy: holds, including `--revoke` and `--notify`.
+- `update-epic --priority`: holds.
+- set-review-mode: holds.
+- `update-epic --review-mode`: holds. This is the per-epic override of set-review-mode, and it gets
+  the same event.
+
+**Deliberately not named** (still logged as `state-write`, with the revision covered):
+- `reorder` (the `rank` field): within-band ordering. No reader question asks about it.
+- `set-lane-routing`, `set-tracker`, `set-gate-guard`, `set-activity-log`: repo configuration outside
+  the finding's list. Each would need its own reader question first, per the header contract.
 
 ## Required item 7 — what the work taught
 
-(Completed after execution — see below.)
+- **Tooling friction (pm).** Any edit under `scripts/lib/**` makes drift demand
+  `certify.mjs sweeps`. The certification record is one entry per trigger in the shared git common
+  dir, so parallel worktrees overwrite each other's record and the orchestrator had to impose a
+  machine-wide lock. This is already filed as **#226**, which is open, so nothing new was filed.
+- **Process lesson.** The fake-frame fixture is a recurrence of
+  `docs/lessons/fixtures-the-product-should-refuse.md`, in a new form: the fixture had a hand-built
+  record SHAPE, where the lesson's cases were placeholder values. It is added to that lesson's body
+  as a dated recurrence rather than as a new lesson, because the trigger already names "a detour".
+  The README index is unchanged, since the frontmatter is unchanged.
+- **Output sweep.** Moving the GATES/SETTINGS row builders out of the inline `L.push(...map())`
+  made the output-interpolations sweep flag their values as UNCLASSIFIED. The sweep only runs
+  at certify, so the per-commit hook never saw it. They now sit nested inside `formatReport`,
+  which is judged `sink-flow` as a whole in `output-interpolations.judged.mjs`. That judgment is
+  accurate: every row is escaped at `L.map(escapeControls)`. This is the sweep working as
+  designed, so nothing was filed.
+- **Unit-rung boundary, noted and not filed.** `set-review-mode` rewrites CLAUDE.md, so the unit
+  rung's write guard refuses it. Its end-to-end test lives on the file rung, and the repo-wide
+  event is also pinned purely on the unit rung. This is the documented rung rule working as
+  intended; there is no gap to file.
