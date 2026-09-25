@@ -15,6 +15,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import os from "node:os";
 import { spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, observationRepo as helperObservationRepo, tmpRepo } from "../fixtures/functional-harness.mjs";
@@ -483,7 +484,7 @@ test("1.3 Layer A: every engine invocation in shipped docs passes the pre-dispat
 
 /** A constructed pm-shaped document tree in a temp dir: `commands/probe.md` holding `body`. */
 function constructedRoot(body) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-"));
+  const root = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-")));
   fs.mkdirSync(path.join(root, "commands"), { recursive: true });
   fs.writeFileSync(path.join(root, "commands", "probe.md"), body);
   return root;
@@ -3049,7 +3050,7 @@ test("R-M4 the template scan reaches a single-quoted span and a double-quoted on
   // opened inside a single-quoted string, and a double-quoted string ending `" +` with the id on the
   // next line. Each must be reported; the same lines through printedId() must not.
   const BT = "`";
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-")));
   fs.writeFileSync(path.join(dir, "shapes.mjs"), [
     "export const a = (detourId) => `detour '${detourId}' not found (` + '" + BT + "add-epic --id ' + detourId + ' ' +",
     '  "…' + BT + '), register it";',

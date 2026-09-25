@@ -44,14 +44,6 @@ const KNOWN = [
   { file: "functional/runtime-support.test.mjs", token: "pm-node-version-preload-", how: "removed in the test's finally" },
   { file: "assert/conductor-33.test.mjs", token: "tmpRepo())), prefix", tail: true,
     how: "LEAKS (pm-seg*) — scratchDir() was out of gh-cfdude-pm-224's scope: another agent owned conductor-33 in 0.50.0" },
-  // PENDING — scheduled by a later task of gh-cfdude-pm-224 and removed from this table as it lands.
-  { file: "functional/hermetic-git.test.mjs", token: "os.tmpdir(), p)", pending: true },
-  { file: "functional/commit-resolution.test.mjs", token: "pm-optinject-", pending: true },
-  { file: "functional/emitted-invocations.test.mjs", token: "pm-emitted-docs-", pending: true },
-  { file: "functional/emitted-invocations.test.mjs", token: "pm-templates-", pending: true },
-  { file: "functional/head-attachment.test.mjs", token: "pm-head-", pending: true },
-  { file: "functional/head-attachment.test.mjs", token: "pm-nogit-", pending: true },
-  { file: "functional/state-write-verification.test.mjs", token: "pm-persist-", pending: true },
 ];
 
 /** Every `.mjs` under scripts/test, repo-relative to it. */
@@ -104,7 +96,7 @@ test("temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site",
   // as a documented exception to nothing. The tail entry is exempt from the "still live" half only:
   // when its owner closes it, deleting the entry is the owner's step, and the next line says so.
   const sites = callSites();
-  const stale = KNOWN.filter((k) => !k.tail && !k.pending
+  const stale = KNOWN.filter((k) => !k.tail
     && !sites.some((s) => s.file === k.file && s.text.includes(k.token) && !SCHEDULED.test(s.text)));
   assert.deepEqual(stale.map((k) => `${k.file} ${k.token}`), [],
     "these KNOWN entries name no live unscheduled site — delete them");

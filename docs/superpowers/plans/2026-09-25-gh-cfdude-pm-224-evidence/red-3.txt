@@ -1,0 +1,109 @@
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (2.177792ms)
+✖ temp-dir-cleanup: every mkdtempSync site in scripts/test is scheduled on its line or enrolled with how it is removed (829.67425ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (313.198875ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4652.818292
+
+✖ failing tests:
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:84:1
+✖ temp-dir-cleanup: every mkdtempSync site in scripts/test is scheduled on its line or enrolled with how it is removed (829.67425ms)
+  AssertionError [ERR_ASSERTION]: these temp directories are made and never removed — wrap the call in removeAtExit() (fixtures/temp-dir.mjs), or remove it in a finally and enrol it in KNOWN with how
+  + actual - expected
+  
+  + [
+  +   'functional/commit-resolution.test.mjs:273  const outDir = fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-"));',
+  +   'functional/emitted-invocations.test.mjs:486  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-"));',
+  +   'functional/emitted-invocations.test.mjs:3052  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-"));',
+  +   'functional/head-attachment.test.mjs:43  const d = fs.mkdtempSync(path.join(os.tmpdir(), "pm-head-"));',
+  +   'functional/head-attachment.test.mjs:76  const d = fs.mkdtempSync(path.join(os.tmpdir(), "pm-nogit-"));',
+  +   'functional/hermetic-git.test.mjs:15  const tmp = (p) => fs.mkdtempSync(path.join(os.tmpdir(), p));',
+  +   'functional/state-write-verification.test.mjs:23  const CWD = fs.mkdtempSync(path.join(os.tmpdir(), "pm-persist-"));'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-acafaaa069ba77c21/scripts/test/assert/temp-dir-cleanup.test.mjs:89:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'functional/commit-resolution.test.mjs:273  const outDir = fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-"));', 'functional/emitted-invocations.test.mjs:486  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-"));', 'functional/emitted-invocations.test.mjs:3052  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-"));', 'functional/head-attachment.test.mjs:43  const d = fs.mkdtempSync(path.join(os.tmpdir(), "pm-head-"));', 'functional/head-attachment.test.mjs:76  const d = fs.mkdtempSync(path.join(os.tmpdir(), "pm-nogit-"));', 'functional/hermetic-git.test.mjs:15  const tmp = (p) => fs.mkdtempSync(path.join(os.tmpdir(), p));', 'functional/state-write-verification.test.mjs:23  const CWD = fs.mkdtempSync(path.join(os.tmpdir(), "pm-persist-"));' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+✔ temp-dir-cleanup: the fixture helpers' directories are all gone once the process exits (22460.651208ms)
+✖ temp-dir-cleanup: each enrolled site file leaves nothing behind (70068.393583ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 95240.733459
+
+✖ failing tests:
+
+test at scripts/test/functional/temp-dir-cleanup.test.mjs:118:1
+✖ temp-dir-cleanup: each enrolled site file leaves nothing behind (70068.393583ms)
+  AssertionError [ERR_ASSERTION]: these site files left temp directories behind once their process exited — schedule each with removeAtExit()
+  + actual - expected
+  
+  + {
+  +   'functional/commit-resolution.test.mjs /^g2-1 /': [
+  +     'pm-optinject-dm4vfr'
+  +   ],
+  +   'functional/emitted-invocations.test.mjs /^1\\.4 /': [
+  +     'pm-emitted-docs-3x41UH',
+  +     'pm-emitted-docs-8rxVOV',
+  +     'pm-emitted-docs-CTyvE5',
+  +     'pm-emitted-docs-WLdHkT',
+  +     'pm-emitted-docs-bCuNDS'
+  +   ],
+  +   'functional/head-attachment.test.mjs': [
+  +     'pm-head-6jbB0k',
+  +     'pm-head-Hbeb7a',
+  +     'pm-head-LeHM3X',
+  +     'pm-head-OqlspE',
+  +     'pm-head-TIL9uZ',
+  +     'pm-head-Uiowlz',
+  +     'pm-head-cg4GQG',
+  +     'pm-head-ySQU5J',
+  +     'pm-nogit-LfMnM4'
+  +   ],
+  +   'functional/hermetic-git.test.mjs': [
+  +     'pm-fake-template-HsYQNr',
+  +     'pm-hermetic-NgZZUC',
+  +     'pm-hermetic-W5edmG'
+  +   ],
+  +   'functional/state-write-verification.test.mjs': [
+  +     'pm-persist-qtyRDj'
+  +   ]
+  + }
+  - {}
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-acafaaa069ba77c21/scripts/test/functional/temp-dir-cleanup.test.mjs:126:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { 'functional/head-attachment.test.mjs': [ 'pm-head-6jbB0k', 'pm-head-Hbeb7a', 'pm-head-LeHM3X', 'pm-head-OqlspE', 'pm-head-TIL9uZ', 'pm-head-Uiowlz', 'pm-head-cg4GQG', 'pm-head-ySQU5J', 'pm-nogit-LfMnM4' ], 'functional/hermetic-git.test.mjs': [ 'pm-fake-template-HsYQNr', 'pm-hermetic-NgZZUC', 'pm-hermetic-W5edmG' ], 'functional/state-write-verification.test.mjs': [ 'pm-persist-qtyRDj' ], 'functional/commit-resolution.test.mjs /^g2-1 /': [ 'pm-optinject-dm4vfr' ], 'functional/emitted-invocations.test.mjs /^1\\.4 /': [ 'pm-emitted-docs-3x41UH', 'pm-emitted-docs-8rxVOV', 'pm-emitted-docs-CTyvE5', 'pm-emitted-docs-WLdHkT', 'pm-emitted-docs-bCuNDS' ] },
+    expected: {},
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

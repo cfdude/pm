@@ -63,6 +63,11 @@ const PROBE = [
 const SITE_RUNS = [
   { file: "assert/parity.test.mjs" },
   { file: "assert/engine-resolution.test.mjs" },
+  { file: "functional/head-attachment.test.mjs" },
+  { file: "functional/hermetic-git.test.mjs" },
+  { file: "functional/state-write-verification.test.mjs" },
+  { file: "functional/commit-resolution.test.mjs", namePattern: "^g2-1 " },
+  { file: "functional/emitted-invocations.test.mjs", namePattern: "^1\\.4 " },
 ];
 
 function hermeticRoot() {
