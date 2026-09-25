@@ -13,7 +13,6 @@ rule: Freeze the fixture. Never build a test's starting state by reading the pro
 enforced_in: scripts/test/fixtures/state-pre-disposition-walk.json — the frozen pre-walk record,
   and the rename of `repoFromLiveState()` to `repoFromFrozenPreMigrationRecord()` in
   scripts/test/conductor-15.test.mjs that stopped the function claiming to read live state.
-detect: (readFileSync|require|import)\([^)]*\.conductor/state\.json.*\n?.*(delete |filter\(|splice\()
 ---
 
 ## What happened
