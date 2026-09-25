@@ -19,37 +19,53 @@ construction, and a guard keying on raw checkboxes would refuse every correctly 
 
 **An epic's progress source is the UNION of two parts, and neither part SHALL hide the other.**
 
-- **The story part:** the epic's inline stories. A story that carries a disposition leaves both the
-  numerator and the denominator, exactly as a declared-bookkeeping task does.
-- **The checkbox part:** the epic's plan file where it records one. Otherwise, for an openspec-lane
+- **The story part:** the epic's inline stories. A **disposed story** leaves both the numerator and
+  the denominator, exactly as a declared-bookkeeping task does.
+- **The checkbox source:** the epic's plan file where it records one. Otherwise, for an openspec-lane
   epic (an absent lane read as openspec), the change's `tasks.md`.
 
-The epic's `done` and `total` are the two parts' sums. Before this requirement, the presence of any
-inline story made the checkbox part unread. On a `tasks.md` at 1/3, one `--add-story`, one
-`--story 1 --done` and an archive recorded `delivered` with two tasks open and a rendered `1/1`. A
-source that stops being read because another one appeared is the missing-source defect this
-capability already prohibits, reached by a different path.
+The epic's `done` and `total` are the two parts' sums, and so is the count of excluded items (disposed
+stories plus declared-bookkeeping tasks), which the rendered record labels by kind so a disposed story
+is never called lifecycle bookkeeping. Before this requirement, the presence of any inline story made
+the checkbox source unread. On a `tasks.md` at 1/3, one `--add-story`, one `--story 1 --done` and an
+archive recorded `delivered` with two tasks open and a rendered `1/1`. A source that stops being read
+because another one appeared is the missing-source defect this capability already prohibits, reached
+by a different path.
 
 The union counts. It does not refuse a second source. Refusing to add a story to an epic with a
 checkbox source would guard only the verbs that add stories, and it would leave every record that
 already holds both parts reading one of them. The error direction is the one this capability already
 chooses: an item counted twice is visible in the rendered record, and an item never counted is not.
 
-**The checkbox part of an archived openspec change is its ARCHIVED `tasks.md`.** `openspec archive`
+Every consumer that branches on WHICH part holds the outstanding work SHALL test each part's own open
+count, never a single source label: under the union an epic can have work open in both parts at
+once, and a consumer that picked one label would name a remedy that clears only half of it.
+
+**The checkbox source of an archived openspec change is its ARCHIVED `tasks.md`.** `openspec archive`
 moves `openspec/changes/<id>/` to `openspec/changes/archive/<YYYY-MM-DD>-<id>/` (or
-`archive/<id>/`). Where the live `tasks.md` is absent, the checkbox part SHALL be read from the
-archived change directory whose id matches the epic's. That is the same match that decides whether
-the change is archived, and it holds for every epic, not only a backfilled one. A consumer that reads
-only the live path sees zero outstanding work at exactly the moment the archive gate asks. In this
-repository that let archives be recorded `delivered` with tasks open. The epic's id is the key:
-an epic whose work lives in a change directory with a different id has no checkbox part under this
-rule, and this requirement does not add a mapping.
+`archive/<id>/`). Where the live `tasks.md` is absent, the checkbox source SHALL be read from the
+archived change directory whose id matches the epic's, and that holds for every epic, not only a
+backfilled one. A consumer that reads only the live path sees zero outstanding work at exactly the
+moment the archive gate asks. In this repository that let archives be recorded `delivered` with tasks
+open. The epic's id is the key: an epic whose work lives in a change directory with a different id
+has no checkbox source under this rule, and this requirement does not add a mapping.
+
+**One resolver decides which archived directory is an epic's.** The question "is this epic's change
+archived" and the question "where is its archived `tasks.md`" SHALL be answered by the SAME match, so
+they can never disagree about one epic. A directory matches when its name, with one leading
+`YYYY-MM-DD-` prefix removed, equals the epic's id with the same prefix removed. Where more than one
+directory matches (a change archived, re-proposed under the same id and archived again), the one with
+the LATEST date prefix wins, and an undated directory ranks below every dated one, because
+`openspec archive` always writes a date and an undated directory is the older manual convention.
+Before this requirement the two questions used different matches: one tried the undated name first
+and then took the first stripped match in directory order (the OLDEST), and the other matched the
+literal id, so an id that itself carried a date prefix could read as archived with no tasks found.
 
 A plan file that has moved is read where the epic records it and nowhere else. Plans have no archive
 convention to follow, so a moved plan is not reconstructed here.
 
-The missing-source warning is decided by the checkbox part alone, and the story part does not
-suppress it. An epic that is not archived, whose checkbox part is expected (it records a plan file,
+The missing-source warning is decided by the checkbox source alone, and the story part does not
+suppress it. An epic that is not archived, whose checkbox source is expected (it records a plan file,
 or it is openspec-lane) and cannot be read from either location, warns whether or not it has
 stories.
 
@@ -90,6 +106,12 @@ stories.
   exists at the live path or in any archived change directory matching its id
 - **THEN** the missing-source warning is emitted and its stories are still counted
 
+#### Scenario: Two archived directories for one id resolve to the latest
+- **WHEN** an epic's id matches both `openspec/changes/archive/2026-08-01-<id>/` and
+  `openspec/changes/archive/2026-09-01-<id>/`, each holding a `tasks.md` with different counts
+- **THEN** its progress is read from the `2026-09-01` directory, and the same directory is the one
+  that decides the epic's change is archived
+
 #### Scenario: A story-only epic is unchanged
-- **WHEN** an epic in a lane with no checkbox part and no plan file carries 3 stories, 1 done
+- **WHEN** an epic in a lane with no checkbox source and no plan file carries 3 stories, 1 done
 - **THEN** its progress renders `1/3`, as before this requirement

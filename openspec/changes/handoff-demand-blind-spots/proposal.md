@@ -1,6 +1,8 @@
 # Proposal: the archive gate reads the archived work
 
-**Epics:** `handoff-demand-blind-spots` (code review 0.43.0, findings A1 and A2), `gh-cfdude-pm-222` (cfdude/pm#222)
+**Epic:** `handoff-demand-blind-spots` (code review 0.43.0, findings A1 and A2), the carrier. It also
+carries cfdude/pm#222: that epic, `gh-cfdude-pm-222`, is already archived `superseded` into this one
+through a `supersedes` link, and the issue is closed with the ship evidence at close (task 9.2).
 **Release:** 0.50.0
 
 ## Why
@@ -30,13 +32,15 @@ blind spots, and each one has already happened for real in this repository:
 ## What Changes
 
 - **Archived tasks are read for every epic.** When the live `tasks.md` is gone, the progress source
-  of an openspec-lane epic is its archived `tasks.md`, found by the same id match `isArchived()`
-  uses. Before, only backfilled epics read it. The gate-integrity clause that made the handoff read
+  of an openspec-lane epic is its archived `tasks.md`, found by ONE resolver that also answers
+  `isArchived()` (today the two use different matches; the latest date prefix wins). Before, only
+  backfilled epics read it. The gate-integrity clause that made the handoff read
   zero is replaced.
 - **Stories and a checkbox source count together.** An epic's outstanding work is the sum of its
   undisposed open inline stories and the open, undeclared items of its checkbox source (a plan
   file, or the change's `tasks.md`). Neither can hide the other. A refusal names the remedy for each
-  source that contributes.
+  part that contributes (`epic-disposition` states it), and every remedy the engine prints keys on
+  each part's own open count (`emitted-instructions`).
 - **The record reports it when a delivered epic's archived spec deltas are absent from the main
   specs.** This is a new integrity check, and a briefing line reports the same finding:
   - every ADDED or MODIFIED requirement header in the archived change's delta specs must be in the
@@ -44,11 +48,13 @@ blind spots, and each one has already happened for real in this repository:
   - RENAMED is checked on both of its sides;
   - a later archived change that touched the same header discharges the obligation.
 
-  The main spec is read from git's **index** (`:<path>`), not the working tree. This is reported as a
-  standing condition, **not** a refusal at the archive transition; `design.md` gives the reason (it
-  would deadlock pm's own closeout).
-- **A new git-gateway operation** reads index content in one `cat-file --batch` process. It is
-  answered by the assertion rung's git double.
+  The main spec is read from git's **index** (`:./<path>`, relative to the conductor root), not the
+  working tree. This is reported as a standing condition, **not** a refusal at the archive
+  transition; `design.md` gives the reason (it would deadlock pm's own closeout). It is reported by
+  `integrity`, the SessionStart briefing and `render`'s output, and never written into the tracked
+  `PROJECT.md`.
+- **A new git-gateway operation** reads index content as BYTES in one `cat-file --batch` process. It
+  is answered by the assertion rung's git double.
 
 ## Capabilities
 
@@ -66,17 +72,26 @@ None.
     outstanding-work quantity reads zero once the source has moved;
   - ADDED: "A delivered epic whose archived spec deltas are absent from the main specs is reported
     until they arrive".
+- `epic-disposition`:
+  - "Unfinished work at archive records where it went": the refusal names the remedy for each part
+    of the union that contributes;
+  - "The archive can be asked which of its records carry no considered outcome": the story remedy
+    clears the entry only for a story-only epic; a both-parts scenario is added.
+- `emitted-instructions`: "A remedy the engine prints clears the condition that printed it": the
+  delivered-release and drift-heal remedies key on each part of the union, not on either/or.
 
 ## Impact
 
 - **Engine:** `scripts/lib/epic-progress.mjs` (`epicProgress`, `outstandingWork`),
   `scripts/lib/archive-gate.mjs` (`outstandingSummary`, the handoff entry of
   `DELIVERED_OBLIGATIONS`), `scripts/lib/integrity.mjs` (new check), the briefing's
-  standing-condition block, a new module for the delta parser and the comparison,
+  standing-condition block and `render`'s output (never `PROJECT.md`), a new module for the delta parser and the comparison,
   `scripts/lib/git.mjs` (a wrapper), and `scripts/lib/git-gateway.mjs` (`realGit`,
   `GIT_OPERATIONS`).
 - **Tests:** the git double (`scripts/test/fixtures/fake-git.mjs`) and its capture
-  (`git-gateway-capture.json`), the gateway guard, new unit and assert tests, and any live-record
+  (`git-gateway-capture.json`, which gains a byte-valued entry), the gateway guard in both halves and
+  `fixtures/git-gateway-repo.mjs`, new unit, assert and functional tests (functional ones with their
+  twins), `functional/conductor-15.test.mjs`'s 8.3 case and its twin, and any live-record
   test whose expectation moves when 17 archived epics stop reading 0/0.
 - **Docs:** `README.md`, `commands/status.md` (which documents `integrity` and the briefing), a `.changesets/` fragment,
   and the Mintlify pages for the release cut.

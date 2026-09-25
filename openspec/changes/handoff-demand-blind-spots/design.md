@@ -1,7 +1,10 @@
 # Design: the archive gate reads the archived work
 
-See `proposal.md` for the Why. The requirements are in `specs/conductor-record/spec.md` and
-`specs/gate-integrity/spec.md`. This document records how the work is built, what was measured
+See `proposal.md` for the Why. The requirements are in four delta files:
+`specs/conductor-record/spec.md`, `specs/gate-integrity/spec.md`, `specs/epic-disposition/spec.md`
+and `specs/emitted-instructions/spec.md`. The last two exist because the union (D2) makes two
+either/or sentences in those main specs false: an epic with an open story AND an open task is not
+cleared by the story remedy alone. This document records how the work is built, what was measured
 before choosing, and what was deliberately left out.
 
 ## Context
@@ -11,10 +14,20 @@ before choosing, and what was deliberately left out.
   `tasks.md` is gone, it reads `archivedTasksPath(epic.id)` ONLY when `isArchiveBackfilled(epic)`
   is true. Its comment names the reason, and that reason is now void: "`archiveGate()` documents
   that outstanding work reads zero for an archived epic whose source is gone". This change amends
-  that sentence of the spec.
+  that sentence of the spec. The same premise is repeated in three code comments that must be
+  rewritten with it: `archiveGate()`'s doc comment ("reads zero for an archived epic whose source is
+  gone"), the handoff branch inside `archiveGate()` ("A checkbox source cannot be read here at all"),
+  and the `archived-with-zero-ticked-tasks` check's comment in `integrity.mjs` (which calls `0/0`
+  "the ordinary case" for an archived epic).
+- `archivedTasksPath()` and `isArchived()` answer "which archived directory is this epic's" with two
+  DIFFERENT matches. `archivedTasksPath()` tries the undated name, then the first
+  `strippedChangeId()` match in directory order (the oldest). `isArchived()` tries the undated name,
+  then a regex over the LITERAL id. They disagree for an id that itself carries a date prefix, and
+  when a change was archived twice.
 - `outstandingWork()` and `outstandingSummary()` (in `archive-gate.mjs`) are thin readers over
   `epicProgress()`. The handoff entry of `DELIVERED_OBLIGATIONS` branches on
-  `outstandingSummary(epic).source === "stories"` for both its `remedy` and its `archiveFlags`.
+  `outstandingSummary(epic).source === "stories"` for both its `remedy` and its `archiveFlags`, and
+  `archiveGate()`'s own refusal message branches on the same test to choose its remedy text.
 - The engine has one injected git gateway (`scripts/lib/git-gateway.mjs`: `realGit()` and the
   `GIT_OPERATIONS` table). A guard (`scripts/test/{assert,functional}/git-gateway-guard.test.mjs`)
   derives the exec sites from source, and the table must match them. The assertion half's double
@@ -59,6 +72,7 @@ below is carried forward as a fact.
 - **Repairing the two live `delivered` records with open tasks.** They are reported truthfully. The
   per-obligation regression check does not refuse updates to them, because the obligation they fail
   was already failing before any update.
+- **Refusing to let a `--skip-specs` or `killed` later change discharge an obligation.** See D4.
 
 ## Decisions
 
@@ -66,6 +80,13 @@ below is carried forward as a fact.
 
 When the live `tasks.md` is absent, `epicProgress()` reads `archivedTasksPath(epic.id)` whatever
 the backfill stamp says.
+
+**One resolver.** `isArchived()`, `archivedTasksPath()` and the spec-sync check (D5) all call ONE
+exported resolver (working name `archivedChangeDir(id)`) built on `archivedChanges()` and
+`strippedChangeId()`: strip one date prefix from both sides, and among several matches take the
+latest date, with an undated directory ranking below every dated one. `conductor-record` states the
+rule. `reconcileArchived()` reaches it through `isArchived()`, which is a file the 0.50.0 epic
+`drift-heal-leaves-claim-on-archive` also edits (Risks).
 
 - **Alternative: keep it scoped to backfill.** Rejected. The scope rests on a spec sentence that
   makes the handoff demand inert on the documented path, and the 53/54 and 46/47 records are that
@@ -83,11 +104,13 @@ re-measures this.
 
 ### D2. Stories and the checkbox source count together
 
-`epicProgress()` computes the story part and the checkbox part independently and sums them.
+`epicProgress()` computes the story part and the checkbox source independently and sums them.
 
 - `excluded` is the sum of disposed stories and lifecycle-declared tasks.
 - `excludedLabel` names both kinds when both are non-zero, so `bar()` never calls a disposed story
   "lifecycle".
+- The vocabulary is `conductor-record`'s: the **story part**, a **disposed story**, and the
+  **checkbox source** (a plan file or a `tasks.md`). No artifact says "checkbox part".
 - `source` stays a single value when one part contributes and becomes a two-part value (for example
   `stories+openspec`) when both do.
 - A new field lists the parts, so a consumer tests membership rather than equality.
@@ -95,13 +118,26 @@ re-measures this.
 **Every consumer of `source` is re-derived in the same commit** (task 2.3 enumerates them with `rg`):
 
 - `outstandingSummary`: `items` lists the open stories whenever the story part contributes;
+- `archiveGate()`'s handoff refusal message: its `source === "stories"` remedy branch becomes one
+  remedy clause per contributing part, as `epic-disposition` now requires, and its "a checkbox
+  source cannot be read here" comment is rewritten, because under D1 it can;
 - the handoff's `remedy`: it offers `--story <n> --done` when stories contribute;
-- the handoff's `archiveFlags`: it offers `--carried-to` when the checkbox part has open tasks;
+- the handoff's `archiveFlags`: it offers `--carried-to` when the checkbox source has open tasks;
+- the remedies `integrity` prints for `heal-archived-epic-passed-gate-2` and
+  `delivered-release-epic-left-open`, which `emitted-instructions` now requires to name both parts'
+  remedies when both contribute;
 - `bar()`;
 - the regression refusal's printed-invocation rule for `--carried-to`, in gate-integrity: "if and
   only if the record ... has a checkbox task source whose open tasks break the handoff demand". That
-  wording stays true under the union, and the implementation must test the checkbox part's open
+  wording stays true under the union, and the implementation must test the checkbox source's open
   count, not `source`.
+
+**Readers of `deliveredObligations()` inherit the union without being edited**, and each must be
+checked (task 6.1): `blockedDelivered()` (and through it `unconsidered-outcomes`), `integrity`'s
+`heal-archived-epic-passed-gate-2` and `delivered-release-epic-left-open`, `deliveredRegression()`,
+and the AMEND commit hook in `subcommands.mjs` that calls `deliveredRegression()`. An archived
+`delivered` epic whose handoff obligation newly fails under D1 was ALREADY failing it before any
+edit, so `deliveredRegression()` (which compares before and after) does not refuse an update to it.
 
 **Alternative: refuse to switch source.** This means refusing `--add-story` on an epic with a
 checkbox source, and the reverse. Rejected for three reasons:
@@ -112,7 +148,7 @@ checkbox source, and the reverse. Rejected for three reasons:
 - it leaves every existing record that holds both parts reading one of them;
 - over-counting is the visible error direction, and `conductor-record` already chooses it.
 
-**The missing-source warning** follows the checkbox part alone. A story no longer silences a
+**The missing-source warning** follows the checkbox source alone. A story no longer silences a
 missing `tasks.md` on an openspec epic that is not archived. On the measurement, no live epic
 changes.
 
@@ -145,15 +181,22 @@ The ungated archive is the same argument already shipped as a standing condition
 ### D4. Headers only, and a later change discharges in the opposite direction
 
 The comparison is set membership over requirement NAMES, and it follows OpenSpec 1.13.2's delta
-grammar (read from `dist/core/parsers/requirement-blocks.js`):
+grammar (read from `dist/core/parsers/requirement-blocks.js`). The ADDED requirement in
+`gate-integrity` states every rule, and task 4.1 pins each with a fixture. The ones most easily got
+wrong:
 
-- names are compared case-sensitively after `normalizeRequirementName` (strip a closing `#` run,
-  trim);
-- lines in code fences are skipped;
-- REMOVED also accepts a bulleted header;
-- RENAMED is a `FROM:` line followed by a `TO:` line, with an optional `-*+` bullet and optional
-  backticks;
-- an unpaired line is a finding, not a skip.
+- the header regex is `^###\s*Requirement:\s*(.+)\s*$` with the `i` flag, so the keyword is
+  case-insensitive and `###Requirement:` is a header;
+- a closing `#` run is stripped only after a space or tab (`[ \t]+#+[ \t]*$`), so `C#` keeps its `#`;
+- a BOM is stripped and CRLF/CR become LF before anything else;
+- section titles fold case-insensitively and a repeated title contributes every copy;
+- `FROM:`/`TO:` pairs form per section body, never across two copies; an unpaired `FROM:` AND an
+  unpaired `TO:` are both findings;
+- the MAIN spec counts only headers under its `## Requirements` section, as
+  `extractRequirementsSection()` does; the delta counts only headers under a delta section.
+
+An unpaired RENAMED finding needs no git, so it is reported even where git cannot answer. The
+no-repository rule suppresses presence and absence findings only (P5 of the cross-spec review).
 
 The engine re-implements this grammar rather than importing OpenSpec, under the zero-runtime-dependency
 law, so a fixture per arm pins it (task 4.1).
@@ -168,51 +211,92 @@ DECLARED in the spec as a limit, and is recorded as a declined deferral at archi
 unordered and discharges in both directions. OpenSpec's archive records no finer order, and a
 finding that guessed one would report a correct record.
 
+**Any archived change discharges, and that is a declared limit.** The discharging change's epic
+outcome is not read, and `openspec archive --skip-specs` leaves no trace. So a later change archived
+with `--skip-specs`, or ending `killed`, can clear a real loss. Restricting discharge to delivered
+epics would report correct records whenever a discharging change has no epic (the archive predates
+the conductor). This is the false-negative direction, declared in the spec.
+
 ### D5. The main spec is read from the INDEX, through one new gateway operation
 
 **Why the index.** It equals `HEAD` at rest, and between `git add` and `git commit` it is what the
 next commit will record. So in the 0.48.0 shape (the archive staged, the specs left out), an
 interactive `integrity` or `status` run in that window reports the loss before the commit is made.
-The next SessionStart briefing reports it too, instead of two days later. `HEAD` would report every
-correct archive as broken until its commit lands. The working tree would pass the 0.48.0 loss
-outright.
+The next SessionStart briefing reports it too, instead of two days later. The working tree would pass
+the 0.48.0 loss outright.
+
+**What the index costs, stated.** `HEAD` would report every correct archive until its commit lands.
+The index does the same until `git add`: after `openspec archive` rewrites the main specs in the
+working tree and before they are staged, a CORRECT archive is reported. The index narrows the window
+to the staging step; it does not close it. That window is the reason for D6's `PROJECT.md` decision.
 
 **What does NOT run it.** The pre-commit hook runs the assertion half, whose git double answers the
 no-repository case. The check therefore sees "cannot answer" there and reports nothing, so it
 neither blocks nor protects a commit. Wiring it into the hook against real git is a separate
 decision, and it is not taken here.
 
-**The operation.** It is `git cat-file --batch`, with one `:<path>` line per capability on stdin,
+**The operation.** It is `git cat-file --batch`, with one `:./<path>` line per capability on stdin,
 in ONE process. The briefing reads it at SessionStart, and integrity scans every in-scope epic. A
 `show :<path>` per file would be one process each.
 
+- **Paths are `:./openspec/specs/<cap>/spec.md`, resolved from the gateway's `cwd` (the conductor
+  root).** A bare `:<path>` resolves from the repository's TOP LEVEL, so in a monorepo whose conductor
+  lives in a subdirectory every capability would read `missing` and every header would be reported.
+  Verified 2026-09-25 with git 2.55.0 in a scratch repository: from `sub/`,
+  `:./openspec/specs/x/spec.md` answers the blob and `:openspec/specs/x/spec.md` answers `missing`.
+  (`rev-parse --show-prefix` joined onto the path is the equivalent; `:./` needs no second process.)
+- **The output is BYTES.** Each header line is `<oid> blob <size>`, and `<size>` counts bytes. The
+  specs hold multi-byte text: all 15 main specs differ between byte and UTF-16 length (measured
+  2026-09-25), and `gate-integrity` is 164362 bytes against 163986 characters, so slicing a decoded string by `<size>`
+  misreads every file after the first multi-byte one. The operation returns a `Buffer`; the wrapper
+  slices by byte offset and decodes each blob as UTF-8 only after slicing.
+- **`maxBuffer` is set explicitly** to 256 MiB, the gateway's existing ceiling for `rev-list`. The
+  default is 1 MiB and the main specs already total 485045 bytes. An overflow (`ENOBUFS`) is NOT "git
+  cannot answer": the wrapper rethrows it, and the check fails loudly rather than reporting nothing.
 - A `missing` line is the definite answer "absent from the index": the spec holds no headers.
-- A throw means "cannot answer" (no repository, no git). That yields no findings at all, which
-  mirrors how the integrity checks already treat an unanswerable git ("`null` means git could not
-  answer at all ... must never be reported as a finding").
+- The no-repository failure (git exits non-zero because there is no repository, or git is absent)
+  means "cannot answer". The wrapper returns `null` for that and for nothing else. That yields no
+  presence or absence findings, which mirrors how the integrity checks already treat an unanswerable
+  git ("`null` means git could not answer at all ... must never be reported as a finding").
 - The same `batchCheckCommits` precedent sets `GIT_NO_LAZY_FETCH=1`.
+- **The capture carries bytes.** Every existing gateway operation returns a UTF-8 string and the
+  capture stores strings. This operation's capture entry stores its value base64-encoded under an
+  explicit encoding tag, `fake-git.mjs` decodes it to a `Buffer`, and the capture's byte-identity
+  check compares bytes. A string-valued entry would agree with real git on ASCII and disagree on
+  exactly the multi-byte case the capture must pin.
 
 **Where it lives.**
 
 - The operation is in `realGit()` and `GIT_OPERATIONS`.
 - A wrapper sits in `git.mjs` (e.g. `indexFileContents(paths) -> Map<path, string|null> | null`).
+- **The injection point is named.** The exported comparison (working name
+  `specSyncFindings(epics, { readIndex = indexFileContents } = {})`) takes the index reader as a
+  parameter, and `integrity` and the briefing both call it with the default. A test hands it a stub
+  reader returning a NON-EMPTY map. The verb path reaches git only through `gitOps()`, so a verb-level
+  test supplies the operation through the invocation's `io.git` like any other gateway operation.
+  Without this, the assertion half's double answers `noRepository`, the check reports nothing, and a
+  test comparing two surfaces compares two empty sets.
 - The pure comparison and the delta parser go in a NEW module (working name
   `scripts/lib/spec-sync.mjs`), which imports `epic-progress.mjs` (`archivedChanges`,
   `strippedChangeId`) and `git.mjs`. `integrity.mjs` and the briefing import it.
 - `git.mjs` is a certified module (it calls `gitOps(`). The new module is not, because it calls only
   the wrapper.
 
-**Testing.**
+**Testing, by rung.** A test's rung follows what it observes and what its own frame touches. The
+unit rung refuses a test that reads or writes a path (`fixtures/fs-work-counter.mjs`), and the
+precedent is `unit/conductor-22` and `unit/conductor-03`, which left every `withArchivedChange()`
+case on the file rung.
 
-- **The pure comparison** is on the UNIT rung. Its observable is a value, from delta text and main
-  text to findings, with no git.
-- **The git read** is FUNCTIONAL, with a hermetic repository that covers:
-  - staged but not committed;
-  - committed;
-  - reset;
-  - absent from the index;
-  - no repository.
-  It has an assertion twin of the same id, edited in the same commit.
+- **UNIT:** the delta parser and the pure comparison (delta text and main text in, findings out,
+  no git, no path), and the story-only progress cases.
+- **ASSERT (file rung):** anything whose fixture writes an archived change directory or a
+  `tasks.md` for the engine to read: 1.2, 1.3, 2.1's checkbox cases, 2.2, 2.3, and
+  `specSyncFindings()` called directly with a stub reader over fixture directories.
+- **FUNCTIONAL, each with its assertion twin edited in the same commit:** the git read itself
+  (staged, committed, reset, absent, multi-byte, subdirectory root, no repository), and every
+  verb-level spec-sync case: `integrity` naming the epic, the briefing and integrity reporting the
+  same set, the archive transition not refused, the staged-then-reset sequence and the
+  archive-to-`git add` window.
 - **The double** gains:
   - a `noRepository` answer for the operation. In the assertion half, every existing brief and
     integrity test then sees "cannot answer" and no finding, so no existing assertion moves;
@@ -223,10 +307,25 @@ in ONE process. The briefing reads it at SessionStart, and integrity scans every
 
 - An integrity check with a stable id (working name `delivered-epic-spec-deltas-absent`).
 - A briefing block under its own heading, fed by the same exported function (the
-  `ungatedArchives()` pattern), so the two cannot name different sets.
-- `status` renders the briefing and inherits the block.
-- `unconsidered-outcomes` is NOT extended. It answers "which records carry no considered outcome",
-  and these records carry one.
+  `ungatedArchives()` pattern), so the two cannot name different sets. Its overflow line points at
+  `integrity`, never at `PROJECT.md`.
+- **The block is NOT written into `PROJECT.md`.** `render()` embeds `buildBrief(state)` into
+  `PROJECT.md`, a tracked file. Decided: `buildBrief()` gains an option that includes the block, which
+  `brief()` and `snapshot()` pass and `render()`'s embedding does not. The `render` VERB, at its
+  command-line dispatch and not inside `render()`, writes the block to its stdout after writing the
+  file. `render()` itself runs in-process under `snapshot`, `commit-nudge`, `sync`, `upgrade` and most
+  mutating verbs, several of them hooks, so printing there would put the block (and a git process)
+  into every one of those outputs; and `render --diff-summary`'s stdout is a machine-read line, so
+  it never carries the block. `/pm:status` runs `render` and reads its output as
+  well as `PROJECT.md` (`commands/status.md` says so), so status still shows it. Why not the file:
+  - the condition depends on the INDEX, and a render between `openspec archive` and `git add` would
+    write a finding about a correct archive into `PROJECT.md`, which pm's closeout then commits;
+  - `PROJECT.md` would change with staging state rather than with the record, which defeats
+    `render`'s unchanged-skip and `--diff-summary`;
+  - the ungated block belongs in the file because it is a function of `state.json`; this one is not.
+- `unconsidered-outcomes` is NOT extended with this check. It answers "which records carry no
+  considered outcome", and these records carry one. Its entries DO change under D1 and D2, through
+  `blockedDelivered()`, so it is in 1.1's and 8.1's baselines.
 
 ## Risks / Trade-offs
 
@@ -242,10 +341,12 @@ in ONE process. The briefing reads it at SessionStart, and integrity scans every
   pages and correct those records.
 - **[The re-implemented OpenSpec grammar drifts from a future OpenSpec]** → a fixture per arm, and a
   comment naming the upstream file and version it was read from.
-- **[This change's own id differs from both member epics]** → under D1, neither
-  `handoff-demand-blind-spots` nor `gh-cfdude-pm-222` reads this change's `tasks.md`, and the check
-  in D3 finds no archived directory for either. This is raised as an open question to the
-  orchestrator, not solved by a mapping.
+- **[Shared files with other 0.50.0 epics]** → `drift-heal-leaves-claim-on-archive` edits
+  `reconcileArchived()`, which calls `isArchived()`, the function D1's one resolver rewrites; whichever
+  lands second re-reads the other's diff. `no-network-law-test-is-weak` adds an allowlist over spawn
+  and exec argv; the new gateway operation spawns `git`, which that allowlist must admit, and the new
+  exec site is one more row its test sees. `commit-gate-tests-working-tree-not-index` moves the
+  pre-commit hook to the index; D5's "the hook does not run this check" stays true either way.
 
 ## Migration Plan
 
@@ -254,6 +355,6 @@ Rollback is a revert of the implementation commits.
 
 ## Open Questions
 
-- What happens to the two member epics' progress while this change's id matches neither? The
-  orchestrator decides: re-key, register the change id as the carrier epic and supersede the two, or
-  link them. It is raised in the proposal report, and it does not change these specs.
+None. The change-to-epic mapping was resolved by RE-KEY (task 0.3): the change id is the carrier
+epic's id. `gh-cfdude-pm-222` is already archived `superseded` into the carrier through a
+`supersedes` link; cfdude/pm#222 is closed with the ship evidence by task 9.2.
