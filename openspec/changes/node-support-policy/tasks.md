@@ -603,7 +603,7 @@ Commit mechanics, which bind every section below:
 
 ## 7. Docs
 
-- [ ] 7.1 `CONTRIBUTING.md`.
+- [x] 7.1 `CONTRIBUTING.md`.
       - Update the commands and prose at `:9-12`, `:53`, `:70`, `:89` ("Both rungs in one
         process"), `:92`, `:100`, `:103-105`, `:142` ("The assertion half is one Node process",
         Gate 1 I8) and `:239-241`.
