@@ -420,7 +420,7 @@ Commit mechanics, which bind every section below:
       - a step rewritten as `total=$(FORCE_COLOR=0 node --test … | grep … | awk …)` — the G-C1
         pipeline shape with an env prefix (Gate 1 I5);
       - the compute step no longer passing `$PM_NODE_FALLBACK` to the script (Gate 1 B5).
-- [ ] 4.4 RED then GREEN, one commit — `scripts/test/certify.mjs`.
+- [x] 4.4 RED then GREEN, one commit — `scripts/test/certify.mjs`.
       - Export the count parser.
       - RED: a file-rung test asserts the exported parser returns `null` for a TAP summary
         (`# tests 3`) and for a coloured spec summary. It fails today: the parser is not exported,

@@ -54,23 +54,40 @@ function bucketFiles(root, bucket) {
   return files;
 }
 
+/** One count from the runner's summary: `ℹ <label> N` at the start of a line, or `null`. ONE FORMAT
+ *  (0.49.0, design D4): the runner is started with `--test-reporter=spec` and `FORCE_COLOR=0`, so the
+ *  summary is these bytes on every supported Node major. A TAP summary (`# tests N`) or a coloured one
+ *  (`ESC[34mℹ tests N`) is NOT read — a count in another format is one this runner did not ask for. */
+export function summaryCount(output, label) {
+  const m = new RegExp(`^ℹ ${label} (\\d+)$`, "m").exec(output);
+  return m ? Number(m[1]) : null;
+}
+
 /** One bucket run. Returns `{ ok, counts, output }`; `counts` is read from the runner's own summary
- *  line (both reporters: newer Node uses the `spec` reporter's `ℹ`, the CI runner's Node 18 the
- *  `tap` reporter's `#`). */
+ *  line, in the one format the runner is forced to print. */
 function runBucket(root, bucket) {
   const files = bucketFiles(root, bucket);
-  const r = spawnSync(process.execPath, ["--test", ...files], { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  const r = spawnSync(process.execPath, ["--test", "--test-reporter=spec", ...files], {
+    cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0" },
+  });
   const output = `${r.stdout || ""}${r.stderr || ""}`;
-  const pick = (label) => {
-    const m = new RegExp(`^(?:ℹ|#) ${label} (\\d+)$`, "m").exec(output);
-    return m ? Number(m[1]) : null;
-  };
   return {
     ok: r.status === 0,
     status: r.status,
-    counts: { tests: pick("tests"), pass: pick("pass"), fail: pick("fail") },
+    counts: { tests: summaryCount(output, "tests"), pass: summaryCount(output, "pass"), fail: summaryCount(output, "fail") },
     output,
   };
+}
+
+/** A passing run is recorded only over a count that was READ and is not ZERO. A record is a claim about
+ *  a pass over N tests; an unreadable or empty count is a run this runner cannot vouch for. Returns
+ *  the refusal text, or `null` when the count may be recorded. */
+function countRefusal(label, counts) {
+  if (counts.tests === null || counts.pass === null) {
+    return `certify: the ${label} passed but its count could not be read (no '^ℹ tests' / '^ℹ pass' line). Nothing recorded.\n`;
+  }
+  if (counts.tests === 0) return `certify: the ${label} ran ZERO tests. Nothing recorded — a run of nothing is not a pass.\n`;
+  return null;
 }
 
 /** The provenance and the timing every entry carries. `engineSha` is INFORMATIONAL (D7): nothing
@@ -90,6 +107,8 @@ function certifyFunctional(root, gitCommonDir) {
     process.stderr.write(`\ncertify: the functional half FAILED (status ${run.status}). Nothing recorded — a record is a claim about a pass.\n`);
     return 1;
   }
+  const refusedF = countRefusal("functional half", run.counts);
+  if (refusedF) { process.stderr.write(run.output + "\n" + refusedF); return 1; }
   const { ranAt, engineSha } = provenance(root);
   const functional = functionalIds(root);
   const mods = certifiedModules(root);
@@ -110,6 +129,8 @@ function certifySweeps(root, gitCommonDir) {
     process.stderr.write(`\ncertify: the sweeps bucket FAILED (status ${run.status}). Nothing recorded.\n`);
     return 1;
   }
+  const refusedS = countRefusal("sweeps bucket", run.counts);
+  if (refusedS) { process.stderr.write(run.output + "\n" + refusedS); return 1; }
   const { ranAt, engineSha } = provenance(root);
   const entry = triggerEntry({ root, counts: run.counts, ranAt, engineSha });
   writeEntry(gitCommonDir, ENGINE_SOURCE, entry);
