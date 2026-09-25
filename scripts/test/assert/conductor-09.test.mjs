@@ -253,7 +253,10 @@ test("IX the hook verifies the INDEX: captured before the scrub, exported with c
   // fixtures make is wrapped in removeAtExit(), so a failed assertion cannot leak one.
   const functionalSrc = fs.readFileSync(path.join(path.dirname(HOOK), "..", "scripts", "test", "functional", "conductor-09.test.mjs"), "utf8");
   const ixSection = functionalSrc.slice(functionalSrc.indexOf("the hook verifies the INDEX, never the working tree"));
-  const unwrapped = ixSection.split("\n").filter((l) => /\bmkdtempSync\(/.test(l) && !/removeAtExit\(\s*fs\.mkdtempSync\(/.test(l));
+  // Built from parts, so this line is not itself a site for the repo-wide temp-dir scan.
+  const MK = "mk" + "dtemp" + "Sync\\(";
+  const unwrapped = ixSection.split("\n")
+    .filter((l) => new RegExp("\\b" + MK).test(l) && !new RegExp("removeAtExit\\(\\s*fs\\." + MK).test(l));
   assert.deepEqual(unwrapped, [], "an IX fixture makes a temp dir that is not scheduled with removeAtExit()");
 
   // 4. `declared` COUNTS THE SNAPSHOT'S BYTES, never the working tree's copy of a partially staged file.
