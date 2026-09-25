@@ -175,7 +175,13 @@ export function setTracker() {
     for (const pair of f.intent) {
       if (typeof pair !== "string") continue;
       const i = pair.indexOf(":");                 // split once — target may contain no ':'
-      if (i <= 0 || i === pair.length - 1) continue;
+      // A pair with no ':' or an empty half was DROPPED without a word (code review 0.43.0 minors):
+      // exit 0, "tracker set", and the intent the user typed recorded nowhere. Refused by name now,
+      // before anything is written.
+      if (i <= 0 || i === pair.length - 1 || !pair.slice(0, i).trim() || !pair.slice(i + 1).trim()) {
+        die(`conductor: --intent ${escapeControls(JSON.stringify(pair))} must be <pm-status>:<tracker-state>, ` +
+          "both halves non-empty — e.g. --intent \"active:In Progress\"\n");
+      }
       si[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
     }
     t.statusIntent = si;

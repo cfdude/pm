@@ -13,3 +13,6 @@
 * **`changelog --since` refuses a value that is not a version.** Any non-version read as `0.0.0`,
   so `--since garbage` printed the entire changelog — about 3,400 lines — instead of saying the
   value was wrong. It now takes only `x.y.z`.
+* **`set-tracker --intent` refuses a malformed pair.** A value with no `:` or an empty half was
+  dropped without a word — the command exited 0 with "tracker set" and the intent recorded nowhere.
+  It is now refused by name and nothing is written.

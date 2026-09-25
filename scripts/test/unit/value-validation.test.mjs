@@ -72,6 +72,17 @@ unitTest("isIsoTimestamp accepts what GitHub, Linear and Jira emit and nothing D
   }
 });
 
+unitTest("set-tracker refuses an --intent that is not <status>:<target> instead of dropping it", () => {
+  // The malformed pair was skipped silently: exit 0, "tracker set", and the intent recorded nowhere.
+  const engine = memoryEngine(emptyRecord());
+  for (const bad of ["badpair", ":done", "active:", "active: "]) {
+    const err = expectFail(() => engine(["set-tracker", "--system", "jira", "--intent", bad]));
+    assert.ok(err, `--intent ${JSON.stringify(bad)} is refused`);
+    assert.match(err.stderr, /must be <pm-status>:<tracker-state>/);
+  }
+  assert.equal(engine.store.record().tracker, undefined, "and no tracker was written");
+});
+
 unitTest("changelog --since refuses a value that is not a version instead of printing everything", () => {
   // cmpVer() read any non-number as 0, so `--since garbage` meant "since 0.0.0": 3,366 lines.
   const engine = memoryEngine(emptyRecord());
