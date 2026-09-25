@@ -12,9 +12,12 @@
 // with no question behind it, or a question with no section, is the graveyard starting.
 //
 //   "How long did an epic sit `queued` before it was picked up?"      → TIME TO PICKUP
-//   "How many detours interrupted it?"                                 → DETOURS
+//   "How many detours interrupted it?"                                 → DETOURS (pushes per epic;
+//                                                                         pops resumed, drops ended)
 //   "Which lane was chosen, and did the work prove it wrong?"          → LANES (and re-routes)
-//   "Was a gate recorded before or after the commits it covers?"       → GATES (sequence + time)
+//   "Was a gate recorded before or after the commits it covers?"       → GATES (sequence + time,
+//                                                                         reconcile verdicts included)
+//   "What was re-prioritised, granted autonomy, or re-dialled, when?"  → SETTINGS
 //   "How often does an agent take the instructed path vs work around?" → OUT-OF-BAND WRITES
 //
 // The last one is the reason the log is worth its cost. #110 is a gate defeated silently,
@@ -77,7 +80,9 @@ export function readEvents({ dir = activityDir(), since = null, epic = null } = 
       // one that reads N-1 lines — but COUNTED, and the count is printed.
       try { e = JSON.parse(line); } catch { malformed++; continue; }
       if (scoped && Date.parse(e.at) < sinceMs) continue;
-      if (epic && e.epic !== epic) continue;
+      // A detour event is about TWO epics — the one paused (`epic`) and the one it was paused for
+      // (`detour`) — and `--epic` finds it under either.
+      if (epic && e.epic !== epic && e.detour !== epic) continue;
       events.push(e);
     }
   }
@@ -101,6 +106,26 @@ export function segmentStart(name) {
  *  the sample, in both the text report and `--json`. */
 export const OUT_OF_BAND_SAMPLE = 50;
 
+/** Event kind → the DETOURS counter it feeds. A pop RESUMES a pause and a drop ENDS one; counting
+ *  both as pops is the defect this table exists to prevent. */
+const DETOUR_KINDS = {
+  "detour-push": "push", "detour-pop": "pop", "detour-drop": "drop", "detour-removed": "removed",
+};
+
+/** Kinds that name an epic without being evidence that it entered the queue: a detour event names an
+ *  epic already in flight, and a reconcile verdict or a priority/autonomy/review-mode change is a
+ *  setting on an epic, not work on it. Before this change none of them carried an `epic` at all, so
+ *  excluding them keeps TIME TO PICKUP's population exactly what it was — an epic the window
+ *  mentions ONLY through one of these is not reported as "never picked up". The events still reach
+ *  DETOURS, GATES and SETTINGS, and `--epic` still finds them. */
+const NOT_PICKUP_EVIDENCE = new Set([
+  "detour-push", "detour-pop", "detour-drop", "detour-removed",
+  "reconcile-recorded", "epic-priority", "epic-autonomy", "review-mode",
+]);
+
+/** The kinds the SETTINGS section lists: priority, autonomy and review-intensity changes. */
+const SETTINGS_KINDS = new Set(["epic-priority", "epic-autonomy", "review-mode"]);
+
 const HOUR = 3_600_000;
 const hrs = (ms) => `${(ms / HOUR).toFixed(1)}h`;
 function median(ns) {
@@ -116,8 +141,8 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     events: events.length, malformed,
     from: events.length ? events[0].at : null,
     to: events.length ? events[events.length - 1].at : null,
-    pickup: [], detours: { push: 0, pop: 0, byEpic: {} },
-    lanes: {}, reroutes: [], gates: [],
+    pickup: [], detours: { push: 0, pop: 0, drop: 0, removed: 0, byEpic: {} },
+    lanes: {}, reroutes: [], gates: [], settings: [],
     outOfBand: { covered: 0, missing: [], missingCount: 0, afterLast: 0 },
     sessions: {},
   };
@@ -131,7 +156,7 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
   const pickedUp = new Map();
   for (const e of events) {
     if (!e.epic) continue;
-    if (!firstSeen.has(e.epic)) firstSeen.set(e.epic, e.at);
+    if (!firstSeen.has(e.epic) && !NOT_PICKUP_EVIDENCE.has(e.kind)) firstSeen.set(e.epic, e.at);
     if (e.kind === "epic-status" && e.to === "active" && !pickedUp.has(e.epic)) {
       pickedUp.set(e.epic, e.at);
     }
@@ -148,9 +173,13 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
 
   // ── detours, lanes, re-routes, gates, sessions ──────────────────────────────────────────
   for (const e of events) {
-    if (e.kind === "detour-push" || e.kind === "detour-pop") {
-      r.detours[e.kind === "detour-push" ? "push" : "pop"]++;
-      if (e.epic) r.detours.byEpic[e.epic] = (r.detours.byEpic[e.epic] || 0) + 1;
+    const detourKind = DETOUR_KINDS[e.kind];
+    if (detourKind) {
+      r.detours[detourKind]++;
+      // PUSHES ONLY: the question is "how many detours interrupted it", and one interruption is one
+      // push. Counting the pop too reported every interruption twice — invisible only while `epic`
+      // was always null.
+      if (e.kind === "detour-push" && e.epic) r.detours.byEpic[e.epic] = (r.detours.byEpic[e.epic] || 0) + 1;
     }
     if (e.kind === "epic-created" && e.lane) r.lanes[e.lane] = (r.lanes[e.lane] || 0) + 1;
     // A lane CHANGE is the only mechanical evidence the log holds for "did the work later prove
@@ -161,6 +190,16 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     // A withdrawal sits in the SAME sequence as the verdicts, because "was this verdict taken back,
     // and when relative to the rest" is a question about that sequence.
     if (e.kind === "gate-withdrawn") r.gates.push({ epic: e.epic, gate: e.gate, withdrawn: true, at: e.at });
+    // The reconcile gate's verdict belongs in the same sequence: "was the paused plan re-checked
+    // before or after the work that followed" is a question about that ordering.
+    if (e.kind === "reconcile-recorded") {
+      r.gates.push({ epic: e.epic, gate: "reconcile", detour: e.detour, verdict: e.verdict, correction: !!e.correction, at: e.at });
+    }
+    if (SETTINGS_KINDS.has(e.kind)) {
+      const s = { kind: e.kind, epic: e.epic || null, from: e.from, to: e.to, at: e.at };
+      if (e.kind === "epic-autonomy") Object.assign(s, { granted: e.granted, revoked: e.revoked, notified: e.notified });
+      r.settings.push(s);
+    }
     if (e.session) r.sessions[e.session] = (r.sessions[e.session] || 0) + 1;
   }
 
@@ -230,7 +269,9 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("DETOURS — how often work was interrupted");
-  L.push(`  ${r.detours.push} push(es), ${r.detours.pop} pop(s)`);
+  L.push(`  ${r.detours.push} push(es), ${r.detours.pop} pop(s), ${r.detours.drop} drop(s)` +
+    (r.detours.removed ? `, ${r.detours.removed} removed by another verb` : ""));
+  if (Object.keys(r.detours.byEpic).length) L.push("  interruptions per paused epic:");
   for (const [epic, n] of Object.entries(r.detours.byEpic)) L.push(`  • ${epic} — ${n}`);
   L.push("");
 
@@ -246,8 +287,28 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("GATES — verdicts and withdrawals in the order they were recorded");
-  L.push(...(r.gates.length ? r.gates.map(g => `  • ${g.at}  ${g.epic}  ${g.withdrawn ? `${g.gate} withdrawn` : `${g.gate}=${g.verdict}`}`)
-    : ["  (none recorded in this window)"]));
+  // EVERY ROW IS A TEMPLATE WRITTEN DIRECTLY INTO L.push, never a string built elsewhere and handed
+  // in: L is escaped at its join, and the output sweep recognises exactly this shape as sunk — so a
+  // raw value written anywhere else stays visible to it rather than hidden behind a blanket judgment.
+  if (!r.gates.length) L.push("  (none recorded in this window)");
+  for (const g of r.gates) {
+    if (g.withdrawn) L.push(`  • ${g.at}  ${g.epic}  ${g.gate} withdrawn`);
+    else if (g.gate === "reconcile") L.push(`  • ${g.at}  ${g.epic}  reconcile vs ${g.detour}=${g.verdict}${g.correction ? " (correction)" : ""}`);
+    else L.push(`  • ${g.at}  ${g.epic}  ${g.gate}=${g.verdict}`);
+  }
+  L.push("");
+
+  L.push("SETTINGS — priority, autonomy and review-mode changes, in order");
+  if (!r.settings.length) L.push("  (none recorded in this window)");
+  for (const s of r.settings) {
+    if (s.kind === "epic-autonomy") {
+      L.push(`  • ${s.at}  ${s.epic || "(repo)"}  autonomy ${s.from || "(unset)"} → ${s.to || "(unset)"}` +
+        ` (+${s.granted} granted, ${s.revoked} revoked, ${s.notified} notified)`);
+    } else {
+      L.push(`  • ${s.at}  ${s.epic || "(repo)"}  ${s.kind === "epic-priority" ? "priority" : "review-mode"} ` +
+        `${s.from || "(unset)"} → ${s.to || "(unset)"}`);
+    }
+  }
   L.push("");
 
   L.push("OUT-OF-BAND WRITES — state.json revisions no engine verb accounts for");

@@ -205,6 +205,20 @@ test("gh-111: unparseable lines are skipped, COUNTED, and reported — not silen
   assert.match(formatReport(buildReport(events, { malformed })), /1 unparseable line\(s\)/);
 });
 
+test("activity-log-detour-events-lose-epic: --epic <detour> finds the detour events that name it", async () => {
+  // A detour event is ABOUT two epics: the one paused (`epic`) and the one it was paused for
+  // (`detour`). Filtering on `epic` alone made `activity --epic <detour>` blind to the push that
+  // started the detour's own work.
+  const { readEvents } = await import(AREPORT);
+  const dir = scratchDir("pm-seg-detour-");
+  fs.writeFileSync(path.join(dir, "activity-2026-01-01T00-00-00-000Z.log"), [
+    { at: "2026-01-01T00:00:00.000Z", kind: "detour-push", verb: "push-detour", epic: "e1", detour: "d1" },
+    { at: "2026-01-01T00:00:01.000Z", kind: "state-write", verb: "v" },
+  ].map(e => JSON.stringify(e)).join("\n") + "\n");
+  assert.deepEqual(readEvents({ dir, epic: "d1" }).events.map(e => e.kind), ["detour-push"]);
+  assert.deepEqual(readEvents({ dir, epic: "e1" }).events.map(e => e.kind), ["detour-push"]);
+});
+
 // ─────────────── the READER, whose argument is a directory ───────────────
 //
 // `readEvents({ dir })` is given a directory and reads it, and `activity` builds its report on top
@@ -254,6 +268,15 @@ test("gh-111: revisions after the last recorded event are reported separately", 
   assert.ok(j.outOfBand.afterLast >= 1,
     "a window during which logging was off is worth knowing and is not inferable from state.json");
   assert.equal(j.enabled, false);
+});
+
+test("activity-log-detour-events-lose-epic: set-review-mode logs a repo-wide review-mode event, not a bare state-write", () => {
+  // File rung because the verb rewrites CLAUDE.md's rules block — a repository file the store does
+  // not own. The event's value is the subject; `activity --json` is how a user reads it back.
+  const cwd = loggingRepo();
+  run(["set-review-mode", "--mode", "thorough"], { cwd });
+  const j = JSON.parse(run(["activity", "--json"], { cwd }));
+  assert.deepEqual(j.settings.map(s => [s.kind, s.epic, s.to]), [["review-mode", null, "thorough"]]);
 });
 
 test("gh-111: --epic scopes the report to one epic", () => {

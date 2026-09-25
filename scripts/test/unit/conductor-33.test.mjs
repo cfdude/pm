@@ -639,20 +639,192 @@ unitTest("gh-111: purge-logs selectors — keep, over and older-than, unioned", 
 
 // ─────────────── the diff, as a pure function ───────────────
 
-unitTest("gh-111: diffEvents reports detour push/pop and a gate verdict", async () => {
+unitTest("activity-log-detour-events-lose-epic: detour events name the paused epic, from frames push-detour really writes", async () => {
+  // The test this replaces built its frame by hand as `{ epic: "e1" }` — a shape no verb writes —
+  // so it passed while every real detour event carried `epic: null`. The frames here come from the
+  // verbs themselves, so a reader keyed on the wrong field fails here rather than in a report.
+  const { buildReport } = await import(AREPORT);
+  const engine = loggingRepo();
+  engine(["add-epic", "--id", "d1", "--lane", "claude-code", "--title", "detour"]);
+  engine(["update-epic", "e1", "--status", "active"]);
+  engine(["push-detour", "e1", "--detour", "d1", "--reason", "blocked", "--no-reconcile"]);
+  engine(["pop-detour", "e1"]);
+  engine(["push-detour", "e1", "--detour", "d1", "--reason", "blocked again", "--no-reconcile"]);
+
+  const detourEvents = allEvents(engine).filter(e => e.kind.startsWith("detour-"));
+  assert.deepEqual(detourEvents.map(e => [e.kind, e.verb, e.epic, e.detour, e.depth]), [
+    ["detour-push", "push-detour", "e1", "d1", 1],
+    ["detour-pop", "pop-detour", "e1", "d1", 0],
+    ["detour-push", "push-detour", "e1", "d1", 1],
+  ]);
+  // EXACT, not non-empty: e1 was interrupted twice. Counting the pop too reads 4, and a test that
+  // only checked byEpic was populated would pass that double count.
+  assert.deepEqual(buildReport(allEvents(engine)).detours.byEpic, { e1: 2 });
+});
+
+unitTest("activity-log-detour-events-lose-epic: a BURIED drop is a detour-drop naming the dropped frame, not a pop of the top", async () => {
+  // drop-detour ENDS a pause; pop-detour RESUMES one. A depth comparison logged the drop as
+  // `detour-pop` and named the TOP frame (e2 here), which is not the frame that left.
+  const { buildReport, formatReport } = await import(AREPORT);
+  const engine = loggingRepo();
+  engine(["add-epic", "--id", "e3", "--lane", "claude-code", "--title", "three"]);
+  engine(["update-epic", "e1", "--status", "active"]);
+  engine(["push-detour", "e1", "--detour", "e2", "--reason", "blocked", "--no-reconcile"]);
+  engine(["push-detour", "e2", "--detour", "e3", "--reason", "blocked too", "--no-reconcile"]);
+  const before = allEvents(engine).length;
+  engine(["drop-detour", "e1", "--reason", "not coming back"]);
+
+  const dropEvents = allEvents(engine).slice(before).filter(e => e.kind.startsWith("detour-"));
+  assert.deepEqual(dropEvents.map(e => [e.kind, e.verb, e.epic, e.detour, e.depth]), [
+    ["detour-drop", "drop-detour", "e1", "e2", 1],
+  ]);
+  const r = buildReport(allEvents(engine));
+  assert.deepEqual([r.detours.push, r.detours.pop, r.detours.drop, r.detours.removed], [2, 0, 1, 0]);
+  assert.deepEqual(r.detours.byEpic, { e1: 1, e2: 1 }, "a drop is not an interruption");
+  assert.match(formatReport(r), /2 push\(es\), 0 pop\(s\), 1 drop\(s\)/);
+  assert.doesNotMatch(formatReport(r), /removed by another verb/, "the fallback line prints only when non-zero");
+});
+
+unitTest("activity-log-detour-events-lose-epic: a frame removed by any other verb is detour-removed, never guessed", async () => {
+  // Only pop-detour and drop-detour remove frames today. A verb added later that removes one is
+  // still RECORDED by the diff, under a name that does not claim to know which of the two it was.
+  const { diffEvents } = await import(ALOG);
+  const { buildReport, formatReport } = await import(AREPORT);
+  const frame = { pausedEpic: "e1", pausedAt: "2026-01-01T00:00:00.000Z", spawnedDetour: "d1" };
+  const ev = diffEvents({ revision: 1, epics: [], detourStack: [frame] },
+    { revision: 2, epics: [], detourStack: [] }, { verb: "some-future-verb" });
+  assert.deepEqual(ev.map(e => [e.kind, e.epic]), [["detour-removed", "e1"]]);
+  assert.match(formatReport(buildReport(ev)), /1 removed by another verb/);
+});
+
+unitTest("activity-log-detour-events-lose-epic: record-reconcile, set-autonomy, a priority change and set-review-mode are NAMED, epic-scoped events", async () => {
+  // Each of these logged only as a bare `state-write` with no `epic`, so `activity --epic` could not
+  // show a reconcile verdict or an autonomy grant — the decisions most worth reading back.
+  const { buildReport, formatReport } = await import(AREPORT);
+  const engine = loggingRepo();
+  const newest = () => allEvents(engine).at(-1);
+  const pick = (e, keys) => Object.fromEntries(keys.map(k => [k, e[k]]));
+
+  engine(["update-epic", "e1", "--status", "active"]);
+  engine(["push-detour", "e1", "--detour", "e2", "--reason", "blocked", "--reconcile"]);
+  engine(["pop-detour", "e1"]);
+  engine(["record-reconcile", "e1", "--detour", "e2", "--verdict", "valid", "--amendments", "none"]);
+  assert.deepEqual(pick(newest(), ["kind", "verb", "epic", "detour", "verdict", "correction"]), {
+    kind: "reconcile-recorded", verb: "record-reconcile", epic: "e1", detour: "e2", verdict: "valid", correction: false });
+  engine(["record-reconcile", "e1", "--detour", "e2", "--verdict", "invalidated", "--amendment", "redo 2.1"]);
+  assert.deepEqual(pick(newest(), ["kind", "verdict", "correction"]),
+    { kind: "reconcile-recorded", verdict: "invalidated", correction: true }, "a re-record is a correction, and says so");
+
+  engine(["update-epic", "e2", "--priority", "P0"]);
+  assert.deepEqual(pick(newest(), ["kind", "epic", "from", "to"]), { kind: "epic-priority", epic: "e2", from: "P?", to: "P0" });
+
+  engine(["set-autonomy", "e1", "--level", "autonomous", "--preauthorize", "rm -rf build/:regenerated"]);
+  assert.deepEqual(pick(newest(), ["kind", "epic", "from", "to", "granted", "revoked", "notified"]),
+    { kind: "epic-autonomy", epic: "e1", from: "off", to: "autonomous", granted: 1, revoked: 0, notified: 0 });
+  engine(["set-autonomy", "e1", "--revoke", "rm -rf build/", "--revoke-reason", "no longer safe", "--notify", "deleted build/"]);
+  assert.deepEqual(pick(newest(), ["kind", "from", "to", "granted", "revoked", "notified"]),
+    { kind: "epic-autonomy", from: "autonomous", to: "autonomous", granted: 0, revoked: 1, notified: 1 });
+
+  // `set-review-mode` itself rewrites CLAUDE.md's rules block — a repository file, so its end-to-end
+  // run is on the file rung (assert/conductor-33); the repo-wide event is pinned purely below.
+  engine(["update-epic", "e2", "--review-mode", "thorough"]);
+  assert.deepEqual(pick(newest(), ["kind", "epic", "to"]), { kind: "review-mode", epic: "e2", to: "thorough" });
+
+  const r = buildReport(allEvents(engine));
+  assert.deepEqual(r.gates.map(g => [g.epic, g.gate, g.detour, g.verdict]),
+    [["e1", "reconcile", "e2", "valid"], ["e1", "reconcile", "e2", "invalidated"]],
+    "a reconcile verdict sits in the GATES sequence");
+  assert.deepEqual(r.settings.map(s => [s.kind, s.epic]), [
+    ["epic-priority", "e2"], ["epic-autonomy", "e1"], ["epic-autonomy", "e1"], ["review-mode", "e2"],
+  ]);
+  const text = formatReport(r);
+  assert.match(text, /e1 {2}reconcile vs e2=invalidated \(correction\)/);
+  assert.match(text, /SETTINGS — /);
+  assert.match(text, /e1 {2}autonomy off → autonomous \(\+1 granted, 0 revoked, 0 notified\)/);
+  assert.match(text, /e2 {2}review-mode \(unset\) → thorough/);
+});
+
+unitTest("activity-log-detour-events-lose-epic: a control character in a GATES or SETTINGS row prints escaped, never raw", async () => {
+  // user-text-never-forges-output. The rows interpolate stored values (epic ids, verdicts, levels);
+  // a raw newline in one would start a line the engine never wrote. Built from code points so no
+  // raw control character, and no escape spelling, sits in this source file.
+  const { buildReport, formatReport } = await import(AREPORT);
+  const [NL, CR, ESC] = [10, 13, 27].map(c => String.fromCharCode(c));
+  const escaped = (code) => "\\" + "u" + code.toString(16).padStart(4, "0");
+  const at = "2026-01-01T00:00:00.000Z";
+  const text = formatReport(buildReport([
+    { at, kind: "reconcile-recorded", verb: "record-reconcile", epic: "e1" + NL + "FORGED gate row",
+      detour: "d1" + CR, verdict: "valid" + ESC + "[31m", correction: false },
+    { at, kind: "gate-review", verb: "record-gate-review", epic: "e1", gate: "gate2", verdict: "pass" + NL + "FORGED verdict" },
+    { at, kind: "epic-autonomy", verb: "set-autonomy", epic: "e1", from: "off" + NL + "FORGED setting row",
+      to: "autonomous" + ESC, granted: 1, revoked: 0, notified: 0 },
+    { at, kind: "review-mode", verb: "set-review-mode", epic: null, from: null, to: "thorough" + CR },
+  ]));
+  for (const line of text.split(NL)) {
+    assert.doesNotMatch(line, /^FORGED/, `a stored newline started a line of its own: ${JSON.stringify(line)}`);
+  }
+  assert.ok(!text.includes(CR) && !text.includes(ESC), "no raw CR or ESC reaches the report");
+  for (const code of [10, 13, 27]) assert.ok(text.includes(escaped(code)), `U+${code} is printed in its escaped form`);
+  assert.match(text, /reconcile vs d1/);
+  assert.match(text, /autonomy off/);
+});
+
+unitTest("activity-log-detour-events-lose-epic: a reconcile correction in the SAME millisecond is still logged", async () => {
+  // second-resolution-timestamps-collide-on-fast-machines: keyed on `reconciledAt` alone, a
+  // correction stamped in the same millisecond as the verdict it replaces was invisible.
+  const { diffEvents } = await import(ALOG);
+  const T = "2026-01-01T00:00:00.000Z";
+  const epicWith = (link) => ({ id: "e1", status: "active", links: [{ type: "may-invalidate", epic: "e2", ...link }] });
+  const first = { verdict: "valid", amendments: [], reconciledAt: T };
+  const ev = diffEvents(
+    { revision: 1, epics: [epicWith({ reconciled: first })] },
+    { revision: 2, epics: [epicWith({ reconciled: { verdict: "invalidated", amendments: ["x"], reconciledAt: T }, superseded: first })] },
+    { verb: "record-reconcile" });
+  assert.deepEqual(ev.map(e => [e.kind, e.verdict, e.correction]), [["reconcile-recorded", "invalidated", true]]);
+  const same = diffEvents(
+    { revision: 2, epics: [epicWith({ reconciled: first })] },
+    { revision: 3, epics: [epicWith({ reconciled: { ...first } })] }, { verb: "update-epic" });
+  assert.deepEqual(same.map(e => e.kind), ["state-write"], "an unchanged verdict is not a new one");
+});
+
+unitTest("activity-log-detour-events-lose-epic: detour and settings events do not start an epic's pickup clock", async () => {
+  // TIME TO PICKUP measures queued → active. An epic the window mentions ONLY through a detour, a
+  // reconcile verdict, a priority, autonomy or review-mode change must not be counted as waiting —
+  // before these kinds carried an epic it was not counted at all, and the population stays that.
+  const { buildReport } = await import(AREPORT);
+  const at = "2026-01-01T00:00:00.000Z";
+  const r = buildReport([
+    { at, kind: "detour-push", epic: "p1", detour: "d1" },
+    { at, kind: "reconcile-recorded", epic: "p2", detour: "d1", verdict: "valid" },
+    { at, kind: "epic-priority", epic: "p3", from: "P2", to: "P0" },
+    { at, kind: "epic-autonomy", epic: "p4", from: "off", to: "autonomous", granted: 0, revoked: 0, notified: 0 },
+    { at, kind: "review-mode", epic: "p5", from: null, to: "thorough" },
+    { at, kind: "epic-created", epic: "w1", lane: "claude-code", status: "queued" },
+  ]);
+  assert.deepEqual(r.pickup.map(p => p.epic), ["w1"]);
+  assert.equal(r.neverPickedUp, 1);
+});
+
+unitTest("activity-log-detour-events-lose-epic: the repo-wide review-mode dial is a review-mode event with epic null", async () => {
+  const { diffEvents } = await import(ALOG);
+  const { buildReport, formatReport } = await import(AREPORT);
+  const ev = diffEvents({ revision: 1, epics: [] }, { revision: 2, epics: [], reviewMode: "thorough" },
+    { verb: "set-review-mode" });
+  assert.deepEqual(ev.map(e => [e.kind, e.epic, e.from, e.to]), [["review-mode", null, null, "thorough"]]);
+  assert.match(formatReport(buildReport(ev)), /\(repo\) {2}review-mode \(unset\) → thorough/);
+});
+
+unitTest("activity-log-detour-events-lose-epic: a frame naming no paused epic yields epic null, never a throw", async () => {
+  const { diffEvents } = await import(ALOG);
+  const push = diffEvents(
+    { revision: 1, epics: [], detourStack: [] },
+    { revision: 2, epics: [], detourStack: [{ reason: "hand-edited" }, null] }, { verb: "v" });
+  assert.deepEqual(push.filter(e => e.kind === "detour-push").map(e => [e.epic, e.detour]), [[null, null], [null, null]]);
+});
+
+unitTest("gh-111: diffEvents reports a gate verdict, and a quiet write still leaves a line", async () => {
   const { diffEvents } = await import(ALOG);
   const epic = (over = {}) => ({ id: "e1", status: "active", lane: "openspec", ...over });
-  const push = diffEvents(
-    { revision: 1, epics: [epic()], detourStack: [] },
-    { revision: 2, epics: [epic()], detourStack: [{ epic: "e1", reason: "blocked" }] },
-    { verb: "update-epic", at: "2026-01-01T00:00:00.000Z" });
-  assert.equal(push.find(e => e.kind === "detour-push").epic, "e1");
-
-  const pop = diffEvents(
-    { revision: 2, epics: [epic()], detourStack: [{ epic: "e1" }] },
-    { revision: 3, epics: [epic()], detourStack: [] }, { verb: "resume" });
-  assert.equal(pop.find(e => e.kind === "detour-pop").epic, "e1");
-
   const gate = diffEvents(
     { revision: 3, epics: [epic()], detourStack: [] },
     { revision: 4, epics: [epic({ gateReview: { gate2: { verdict: "pass" } } })], detourStack: [] },
