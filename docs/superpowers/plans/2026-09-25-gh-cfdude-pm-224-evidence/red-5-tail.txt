@@ -1,0 +1,41 @@
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (2.454375ms)
+✖ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (48.869916ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (13.948708ms)
+✔ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.198167ms)
+✔ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.093042ms)
+✔ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (0.631166ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 200.269
+
+✖ failing tests:
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:124:1
+✖ temp-dir-cleanup: every temp-dir site in scripts/test is scheduled on its line or enrolled with how it is removed (48.869916ms)
+  AssertionError [ERR_ASSERTION]: these temp directories are made and never removed — wrap the call in removeAtExit() (fixtures/temp-dir.mjs), or remove it in a finally and enrol it in KNOWN with how
+  + actual - expected
+  
+  + [
+  +   'assert/conductor-33.test.mjs:121  return fs.mkdtempSync(path.join(fs.realpathSync(path.dirname(tmpRepo())), prefix));'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a54d752848e5d7473/scripts/test/assert/temp-dir-cleanup.test.mjs:129:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'assert/conductor-33.test.mjs:121  return fs.mkdtempSync(path.join(fs.realpathSync(path.dirname(tmpRepo())), prefix));' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
