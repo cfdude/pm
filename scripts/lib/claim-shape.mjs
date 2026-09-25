@@ -9,7 +9,7 @@
 // with two copies of it, so the predicate moved down here rather than the audit growing a
 // second definition of "expired".
 
-import { CLAIM_MAX_TTL_MINUTES } from "./constants.mjs";
+import { CLAIM_MAX_TTL_MINUTES, escapeControls } from "./constants.mjs";
 
 /** Is `n` a TTL a claim may carry: a finite number of minutes, greater than zero and no greater
  *  than CLAIM_MAX_TTL_MINUTES? One predicate for the writer's refusal and the reader's judgement. */
@@ -43,4 +43,21 @@ export function claimExpiry(claim) {
 export function isLiveClaim(claim, now = Date.now()) {
   const exp = claimExpiry(claim);
   return exp !== null && Date.parse(exp) > now;
+}
+
+/** THE ONE REMOVAL PATH for the claim of an epic that has ENDED (#84; code review 0.43.0, B2).
+ *  An archived epic cannot still be OWNED: the claim is an advisory "I am working on this", and
+ *  leaving it behind is a dangling reference that `owners` would show as live ownership of finished
+ *  work forever. Every path that moves an epic to `archived` calls this — `update-epic` and the
+ *  archive-drift heal (`reconcileArchived`, which is how an `/opsx:archive`d epic usually gets
+ *  there). The heal once had no removal, and integrity then blamed a hand-edit that never happened.
+ *
+ *  Deletes `epic.claim` and returns the line to announce, or null when nothing was held. The CALLER
+ *  writes the line, so this module stays a leaf. */
+export function releaseClaimOfEndedEpic(epic) {
+  if (!epic || !epic.claim) return null;
+  const line = `conductor: cleared the advisory claim held by '${escapeControls(epic.claim.session)}' — ` +
+    `'${escapeControls(epic.id)}' has ended\n`;
+  delete epic.claim;
+  return line;
 }
