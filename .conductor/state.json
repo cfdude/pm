@@ -10100,10 +10100,11 @@
         "7fa0b5d3ac09a419f9d4a92ec9522a302331dc2a",
         "9b94c9adfc5c01003f22c8c02d2cbf713cef8f0a",
         "86f74c43239bed7e91a8b0a5ff8bc6349274d9a7",
-        "2fdd74d807eff852998b015e2c87b6a83e8a8c7c"
+        "2fdd74d807eff852998b015e2c87b6a83e8a8c7c",
+        "f230e85fce761844dc53b2c8a8d38623045ce8f7"
       ],
       "createdAt": "2026-09-23T20:29:57.349Z",
-      "touchedAt": "2026-09-25T04:35:10.881Z",
+      "touchedAt": "2026-09-25T04:45:17.144Z",
       "notes": [
         {
           "at": "2026-09-23T20:29:58.242Z",
@@ -10130,6 +10131,13 @@
           "baseSha": "aa48c885fd965d091ebb804a1e379fd79b47bd24",
           "headSha": "9fa4163fa1ff7012d8f0a19714c6ae9cf2e44947",
           "reviewer": "two fresh-context lenses (A correctness/testability reproduced on 22/24/26 binaries; B absent-edit sweep) + confirmation: round 1 fail (2 C: zero-count CI pass, unfalsifiable scenario; 9 I), fixed 8a73f75; confirmation fail (2 I), fixed 9fa4163; 2026-09-24"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-25T04:45:17.139Z",
+          "baseSha": "aa48c885fd965d091ebb804a1e379fd79b47bd24",
+          "headSha": "f230e85fce761844dc53b2c8a8d38623045ce8f7",
+          "reviewer": "two fresh-context lenses (A spec alignment + ~60 mutations on 22/26; B absent-edit sweep + commit integrity) + confirmation: round 1 A fail (3 I: CI unreadable-count refusal untested, certify count guards untested, harness shim install trusted) / B pass (6 M); all 11 fixed f84fe9d..f230e85 with mutation proofs; confirmation pass (original mutations now fail, 1305/1305 on 22 and 26, drift ok); 2026-09-24"
         }
       }
     }
@@ -10142,7 +10150,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1370,
+  "revision": 1372,
   "reviewMode": "thorough",
   "releases": [
     {

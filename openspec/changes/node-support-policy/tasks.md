@@ -568,7 +568,7 @@ Commit mechanics, which bind every section below:
       `<!-- pm:lifecycle -->` on its task line. It was marked when this source was authored.
       `3256cc2`'s sync of 0.48.0's deltas is 0.48.0's bookkeeping, recorded as done in 0.4. It is
       not a task of this change's work.
-- [ ] 6.6 **Attribute every commit to its epic** (required task item 4). Run
+- [x] 6.6 **Attribute every commit to its epic** (required task item 4). Run
       `update-epic node-support-policy --attribute-commit <sha>` as each commit is made. (Apply run:
       every commit 7b5dcaa…9e722f1 attributed as it landed, 23 in all with the three proposal commits,
       in landing order; the three throwaway-branch commits of 4.5/8.3 deliberately NOT.) It is NOT
@@ -576,11 +576,11 @@ Commit mechanics, which bind every section below:
       - the commit that moves this change under `archive/`;
       - 2.6's machine cleanup, which is not a commit at all;
       - `3256cc2`, the 0.48.0 spec sync (task 0.4).
-- [ ] 6.7 **Review the release's specs against each other** (required task item 5). This is 0.2,
+- [x] 6.7 **Review the release's specs against each other** (required task item 5). This is 0.2,
       re-run after any amendment made at Gate 1 or at Gate 2. (0.4's sync, `3256cc2`, landed before 0.2
       runs, so 0.2 already reviews against the restored text.) The verdict must not
       render stale at archive time.
-- [ ] 6.8 **End by recording a disposition** (required task item 6). 9.2 archives with
+- [x] 6.8 **End by recording a disposition** (required task item 6). 9.2 archives with
       `--outcome delivered` and either `--no-deferrals` or one `--deferral`/`--declined-deferral`
       per item actually deferred. Candidates to decide at that point:
       - widening `conductor-35`'s network set, if 3.3 declines it;
@@ -724,7 +724,7 @@ Commit mechanics, which bind every section below:
 
 ## 9. Close
 
-- [ ] 9.1 **Gate 2**, mode `thorough`: two fresh-context lenses over the committed range.
+- [x] 9.1 **Gate 2**, mode `thorough`: two fresh-context lenses over the committed range.
       - Lens A: spec alignment and real tests. Every guard re-pointed in this change has been SEEN
         to fail on its mutation.
       - Lens B: absent edits:
