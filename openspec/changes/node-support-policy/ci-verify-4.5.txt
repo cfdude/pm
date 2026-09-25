@@ -1,0 +1,58 @@
+# ci-verify-4.5 — the CI matrix verified on GitHub Actions, 2026-09-25 (UTC)
+
+Mechanism: throwaway branch `ci-verify-049` and DRAFT PR cfdude/pm#221 into `main` (no trigger added:
+ci.yml already runs on `pull_request` into `main`). The branch was never merged. Afterwards:
+`gh pr close 221` (state CLOSED, mergedAt null), `git push origin --delete ci-verify-049`,
+`git branch -D ci-verify-049`, and `git ls-remote origin ci-verify-049` returned nothing.
+
+## Run 1 — the change as committed (branch head 85670f8, the dev HEAD after task 4.4)
+
+Run 36089089608: conclusion success.
+
+- `node-majors` output (Compute step log): `[22,24,26]` — computed from the live schedule, no warning.
+- Three legs, named `test (node 22)`, `test (node 24)`, `test (node 26)`; setup-node resolved
+  v22 / v24 / v26.10.0 (x64, linux).
+- The aggregate reported under the context `test` (`gh pr checks 221`: `test pass 4s`), next to
+  `node-majors`, `test (node 22)`, `test (node 24)`, `test (node 26)`. Branch protection's required
+  context is `test`, so the aggregate satisfies it with no settings change.
+- Each leg's count lines — D4's linux confirmation (the forced spec reporter's `^ℹ` parse read a
+  count on every major):
+
+| Leg | assertion half | functional half | sweep bucket |
+|---|---|---|---|
+| node 22 | ran 1294, declared 1294 | ran 1189, declared 1086 | ran 25, declared 19 |
+| node 24 | ran 1294, declared 1294 | ran 1189, declared 1086 | ran 25, declared 19 |
+| node 26 | ran 1294, declared 1294 | ran 1189, declared 1086 | ran 25, declared 19 |
+
+  (The node 26 leg's assertion-half line is from the job's raw log,
+  `gh api repos/cfdude/pm/actions/jobs/107927387536/logs`; `gh run view --log` omitted that step.
+  The functional and sweep floors count `^test(` only, so their `declared` sits below `ran`, as it did
+  before this change; the floor is a lower bound.)
+
+## Run 2 — the fallback path (commit 459deac on the throwaway branch)
+
+The commit pointed BOTH the URL in ci.yml AND the URL `ci-workflow.test.mjs` pins at
+`…/nodejs/Release/main/schedule-404-ci-verify-049.json` (design D2 option (b)); the pre-commit hook
+passed on its own terms (1294/1294). Run 36089519332: conclusion success.
+
+- Compute step: `curl: (22) The requested URL returned error: 404`, then
+  `##[warning]the Node release schedule could not be fetched — the matrix is the committed fallback [22,24,26], not a computed set`,
+  then `[22,24,26]`. The warning is a run annotation (`gh run view`: ANNOTATIONS, `node-majors: .github#13`)
+  and was appended to $GITHUB_STEP_SUMMARY.
+- The three legs ran on the fallback and passed; the aggregate `test` passed.
+
+## Run 3 — the mismatch path (commit bf38390: real URL, `PM_NODE_FALLBACK: "[22,24]"`)
+
+No guard edit was needed: the fallback's minimum is still 22 = NODE_FLOOR_MAJOR, and the hook passed.
+Run 36089888678: conclusion failure, as intended.
+
+- `node-majors`: `##[error]the computed set of supported Node majors [22,24,26] differs from the committed fallback PM_NODE_FALLBACK [22,24] — move the fallback, NODE_FLOOR_MAJOR and the documented support floor together`, exit 1.
+- `test (node …)`: skipped (no matrix — its `needs` failed).
+- `test` (the aggregate, `if: always()`): ran, printed `node-majors: failure; test-node: skipped`,
+  and failed with `##[error]the required check fails: computing the supported majors was 'failure'
+  and the per-major legs were 'skipped' — both must be 'success'`. So the required check does NOT
+  pass on legs that did not run (runtime-support: "The required check cannot pass on a leg that did
+  not run").
+
+Run ids: normal 36089089608 · fallback 36089519332 · mismatch 36089888678. (A fourth run on the same
+throwaway PR, 36089977671, is task 8.3's bench; see baseline-after.md.)

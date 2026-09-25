@@ -430,7 +430,7 @@ Commit mechanics, which bind every section below:
         - it parses `^ℹ` only;
         - it records NOTHING and exits non-zero when `tests` is `null` or `0`;
         - the header comment at `:57-59` is corrected.
-- [ ] 4.5 VERIFY IN CI, on this change's PR run. Record in `ci-verify-4.5.txt`:
+- [x] 4.5 VERIFY IN CI, on this change's PR run. Record in `ci-verify-4.5.txt`:
       - the `node-majors` output (`[22,24,26]` expected);
       - three legs named `test (node 22|24|26)`;
       - the aggregate reported under the context `test`, satisfying branch protection with no
