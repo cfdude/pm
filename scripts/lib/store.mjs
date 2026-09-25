@@ -532,11 +532,17 @@ function lockRefusalMessage(lock, expected) {
     "re-run the command.";
 }
 
-/** How a lock's recorded holder reads in a refusal. */
-function describeHolder(info) {
+/** How a lock's recorded holder reads in a refusal. Exported for its unit test only. `kind` is
+ *  "directory", "symlink" or "other" (a FIFO, socket or device); "other" read "a other" in the
+ *  refusal (code review 0.43.0 minors), so it is named for what it is. */
+export function describeHolder(info) {
   const c = info && info.content;
-  if (!c) return info && info.kind && info.kind !== "file"
-    ? `not a lock file at all — a ${info.kind}` : "a writer whose lock content could not be read";
+  if (!c) {
+    if (!info || !info.kind || info.kind === "file") return "a writer whose lock content could not be read";
+    return info.kind === "other"
+      ? "not a lock file at all — a special file (a FIFO, socket or device)"
+      : `not a lock file at all — a ${info.kind}`;
+  }
   const parts = [];
   if (Number.isInteger(c.pid)) parts.push(`pid ${c.pid}`);
   if (typeof c.host === "string") parts.push(`on host ${escapeControls(c.host)}`);

@@ -16,3 +16,6 @@
 * **`set-tracker --intent` refuses a malformed pair.** A value with no `:` or an empty half was
   dropped without a word — the command exited 0 with "tracker set" and the intent recorded nowhere.
   It is now refused by name and nothing is written.
+* **Two refusals read correctly.** The archive gate's open-work refusal said "2 of 1/3 task(s)
+  outstanding"; it now says "2 task(s) outstanding (1/3 done)". A state lock that is a FIFO, socket
+  or device is described as a special file rather than "a other".

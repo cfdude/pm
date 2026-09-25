@@ -429,7 +429,7 @@ export const DELIVERED_OBLIGATIONS = [
       if (carriedTo) return null;
       const summary = outstandingSummary(epic);
       return summary.outstanding > 0
-        ? { items: summary.items, detail: `${summary.outstanding} of ${summary.claimed} task(s) outstanding` } : null;
+        ? { items: summary.items, detail: `${summary.outstanding} task(s) outstanding (${summary.claimed} done)` } : null;
     },
     // Per source: only the STORIES source has a verb that records a story done. A checkbox source is
     // ticked in its own file, and moved work is recorded with `--carried-to` on the archive itself.
