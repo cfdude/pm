@@ -75,10 +75,20 @@ export function gitSpawns() {
   } catch { return []; }
 }
 
-process.on("exit", () => {
-  // READ FIRST, THEN REMOVE: the log lives in the directory being removed.
-  const spawns = gitSpawns();
-  removeTempDir(shimDir);
+/** Read the spawn log in `dir`, then remove `dir` — READ FIRST, the log lives in the directory being
+ *  removed. Returns the logged argv lines. Exported so a test can exercise it on a scratch directory
+ *  (Gate 2 M1). */
+export function drainAndRemove(dir) {
+  let spawns = [];
+  try { spawns = fs.readFileSync(path.join(dir, "git-spawns.log"), "utf8").split("\n").filter(Boolean); } catch { /* none */ }
+  removeTempDir(dir);
+  return spawns;
+}
+
+/** The exit listener: drain and remove this process's shim directory, then fail the file if any real
+ *  git call reached the shim. Exported so a test can assert it is the registered listener. */
+export function onExit() {
+  const spawns = drainAndRemove(shimDir);
   if (!spawns.length) return;
   process.stderr.write(
     `\nassertion half: ${spawns.length} REAL 'git' invocation(s) reached the shim — the half must run ` +
@@ -87,4 +97,6 @@ process.on("exit", () => {
     "A direct lib call outside `main()` leaves invocation() on the live process context, so gitOps() " +
     "builds the real gateway. Drive it through the harness, or hand it a fake.\n");
   process.exitCode = 1;
-});
+}
+
+process.on("exit", onExit);

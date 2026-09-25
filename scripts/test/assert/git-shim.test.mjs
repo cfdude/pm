@@ -58,3 +58,16 @@ test("2.4b the harness's per-process EMPTY_CACHE is scheduled for removal at exi
     shim.removeTempDir(dir);
   }
 });
+
+test("M1 the shim's own directory is removed at exit — its listener is registered, and drains then removes", () => {
+  // The same check EMPTY_CACHE has (Gate 2 M1): the shim's exit listener is live in THIS process, and
+  // the function it runs reads the spawn log and then removes the directory — exercised on a scratch
+  // directory, since the real one must survive until every test has finished.
+  assert.equal(typeof shim.onExit, "function", "the shim exports no onExit(): its exit-time removal cannot be checked");
+  assert.ok(process.listeners("exit").includes(shim.onExit), "the shim's exit listener is not registered in this process");
+  assert.equal(typeof shim.drainAndRemove, "function", "the shim exports no drainAndRemove()");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-shim-drain-"));
+  fs.writeFileSync(path.join(dir, "git-spawns.log"), "status --short\nrev-parse HEAD\n");
+  assert.deepEqual(shim.drainAndRemove(dir), ["status --short", "rev-parse HEAD"], "the log is read before removal");
+  assert.equal(fs.existsSync(dir), false, `drainAndRemove() left ${dir} behind`);
+});

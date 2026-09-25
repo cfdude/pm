@@ -213,6 +213,55 @@ test("2.1 every file in both rungs installs the git shim itself — the counter 
     '"../fixtures/assert-git-shim.mjs";` as its first import (or import one of the two harnesses).');
 });
 
+// ─────────────── Gate 2 I3 — A HARNESS IS AN INSTALLER ONLY WHILE IT INSTALLS ───────────────
+//
+// The walk above trusts two harnesses as installers, and 124 of the 141 rung files install ONLY through
+// one of them. So each listed harness must itself be seen to install the shim — directly, or through
+// another listed harness (unit-harness reaches it through assert-harness). Without this, removing the
+// shim import from `fixtures/assert-harness.mjs` left 1298/1298 green while nothing counted.
+
+const FIXTURES = path.join(HERE, "..", "fixtures");
+const SHIM_MODULE = "assert-git-shim";
+
+/** True when fixture module `name` (e.g. "assert-harness") installs the shim at import time: it IS the
+ *  shim, it imports `./assert-git-shim.mjs`, or it imports another fixture that does. `read(name)`
+ *  returns that fixture's source. Cycles terminate: a module already being walked installs nothing. */
+export function fixtureInstallsShim(name, read, seen = new Set()) {
+  if (name === SHIM_MODULE) return true;
+  if (seen.has(name)) return false;
+  seen.add(name);
+  const code = stripComments(read(name));
+  for (const m of code.matchAll(/^\s*import\s*(?:[^;]*?\bfrom\s*)?["']\.\/([\w-]+)\.mjs["']/gm)) {
+    if (fixtureInstallsShim(m[1], read, seen)) return true;
+  }
+  return false;
+}
+
+test("I3 every harness the walk trusts as an installer does install the git shim itself", () => {
+  const read = (name) => fs.readFileSync(path.join(FIXTURES, `${name}.mjs`), "utf8");
+  const trusted = SHIM_INSTALLERS.map((s) => /\/([\w-]+)\.mjs$/.exec(s)[1]).filter((n) => n !== SHIM_MODULE);
+  assert.deepEqual(trusted, ["assert-harness", "unit-harness"], "the walk's trusted harnesses changed — review this list");
+  const notInstalling = trusted.filter((n) => !fixtureInstallsShim(n, read));
+  assert.deepEqual(notInstalling, [],
+    `these harnesses are trusted as shim installers by the walk above but no longer install it: ${notInstalling.join(", ")}. ` +
+    "Every rung file that imports one of them would run with the real git reachable and nothing counting.");
+});
+
+test("I3 the harness check DISCRIMINATES — direct, transitive, neither, and a comment", () => {
+  const src = {
+    direct: 'import "./assert-git-shim.mjs";\n',
+    transitive: 'import { invokeEngine } from "./direct.mjs";\n',
+    neither: 'import { fakeGit } from "./fake-git.mjs";\n',
+    "fake-git": "export const fakeGit = 1;\n",
+    comment: '// import "./assert-git-shim.mjs";\nconst a = 1;\n',
+  };
+  const read = (n) => src[n];
+  assert.equal(fixtureInstallsShim("direct", read), true);
+  assert.equal(fixtureInstallsShim("transitive", read), true, "unit-harness's shape: through another harness");
+  assert.equal(fixtureInstallsShim("neither", read), false);
+  assert.equal(fixtureInstallsShim("comment", read), false, "a comment naming the shim is not an install");
+});
+
 test("2.1 the shim-install walk DISCRIMINATES — imports install it, a mention in a comment does not", () => {
   const spec = (m) => `"../fixtures/${m}.mjs"`;
   const SHIM = "assert-git-shim";

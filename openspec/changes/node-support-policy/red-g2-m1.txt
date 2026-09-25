@@ -1,0 +1,37 @@
+# red-g2-m1 — Gate 2 M1, captured against d266971 + the new test; node v26.9.0
+✔ 2.3 the shim module exports a directory-removal function, and it removes a directory tree (1.037209ms)
+✔ 2.4b the harness's per-process EMPTY_CACHE is scheduled for removal at exit, through the same function (0.658875ms)
+✖ M1 the shim's own directory is removed at exit — its listener is registered, and drains then removes (0.444083ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 116.268209
+
+✖ failing tests:
+
+test at scripts/test/assert/git-shim.test.mjs:62:1
+✖ M1 the shim's own directory is removed at exit — its listener is registered, and drains then removes (0.444083ms)
+  AssertionError [ERR_ASSERTION]: the shim exports no onExit(): its exit-time removal cannot be checked
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/git-shim.test.mjs:66:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
