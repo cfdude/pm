@@ -10091,8 +10091,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-25T19:29:36.373Z"
     },
     {
       "id": "node-support-policy",
@@ -10278,7 +10277,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1383,
+  "revision": 1384,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10746,7 +10745,13 @@
     {
       "id": "0.50.0",
       "intent": "Close the 0.43.0 review's open findings, the archive gate's blind spots (#222, handoff), the test-harness temp-dir leak (#224), and the last fsync wall in the per-commit gate if measurement supports it",
-      "deferred": []
+      "deferred": [
+        {
+          "epic": "store-owns-claude-md-managed-block",
+          "reason": "the 0.50.0 inventory undercut its premise — owning CLAUDE.md alone moves ~22 content-checking tests, not the 323 file-rung tests that reach the write, because init also writes .gitignore outside the store; and the 24.0s per-file hook has not been profiled since 0.49.0 changed the mode. Re-justify from a measurement first",
+          "recordedAt": "2026-09-25T19:29:36.364Z"
+        }
+      ]
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
