@@ -37,7 +37,9 @@ function describeDifference(expected, actual) {
   const a = expected === null || expected === undefined ? "" : String(expected);
   const b = actual === null || actual === undefined ? "" : String(actual);
   if (a === b) return null;
-  const linesA = a.split("\n"), linesB = b.split("\n");
+  // A NUL is a field end too: `worktreeList` reads `--porcelain -z`, and a field the check names must
+  // still be a field there.
+  const linesA = a.split(/[\n\0]/), linesB = b.split(/[\n\0]/);
   for (let i = 0; i < Math.max(linesA.length, linesB.length); i++) {
     if (linesA[i] === linesB[i]) continue;
     const key = /^([a-z][a-z-]*) /.exec(linesB[i] ?? "") || /^([a-z][a-z-]*) /.exec(linesA[i] ?? "");

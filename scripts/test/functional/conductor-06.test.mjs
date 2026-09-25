@@ -307,6 +307,24 @@ test("verify-worktrees does not flag a hierarchy-child worktree whose epic is st
   execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
 });
 
+test("verify-worktrees reports the WHOLE path of a worktree whose directory name holds a line feed", () => {
+  // code-review-0-43-0-minors: the listing was read line by line, so a path holding a line feed
+  // arrived as the text before the break — a truncated directory that does not exist. The engine now
+  // reads `git worktree list --porcelain -z`, where every field ends in NUL.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  run(["add-epic", "--id", "lf-child", "--lane", "claude-code", "--status", "archived"], { cwd });
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "pm-wt-lf-"));
+  const wtPath = path.join(parent, "line\nfeed");
+  execFileSync("git", ["worktree", "add", "-b", "hierarchy-child/lf-child", wtPath], { cwd });
+  const out = JSON.parse(run(["verify-worktrees"], { cwd }));
+  assert.equal(out.orphaned.length, 1);
+  assert.equal(fs.realpathSync(out.orphaned[0].path), fs.realpathSync(wtPath),
+    "the reported path is the worktree's own, line feed included");
+  execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
+});
+
 test("verify-worktrees flags a hierarchy-child worktree whose branch is already merged into HEAD, even when the epic's status is not archived", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

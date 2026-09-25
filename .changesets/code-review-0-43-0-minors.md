@@ -23,3 +23,6 @@
   three read-only `verify-*` verbs had no command doc, so they were reachable only by calling the
   engine directly. Each now has one, saying what it compares, what each exit means and — for
   `verify-state` — what it cannot see.
+* **`verify-worktrees` reports the whole path of a worktree whose name holds a line feed.** It read
+  `git worktree list` line by line, so such a path arrived truncated at the break — a directory that
+  does not exist. It now reads the NUL-terminated listing (`--porcelain -z`, git 2.36 or later).

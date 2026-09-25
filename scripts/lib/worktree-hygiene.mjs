@@ -25,7 +25,7 @@ import { errStream, gitOps, outStream } from "./invocation.mjs";
  *  Pure read — flags, never deletes, since a worktree could in principle still hold
  *  in-progress work the bookkeeping hasn't caught up with. Bakes worktree hygiene into the
  *  plugin itself (checkable on any fresh install) rather than depending on a user's own
- *  personal discipline/CLAUDE.md. Zero-dependency: shells out to `git worktree list
+ *  personal discipline/CLAUDE.md. Zero-dependency: shells out to `git worktree list -z
  *  --porcelain` and `git merge-base --is-ancestor` only; gracefully returns no orphans if
  *  listing worktrees fails (e.g. this isn't a git repo at all). */
 export function verifyWorktrees() {
@@ -42,8 +42,8 @@ export function verifyWorktrees() {
   const orphaned = [];
   let currentPath = null;
   let currentHead = null;
-  for (const line of out.split("\n")) {
-    if (line.startsWith("worktree ")) { currentPath = line.slice("worktree ".length).trim(); currentHead = null; continue; }
+  for (const line of out.split("\0")) {
+    if (line.startsWith("worktree ")) { currentPath = line.slice("worktree ".length); currentHead = null; continue; }
     if (line.startsWith("HEAD ")) { currentHead = line.slice("HEAD ".length).trim(); continue; }
     const m = line.match(/^branch refs\/heads\/hierarchy-child\/(.+)$/);
     if (m && currentPath) {

@@ -24,6 +24,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, fixturePluginRoot } from "../fixtures/assert-harness.mjs";
+import { fakeGit } from "../fixtures/fake-git.mjs";
+// The UNBOUND entry point: the harness's own `invokeEngine` pins the no-repository double per call,
+// and this file's last test hands the engine a listing of its own.
+import { invokeEngine } from "../fixtures/harness.mjs";
 
 // ───────────────────────── 0.5.0: link migration ─────────────────────────
 
@@ -49,4 +53,26 @@ test("0.5.0 migration repairs colon-string links, drops unrecoverable, is idempo
   const first = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), first);
+});
+
+// The twin of the functional "reports the WHOLE path of a worktree whose directory name holds a line
+// feed". This half cannot create a worktree, but it can hand the engine the listing git would print:
+// the double's no-repository gateway with the one listing answered, NUL-terminated as `-z` prints it.
+// The path's line feed must survive into the report, and the BRANCH line after it must still be read.
+test("verify-worktrees parses a NUL-terminated listing: a line feed inside a path stays in the path", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "lf-child", "--lane", "claude-code", "--status", "archived"], { cwd });
+  const wt = "/tmp/pm-wt/line\nfeed";
+  const git = {
+    ...fakeGit({ noRepository: true }),
+    worktreeList: () => `worktree ${cwd}\0HEAD aaaa\0branch refs/heads/main\0\0` +
+      `worktree ${wt}\0HEAD bbbb\0branch refs/heads/hierarchy-child/lf-child\0\0`,
+    mergeBaseIsAncestorOfHead: () => { const e = new Error("not an ancestor"); e.status = 1; throw e; },
+  };
+  const r = invokeEngine(["verify-worktrees"], { cwd, git });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.deepEqual(out.orphaned.map(o => o.path), [wt], "the whole path, line feed included");
+  assert.deepEqual(out.orphaned[0].reasons, ["epic-archived"]);
 });
