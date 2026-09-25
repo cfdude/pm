@@ -14,8 +14,9 @@ rule: An archive is one move with two halves: the change directory relocating un
   every `openspec/specs/<capability>/spec.md` it rewrote. Stage `openspec/` as a whole — or run
   `git status --short openspec/` and stage everything it lists — never `openspec/changes` alone. Before
   any hard reset, `git status --short` must be empty of `openspec/specs/` paths.
-enforced_in: Retrieval only, until 0.49.0's docs tasks add the staging line to the release-checklist
-  skill's archive step (.claude/skills/release-checklist/SKILL.md).
+enforced_in: The release-checklist skill's step 5 (.claude/skills/release-checklist/SKILL.md) — "stage
+  openspec/ whole (or everything `git status --short openspec/` lists) — the archive rewrites
+  openspec/specs too" — added by 0.49.0's docs tasks (task 7.8).
 ---
 
 ## What happened

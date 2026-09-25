@@ -92,7 +92,15 @@ skip straight to the branch dance at the bottom.
      that fails the "pulled from git log" claim the section itself makes doesn't belong in it,
      regardless of whether it was ever accurate.
 
-5. **The `pm` repo's own branch dance.** Follow the `pr-workflow` skill — commit on `dev`, PR
+5. **Archive the release's changes, then the branch dance.** Each change in the release is
+   archived (`/opsx:archive <id>`) after its Gate 2 and before the squash-merge. When committing
+   that archive, stage openspec/ whole (or everything `git status --short openspec/` lists) — the archive rewrites openspec/specs too.
+   Staging only `openspec/changes` leaves the main specs' edits in the working tree, where the next
+   hard reset discards them (0.48.0 lost four requirements that way —
+   `docs/lessons/an-archive-writes-outside-the-change-dir.md`). The archive commit is lifecycle
+   bookkeeping and is never attributed to the epic.
+
+   Then the `pm` repo's own branch dance. Follow the `pr-workflow` skill — commit on `dev`, PR
    into `main`, wait for CI green, squash-merge, sync both branches. Never commit a version
    bump directly to `main` — this bit a session once already.
    **Gate 2 for every change in the release is recorded before that squash-merge, from the

@@ -661,7 +661,7 @@ Commit mechanics, which bind every section below:
       - Expected: empty.
       - The plugin version bump belongs to the release cut.
       - `scripts/test/assert/parity.test.mjs` stays green.
-- [ ] 7.8 **Close `docs/lessons/an-archive-writes-outside-the-change-dir.md`.** In
+- [x] 7.8 **Close `docs/lessons/an-archive-writes-outside-the-change-dir.md`.** In
       `.claude/skills/release-checklist/SKILL.md`, the step that archives a change (today the skill
       names no archive step at all: `rg -n -i archive .claude/skills/release-checklist/SKILL.md`
       returns nothing, so the line lands where the release's changes are archived, beside the
