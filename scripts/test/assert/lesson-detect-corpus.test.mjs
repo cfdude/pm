@@ -82,6 +82,21 @@ test("the hook stays silent about rejects — a malformed corpus is not advice",
   assert.equal(r.stderr, "");
 });
 
+test("a catastrophic matcher on disk cannot stall the hook (C1)", () => {
+  const cwd = initRepo();
+  // Passes the static nesting check — overlapping alternation is not statically decidable — so
+  // only the regex budget stands between this lesson and every Bash call. Unbounded it takes ~13 s
+  // on this command (6.7 s at 24 characters, measured unloaded); the budget is 100 ms, and the bound leaves room for a loaded machine.
+  lesson(cwd, "a-good", { detect: '{"tool":"Bash","commandMatches":"^a"}', rule: "good rule fires" });
+  lesson(cwd, "z-runaway", { detect: '{"tool":"Bash","commandMatches":"^(a|a)*$"}', rule: "runaway" });
+  const t0 = performance.now();
+  const out = advice(cwd, { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } });
+  const ms = performance.now() - t0;
+  assert.ok(ms < 4000, `the hook took ${ms.toFixed(0)} ms`);
+  assert.match(out, /good rule fires/);
+  assert.doesNotMatch(out, /runaway/);
+});
+
 test("a NotebookEdit path matcher fires through the hook", () => {
   const cwd = initRepo();
   lesson(cwd, "nb", { detect: '{"tool":"NotebookEdit","pathEndsWith":".ipynb"}', rule: "notebook rule" });

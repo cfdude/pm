@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 import {
-  ADVISED_TOOLS, DETECT_KEYS,
+  ADVISED_TOOLS, DETECT_KEYS, MATCH_TEXT_CAP, REGEX_BUDGET_MS,
   checkDetect, matchLessons, nestedUnboundedQuantifier,
 } from "../../lib/lessons.mjs";
 
@@ -117,3 +117,36 @@ unitTest("a NotebookEdit path matcher reads notebook_path, the field that tool s
   const event = { tool_name: "NotebookEdit", tool_input: { notebook_path: "/x/a.ipynb" } };
   assert.deepEqual(matchLessons(event, [nb]).map(h => h.file), ["nb.md"]);
 });
+// ─────────────── the regex phase is bounded (C1) ───────────────
+
+unitTest("a catastrophic regex the static check cannot see is cut off inside the budget", () => {
+  // `^(a|a)*$` nests nothing, so checkDetect accepts it; unguarded it takes ~13 s on this input
+  // (6.7 s at 24 characters, doubling per character, measured unloaded), so a mutant without the budget FAILS the time assertion
+  // rather than hanging the run.
+  const good = lessonOf("a-good.md", '{"tool":"Bash","commandMatches":"^a"}');
+  const bad = lessonOf("z-bad.md", '{"tool":"Bash","commandMatches":"^(a|a)*$"}');
+  const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
+  const t0 = performance.now();
+  const hits = matchLessons(event, [good, bad]);
+  const ms = performance.now() - t0;
+  assert.ok(ms < REGEX_BUDGET_MS + 1900, `regex phase took ${ms.toFixed(0)} ms`);
+  assert.deepEqual(hits.map(h => h.file), ["a-good.md"],
+    "the lesson evaluated before the budget ran out still fires; the runaway one does not");
+});
+
+unitTest("only the first MATCH_TEXT_CAP characters of the command line are matched", () => {
+  const tail = lessonOf("tail.md", '{"tool":"Bash","commandMatches":"x$"}');
+  const long = { tool_name: "Bash", tool_input: { command: "a".repeat(MATCH_TEXT_CAP + 1000) + "x" } };
+  assert.deepEqual(matchLessons(long, [tail]), []);
+  const short = { tool_name: "Bash", tool_input: { command: "a".repeat(MATCH_TEXT_CAP - 1) + "x" } };
+  assert.deepEqual(matchLessons(short, [tail]).map(h => h.file), ["tail.md"]);
+});
+
+unitTest("a suppression regex that runs out of budget suppresses — it never fires as though it had finished", () => {
+  const l = lessonOf("lacks.md", '{"tool":"Bash","commandMatches":"^a","commandLacks":"^(a|a)*$"}');
+  const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
+  const t0 = performance.now();
+  assert.deepEqual(matchLessons(event, [l]), []);
+  assert.ok(performance.now() - t0 < REGEX_BUDGET_MS + 1900);
+});
+

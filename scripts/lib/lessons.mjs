@@ -33,6 +33,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 import { isInitialized, readStdin } from "./state.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 import { escapeControls, jsonText } from "./constants.mjs";
@@ -263,20 +264,50 @@ export function matchableLessons(dir = lessonsDir()) {
  *
  *  THE PATH is `file_path`, or `notebook_path` for NotebookEdit — the field that tool actually
  *  sends; reading only `file_path` left every NotebookEdit path matcher inert. */
-export function matchLessons(event, lessons) {
+export function matchLessons(event, lessons, { budgetMs = REGEX_BUDGET_MS } = {}) {
   const tool = event.tool_name || "";
   const ti = event.tool_input || {};
-  const cmdLine = String(ti.command || "").split("\n")[0];
+  const cmdLine = String(ti.command || "").split("\n")[0].slice(0, MATCH_TEXT_CAP);
   const filePath = String(ti.file_path || ti.notebook_path || "");
+  const test = boundedTester(budgetMs);
   return lessons.filter(l => {
     const d = l.detect;
     if (d.tool && d.tool !== tool) return false;
     if (d.pathEndsWith && !filePath.endsWith(d.pathEndsWith)) return false;
     const re = l.regex || {};
-    if (re.commandMatches && !re.commandMatches.test(cmdLine)) return false;
-    if (re.commandLacks && re.commandLacks.test(cmdLine)) return false;
+    // A regex that ran out of budget (null) is NOT a match, whichever predicate it serves: a
+    // lesson whose suppression half could not finish must not fire as though it had.
+    if (re.commandMatches && test(re.commandMatches, cmdLine) !== true) return false;
+    if (re.commandLacks && test(re.commandLacks, cmdLine) !== false) return false;
     return true;
   });
+}
+
+/** The TOTAL time every regex of one hook invocation may take, in milliseconds. The hook runs
+ *  before every Bash/Edit/Write/NotebookEdit call and `hooks/hooks.json` gives it no timeout of
+ *  its own, so without this a catastrophic regex held each tool call until Claude Code's 60 s hook
+ *  timeout killed it (C1). An exhausted budget costs ADVICE, never time. */
+export const REGEX_BUDGET_MS = 100;
+
+/** The most of the command's first line any regex sees. Bounds the polynomial blow-up of an
+ *  ordinary `.*.*` on a pasted 100 kB one-liner; the catastrophic cases are the budget's job. */
+export const MATCH_TEXT_CAP = 4096;
+
+/** `(re, text) => true | false | null` — `re.test(text)` run inside a `node:vm` context whose
+ *  timeout interrupts even a backtracking regex (the only built-in way to stop one), sharing ONE
+ *  deadline across every call. `null` means the budget ran out before an answer. The context is
+ *  created lazily, so a tool call no regex lesson reaches pays nothing for it. */
+function boundedTester(budgetMs) {
+  const deadline = performance.now() + budgetMs;
+  let ctx = null;
+  return (re, text) => {
+    const left = Math.floor(deadline - performance.now());
+    if (left < 1) return null;
+    ctx ??= vm.createContext({});
+    ctx.re = re;
+    ctx.s = text;
+    try { return vm.runInContext("re.test(s)", ctx, { timeout: left }) === true; } catch { return null; }
+  };
 }
 
 /** The `additionalContext` string for a set of hits. */
