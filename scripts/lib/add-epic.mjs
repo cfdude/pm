@@ -9,9 +9,10 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, EPIC_ID_FORMAT, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
+import { EPIC_ID_FORMAT, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
+import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { rankOf } from "./epic-progress.mjs";
 import { assertKnownPlatform, platformFlag } from "./platform.mjs";
 import { die } from "./command-exit.mjs";
@@ -381,27 +382,13 @@ export function addEpic() {
   }
   const externalId = str(f["external-id"]);
   const externalUrl = str(f["external-url"]);
-  if (externalId !== undefined) {
-    // Dedup by externalUrl when BOTH sides have one — a bare externalId is only unique WITHIN
-    // one tracker/repo (e.g. GitHub issue numbers restart at #1 per repo), so two epics sourced
-    // from different secondary trackers can legitimately share the same externalId. Bare
-    // externalId is compared only when NEITHER side has a URL. When exactly one side has a URL
-    // and the other doesn't, they are never treated as a duplicate — falling back to an
-    // externalId-only comparison in that case would let a URL-less legacy epic falsely block a
-    // genuinely distinct, URL-bearing one sharing the same bare id (Gate 2 finding).
-    // The two key names come from EPIC_DEDUP_KEYS, not from literals here: the nullable-clearing
-    // sweep derives its cross-record population from that declaration, and a declaration nothing
-    // reads is a comment. The COMPARISON is unchanged — only where the names come from is.
-    const { primary, fallback } = EPIC_DEDUP_KEYS;
-    const supplied = { [primary]: externalUrl, [fallback]: externalId };
-    const dup = state.epics.find(e => {
-      if (supplied[primary] !== undefined && e[primary] !== undefined) return e[primary] === supplied[primary];
-      if (supplied[primary] === undefined && e[primary] === undefined) return e[fallback] === supplied[fallback];
-      return false;
-    });
-    if (dup) {
-      die(`conductor: epic with external-id '${escapeControls(externalId)}' already exists ('${escapeControls(dup.id)}') — skipped\n`);
-    }
+  // One tracker item, one epic — the shared rule in tracker-dedup.mjs (URL against URL when both
+  // sides carry one, bare externalId only when neither does). It used to sit inside
+  // `if (externalId !== undefined)`, so `--external-url` alone skipped it entirely, and its
+  // message named external-id even when the URL was what collided (code review 0.43.0 B2/E1).
+  if (externalId !== undefined || externalUrl !== undefined) {
+    const hit = trackerKeyHolder(state.epics, { externalUrl, externalId });
+    if (hit) { die(`conductor: ${trackerKeyRefusal(hit, { externalUrl, externalId })}\n`); }
   }
   let links;
   try {

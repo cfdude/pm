@@ -16,6 +16,7 @@ import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocatio
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
+import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
 import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours, storedEpicIdError } from "./links.mjs";
 import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
@@ -505,6 +506,23 @@ export function updateEpic() {
       `conductor: --clear ${contradictory.join(", --clear ")} contradicts ` +
       `--${contradictory.join(", --")} in the same invocation — set the field or unset it, ` +
       "not both. Nothing was written.\n");
+  }
+
+  // One tracker item, one epic (tracker-item-dedup-bypassed). Fires only when this invocation SETS
+  // a dedup key: an unrelated write to an epic that already shares its URL with another (a state
+  // file written before this guard) must still go through, and `--clear external-url` — the
+  // inverse, and the way a URL is FREED — is never refused, even when the now URL-less epic meets
+  // another on the externalId fallback. The candidate is the record as it will stand after this
+  // write, compared against every OTHER epic, so re-stating an epic's own URL is not a collision.
+  const setUrl = str(f["external-url"]);
+  const setExternalId = str(f["external-id"]);
+  if (setUrl !== undefined || setExternalId !== undefined) {
+    const clearedKeys = new Set(clearedRows.map(r => r.key));
+    const after = (supplied, key) =>
+      supplied !== undefined ? supplied : (clearedKeys.has(key) ? undefined : epic[key]);
+    const candidate = { externalUrl: after(setUrl, "externalUrl"), externalId: after(setExternalId, "externalId") };
+    const hit = trackerKeyHolder(state.epics.filter(e => e !== epic), candidate);
+    if (hit) { die(`conductor: ${trackerKeyRefusal(hit, candidate)}\n`); }
   }
 
   // --review-mode: a per-epic escalation-only override of the repo-global review-mode dial

@@ -1,0 +1,59 @@
+mutation proofs — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/dedup/mut, worktree untouched
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M1 add-epic guard back inside `if (externalId !== undefined)` (the original bypass)
+  mutation: scripts/lib/add-epic.mjs: "if (externalId !== undefined || externalUrl !== undefined) {" -> "if (externalId !== undefined) {"
+  exit 1 — CAUGHT
+  ✖ add-epic refuses a second epic claiming an external-url with NO external-id (the bypass) (29.251542ms)
+  ✖ an ARCHIVED holder still blocks, and the refusal names the clear that frees it (2.251667ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M2 update-epic guard removed
+  mutation: scripts/lib/update-epic.mjs: "if (hit) { die(`conductor: ${trackerKeyRefusal(hit, candidate)}" -> "if (false) { die(`conductor: ${trackerKeyRefusal(hit, candidate)}"
+  exit 1 — CAUGHT
+  ✖ update-epic --external-url refuses a URL another epic holds, naming it, and writes nothing (4.285ms)
+  ✖ update-epic --external-id enforces the URL-less fallback key (4.453625ms)
+  ✖ update-epic judges the record AFTER its own --clear: clearing the URL while setting external-id meets the fallback key (2.432ms)
+  ✖ an existing duplicate: re-setting the key refuses naming the other holder; clearing one frees it (1.498167ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M3 archived holders no longer count
+  mutation: scripts/lib/tracker-dedup.mjs: "if (!e || typeof e !== \"object\") continue;" -> "if (!e || typeof e !== \"object\" || e.status === \"archived\") continue;"
+  exit 1 — CAUGHT
+  ✖ an ARCHIVED holder still blocks, and the refusal names the clear that frees it (8.525042ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M4 update-epic compares against itself too
+  mutation: scripts/lib/update-epic.mjs: "trackerKeyHolder(state.epics.filter(e => e !== epic), candidate)" -> "trackerKeyHolder(state.epics, candidate)"
+  exit 1 — CAUGHT
+  ✖ update-epic re-stating an epic's OWN url is not a collision (1.001667ms)
+  ✖ an existing duplicate: re-setting the key refuses naming the other holder; clearing one frees it (1.166542ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M5 update-epic ignores its own --clear when building the candidate
+  mutation: scripts/lib/update-epic.mjs: "(clearedKeys.has(key) ? undefined : epic[key])" -> "epic[key]"
+  exit 1 — CAUGHT
+  ✖ update-epic judges the record AFTER its own --clear: clearing the URL while setting external-id meets the fallback key (7.26375ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M6 refusal names external-id whatever collided (E1)
+  mutation: scripts/lib/tracker-dedup.mjs: "const flag = FLAG_OF[key] || key;" -> "const flag = \"external-id\"; key = \"externalId\";"
+  exit 1 — CAUGHT
+  ✖ add-epic refuses a second epic claiming an external-url with NO external-id (the bypass) (6.089541ms)
+  ✖ the refusal names the key that collided — the URL, not external-id (E1) (1.482125ms)
+  ✖ an ARCHIVED holder still blocks, and the refusal names the clear that frees it (1.630792ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M7 fallback key dropped (URL-less externalId never compared)
+  mutation: scripts/lib/tracker-dedup.mjs: "return { holder: e, key: fallback };" -> "continue;"
+  exit 1 — CAUGHT
+  ✖ update-epic --external-id enforces the URL-less fallback key (3.5455ms)
+  ✖ update-epic judges the record AFTER its own --clear: clearing the URL while setting external-id meets the fallback key (2.165916ms)
+  ✖ failing tests:
+

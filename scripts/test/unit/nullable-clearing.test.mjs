@@ -372,8 +372,8 @@ unitTest("a no-op clear announces NOTHING — there was no removal to have a con
  *      rather than read off the returned `where` string (which is rendered prose, not a key).
  *      A synthetic epic gets `sentinel-<key>` in every nullable key; whichever sentinels come
  *      back as `r.epic` are the epic-id-bearing nullable fields, by construction.
- *   3. `EPIC_DEDUP_KEYS` — the two fields the inward sync dedup compares. `add-epic` reads the
- *      same declaration, so it cannot rot into decoration.
+ *   3. `EPIC_DEDUP_KEYS` — the two fields the inward sync dedup compares. `tracker-dedup.mjs` (the
+ *      rule every writer of the key calls) reads the same declaration, so it cannot rot into decoration.
  *
  *  DELIBERATELY OUT: `reviewMode`, which points at a repo-global dial rather than at another
  *  record. It carries a clearNote anyway, as a declared judgement on its row — but demanding one
