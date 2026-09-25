@@ -317,7 +317,13 @@ function runInvocation(argv, io = {}) {
   //
   // The predicate is cheap (two realpaths and one existsSync) and, by construction, silent in
   // every case except two live conductors with the wrong one selected.
-  if (VERB_EFFECTS[cmd]?.effect !== "read-only") {
+  //
+  // AND NOT BEFORE INIT (code review 0.43.0, C1). A root pm never initialised is one where every verb
+  // but `init` is dormant or refuses, so it writes nothing there and a warning about that write is
+  // false — and the hooks are wired into EVERY repository on the machine, which hooks/README.md
+  // promises are silent until /pm:init. `init` keeps both warnings: it is the one verb that writes
+  // into an uninitialised root, and scaffolding the wrong repository is what they exist to catch.
+  if (VERB_EFFECTS[cmd]?.effect !== "read-only" && (cmd === "init" || isInitialized())) {
     warnRootDivergence();
     // gh#175. THE SAME GATE, deliberately. 0.40.0 stopped the divergence warning above crying wolf
     // on the 17 read-only verbs; a second warning built beside it must inherit that gate or it

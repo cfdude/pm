@@ -117,6 +117,25 @@ test("commit-nudge does NOT warn — it writes nothing here, and it runs on ever
   assert.doesNotMatch(out, DETACHED, "nothing is written, so there is no discarded write to warn about");
 });
 
+test("a hook in a detached repository pm never initialised prints NOTHING — dormant means silent", () => {
+  // hooks-not-silent-before-init (code review 0.43.0, C1). snapshot is PreCompact-wired in every
+  // repository on the machine; in a detached non-pm checkout it printed a four-line "about to write
+  // .conductor/brief.txt" and then, dormant, wrote nothing. hooks/README.md says silent until /pm:init.
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "f.txt"), "x\n");
+  git(cwd, "init", "-q", "-b", "main");
+  git(cwd, "config", "user.email", "t@example.com");
+  git(cwd, "config", "user.name", "t");
+  git(cwd, "add", "-A");
+  git(cwd, "commit", "-q", "-m", "one");
+  git(cwd, "checkout", "-q", "--detach", git(cwd, "rev-parse", "HEAD").trim());
+  for (const hook of ["snapshot", "brief"]) {
+    const out = runCombined([hook], { cwd, input: "{}" });
+    assert.doesNotMatch(out, DETACHED, `${hook}: no detached warning in a repository pm never initialised`);
+  }
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor")), "and nothing was written");
+});
+
 test("the warning says that session bookkeeping will not happen", () => {
   const cwd = deployed();
   const out = runCombined(["snapshot"], { cwd });
