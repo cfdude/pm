@@ -1,0 +1,27 @@
+# mutation-g2-m4-m5 — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-49/g2m45/tree; node v26.9.0. Each mutation refused (exit=1); CONTROL: the pre-fix no-network set misses the bare specifier.
+
+=== M5(a) reviewer's mutation: import net from "net" (bare specifier) in runtime-support.mjs ===
+23a24
+> import net from "net";
+exit=1
+ℹ pass 4
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the engine must never open a connection (matched /\bfrom\s*['"](?:node:)?(?:https?|http2|net|tls|dgram|dns)['"]/) — pm is an instruction layer
+=== M5(b) a dynamic import("dns") in runtime-support.mjs ===
+26a27
+> export const probe = () => import("dns");
+exit=1
+ℹ pass 4
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the engine must never open a connection (matched /\bimport\s*\(\s*['"](?:node:)?(?:https?|http2|net|tls|dgram|dns)['"]\s*\)/) — pm is an instruction layer
+=== M4 the engine header states Node 20+ ===
+77c77
+<  * No external dependencies. Node 22+ — pm supports the oldest Node LTS line that is not end-of-life
+---
+>  * No external dependencies. Node 20+ — pm supports the oldest Node LTS line that is not end-of-life
+exit=1
+ℹ pass 8
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+--- CONTROL: the pre-fix (d45ee0e) conductor-35 forbidden set against M5(a)'s source:
+pre-fix set matches: [ false, false, false ]

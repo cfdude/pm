@@ -42,9 +42,10 @@ skip straight to the branch dance at the bottom.
    It prints the set (exit 0) or names the computed set and the committed one (exit 1). If the
    oldest major's `end` is on or before the release date, or the set otherwise differs, move ONE
    UNIT in this release: `NODE_FLOOR_MAJOR` (`scripts/lib/runtime-support.mjs`),
-   `PM_NODE_FALLBACK` (`.github/workflows/ci.yml`), the README's `Node N+` lines, CONTRIBUTING.md's
-   and CLAUDE.md's, and the docs-site pages (installation, index, introduction, llms.txt). The
-   per-commit suite holds the first four together (`assert/ci-workflow`, `assert/support-floor`);
+   `PM_NODE_FALLBACK` (`.github/workflows/ci.yml`), the README's `Node N+` lines, CONTRIBUTING.md's,
+   CLAUDE.md's and the engine header's (`scripts/conductor.mjs`), and the docs-site pages
+   (installation, index, introduction, llms.txt). The per-commit suite holds all but the site
+   together (`assert/ci-workflow`, `assert/support-floor`);
    the site is this step's alone. Look one release ahead too: the next `end` date on the schedule
    (2027-04-30 for Node 22) turns CI red on that day until such a release lands, by design.
 

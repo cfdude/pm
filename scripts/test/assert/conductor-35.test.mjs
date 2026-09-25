@@ -124,8 +124,16 @@ test("the engine still opens no network connection — the pointer is an INSTRUC
   // (`node:net`), a TLS socket (`node:tls`), a datagram (`node:dgram`) or HTTP/2 (`node:http2`) opens
   // a connection just as surely. It was widened in the change that added `runtime-support.mjs`, a
   // module whose subject is an external schedule — exactly the temptation this law guards against.
-  const NET = "https?|http2|net|tls|dgram";
-  for (const forbidden of [/\bfetch\s*\(/, new RegExp(`node:(?:${NET})\\b`), new RegExp(`require\\(['"](?:node:)?(?:${NET})['"]\\)`)]) {
+  // AND BARE SPECIFIERS (Gate 2 M5): `import net from "net"` opens the same socket as "node:net" and
+  // matched none of the patterns above, nor did a dynamic `import("net")`. `dns` joins the set.
+  const NET = "https?|http2|net|tls|dgram|dns";
+  for (const forbidden of [
+    /\bfetch\s*\(/,
+    new RegExp(`node:(?:${NET})\\b`),
+    new RegExp(`require\\(\\s*['"](?:node:)?(?:${NET})['"]\\s*\\)`),
+    new RegExp(`\\bfrom\\s*['"](?:node:)?(?:${NET})['"]`),
+    new RegExp(`\\bimport\\s*\\(\\s*['"](?:node:)?(?:${NET})['"]\\s*\\)`),
+  ]) {
     assert.ok(!forbidden.test(engineSrc),
       `the engine must never open a connection (matched ${forbidden}) — pm is an instruction layer`);
   }

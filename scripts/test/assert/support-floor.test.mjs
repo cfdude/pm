@@ -125,7 +125,7 @@ export function floorCopyRefusals(file, text, min, floor = NODE_FLOOR_MAJOR) {
   return out;
 }
 
-const FLOOR_COPIES = [["README.md", 2], ["CONTRIBUTING.md", 1], ["CLAUDE.md", 1]];
+const FLOOR_COPIES = [["README.md", 2], ["CONTRIBUTING.md", 1], ["CLAUDE.md", 1], ["scripts/conductor.mjs", 1]];
 
 test("the documented support floor — every 'Node N+' copy — equals NODE_FLOOR_MAJOR", () => {
   const found = FLOOR_COPIES.flatMap(([file, min]) =>
