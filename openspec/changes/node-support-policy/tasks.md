@@ -345,7 +345,7 @@ Commit mechanics, which bind every section below:
       - Confirm `fetch-depth: 0` (`ci.yml:28`) keeps its meaning.
       - Re-confirm the latest tags with `gh api repos/actions/{checkout,setup-node}/releases/latest`.
         At drafting they were `v7.0.1` and `v7.0.0`, both `using: node24`.
-- [ ] 4.2 RED (same commit as 4.3, after 4.2b) — `assert/ci-workflow.test.mjs` gains pure functions over `ci.yml`'s text, with tests.
+- [x] 4.2 RED (same commit as 4.3, after 4.2b) — `assert/ci-workflow.test.mjs` gains pure functions over `ci.yml`'s text, with tests.
       They assert:
       - (a) a job named `test`, with `if: always()`, needing the compute job and the matrix job;
       - (b) its step fails unless both `needs.*.result` equal `success`;
@@ -396,7 +396,7 @@ Commit mechanics, which bind every section below:
       - Save `red-4.2b.txt`. Mutations in scratch copies, saved to `mutation-4.2b.txt`: the start
         clause removed; the `lts` clause removed; the `end` clause removed; a malformed body routed to the fallback — each
         refused by the canned-schedule test.
-- [ ] 4.3 GREEN — rewrite `ci.yml` per design D2.
+- [x] 4.3 GREEN — rewrite `ci.yml` per design D2.
       - Jobs: `node-majors` (runs 4.2b's script under `actions/setup-node@v7` at the support
         floor), `test-node` (matrix) and the `test` aggregate.
       - `PM_NODE_FALLBACK: "[22,24,26]"`.
