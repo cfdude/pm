@@ -1,0 +1,22 @@
+Mutation proofs — each applied in place to scripts/lib/releases.mjs, run, then restored from a
+scratch backup (the worktree sandbox refuses running node from a copy outside the worktree).
+
+M1 (Task 1) — delete `amend(old, { op: "unmember", epic: epicId, via: "member", to: id });`
+  ✖ a cross-release --member records an unmember amendment on the OLD release, naming where it went
+  ✖ `release show` of the old release renders the move, not "no reason given"
+  ✖ one --member that undefers on the new release AND moves off the old one records both, on two releases
+  pass 3 / fail 3
+
+M2 (Task 1) — `if (prev && prev !== id)` → `if (prev)` (same-release re-member now amends)
+  ✖ re-membering into the SAME release writes nothing
+  pass 5 / fail 1
+
+M3 (Task 2) — `amend(rel, { op: "redefer", … })` → `void ({ op: "redefer", … })`
+  ✖ re-deferring with a NEW reason keeps the old one in the amendments trail
+  ✖ a re-defer names the reason it replaced on stderr, and `release show` renders both
+  ✖ three reasons in a row leave a readable chain: each amendment's `was` is the one before
+  pass 7 / fail 3
+
+M4 (Task 2) — `else if (rel.deferred[at].reason !== record.reason)` → `else if (true)`
+  ✖ re-deferring with the IDENTICAL reason writes nothing — not even a fresh recordedAt
+  pass 9 / fail 1

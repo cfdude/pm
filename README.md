@@ -1024,6 +1024,13 @@ removes an exclusion, keeps what it said, and does **not** make the epic a membe
 undefer `--member` has always performed is now recorded the same way, marked `via: "member"` and
 carrying no invented reason.
 
+**Nothing a release recorded disappears silently.** `--member` on an epic that belongs to another
+release still moves it, and now records the move on the release it left — an `unmember` amendment
+with `via: "member"` and `to: "<new release>"` — and says so on stderr, so `release show <old>`
+reads "moved to `<new>`" instead of quietly holding one epic fewer. Re-running `--defer` with a new
+reason keeps the old one as a `redefer` amendment (`was`, `wasRecordedAt`); the same reason again
+writes nothing.
+
 **`--defer` also takes its reason inline** — `--defer "<epicId>:<why>"`, split on the first colon,
 the same rule `--deferral` uses — because deferral was one concept spelled three ways across two
 verbs and no two agreed. `--deferral` now accepts `::` as well as `:` for the same reason, and
