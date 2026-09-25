@@ -1,0 +1,126 @@
+mutation-1.3 — handoff-demand-blind-spots
+A scratch COPY of scripts/ (never the tree). Mutation: epicProgress() restored to the backfill scope:
+  const a = isArchiveBackfilled(epic) ? countCheckboxes(archivedTasksPath(epic.id)) : { exists: false };
+Run: node --test --test-reporter=spec scripts/test/assert/archived-progress.test.mjs
+Expected: the 1.3 refusal case FAILS (the delivered archive is accepted over 2 open archived tasks).
+
+✖ 1.2 a MANAGED archived epic (no backfill stamp) reads its archived tasks.md — date-prefixed directory (2.643709ms)
+✖ 1.2 a MANAGED archived epic (no backfill stamp) reads its archived tasks.md — undated directory (0.954209ms)
+✖ 1.2 two dated directories for one id: the LATER date is read, and isArchived/archivedTasksPath name it (6.705583ms)
+✔ 1.2 an id that itself carries a date prefix resolves identically through both questions (1.172167ms)
+✔ 1.2 the live tasks.md still wins while it exists (1.028125ms)
+✖ 1.3 the documented sequence REFUSES delivered while the archived tasks.md has open tasks (82.355625ms)
+✔ 1.3 the paired case: every undeclared archived task ticked, the archive task declared → accepted (67.971584ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 300.277583
+
+✖ failing tests:
+
+test at scripts/test/assert/archived-progress.test.mjs:31:3
+✖ 1.2 a MANAGED archived epic (no backfill stamp) reads its archived tasks.md — date-prefixed directory (2.643709ms)
+  AssertionError [ERR_ASSERTION]: the archived tasks.md is the checkbox source once the live one is gone — `0/0` is the blind spot
+  + actual - expected
+  
+    [
+  +   0,
+  +   0
+  -   1,
+  -   3
+    ]
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:36:14
+      at withAssertInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/assert-harness.mjs:59:18)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:34:11)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 0, 0 ],
+    expected: [ 1, 3 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/archived-progress.test.mjs:31:3
+✖ 1.2 a MANAGED archived epic (no backfill stamp) reads its archived tasks.md — undated directory (0.954209ms)
+  AssertionError [ERR_ASSERTION]: the archived tasks.md is the checkbox source once the live one is gone — `0/0` is the blind spot
+  + actual - expected
+  
+    [
+  +   0,
+  +   0
+  -   1,
+  -   3
+    ]
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:36:14
+      at withAssertInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/assert-harness.mjs:59:18)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:34:11)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 0, 0 ],
+    expected: [ 1, 3 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/archived-progress.test.mjs:44:1
+✖ 1.2 two dated directories for one id: the LATER date is read, and isArchived/archivedTasksPath name it (6.705583ms)
+  AssertionError [ERR_ASSERTION]: progress is read from the 2026-09-01 directory
+  + actual - expected
+  
+    [
+  +   0,
+  +   0
+  -   2,
+  -   3
+    ]
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:57:12
+      at withAssertInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/assert-harness.mjs:59:18)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:49:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 0, 0 ],
+    expected: [ 2, 3 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/archived-progress.test.mjs:110:1
+✖ 1.3 the documented sequence REFUSES delivered while the archived tasks.md has open tasks (82.355625ms)
+  AssertionError [ERR_ASSERTION]: a delivered archive over open archived tasks is refused
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/archived-progress.test.mjs:114:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

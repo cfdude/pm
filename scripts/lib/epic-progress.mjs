@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { engineRoot, changesDir, archiveDir, plansDir, laneRank, isOpenspecLane, withdrawnGate, escapeControls } from "./constants.mjs";
-import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
+import { engineStamp, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
 import { errStream } from "./invocation.mjs";
@@ -76,26 +76,47 @@ export function archivedChanges(dir = archiveDir()) {
   } catch { return []; }
 }
 
+/** THE ONE RESOLVER: which directory under `openspec/changes/archive/` is this id's archived change,
+ *  or `null` when none is. Every archive-identity question about ONE epic goes through it —
+ *  `isArchived()` ("is its change archived"), `archivedTasksPath()` ("where is its archived
+ *  tasks.md") and the spec-sync check ("where are its archived deltas") — so no two of them can
+ *  disagree about one epic (conductor-record, "One resolver decides which archived directory is an
+ *  epic's").
+ *
+ *  A directory matches when its name, with one leading `YYYY-MM-DD-` removed, equals the id with the
+ *  same prefix removed. Where several match (a change archived, re-proposed under the same id and
+ *  archived again), the LATEST date prefix wins and an undated directory ranks below every dated
+ *  one: `openspec archive` always writes a date, and an undated directory is the older manual
+ *  convention. Equal keys are broken by name so the answer never depends on directory order.
+ *
+ *  Before this resolver the two questions used different matches. `archivedTasksPath()` tried the
+ *  undated name and then took the FIRST stripped match in directory order — the oldest — while
+ *  `isArchived()` matched a regex over the literal id, so an id that itself carried a date prefix
+ *  could read as archived with no tasks found. */
+export function archivedChangeDir(id, dir = archiveDir()) {
+  const want = strippedChangeId(id);
+  const dated = (name) => (/^\d{4}-\d{2}-\d{2}-/.test(name) ? name.slice(0, 10) : "");
+  const hits = archivedChanges(dir).filter(c => c.id === want).map(c => c.dir);
+  if (!hits.length) return null;
+  hits.sort((a, b) => dated(b).localeCompare(dated(a)) || b.localeCompare(a));
+  return hits[0];
+}
+
 /** Where an archived change's task source actually sits, or a path that does not exist.
  *
  *  `CHANGES_DIR/<id>/tasks.md` cannot exist once a change is archived — openspec MOVES the
- *  directory — so a consumer that needs the counts has to look where the file went. Both archive
- *  namings are tried, the same two `isArchived()` matches. */
+ *  directory — so a consumer that needs the counts has to look where the file went: the directory
+ *  the one resolver names, the same one `isArchived()` answers from. */
 export function archivedTasksPath(id) {
-  const exact = path.join(archiveDir(), id, "tasks.md");
-  if (fs.existsSync(exact)) return exact;
-  const hit = archivedChanges().find(c => c.id === strippedChangeId(id));
-  return hit ? path.join(archiveDir(), hit.dir, "tasks.md") : exact;
+  const hit = archivedChangeDir(id);
+  return path.join(archiveDir(), hit ?? String(id), "tasks.md");
 }
 
-/** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
- *  so an exact-name check misses it. Match the exact id (older/manual) OR a date-prefixed dir. */
+/** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`, and an
+ *  older/manual archive is `archive/<id>`: both are the one resolver's matches, so this answer and
+ *  `archivedTasksPath()`'s can never disagree. */
 export function isArchived(id) {
-  if (fs.existsSync(path.join(archiveDir(), id))) return true;
-  let entries;
-  try { entries = fs.readdirSync(archiveDir(), { withFileTypes: true }); } catch { return false; }
-  const re = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
-  return entries.some(d => d.isDirectory() && re.test(d.name));
+  return archivedChangeDir(id) !== null;
 }
 
 /** Heal drift between the conductor and the on-disk archive: any epic whose change is
@@ -286,19 +307,17 @@ export function epicProgress(epic) {
   if ((epic.lane || "openspec") === "openspec") {
     const c = countCheckboxes(path.join(changesDir(), epic.id, "tasks.md"));
     if (!c.exists) {
-      // A BACKFILLED epic reads its counts from the archived artifacts. It never passed through
-      // the conductor while it was in flight, so `0/0` here is not "a managed epic whose source
-      // legitimately moved" — it is the evidence being discarded at the moment it is registered.
-      // A change archived with 12 of its tasks unticked is the most informative row in an audit,
-      // and preserving the row while throwing away the counts preserves nothing.
+      // The checkbox source of an ARCHIVED change is its archived tasks.md, for EVERY epic
+      // (conductor-record; design D1). `openspec archive` moves `changes/<id>/`, so a reader of
+      // the live path alone sees zero outstanding work at exactly the moment the archive gate asks
+      // — which is how two epics here were recorded `delivered` at 53/54 and 46/47. This used to
+      // be scoped to BACKFILLED epics, on the premise that the handoff demand was written against
+      // a quantity that "reads zero for an archived epic whose source is gone"; that premise was
+      // the blind spot, and the gate-integrity requirement that stated it is amended with this.
       //
-      // Deliberately SCOPED to the backfill rather than applied to every archived epic.
-      // `archiveGate()` documents that outstanding work "reads zero for an archived epic whose
-      // source is gone" and the interactive verb's handoff demand rests on that; reading archived
-      // artifacts for every archived epic would move a quantity out from under a gate written
-      // against it. The stamp is exactly what the spec says it is for — telling a record
-      // reconstructed from disk apart from one the conductor managed.
-      const a = isArchiveBackfilled(epic) ? countCheckboxes(archivedTasksPath(epic.id)) : { exists: false };
+      // The LIVE path still wins while it exists: it is authoritative for a change in flight, and
+      // a change can be un-archived and re-proposed under the same id.
+      const a = countCheckboxes(archivedTasksPath(epic.id));
       if (a.exists) return { done: a.done, total: a.total, excluded: a.excluded, source: "openspec", warn: null };
       return { done: 0, total: 0, excluded: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
     }

@@ -209,9 +209,11 @@ export const CHECKS = [
         if (e.status !== "archived" || !inCompletionScope(e)) continue;
         const p = epicProgress(e);
         // Gated on `total > 0`, NEVER on `done === 0`. epicProgress() returns `{done: 0,
-        // total: 0}` for an archived epic whose source is gone — the ordinary case for most of
-        // them — so a `done === 0` test reports every source-less archived epic in the repo and
-        // says nothing about any of them. `total > 0` means a real source with real checkboxes.
+        // total: 0}` for an epic with no readable source — a lane with none, or a plan file that
+        // moved — so a `done === 0` test reports every source-less archived epic in the repo and
+        // says nothing about any of them. An archived openspec change is NOT that case any more:
+        // its archived `tasks.md` is read (design D1), so it reaches this check with real counts.
+        // `total > 0` means a real source with real checkboxes.
         if (p.total > 0 && p.done === 0) {
           out.push({ epic: e.id, detail: `archived at ${p.done}/${p.total} (source: ${p.source})` });
         }

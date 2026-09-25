@@ -108,7 +108,7 @@ These rules bind every section below.
         path, through `isArchived()`) would write differently under the resolver. 1.2 adds a test for
         any non-zero count.
       Verify: the file exists and names the commit it was measured at.
-- [ ] 1.2 **TDD** — one resolver, and the archived `tasks.md` for a non-backfilled epic.
+- [x] 1.2 **TDD** — one resolver, and the archived `tasks.md` for a non-backfilled epic.
       - RED: `red-1.2.txt`, an ASSERT-rung test in `scripts/test/assert/` (its fixture writes
         `openspec/changes/archive/…`, which the unit rung refuses):
         - an archived openspec-lane epic with no backfill stamp and an archived `tasks.md` at 1/3:
@@ -134,7 +134,7 @@ These rules bind every section below.
           half at 1188/1189 with D1 applied and this test unchanged, while the hook stayed green.
       Verify: the assertion half is green, `certify.mjs functional` is green where permitted, and the
       file-rung backfill tests are unchanged.
-- [ ] 1.3 **TDD** — the documented sequence refuses a delivered archive with open archived tasks.
+- [x] 1.3 **TDD** — the documented sequence refuses a delivered archive with open archived tasks.
       - RED: `red-1.3.txt`, an ASSERT-rung verb test: Gate 2 recorded, the change moved under
         `archive/`, the heal run, then `update-epic <id> --status archived --outcome delivered --no-deferrals`.
         It asserts exit non-zero, `2 of 1/3 task(s) outstanding` in the refusal, and the store

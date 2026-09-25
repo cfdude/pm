@@ -188,10 +188,12 @@ export function gateTableRows(epics) {
  * as grounds to skip would leave EVERY openspec epic following the documented workflow at
  * `unknown` — the 42-of-49 headline defect, reproduced in the field built to close it.
  *
- * Every input below is read from the RECORD and none from `openspec/changes/<id>/`: by that
- * point the directory has moved under `archive/`. The Gate 2 verdict and its evidence, the
- * outstanding-work quantity (which reads zero for an archived epic whose source is gone), the
- * deferral assertion and the attribution array are all durable on the epic.
+ * No input below is read from the live `openspec/changes/<id>/`: by that point the directory has
+ * moved under `archive/`. The Gate 2 verdict and its evidence, the deferral assertion and the
+ * attribution array are durable on the epic, and the outstanding-work quantity is
+ * epic-progress.mjs's, which reads the ARCHIVED `tasks.md` where the live one is gone — it never
+ * reads zero because the change moved (gate-integrity, "The interactive archive verb accepts an
+ * epic that is already archived").
  *
  * @param {object} epic     the epic as it stands BEFORE the transition.
  * @param {object} [request] what the caller is asking for at this transition — the interactive
@@ -661,9 +663,10 @@ export function archiveGate(epic, request = {}) {
     // disposal as the normal route and get work disposed of that should have been done —
     // a completion prompt turned into a paperwork step, which is worse than no gate.
     //
-    // Only the STORIES source can name them: those rows are on the epic and survive archiving.
-    // A checkbox source cannot be read here at all — by this point `openspec/changes/<id>/`
-    // has moved — so it keeps the unnamed form rather than guessing at titles. The titles come
+    // Only the STORY part can name them: those rows are on the epic and carry titles. A checkbox
+    // source IS read here — its archived `tasks.md` where the change has moved (design D1) — but
+    // its count is what the refusal cites; its task lines are not titled rows the record holds, so
+    // it keeps the unnamed form rather than quoting free text out of a file. The titles come
     // from the finding's `items`, each escaped so a title cannot begin a line of the refusal (and so
     // cannot forge the invocation below it — user-text-never-forges-output repro D).
     const { items } = handoffFailure;
