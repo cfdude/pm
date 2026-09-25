@@ -5,4 +5,6 @@
   write .conductor/brief.txt" in a detached non-pm checkout — both for a write the dormant hook
   never makes. Both warnings now fire only once pm is initialised there, except for `init` itself,
   which is the one verb that writes into an uninitialised repository and still warns before it
-  scaffolds the wrong one.
+  scaffolds the wrong one. A non-hook verb refused there for want of `/pm:init` still prints the
+  wrong-repository warning first, naming both repositories, so following its advice does not
+  initialise the wrong one.

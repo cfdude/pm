@@ -79,3 +79,15 @@ test("gh#82: `init` into an uninitialised root still warns — it is the one ver
   const r = invokeEngine(["init"], { cwd: here, env: { CLAUDE_PROJECT_DIR: target } });
   assert.match(r.stdout + r.stderr, /different repository/i);
 });
+// Branch review of the init gate: standing in a pm repository with CLAUDE_PROJECT_DIR at one pm
+// never initialised, `add-epic` said only "run /pm:init first" — and following that initialises the
+// WRONG repository. A non-hook verb names both before it refuses; a hook stays silent (above).
+test("gh#82: a verb refused for an uninitialised root names BOTH repositories when the roots diverge", () => {
+  const target = tmpRepo();                         // never initialised
+  const here = tmpRepo(); run(["init"], { cwd: here });
+  const r = invokeEngine(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd: here, env: { CLAUDE_PROJECT_DIR: target } });
+  assert.notEqual(r.status, 0, "still refused — there is no record to write");
+  const text = r.stdout + r.stderr;
+  assert.match(text, /different repository/i, "and it says where it is pointed before telling you to init");
+  assert.ok(text.includes(target) && text.includes(here), "naming both paths");
+});

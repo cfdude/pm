@@ -323,7 +323,15 @@ function runInvocation(argv, io = {}) {
   // false — and the hooks are wired into EVERY repository on the machine, which hooks/README.md
   // promises are silent until /pm:init. `init` keeps both warnings: it is the one verb that writes
   // into an uninitialised root, and scaffolding the wrong repository is what they exist to catch.
-  if (VERB_EFFECTS[cmd]?.effect !== "read-only" && (cmd === "init" || isInitialized())) {
+  // ONE MORE CASE for the divergence warning, and only for it (branch review): a NON-HOOK verb in an
+  // uninitialised root is about to refuse with "run /pm:init first", and when the caller is
+  // standing in a different, initialised repository that advice initialises the WRONG one. The
+  // warning names both before the refusal does. A hook stays silent — it refuses nothing there.
+  const initialized = isInitialized();
+  if (VERB_EFFECTS[cmd]?.effect !== "read-only" && !initialized && cmd !== "init" && VERB_EFFECTS[cmd]?.hook !== true) {
+    warnRootDivergence();
+  }
+  if (VERB_EFFECTS[cmd]?.effect !== "read-only" && (cmd === "init" || initialized)) {
     warnRootDivergence();
     // gh#175. THE SAME GATE, deliberately. 0.40.0 stopped the divergence warning above crying wolf
     // on the 17 read-only verbs; a second warning built beside it must inherit that gate or it
