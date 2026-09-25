@@ -14,8 +14,13 @@ Commit mechanics, which bind every section below:
   So:
   - Before any commit that touches `scripts/conductor.mjs` or `scripts/lib/*.mjs`, even a comment,
     run `node scripts/test/certify.mjs sweeps`.
-  - If the file is a certified module (it calls `gitOps(`; `conductor.mjs` and `subcommands.mjs` do),
-    run `… certify.mjs functional` too.
+  - If the file is a certified module, run `… certify.mjs functional` too. The certified set is
+    DERIVED, never named from memory (Gate 1 I9): it is `certifiedModules()` in
+    `scripts/test/certification.mjs:190` — every `scripts/lib/*.mjs` whose source calls `gitOps(`,
+    minus `invocation.mjs` and `git-gateway.mjs`, plus `scripts/conductor.mjs`. Before each commit,
+    run `rg -l '\bgitOps\s*\(' scripts/lib scripts/conductor.mjs` and check the staged engine files
+    against it. At drafting it was `conductor.mjs`, `commit-watch.mjs`, `constants.mjs`,
+    `created-at.mjs`, `git.mjs`, `subcommands.mjs`, `tool-currency.mjs`, `worktree-hygiene.mjs`.
   - Before any commit that touches a functional test file, run `… certify.mjs functional`.
 - **The guards that change when the hook or CI changes**, each re-pointed IN THE COMMIT that changes
   the shape it reads, and each re-point proven by a mutation in a scratch copy:
@@ -25,6 +30,10 @@ Commit mechanics, which bind every section below:
   - `scripts/test/assert/ci-workflow.test.mjs` — `ci.yml`'s bucket steps and, from section 4, its
     matrix;
   - `scripts/test/assert/assert-half-has-no-spawn.test.mjs` — the shim coverage walk.
+- **Landing order is not section order** (design, Migration Plan): 1.1–1.3, then section 2, then
+  1.4–1.5, then sections 3, 4, 5, 7, 8, 9. Section 2 lands before 1.4 so that no commit runs the half
+  per-file while the 13 file-rung files still rely on another file's shim. **The PR into `main` opens
+  only after 4.3.**
 
 ## 0. Before any code
 
@@ -94,6 +103,9 @@ Commit mechanics, which bind every section below:
       - It fails today on the machine's Node 24+: the spec reporter colours its summary, `^ℹ tests `
         matches nothing, the hook prints `tests passing (summary line not found)` and exits 0 with
         the floor skipped (`.githooks/pre-commit:214`, `:223-224`).
+      - It reproduces only on Node 24+, whose default non-TTY reporter is spec; on 20/22 the default
+        is TAP, which is never coloured. `red-1.1.txt` records `node --version` of the Node the
+        hook resolved when it was captured.
       - Save `red-1.1.txt`.
       - Twin: `assert/conductor-09.test.mjs` is staged in the same commit, since 1.2 re-points it.
       - Run `certify.mjs functional` before the commit.
@@ -101,9 +113,20 @@ Commit mechanics, which bind every section below:
       `FORCE_COLOR=0 node --test --test-reporter=spec $ISOFLAG $RUNG_FILES`, still with the probe at
       this step.
       - `total` and `passed` are parsed from `^ℹ ` only, and the `#` branch is deleted.
-      - A run whose `total` is empty, or `0`, is an ABORT naming what could not be read. It is no
-        longer "tests passing (summary line not found)".
-      - `assert/conductor-09.test.mjs:129`'s `RUNNER_LINE` is re-pointed in this commit.
+      - The checks run in the order design D5 fixes: (1) no parseable summary → ABORT, "the count
+        could not be read" — no longer "tests passing (summary line not found)"; (2) `total <
+        declared` → the existing shortfall ABORT naming both counts, `total = 0` included; (3)
+        `declared = 0` → the empty-rung ABORT. The empty-rung message is NEVER shown while the index
+        still declares tests (Gate 1 B6).
+      - The hook's prose at `:173-175` (the dual-reporter comment) is rewritten (Gate 1 I8).
+      - `assert/conductor-09.test.mjs:129`'s `RUNNER_LINE` is re-pointed in this commit, and a TEXT
+        guard is added there: the hook holds the unreadable-count ABORT and parses `^ℹ` only.
+      - **A durable test for the unreadable-count refusal (Gate 1 I2):** `functional/conductor-09.test.mjs`
+        gains a fixture whose PATH holds a stub `node` first — a shell script that exits 0 and
+        prints no summary — and asserts the hook ABORTs with "the count could not be read" rather
+        than passing. The stub also answers the hook's `drift.mjs` call; the test asserts the
+        runner's refusal, not drift's. Its twin is `assert/conductor-09.test.mjs`, staged in this
+        commit; run `certify.mjs functional` first.
       Mutation proofs in scratch copies of the hook, saved to `mutation-1.2.txt`:
       - (i) the reporter flag swapped for `--test-reporter=tap` → the hook ABORTs on an unreadable
         count rather than passing;
@@ -124,9 +147,15 @@ Commit mechanics, which bind every section below:
         write.
       - Delete the `[ -f ]` loop (`:160-169`). The runner line carries the two rung globs literally:
         `FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`.
-      - Re-key the empty-rung abort to `total = 0`, keeping its message "neither rung of the
-        assertion half holds a *.test.mjs file".
-      - Rewrite the hook's prose at `:32-34`, `:48-50` and `:134-159`.
+      - The empty-rung abort is the THIRD check of 1.2's order — `declared = 0` — and keeps its
+        message "neither rung of the assertion half holds a *.test.mjs file". A run with `total = 0`
+        and `declared > 0` is the shortfall ABORT, never this message.
+      - One rung matching nothing while the other matches is NOT a refusal. The existing
+        `functional/conductor-09.test.mjs:411-450` fixture (unit rung holds only `.keep`, assert rung
+        holds one file) is suite-certification's *"One rung that matches nothing does not stop the
+        other"* scenario; it stays and is cited as such.
+      - Rewrite the hook's prose at `:32-34`, `:48-50` and `:134-159`, and `assert/conductor-09.test.mjs:94-128`'s
+        narrative, including `:120`'s wrapped "Node 18 REFUSES" (Gate 1 I8).
       Re-point `assert/conductor-09.test.mjs`:
       - `RUNNER_LINE` (`:129`);
       - exactly ONE `node --test` line, replacing the runner-plus-probe count at `:134-143`;
@@ -142,7 +171,10 @@ Commit mechanics, which bind every section below:
       Mutation proofs, saved to `mutation-1.4.txt`:
       - (i) `--test-isolation=none` re-added to a copy → `conductor-09` fails;
       - (ii) `scripts/test/functional/*.test.mjs` added to the runner line → it fails;
-      - (iii) the zero-count abort removed → 1.3's fixture fails.
+      - (iii) the zero-count abort removed → 1.3's fixture fails;
+      - (iv) the checks re-ordered so the empty-rung message precedes the floor → a fixture whose
+        index declares tests but whose runner reports 0 shows the empty-rung message, and the test
+        asserting the shortfall message fails.
 - [ ] 1.5 REGRESSION GUARD — `functional/conductor-09.test.mjs`: a fixture whose git dir holds a
       stale `pm-isolation-flag` has none after one hook run. This proves the inverse shipped.
       Mutation: the `rm -f` line removed from a copy → red. Save to `mutation-1.5.txt`.
@@ -154,7 +186,9 @@ Commit mechanics, which bind every section below:
         or an import of `fixtures/assert-harness.mjs` or `fixtures/unit-harness.mjs`.
       - A file that does neither is refused by name.
       - A discrimination test feeds it one source per shape, and one that names the shim only in a
-        comment, which is NOT an install.
+        comment, which is NOT an install. One sample is a TWO-LINE import, in the shape of
+        `assert/conductor-33.test.mjs:39-40` (`import { … ,\n  … } from "../fixtures/assert-harness.mjs"`),
+        so a line-based match cannot pass it by accident.
       - Fails today naming the 13 file-rung files: `ci-workflow`, `conductor-29`, `conductor-37`,
         `drift-script`, `engine-resolution`, `git-gateway-guard`, `hermetic-git`, `hooks-schema`,
         `lessons-index`, `no-inline-exit`, `outcome-vocabulary`, `parity`, `store-ownership`.
@@ -175,8 +209,24 @@ Commit mechanics, which bind every section below:
       - The G-I4 test (`assert-half-has-no-spawn.test.mjs:149-168`) is re-scoped per design D3
         row 2. Its comment says the per-process listener is the mechanism, and its direct check is
         that the shim is first on PATH in THIS process.
+      - The shim's prose at `:17-19` and `:23-26` (Gate 1 I8) and the old-requirement-name
+        citation at `:69` (6.2) are rewritten in this commit.
       - Verify: the `pm-assert-no-git-*` count from 0.3(d) is unchanged across one full run of the
         half. Save `verify-2.4.txt` with before and after.
+- [ ] 2.4b GREEN — the SECOND per-process leak (design D3 row 3b, Gate 1 I6):
+      `fixtures/harness.mjs:36`'s `EMPTY_CACHE` directory is removed at process exit through the same
+      removal function as 2.4's. RED in the same commit: the 2.3 test file gains a case asserting the
+      harness registers the removal (the directory is created by `mkdtemp`, so the check is that the
+      exported path is scheduled for removal, exercised on a scratch directory). Verify: the
+      `pm-empty-cache-*` count is unchanged across one full run. Save `verify-2.4b.txt`.
+- [ ] 2.4c REGRESSION GUARD — *"A real git call in any file's process fails the run"* gets a durable
+      test (Gate 1 I3). New `functional/git-shim.test.mjs` writes a fixture test file that imports
+      the shim and runs `git --version` through `execFileSync`, runs `node --test --test-reporter=spec`
+      on it with `FORCE_COLOR=0`, and asserts exit 1, `ℹ fail 1`, and the listener's report naming
+      the argv. Its twin is `assert/git-shim.test.mjs`, which is 2.3's file (the removal test), so
+      the id pair exists by construction. Run `certify.mjs functional` first. Mutation: the
+      listener's `process.exitCode = 1` removed in a scratch copy → the functional test fails.
+      Save `mutation-2.4c.txt`.
 - [ ] 2.5 Comments and one test title that state the retired mode as the rationale (design D3 rows
       4–8 and 10):
       - `scripts/lib/invocation.mjs:10-13`, `:20-21`, `:67-68`;
@@ -187,27 +237,41 @@ Commit mechanics, which bind every section below:
       - `assert/per-call-roots.test.mjs:11`;
       - `certification.mjs:107`;
       - `assert/delivered-obligations.test.mjs:26`;
-      - `assert-half-has-no-spawn.test.mjs:5-7`, `:143`, `:166`, and the test title at `:208`.
-      Engine source is touched, so run `certify.mjs sweeps` before the commit.
+      - `assert-half-has-no-spawn.test.mjs:5-7`, `:143`, `:166`, and the test title at `:208`;
+      - `scripts/lib/command-exit.mjs:46-47` and `scripts/lib/git-gateway.mjs:5` (Gate 1 I8).
+      Engine source is touched, so run `certify.mjs sweeps` before the commit. `constants.mjs` is a
+      CERTIFIED module (it calls `gitOps(`), so run `certify.mjs functional` too (Gate 1 I9).
+- [ ] 2.6 One-time cleanup of the directories already leaked on this machine: at the fix round,
+      4,041 `pm-assert-no-git-*` and 6,877 `pm-empty-cache-*` under `os.tmpdir()`. After 2.4 and
+      2.4b land, remove them with
+      `rm -rf "$(node -p 'require("os").tmpdir()')"/pm-assert-no-git-* "$(node -p 'require("os").tmpdir()')"/pm-empty-cache-*`,
+      while no suite is running (the cross-worktree lock is free). This is a machine action, not a
+      repository change, and it commits nothing. Verify both counts read 0 afterwards, and record
+      before and after in `verify-2.6.txt`.
       Verify: `rg -n -i 'isolation=none|single process|one process|shared process' scripts/lib scripts/test`
       returns only lines about an in-process caller serving several invocations. Each surviving line
       is listed with that reason in `verify-2.5.txt`.
 
-## 3. The engine: the floor, the runtime-version seam, the brief line (design D1, D6)
+## 3. The engine: the support floor, the runtime-version seam, the brief line (design D1, D6)
 
-- [ ] 3.1 RED — unit rung, a new `scripts/test/unit/runtime-support.test.mjs` driven through
-      `memoryEngine()` with `io.nodeVersion`. It covers every scenario of `runtime-support`'s
-      briefing requirement and `engine-invocation`'s ADDED requirement:
+- [ ] 3.1 A new unit-rung file, `scripts/test/unit/runtime-support.test.mjs`, driven through
+      `memoryEngine()` with `nodeVersion`. It is split by what fails TODAY (Gate 1 I1):
+      **RED** (fails today — no seam, no line; save `red-3.1.txt`):
       - `brief` in an initialized record under `v20.20.2` → the `additionalContext` starts with one
         line naming `20.20.2` and `22`, and the status equals the `v22.23.3` run's;
-      - under `v22.23.3` and `v26.10.0` → no such line;
-      - under `garbage` → no line;
-      - not initialized → no output;
-      - two invocations in one process with two versions → each sees its own;
-      - no `nodeVersion` supplied → the running process's own, so no line under the gate's Node;
+      - two invocations in one process under two DIFFERENT below-support-floor versions, `v20.20.2`
+        and `v18.20.8` → each line names its own version (two versions that both produce no line
+        could not tell the invocations apart);
+      - no `nodeVersion` supplied → a store whose `read` records `runtimeVersion()` at the moment
+        `brief` loads the record sees exactly `process.version` (Gate 1 B2; "no line" alone would
+        pass with an absent value).
+      **REGRESSION GUARDS** (pass today, because nothing prints a line yet), each with a mutation in a
+      scratch copy of `runtime-support.mjs` or `subcommands.mjs` after 3.2, saved to `mutation-3.1.txt`:
+      - under `v22.23.3`, `v25.0.0` and `v26.10.0` → no line (mutation: the line emitted always);
+      - under `garbage` → no line (mutation: an unparseable major read as 0);
+      - not initialized → no output (mutation: the line emitted before `brief()`'s dormancy return);
       - `render`'s PROJECT.md artifact and `snapshot`'s brief artifact under `v20.20.2` → neither
-        contains the line.
-      Fails today: there is no seam and no line. Save `red-3.1.txt`.
+        contains the line (mutation: the line built in `buildBrief()` instead of `brief()`).
 - [ ] 3.2 GREEN — the engine side.
       - New `scripts/lib/runtime-support.mjs`: `NODE_FLOOR_MAJOR = 22`, and a pure function from a
         version to the line or `null`.
@@ -215,7 +279,20 @@ Commit mechanics, which bind every section below:
         `runtimeVersion()` accessor is added.
       - `conductor.mjs`'s `runInvocation` context gains `nodeVersion: io.nodeVersion ?? process.version`.
       - `subcommands.mjs`'s `brief()` prepends the line.
-      - `fixtures/harness.mjs`'s `invokeEngine` passes `nodeVersion` through.
+      - `fixtures/harness.mjs`'s `invokeEngine` (`:60`) passes `nodeVersion` through, AND
+        `fixtures/unit-harness.mjs`'s `memoryEngine` (`:65-67`), whose `result()` forwards only
+        `{ cwd, store, env, input }` today, gains it (Gate 1 I7).
+      - `runtimeVersion(ctx)` returns `ctx.nodeVersion ?? process.version`, so a context installed
+        with `setInvocation({ … })` and no `nodeVersion` (`assert/gate-artifact-evidence.test.mjs:32`,
+        `assert/delivered-obligations.test.mjs:31`, `fixtures/assert-harness.mjs:42`) behaves like
+        the process.
+      - **The command-line path (Gate 1 B2):** new `functional/runtime-support.test.mjs`, twin
+        `unit/runtime-support.test.mjs` (3.1's file). It spawns
+        `node --import <preload> scripts/conductor.mjs brief --platform claude-code` in an
+        initialized repository, where the preload runs
+        `Object.defineProperty(process, "version", { value: "v20.20.2" })` (verified:
+        `process.version` is `configurable: true`), and asserts the warning line; without the
+        preload, it asserts none. Run `certify.mjs functional` first.
       - The version is interpolated through `escapeControls`, and the output-interpolation sweep is
         green: escape or judge `<N>` as the sweep requires.
       - `conductor.mjs:77`'s "Node 18+" is corrected in the same commit.
@@ -247,22 +324,54 @@ Commit mechanics, which bind every section below:
       - (b) its step fails unless both `needs.*.result` equal `success`;
       - (c) the matrix job has `fail-fast: false`, `timeout-minutes`, and
         `matrix.node: ${{ fromJSON(needs.<compute>.outputs.majors) }}`;
-      - (d) the compute step uses `date -u`, the schedule URL, and a `has("lts")` filter. It emits
-        `::warning::` on the fallback path, `::error::` plus `exit 1` on a fetched-versus-fallback
-        mismatch, and `::error::` plus `exit 1` on an empty set;
+      - (d) the compute step fetches the pinned schedule URL with `curl`, and runs
+        `node scripts/test/node-majors.mjs` handing it the fetched file (or the fetch's failure),
+        `date -u +%F`, and `$PM_NODE_FALLBACK` — the step must name `PM_NODE_FALLBACK` in the
+        script's arguments or environment, so a step that ignores the committed list is refused
+        (Gate 1 B5);
       - (e) the minimum of the workflow's `PM_NODE_FALLBACK` equals `NODE_FLOOR_MAJOR`, imported
         from `scripts/lib/runtime-support.mjs`, and a mismatch names both values;
       - (f) every bucket step's runner carries `--test-reporter=spec` and `FORCE_COLOR=0`, and its
         parse names `ℹ` and not `#`;
+      - (f2) every bucket step refuses a ZERO count on its own — a `"$total" -eq 0` (or equivalent)
+        `::error::` plus `exit 1` independent of `declared` — because `[ "$total" -lt "$declared" ]`
+        is green at 0/0 (Gate 1 B1);
       - (g) `actions/checkout@v7` and `actions/setup-node@v7`, and no `node-version: "18"`.
       Also re-point `runnerLine()` (`:59`) so flags between `--test` and the globs are allowed, and
-      update the G-C1 fixture strings (`:149-190`).
+      update the G-C1 fixture strings (`:149-190`). And re-point the pipeline patterns at `:86` and
+      `:97`, which match `total=$(node --test …` but not `total=$(FORCE_COLOR=0 node --test …`, so
+      they accept any `NAME=value` prefixes before `node --test` (Gate 1 I5).
+- [ ] 4.2b RED then GREEN, one commit — the schedule filter as a committed dev script (design D2,
+      Gate 1 B5) and the support-floor copies (Gate 1 I10).
+      - New `scripts/test/node-majors.mjs`: plain Node, no dependency, not shipped, not a test file
+        (so outside the enrolment rule; `ci.yml:72`'s syntax loop already covers `scripts/test/*.mjs`).
+        It exports pure functions — `supportedMajors(schedule, today)` and
+        `decide({ fetched, body, today, fallback })` — and a CLI tail that prints the JSON array or
+        exits 1 with `::error::` / prints `::warning::`, per design D2's table.
+      - New file-rung test `scripts/test/assert/support-floor.test.mjs` (it installs the shim, per
+        2.1's rule). Against a CANNED schedule it asserts: an `lts`-bearing entry whose `start` is
+        after today is excluded; a live entry with no `lts` is excluded; a live entry whose `lts` date
+        is in the future is included — each condition deciding one entry alone. And `decide()`:
+        fetch failed → the fallback plus a warning; body not JSON, or JSON with no entry holding
+        `start`/`end` → an ERROR, not the fallback; computed ≠ fallback → an error naming both;
+        computed empty → an error.
+      - The same test asserts every documented copy of the support floor equals `NODE_FLOOR_MAJOR`:
+        `README.md`'s `Node N+` at `:51` and `:118`, and `CLAUDE.md:19`'s, naming the file and both
+        values on a mismatch. It runs after 7.2/7.3 rewrite those lines; until then the README and
+        CLAUDE.md cases are written against the 7.2/7.3 text and land in that commit instead.
+        `CONTRIBUTING.md` carries no support-floor number today (`v26.9.0` at `:82` is a
+        measurement's Node); if 7.1 adds one, it is added here.
+      - Save `red-4.2b.txt`. Mutations in scratch copies, saved to `mutation-4.2b.txt`: the start
+        clause removed; the `lts` clause removed; a malformed body routed to the fallback — each
+        refused by the canned-schedule test.
       Fails today on every one. Save `red-4.2.txt`.
 - [ ] 4.3 GREEN — rewrite `ci.yml` per design D2.
-      - Jobs: `node-majors`, `test-node` (matrix) and the `test` aggregate.
+      - Jobs: `node-majors` (runs 4.2b's script under `actions/setup-node@v7` at the support
+        floor), `test-node` (matrix) and the `test` aggregate.
       - `PM_NODE_FALLBACK: "[22,24,26]"`.
       - v7 actions.
-      - Every bucket step as `FORCE_COLOR=0 node --test --test-reporter=spec …`, with `^ℹ` parses.
+      - Every bucket step as `FORCE_COLOR=0 node --test --test-reporter=spec …`, with `^ℹ` parses and
+        a zero-count `::error::` plus `exit 1`.
       - The comment block at `:88-98`, dangling path included, replaced by what is true now.
       - The security workflow untouched.
       Mutation proofs, each a scratch copy of `ci.yml` fed to 4.2's functions and saved in
@@ -275,7 +384,11 @@ Commit mechanics, which bind every section below:
       - the mismatch `exit 1` removed;
       - the empty-set check removed;
       - one step without the reporter;
-      - a `#` alternation re-added.
+      - a `#` alternation re-added;
+      - one step's zero-count check removed (Gate 1 B1);
+      - a step rewritten as `total=$(FORCE_COLOR=0 node --test … | grep … | awk …)` — the G-C1
+        pipeline shape with an env prefix (Gate 1 I5);
+      - the compute step no longer passing `$PM_NODE_FALLBACK` to the script (Gate 1 B5).
 - [ ] 4.4 RED then GREEN, one commit — `scripts/test/certify.mjs`.
       - Export the count parser.
       - RED: a file-rung test asserts the exported parser returns `null` for a TAP summary
@@ -297,8 +410,13 @@ Commit mechanics, which bind every section below:
       `main` and `pull_request` into `main`, so a draft PR runs the branch's own `ci.yml` with NO
       trigger added; `workflow_dispatch` is deliberately not added, because it would persist in the
       shipped workflow for a one-off. The branch is never merged:
-      - schedule URL pointed at a 404 → the legs run on the fallback with the warning visible;
-      - fallback edited to `[22,24]` → red naming both sets.
+      - schedule URL pointed at a 404 → the legs run on the fallback with the warning visible.
+        **The throwaway commit edits BOTH the URL in `ci.yml` AND the URL 4.2(d) pins in
+        `ci-workflow.test.mjs`** (design D2, option (b)), so the pre-commit hook passes on its own
+        terms — `--no-verify` stays banned. The branch is never merged, so the edited guard never
+        reaches `main`;
+      - fallback edited to `[22,24]` → red naming both sets. No guard edit is needed: its minimum
+        still equals the support floor.
       Record both run ids. Then close the draft PR without merging (`gh pr close <n> --repo cfdude/pm`)
       and DELETE the branch, remote and local
       (`git push origin --delete <branch>` and `git branch -D <branch>`), and confirm
@@ -308,9 +426,12 @@ Commit mechanics, which bind every section below:
 
 - [ ] 5.1 RED — `assert/state-file-refuses-to-guess.test.mjs`, the functional file's twin, gains
       a source scan.
-      - Every `on("close"` site under `scripts/test/**/*.mjs` must sit in a function that also arms
-        a timer that kills the child.
-      - It is discriminated against an unbounded sample (refused) and a bounded one (not refused).
+      - Every ASYNCHRONOUS wait on a child's `"close"` or `"exit"` under `scripts/test/**/*.mjs`, in
+        all three forms — `.on(…)`, `.once(…)`, and the events module's `once(child, …)` promise form
+        (bare or `events.once`) — must sit in a function that also arms a timer that kills the child
+        (Gate 1 B4). Synchronous spawns are out of scope by the requirement's own text (design D9).
+      - It is discriminated against an unbounded sample of EACH form (all refused) and a bounded one
+        (not refused).
       - The token it searches for, and both samples, are BUILT FROM PARTS
         (`assert-half-has-no-spawn.test.mjs:42-45`'s pattern). A scan whose own source spells the
         token would refuse itself, and exempting it by name is the first exemption of many.
@@ -348,20 +469,30 @@ Commit mechanics, which bind every section below:
         - `functional/conductor-09`'s fixtures, which run the hook;
         - `scripts/wt-preflight.sh:22`, a `pgrep`;
         - `docs/lessons/filter-at-read-time-not-at-capture-time.md`, a record.
-        Every count site forces the reporter and `FORCE_COLOR=0`, or the omission is justified.
-      - (b) Every reader of the runtime version: `rg -n 'runtimeVersion\(|process\.version'`.
+        Every count site BOTH forces the reporter and `FORCE_COLOR=0` AND refuses an unreadable or
+        zero count (Gate 1 B1) — including the Real Numbers recipe's new stop line (7.4) — or the
+        omission is justified.
+      - (b) Every reader AND every WRITER of the runtime version (Gate 1 I7): readers from
+        `rg -n 'runtimeVersion\(|process\.version'`; writers from `rg -n 'nodeVersion' scripts` —
+        `conductor.mjs`'s `runInvocation`, `invocation.mjs`'s `PROCESS_CONTEXT`,
+        `fixtures/harness.mjs`'s `invokeEngine`, `fixtures/unit-harness.mjs`'s `memoryEngine`, and
+        every `setInvocation({ … })` that omits it (named, with the fallback that covers it).
       - (c) Every reader of `NODE_FLOOR_MAJOR`.
       - (d) Every rung file against the shim install (2.1's walk is the mechanism; list its
         output).
       - (e) Every awaited child `close`, plus every `spawnSync`/`execFileSync` in `scripts/test`
         without a `timeout`, NAMED as design D9's separate class.
-      - (f) D8's version-claim `rg`, re-run on the final tree.
+      - (f) D8's version-claim `rg`, re-run on the final tree BOTH line-based and multiline
+        (`rg -U` with `\s+` for each literal space), because wrapped text escapes the line-based form
+        (Gate 1 I8).
 - [ ] 6.2 **Data references** (required task item 1). `PM_NODE_FALLBACK` is a data reference to
       `NODE_FLOOR_MAJOR`. Record where each is written, where it is read, and where it is removed:
       - `ci.yml`'s env;
       - `ci-workflow.test.mjs`;
       - `runtime-support.mjs`;
-      - the release-checklist step.
+      - the release-checklist step;
+      - the documented copies of the support floor (Gate 1 I10): `README.md:51`, `:118`,
+        `CLAUDE.md:19` — each held true by 4.2b's per-commit assertion.
       Also record the `pm-isolation-flag` file: its writer is deleted (1.4), and its removal is
       shipped (1.4, proven in 1.5).
       **A REQUIREMENT NAME IS A DATA REFERENCE TOO.** This change REMOVES *"The assertion half spawns
@@ -395,7 +526,8 @@ Commit mechanics, which bind every section below:
       THAT commit. Pay particular attention to:
       - 2.2's thirteen files;
       - 2.5's comment set;
-      - 3.2's engine and harness files.
+      - 3.2's engine files and BOTH harnesses — `fixtures/harness.mjs` and
+        `fixtures/unit-harness.mjs` (Gate 1 I7).
       Record in `commit-verification-6.4.txt`.
 - [ ] 6.5 **Declare lifecycle bookkeeping** (required task item 3). The archive task, 9.2, carries
       `<!-- pm:lifecycle -->` on its task line. It was marked when this source was authored.
@@ -405,6 +537,7 @@ Commit mechanics, which bind every section below:
       `update-epic node-support-policy --attribute-commit <sha>` as each commit is made. It is NOT
       attributed for:
       - the commit that moves this change under `archive/`;
+      - 2.6's machine cleanup, which is not a commit at all;
       - `3256cc2`, the 0.48.0 spec sync (task 0.4).
 - [ ] 6.7 **Review the release's specs against each other** (required task item 5). This is 0.2,
       re-run after any amendment made at Gate 1 or at Gate 2. (0.4's sync, `3256cc2`, landed before 0.2
@@ -414,7 +547,9 @@ Commit mechanics, which bind every section below:
       `--outcome delivered` and either `--no-deferrals` or one `--deferral`/`--declined-deferral`
       per item actually deferred. Candidates to decide at that point:
       - widening `conductor-35`'s network set, if 3.3 declines it;
-      - bounding the synchronous spawns D9 names.
+      - bounding the synchronous spawns D9 names;
+      - the hook's `rm -f pm-isolation-flag` line's sunset: removed in 0.50.0 (design D3), recorded
+        as `--deferral` against an epic registered for it, or declined with a reason.
       `store-owns-claude-md-managed-block` is NOT dispositioned by this change (design D10).
 - [ ] 6.9 **Route what the work taught you** (required task item 7). Name each finding as one of
       three kinds before the change closes. Candidates carried in from drafting:
@@ -438,16 +573,18 @@ Commit mechanics, which bind every section below:
 ## 7. Docs
 
 - [ ] 7.1 `CONTRIBUTING.md`.
-      - Update the commands and prose at `:9-12`, `:53`, `:70`, `:92`, `:100`, `:103-105` and
-        `:239-241`.
+      - Update the commands and prose at `:9-12`, `:53`, `:70`, `:89` ("Both rungs in one
+        process"), `:92`, `:100`, `:103-105`, `:142` ("The assertion half is one Node process",
+        Gate 1 I8) and `:239-241`.
       - `:103-105`'s "`--test-isolation=none` is not optional" becomes a note on
         `--test-concurrency` for throttling.
-      - Re-measure the quickstart claim at `:82-85` (`v26.9.0`, 26.1 s) on the floor Node and on the
+      - Re-measure the quickstart claim at `:82-85` (`v26.9.0`, 26.1 s) on the support-floor Node and on the
         machine's Node, by RUNNING the quickstart in a fresh clone.
       - The required-check description at `:8-12` names the aggregate and the matrix.
       Verify: every command in the file runs as written.
 - [ ] 7.2 `README.md:51` and `:118` get the policy wording: "Node 22+ — pm supports the oldest Node
-      major that is not end-of-life". `:51`'s "1,116 tests" is left to the release cut's Real Numbers
+      LTS line that is not end-of-life". In the same commit, 4.2b's README support-floor assertion
+      lands (it could not before, while the README said 18). `:51`'s "1,116 tests" is left to the release cut's Real Numbers
       recompute, and that is stated here so it is not mistaken for a miss. The change is
       user-facing, so the documentation-currency check is answered YES.
 - [ ] 7.3 `CLAUDE.md`.
@@ -456,16 +593,19 @@ Commit mechanics, which bind every section below:
         `node:tty`, `node:url`.
       - `:27-38`: the `Tests:` bullet loses `--test-isolation=none` and "in ONE process". The
         property it keeps is that tests spawn nothing and run no git.
+      - 4.2b's `CLAUDE.md:19` support-floor assertion lands in this commit.
       Verify: `rg -n 'isolation|Node 18' CLAUDE.md` returns nothing.
 - [ ] 7.4 The repo skills.
       - `.claude/skills/pr-workflow/SKILL.md`:
         - `:22` and `:97`: the commands;
         - `:3` and `:8`: the `test` check is now an aggregate over the matrix legs.
       - `.claude/skills/release-checklist/SKILL.md`:
-        - `:26`: the step-1 command;
-        - `:63-64`: the Real Numbers recipe, with `FORCE_COLOR=0` and `--test-reporter=spec`, and
-          the `grep` corrected to what it parses;
-        - a NEW step at "Engine + tests": the floor check against `schedule.json` (design D1),
+        - `:26`: the step-1 command, and `:27`'s "BOTH rungs of the assertion half, one process"
+          (Gate 1 I8);
+        - `:63-64`: the Real Numbers recipe, with `FORCE_COLOR=0` and `--test-reporter=spec`, the
+          `grep` corrected to what it parses, and a STOP line after it (Gate 1 B1): if the
+          `ℹ tests` line is missing or reads 0, stop — do not publish a number;
+        - a NEW step at "Engine + tests": the support-floor check against `schedule.json` (design D1),
           naming the constant, `PM_NODE_FALLBACK`, the README line and the docs-site pages as one
           unit.
       Verify: `rg -n 'isolation' .claude/skills` returns nothing.

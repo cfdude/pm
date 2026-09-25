@@ -33,9 +33,11 @@ Both are measured unnecessary on 22, 24 and 26 (design D4 and D5).
 
 ## What Changes
 
-- **A stated support policy, and one place it lives.** pm supports the oldest Node major that is not
-  end-of-life, per `schedule.json`. Today that floor is **22** (EOL 2027-04-30); it becomes **24**
-  after that date. 18 and 20 are dropped. The floor is ONE engine constant, updated at release time.
+- **A stated support policy, and one place it lives.** pm supports exactly the long-term-support lines
+  that are not end-of-life, per `schedule.json` — the same set CI tests. The lowest of them, the
+  **support floor**, is **22** today (EOL 2027-04-30); it becomes **24** after that date. 18 and 20
+  are dropped, and odd majors (23, 25, 27) are unsupported. The support floor is ONE engine
+  constant, updated at release time.
   The engine never fetches the schedule, and the architectural law that the engine opens no network
   connection is unchanged.
 - **CI tests every supported LTS line, computed from the schedule rather than typed.**
@@ -83,7 +85,7 @@ Both are measured unnecessary on 22, 24 and 26 (design D4 and D5).
 - `runtime-support`: covers three things:
   - which Node majors pm supports and where the floor lives;
   - that CI tests every supported LTS line, computed from Node's schedule with a committed fallback;
-  - that the SessionStart brief warns when the running Node is below the floor.
+  - that the SessionStart brief warns when the running Node is below the support floor.
 
 ### Modified Capabilities
 
@@ -100,7 +102,8 @@ Both are measured unnecessary on 22, 24 and 26 (design D4 and D5).
     its three live citations.)
   - ADDED: every run the suite is counted from uses one reporter, and an unreadable or zero count
     refuses.
-  - ADDED: a test that awaits a child process bounds the wait.
+  - ADDED: a test that waits ASYNCHRONOUSLY on a child's close or exit event bounds the wait
+    (synchronous spawns are out of scope, bounded in CI by the job's time limit).
 - `engine-invocation`: ADDED. The runtime version the engine consults is supplied per call, the
   same way as the store, the git gateway, the root and the streams.
 
@@ -115,7 +118,7 @@ Both are measured unnecessary on 22, 24 and 26 (design D4 and D5).
   Each is an engine-source edit, so each commit needs `certify sweeps`. `conductor.mjs` and
   `subcommands.mjs` are also certified modules, so those commits need `certify functional` too.
 - **CLI contract:** unchanged. The same verbs, flags and exit statuses. `brief` prints one extra line
-  only on a Node below the floor.
+  only on a Node below the support floor.
 - **Repo tooling:**
   - `.githooks/pre-commit`
   - `.github/workflows/ci.yml`

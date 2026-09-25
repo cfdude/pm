@@ -100,7 +100,11 @@ read, write, create or remove a path, and SHALL NOT flush a file to disk. This i
 rung exists for — the assertion half's cost was measured as durability flushing, thousands of calls
 per run, on tests that assert on a value — so a unit-rung file that has drifted into doing disk work
 SHALL fail a guard rather than merely run slowly, and the guard's refusal SHALL name the file and the
-call shape it found.
+call shape it found. The run-time git counter that every rung file installs (above) is not the TEST's
+filesystem work: the harness installs it at import time and removes its directory at process exit,
+both outside any test's window. The unit rung's run-time filesystem counter watches only while a test
+runs, and its source scan reads the test file's own code, never the harness it imports — so the two
+rules do not collide.
 
 #### Scenario: A spawn added to the assertion half fails a guard
 
@@ -153,6 +157,15 @@ A run whose summary cannot be parsed, or whose summary reports zero tests, SHALL
 one of those places, and SHALL NOT be reported as a pass. The count floor is only as good as the count
 it reads: a floor skipped because the count was unreadable is a floor that did not run.
 
+Where a place also holds a declared count, the count floor SHALL be compared FIRST: a run that reports
+fewer tests than are declared — zero included — is refused as a shortfall naming both counts. Only when
+the declared count is itself zero is the refusal that the bucket holds no test file, so a run that
+collapsed while the index still holds tests is never reported as an empty bucket.
+
+A pattern handed to the runner that matches no file SHALL NOT fail the run on its own: the files the
+other patterns matched still run and are counted, and the count floor, not the unmatched pattern,
+decides whether anything is missing.
+
 #### Scenario: A colour setting in the environment does not change the count
 
 - **WHEN** the assertion half is run by the pre-commit gate in an environment that forces colour
@@ -168,25 +181,49 @@ it reads: a floor skipped because the count was unreadable is a floor that did n
 
 #### Scenario: A run of zero tests refuses the commit
 
-- **WHEN** neither rung of the assertion half holds a test file, so the runner reports zero tests
+- **WHEN** neither rung of the assertion half holds a tracked test file, so the declared count is zero
+  and the runner reports zero tests
 - **THEN** the gate refuses the commit naming the two rungs it found empty, and at no point is the
   runner invoked without a path — which would fall back to the runner's default discovery and reach
   the triggered halves
+
+#### Scenario: A collapsed run is a shortfall, not an empty rung
+
+- **WHEN** the rungs' tracked files declare tests but the runner reports zero
+- **THEN** the gate refuses the commit as a shortfall naming both counts, and does not say the rungs
+  hold no test file
+
+#### Scenario: A CI bucket that ran nothing fails
+
+- **WHEN** a CI bucket step's runner reports zero tests, whatever its declared count
+- **THEN** the step fails, rather than passing because zero is not less than zero
+
+#### Scenario: One rung that matches nothing does not stop the other
+
+- **WHEN** one rung's directory holds no test file while the other rung's does
+- **THEN** the other rung's tests run and are counted, the run is not refused for the unmatched
+  pattern, and the count floor compares what ran against what the index declares
 
 #### Scenario: The same summary on every supported major
 
 - **WHEN** the same test files are run under the forced reporter on each supported Node major
 - **THEN** the summary lines are byte-identical apart from the reported duration
 
-### Requirement: A test that waits on a child process bounds the wait
+### Requirement: A test that waits asynchronously on a child process bounds the wait
 
-A test that starts a child process and waits for it to finish SHALL bound that wait. When the bound
-expires the test SHALL kill the child and SHALL fail, naming the invocation that did not finish and
-the bound it exceeded. A hung child SHALL therefore cost one failed test, never a run that does not
-end.
+A test that starts a child process ASYNCHRONOUSLY and waits for the child's close or exit event SHALL
+bound that wait. When the bound expires the test SHALL kill the child and SHALL fail, naming the
+invocation that did not finish and the bound it exceeded. A hung child SHALL therefore cost one failed
+test, never a run that does not end.
 
-A source check SHALL exist that refuses a test-suite helper which waits on a child's completion
-without a bound, so a sibling of a fixed helper cannot reintroduce the hang unnoticed.
+A source check SHALL exist that refuses a test-suite helper which waits on a child's close or exit
+event — through an event listener, a one-shot listener, or the events module's promise form — without
+a bound, so a sibling of a fixed helper cannot reintroduce the hang unnoticed.
+
+A SYNCHRONOUS spawn is outside this requirement: it blocks one test file's process rather than leaving
+an awaited promise unresolved, most of the suite's synchronous spawns carry no per-call bound today,
+and in CI every one of them is bounded by the job's time limit. This requirement does not claim more
+than that.
 
 #### Scenario: A hung child fails its test instead of hanging the run
 
@@ -196,5 +233,6 @@ without a bound, so a sibling of a fixed helper cannot reintroduce the hang unno
 
 #### Scenario: An unbounded wait is refused at the source
 
-- **WHEN** a helper in the suite is written to wait for a child's completion with no bound
+- **WHEN** a helper in the suite is written to wait for a child's close or exit event with no bound,
+  in any of the three forms
 - **THEN** the source check names the file and the run fails
