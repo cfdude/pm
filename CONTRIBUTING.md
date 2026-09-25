@@ -105,7 +105,8 @@ same summary on every major.)
 
 ### `node --test --watch` — the loop
 
-Both rungs in one runner invocation, the same file set the pre-commit hook runs:
+Both rungs in one runner invocation, the same file set the pre-commit hook runs — this runs your
+working tree's copy; the hook runs the index's:
 
 ```bash
 node --test --watch scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs

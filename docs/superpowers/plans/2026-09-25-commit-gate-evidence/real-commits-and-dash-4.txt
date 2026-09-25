@@ -1,0 +1,21 @@
+# REAL `git commit` forms through the REAL hook (core.hooksPath=.githooks) in a minimal repo laid out like
+# runHookAgainstFixture's, hermetic git config (real-commits.sh). In each case the commit's index and
+# `.git/index` or the working tree DISAGREE; "LANDED" means HEAD's subject is the new commit.
+hook shell: /bin/sh -> (not a link)
+1 plain commit, index FAILING / tree passing (expect ABORTED): ABORTED
+2 commit -a, tree FAILING / .git/index passing (expect ABORTED): ABORTED
+3 commit -a, tree passing / .git/index FAILING (expect LANDED): LANDED
+4 commit -- <path>, tree FAILING / .git/index passing (expect ABORTED): ABORTED
+5 commit -- <path>, tree passing / .git/index FAILING (expect LANDED): LANDED
+# (case 5's first run "ABORTED" with the hook reporting 1/1 passing: the tree's passing copy equalled the
+#  baseline, so `--only` had nothing to commit and git itself refused. The script now writes a second,
+#  different passing version; the hook was never the cause.)
+
+# UNDER DASH — Ubuntu CI's /bin/sh. A dir with sh -> /bin/dash first on PATH, so runHookAgainstFixture's
+# spawnSync("sh", …) runs the hook under dash (dash-mutant.sh prints the resolution).
+scripts/test/functional/conductor-09.test.mjs under dash: ℹ tests 40  ℹ pass 40  ℹ fail 0
+sh resolves to: …/dashbin/sh -> /bin/dash
+pristine under dash: ✔ IX-f an INTERRUPTED hook (SIGTERM mid-suite) leaves the tree, the index, TMPDIR and the lock clean
+no-term-trap under dash: ✖ IX-f … AssertionError: the interrupted hook left files in TMPDIR
+# So under dash the `no-term-trap` mutant is killed BEHAVIOURALLY by IX-f; under macOS /bin/sh (bash) only
+# the IX shape test kills it, because bash runs the EXIT trap on an untrapped SIGTERM.

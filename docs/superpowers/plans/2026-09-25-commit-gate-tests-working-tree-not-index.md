@@ -72,15 +72,17 @@ still landed — it reads the index and does not lock it.
 | Writes the working tree | Twice (stash, restore) — mtimes churn, `--watch` loops and editors reload | **Never** | Twice | No, but registers a worktree |
 | Unstaged work on SIGKILL mid-hook | Sits in the stash; tree is missing it until someone applies it | **Untouched** (worst case: an orphan dir under `$TMPDIR`) | Sits in a patch file; tree is at index state | Orphaned worktree registration — per this estate's CLAUDE.md an orphaned worktree crashes every Claude Code instance |
 | Shared state | The stash stack is shared by EVERY worktree of the repo; parallel agents in this repo push/pop it concurrently | None (private temp dir) | Patch file | Worktree list (shared) |
-| Partially staged file | Restore of a partially staged file is the known conflict case for `stash --keep-index` + pop | By construction: the snapshot holds the index version | Handled, but is the whole reason the patch dance exists | — |
+| Partially staged file | Restored correctly in the measurement (`stash push --keep-index -u` → `reset --hard` → `apply --index <sha>` → drop left `MM README.md` / `?? untracked` every run) — but only through a restore path the hook must itself get right, on a stack it shares | By construction: the snapshot holds the index version | Restored correctly in the measurement (patch → `checkout -- .` → `apply`) — same caveat: correct only if the restore runs | — |
 | Untracked files | Must add `-u` or an untracked failing test blocks / an untracked passing one counts | Not exported — never run, never counted | Left in place — an untracked test file RUNS | — |
 | `commit -a` / `commit <path>` | Stashes against whichever index is in the env — needs the same capture as B, plus a restore into it | Capture + pass `GIT_INDEX_FILE` | Same capture needed | — |
-| Added latency (overhead only; the suite is identical) | 1.8–2.6 s at load 250 | 2.6–3.8 s at load 250 (one 39.8 s cold outlier) | not measured — rejected on the write-the-tree row | not measured — rejected on the orphan row |
+| Added latency, overhead only (the suite is identical) — 7 interleaved runs, started at load1 15.5, read 17.5–17.9 during (`overhead-4.txt`) | 0.170–0.264 s | **0.165–0.233 s** (`$TMPDIR`); 0.156–0.245 s (git dir) | 0.037–0.045 s | not measured — rejected on the orphan and no-HEAD rows before latency mattered |
 
-The load average on this machine during these measurements was 124–256 (parallel agents), so the
-absolute numbers are noise-dominated; Task 3 re-measures the WHOLE hook old vs new, interleaved,
-median of 3, with the load recorded next to each number. A and B are within a second of each other
-under the same load; A loses on correctness (no HEAD, shared stash stack, tree writes), not speed.
+Against a ~26 s hook every option's overhead is noise: latency does not choose between them.
+(A first pass at load 124–256 read A 1.8–2.6 s, B 2.6–3.8 s with one 39.8 s cold outlier; those
+numbers are superseded by the table and kept only because the brief asked for them to be reported
+with their load.) C is the fastest and still loses: it writes the working tree twice, leaves an
+untracked test file in place to run, and leaves the tree at the index state if the hook is killed
+between checkout and apply.
 
 **Why B.** It is the only option that never writes the working tree or the index, so "never lose
 unstaged work — untracked files included, and on a failed or interrupted hook" is true by
@@ -104,6 +106,16 @@ passed 1305/1305 (2026-09-25), so no assertion test depends on an untracked file
 One trap after the lock is taken removes `$tmpfile`, `$SNAP` and `$LOCKDIR`; `INT`, `TERM` and `HUP`
 are trapped to `exit 130/143/129` so the `EXIT` trap runs on a signal under every `/bin/sh`. Nothing
 the trap removes is user data.
+
+## Verified outside the fixtures (after Task 3)
+
+- **Real commit forms through the real hook** (`real-commits-and-dash-4.txt`): a plain commit with a
+  failing index aborts; `git commit -a` and `git commit -- <path>` each ABORT when what they commit
+  fails while `.git/index` passes, and each LAND when what they commit passes while `.git/index`
+  holds a failing copy. IX-d simulates the env; this runs git's own temporary indexes, drift included.
+- **Under dash** (Ubuntu CI's `/bin/sh`): the whole functional `conductor-09` file passes 40/40 with
+  the hook spawned by dash, and the `no-term-trap` mutant is killed behaviourally by IX-f there (under
+  macOS bash only the shape test kills it — bash runs the EXIT trap on an untrapped TERM).
 
 ## Review Focus
 
@@ -208,8 +220,9 @@ Started only once the 1-minute load was below 16 (15.36). A suite run itself dri
 | 3 | 58.66 s | 48.61 s | 23.2 / 48.7 — other agents resumed |
 | median | 27.65 s | 39.44 s | — noise-dominated; do not read as a 12 s cost |
 
-The only work the new hook ADDS is the export and its removal, measured alone five times: **0.52–0.74 s**
-(at load 68). Round 1, the only pair taken before outside load returned, differs by 1.3 s. So the
+The only work the new hook ADDS is the export and its removal: **0.165–0.233 s** at load ~17.5
+(`overhead-4.txt`; 0.52–0.74 s at load 68). Whole-hook rounds cannot be taken below load 16 at all:
+a suite run itself drives load1 to ~20. Round 1, the only pair taken before outside load returned, differs by 1.3 s. So the
 honest statement is: the snapshot costs well under a second of export on a ~26 s hook; the medians
 above are dominated by concurrent agents and are not a measurement of the change. The stash
 alternative measured 1.8–2.6 s of overhead under the same heavy load as B's 2.6–3.8 s, so latency
