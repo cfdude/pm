@@ -8,6 +8,7 @@
 // REPO test, the same shape as parity.test.mjs: it guards this repository's docs against its own
 // directory, and asserts nothing about what a consumer's corpus must contain.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

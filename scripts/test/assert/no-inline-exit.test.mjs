@@ -24,6 +24,7 @@
 // prove nothing, and `docs/lessons/a-guard-can-check-the-wrong-half.md` is the standing reason to
 // check which half a guard is actually watching.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

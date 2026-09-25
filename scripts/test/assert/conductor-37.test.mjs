@@ -14,6 +14,7 @@
 // is a copy or nothing. The rule has one home in the shipped tree (the functional file); this is its
 // fast-half mirror.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

@@ -19,6 +19,7 @@
 // functional twin, and does not need one: the twin rule runs in ONE direction (D6), and the
 // subject here is the workflow's text, not git's behaviour.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

@@ -20,6 +20,7 @@
 // that is asserted against the source fails the moment a write site moves into the engine without a
 // decision being taken about it.
 
+import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

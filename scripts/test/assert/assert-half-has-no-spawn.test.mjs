@@ -167,6 +167,65 @@ test("G-I4 the assertion half makes ZERO real git calls — a PATH shim counts t
     "the gateway through the PROCESS context instead of through an installed invocation.");
 });
 
+// ─────────────── 0.49.0 task 2.1 — EVERY RUNG FILE INSTALLS THE RUN-TIME COUNTER ITSELF ───────────────
+//
+// THE COUNTER ABOVE IS PER PROCESS. While the half shared one process, the shim one file installed
+// covered every file after it — and 13 file-rung files imported neither the shim nor a harness that
+// installs it, relying on the unit rung (handed first, every file importing `unit-harness`) to have
+// done it for them. Once the runner gives every file its own process, those 13 would run with the real
+// `git` reachable and nothing counting (design D3 row 1). So every rung file installs it ITSELF: a
+// direct import of the shim, or an import of one of the two harnesses that import it.
+//
+// THE MATCH IS ON AN IMPORT STATEMENT, NOT A MENTION: comments are stripped first, and the statement
+// must open a line with `import` and may span lines (`import { a,\n  b } from "…harness.mjs"`, the
+// shape `assert/conductor-33.test.mjs` uses) — a line-based match could not see the specifier there.
+
+/** The specifiers that install the shim at import time, built from parts so this file's own import of
+ *  the shim is not the only evidence a sample could lean on. */
+const SHIM_INSTALLERS = ["assert-git-shim", "assert-harness", "unit-harness"].map((m) => `../fixtures/${m}.mjs`);
+
+/** True when `src` installs the git shim at import time: an `import` statement (side-effect or
+ *  named, one line or several) whose specifier is the shim or one of the two harnesses. */
+export function installsShim(src) {
+  const code = stripComments(src);
+  const escaped = SHIM_INSTALLERS.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return new RegExp(`^\\s*import\\s*(?:[^;]*?\\bfrom\\s*)?["'](?:${escaped})["']`, "m").test(code);
+}
+
+test("2.1 every file in both rungs installs the git shim itself — the counter is per process", () => {
+  const rungs = [["unit", UNIT], ["assert", HERE]];  // UNIT is declared below; read at run time
+  const files = rungs.flatMap(([rung, dir]) =>
+    fs.readdirSync(dir).filter((f) => f.endsWith(".test.mjs")).sort().map((f) => [`${rung}/${f}`, path.join(dir, f)]));
+  assert.ok(files.length > 100, `both rungs hold ${files.length} files; a walk over nearly nothing is not a check`);
+  const missing = files.filter(([, p]) => !installsShim(fs.readFileSync(p, "utf8"))).map(([n]) => n);
+  assert.deepEqual(missing, [],
+    `these rung files do not install the run-time git counter: ${missing.join(", ")}. Under the ` +
+    "runner's per-file isolation each file is its own process, so a file that relies on another file " +
+    'having installed the shim runs with the real `git` reachable and nothing counting. Add `import ' +
+    '"../fixtures/assert-git-shim.mjs";` as its first import (or import one of the two harnesses).');
+});
+
+test("2.1 the shim-install walk DISCRIMINATES — imports install it, a mention in a comment does not", () => {
+  const spec = (m) => `"../fixtures/${m}.mjs"`;
+  const SHIM = "assert-git-shim";
+  // Installs: a side-effect import, a named import, each harness, and a TWO-LINE import.
+  assert.equal(installsShim(`import ${spec(SHIM)};\nimport { test } from "node:test";\n`), true,
+    "a side-effect import of the shim installs it");
+  assert.equal(installsShim(`import { SHIM_DIR } from ${spec(SHIM)};\n`), true, "a named import installs it");
+  assert.equal(installsShim(`import { run } from ${spec(["assert", "harness"].join("-"))};\n`), true,
+    "the file-rung harness installs it");
+  assert.equal(installsShim(`import { memoryEngine } from ${spec(["unit", "harness"].join("-"))};\n`), true,
+    "the unit-rung harness installs it");
+  assert.equal(installsShim(`import { tmpRepo, run,\n  readState } from ${spec(["assert", "harness"].join("-"))};\n`), true,
+    "a TWO-LINE import installs it — the shape assert/conductor-33 uses, which a line-based match misses");
+  // Does not install: nothing at all, a mention only in comments, and an unrelated fixture.
+  assert.equal(installsShim(`import { test } from "node:test";\n`), false, "no import installs nothing");
+  assert.equal(installsShim(`// import ${spec(SHIM)};\n/* import ${spec(SHIM)}; */\nconst a = 1;\n`), false,
+    "a comment naming the shim is NOT an install");
+  assert.equal(installsShim(`import { x } from ${spec("helpers")};\n`), false,
+    "an unrelated fixture does not install the shim");
+});
+
 test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the stated reason", () => {
   // 5.2's required verification, kept as a test rather than a one-off run: a check nobody has seen
   // fail is a check that may be comparing nothing.

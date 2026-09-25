@@ -204,7 +204,7 @@ Commit mechanics, which bind every section below:
 
 ## 2. The git shim in every process, and its temp directory removed (design D3 rows 1–3)
 
-- [ ] 2.1 RED — `assert/assert-half-has-no-spawn.test.mjs` gains a walk over both rungs.
+- [x] 2.1 RED — `assert/assert-half-has-no-spawn.test.mjs` gains a walk over both rungs.
       - Every rung file must install the shim: a direct `import "../fixtures/assert-git-shim.mjs"`,
         or an import of `fixtures/assert-harness.mjs` or `fixtures/unit-harness.mjs`.
       - A file that does neither is refused by name.
@@ -216,7 +216,7 @@ Commit mechanics, which bind every section below:
         `drift-script`, `engine-resolution`, `git-gateway-guard`, `hermetic-git`, `hooks-schema`,
         `lessons-index`, `no-inline-exit`, `outcome-vocabulary`, `parity`, `store-ownership`.
       - Save `red-2.1.txt`.
-- [ ] 2.2 GREEN — each of the 13 gains `import "../fixtures/assert-git-shim.mjs";` as its first
+- [x] 2.2 GREEN — each of the 13 gains `import "../fixtures/assert-git-shim.mjs";` as its first
       import.
       - Verify: 2.1 is green, and the half's `ℹ tests` is unchanged from 0.3(b).
       - **If any of the 13 goes red, that file was reaching the real `git` undetected.** That is a
