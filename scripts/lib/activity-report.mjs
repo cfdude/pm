@@ -12,7 +12,8 @@
 // with no question behind it, or a question with no section, is the graveyard starting.
 //
 //   "How long did an epic sit `queued` before it was picked up?"      → TIME TO PICKUP
-//   "How many detours interrupted it?"                                 → DETOURS
+//   "How many detours interrupted it?"                                 → DETOURS (pushes per epic;
+//                                                                         pops resumed, drops ended)
 //   "Which lane was chosen, and did the work prove it wrong?"          → LANES (and re-routes)
 //   "Was a gate recorded before or after the commits it covers?"       → GATES (sequence + time)
 //   "How often does an agent take the instructed path vs work around?" → OUT-OF-BAND WRITES
@@ -103,6 +104,12 @@ export function segmentStart(name) {
  *  the sample, in both the text report and `--json`. */
 export const OUT_OF_BAND_SAMPLE = 50;
 
+/** Event kind → the DETOURS counter it feeds. A pop RESUMES a pause and a drop ENDS one; counting
+ *  both as pops is the defect this table exists to prevent. */
+const DETOUR_KINDS = {
+  "detour-push": "push", "detour-pop": "pop", "detour-drop": "drop", "detour-removed": "removed",
+};
+
 const HOUR = 3_600_000;
 const hrs = (ms) => `${(ms / HOUR).toFixed(1)}h`;
 function median(ns) {
@@ -118,7 +125,7 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     events: events.length, malformed,
     from: events.length ? events[0].at : null,
     to: events.length ? events[events.length - 1].at : null,
-    pickup: [], detours: { push: 0, pop: 0, byEpic: {} },
+    pickup: [], detours: { push: 0, pop: 0, drop: 0, removed: 0, byEpic: {} },
     lanes: {}, reroutes: [], gates: [],
     outOfBand: { covered: 0, missing: [], missingCount: 0, afterLast: 0 },
     sessions: {},
@@ -150,8 +157,9 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
 
   // ── detours, lanes, re-routes, gates, sessions ──────────────────────────────────────────
   for (const e of events) {
-    if (e.kind === "detour-push" || e.kind === "detour-pop") {
-      r.detours[e.kind === "detour-push" ? "push" : "pop"]++;
+    const detourKind = DETOUR_KINDS[e.kind];
+    if (detourKind) {
+      r.detours[detourKind]++;
       // PUSHES ONLY: the question is "how many detours interrupted it", and one interruption is one
       // push. Counting the pop too reported every interruption twice — invisible only while `epic`
       // was always null.
@@ -235,7 +243,9 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("DETOURS — how often work was interrupted");
-  L.push(`  ${r.detours.push} push(es), ${r.detours.pop} pop(s)`);
+  L.push(`  ${r.detours.push} push(es), ${r.detours.pop} pop(s), ${r.detours.drop} drop(s)` +
+    (r.detours.removed ? `, ${r.detours.removed} removed by another verb` : ""));
+  if (Object.keys(r.detours.byEpic).length) L.push("  interruptions per paused epic:");
   for (const [epic, n] of Object.entries(r.detours.byEpic)) L.push(`  • ${epic} — ${n}`);
   L.push("");
 

@@ -662,6 +662,41 @@ unitTest("activity-log-detour-events-lose-epic: detour events name the paused ep
   assert.deepEqual(buildReport(allEvents(engine)).detours.byEpic, { e1: 2 });
 });
 
+unitTest("activity-log-detour-events-lose-epic: a BURIED drop is a detour-drop naming the dropped frame, not a pop of the top", async () => {
+  // drop-detour ENDS a pause; pop-detour RESUMES one. A depth comparison logged the drop as
+  // `detour-pop` and named the TOP frame (e2 here), which is not the frame that left.
+  const { buildReport, formatReport } = await import(AREPORT);
+  const engine = loggingRepo();
+  engine(["add-epic", "--id", "e3", "--lane", "claude-code", "--title", "three"]);
+  engine(["update-epic", "e1", "--status", "active"]);
+  engine(["push-detour", "e1", "--detour", "e2", "--reason", "blocked", "--no-reconcile"]);
+  engine(["push-detour", "e2", "--detour", "e3", "--reason", "blocked too", "--no-reconcile"]);
+  const before = allEvents(engine).length;
+  engine(["drop-detour", "e1", "--reason", "not coming back"]);
+
+  const dropEvents = allEvents(engine).slice(before).filter(e => e.kind.startsWith("detour-"));
+  assert.deepEqual(dropEvents.map(e => [e.kind, e.verb, e.epic, e.detour, e.depth]), [
+    ["detour-drop", "drop-detour", "e1", "e2", 1],
+  ]);
+  const r = buildReport(allEvents(engine));
+  assert.deepEqual([r.detours.push, r.detours.pop, r.detours.drop, r.detours.removed], [2, 0, 1, 0]);
+  assert.deepEqual(r.detours.byEpic, { e1: 1, e2: 1 }, "a drop is not an interruption");
+  assert.match(formatReport(r), /2 push\(es\), 0 pop\(s\), 1 drop\(s\)/);
+  assert.doesNotMatch(formatReport(r), /removed by another verb/, "the fallback line prints only when non-zero");
+});
+
+unitTest("activity-log-detour-events-lose-epic: a frame removed by any other verb is detour-removed, never guessed", async () => {
+  // Only pop-detour and drop-detour remove frames today. A verb added later that removes one is
+  // still RECORDED by the diff, under a name that does not claim to know which of the two it was.
+  const { diffEvents } = await import(ALOG);
+  const { buildReport, formatReport } = await import(AREPORT);
+  const frame = { pausedEpic: "e1", pausedAt: "2026-01-01T00:00:00.000Z", spawnedDetour: "d1" };
+  const ev = diffEvents({ revision: 1, epics: [], detourStack: [frame] },
+    { revision: 2, epics: [], detourStack: [] }, { verb: "some-future-verb" });
+  assert.deepEqual(ev.map(e => [e.kind, e.epic]), [["detour-removed", "e1"]]);
+  assert.match(formatReport(buildReport(ev)), /1 removed by another verb/);
+});
+
 unitTest("activity-log-detour-events-lose-epic: a frame naming no paused epic yields epic null, never a throw", async () => {
   const { diffEvents } = await import(ALOG);
   const push = diffEvents(

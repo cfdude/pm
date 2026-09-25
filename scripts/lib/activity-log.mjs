@@ -194,6 +194,18 @@ function framesMissing(from, to) {
   return out;
 }
 
+/** WHICH KIND OF REMOVAL a frame's departure was — BY VERB, because the diff alone cannot tell.
+ *  `set-active` accepts an epic that is on the stack, so after `set-active e1` on a paused e1, a
+ *  `pop-detour e1` and a `drop-detour e1` (pushed --no-reconcile) make byte-identical changes to the
+ *  stack, the pointer and the status. The pop RESUMES a pause and the drop ENDS one, and the reader
+ *  must not count one as the other. A frame removed by any OTHER verb is still recorded — the diff
+ *  cannot forget it — under `detour-removed`, which does not claim to know which of the two it was. */
+function removedKind(verb) {
+  if (verb === "pop-detour") return "detour-pop";
+  if (verb === "drop-detour") return "detour-drop";
+  return "detour-removed";
+}
+
 /** Every state transition this invocation caused, as event objects.
  *
  *  PURE — no clock, no filesystem, no argv. `meta` carries the invocation's identity so the
@@ -206,7 +218,10 @@ function framesMissing(from, to) {
  *                                                 was picked up, and what is its lifecycle
  *    epic-lane                                  → which lane was chosen, and was it re-routed
  *                                                 later (i.e. did the work prove it wrong)
- *    detour-push / detour-pop                   → how many detours interrupted an epic
+ *    detour-push / detour-pop / detour-drop     → how many detours interrupted an epic (pushes), and
+ *                                                 whether each pause was resumed (pop) or ended (drop);
+ *                                                 each names the paused `epic` and its `detour`.
+ *                                                 `detour-removed`: a frame another verb removed
  *    gate-review                                → when a gate verdict was recorded, in sequence
  *    gate-withdrawn                             → when a recorded verdict was taken back, in the
  *                                                 same sequence (growth of withdrawnGateReviews)
@@ -282,7 +297,7 @@ export function diffEvents(before, after, meta = {}) {
   const depth = framesOf(after).length;
   const about = (f) => ({ epic: frameField(f, "pausedEpic"), detour: frameField(f, "spawnedDetour"), depth });
   for (const f of framesMissing(after, before)) out.push(ev("detour-push", about(f)));
-  for (const f of framesMissing(before, after)) out.push(ev("detour-pop", about(f)));
+  for (const f of framesMissing(before, after)) out.push(ev(removedKind(meta.verb), about(f)));
 
   const pa = before ? (before.active || null) : null;
   const na = after ? (after.active || null) : null;
