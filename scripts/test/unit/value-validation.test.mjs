@@ -60,6 +60,25 @@ unitTest("record-tracker-refresh refuses a non-date watermark and one OLDER than
   assert.equal(epicOf(engine, "t").externalUpdatedAt, "2026-09-26T08:00:00+02:00");
 });
 
+unitTest("the older-watermark refusal compares INSTANTS, where string order says the opposite", () => {
+  // Branch review: the mutant `watermark < prev` survived every test above, because in each of them
+  // the string order and the instant order agreed. Here they disagree, in both directions.
+  const engine = memoryEngine(emptyRecord());
+  engine(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "1",
+    "--external-updated-at", "2026-01-01T09:00:00Z"]);
+  // 10:00+02:00 is 08:00Z — an hour OLDER, though it sorts after "09:00:00Z" as a string.
+  const older = expectFail(() => engine(["record-tracker-refresh", "a", "--verdict", "unchanged",
+    "--external-updated-at", "2026-01-01T10:00:00+02:00"]));
+  assert.ok(older, "an older instant is refused even when its string sorts later");
+  assert.match(older.stderr, /OLDER than the watermark already recorded/);
+
+  engine(["add-epic", "--id", "b", "--lane", "claude-code", "--external-id", "2",
+    "--external-updated-at", "2026-01-01T10:00:00+02:00"]);
+  // 09:00Z is an hour NEWER than 10:00+02:00, though it sorts before it as a string.
+  engine(["record-tracker-refresh", "b", "--verdict", "unchanged", "--external-updated-at", "2026-01-01T09:00:00Z"]);
+  assert.equal(epicOf(engine, "b").externalUpdatedAt, "2026-01-01T09:00:00Z", "a newer instant is accepted");
+});
+
 unitTest("isIsoTimestamp accepts what GitHub, Linear and Jira emit and nothing Date.parse merely tolerates", async () => {
   const { isIsoTimestamp } = await import(CONSTANTS);
   for (const ok of ["2026-09-25T12:00:00Z", "2026-09-25T12:00:00.000Z", "2026-09-25T12:00:00.000+0000",
