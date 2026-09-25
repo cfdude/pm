@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "node-support-policy",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10058,6 +10058,38 @@
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
       "touchedAt": "2026-09-22T11:09:54.633Z"
+    },
+    {
+      "id": "node-support-policy",
+      "title": "Node support policy: support the oldest non-EOL Node major (floor 22 today, 24 after 2027-04-30); CI matrix 22/24/26; retire Node 18 pin, stale actions (v4 on EOL node20 runtime), and old-Node workarounds; correct every 'Node 18+' claim",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-23T20:29:57.349Z",
+      "touchedAt": "2026-09-25T00:50:49.164Z",
+      "notes": [
+        {
+          "at": "2026-09-23T20:29:58.242Z",
+          "actor": "agent",
+          "text": "lane: openspec not (none routed) — changes the hook/CI contract the suite-certification spec governs, plus a user-facing requirement across README and pm-plugin.dev; needs a spec record, not a claude-code tweak. Policy stated by Rob 2026-09-23: 'support the oldest version of Node that isn't end-of-life'; test at least 22, 24, 26."
+        },
+        {
+          "at": "2026-09-23T20:31:00.595Z",
+          "actor": "agent",
+          "text": "Benchmark 2026-09-23 (16 CPUs, darwin-arm64, clone 61a75a5, logs scratchpad/node-bench/logs): assertion half P-mode (process-per-file) 13.0-14.9s on 18/20/22/24/26 — version barely matters; S-mode (--test-isolation=none) 24-27s, ~2x SLOWER than P on every version that has it. Engine cold start (brief): 18=65.8ms, 22/24/26=48-50ms. Homebrew node 26.9 cold start 107.7ms vs nodejs.org 26.10 49.9ms (bare startup 83ms vs 24ms; brew links libnode dynamically). Node 22 accepts only --experimental-test-isolation. Node 18 hung test 3.1 (filed as issue)."
+        },
+        {
+          "at": "2026-09-25T00:50:47.952Z",
+          "actor": "agent",
+          "text": "Rob 2026-09-24: approved — drop single-process (per-file mode), CI matrix from schedule.json, actions v7, delete isolation probe + reporter dual-parse + [ -f ] loop where the floor allows, EOL warning in brief, fix Node 18+ claims, fix #220. Leave Homebrew node alone (out of scope)."
+        }
+      ],
+      "release": "0.49.0",
+      "startedAt": "2026-09-25T00:50:49.159Z"
     }
   ],
   "detourStack": [],
@@ -10068,7 +10100,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1330,
+  "revision": 1336,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10508,6 +10540,11 @@
           "reviewer": "inline foreground cross-spec review of the 0.48.0 spec set (2 spec files: suite-certification, engine-invocation) — no fresh-context subagents were available in this run, so the reviewer is the applying agent, which read both deltas in full and answered the six questions. BLOCKS (fixed in this commit): engine-invocation's 'the invocation that used the in-memory store created no file' scenario was unreachable — init() writes CLAUDE.md (rules.mjs:1097) and .gitignore through raw fs, both deliberately outside the store per design D1, so the scenario was narrowed to the store's own footprint with an explicit boundary paragraph added. Contradiction: none — suite-certification's rungs and engine-invocation's per-call store agree; the rung's process claim ('both rungs, one invocation, one process') does not collide with 'two invocations in one process are independent' because they are different claims about different things. Double ownership: none — engine-invocation owns the caller's contract and states the store boundary; suite-certification owns rung membership and names the store only as the mechanism a unit test obtains a value through. Unmeetable: the one above, now fixed. Gaps vs the proposal's What Changes: none found — the three artifacts I1 added (session-claim.json, commit-observe.json+.lock, write-conflicts.log.prev) and the render's three reads (projectMd pre-image :306, the stamp's mtime test :356, detoursLog :276) are each carried by a task (1.2, 1.3). Vocabulary: ok within the spec set; POLISH declined — the file rung's directory is still named assert/ (the half's own name) while the unit rung's is unit/, and the spec's 'the two rungs SHALL be named on disk' is satisfied but the names are not parallel; renaming is out of this change's scope. Chokepoints: homeOf() (certification.mjs:63) and the two-glob runner invocation shared by the hook and ci.yml are each owned by exactly one capability. Recorded after the amendment above, so the hash covers the amended text."
         }
       }
+    },
+    {
+      "id": "0.49.0",
+      "intent": "Node support policy: support the oldest non-EOL Node major; CI matrix from Node's schedule; per-file test mode; old-Node workarounds retired",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
