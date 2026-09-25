@@ -744,6 +744,31 @@ unitTest("activity-log-detour-events-lose-epic: record-reconcile, set-autonomy, 
   assert.match(text, /e2 {2}review-mode \(unset\) → thorough/);
 });
 
+unitTest("activity-log-detour-events-lose-epic: a control character in a GATES or SETTINGS row prints escaped, never raw", async () => {
+  // user-text-never-forges-output. The rows interpolate stored values (epic ids, verdicts, levels);
+  // a raw newline in one would start a line the engine never wrote. Built from code points so no
+  // raw control character, and no escape spelling, sits in this source file.
+  const { buildReport, formatReport } = await import(AREPORT);
+  const [NL, CR, ESC] = [10, 13, 27].map(c => String.fromCharCode(c));
+  const escaped = (code) => "\\" + "u" + code.toString(16).padStart(4, "0");
+  const at = "2026-01-01T00:00:00.000Z";
+  const text = formatReport(buildReport([
+    { at, kind: "reconcile-recorded", verb: "record-reconcile", epic: "e1" + NL + "FORGED gate row",
+      detour: "d1" + CR, verdict: "valid" + ESC + "[31m", correction: false },
+    { at, kind: "gate-review", verb: "record-gate-review", epic: "e1", gate: "gate2", verdict: "pass" + NL + "FORGED verdict" },
+    { at, kind: "epic-autonomy", verb: "set-autonomy", epic: "e1", from: "off" + NL + "FORGED setting row",
+      to: "autonomous" + ESC, granted: 1, revoked: 0, notified: 0 },
+    { at, kind: "review-mode", verb: "set-review-mode", epic: null, from: null, to: "thorough" + CR },
+  ]));
+  for (const line of text.split(NL)) {
+    assert.doesNotMatch(line, /^FORGED/, `a stored newline started a line of its own: ${JSON.stringify(line)}`);
+  }
+  assert.ok(!text.includes(CR) && !text.includes(ESC), "no raw CR or ESC reaches the report");
+  for (const code of [10, 13, 27]) assert.ok(text.includes(escaped(code)), `U+${code} is printed in its escaped form`);
+  assert.match(text, /reconcile vs d1/);
+  assert.match(text, /autonomy off/);
+});
+
 unitTest("activity-log-detour-events-lose-epic: the repo-wide review-mode dial is a review-mode event with epic null", async () => {
   const { diffEvents } = await import(ALOG);
   const { buildReport, formatReport } = await import(AREPORT);

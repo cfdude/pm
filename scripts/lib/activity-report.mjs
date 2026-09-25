@@ -227,23 +227,6 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
 
 export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   const L = ["ACTIVITY — what this conductor actually did, from .conductor/activity/.", ""];
-  // Row builders for GATES and SETTINGS. Nested here, not module-level: every row they build is
-  // pushed onto L and escaped at L's join, the same sink the inline map they replace reached.
-  function formatGate(g) {
-    if (g.withdrawn) return `  • ${g.at}  ${g.epic}  ${g.gate} withdrawn`;
-    if (g.gate === "reconcile") {
-      return `  • ${g.at}  ${g.epic}  reconcile vs ${g.detour}=${g.verdict}${g.correction ? " (correction)" : ""}`;
-    }
-    return `  • ${g.at}  ${g.epic}  ${g.gate}=${g.verdict}`;
-  }
-
-  function formatSetting(s) {
-    const what = s.kind === "epic-priority" ? "priority" : s.kind === "epic-autonomy" ? "autonomy" : "review-mode";
-    const tail = s.kind === "epic-autonomy"
-      ? ` (+${s.granted} granted, ${s.revoked} revoked, ${s.notified} notified)` : "";
-    return `  • ${s.at}  ${s.epic || "(repo)"}  ${what} ${s.from || "(unset)"} → ${s.to || "(unset)"}${tail}`;
-  }
-
   // `enabled: null` is UNKNOWN — .conductor/state.json could not be read — and must read as neither
   // on nor off: a report silent about the flag reads as a log that is on.
   if (enabled === null) {
@@ -293,11 +276,28 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("GATES — verdicts and withdrawals in the order they were recorded");
-  L.push(...(r.gates.length ? r.gates.map(formatGate) : ["  (none recorded in this window)"]));
+  // EVERY ROW IS A TEMPLATE WRITTEN DIRECTLY INTO L.push, never a string built elsewhere and handed
+  // in: L is escaped at its join, and the output sweep recognises exactly this shape as sunk — so a
+  // raw value written anywhere else stays visible to it rather than hidden behind a blanket judgment.
+  if (!r.gates.length) L.push("  (none recorded in this window)");
+  for (const g of r.gates) {
+    if (g.withdrawn) L.push(`  • ${g.at}  ${g.epic}  ${g.gate} withdrawn`);
+    else if (g.gate === "reconcile") L.push(`  • ${g.at}  ${g.epic}  reconcile vs ${g.detour}=${g.verdict}${g.correction ? " (correction)" : ""}`);
+    else L.push(`  • ${g.at}  ${g.epic}  ${g.gate}=${g.verdict}`);
+  }
   L.push("");
 
   L.push("SETTINGS — priority, autonomy and review-mode changes, in order");
-  L.push(...(r.settings.length ? r.settings.map(formatSetting) : ["  (none recorded in this window)"]));
+  if (!r.settings.length) L.push("  (none recorded in this window)");
+  for (const s of r.settings) {
+    if (s.kind === "epic-autonomy") {
+      L.push(`  • ${s.at}  ${s.epic || "(repo)"}  autonomy ${s.from || "(unset)"} → ${s.to || "(unset)"}` +
+        ` (+${s.granted} granted, ${s.revoked} revoked, ${s.notified} notified)`);
+    } else {
+      L.push(`  • ${s.at}  ${s.epic || "(repo)"}  ${s.kind === "epic-priority" ? "priority" : "review-mode"} ` +
+        `${s.from || "(unset)"} → ${s.to || "(unset)"}`);
+    }
+  }
   L.push("");
 
   L.push("OUT-OF-BAND WRITES — state.json revisions no engine verb accounts for");

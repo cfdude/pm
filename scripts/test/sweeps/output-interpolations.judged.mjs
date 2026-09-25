@@ -88,7 +88,6 @@ x("verify-specs.mjs", "verifySpecs", {
   "formatHeaderCandidates(headerCandidates(state, absRoot))": 1,
   "formatSpecCoverage(specCoverage(state, absRoot))": 1,
 }, "escaped", "formatHeaderCandidates/formatSpecCoverage return sink-joined text");
-j("activity-report.mjs", "formatReport", ALL, "sink-flow", "every line is pushed onto L and joined through L.map(escapeControls) at formatReport's return; its nested formatGate/formatSetting row builders return only into L.push");
 x("activity-report.mjs", "activity", {
   "formatReport(report, { enabled: state ? activityEnabled(state) : null })": 1,
 }, "escaped", "formatReport() returns its L through L.map(escapeControls)");
