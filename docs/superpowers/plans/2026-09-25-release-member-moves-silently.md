@@ -71,7 +71,7 @@ Checked, not assumed: `rg -n '"undefer"|"unmember"|\.op\b|amendments' scripts/li
 
 - Engine: zero runtime dependencies. `pm` is an instruction layer.
 - The tests go in a NEW unit-rung file, `scripts/test/unit/release-membership-history.test.mjs`. It is not a twin of any functional id, so the drift script's twin-coupling check does not touch it. `verb-surface-answers-back.test.mjs` is a certified twin and is NOT edited.
-- **Known blocker:** the drift script's `engine-source` bucket covers every `scripts/lib/*.mjs`. A staged edit to `releases.mjs` is refused until `node scripts/test/certify.mjs sweeps` records it, and this worktree's brief forbids running certify. Probe on 2026-09-25: one appended comment line was refused with `the certified change-triggered bucket 'engine-source' changed (scripts/lib/releases.mjs)`. The implementation is written and verified by running the assertion half directly. The commit is attempted, and if the drift script refuses it, the work stops there and the refusal is reported.
+- **Certification:** the drift script's `engine-source` bucket covers every `scripts/lib/*.mjs`, so each engine commit needs `certify sweeps`. The coordinator amended the brief: certify and the commit run under the machine-wide lock `.git/pm-certify.lock`, which is how `b999690` and `439f7fb` landed.
 
 ## Tasks
 
@@ -79,7 +79,7 @@ Checked, not assumed: `rg -n '"undefer"|"unmember"|\.op\b|amendments' scripts/li
 
 **Files:** modify `scripts/lib/releases.mjs` (the member loop and the `release show` renderer). Create `scripts/test/unit/release-membership-history.test.mjs`.
 
-- [ ] RED: tests.
+- [x] RED: tests.
   - `release r2 --member e1` (e1 in r1) leaves `r1.amendments` = `[{op:"unmember", epic:"e1", via:"member", to:"r2"}]`.
   - stderr names both `r1` and `r2`.
   - `release show r1` renders `moved to \`r2\`` and not "no reason given".
@@ -88,26 +88,26 @@ Checked, not assumed: `rg -n '"undefer"|"unmember"|\.op\b|amendments' scripts/li
   - Undefer on r2 plus move-out on r1 in one invocation produces two amendments on two releases.
 
   Save the failing run as `red-task1.txt`.
-- [ ] GREEN: in the member loop, before `knownEpic(epicId).release = id`, read `prev = epic.release`. If `prev` is set and `prev !== id`: `old = findRelease(state, prev)`. If `old` exists, `amend(old, {op:"unmember", epic, via:"member", to:id})`. In both cases, write a stderr line. In `releaseShow`, render `a.to` as `moved to \`<to>\`` in the reason slot.
-- [ ] Mutation proof: in a scratch copy, delete the `amend(old, …)` call. The amendment test must fail.
-- [ ] Commit `fix(release): --member records the move on the release it leaves`.
+- [x] GREEN: in the member loop, before `knownEpic(epicId).release = id`, read `prev = epic.release`. If `prev` is set and `prev !== id`: `old = findRelease(state, prev)`. If `old` exists, `amend(old, {op:"unmember", epic, via:"member", to:id})`. In both cases, write a stderr line. In `releaseShow`, render `a.to` as `moved to \`<to>\`` in the reason slot.
+- [x] Mutation proof (applied in place and restored from a scratch backup, because the sandbox refuses node outside the worktree): delete the `amend(old, …)` call. The amendment test must fail.
+- [x] Commit `fix(release): --member records the move on the release it leaves`.
 
 ### Task 2: re-defer history (decision b)
 
 **Files:** modify `scripts/lib/releases.mjs` (the `--defer` write). Add tests to the same unit file.
 
-- [ ] RED: tests.
+- [x] RED: tests.
   - `--defer e2:"depends on X landing"` then `--defer e2:"cut for scope"` gives `deferred[0].reason === "cut for scope"`, and the amendment `{op:"redefer", epic:"e2", reason:"cut for scope", was:"depends on X landing", wasRecordedAt:<first recordedAt>}`.
   - `release show` renders both reasons.
   - Stderr names the replaced reason.
   - Re-running with the IDENTICAL reason leaves the state bytes unchanged.
 
   Save the failing run as `red-task2.txt`.
-- [ ] GREEN: in the `--defer` write, when an existing entry is found: if its reason equals the new one, leave the record alone. Otherwise, amend with `redefer`, write the stderr line, and replace the entry.
-- [ ] Mutation proofs:
+- [x] GREEN: in the `--defer` write, when an existing entry is found: if its reason equals the new one, leave the record alone. Otherwise, amend with `redefer`, write the stderr line, and replace the entry.
+- [x] Mutation proofs:
   - Drop the `amend` call. The history test must fail.
   - Drop the identical-reason short-circuit. The no-op test must fail.
-- [ ] Commit `fix(release): re-deferring keeps the reason it replaces`.
+- [x] Commit `fix(release): re-deferring keeps the reason it replaces`.
 
 ### Task 3: backward-compatibility test, docs and changeset
 
@@ -117,7 +117,7 @@ Checked, not assumed: `rg -n '"undefer"|"unmember"|\.op\b|amendments' scripts/li
 - `README.md`: the release section's `--defer` paragraph and the inverses paragraph.
 - `.changesets/release-member-moves-silently.md`: user-facing prose.
 
-- [ ] Commit `docs(release): a move and a re-defer are recorded`.
+- [x] Commit `docs(release): a move and a re-defer are recorded`.
 
 ## Required item 1: the call-site completeness sweep
 
@@ -149,6 +149,6 @@ The amendments trail is append-only by design and has no inverse, deliberately. 
 
 ## Required item 7: what to route
 
-- **Tooling friction:** the `engine-source` certification bucket covers every `scripts/lib/*.mjs`, and parallel worktrees share one entry per trigger. It is already filed as cfdude/pm#226, so nothing new was filed. The workaround was the coordinator's lock around certify plus commit. Waiting for that lock took about 40 minutes across three attempts while agents passed it around.
+- **Tooling friction:** the `engine-source` certification bucket covers every `scripts/lib/*.mjs`, and parallel worktrees share one entry per trigger. It is already filed as cfdude/pm#226, so nothing new was filed. The workaround was the coordinator's lock around certify plus commit. Task 1 acquired the lock after 117 s. Task 2 needed three attempts: two gave up after 15 minutes of total wait, and the third acquired the lock after 24 s.
 - **Sweep catch:** the output-interpolation sweep flagged an unescaped `a.to` in `release show`. The unit rung could not have seen this, because the value reaches output through a const outside the sink. It was fixed by escaping where the value is built, and is recorded here so the next `release show` field follows the same rule. It is not a new lesson: the sweep worked as designed.
 - **Practice or process:** none new.
