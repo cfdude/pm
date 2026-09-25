@@ -155,8 +155,10 @@ need a clock seam this change does not otherwise need.
     clause OR the `lts` clause still yields `[22,24,26]` (27 is excluded by `lts` as well as by start;
     25 by `end` as well as by `lts`), and nothing could assert the step read `$PM_NODE_FALLBACK`. The
     script exports its pure functions, and `assert/support-floor.test.mjs` runs them against a CANNED
-    schedule with a future-start `lts` entry, a live entry with no `lts`, and a live entry whose
-    `lts` date is still in the future — each condition deciding one entry on its own.
+    schedule with a future-start `lts` entry, a live entry with no `lts`, an `lts` entry that has
+    started but whose `end` is on or before today, and a live entry whose `lts` date is still in the
+    future — each of the three clauses deciding one entry on its own (confirmation review: without the
+    third entry, dropping the `end` clause went undetected).
   - Verified 2026-09-24 against the live file: the filter yields `[22,24,26]` (18, 20 past `end`;
     25 no `lts`; 26 `"lts": "2026-10-28"`, a future date, included).
   - The job outputs the array.

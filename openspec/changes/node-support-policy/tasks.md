@@ -34,6 +34,25 @@ Commit mechanics, which bind every section below:
   1.4–1.5, then sections 3, 4, 5, 7, 8, 9. Section 2 lands before 1.4 so that no commit runs the half
   per-file while the 13 file-rung files still rely on another file's shim. **The PR into `main` opens
   only after 4.3.**
+- **The twin must be EDITED, not merely present.** `couplingRefusals()`
+  (`scripts/test/certification.mjs:163-176`) passes a staged `functional/<id>.test.mjs` only when
+  `scripts/test/{unit,assert}/<id>.test.mjs` is itself in the STAGED set (`git diff --cached
+  --name-only --no-renames`), i.e. carries a change in the same commit. An existing twin, or one
+  `git add`ed unchanged, does not count. Every commit in the landing order that stages a
+  functional file, checked against that rule:
+  | Commit (landing order) | Functional file staged | Twin EDITED in the same commit |
+  |---|---|---|
+  | 1.1 + 1.2 + 1.3 | `functional/conductor-09` (1.1's RED fixture, 1.2's stub-`node` fixture, 1.3's empty-rungs fixture) | `assert/conductor-09` — `RUNNER_LINE` re-point and the unreadable-count text guard |
+  | 2.1 + 2.2 | none | — |
+  | 2.3 + 2.4 | none | — (`assert/git-shim` created) |
+  | 2.4b + 2.4c | `functional/git-shim` (new) | `assert/git-shim` — 2.4b's `EMPTY_CACHE` removal case |
+  | 2.5 | none (every file it names is lib, fixture or assert) | — |
+  | 1.4 + 1.5 | `functional/conductor-09` (`:411-450` narrative, 1.5's cache-file fixture) | `assert/conductor-09` — the runner-line, one-`node --test` and zero-count re-points |
+  | 3.1 + 3.2 | `functional/runtime-support` (new) | `unit/runtime-support` (new) |
+  | 3.3; 4.2b; 4.2 + 4.3; 4.4 | none | — |
+  | 5.1 + 5.2 | `functional/state-file-refuses-to-guess` (`spawnAll`) | `assert/state-file-refuses-to-guess` — 5.1's source scan |
+  | 7.x | none | — |
+  Every functional-touching commit also runs `certify.mjs functional` first.
 
 ## 0. Before any code
 
@@ -140,7 +159,9 @@ Commit mechanics, which bind every section below:
         never reached.
       - It passes today, through the loop's empty-list abort, and must still pass after 1.4 removes
         the loop.
-      - Run `certify.mjs functional` before the commit; stage the twin.
+      - **Lands in the 1.1 + 1.2 commit** (it passes today, so it has no RED of its own): a
+        separate commit would stage `functional/conductor-09` with no `assert/conductor-09` edit,
+        which the drift script's coupling check refuses.
 - [ ] 1.4 GREEN — delete the single-process machinery and the Node-18 loop (design D3, D5).
       - Delete the probe block (`pre-commit:108-131`), `ISOFLAGFILE` (`:117`) and `ISOFLAG` (`:132`).
       - Add `rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"`, the inverse of the probe's
@@ -178,6 +199,8 @@ Commit mechanics, which bind every section below:
 - [ ] 1.5 REGRESSION GUARD — `functional/conductor-09.test.mjs`: a fixture whose git dir holds a
       stale `pm-isolation-flag` has none after one hook run. This proves the inverse shipped.
       Mutation: the `rm -f` line removed from a copy → red. Save to `mutation-1.5.txt`.
+      **Lands in the 1.4 commit**, whose `assert/conductor-09` re-points are the twin edit the
+      coupling check requires; alone it would stage the functional file with no twin edit.
 
 ## 2. The git shim in every process, and its temp directory removed (design D3 rows 1–3)
 
@@ -223,8 +246,9 @@ Commit mechanics, which bind every section below:
       test (Gate 1 I3). New `functional/git-shim.test.mjs` writes a fixture test file that imports
       the shim and runs `git --version` through `execFileSync`, runs `node --test --test-reporter=spec`
       on it with `FORCE_COLOR=0`, and asserts exit 1, `ℹ fail 1`, and the listener's report naming
-      the argv. Its twin is `assert/git-shim.test.mjs`, which is 2.3's file (the removal test), so
-      the id pair exists by construction. Run `certify.mjs functional` first. Mutation: the
+      the argv. Its twin is `assert/git-shim.test.mjs`, 2.3's file (the removal test). **It lands in
+      2.4b's commit**, because 2.4b EDITS `assert/git-shim.test.mjs` (its `EMPTY_CACHE` case), and the
+      coupling check needs the twin edited, not merely present. Run `certify.mjs functional` first. Mutation: the
       listener's `process.exitCode = 1` removed in a scratch copy → the functional test fails.
       Save `mutation-2.4c.txt`.
 - [ ] 2.5 Comments and one test title that state the retired mode as the rationale (design D3 rows
@@ -241,6 +265,9 @@ Commit mechanics, which bind every section below:
       - `scripts/lib/command-exit.mjs:46-47` and `scripts/lib/git-gateway.mjs:5` (Gate 1 I8).
       Engine source is touched, so run `certify.mjs sweeps` before the commit. `constants.mjs` is a
       CERTIFIED module (it calls `gitOps(`), so run `certify.mjs functional` too (Gate 1 I9).
+      Verify: `rg -n -i 'isolation=none|single process|one process|shared process' scripts/lib scripts/test`
+      returns only lines about an in-process caller serving several invocations. Each surviving line
+      is listed with that reason in `verify-2.5.txt`.
 - [ ] 2.6 One-time cleanup of the directories already leaked on this machine: at the fix round,
       4,041 `pm-assert-no-git-*` and 6,877 `pm-empty-cache-*` under `os.tmpdir()`. After 2.4 and
       2.4b land, remove them with
@@ -248,9 +275,6 @@ Commit mechanics, which bind every section below:
       while no suite is running (the cross-worktree lock is free). This is a machine action, not a
       repository change, and it commits nothing. Verify both counts read 0 afterwards, and record
       before and after in `verify-2.6.txt`.
-      Verify: `rg -n -i 'isolation=none|single process|one process|shared process' scripts/lib scripts/test`
-      returns only lines about an in-process caller serving several invocations. Each surviving line
-      is listed with that reason in `verify-2.5.txt`.
 
 ## 3. The engine: the support floor, the runtime-version seam, the brief line (design D1, D6)
 
@@ -318,7 +342,7 @@ Commit mechanics, which bind every section below:
       - Confirm `fetch-depth: 0` (`ci.yml:28`) keeps its meaning.
       - Re-confirm the latest tags with `gh api repos/actions/{checkout,setup-node}/releases/latest`.
         At drafting they were `v7.0.1` and `v7.0.0`, both `using: node24`.
-- [ ] 4.2 RED — `assert/ci-workflow.test.mjs` gains pure functions over `ci.yml`'s text, with tests.
+- [ ] 4.2 RED (same commit as 4.3, after 4.2b) — `assert/ci-workflow.test.mjs` gains pure functions over `ci.yml`'s text, with tests.
       They assert:
       - (a) a job named `test`, with `if: always()`, needing the compute job and the matrix job;
       - (b) its step fails unless both `needs.*.result` equal `success`;
@@ -341,6 +365,10 @@ Commit mechanics, which bind every section below:
       update the G-C1 fixture strings (`:149-190`). And re-point the pipeline patterns at `:86` and
       `:97`, which match `total=$(node --test …` but not `total=$(FORCE_COLOR=0 node --test …`, so
       they accept any `NAME=value` prefixes before `node --test` (Gate 1 I5).
+      Fails today on every one. Save `red-4.2.txt`.
+      **4.2 and 4.3 are ONE commit** (the RED lands with its GREEN), and it lands AFTER 4.2b's
+      commit: 4.2(d) asserts the compute step calls `scripts/test/node-majors.mjs`, which 4.2b
+      creates, and 4.2(e) imports `NODE_FLOOR_MAJOR`, which 3.2 creates.
 - [ ] 4.2b RED then GREEN, one commit — the schedule filter as a committed dev script (design D2,
       Gate 1 B5) and the support-floor copies (Gate 1 I10).
       - New `scripts/test/node-majors.mjs`: plain Node, no dependency, not shipped, not a test file
@@ -350,8 +378,9 @@ Commit mechanics, which bind every section below:
         exits 1 with `::error::` / prints `::warning::`, per design D2's table.
       - New file-rung test `scripts/test/assert/support-floor.test.mjs` (it installs the shim, per
         2.1's rule). Against a CANNED schedule it asserts: an `lts`-bearing entry whose `start` is
-        after today is excluded; a live entry with no `lts` is excluded; a live entry whose `lts` date
-        is in the future is included — each condition deciding one entry alone. And `decide()`:
+        after today is excluded; a live entry with no `lts` is excluded; an `lts`-bearing entry that
+        has started and whose `end` is on or before today is excluded; a live entry whose `lts` date
+        is in the future is included — each of the three clauses deciding one entry alone. And `decide()`:
         fetch failed → the fallback plus a warning; body not JSON, or JSON with no entry holding
         `start`/`end` → an ERROR, not the fallback; computed ≠ fallback → an error naming both;
         computed empty → an error.
@@ -362,9 +391,8 @@ Commit mechanics, which bind every section below:
         `CONTRIBUTING.md` carries no support-floor number today (`v26.9.0` at `:82` is a
         measurement's Node); if 7.1 adds one, it is added here.
       - Save `red-4.2b.txt`. Mutations in scratch copies, saved to `mutation-4.2b.txt`: the start
-        clause removed; the `lts` clause removed; a malformed body routed to the fallback — each
+        clause removed; the `lts` clause removed; the `end` clause removed; a malformed body routed to the fallback — each
         refused by the canned-schedule test.
-      Fails today on every one. Save `red-4.2.txt`.
 - [ ] 4.3 GREEN — rewrite `ci.yml` per design D2.
       - Jobs: `node-majors` (runs 4.2b's script under `actions/setup-node@v7` at the support
         floor), `test-node` (matrix) and the `test` aggregate.

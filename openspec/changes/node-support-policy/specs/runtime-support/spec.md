@@ -95,9 +95,10 @@ The security scans are not part of this requirement and SHALL stay single-versio
 #### Scenario: Each condition of the filter decides on its own
 
 - **WHEN** the computation is given a canned schedule holding an entry that has a long-term-support
-  date but starts after today, an entry that is live today but has no long-term-support date, and an
-  entry that is live today with a long-term-support date still in the future
-- **THEN** only the third entry is in the set
+  date but starts after today, an entry that is live today but has no long-term-support date, an
+  entry that has a long-term-support date and has started but whose end-of-life date is on or before
+  today, and an entry that is live today with a long-term-support date still in the future
+- **THEN** only the fourth entry is in the set
 
 #### Scenario: A failed fetch falls back visibly
 
