@@ -88,7 +88,7 @@ These rules bind every section below.
 
 ## 1. Measure, then read the archived tasks.md for every epic (conductor-record, design D1)
 
-- [ ] 1.1 **BASELINE** in `baseline-before.md`, measured on the day and never copied from `design.md`.
+- [x] 1.1 **BASELINE** in `baseline-before.md`, measured on the day and never copied from `design.md`.
       - (a) Count the managed archived openspec epics whose render moves off `0/0` once the archived
         `tasks.md` is read, and list those with outstanding work above zero, each with its outcome.
       - (b) Run `node scripts/conductor.mjs integrity` in full and save the finding count per check
