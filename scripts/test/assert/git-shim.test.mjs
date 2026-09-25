@@ -20,6 +20,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { EMPTY_CACHE } from "../fixtures/harness.mjs";
 
 test("2.3 the shim module exports a directory-removal function, and it removes a directory tree", () => {
   assert.equal(typeof shim.removeTempDir, "function",
@@ -33,4 +34,27 @@ test("2.3 the shim module exports a directory-removal function, and it removes a
   assert.equal(fs.existsSync(dir), false, `removeTempDir() left ${dir} behind`);
   // And removing what is already gone is not an error: the exit listener must never throw.
   assert.doesNotThrow(() => shim.removeTempDir(dir), "removing an absent directory must not throw");
+});
+
+test("2.4b the harness's per-process EMPTY_CACHE is scheduled for removal at exit, through the same function", () => {
+  // THE SECOND PER-PROCESS LEAK (design D3 row 3b, Gate 1 I6). `fixtures/harness.mjs` makes one
+  // `pm-empty-cache-*` directory per process that imports it — 6,877 of them sat in `os.tmpdir()` at
+  // the Gate 1 fix round — and nothing removed it. It is now registered for removal at process exit,
+  // and the removal is `removeTempDir()`, the shim's own. The directory is live for the rest of this
+  // process, so the check is that it is SCHEDULED; the scheduling itself is exercised on a scratch
+  // directory, and the removal on one by the test above.
+  assert.equal(typeof shim.removeAtExit, "function",
+    "no removeAtExit(): a per-process temp directory has no way to be scheduled for removal");
+  assert.equal(typeof shim.scheduledForRemoval, "function",
+    "no scheduledForRemoval(): nothing can show what a process will remove at exit");
+  assert.ok(shim.scheduledForRemoval().includes(EMPTY_CACHE),
+    `the harness's EMPTY_CACHE (${EMPTY_CACHE}) is not scheduled for removal at exit, so every process ` +
+    "that imports the harness leaks one pm-empty-cache-* directory");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-shim-schedule-"));
+  try {
+    assert.equal(shim.removeAtExit(dir), dir, "removeAtExit() hands back the directory it scheduled");
+    assert.ok(shim.scheduledForRemoval().includes(dir), "a scheduled scratch directory is not listed");
+  } finally {
+    shim.removeTempDir(dir);
+  }
 });

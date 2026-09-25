@@ -30,10 +30,13 @@ import os from "node:os";
 import path from "node:path";
 import { main } from "../../conductor.mjs";
 import { fakeGit } from "./fake-git.mjs";
+import { removeAtExit } from "./temp-dir.mjs";
 
 /** One empty version cache for the whole process, as before: `pluginVersion()`/tool-currency read
- *  it, and a per-call one would be a filesystem allocation per assertion. */
-export const EMPTY_CACHE = fs.mkdtempSync(path.join(os.tmpdir(), "pm-empty-cache-"));
+ *  it, and a per-call one would be a filesystem allocation per assertion. REMOVED AT PROCESS EXIT
+ *  (0.49.0, design D3 row 3b): under per-file isolation this is one directory per file, and it was
+ *  never removed — 6,877 `pm-empty-cache-*` directories had accumulated by the Gate 1 fix round. */
+export const EMPTY_CACHE = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-empty-cache-")));
 
 // ─────────── which half's `run` the shared helpers should use ───────────
 //

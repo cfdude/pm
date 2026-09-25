@@ -236,13 +236,13 @@ Commit mechanics, which bind every section below:
         citation at `:69` (6.2) are rewritten in this commit.
       - Verify: the `pm-assert-no-git-*` count from 0.3(d) is unchanged across one full run of the
         half. Save `verify-2.4.txt` with before and after.
-- [ ] 2.4b GREEN — the SECOND per-process leak (design D3 row 3b, Gate 1 I6):
+- [x] 2.4b GREEN — the SECOND per-process leak (design D3 row 3b, Gate 1 I6):
       `fixtures/harness.mjs:36`'s `EMPTY_CACHE` directory is removed at process exit through the same
       removal function as 2.4's. RED in the same commit: the 2.3 test file gains a case asserting the
       harness registers the removal (the directory is created by `mkdtemp`, so the check is that the
       exported path is scheduled for removal, exercised on a scratch directory). Verify: the
       `pm-empty-cache-*` count is unchanged across one full run. Save `verify-2.4b.txt`.
-- [ ] 2.4c REGRESSION GUARD — *"A real git call in any file's process fails the run"* gets a durable
+- [x] 2.4c REGRESSION GUARD — *"A real git call in any file's process fails the run"* gets a durable
       test (Gate 1 I3). New `functional/git-shim.test.mjs` writes a fixture test file that imports
       the shim and runs `git --version` through `execFileSync`, runs `node --test --test-reporter=spec`
       on it with `FORCE_COLOR=0`, and asserts exit 1, `ℹ fail 1`, and the listener's report naming

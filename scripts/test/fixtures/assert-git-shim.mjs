@@ -31,7 +31,7 @@
 //
 // THE DIRECTORY IS REMOVED AT EXIT (0.49.0, design D3 row 3). One `pm-assert-no-git-*` directory is
 // made per process that imports this file; the exit listener reads the log and THEN removes it, through
-// `removeTempDir()`, which `fixtures/harness.mjs` uses for its own per-process directory too.
+// `removeTempDir()` (`temp-dir.mjs`), which `fixtures/harness.mjs` uses for its own per-process directory too.
 //
 // THE SHIM IS NOT A FAILURE INJECTION. Exiting 128 is what a missing repository looks like, and it is
 // TOLERATED by every caller (`headAttachment` answers "unknown", `appendEvents` returns): the suite
@@ -42,6 +42,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { removeTempDir } from "./temp-dir.mjs";
 
 const shimDir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-assert-no-git-"));
 
@@ -60,13 +61,11 @@ export const SHIM_DIR = shimDir;
 
 process.env.PATH = `${shimDir}${path.delimiter}${process.env.PATH}`;
 
-/** Remove a per-process temp directory and everything under it. Synchronous, because its caller is
- *  an `exit` listener, and silent on a directory that is already gone, because an exit listener must
- *  never throw. Exported so a test can exercise it (`assert/git-shim.test.mjs`): the listener itself
- *  runs after every test has finished, where nothing can observe it. */
-export function removeTempDir(dir) {
-  fs.rmSync(dir, { recursive: true, force: true });
-}
+// The removal function, and the exit-time schedule the harness uses for its own directory, live in
+// `temp-dir.mjs` (the harness is imported by the functional half too, which must never load this
+// file). Re-exported here so a test can exercise them (`assert/git-shim.test.mjs`): the listener
+// itself runs after every test has finished, where nothing can observe it.
+export { removeAtExit, removeTempDir, scheduledForRemoval } from "./temp-dir.mjs";
 
 /** Every real git invocation the process has made since the shim was installed. Empty is the
  *  property; a non-empty list is the evidence, including the argv that was run. */
