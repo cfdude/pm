@@ -6,3 +6,5 @@
   spelling of one word match.
   Chinese, Japanese and Korean text, which puts no spaces between words, is split into
   overlapping two-character tokens, so a reworded ask still finds the epic whose words it shares.
+  An epic matched only by those tokens needs a share of them that grows with the ask, so common
+  words such as "new" and "feature" do not fill the candidate list.

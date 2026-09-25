@@ -356,3 +356,30 @@ unitTest("tokenize splits a Han run into bigrams and leaves the Latin words arou
   assert.deepEqual(tokenize("export " + cp(0x5bfc, 0x51fa) + "api"), ["export", cp(0x5bfc, 0x51fa), "api"]);
   assert.deepEqual(tokenize(cp(0x5bfc)), [cp(0x5bfc)], "a single Han character is a word, not noise");
 });
+
+// Confirmation review: a long unrelated Chinese ask filled every candidate slot through common
+// bigrams — 新的 "new" and 功能 "feature" — because a 46-character ask carries ~45 bigrams, many of
+// them spanning a word boundary, where a Latin ask of the same meaning carries ~10 words. A
+// candidate surfaced ONLY by CJK bigrams must now share a number that grows with the ask.
+const cps = (...ns) => String.fromCodePoint(...ns);
+// 我们需要一个新的功能来支持用户在移动设备上查看历史订单并且可以按照日期筛选和导出新的报表功能
+const LONG_ASK = cps(0x6211,0x4eec,0x9700,0x8981,0x4e00,0x4e2a,0x65b0,0x7684,0x529f,0x80fd,0x6765,0x652f,0x6301,0x7528,0x6237,0x5728,0x79fb,0x52a8,0x8bbe,0x5907,0x4e0a,0x67e5,0x770b,0x5386,0x53f2,0x8ba2,0x5355,0x5e76,0x4e14,0x53ef,0x4ee5,0x6309,0x7167,0x65e5,0x671f,0x7b5b,0x9009,0x548c,0x5bfc,0x51fa,0x65b0,0x7684,0x62a5,0x8868,0x529f,0x80fd);
+unitTest("common CJK bigrams alone do not fill the candidate list; the epic the ask restates does", () => {
+  const engine = repoWith([
+    { id: "orders-history", title: cps(0x7528,0x6237,0x67e5,0x770b,0x5386,0x53f2,0x8ba2,0x5355,0x5e76,0x6309,0x65e5,0x671f,0x7b5b,0x9009) }, // 用户查看历史订单并按日期筛选
+    { id: "login", title: cps(0x6dfb,0x52a0,0x65b0,0x7684,0x767b,0x5f55,0x529f,0x80fd) },          // 添加新的登录功能
+    { id: "notify", title: cps(0x65b0,0x7684,0x901a,0x77e5,0x529f,0x80fd,0x8bbe,0x8ba1) },         // 新的通知功能设计
+    { id: "search", title: cps(0x641c,0x7d22,0x529f,0x80fd,0x4f18,0x5316) },                       // 搜索功能优化
+    { id: "theme", title: cps(0x65b0,0x7684,0x4e3b,0x9898,0x989c,0x8272) },                        // 新的主题颜色
+    { id: "flags", title: cps(0x529f,0x80fd,0x5f00,0x5173,0x7ba1,0x7406) },                        // 功能开关管理
+    { id: "payments", title: cps(0x652f,0x4ed8,0x529f,0x80fd,0x91cd,0x6784) },                     // 支付功能重构
+  ]);
+  assert.deepEqual(triage(engine, LONG_ASK).candidates.map(c => c.id), ["orders-history"]);
+});
+
+unitTest("a Latin ask's candidates are untouched by the CJK threshold", async () => {
+  const { candidateSet } = await import(TRIAGE);
+  const epics = [{ id: "new-login-feature", title: "new login feature" }, { id: "other", title: "render table" }];
+  // Two generic shared words still surface a Latin candidate, exactly as before the CJK rule.
+  assert.deepEqual(candidateSet(epics, "add a new export feature", { limit: 5 }).map(c => c.id), ["new-login-feature"]);
+});
