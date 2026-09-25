@@ -640,7 +640,7 @@ Commit mechanics, which bind every section below:
           naming the constant, `PM_NODE_FALLBACK`, the README line and the docs-site pages as one
           unit.
       Verify: `rg -n 'isolation' .claude/skills` returns nothing.
-- [ ] 7.5 `CHANGELOG.md` gets an entry under `## [Unreleased]`:
+- [x] 7.5 `CHANGELOG.md` gets an entry under `## [Unreleased]`:
       - Changed: support policy and floor; CI matrix; per-file mode, with 0.3's and 8.1's numbers;
         one reporter; actions v7.
       - Added: the brief warning.
@@ -656,7 +656,7 @@ Commit mechanics, which bind every section below:
       - the Changelog page
       - Introduction's Real Numbers
       Verify: the list is carried into the release cut's checklist run.
-- [ ] 7.7 Parity ledger. Confirm on the commits, not on intent: run
+- [x] 7.7 Parity ledger. Confirm on the commits, not on intent: run
       `git diff --stat <base>..HEAD -- commands/ agents/ skills/ hooks/ .claude-plugin/`.
       - Expected: empty.
       - The plugin version bump belongs to the release cut.

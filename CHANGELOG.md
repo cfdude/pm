@@ -6,6 +6,67 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+* **pm states a Node support policy: it supports exactly the Node LTS lines that are not
+  end-of-life, and the oldest of them — the support floor — is Node 22.** The floor is one engine
+  constant, `NODE_FLOOR_MAJOR` in the new `scripts/lib/runtime-support.mjs`, moved at release time
+  by a new release-checklist step; the engine still never fetches anything. Node 18 and 20 are
+  dropped (end-of-life 2025-04-30 and 2026-04-30); odd majors (23, 25, 27) are unsupported. The
+  README, CONTRIBUTING.md, CLAUDE.md and the engine header now say **Node 22+**, and a per-commit test
+  holds every documented copy equal to the constant.
+* **CI tests every supported major, computed from Node's release schedule — 22, 24 and 26 today.**
+  A `node-majors` job fetches `schedule.json` and keeps each entry with an `lts` date, `start <= today
+  < end` (the filter is `scripts/test/node-majors.mjs`, tested clause by clause); a fetch failure
+  falls back to the committed `PM_NODE_FALLBACK` with a visible warning, an unreadable schedule and a
+  computed set that differs from the fallback both fail, and the fallback's minimum is held equal to
+  `NODE_FLOOR_MAJOR` on every commit. The legs report as `test (node N)` with `fail-fast: false`, and
+  the required check stays the single context `test`, now an `if: always()` aggregate that fails
+  unless the set was computed and every leg passed. Verified on Actions: computed `[22,24,26]`, the
+  404 fallback, and the mismatch refusal. Each leg is faster than the old Node 18 job (4 m 18 s /
+  4 m 18 s / 3 m 38 s against 4 m 46 s), and the three run in parallel.
+* **The assertion half runs under the test runner's default per-file isolation; the single-process
+  mode is retired.** On this 16-CPU machine the pre-commit hook, end to end, went from **33.55 s**
+  (single-process, runner 27.1 s) to **24.0 s** (runner 15.7 s), median of three each. That is still
+  NOT under 15 s. On a 4-core CI runner per-file is the slower mode — 14.5 s against 11.3 s — and
+  that trade is accepted for one command on every supported major and failures attributed to the
+  file that failed. Every rung file now installs the run-time git counter itself: 13 file-rung files
+  relied on another file's process and would otherwise have run with the real `git` reachable.
+* **One reporter everywhere a count is read.** The hook, CI's three bucket steps, `certify.mjs` and
+  the release checklist's Real Numbers recipe run `FORCE_COLOR=0 node --test --test-reporter=spec`
+  and parse `ℹ` only; the `ℹ`/`#` dual parse is gone.
+* **CI actions** move to `actions/checkout@v7` and `actions/setup-node@v7` (both `node24`).
+
+### Added
+
+* **The SessionStart brief warns, in ONE line, when the Node running pm is below the support
+  floor** — naming the version and the floor, saying pm still runs. It is a warning, never a
+  refusal; it never appears in `PROJECT.md` or the PreCompact snapshot. The running version reaches
+  the engine through the invocation (`runtimeVersion()`), so both sides are tested without an old
+  Node.
+
+### Fixed
+
+* **cfdude/pm#220 — a hung child no longer hangs the functional half.** `spawnAll` bounds every child
+  at 30 s, kills it and fails the test naming the invocation; a source scan refuses any unbounded
+  wait on a child's close/exit event in the suite.
+* **The pre-commit hook no longer skips its count floor when it cannot read the count.** A
+  colour-forcing environment made the summary unparseable and the hook printed "tests passing" with
+  the floor skipped; an unreadable count, and a run of zero tests, are now refusals — in the hook, in
+  every CI bucket step and in `certify.mjs`.
+* **The git shim and the harness no longer leak a temp directory per process.** 4,043
+  `pm-assert-no-git-*` and 6,879 `pm-empty-cache-*` directories had accumulated in `os.tmpdir()`;
+  both are now removed at process exit.
+
+### Removed
+
+* The pre-commit hook's `--test-isolation` probe, its cached `pm-isolation-flag` (removed from existing
+  clones on the next commit), and the Node-18 `[ -f ]` loop that resolved the rung globs.
+
+---
+
 ## [0.48.0] — 2026-09-22
 
 ### Changed
