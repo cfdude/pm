@@ -43,11 +43,11 @@ These rules bind every section below.
           with the ungated standing condition's, and whether integrity and the briefing can
           disagree about an epic under it.
       Fix every Critical and Important finding, then re-run
-      `openspec validate archive-gate-reads-archived-work --strict`. Record
+      `openspec validate handoff-demand-blind-spots --strict`. Record
       `record-gate-review <epic> --gate 1 --verdict pass --reviewer "<identity>"`, with one
       `--artifact` for each of `proposal.md`, `design.md`, `tasks.md`,
       `specs/conductor-record/spec.md` and `specs/gate-integrity/spec.md`, all under
-      `openspec/changes/archive-gate-reads-archived-work/`. `<epic>` is whatever 0.3 resolves.
+      `openspec/changes/handoff-demand-blind-spots/`. `<epic>` is whatever 0.3 resolves.
       Verify: the verdict appears in `node scripts/conductor.mjs status`.
 - [ ] 0.2 **Cross-spec review** (required task item 5). Release 0.50.0 holds this change's TWO spec
       files, `conductor-record` and `gate-integrity`, plus every other member change's, counted
@@ -61,14 +61,14 @@ These rules bind every section below.
         `DELIVERED_OBLIGATIONS` or `GIT_OPERATIONS`.
       Record `record-cross-spec-review 0.50.0 --verdict pass|fail --reviewer "<identity>"`.
       Verify: the verdict is recorded and not rendered stale.
-- [ ] 0.3 **Resolve the change-to-epic mapping before any code.** Under design D1, the epic id is
-      the key, and this change's id (`archive-gate-reads-archived-work`) matches neither
-      `handoff-demand-blind-spots` nor `gh-cfdude-pm-222`. The orchestrator records the resolution:
-      a carrier epic under the change id with the two epics linked or superseded, or a re-key. It is
-      recorded before 0.1's `record-gate-review` names an epic. Verify:
-      `node scripts/conductor.mjs status` renders this change's `tasks.md` progress on the epic
-      that will be archived `delivered`.
-- [ ] 0.4 **Re-read the tracker item** for `gh-cfdude-pm-222`
+- [x] 0.3 **Resolve the change-to-epic mapping before any code.** Resolved by RE-KEY (orchestrator,
+      2026-09-25): the change was proposed as `archive-gate-reads-archived-work` and renamed to
+      `handoff-demand-blind-spots`, so the change id IS the carrier epic's id (openspec lane since
+      2026-09-25). `gh-cfdude-pm-222` stays its own tracker-linked epic, delivered by this same change;
+      its disposition names this change as the carrier. Verify:
+      `node scripts/conductor.mjs status` renders this change's `tasks.md` progress on
+      `handoff-demand-blind-spots`.
+- [x] 0.4 **Re-read the tracker item** for `gh-cfdude-pm-222`
       (`gh issue view 222 --repo cfdude/pm --comments`) and record
       `record-tracker-refresh gh-cfdude-pm-222 --verdict unchanged|material-change --external-updated-at <iso>`.
       At drafting, `updatedAt` was 2026-09-25T03:54:58Z with no comments.
@@ -304,7 +304,7 @@ These rules bind every section below.
 ## 8. Integration
 
 - [ ] 8.1 Every test is green on the final tree: the drift script, the assertion half, and
-      `certify.mjs functional|sweeps` where permitted. `openspec validate archive-gate-reads-archived-work --strict`
+      `certify.mjs functional|sweeps` where permitted. `openspec validate handoff-demand-blind-spots --strict`
       passes. Re-run 1.1's measurements into `baseline-after.md`, and explain every difference from
       `baseline-before.md`.
 
@@ -323,6 +323,6 @@ These rules bind every section below.
       `--declined-deferral "no refusal at the archive transition::it deadlocks pm's own closeout (design D3)"`,
       and any further deferral as `--deferral "<epicId>:<section>"`. Each member epic that is not
       the carrier ends with its own disposition, per 0.3.
-- [ ] 9.3 <!-- pm:lifecycle --> Archive: run `/opsx:archive archive-gate-reads-archived-work`, then
+- [ ] 9.3 <!-- pm:lifecycle --> Archive: run `/opsx:archive handoff-demand-blind-spots`, then
       stage `openspec/` WHOLE, because the archive rewrites `openspec/specs/` too. Verify: the new
       integrity check reports nothing for this change once that commit is made.
