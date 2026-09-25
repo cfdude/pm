@@ -7967,7 +7967,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "claude-code",
       "links": [
         {
           "type": "relates-to",
@@ -7979,7 +7979,14 @@
       "description": "Code review 0.43.0 (C1, E2). conductor.mjs warnRootDivergence / warnDetachedTree run before any isInitialized() check: snapshot (PreCompact) in a non-pm detached repo prints a 4-line 'about to write .conductor/brief.txt' and writes nothing; commit-nudge prints 'WRITING A DIFFERENT REPOSITORY' when CLAUDE_PROJECT_DIR is a non-pm repo. Breaks hooks/README.md 'silent until /pm:init'. Tests: mutating gate-guard's dormancy return to exit 2 (blocks Edit in every repo on the machine) survives 176 tests; removing snapshot's guard survives 131. Fix: skip both warnings when !isInitialized(); add dormancy tests for gate-guard, snapshot and brief like the existing commit-nudge/write-rules/lesson-advice ones.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:16.084Z",
-      "touchedAt": "2026-09-15T05:11:16.087Z"
+      "touchedAt": "2026-09-25T19:25:16.115Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:25:16.108Z",
+          "actor": "agent",
+          "text": "lane: claude-code not superpowers — dormancy-test half fixed in 0.44.0 (43ce728); what remains is one isInitialized() gate on two warnings plus a test; inventory 2026-09-25"
+        }
+      ]
     },
     {
       "id": "gate-guard-bash-writes-unguarded",
@@ -8155,7 +8162,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -8175,11 +8182,16 @@
           "at": "2026-09-15T05:11:28.637Z",
           "actor": "agent",
           "text": "lane: claude-code — one loop plus test"
+        },
+        {
+          "at": "2026-09-25T19:25:12.720Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — refuse-vs-record and a reason-history shape are design decisions; inventory 2026-09-25"
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:28.637Z",
-      "touchedAt": "2026-09-15T05:11:28.640Z"
+      "touchedAt": "2026-09-25T19:25:12.728Z"
     },
     {
       "id": "user-text-unescaped-in-render-brief-integrity",
@@ -8230,7 +8242,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [
         {
           "type": "relates-to",
@@ -8242,7 +8254,14 @@
       "description": "Code review 0.43.0 (A1, A2). (1) epic-progress.mjs epicProgress: after the change moves under archive/, tasks.md is not found and archive-as-delivered is accepted with 2 of 3 tasks unticked; archivedTasksPath() exists but is used only for backfilled epics (the gate-integrity spec currently permits reading zero — a spec-level check that cannot fail). (2) Array.isArray(epic.stories) is preferred over the tasks source: tasks.md at 1/3, `--add-story x`, `--story 1 --done --status archived --outcome delivered` archives with PROJECT.md showing 1/1. Fix: read the archived tasks.md when the live one is gone (amend the spec); count tasks and stories together or refuse to switch source.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-15T05:11:32.759Z"
+      "touchedAt": "2026-09-25T19:25:09.444Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:25:09.437Z",
+          "actor": "agent",
+          "text": "lane: openspec not superpowers — the fix amends gate-integrity and conductor-record ('Outstanding work is a defined quantity'); inventory 2026-09-25. Built together with gh-cfdude-pm-222 in one openspec change, which also removes the stale duplicate openspec/changes/functional-assertion-test-split/."
+        }
+      ]
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -10156,6 +10175,80 @@
         ]
       },
       "completedAt": "2026-09-25T04:46:07.444Z"
+    },
+    {
+      "id": "gh-cfdude-pm-222",
+      "title": "pm's archive gate does not notice when an archived change's spec deltas never reached openspec/specs/",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "handoff-demand-blind-spots",
+          "reason": "both are archive-gate reads that go blind after /opsx:archive moves a change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "222",
+      "externalUrl": "https://github.com/cfdude/pm/issues/222",
+      "externalUpdatedAt": "2026-09-25T03:54:58Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-25T19:03:32.224Z",
+      "touchedAt": "2026-09-25T19:03:34.737Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:03:34.734Z",
+          "actor": "agent",
+          "text": "lane: openspec not (none routed) — changes the archive gate's refusal set, which the gate-integrity spec governs"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-224",
+      "title": "Test suite leaks ~436 pm-test/pm-plugin/pm-cache temp dirs per run",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "unit-rung-and-fixture-snapshots",
+          "reason": "0.49.0 closed the two per-process leaks; this is the older pm-test/pm-plugin/pm-cache class"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "224",
+      "externalUrl": "https://github.com/cfdude/pm/issues/224",
+      "externalUpdatedAt": "2026-09-25T04:16:37Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-25T19:03:34.037Z",
+      "touchedAt": "2026-09-25T19:03:35.447Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:03:35.444Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — test-harness only, multi-file sweep with a guard; resolve away from claude-code"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-219",
+      "title": "A combined-invocation bucket run reported fail 1 non-reproducibly — the Real Numbers recipe needs its output captured",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "219",
+      "externalUrl": "https://github.com/cfdude/pm/issues/219",
+      "externalUpdatedAt": "2026-09-22T12:11:09Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-25T19:25:05.286Z",
+      "touchedAt": "2026-09-25T19:25:05.295Z"
     }
   ],
   "detourStack": [],
@@ -10166,7 +10259,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1374,
+  "revision": 1382,
   "reviewMode": "thorough",
   "releases": [
     {
