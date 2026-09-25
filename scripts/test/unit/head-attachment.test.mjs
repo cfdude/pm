@@ -21,6 +21,10 @@
 //   `hasState(cwd)`                         →  `engine.store.exists("state.json")`
 //   `readState(cwd)`                        →  `engine.store.record()`
 
+// TEMP DIRECTORIES (gh-cfdude-pm-224). The functional file's scratch directories are scheduled for
+// removal at process exit through `fixtures/temp-dir.mjs`; the rule that EVERY such site in the tree
+// is scheduled or enrolled is `assert/temp-dir-cleanup.test.mjs`'s, not this file's.
+
 import assert from "node:assert/strict";
 import { emptyRecord, memoryEngine, unitTest } from "../fixtures/unit-harness.mjs";
 

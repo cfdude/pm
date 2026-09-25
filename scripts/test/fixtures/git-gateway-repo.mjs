@@ -35,6 +35,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "./temp-dir.mjs";
 import { GIT_OPERATIONS, realGit } from "../../lib/git-gateway.mjs";
 
 // Isolate the fixture from the machine's git config, before any git process starts. `??=` so an
@@ -115,7 +116,7 @@ export const rootsOf = (fx) => [
  *  (a squash-merged commit). A linked worktree is added for the same reason: `git worktree list
  *  --porcelain` has a one-entry answer in a bare clone and only shows its real shape with two. */
 function buildAt(prefix, { detach = false } = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const root = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
   git(root, "init", "-q", "-b", "main");
   fs.mkdirSync(path.join(root, ".conductor"), { recursive: true });
   fs.mkdirSync(path.join(root, ".claude", "skills", "openspec-apply"), { recursive: true });
@@ -148,7 +149,8 @@ function buildAt(prefix, { detach = false } = {}) {
 
   let worktree = null;
   if (!detach) {
-    worktree = root + "-wt";
+    // Beside the root, not inside it, so it is scheduled on its own (gh-cfdude-pm-224).
+    worktree = removeAtExit(root + "-wt");
     // The branch is named so `refs/heads/main` sorts before it: `for-each-ref --contains=<HEAD>
     // --count=1` answers with the alphabetically first containing ref, and the fixture reads better
     // naming the branch the engine's own commit is on.
@@ -171,7 +173,7 @@ export function buildFixture() {
     // run with this as its cwd answers 128 "not a git repository". That is the world the ASSERTION
     // half's invocations run in (design D5's placement rule sends a test that needs a real
     // repository to the functional half), so the double has to model it rather than guess at it.
-    plain: fs.mkdtempSync(path.join(os.tmpdir(), "pm-gateway-fx-plain-")),
+    plain: removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-gateway-fx-plain-"))),
   };
 }
 

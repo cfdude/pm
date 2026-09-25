@@ -15,6 +15,10 @@
 // per-commit path, where a doc edit that names a flag the engine dropped is caught in the same
 // commit that made it.
 
+// TEMP DIRECTORIES (gh-cfdude-pm-224). The functional file's scratch directories are scheduled for
+// removal at process exit through `fixtures/temp-dir.mjs`; the rule that EVERY such site in the tree
+// is scheduled or enrolled is `assert/temp-dir-cleanup.test.mjs`'s, not this file's.
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

@@ -1,0 +1,58 @@
+✔ temp-dir-cleanup: tmpRepo, fixtureCache and fixturePluginRoot schedule their directory for removal at exit (113.502167ms)
+✔ temp-dir-cleanup: every mkdtempSync site in scripts/test is scheduled on its line or enrolled with how it is removed (100.054875ms)
+✔ temp-dir-cleanup: every KNOWN entry still names a live, unscheduled site (55.164125ms)
+✖ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.540417ms)
+✖ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.109625ms)
+✔ temp-dir-cleanup: every KNOWN entry's cleanup is present near its site (0.89425ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 665.702083
+
+✖ failing tests:
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:144:1
+✖ temp-dir-cleanup: the scan sees every spelling of the call, and no mention that is not one (0.540417ms)
+  AssertionError [ERR_ASSERTION]: the aliased spelling is a site and the scan missed it: const mk = fs.mkdtempSync;
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-acafaaa069ba77c21/scripts/test/assert/temp-dir-cleanup.test.mjs:154:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/temp-dir-cleanup.test.mjs:170:1
+✖ temp-dir-cleanup: a KNOWN entry's cleanup must be in code near its site (0.109625ms)
+  AssertionError [ERR_ASSERTION]: a cleanup beyond `within` is not
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-acafaaa069ba77c21/scripts/test/assert/temp-dir-cleanup.test.mjs:180:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -28,6 +28,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -92,7 +93,7 @@ test("gh-139: no shipped command, skill, agent, hook or manifest resolves the en
 test("gh-139: the guard actually detects the pattern it bans (mutation)", () => {
   // Both shapes of the defect, written into a throwaway tree the gate then walks. Without this
   // the assertion above is indistinguishable from a regex that matches nothing.
-  const dir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "pm-gh139-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "pm-gh139-")));
   fs.mkdirSync(path.join(dir, "commands"), { recursive: true });
   fs.mkdirSync(path.join(dir, "hooks"), { recursive: true });
   fs.writeFileSync(
@@ -110,7 +111,7 @@ test("gh-139: the guard actually detects the pattern it bans (mutation)", () => 
 });
 
 test("gh-139: the guard does not trip on the legitimate prose mentions of CLAUDE_PROJECT_DIR", () => {
-  const dir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "pm-gh139-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "pm-gh139-")));
   fs.mkdirSync(path.join(dir, "skills", "conductor"), { recursive: true });
   fs.writeFileSync(
     path.join(dir, "skills", "conductor", "SKILL.md"),

@@ -26,6 +26,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import { PARITY_ROOTS } from "../fixtures/parity-helpers.mjs";
 
 const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -63,7 +64,7 @@ function violations(rootDir, ledger) {
 /** A fresh temp dir holding `files` (repo-relative). */
 function tmpFixture(files) {
   const os = { tmpdir: process.env.TMPDIR || "/tmp" };
-  const dir = fs.mkdtempSync(path.join(os.tmpdir, "pm-parity-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir, "pm-parity-")));
   for (const rel of files) {
     const abs = path.join(dir, rel);
     fs.mkdirSync(path.dirname(abs), { recursive: true });
