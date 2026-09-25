@@ -71,9 +71,28 @@ A JSON object on one line. Every key present must match; an absent key is not ch
 | Key | Matches |
 |---|---|
 | `tool` | the tool name exactly (`Bash`, `Edit`, `Write`, `NotebookEdit`) |
-| `pathEndsWith` | a suffix of `tool_input.file_path` |
+| `pathEndsWith` | a suffix of `tool_input.file_path` (`notebook_path` for NotebookEdit) |
 | `commandMatches` | a regex against the **first line** of `tool_input.command` |
 | `commandLacks` | suppresses the hit when this regex matches — the "safe form" escape |
+
+**A matcher that cannot work is REJECTED, never guessed at.** The engine refuses a `detect:` that
+is not a JSON object, holds any other key (a typo like `commandMatch` used to match EVERY tool
+call), has a non-string or empty value (a `tool` array), names a tool the hook is never sent,
+has no positive predicate (`pathEndsWith` or `commandMatches`), pairs a command predicate with a
+non-Bash tool or a path with Bash, or holds a regex that does not compile, contains a control
+character, or nests an unbounded quantifier (`(a+)+`). Regexes are JSON strings, so write every
+backslash twice: `"\\s"`, `"\\b"` (a single `\b` decodes to a backspace). The file may use LF or
+CRLF line endings.
+
+**Where a reject is reported.** The hook stays silent — an advisor that printed on a malformed
+corpus would print on every tool call. `classifyLessons()` in the engine's `lessons.mjs` returns
+each rejected lesson with its reason; pm's own repository asserts it is empty on every commit
+(`scripts/test/assert/lessons-index.test.mjs`), and a repository that wants the same can do
+likewise. After writing a `detect:`, fire it once by hand before trusting it.
+
+**The hook cannot stall a tool call.** Every regex of one hook run shares a 100 ms budget and
+sees at most the first 4096 characters of the command's first line; a regex that runs out of
+budget counts as not matched. A pathological matcher therefore costs its advice, never time.
 
 **PRECISION, NOT COVERAGE.** A hook firing on false positives gets ignored; a warning wrong 7
 times in 8 trains people to ignore the one time it is right. So:
@@ -88,8 +107,8 @@ times in 8 trains people to ignore the one time it is right. So:
 - Adding a matcher is a **frontmatter edit, not a code change**, which keeps the barrier low
   without putting pattern-writing in the hot path.
 
-A lesson with an absent, malformed or non-object `detect:` is skipped **for itself alone** — the
-rest of the corpus still fires.
+A lesson with no `detect:` is retrieval-only by design; one whose `detect:` is rejected is skipped
+**for itself alone** — the rest of the corpus still fires.
 
 ## Consulting (the common case)
 

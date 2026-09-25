@@ -102,7 +102,7 @@ and `classifyLessons()` is the exported reader any future surface calls.**
 
 ### Task 1: the plan (this file)
 
-- [ ] Commit this plan: `docs(plan): lesson detect matcher hardening (#194)`.
+- [x] Commit this plan: `docs(plan): lesson detect matcher hardening (#194)`.
 
 ### Task 2: one classifier — validate, reject with a reason, accept CRLF
 
@@ -119,7 +119,7 @@ file rung).
 - `export function classifyLessons(dir = lessonsDir()): {matchable: Array<{file, rule, detect, regex}>, rejected: Array<{file, reason}>, retrievalOnly: string[]}`
 - `matchableLessons(dir)` unchanged in name, now `classifyLessons(dir).matchable`.
 
-- [ ] **Step 1: failing unit tests** — one `unitTest` per row of the contract table above, e.g.
+- [x] **Step 1: failing unit tests** — one `unitTest` per row of the contract table above, e.g.
 
 ```js
 unitTest("a typo'd key is rejected, not a match-everything matcher", () => {
@@ -137,17 +137,17 @@ unitTest("nested unbounded quantifiers are named; bounded or flat ones are not",
 ```
 
   plus every shipped-valid shape (the four existing JSON matchers in `docs/lessons/`) accepted.
-- [ ] **Step 2: failing file-rung tests** — through `invokeEngine(["lesson-advice"], …)` in an
+- [x] **Step 2: failing file-rung tests** — through `invokeEngine(["lesson-advice"], …)` in an
   initialised `tmpRepo()`: (a) a CRLF lesson fires; (b) C2 repro — `{"tool":"Bash","commandMatch":"gh pr merge"}`
   plus command `ls` is silence; (c) `classifyLessons(dir)` on a tmp corpus returns each malformed
   lesson in `rejected` with its reason and the good one in `matchable`, and a lesson with no
   `detect:` in `retrievalOnly`; (d) a `NotebookEdit` `pathEndsWith` matcher fires on `notebook_path`.
-- [ ] **Step 3:** run both files, save the failing run as `red-task2.txt` next to this plan.
-- [ ] **Step 4: implement** — `frontmatterBlock(txt)` normalises `\r\n` → `\n` before
+- [x] **Step 3:** run both files, save the failing run as `red-task2.txt` next to this plan.
+- [x] **Step 4: implement** — `frontmatterBlock(txt)` normalises `\r\n` → `\n` before
   `/^---\n([\s\S]*?)\n---/`; `detectLine(block)` distinguishes absent (`retrievalOnly`) from present;
   `checkDetect` applies the table in order and compiles each regex once; `classifyLessons` builds
   the three lists; `matchLessons` reads `l.regex` and `file_path || notebook_path`.
-- [ ] **Step 5:** both files and `conductor-28` pass; commit `feat(lessons): reject a malformed detect with a named reason (#194)`.
+- [x] **Step 5:** both files and `conductor-28` pass; commit `feat(lessons): reject a malformed detect with a named reason (#194)`.
 
 ### Task 3: bound the regex phase — a total budget and a capped input
 
@@ -156,44 +156,44 @@ unitTest("nested unbounded quantifiers are named; bounded or flat ones are not",
 **Interfaces — Produces:** `export const REGEX_BUDGET_MS = 100`, `export const MATCH_TEXT_CAP = 4096`,
 `matchLessons(event, lessons, {budgetMs = REGEX_BUDGET_MS} = {})`.
 
-- [ ] **Step 1: failing tests.** Unit: a lesson compiled from `^(a|a)*$` (passes the static
+- [x] **Step 1: failing tests.** Unit: a lesson compiled from `^(a|a)*$` (passes the static
   check) against 23 `a`s + `!` returns `[]` in under 500 ms (unguarded it takes ~3 s, so the mutant
   FAILS on the assertion rather than hanging), and a benign lesson listed BEFORE it still matches.
   Unit: a 100 000-character first line is matched only up to `MATCH_TEXT_CAP` (a matcher anchored
   `x$` on `"a".repeat(5000) + "x"` does not fire). File rung: the same catastrophic lesson on disk,
   through the hook, exits 0 in under 2 s.
-- [ ] **Step 2:** save `red-task3.txt`.
-- [ ] **Step 3: implement** — a per-invocation tester: lazily one `vm.createContext({})`, a
+- [x] **Step 2:** save `red-task3.txt`.
+- [x] **Step 3: implement** — a per-invocation tester: lazily one `vm.createContext({})`, a
   deadline of `now + budgetMs`, and `vm.runInContext("re.test(s)", ctx, {timeout: remaining})`;
   a timeout or an exhausted deadline returns "no match". `cmdLine` is `.slice(0, MATCH_TEXT_CAP)`.
-- [ ] **Step 4:** green; commit `fix(lessons): a catastrophic detect regex can no longer stall a tool call`.
+- [x] **Step 4:** green; commit `fix(lessons): a catastrophic detect regex can no longer stall a tool call`.
 
 ### Task 4: pm's own corpus passes the new rules, and the index test reports rejects
 
 **Files:** Modify `scripts/test/assert/lessons-index.test.mjs`, six lessons, `docs/lessons/README.md`.
 
-- [ ] **Step 1: failing test** — replace the `INERT_PENDING_194` test and its companion with:
+- [x] **Step 1: failing test** — replace the `INERT_PENDING_194` test and its companion with:
   `classifyLessons(DIR).rejected` deep-equals `[]` (message lists `file: reason`); the README's 🔔
   column names exactly `classifyLessons(DIR).matchable`; `ADVISED_TOOLS` equals the lesson-advice
   matcher in `hooks/hooks.json` split on `|`. Save `red-task4.txt` (six rejects + 🔔 mismatch).
-- [ ] **Step 2: fix the six** (each judged on precision, per the module header):
+- [x] **Step 2: fix the six** (each judged on precision, per the module header):
   - `second-resolution-timestamps-…`, `a-fixture-reconstructed-…` — their regexes match SOURCE TEXT
     being written, which no `detect` key can see. Remove `detect:`; retrieval-only by design.
   - `cite-a-symbol-not-a-line-number` → `{"tool":"Bash","commandMatches":"--(reason|notes|description)[ =]\"[^\"]*\\b[a-z0-9_.-]+\\.(mjs|md|json|py|ts):[0-9]+"}`
   - `an-unused-active-pointer-…` → `{"tool":"Bash","commandMatches":"(conductor\\.mjs|\\$\\{?ENGINE\\}?)\"? (release|update-epic) .*--(member|status archived)"}` (pm's own docs invoke the engine as `"$ENGINE"`, so the literal `conductor\.mjs` alone would stay near-inert).
   - `stacked-background-commits-…` → `{"tool":"Bash","commandMatches":"(^|[;&|]\\s*)git commit\\b.*[^&]&\\s*$"}` — the `&`-backgrounded half; `run_in_background` is a tool_input field no key reads, so that half stays a habit (said in `enforced_in`).
   - `a-silent-noop-edit-reports-success` → `{"tool":"Bash","commandMatches":"(^|[;&|]\\s*)sed -i"}` — the in-place `sed` half; `str.replace` in a script is source text, so it stays a habit (said in `enforced_in`).
-- [ ] **Step 3:** README — replace the ⚠️ "six retrieval-only by accident" paragraph with what the
+- [x] **Step 3:** README — replace the ⚠️ "six retrieval-only by accident" paragraph with what the
   classifier now guarantees; add 🔔 to the four converted rows; update their enforced-in rows.
-- [ ] **Step 4:** green; commit `fix(lessons): pm's own inert detect matchers work or are removed (#194)`.
+- [x] **Step 4:** green; commit `fix(lessons): pm's own inert detect matchers work or are removed (#194)`.
 
 ### Task 5: user docs, changesets, required items
 
-- [ ] `skills/lessons/SKILL.md` §`detect:` — the table gains the rules above; replace "skipped for
+- [x] `skills/lessons/SKILL.md` §`detect:` — the table gains the rules above; replace "skipped for
   itself alone" with "rejected with a reason, reported by `classifyLessons()`"; state the budget.
-- [ ] `README.md` hook row — one sentence: malformed matchers are rejected, the regex phase is bounded.
-- [ ] `.changesets/lesson-detect-matcher-hardening.md` and `.changesets/gh-cfdude-pm-194.md`.
-- [ ] Item 7 outcomes recorded below; commit `docs(lessons): the detect contract states its rejects and its budget`.
+- [x] `README.md` hook row — one sentence: malformed matchers are rejected, the regex phase is bounded.
+- [x] `.changesets/lesson-detect-matcher-hardening.md` and `.changesets/gh-cfdude-pm-194.md`.
+- [x] Item 7 outcomes recorded below; commit `docs(lessons): the detect contract states its rejects and its budget`.
 
 ---
 
@@ -216,6 +216,30 @@ every call and never stored — nothing to write, read back, or remove.
 frontmatter is fixed (no cache, no state). *budget exhausted* ↔ *restored*: per invocation, nothing
 persists. No inverse is withheld.
 
+**Sibling regex sites (`rg -n "new RegExp\(" scripts/lib`), and why the budget rule does not
+extend to them:** `epic-progress.mjs` builds its pattern from a fully escaped id. `constants.mjs`
+compiles engine constants. `lane-routing.mjs` `laneMatchTest` compiles a USER-authored
+`laneRouting` glob, but every literal segment is escaped and only `*` becomes `.*`. That form
+cannot nest a quantifier, so it is polynomial at worst, and it runs in `suggest-lane` / `triage`,
+not before every tool call. `lessons.mjs` `frontmatterField` interpolates engine-fixed key names
+only. `gate-guard.mjs` reads the same PreToolUse payload but matches engine-authored patterns. The
+lessons matcher is therefore the only place where a raw workspace regex runs on the hook path, and
+the rule holds there.
+
 ## Required item 7 — what the work taught (filled at Task 5)
 
-See the section appended by Task 5.
+- **Product gap (filed): cfdude/pm#228.** A consumer repository's rejected `detect:` is still
+  reported by no surface. Only pm's own index test names it. The issue recommends a SessionStart
+  brief line, because it needs no recall, and a lint verb as an optional complement.
+- **Finding recorded, not fixed:** pm's own shipped matcher in `filter-at-read-time-not-at-capture-time`
+  (`(?:>&|&>|[^|;&])*`) backtracks exponentially on a crafted `>&>&>…` line. It is overlapping
+  alternation, which the static check cannot decide. The runtime budget now bounds it. Rewriting it
+  unambiguously would change a working matcher's meaning, and that is left to its author.
+- **Tooling friction (orchestration, not pm):** the shared `pm-certify.lock` was held for more than
+  15 minutes by another worktree's `certify functional` while this branch waited to commit. That was
+  reported to the orchestrator. It is not a pm product issue, because the lock is this batch's own
+  convention.
+- **No new process lesson.** The load-sensitive timing bounds were designed with a wide margin
+  before any flake: 25 characters (about 13 s unguarded) against bounds of 2 s and 4 s. The existing
+  `explaining-a-cost-needs-a-control-not-a-story` and `a-static-guard-over-dynamic-code-needs-declared-limits`
+  lessons already cover what this change practised.
