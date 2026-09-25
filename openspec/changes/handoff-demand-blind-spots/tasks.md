@@ -32,7 +32,7 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1**, review mode `thorough`: two fresh-context lenses over these artifacts BY PATH.
+- [ ] 0.1 **Gate 1** (orchestrator), review mode `thorough`: two fresh-context lenses over these artifacts BY PATH.
       - Lens A: is every WHEN/THEN in the four delta files (`specs/conductor-record/spec.md`,
         `specs/gate-integrity/spec.md`, `specs/epic-disposition/spec.md`,
         `specs/emitted-instructions/spec.md`) reachable and testable against the engine AS IT STANDS
@@ -57,7 +57,7 @@ These rules bind every section below.
       `specs/epic-disposition/spec.md` and `specs/emitted-instructions/spec.md`, all under
       `openspec/changes/handoff-demand-blind-spots/`.
       Verify: the verdict appears in `node scripts/conductor.mjs status`.
-- [ ] 0.2 **Cross-spec review** (required task item 5). Release 0.50.0 holds this change's FOUR spec
+- [ ] 0.2 **Cross-spec review** (orchestrator) (required task item 5). Release 0.50.0 holds this change's FOUR spec
       files (`conductor-record`, `gate-integrity`, `epic-disposition`, `emitted-instructions`), plus
       every other member change's, counted flat. Run the `cross-spec-review` skill after Gate 1 with
       two lenses and ask the six questions. The engine hashes the spec set it enumerates, so any
@@ -405,11 +405,11 @@ These rules bind every section below.
       source was authored. This matters more here than anywhere else: this change makes the
       ARCHIVED `tasks.md` count, so an unmarked disposition task would make the handoff refuse this
       very change.
-- [ ] 6.6 **Attribute every commit** (item 4). The orchestrator runs
+- [ ] 6.6 **Attribute every commit** (orchestrator) (item 4). The orchestrator runs
       `update-epic handoff-demand-blind-spots --attribute-commit <sha>` for each implementation
       commit, in the order the commits landed, after the merge. The archive-move commit is NOT
       attributed.
-- [ ] 6.7 **Cross-spec review** (item 5). This is 0.2. Re-run it after any concurrent amendment to a
+- [ ] 6.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it after any concurrent amendment to a
       0.50.0 spec, and record the verdict again.
 - [ ] 6.8 **Disposition** (item 6). It is recorded by 9.2, whose flags are specified there.
       This task checks that 9.2's declined deferrals still name every non-goal in `design.md`

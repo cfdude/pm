@@ -1,0 +1,36 @@
+mutation-2.3-release — handoff-demand-blind-spots
+The delivered-release both-parts case (emitted-instructions, "Each alternative of the delivered-release
+finding clears it on its own") is a REGRESSION GUARD: it was added after 2.3's GREEN and passed on arrival.
+A scratch COPY of scripts/ (never the tree). Mutation: the handoff's `remedy` keyed on the single source
+label again — `outstandingSummary(epic).source === "stories"` — so a two-part epic (`stories+plan`) is
+offered no `--story <n> --done`.
+Run: node --test --test-reporter=spec --test-name-pattern="delivered-release" scripts/test/assert/progress-union.test.mjs
+
+✖ 2.3 the delivered-release alternative keys on each part: --story first, --carried-to for the task; followed in order it clears (58.525625ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 320.390208
+
+✖ failing tests:
+
+test at scripts/test/assert/progress-union.test.mjs:175:1
+✖ 2.3 the delivered-release alternative keys on each part: --story first, --carried-to for the task; followed in order it clears (58.525625ms)
+  AssertionError [ERR_ASSERTION]: --story first, then the archive carrying --carried-to:
+    • `left` — still `queued` in release `1.0`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: tick its open tasks in its task source and archive it, or record where they went: `update-epic left --status archived --outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals` — or it was cut, and you record that instead: `release 1.0 --defer left --reason "<why>"`
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/progress-union.test.mjs:198:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -171,3 +171,34 @@ test("2.3 the drift-heal disposition step integrity prints names --story first A
   assert.ok(!again.split("\n").some(l => l.includes("`mixed`") && l.includes("drift heal")), "the finding clears");
   assert.ok(readState(cwd).epics.find(x => x.id === "mixed"), "and the epic still exists");
 });
+
+test("2.3 the delivered-release alternative keys on each part: --story first, --carried-to for the task; followed in order it clears", () => {
+  // emitted-instructions, "Each alternative of the delivered-release finding clears it on its own":
+  // a member with an open inline story AND an open task in its checkbox source (a plan file here, so no
+  // Gate 2 is owed and the handoff is the only obligation) is offered BOTH parts' remedies.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = path.join("docs", "superpowers", "plans", "left.md");
+  fs.mkdirSync(path.join(cwd, path.dirname(plan)), { recursive: true });
+  fs.writeFileSync(path.join(cwd, plan), "# Plan\n\n- [x] 1 done\n- [ ] 2 still open\n");
+  const st = readState(cwd);
+  const base = { priority: "P1", role: "epic", links: [] };
+  st.releases = [{ id: "1.0", intent: "x", deferred: [] }];
+  st.epics.push(
+    { ...base, id: "shipped", title: "shipped", lane: "claude-code", release: "1.0", status: "archived",
+      disposition: { outcome: "delivered", recordedAt: "2026-01-01T00:00:00Z" } },
+    { ...base, id: "left", title: "left", lane: "superpowers", release: "1.0", status: "queued", planPath: plan,
+      stories: [{ title: "the open story", done: false }] },
+    { ...base, id: "later", title: "later", lane: "claude-code", status: "queued" });
+  writeState(cwd, st);
+  const report = run(["integrity"], { cwd });
+  const line = report.split("\n").find(l => l.includes("`left`") && l.includes("release"));
+  assert.ok(line, `the member is reported:\n${report}`);
+  const story = line.indexOf("--story <n> --done"), carried = line.indexOf("--carried-to <epicId>");
+  assert.ok(story > 0 && carried > story, `--story first, then the archive carrying --carried-to:\n${line}`);
+  run(["update-epic", "left", "--story", "1", "--done"], { cwd });
+  run(["update-epic", "left", "--status", "archived", "--outcome", "delivered", "--carried-to", "later", "--reason", "task 2 moved", "--no-deferrals"], { cwd });
+  const again = run(["integrity"], { cwd });
+  assert.ok(!again.split("\n").some(l => l.includes("`left`") && l.includes("release")), "the finding clears");
+  assert.ok(readState(cwd).epics.find(x => x.id === "left"), "and the epic still exists");
+});
