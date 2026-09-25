@@ -33,20 +33,35 @@ export function addMany() {
   let doc;
   try { doc = JSON.parse(raw); } catch { die("conductor: --from is not valid JSON\n"); }
 
+  // This module's own spelling of the ONE exit path (command-exit.mjs), carrying the verb name
+  // add-many's refusals have always had. See the import for why it is not called `die`.
+  const refuse = (msg) => die(`conductor: add-many: ${msg}\n`);
+
+  // The DOCUMENT's own shape, before any entry is read (add-many-drops-input-silently). Its keys
+  // used to be read by name and everything else ignored: `"epic": [...]` for `"epics"` created the
+  // parent alone, exit 0, and a non-array `epics` silently became no children. A bulk write
+  // persists what it accepts or refuses it by name, so an unknown key or a mis-shaped value refuses
+  // the whole batch here — the same rule the per-entry key allowlist below applies one level down.
+  const DOC_KEYS = ["parent", "epics"];
+  const isObject = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  if (!isObject(doc)) refuse("the batch must be a JSON object with `parent` and/or `epics`");
+  const unknownDocKeys = Object.keys(doc).filter(k => !DOC_KEYS.includes(k));
+  if (unknownDocKeys.length) {
+    refuse(`unsupported top-level key(s) ${escapeControls(unknownDocKeys.join(", "))} (supported: ${DOC_KEYS.join(", ")})`);
+  }
+  if (doc.parent !== undefined && !isObject(doc.parent)) refuse("`parent` must be an object (one epic entry)");
+  if (doc.epics !== undefined && !Array.isArray(doc.epics)) refuse("`epics` must be an array of epic entries");
+
   const state = loadState();
   const parentId = doc.parent && typeof doc.parent.id === "string" ? doc.parent.id : undefined;
   const incoming = [];
-  if (doc.parent) incoming.push({ ...doc.parent });
-  for (const e of Array.isArray(doc.epics) ? doc.epics : []) {
+  if (doc.parent !== undefined) incoming.push({ ...doc.parent });
+  for (const e of doc.epics || []) {
     const entry = { ...e };
     if (parentId && entry.parent === undefined) entry.parent = parentId;
     incoming.push(entry);
   }
   if (!incoming.length) { die("conductor: add-many: nothing to add (need `parent` and/or `epics`)\n"); }
-
-  // This module's own spelling of the ONE exit path (command-exit.mjs), carrying the verb name
-  // add-many's refusals have always had. See the import for why it is not called `die`.
-  const refuse = (msg) => die(`conductor: add-many: ${msg}\n`);
 
   // The keys a batch entry may carry, derived from the shared EPIC_FLAGS registry rather than
   // restated here. add-many used to copy a fixed key set and drop every other key without a
