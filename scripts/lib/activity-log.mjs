@@ -194,6 +194,26 @@ function framesMissing(from, to) {
   return out;
 }
 
+/** What one invocation changed in an epic's `autonomy` block, or null when nothing did. The level
+ *  (absent reads as `off`, set-autonomy's own default) and COUNTS of what moved — grants added, grants
+ *  newly revoked, notifications added. Counts, not contents: the block itself is in state.json, and
+ *  the question here is WHEN trust was granted or taken back and when a decision was made in the
+ *  user's absence, not a second copy of what was decided. */
+function autonomyDelta(prev, next) {
+  if (JSON.stringify(prev || null) === JSON.stringify(next || null)) return null;
+  const p = prev && typeof prev === "object" ? prev : {};
+  const n = next && typeof next === "object" ? next : {};
+  const arr = (v) => (Array.isArray(v) ? v : []);
+  const revokedCount = (a) => arr(a.preAuthorized).filter(g => g && g.revoked).length;
+  return {
+    from: typeof p.level === "string" ? p.level : "off",
+    to: typeof n.level === "string" ? n.level : "off",
+    granted: Math.max(0, arr(n.preAuthorized).length - arr(p.preAuthorized).length),
+    revoked: Math.max(0, revokedCount(n) - revokedCount(p)),
+    notified: Math.max(0, arr(n.notifications).length - arr(p.notifications).length),
+  };
+}
+
 /** WHICH KIND OF REMOVAL a frame's departure was — BY VERB, because the diff alone cannot tell.
  *  `set-active` accepts an epic that is on the stack, so after `set-active e1` on a paused e1, a
  *  `pop-detour e1` and a `drop-detour e1` (pushed --no-reconcile) make byte-identical changes to the
@@ -223,6 +243,12 @@ function removedKind(verb) {
  *                                                 each names the paused `epic` and its `detour`.
  *                                                 `detour-removed`: a frame another verb removed
  *    gate-review                                → when a gate verdict was recorded, in sequence
+ *    reconcile-recorded                         → when a reconcile verdict was recorded against which
+ *                                                 detour, and whether it corrected an earlier one —
+ *                                                 read in the same GATES sequence
+ *    epic-priority / epic-autonomy / review-mode → what was re-prioritised, what trust was granted or
+ *                                                 revoked (and what was notified in the user's
+ *                                                 absence), and when review intensity changed
  *    gate-withdrawn                             → when a recorded verdict was taken back, in the
  *                                                 same sequence (growth of withdrawnGateReviews)
  *    epic-claimed / epic-released               → which session did which work (#84's secondary
@@ -288,6 +314,26 @@ export function diffEvents(before, after, meta = {}) {
     for (const w of nw.slice(pw)) {
       out.push(ev("gate-withdrawn", { epic: id, gate: `gate${w && w.gate}` }));
     }
+    // A RECONCILE VERDICT, keyed on the `reconciledAt` record-reconcile stamps on the may-invalidate
+    // link — a new stamp is a verdict recorded now; one that REPLACED an earlier verdict is a correction.
+    const prevLinks = Array.isArray(prev.links) ? prev.links : [];
+    for (const l of Array.isArray(epic.links) ? epic.links : []) {
+      if (!l || l.type !== "may-invalidate" || !l.reconciled || typeof l.reconciled !== "object") continue;
+      const pl = prevLinks.find(x => x && x.type === "may-invalidate" && x.epic === l.epic);
+      const was = pl && pl.reconciled && typeof pl.reconciled === "object" ? pl.reconciled : null;
+      if (was && was.reconciledAt === l.reconciled.reconciledAt) continue;
+      out.push(ev("reconcile-recorded", {
+        epic: id, detour: l.epic || null, verdict: l.reconciled.verdict || null, correction: !!was,
+      }));
+    }
+    if ((prev.priority || null) !== (epic.priority || null)) {
+      out.push(ev("epic-priority", { epic: id, from: prev.priority || null, to: epic.priority || null }));
+    }
+    if ((prev.reviewMode || null) !== (epic.reviewMode || null)) {
+      out.push(ev("review-mode", { epic: id, from: prev.reviewMode || null, to: epic.reviewMode || null }));
+    }
+    const autonomyChange = autonomyDelta(prev.autonomy, epic.autonomy);
+    if (autonomyChange) out.push(ev("epic-autonomy", { epic: id, ...autonomyChange }));
   }
   for (const id of b.keys()) if (!a.has(id)) out.push(ev("epic-removed", { epic: id }));
 
@@ -298,6 +344,11 @@ export function diffEvents(before, after, meta = {}) {
   const about = (f) => ({ epic: frameField(f, "pausedEpic"), detour: frameField(f, "spawnedDetour"), depth });
   for (const f of framesMissing(after, before)) out.push(ev("detour-push", about(f)));
   for (const f of framesMissing(before, after)) out.push(ev(removedKind(meta.verb), about(f)));
+
+  // The REPO-WIDE dial; an epic's own override is logged in the loop above, under its epic.
+  const pm = before ? (before.reviewMode || null) : null;
+  const nm = after ? (after.reviewMode || null) : null;
+  if (pm !== nm) out.push(ev("review-mode", { epic: null, from: pm, to: nm }));
 
   const pa = before ? (before.active || null) : null;
   const na = after ? (after.active || null) : null;

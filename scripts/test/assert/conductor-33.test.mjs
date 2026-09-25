@@ -270,6 +270,15 @@ test("gh-111: revisions after the last recorded event are reported separately", 
   assert.equal(j.enabled, false);
 });
 
+test("activity-log-detour-events-lose-epic: set-review-mode logs a repo-wide review-mode event, not a bare state-write", () => {
+  // File rung because the verb rewrites CLAUDE.md's rules block — a repository file the store does
+  // not own. The event's value is the subject; `activity --json` is how a user reads it back.
+  const cwd = loggingRepo();
+  run(["set-review-mode", "--mode", "thorough"], { cwd });
+  const j = JSON.parse(run(["activity", "--json"], { cwd }));
+  assert.deepEqual(j.settings.map(s => [s.kind, s.epic, s.to]), [["review-mode", null, "thorough"]]);
+});
+
 test("gh-111: --epic scopes the report to one epic", () => {
   const cwd = loggingRepo();
   run(["update-epic", "e1", "--status", "active"], { cwd });

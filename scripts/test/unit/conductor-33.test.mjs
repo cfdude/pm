@@ -697,6 +697,62 @@ unitTest("activity-log-detour-events-lose-epic: a frame removed by any other ver
   assert.match(formatReport(buildReport(ev)), /1 removed by another verb/);
 });
 
+unitTest("activity-log-detour-events-lose-epic: record-reconcile, set-autonomy, a priority change and set-review-mode are NAMED, epic-scoped events", async () => {
+  // Each of these logged only as a bare `state-write` with no `epic`, so `activity --epic` could not
+  // show a reconcile verdict or an autonomy grant — the decisions most worth reading back.
+  const { buildReport, formatReport } = await import(AREPORT);
+  const engine = loggingRepo();
+  const newest = () => allEvents(engine).at(-1);
+  const pick = (e, keys) => Object.fromEntries(keys.map(k => [k, e[k]]));
+
+  engine(["update-epic", "e1", "--status", "active"]);
+  engine(["push-detour", "e1", "--detour", "e2", "--reason", "blocked", "--reconcile"]);
+  engine(["pop-detour", "e1"]);
+  engine(["record-reconcile", "e1", "--detour", "e2", "--verdict", "valid", "--amendments", "none"]);
+  assert.deepEqual(pick(newest(), ["kind", "verb", "epic", "detour", "verdict", "correction"]), {
+    kind: "reconcile-recorded", verb: "record-reconcile", epic: "e1", detour: "e2", verdict: "valid", correction: false });
+  engine(["record-reconcile", "e1", "--detour", "e2", "--verdict", "invalidated", "--amendment", "redo 2.1"]);
+  assert.deepEqual(pick(newest(), ["kind", "verdict", "correction"]),
+    { kind: "reconcile-recorded", verdict: "invalidated", correction: true }, "a re-record is a correction, and says so");
+
+  engine(["update-epic", "e2", "--priority", "P0"]);
+  assert.deepEqual(pick(newest(), ["kind", "epic", "from", "to"]), { kind: "epic-priority", epic: "e2", from: "P?", to: "P0" });
+
+  engine(["set-autonomy", "e1", "--level", "autonomous", "--preauthorize", "rm -rf build/:regenerated"]);
+  assert.deepEqual(pick(newest(), ["kind", "epic", "from", "to", "granted", "revoked", "notified"]),
+    { kind: "epic-autonomy", epic: "e1", from: "off", to: "autonomous", granted: 1, revoked: 0, notified: 0 });
+  engine(["set-autonomy", "e1", "--revoke", "rm -rf build/", "--revoke-reason", "no longer safe", "--notify", "deleted build/"]);
+  assert.deepEqual(pick(newest(), ["kind", "from", "to", "granted", "revoked", "notified"]),
+    { kind: "epic-autonomy", from: "autonomous", to: "autonomous", granted: 0, revoked: 1, notified: 1 });
+
+  // `set-review-mode` itself rewrites CLAUDE.md's rules block — a repository file, so its end-to-end
+  // run is on the file rung (assert/conductor-33); the repo-wide event is pinned purely below.
+  engine(["update-epic", "e2", "--review-mode", "thorough"]);
+  assert.deepEqual(pick(newest(), ["kind", "epic", "to"]), { kind: "review-mode", epic: "e2", to: "thorough" });
+
+  const r = buildReport(allEvents(engine));
+  assert.deepEqual(r.gates.map(g => [g.epic, g.gate, g.detour, g.verdict]),
+    [["e1", "reconcile", "e2", "valid"], ["e1", "reconcile", "e2", "invalidated"]],
+    "a reconcile verdict sits in the GATES sequence");
+  assert.deepEqual(r.settings.map(s => [s.kind, s.epic]), [
+    ["epic-priority", "e2"], ["epic-autonomy", "e1"], ["epic-autonomy", "e1"], ["review-mode", "e2"],
+  ]);
+  const text = formatReport(r);
+  assert.match(text, /e1 {2}reconcile vs e2=invalidated \(correction\)/);
+  assert.match(text, /SETTINGS — /);
+  assert.match(text, /e1 {2}autonomy off → autonomous \(\+1 granted, 0 revoked, 0 notified\)/);
+  assert.match(text, /e2 {2}review-mode \(unset\) → thorough/);
+});
+
+unitTest("activity-log-detour-events-lose-epic: the repo-wide review-mode dial is a review-mode event with epic null", async () => {
+  const { diffEvents } = await import(ALOG);
+  const { buildReport, formatReport } = await import(AREPORT);
+  const ev = diffEvents({ revision: 1, epics: [] }, { revision: 2, epics: [], reviewMode: "thorough" },
+    { verb: "set-review-mode" });
+  assert.deepEqual(ev.map(e => [e.kind, e.epic, e.from, e.to]), [["review-mode", null, null, "thorough"]]);
+  assert.match(formatReport(buildReport(ev)), /\(repo\) {2}review-mode \(unset\) → thorough/);
+});
+
 unitTest("activity-log-detour-events-lose-epic: a frame naming no paused epic yields epic null, never a throw", async () => {
   const { diffEvents } = await import(ALOG);
   const push = diffEvents(

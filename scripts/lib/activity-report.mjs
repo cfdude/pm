@@ -15,7 +15,9 @@
 //   "How many detours interrupted it?"                                 → DETOURS (pushes per epic;
 //                                                                         pops resumed, drops ended)
 //   "Which lane was chosen, and did the work prove it wrong?"          → LANES (and re-routes)
-//   "Was a gate recorded before or after the commits it covers?"       → GATES (sequence + time)
+//   "Was a gate recorded before or after the commits it covers?"       → GATES (sequence + time,
+//                                                                         reconcile verdicts included)
+//   "What was re-prioritised, granted autonomy, or re-dialled, when?"  → SETTINGS
 //   "How often does an agent take the instructed path vs work around?" → OUT-OF-BAND WRITES
 //
 // The last one is the reason the log is worth its cost. #110 is a gate defeated silently,
@@ -110,6 +112,9 @@ const DETOUR_KINDS = {
   "detour-push": "push", "detour-pop": "pop", "detour-drop": "drop", "detour-removed": "removed",
 };
 
+/** The kinds the SETTINGS section lists: priority, autonomy and review-intensity changes. */
+const SETTINGS_KINDS = new Set(["epic-priority", "epic-autonomy", "review-mode"]);
+
 const HOUR = 3_600_000;
 const hrs = (ms) => `${(ms / HOUR).toFixed(1)}h`;
 function median(ns) {
@@ -126,7 +131,7 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     from: events.length ? events[0].at : null,
     to: events.length ? events[events.length - 1].at : null,
     pickup: [], detours: { push: 0, pop: 0, drop: 0, removed: 0, byEpic: {} },
-    lanes: {}, reroutes: [], gates: [],
+    lanes: {}, reroutes: [], gates: [], settings: [],
     outOfBand: { covered: 0, missing: [], missingCount: 0, afterLast: 0 },
     sessions: {},
   };
@@ -174,6 +179,16 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     // A withdrawal sits in the SAME sequence as the verdicts, because "was this verdict taken back,
     // and when relative to the rest" is a question about that sequence.
     if (e.kind === "gate-withdrawn") r.gates.push({ epic: e.epic, gate: e.gate, withdrawn: true, at: e.at });
+    // The reconcile gate's verdict belongs in the same sequence: "was the paused plan re-checked
+    // before or after the work that followed" is a question about that ordering.
+    if (e.kind === "reconcile-recorded") {
+      r.gates.push({ epic: e.epic, gate: "reconcile", detour: e.detour, verdict: e.verdict, correction: !!e.correction, at: e.at });
+    }
+    if (SETTINGS_KINDS.has(e.kind)) {
+      const s = { kind: e.kind, epic: e.epic || null, from: e.from, to: e.to, at: e.at };
+      if (e.kind === "epic-autonomy") Object.assign(s, { granted: e.granted, revoked: e.revoked, notified: e.notified });
+      r.settings.push(s);
+    }
     if (e.session) r.sessions[e.session] = (r.sessions[e.session] || 0) + 1;
   }
 
@@ -212,6 +227,23 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
 
 export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   const L = ["ACTIVITY — what this conductor actually did, from .conductor/activity/.", ""];
+  // Row builders for GATES and SETTINGS. Nested here, not module-level: every row they build is
+  // pushed onto L and escaped at L's join, the same sink the inline map they replace reached.
+  function formatGate(g) {
+    if (g.withdrawn) return `  • ${g.at}  ${g.epic}  ${g.gate} withdrawn`;
+    if (g.gate === "reconcile") {
+      return `  • ${g.at}  ${g.epic}  reconcile vs ${g.detour}=${g.verdict}${g.correction ? " (correction)" : ""}`;
+    }
+    return `  • ${g.at}  ${g.epic}  ${g.gate}=${g.verdict}`;
+  }
+
+  function formatSetting(s) {
+    const what = s.kind === "epic-priority" ? "priority" : s.kind === "epic-autonomy" ? "autonomy" : "review-mode";
+    const tail = s.kind === "epic-autonomy"
+      ? ` (+${s.granted} granted, ${s.revoked} revoked, ${s.notified} notified)` : "";
+    return `  • ${s.at}  ${s.epic || "(repo)"}  ${what} ${s.from || "(unset)"} → ${s.to || "(unset)"}${tail}`;
+  }
+
   // `enabled: null` is UNKNOWN — .conductor/state.json could not be read — and must read as neither
   // on nor off: a report silent about the flag reads as a log that is on.
   if (enabled === null) {
@@ -261,8 +293,11 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("GATES — verdicts and withdrawals in the order they were recorded");
-  L.push(...(r.gates.length ? r.gates.map(g => `  • ${g.at}  ${g.epic}  ${g.withdrawn ? `${g.gate} withdrawn` : `${g.gate}=${g.verdict}`}`)
-    : ["  (none recorded in this window)"]));
+  L.push(...(r.gates.length ? r.gates.map(formatGate) : ["  (none recorded in this window)"]));
+  L.push("");
+
+  L.push("SETTINGS — priority, autonomy and review-mode changes, in order");
+  L.push(...(r.settings.length ? r.settings.map(formatSetting) : ["  (none recorded in this window)"]));
   L.push("");
 
   L.push("OUT-OF-BAND WRITES — state.json revisions no engine verb accounts for");
