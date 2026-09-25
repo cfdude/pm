@@ -139,6 +139,121 @@ test("the engine still opens no network connection — the pointer is an INSTRUC
   }
 });
 
+// ─────────── no-network-law-test-is-weak (code review 0.43.0, E2): what a spawn RUNS ───────────
+//
+// The import scan above closes the socket door; this closes the process door. `execFile("curl", …)`
+// or `spawnSync("gh", ["api", …])` talks to the network through a child and imports nothing a
+// socket scan can see. So the child a spawn starts is on an ALLOWLIST, bound to the one module
+// whose job it is, and anything else — a new executable, a new module that spawns, a target the
+// scan cannot read as a literal — fails here and names itself:
+//
+//   git       only through the gateway            scripts/lib/git-gateway.mjs
+//   node      the self-hosting handoff            scripts/lib/self-hosting.mjs (process.execPath)
+//   openspec  the tool-currency version probe     scripts/lib/tool-currency.mjs
+//
+// THREE RULES, because each one alone has a hole the next one closes:
+//   1. only those three modules may mention `child_process` at all (a static import, a dynamic
+//      `import()`, a `require` — any spelling), so a fourth spawning module is refused outright;
+//   2. inside them, the import is a NAMED list with no `as` rename and no namespace import, so every
+//      call is spelled with its own name and rule 3's scan cannot be walked around (`cp.spawn(…)`);
+//   3. every spawner call's FIRST ARGUMENT is a string literal on the module's list — or, for a
+//      shell-string spawner (`execSync`/`exec`), a literal whose first word is — or
+//      `process.execPath` where the list says `node`. An identifier is refused even when it holds
+//      an allowed name: `const c = "curl"; spawnSync(c)` must not pass, and the scan cannot tell.
+// The executable's name is ASSEMBLED for the same reason as the fixtures below: hermetic-git's
+// assertion twin trips on any assertion-half file that QUOTES that name without importing the
+// hermetic module, and this file runs no git to be made hermetic.
+const GIT = ["g", "i", "t"].join("");
+const QGIT = `"${GIT}"`;
+const SPAWN_TARGETS = {
+  "scripts/lib/git-gateway.mjs": [GIT],
+  "scripts/lib/self-hosting.mjs": ["node"],
+  "scripts/lib/tool-currency.mjs": ["openspec"],
+};
+const SPAWNERS = ["spawnSync", "spawn", "execFileSync", "execFile", "execSync", "exec", "fork"];
+const SHELL_SPAWNERS = new Set(["execSync", "exec"]);
+
+/** Strip // and /* *\/ comments so prose that NAMES a spawner is not a call. Strings survive. */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`\\])\/\/.*$/gm, "$1");
+}
+
+/** Every violation of the three rules in one module's source. Pure, so the mutation cases below
+ *  run it against a copy rather than editing a real file. */
+function spawnViolations(rel, rawSrc) {
+  const src = stripComments(rawSrc);
+  const allowed = SPAWN_TARGETS[rel];
+  const out = [];
+  if (!/child_process/.test(src)) return out;
+  if (!allowed) return [`${rel}: mentions child_process, and is not a module allowed to spawn`];
+  for (const m of src.matchAll(/import\s+([^;]*?)\s+from\s*["'](?:node:)?child_process["']/g)) {
+    const clause = m[1].trim();
+    if (!/^\{[^}]*\}$/.test(clause) || /\bas\b/.test(clause)) out.push(`${rel}: child_process imported as \`${clause}\` — only a named list, no rename`);
+  }
+  if (/import\s*\(\s*["'](?:node:)?child_process["']\s*\)|require\s*\(\s*["'](?:node:)?child_process["']\s*\)/.test(src)) {
+    out.push(`${rel}: child_process reached by a dynamic import or require`);
+  }
+  const call = new RegExp(`(^|[^\\w$.])(${SPAWNERS.join("|")})\\s*\\(\\s*([^,)]*)`, "g");
+  for (const m of src.matchAll(call)) {
+    const [, , fn, argRaw] = m;
+    const arg = argRaw.trim();
+    const lit = /^(["'`])([^"'`$]*)\1$/.exec(arg);
+    let target = null;
+    if (arg === "process.execPath") target = "node";
+    else if (lit) target = SHELL_SPAWNERS.has(fn) ? lit[2].trim().split(/\s+/)[0] : lit[2];
+    if (target === null) out.push(`${rel}: ${fn}(${arg}) — the target is not a literal the scan can read`);
+    else if (!allowed.includes(target)) out.push(`${rel}: ${fn} runs '${target}', which is not on this module's list (${allowed.join(", ")})`);
+  }
+  return out;
+}
+
+test("the engine spawns only allowlisted executables, each from the one module that owns it", () => {
+  const files = fs.readdirSync(path.join(REPO, "scripts", "lib")).filter(f => f.endsWith(".mjs"))
+    .map(f => `scripts/lib/${f}`).concat(["scripts/conductor.mjs"]);
+  const violations = files.flatMap(rel => spawnViolations(rel, fs.readFileSync(path.join(REPO, rel), "utf8")));
+  assert.deepEqual(violations, [], violations.join("\n"));
+  // NON-VACUITY: every allowlisted module still spawns what the list says. A list entry nothing
+  // uses is a door held open for the next spawn to walk through unexamined.
+  for (const [rel, targets] of Object.entries(SPAWN_TARGETS)) {
+    const src = stripComments(fs.readFileSync(path.join(REPO, rel), "utf8"));
+    for (const t of targets) {
+      const seen = t === "node" ? /process\.execPath/.test(src) : new RegExp(`\\(\\s*["']${t}[\\s"']`).test(src);
+      assert.ok(seen, `${rel} is allowed to spawn '${t}' and no longer does — remove it from SPAWN_TARGETS`);
+    }
+  }
+});
+
+test("the spawn guard refuses the shapes that would carry a network call through a child", () => {
+  // Every fixture source is ASSEMBLED, never spelled: this file lives in the assertion half, whose
+  // own guard (assert-half-has-no-spawn) refuses a literal spawner call or module name anywhere in
+  // it — strings included, by design.
+  const CPM = ["node", "child_process"].join(":");
+  const call = (fn, args) => fn + "(" + args + ");";
+  const imp = (clause) => `import ${clause} from "${CPM}";\n`;
+  const gw = "scripts/lib/git-gateway.mjs";
+  const named = imp("{ execFileSync, execSync, spawnSync }");
+  const refused = {
+    "a literal curl": [gw, named + call("execFileSync", '"curl", ["https://x"]')],
+    "gh through a shell string": [gw, named + call("execSync", '"gh api repos/o/r"')],
+    "a target held in a variable": [gw, named + 'const c = "curl"; ' + call("spawnSync", "c, []")],
+    "a template-literal target": [gw, named + call("execFileSync", "`${tool}`, []")],
+    "a namespace import": [gw, imp("* as cp") + call("cp.execFileSync", '"curl"')],
+    "a renamed import": [gw, imp("{ execFileSync as run }") + call("run", '"curl"')],
+    "a dynamic import": [gw, `const cp = await import("${CPM}");`],
+    "a module that may not spawn": ["scripts/lib/render.mjs", named + call("execFileSync", QGIT + ', ["status"]')],
+    "git from the wrong module": ["scripts/lib/tool-currency.mjs", named + call("execFileSync", QGIT + ', ["status"]')],
+  };
+  for (const [name, [rel, src]] of Object.entries(refused)) {
+    assert.ok(spawnViolations(rel, src).length > 0, `the guard must refuse ${name}`);
+  }
+  // And it is not a guard that refuses everything: the real shapes pass, and a regex's `.exec(` or
+  // a comment naming a spawner is not a spawn.
+  assert.deepEqual(spawnViolations(gw, named + call("execFileSync", QGIT + ', ["log"]') + "\n" +
+    call("execSync", '"git log -1", {}') + "\nconst m = /x/.exec(s);\n// " + call("spawnSync", '"curl"') + " in prose\n"), []);
+  assert.deepEqual(spawnViolations("scripts/lib/self-hosting.mjs",
+    imp("{ spawnSync }") + call("spawnSync", "process.execPath, [t]")), []);
+});
+
 test("USAGE and the dispatch table agree in BOTH directions", () => {
   // conductor.mjs derives the help-eligible verb list by splitting USAGE, so a verb listed there
   // but no longer dispatched would render help from its rows and then fail on real invocation.
