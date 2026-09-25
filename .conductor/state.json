@@ -10159,14 +10159,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.48.0",
+  "pmVersion": "0.49.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1373,
+  "revision": 1374,
   "reviewMode": "thorough",
   "releases": [
     {
