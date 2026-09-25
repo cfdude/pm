@@ -140,6 +140,14 @@ export function requirePlatformFlag(command) {
   if (declared) assertKnownPlatform(declared);
 }
 
+/** THE `<type>:<epic>[:<reason>]` grammar, split — the reason is everything after the second colon,
+ *  so it may hold colons itself. Shared by parseLinkFlags (`--link`) and add-many's string links, so
+ *  the two spellings of one link cannot come to parse differently. Validates nothing. */
+export function splitLinkSpec(s) {
+  const [type, epic, ...rest] = s.split(":");
+  return { type, epic, reason: rest.join(":").trim() };
+}
+
 /** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}
  *  objects. Rejects malformed input (fewer than two segments, or an `epic` that isn't a
  *  real known epic id) by THROWING, instead of the prior behavior of silently storing a
@@ -155,7 +163,7 @@ export function requirePlatformFlag(command) {
  *  permissive; see isRenderableLink() in links.mjs for why. */
 export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
-    const [type, epic, ...rest] = s.split(":");
+    const { type, epic, reason } = splitLinkSpec(s);
     if (!type || !epic) {
       throw new Error(`bad --link '${escapeControls(s)}': expected "<type>:<epic>[:<reason>]"`);
     }
@@ -170,7 +178,6 @@ export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
     if (!isKnownLinkType(type)) {
       throw new Error(unknownLinkTypeMessage(s, type, { owingEpic }));
     }
-    const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };
   });
 }

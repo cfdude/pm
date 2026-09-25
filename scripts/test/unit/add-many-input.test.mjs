@@ -50,3 +50,81 @@ unitTest("`epics` that is not an array, and `parent` that is not an object, are 
   assert.match(refusal(() => addMany(engine, { parent: "p", epics: [] })), /`parent` must be an object/);
   assert.deepEqual(ids(engine), []);
 });
+
+// ─────────────── links — the same validation `--link` gets ───────────────
+unitTest("a string link in the --link grammar is PERSISTED, reason included", () => {
+  const engine = withBase();
+  addMany(engine, { epics: [
+    { id: "a", lane: "claude-code", links: ["depends-on:base"] },
+    { id: "b", lane: "claude-code", links: ["relates-to:base:shares a parser: and a colon"] },
+  ] });
+  assert.deepEqual(epic(engine, "a").links, [{ type: "depends-on", epic: "base" }]);
+  assert.deepEqual(epic(engine, "b").links, [{ type: "relates-to", epic: "base", reason: "shares a parser: and a colon" }]);
+});
+
+unitTest("links that is not an array — a bare string, null, an object — is refused by name", () => {
+  const engine = withBase();
+  for (const links of ["depends-on:base", null, { type: "depends-on", epic: "base" }]) {
+    assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links }] })),
+      /epic 'a': links must be an array/, `for ${JSON.stringify(links)}`);
+  }
+  assert.deepEqual(ids(engine), ["base"]);
+});
+
+unitTest("a link to an epic that exists nowhere is refused, not stored dangling", () => {
+  const engine = withBase();
+  for (const l of [{ type: "depends-on", epic: "ghost" }, "depends-on:ghost"]) {
+    assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: [l] }] })),
+      /epic 'a': .*'ghost' is not a known epic id/);
+  }
+  assert.deepEqual(ids(engine), ["base"]);
+});
+
+unitTest("a link with no target, or no type, is refused naming what is missing", () => {
+  const engine = withBase();
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: [{ type: "blocks" }] }] })),
+    /epic 'a': .*needs a string `epic`/);
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: [{ epic: "base" }] }] })),
+    /epic 'a': .*needs a string `type`/);
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: ["blocks"] }] })),
+    /epic 'a': .*expected "<type>:<epic>\[:<reason>\]"/);
+  assert.deepEqual(ids(engine), ["base"]);
+});
+
+unitTest("a link element that is neither a string nor an object, or carries a key a link does not have, is refused", () => {
+  const engine = withBase();
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: [42] }] })),
+    /epic 'a': .*must be a "<type>:<epic>\[:<reason>\]" string or a \{type, epic, reason\} object/);
+  // mergeLinks spreads the supplied object, so an unchecked key would carry a hand-written verdict
+  // onto the edge.
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code",
+    links: [{ type: "may-invalidate", epic: "base", verdict: "valid" }] }] })), /unsupported link key\(s\) verdict/);
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code",
+    links: [{ type: "relates-to", epic: "base", reason: 7 }] }] })), /reason must be a string/);
+  assert.deepEqual(ids(engine), ["base"]);
+});
+
+unitTest("an unknown link type is still refused, and the epic half is checked first", () => {
+  const engine = withBase();
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: ["depends_on:base"] }] })),
+    /'depends_on' is not one of/);
+  assert.match(refusal(() => addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: ["type:related:epic"] }] })),
+    /'related' is not a known epic id/);
+});
+
+unitTest("a link to an entry LATER in the same batch is accepted, and so is a self-link (as update-epic --link accepts one)", () => {
+  const engine = withBase();
+  addMany(engine, { epics: [
+    { id: "first", lane: "claude-code", links: ["depends-on:second"] },
+    { id: "second", lane: "claude-code", links: [{ type: "relates-to", epic: "second" }] },
+  ] });
+  assert.deepEqual(epic(engine, "first").links, [{ type: "depends-on", epic: "second" }]);
+  assert.deepEqual(epic(engine, "second").links, [{ type: "relates-to", epic: "second" }]);
+});
+
+unitTest("a hand-supplied may-invalidate edge is still written disarmed, as every other writer writes it", () => {
+  const engine = withBase();
+  addMany(engine, { epics: [{ id: "a", lane: "claude-code", links: ["may-invalidate:base:why"] }] });
+  assert.deepEqual(epic(engine, "a").links,
+    [{ type: "may-invalidate", epic: "base", reason: "why", reconcileOnResume: false }]);
+});

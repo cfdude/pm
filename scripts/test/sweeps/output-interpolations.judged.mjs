@@ -192,6 +192,13 @@ x("add-many.mjs", "addMany", {
   "trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })": 1,
 }, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
 x("add-many.mjs", "addMany", {
+  "where": 1,
+}, "escaped", "where is `epic '${escapeControls(e.id)}'`, escaped where it is built on the line above its use");
+x("add-many.mjs", "batchLink", {
+  "where": 8,
+  "shown": 7,
+}, "escaped", "where is built by addMany through escapeControls(e.id); shown is escapeControls(JSON.stringify(raw)) at the top of batchLink");
+x("add-many.mjs", "addMany", {
   "msg": 1,
 }, "passthrough", "die(): every caller escapes the values it quotes");
 x("archive-gate.mjs", "blockedDelivered", {
