@@ -366,7 +366,13 @@ export function normalizeForDiffSummary(content) {
  *  subcommands so ordering/detour-stack/link invariants stay consistent). Sidecar file
  *  (not a state.json field) so stamping never itself perturbs the content being verified. */
 export function writeRenderStamp() {
+  // UNDER THE RECORD LOCK (confirmation review): a save stamps `lastSave` under it, and this read-modify-
+  // write of the same file, unlocked, could carry an OLDER `lastSave` over a newer one. A lock that
+  // cannot be had skips the stamp — the next render writes it.
   const store = storeOps();
+  store.withRecordLock(() => writeRenderStampLocked(store));
+}
+function writeRenderStampLocked(store) {
   // THE SKIP DECISION IS A STORE QUESTION ABOUT THE STATE, not a stat of it (task 1.3, I3). It used
   // to compare state.json's mtimeMs, and an mtime is precisely what a store that produces no path
   // cannot answer. What it records instead is the RECORD'S IDENTITY — its revision — which is the

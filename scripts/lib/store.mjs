@@ -830,10 +830,24 @@ export function diskStore(ctx = invocation()) {
 
         state.revision = next.revision;   // keep the caller's object usable for a subsequent save
         clearConflictsOn(this);           // consecutive skips end at the first success
+        // `opts.onWritten(revision)` runs HERE, still inside the lock (confirmation review): the save's
+        // own bookkeeping — saveState()'s `lastSave` stamp — must not interleave with another writer's
+        // save, or an older `lastSave` can land last and read as "cannot rule out a hand-edit".
+        if (typeof opts.onWritten === "function") opts.onWritten(next.revision);
         return { ok: true, revision: next.revision };
       } finally {
         releaseStateLock(lock, root());
       }
+    },
+    /** Run `fn` holding the record's lock — for a write that must not interleave with a save (the
+     *  render stamp, whose `lastSave` a save writes under this lock). Returns `fn()`'s value, or
+     *  `undefined` WITHOUT running it when the lock cannot be had in STATE_LOCK_WAIT_MS: the caller's
+     *  write is bookkeeping a later call redoes, and waiting longer on a hook path is the worse cost. */
+    withRecordLock(fn) {
+      fs.mkdirSync(conductorDir(root()), { recursive: true });
+      const lock = acquireStateLock(root());
+      if (lock.timedOut || lock.blocked) return undefined;
+      try { return fn(); } finally { releaseStateLock(lock, root()); }
     },
 
     // ── the artifacts the store owns ────────────────────────────────────────────────────────
@@ -994,8 +1008,11 @@ export function memoryStore(seed = undefined) {
       // has landed, and NOT on the `unchanged` early return above, because a no-op save is not a
       // landing write and must leave the episode where it is.
       clearConflictsOn(this);
+      if (typeof opts.onWritten === "function") opts.onWritten(next.revision);   // same position as the disk store's
       return { ok: true, revision: next.revision };
     },
+    // No lock to take in one process's memory; the interface matches the disk store's.
+    withRecordLock(fn) { return fn(); },
 
     // THE RECORD IS AN ARTIFACT TOO, and answering it from the artifacts map alone would be wrong in
     // a way a unit test would feel immediately: the map holds what the OTHER artifact operations put

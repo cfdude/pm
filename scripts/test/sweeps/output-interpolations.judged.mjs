@@ -33,7 +33,7 @@ x("render.mjs", "normalizeForDiffSummary", {
   "out.slice(0, afterHeading)": 1,
   "out.slice(end)": 1,
 }, "not-output", "slices PROJECT.md text for a diff comparison; prints nothing");
-x("render.mjs", "writeRenderStamp", {
+x("render.mjs", "writeRenderStampLocked", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the render stamp's file body — an ISO timestamp, a revision number and an mtime. It was automatically `not-output` while it sat inside the fs.writeFileSync the sweep recognises; task 1.3 moved the write onto the store, so the sink is no longer visible to the scanner and the judgment has to be explicit");
 x("state.mjs", "recordEngineSave", {

@@ -181,9 +181,13 @@ export class InvalidEpicIdError extends Error {
  *  verbs. The in-memory store reproduces the comparisons and the normalisation and drops the
  *  durability — a different sink, never a weaker engine. */
 export function saveState(state, opts = {}) {
-  const result = storeOps().writeRecord(state, opts);
-  if (result && result.ok && !result.unchanged) recordEngineSave(result.revision);
-  return result;
+  // The stamp is written by the store INSIDE the record lock (`onWritten`), never after it is
+  // released: two concurrent saves stamping outside it could land the older `lastSave` last.
+  const onWritten = (revision) => {
+    recordEngineSave(revision);
+    if (typeof opts.onWritten === "function") opts.onWritten(revision);
+  };
+  return storeOps().writeRecord(state, { ...opts, onWritten });
 }
 
 /** Stamp the engine's OWN save onto the render stamp as `lastSave: {revision, mtimeMs}` — the

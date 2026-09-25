@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEngine, withAssertInvocation } from "../fixtures/assert-harness.mjs";
 
 // ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
 //
@@ -127,4 +127,42 @@ test("verify-state fails loudly when state.json's revision went BACKWARDS since 
   const err = expectFail(() => run(["verify-state"], { cwd }));
   assert.ok(err, "a rewound revision must fail verify-state");
   assert.match(runCombined(["verify-state"], { cwd }), /revision went backwards/i);
+});
+
+// Confirmation review: `lastSave` was stamped AFTER writeRecord released the record lock, and the
+// render stamp's read-modify-write took no lock at all, so two concurrent writers could land an OLDER
+// `lastSave` last — a false "cannot rule out a hand-edit". Both now write the stamp holding the lock.
+// Observed here as the lock FILE existing at the moment each stamp write runs.
+const LOCK = (cwd) => path.join(cwd, ".conductor", "state.json.lock");
+test("an engine save stamps lastSave while it still holds the record lock", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { loadState, saveState } = await import(new URL("../../lib/state.mjs", import.meta.url).href);
+  await withAssertInvocation(cwd, async () => {
+    const s = loadState();
+    s.epics.push({ id: "x", title: "x", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false });
+    let heldAtStamp = null;
+    saveState(s, { onWritten: () => { heldAtStamp = fs.existsSync(LOCK(cwd)); } });
+    assert.equal(heldAtStamp, true, "the save's bookkeeping ran inside the lock");
+    assert.equal(fs.existsSync(LOCK(cwd)), false, "and the lock is released afterwards");
+  });
+  const stamp = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "render-stamp.json"), "utf8"));
+  assert.equal(stamp.lastSave.revision, readState(cwd).revision, "the stamped save is the one that landed");
+});
+test("the render stamp's read-modify-write runs holding the record lock", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { storeOps } = await import(new URL("../../lib/store.mjs", import.meta.url).href);
+  await withAssertInvocation(cwd, async () => {
+    const store = storeOps();
+    const realWrite = store.write.bind(store);
+    let heldAtWrite = null;
+    store.write = (name, text) => { if (name === "render-stamp.json") heldAtWrite = fs.existsSync(LOCK(cwd)); return realWrite(name, text); };
+    try {
+      const { writeRenderStamp } = await import(new URL("../../lib/render.mjs", import.meta.url).href);
+      fs.utimesSync(path.join(cwd, ".conductor", "state.json"), new Date(Date.now() + 60_000), new Date(Date.now() + 60_000));
+      writeRenderStamp();
+    } finally { store.write = realWrite; }
+    assert.equal(heldAtWrite, true, "the stamp was written, and under the lock");
+  });
 });
