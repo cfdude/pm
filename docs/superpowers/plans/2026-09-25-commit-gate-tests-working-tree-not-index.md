@@ -120,7 +120,7 @@ the trap removes is user data.
 
 ### Task 0: this plan
 
-- [ ] Commit this file: `docs(plan): pre-commit tests the index; Real Numbers keeps its evidence`.
+- [x] Commit this file: `docs(plan): pre-commit tests the index; Real Numbers keeps its evidence`.
 
 ### Task 1: the hook tests the index (`commit-gate-tests-working-tree-not-index`)
 
@@ -132,7 +132,7 @@ the trap removes is user data.
 - Create: `.changesets/commit-gate-tests-working-tree-not-index.md`
 - Create: `docs/superpowers/plans/2026-09-25-commit-gate-evidence/red-1.txt`
 
-- [ ] **Step 1: write fixtures a–f in the functional file**, each through `runHookAgainstFixture`
+- [x] **Step 1: write fixtures IX-a…IX-g in the functional file** (IX-g — a partially staged file is counted by its staged half — was added after the first mutation run showed the `declared-reads-worktree` mutant was killed by the shape test alone), each through `runHookAgainstFixture`
   with `setup(cwd)` doing the git work (hermetic env: `GIT_CONFIG_GLOBAL=/dev/null`,
   `GIT_CONFIG_NOSYSTEM=1`):
   - **IX-a** staged FAILING, working tree PASSING → status ≠ 0, output names the failing test, the
@@ -147,22 +147,22 @@ the trap removes is user data.
   - **IX-f** stub `node` first on PATH: `--test` → `kill -TERM $PPID; exit 0`, anything else → `exec`
     the real node (drift must still run) → status ≠ 0, tree and index bytes unchanged, lock gone,
     private `TMPDIR` empty.
-- [ ] **Step 2: RED.** Run the functional file against the OLD hook:
+- [x] **Step 2: RED.** Run the functional file against the OLD hook:
   `node --test --test-name-pattern='^IX-' scripts/test/functional/conductor-09.test.mjs`
   → save to `red-1.txt`. Expected: a and d FAIL (old hook passes a commit whose index fails); e/f
   may fail on the lock path. b and c are precision guards and may pass on the old hook — say so.
-- [ ] **Step 3: GREEN — the hook.** Capture `GIT_INDEX_FILE` before the scrub and absolutise it;
+- [x] **Step 3: GREEN — the hook.** Capture `GIT_INDEX_FILE` before the scrub and absolutise it;
   default to `git rev-parse --path-format=absolute --git-path index`; `ROOT=$PWD` after the `cd`;
   absolute `LOCKDIR`; one trap for tmpfile/SNAP/LOCKDIR plus INT/TERM/HUP; drift under
   `GIT_INDEX_FILE="$INDEX_FILE"`; `SNAP=$(mktemp -d …)`; `GIT_INDEX_FILE="$INDEX_FILE" git
   checkout-index -a --prefix="$SNAP/"`; `cd "$SNAP"` before the unchanged runner line; `declared`
   from `GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files …` counting lines in `"$SNAP/$f"`.
-- [ ] **Step 4: twin.** Re-point the `declared=` regex; assert the capture happens BEFORE the
+- [x] **Step 4: twin.** Re-point the `declared=` regex; assert the capture happens BEFORE the
   `unset`, the export uses `checkout-index` with the captured index, the runner line sits after
   `cd "$SNAP"`, the runner line never carries `GIT_INDEX_FILE`, and the hook never names
   `git stash`.
-- [ ] **Step 5:** run the functional file (all pass) and the assertion half; mutation proofs (below).
-- [ ] **Step 6:** CONTRIBUTING + fragment; commit with explicit paths; `git show --stat`.
+- [x] **Step 5:** run the functional file (all pass) and the assertion half; mutation proofs (below).
+- [x] **Step 6:** CONTRIBUTING + fragment; commit with explicit paths; `git show --stat`.
 
 **Mutation proofs** (each in a COPY of the hook, fixture pointed at the copy by swapping the file
 in a scratch clone): drop `cd "$SNAP"` → a fails; drop the capture (use `.git/index`) → d fails;
@@ -176,17 +176,17 @@ remove `"$SNAP"` from the trap → e fails; relative `LOCKDIR` → e fails.
 - Create: `.changesets/gh-cfdude-pm-219.md`
 - Create: `docs/superpowers/plans/2026-09-25-commit-gate-evidence/red-2.txt`
 
-- [ ] **Step 1: the guard (assert rung, reads one file, spawns nothing):** the recipe's run is
+- [x] **Step 1: the guard (assert rung, reads one file, spawns nothing):** the recipe's run is
   redirected to a file under `$(git rev-parse --path-format=absolute --git-common-dir)/pm-real-numbers/`
   named with a UTC timestamp; no `| grep -m1 '^ℹ tests '` pipe survives; the decision refuses unless
   runner exit is 0, `ℹ fail 0`, `ℹ cancelled 0`, and `tests == pass > 0`; it prints the saved path;
   a failed run is reported before any re-run.
-- [ ] **Step 2: RED** against the current SKILL.md → `red-2.txt`.
-- [ ] **Step 3: GREEN** — rewrite the recipe.
-- [ ] **Step 4:** execute the recipe's decision block against three synthetic logs (clean; `fail 1`;
+- [x] **Step 2: RED** against the current SKILL.md → `red-2.txt`.
+- [x] **Step 3: GREEN** — rewrite the recipe.
+- [x] **Step 4:** execute the recipe's decision block against three synthetic logs (clean; `fail 1`;
   exit 1 with `fail 0` and `cancelled 1`) and keep the transcript in the evidence dir; mutation: drop
   the `fail` clause in a copy of SKILL.md → the guard fails.
-- [ ] **Step 5:** fragment; commit.
+- [x] **Step 5:** fragment; commit.
 
 **Not claimed:** #219's flaky test is still unidentified. This change makes the NEXT occurrence
 diagnosable and unpublishable; it does not find the flake. The combined single invocation stays the
@@ -194,15 +194,73 @@ recipe (one total, one saved log); splitting the buckets is not needed to captur
 
 ### Task 3: measure, sweep, route
 
-- [ ] Whole-hook latency, old vs new, interleaved, median of 3, load recorded — in a scratch clone.
-- [ ] Fill in the Required items section below; commit.
+- [x] Whole-hook latency, old vs new, interleaved, median of 3, load recorded — in a scratch clone.
+- [x] Fill in the Required items section below; commit.
+
+**Measured (2026-09-25, 16 CPUs, Node v26.10.0, git 2.55.0; `latency-3.txt` in the evidence dir).**
+Started only once the 1-minute load was below 16 (15.36). A suite run itself drives the load to
+~20 (up to 15 test processes), so "load1" beside each number includes the run's own contribution.
+
+| Round | Old hook (working tree) | New hook (index snapshot) | load1 at start |
+|---|---|---|---|
+| 1 | 26.31 s | 27.63 s | 21.8 / 23.2 |
+| 2 | 27.65 s | 39.44 s | 22.8 / 20.4 |
+| 3 | 58.66 s | 48.61 s | 23.2 / 48.7 — other agents resumed |
+| median | 27.65 s | 39.44 s | — noise-dominated; do not read as a 12 s cost |
+
+The only work the new hook ADDS is the export and its removal, measured alone five times: **0.52–0.74 s**
+(at load 68). Round 1, the only pair taken before outside load returned, differs by 1.3 s. So the
+honest statement is: the snapshot costs well under a second of export on a ~26 s hook; the medians
+above are dominated by concurrent agents and are not a measurement of the change. The stash
+alternative measured 1.8–2.6 s of overhead under the same heavy load as B's 2.6–3.8 s, so latency
+does not separate A and B; correctness does (see the comparison table).
 
 ## Required items
 
 ### Item 1 — call-site sweep
 
-(Filled in at Task 3 from `rg`, not from memory.)
+**Rule introduced:** a per-commit gate verifies the INDEX the commit is made from. Callers derived
+with `rg -l 'node --test[^\n]*scripts/test/(unit|assert)'` (every place that runs the assertion
+half) and `rg -n GIT_INDEX_FILE` (every index reader), excluding archived changes:
+
+| Site | Holds? | Why |
+|---|---|---|
+| `.githooks/pre-commit` — runner | **Yes (this change)** | runs in the `checkout-index` snapshot |
+| `.githooks/pre-commit` — `declared` | **Yes (this change)** | list from the captured index, counts from `$SNAP/$f` |
+| `.githooks/pre-commit` → `scripts/test/drift.mjs` | **Yes (this change)** | handed `GIT_INDEX_FILE="$INDEX_FILE"`; drift's own reads are already index-only (`ls-files`, `diff --cached`, `show :path`) |
+| `.github/workflows/ci.yml` (three bucket steps + floors) | Yes, unchanged | a runner checks out the commit; no index distinct from the tree exists there |
+| `scripts/test/certify.mjs` | Holds through drift | certify runs over the working tree, but its record is checked by drift against the STAGED bytes' hash (`stagedHash`), so a certification of unstaged bytes is refused at commit time |
+| `.claude/skills/pr-workflow/SKILL.md` step 2, `CONTRIBUTING.md`, `CLAUDE.md` | Not a gate | a developer's manual run over their working tree, deliberately; the hook is the gate. CONTRIBUTING now says which the hook tests |
+| `.claude/skills/release-checklist/SKILL.md` Real Numbers | Not a commit gate | a release-time measurement of the merged tree; Task 2 governs it |
+| `scripts/lib/store.mjs:621` | Not a caller | a comment naming a test file |
+| `scripts/test/assert/ci-workflow.test.mjs`, `conductor-09` twins | Not callers | tests that READ the hook/CI text |
+
+**Data references:** `INDEX_FILE` — written once (capture, absolutised, defaulted), read by the three
+index readers, never by the runner (pinned by the IX shape test). `SNAP` — created by `mktemp -d`,
+read by the export, the `cd` and `declared`, removed by `cleanup` on every exit path (IX-e, IX-f).
+`LOCKDIR` — now absolute; released by `cleanup` only once held (`LOCK_HELD`). The Real Numbers
+`$log` — written by the recipe, read by the human and by the decision block.
+
+**Inverses:** snapshot create ↔ remove (shipped, `cleanup`); lock acquire ↔ release (shipped; the
+relative-path release that would have missed from inside the snapshot is fixed and guarded); env
+scrub ↔ the capture that re-supplies the index to its readers (shipped). The Real Numbers logs are
+written and **not** removed automatically — deliberately: their purpose is to outlive the run so a
+failure can be diagnosed later, and a recipe that deleted its evidence would recreate #219. The
+inverse ships as a named one-liner in the recipe (`rm -rf "$(git rev-parse --git-common-dir)/pm-real-numbers"`)
+to run once nothing in them is owed a diagnosis.
+
+**Not shipped and why:** `--ignore-skip-worktree-bits` on the export — this repo uses no sparse
+checkout; a sparse clone would export only its sparse set and the floor would then report a
+shortfall naming both counts, which fails closed rather than open.
 
 ### Item 7 — route what was learned
 
-(Filled in at Task 3.)
+- **Process failure → lesson:** `docs/lessons/a-commit-gate-must-read-the-index-git-hands-it.md`
+  (+ README index and enforced-in rows). Its sharpest evidence: the commit form the existing lesson
+  `git-commit-takes-the-whole-index` recommends (`git commit -- <paths>`) was exactly the form whose
+  index this hook's drift check and floor were NOT reading.
+- **Tooling friction in pm:** none met — no conductor verb was needed or missing in this work.
+- **Practice for the product:** none. pm ships no pre-commit hook to its users; the practice lives in
+  this repo's hook, so the lesson (not an epic) is its destination.
+- **Not claimed:** #219's flaky test is still unidentified; the recipe now makes its next
+  occurrence diagnosable and unpublishable.

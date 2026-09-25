@@ -23,6 +23,7 @@ trigger fires, not before.
 
 | Lesson | Trigger — read it when… | Rule | Hook |
 |---|---|---|---|
+| [`a-commit-gate-must-read-the-index-git-hands-it`](a-commit-gate-must-read-the-index-git-hands-it.md) | You are writing or editing a git hook or any before-commit gate that reads files from the checkout, or that scrubs `GIT_*` env vars before doing its work. | A commit gate verifies the bytes being committed: capture GIT_INDEX_FILE before any scrub, export that index and run there, count from the export, hand the index to every index reader but never to protected children. Never stash to get there. | — |
 | [`a-degradation-test-can-pin-the-defect`](a-degradation-test-can-pin-the-defect.md) | You are writing or keeping a test that a verb 'still works' or 'does not throw' on corrupt or unreadable input, without asserting what it wrote. | Assert the file is byte-identical (or name exactly what may change) and that the output claims no success it did not have; 'did not throw' will defend a silent overwrite. | — |
 | [`a-fixture-reconstructed-from-live-data-dies-when-the-data-improves`](a-fixture-reconstructed-from-live-data-dies-when-the-data-improves.md) | You are writing a test that builds its fixture by reading the project's own live record and UNDOING something — peeling off a migration's stamps, reverting statuses, stripping a field — to reconstruct an earlier state. | Freeze the fixture. Never build a test's starting state by reading the project's own live record and undoing part of it — the tool improving that record is then what breaks the test, and the failure arrives mid-batch with nothing wrong. | — |
 | [`a-guard-can-check-the-wrong-half`](a-guard-can-check-the-wrong-half.md) | About to rely on an existing test as proof that a behaviour holds — especially a guard someone wrote to protect a rule, and most especially one you or a teammate wrote recently. | A guard proves the half it asserts, not the half it is named for. Before trusting one, neuter the behaviour it claims to protect and watch it fail — and read the assertion itself, not the test's name or its comment. | — |
@@ -82,6 +83,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 
 | Lesson | Enforced in |
 |---|---|
+| `a-commit-gate-must-read-the-index-git-hands-it` | scripts/test/functional/conductor-09.test.mjs IX-a…IX-g and the IX shape test in scripts/test/assert/conductor-09.test.mjs; beyond this hook, a habit |
 | `a-degradation-test-can-pin-the-defect` | scripts/test/state-file-refuses-to-guess.test.mjs; rewritten gh-111 and gh#129 rungs |
 | `a-fixture-reconstructed-from-live-data-dies-when-the-data-improves` | scripts/test/fixtures/state-pre-disposition-walk.json — the frozen pre-walk record, and the rename of `repoFromLiveState()` to `repoFromFrozenPreMigrationRecord()` in scripts/test/conductor-15.test.mjs that stopped the function claiming to read live state. |
 | `a-guard-can-check-the-wrong-half` | habit — the neuter-before-trust step; no mechanism |
