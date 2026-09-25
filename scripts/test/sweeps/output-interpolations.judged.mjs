@@ -189,6 +189,9 @@ x("add-many.mjs", "addMany", {
   "k": 1,
 }, "engine", "the id-format source and the batch key allowlist; k is filtered to allowedKeys before");
 x("add-many.mjs", "addMany", {
+  "trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
+x("add-many.mjs", "addMany", {
   "msg": 1,
 }, "passthrough", "die(): every caller escapes the values it quotes");
 x("archive-gate.mjs", "blockedDelivered", {

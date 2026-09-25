@@ -13,7 +13,10 @@ import { emptyRecord, expectFail, memoryEngine, unitTest } from "../fixtures/uni
 const U = "https://github.com/cfdude/pm/issues/7";
 const ids = (engine) => engine.store.record().epics.map(e => e.id).sort();
 const epic = (engine, id) => engine.store.record().epics.find(e => e.id === id);
-const errText = (err) => String(err.stderr || err.message);
+const errText = (err) => {
+  assert.ok(err, "expected a refusal, but the write was ACCEPTED");
+  return String(err.stderr || err.message);
+};
 
 // ─────────────── add-epic ───────────────
 unitTest("add-epic refuses a second epic claiming an external-url with NO external-id (the bypass)", () => {
@@ -98,6 +101,43 @@ unitTest("update-epic judges the record AFTER its own --clear: clearing the URL 
   const err = expectFail(() => engine(["update-epic", "b", "--clear", "external-url", "--external-id", "JOB-9"]));
   assert.match(errText(err), /external-id 'JOB-9' is already held by epic 'a'/);
   assert.equal(epic(engine, "b").externalUrl, U, "nothing was written");
+});
+
+// ─────────────── add-many — the third writer ───────────────
+// The batch arrives on stdin (`--from -`), so it is a value handed to the verb rather than a file on
+// disk, and these stay on the unit rung.
+const addMany = (engine, doc) => engine(["add-many", "--from", "-"], { input: JSON.stringify(doc) });
+
+unitTest("add-many refuses an entry whose externalUrl an existing epic holds, naming it, and creates nothing", () => {
+  const engine = memoryEngine(emptyRecord());
+  engine(["add-epic", "--id", "a", "--lane", "claude-code", "--external-url", U]);
+  const err = expectFail(() => addMany(engine, { epics: [
+    { id: "ok", lane: "claude-code" },
+    { id: "dup", lane: "claude-code", externalUrl: U },
+  ] }));
+  assert.match(errText(err), /external-url '.*' is already held by epic 'a'/);
+  assert.deepEqual(ids(engine), ["a"], "the good entry was not created either");
+});
+
+unitTest("add-many refuses two entries of ONE batch claiming the same externalUrl, naming the first", () => {
+  const engine = memoryEngine(emptyRecord());
+  const err = expectFail(() => addMany(engine, { parent: { id: "p", lane: "claude-code", externalUrl: U },
+    epics: [{ id: "c", lane: "claude-code", externalUrl: U }] }));
+  assert.match(errText(err), /already claimed by batch entry 'p'/);
+  assert.deepEqual(ids(engine), []);
+});
+
+unitTest("add-many applies the externalId fallback within the batch and against the record", () => {
+  const engine = memoryEngine(emptyRecord());
+  engine(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "JOB-3"]);
+  const err = expectFail(() => addMany(engine, { epics: [{ id: "b", lane: "claude-code", externalId: "JOB-3" }] }));
+  assert.match(errText(err), /external-id 'JOB-3' is already held by epic 'a'/);
+  // Distinct URLs sharing a bare id are distinct items — accepted.
+  addMany(engine, { epics: [
+    { id: "x", lane: "claude-code", externalId: "5", externalUrl: "https://github.com/o/one/issues/5" },
+    { id: "y", lane: "claude-code", externalId: "5", externalUrl: "https://github.com/o/two/issues/5" },
+  ] });
+  assert.deepEqual(ids(engine), ["a", "x", "y"]);
 });
 
 // ─────────────── a state file that ALREADY holds a duplicate ───────────────

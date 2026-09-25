@@ -14,6 +14,7 @@ import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys,
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 import { currentArgv } from "./invocation.mjs";
+import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -136,6 +137,20 @@ export function addMany() {
       const perr = parentError(projected, e.id, e.parent);
       if (perr) refuse(perr);
     }
+  }
+  // One tracker item, one epic — the same rule add-epic and update-epic call (tracker-dedup.mjs).
+  // A batch entry's `externalUrl` used to be copied verbatim, so add-many was the one writer of the
+  // key that never looked (tracker-item-dedup-bypassed). Judged in batch order against the record
+  // AND every earlier entry, so two entries of one batch cannot claim one item either. The values
+  // were validated as non-empty strings above.
+  const claimed = [];
+  for (const e of incoming) {
+    const candidate = { externalUrl: e.externalUrl, externalId: e.externalId };
+    if (candidate.externalUrl !== undefined || candidate.externalId !== undefined) {
+      const hit = trackerKeyHolder([...state.epics, ...claimed], candidate);
+      if (hit) refuse(`epic '${escapeControls(e.id)}': ${trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })}`);
+    }
+    claimed.push(e);
   }
   for (const e of incoming) {
     // Seeded with the defaults a batch entry may omit, plus the two fields the ENGINE owns and
