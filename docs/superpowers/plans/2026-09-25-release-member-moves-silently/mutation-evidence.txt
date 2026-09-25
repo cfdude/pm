@@ -1,0 +1,13 @@
+Mutation proofs — each applied in place to scripts/lib/releases.mjs, run, then restored from a
+scratch backup (the worktree sandbox refuses running node from a copy outside the worktree).
+
+M1 (Task 1) — delete `amend(old, { op: "unmember", epic: epicId, via: "member", to: id });`
+  ✖ a cross-release --member records an unmember amendment on the OLD release, naming where it went
+  ✖ `release show` of the old release renders the move, not "no reason given"
+  ✖ one --member that undefers on the new release AND moves off the old one records both, on two releases
+  pass 3 / fail 3
+
+M2 (Task 1) — `if (prev && prev !== id)` → `if (prev)` (same-release re-member now amends)
+  ✖ re-membering into the SAME release writes nothing
+  pass 5 / fail 1
+

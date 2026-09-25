@@ -1,0 +1,123 @@
+✖ a cross-release --member records an unmember amendment on the OLD release, naming where it went (247.794583ms)
+✖ a cross-release --member says so on stderr, naming both releases (13.006667ms)
+✖ `release show` of the old release renders the move, not "no reason given" (155.276458ms)
+✔ re-membering into the SAME release writes nothing (12.746583ms)
+✖ a pointer to a release that no longer exists is replaced with a stderr line, and nothing throws (8.571375ms)
+✖ one --member that undefers on the new release AND moves off the old one records both, on two releases (27.867584ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1463.3035
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a cross-release --member records an unmember amendment on the OLD release, naming where it went (247.794583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     epic: 'e0',
+  -     op: 'unmember',
+  -     to: 'r2',
+  -     via: 'member'
+  -   }
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:34:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { op: 'unmember', epic: 'e0', via: 'member', to: 'r2' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a cross-release --member says so on stderr, naming both releases (13.006667ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /'e0'.*'r1'.*'r2'/s. Input:
+  
+  'conductor: rendered PROJECT.md\n' +
+    "conductor: release 'r2' — `r2`: 1 epic, 0 deferred\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:44:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: release 'r2' — `r2`: 1 epic, 0 deferred\n",
+    expected: /'e0'.*'r1'.*'r2'/s,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ `release show` of the old release renders the move, not "no reason given" (155.276458ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /amendments \(1\)/. Input:
+  
+  'conductor: release `r1` — one\n' +
+    '  target: —\n' +
+    '  members (0) — derived from `epic.release`, never stored on the release:\n' +
+    '    (none)\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:52:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `r1` — one\n  target: —\n  members (0) — derived from `epic.release`, never stored on the release:\n    (none)\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /amendments \(1\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a pointer to a release that no longer exists is replaced with a stderr line, and nothing throws (8.571375ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /'ghost'/. Input:
+  
+  'conductor: rendered PROJECT.md\n' +
+    "conductor: release 'r2' — `r2`: 1 epic, 0 deferred\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:76:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: release 'r2' — `r2`: 1 epic, 0 deferred\n",
+    expected: /'ghost'/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ one --member that undefers on the new release AND moves off the old one records both, on two releases (27.867584ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'map')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:87:48
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
