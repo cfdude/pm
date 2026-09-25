@@ -618,7 +618,7 @@ Commit mechanics, which bind every section below:
       lands (it could not before, while the README said 18). `:51`'s "1,116 tests" is left to the release cut's Real Numbers
       recompute, and that is stated here so it is not mistaken for a miss. The change is
       user-facing, so the documentation-currency check is answered YES.
-- [ ] 7.3 `CLAUDE.md`.
+- [x] 7.3 `CLAUDE.md`.
       - `:19-20`: "Node 18+ built-ins" becomes the policy wording, and the list becomes the derived
         seven (design D8): `node:child_process`, `node:crypto`, `node:fs`, `node:os`, `node:path`,
         `node:tty`, `node:url`.
