@@ -188,7 +188,8 @@ file a bug report or feature request for `pm` itself against `cfdude/pm` — wri
 (deduping against open issues), else a prefilled `issues/new` URL, else `bugs@pm-plugin.dev`;
 `gh` is an OPTIONAL dependency and the command checks for it rather than assuming it (#105) ·
 `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules + run migrations
-+ print the changelog delta.
++ print the changelog delta · `/pm:verify-state`, `/pm:verify-worktrees`, `/pm:verify-specs` the
+read-only checks of the record, whose engine verbs are listed above.
 
 ## Writing state — exit codes, the lock, and what the engine refuses to guess
 

@@ -19,3 +19,7 @@
 * **Two refusals read correctly.** The archive gate's open-work refusal said "2 of 1/3 task(s)
   outstanding"; it now says "2 task(s) outstanding (1/3 done)". A state lock that is a FIFO, socket
   or device is described as a special file rather than "a other".
+* **`/pm:verify-state`, `/pm:verify-worktrees` and `/pm:verify-specs` are slash commands.** The
+  three read-only `verify-*` verbs had no command doc, so they were reachable only by calling the
+  engine directly. Each now has one, saying what it compares, what each exit means and — for
+  `verify-state` — what it cannot see.

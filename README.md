@@ -1725,6 +1725,7 @@ pm/ (this repo)
 ├── commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync
 │                                 /pm:epic /pm:hierarchy /pm:tracker /pm:feedback /pm:lane-routing
 │                                 /pm:review-mode /pm:gate-guard /pm:changelog /pm:upgrade
+│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md
 ├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PostToolUseFailure · PreToolUse

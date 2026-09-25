@@ -25,6 +25,15 @@
       "platforms": { "claude-code": "slash command (/pm:unconsidered-outcomes)" }
     },
     {
+      "id": "record-verification",
+      "artifacts": [
+        "commands/verify-state.md",
+        "commands/verify-worktrees.md",
+        "commands/verify-specs.md"
+      ],
+      "platforms": { "claude-code": "slash commands (/pm:verify-state, /pm:verify-worktrees, /pm:verify-specs) — read-only checks of the record against state.json's history, git's worktrees and the design documents on disk" }
+    },
+    {
       "id": "detour-lifecycle",
       "artifacts": [
         "commands/detour.md",
