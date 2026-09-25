@@ -679,16 +679,16 @@ Commit mechanics, which bind every section below:
 
 ## 8. The AFTER measurement
 
-- [ ] 8.1 Re-run 0.3(a), (b) and (d) on the final commit. Write `baseline-after.md` beside
+- [x] 8.1 Re-run 0.3(a), (b) and (d) on the final commit. Write `baseline-after.md` beside
       `baseline-before.md`, with the hook's end-to-end wall clock (drift + lock + runner + floor)
       named at both ends.
       State design D10's outcome in one line: under 15 s, or not. Do NOT edit
       `store-owns-claude-md-managed-block`. The evidence goes in this file and in the CHANGELOG
       entry.
-- [ ] 8.2 Each matrix leg's `test` duration and each bucket step's duration, from this change's PR
+- [x] 8.2 Each matrix leg's `test` duration and each bucket step's duration, from this change's PR
       run (`gh run view <id> --json jobs`), against 0.3(c). A leg slower than the Node-18 baseline
       is reported as slower with the number.
-- [ ] 8.3 Per-file against single-process ON A CI RUNNER, where the parallel win is unmeasured.
+- [x] 8.3 Per-file against single-process ON A CI RUNNER, where the parallel win is unmeasured.
       - Use a **DRAFT PR** into `main` from a throwaway branch whose `ci.yml` runs the half both ways
         (the same mechanism and the same no-new-trigger reason as 4.5). Never merged: afterwards close
         the draft PR (`gh pr close <n> --repo cfdude/pm`), DELETE the branch remote and local
