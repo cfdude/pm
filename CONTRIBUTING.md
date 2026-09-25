@@ -62,6 +62,10 @@ fixed copy you left unstaged, an untracked test file neither runs nor counts, an
 staged file is tested as its staged half. It honours the index git hands it, so `git commit -a`
 and `git commit <path>` are tested as what they commit. It never writes your working tree or your
 index, so an interrupted hook cannot lose work; the snapshot is removed on exit, Ctrl-C included.
+The drift script that runs first is the snapshot's own copy, and every set it judges (certified
+modules, test ids, conformance rows) is read from that index too. One known limit: a tracked
+symlink is exported as a symlink, so an absolute one still reads outside the index — this repository
+tracks none.
 To run the suite over your working tree instead, run the command above yourself. The reporter is forced and colour is off so the summary is
 the same bytes on every supported Node, and a count the hook cannot read, or a run of zero tests, is
 a refusal rather than a pass. The drift script refuses, naming the file: a tracked
