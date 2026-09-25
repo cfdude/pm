@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, parseBrief, expectFail, fixturePluginRoot, setupHierarchy, gitInitWithCommit, addHierarchyWorktree } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, parseBrief, expectFail, fixturePluginRoot, setupHierarchy, gitInitWithCommit, addHierarchyWorktree, ENGINE, EMPTY_CACHE } from "../fixtures/functional-harness.mjs";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";  // the line-feed worktree test's parent dir is removed at exit
 
 // ───────────────────────── 0.5.0: link migration ─────────────────────────
@@ -347,6 +347,28 @@ test("verify-worktrees returns an empty orphaned list gracefully when the cwd is
   run(["init"], { cwd });
   const out = JSON.parse(run(["verify-worktrees"], { cwd }));
   assert.deepEqual(out.orphaned, []);
+});
+
+// Confirmation review of bd5e24e: git LOCALIZES "not a git repository", so under a German locale an
+// initialised non-git folder was refused (exit 1) where it used to print an empty list. The gateway
+// now runs the listing with LC_ALL=C. A CHILD process, because the locale must reach git through the
+// process environment exactly as a user's shell passes it — an in-process override would not.
+test("verify-worktrees still reads 'not a git repository' under a non-English locale", (t) => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const DE = { LC_ALL: "de_DE.UTF-8", LANG: "de_DE.UTF-8", LANGUAGE: "de" };
+  const probe = spawnSync("git", ["worktree", "list", "--porcelain", "-z"],
+    { cwd, env: { ...process.env, ...DE }, encoding: "utf8" });
+  if (probe.status === 0 || /not a git repository/i.test(probe.stderr || "")) {
+    t.skip("this machine's git prints no German for de_DE.UTF-8 (locale or git message catalog missing), so the localized refusal cannot be reproduced here");
+    return;
+  }
+  const r = spawnSync(process.execPath, [ENGINE, "verify-worktrees"], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, ...DE, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+  });
+  assert.equal(r.status, 0, `a non-git folder is not a failure in any locale:\n${r.stderr}`);
+  assert.deepEqual(JSON.parse(r.stdout).orphaned, []);
 });
 
 // ---------- remove-epic: every dangling reference, not just links[] ----------

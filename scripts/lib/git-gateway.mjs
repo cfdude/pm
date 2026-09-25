@@ -159,8 +159,13 @@ export function realGit(context) {
     // reader took the text before the break as the path and reported a truncated directory that
     // does not exist (code review 0.43.0 minors). With -z every attribute ends in NUL and a record
     // ends in an extra NUL, so no byte a path can hold is also a separator.
+    // LC_ALL=C (confirmation review of bd5e24e): the caller reads this operation's STDERR — it keys
+    // "not a git repository" on git's own words — and git localizes them, so under a German locale
+    // an uninitialised non-git folder was refused instead of answering []. LC_ALL overrides LANG
+    // and LANGUAGE; the -z stdout is locale-independent either way.
     worktreeList: () =>
-      execFileSync("git", ["worktree", "list", "--porcelain", "-z"], { cwd: root(), encoding: "utf8" }),
+      execFileSync("git", ["worktree", "list", "--porcelain", "-z"],
+        { cwd: root(), encoding: "utf8", env: { ...env(), LC_ALL: "C" } }),
 
     // worktree-hygiene.mjs:77 — is this worktree's head already merged into HEAD. `stdio: "ignore"`
     // at the call site, which is not the same option as the `["ignore","ignore","ignore"]` above.

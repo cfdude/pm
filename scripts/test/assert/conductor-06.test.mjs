@@ -113,3 +113,14 @@ test("verify-worktrees REFUSES when git cannot list worktrees for any reason but
   assert.match(missing.stderr, /git was not found on PATH/);
   assert.doesNotMatch(missing.stderr, /undefined/);
 });
+
+// The twin of the functional "still reads 'not a git repository' under a non-English locale". This
+// half runs no git, so it holds the SOURCE to the property the functional test observes: the one
+// gateway operation whose stderr the engine reads as TEXT runs git with LC_ALL=C. The sweep that
+// found it being the only one: `rg -n 'stderr' scripts/lib | rg -i 'not a|fatal|match|includes|test\('`.
+test("the worktree listing runs git with LC_ALL=C, because its stderr is read as text", () => {
+  const src = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "lib", "git-gateway.mjs"), "utf8");
+  const op = src.slice(src.indexOf("worktreeList: () =>"), src.indexOf("mergeBaseIsAncestorOfHead:"));
+  assert.ok(op.length > 0, "the gateway still defines worktreeList before mergeBaseIsAncestorOfHead");
+  assert.match(op, /LC_ALL: "C"/, "a localized 'not a git repository' would read as a failure");
+});
