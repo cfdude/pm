@@ -20,7 +20,7 @@ env:
   # must equal it (asserted here, by scripts/test/node-majors.mjs). So a line reaching end-of-life
   # turns this workflow red until one release moves the fallback, the constant and the documented
   # support floor together — deliberately (decided 2026-09-24: disagreement FAILS CI).
-  PM_NODE_FALLBACK: "[22,24]"
+  PM_NODE_FALLBACK: "[22,24,26]"
 
 jobs:
   # ─────────── THE SUPPORTED MAJORS, COMPUTED (0.49.0, design D2) ───────────
@@ -65,6 +65,8 @@ jobs:
   # ones). Each leg reports as `test (node N)`; the required check is the aggregate below.
   test-node:
     name: test (node ${{ matrix.node }})
+    # THROWAWAY (task 8.3): the legs are skipped so this run spends its minutes on the bench below.
+    if: ${{ false }}
     needs: node-majors
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -239,3 +241,31 @@ jobs:
             echo "::error::the required check fails: computing the supported majors was '${{ needs.node-majors.result }}' and the per-major legs were '${{ needs.test-node.result }}' — both must be 'success'"
             exit 1
           fi
+
+  # THROWAWAY (task 8.3, never merged): the assertion half per-file against single-process on a CI
+  # runner, Node 24, three runs each, interleaved.
+  bench:
+    name: bench (node 24, per-file vs single-process)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Bench the assertion half both ways
+        run: |
+          set +e
+          echo "BENCH nproc=$(nproc) node=$(node --version)"
+          for mode in P S P S P S; do
+            if [ "$mode" = S ]; then flag=--test-isolation=none; else flag=; fi
+            s=$(date +%s%N)
+            FORCE_COLOR=0 node --test --test-reporter=spec $flag scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/o.txt 2>&1
+            rc=$?
+            e=$(date +%s%N)
+            echo "BENCH mode=$mode rc=$rc wall_ms=$(( (e - s) / 1000000 )) $(grep -m1 '^ℹ tests ' /tmp/o.txt) $(grep -m1 '^ℹ pass ' /tmp/o.txt) $(grep -m1 '^ℹ duration_ms ' /tmp/o.txt)"
+          done
