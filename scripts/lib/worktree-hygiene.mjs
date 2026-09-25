@@ -156,7 +156,8 @@ export function verifyState() {
     );
   }
   const handEdit =
-    "conductor: state.json was modified AFTER the last render — this looks like an " +
+    "conductor: state.json was modified AFTER the engine last wrote it (its last render or save, as " +
+    "recorded on .conductor/render-stamp.json) at the same revision — this looks like an " +
     "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
     "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
     "review the diff, and reconcile before trusting PROJECT.md again.\n";

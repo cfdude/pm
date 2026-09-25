@@ -104,7 +104,10 @@ test("verify-state catches a hand-edit made AFTER an engine save that did not re
   const future = new Date(Date.now() + 60_000);
   fs.utimesSync(statePath, future, future);
   assert.ok(expectFail(() => run(["verify-state"], { cwd })), "the hand-edit is reported");
-  assert.match(runCombined(["verify-state"], { cwd }), /undetected hand-edit/);
+  const said = runCombined(["verify-state"], { cwd });
+  assert.match(said, /undetected hand-edit/);
+  assert.match(said, /after the engine last wrote it \(its last render or save/i, "it names the baseline it compared against");
+  assert.doesNotMatch(said, /AFTER the last render/, "not the render alone, which this edit came after a save to");
 });
 test("verify-state cannot rule out a hand-edit when the revision moved past the last recorded save", () => {
   const cwd = tmpRepo();
