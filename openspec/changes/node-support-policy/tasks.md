@@ -626,7 +626,7 @@ Commit mechanics, which bind every section below:
         property it keeps is that tests spawn nothing and run no git.
       - 4.2b's `CLAUDE.md:19` support-floor assertion lands in this commit.
       Verify: `rg -n 'isolation|Node 18' CLAUDE.md` returns nothing.
-- [ ] 7.4 The repo skills.
+- [x] 7.4 The repo skills.
       - `.claude/skills/pr-workflow/SKILL.md`:
         - `:22` and `:97`: the commands;
         - `:3` and `:8`: the `test` check is now an aggregate over the matrix legs.
