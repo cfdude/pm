@@ -8266,10 +8266,11 @@
       "description": "Code review 0.43.0 (A1, A2). (1) epic-progress.mjs epicProgress: after the change moves under archive/, tasks.md is not found and archive-as-delivered is accepted with 2 of 3 tasks unticked; archivedTasksPath() exists but is used only for backfilled epics (the gate-integrity spec currently permits reading zero — a spec-level check that cannot fail). (2) Array.isArray(epic.stories) is preferred over the tasks source: tasks.md at 1/3, `--add-story x`, `--story 1 --done --status archived --outcome delivered` archives with PROJECT.md showing 1/1. Fix: read the archived tasks.md when the live one is gone (amend the spec); count tasks and stories together or refuse to switch source.",
       "attributedCommits": [
         "6fe6b3d43150b80fdd87d56b0b42ce34b57127ff",
-        "0471ac3f081cca992f79dd0c2e32aeef96c1d753"
+        "0471ac3f081cca992f79dd0c2e32aeef96c1d753",
+        "a6e49014a754bba9a23aaace7f0d3fb6c270477c"
       ],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-25T20:10:10.535Z",
+      "touchedAt": "2026-09-25T20:37:47.811Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:09.437Z",
@@ -10264,9 +10265,17 @@
       "externalId": "224",
       "externalUrl": "https://github.com/cfdude/pm/issues/224",
       "externalUpdatedAt": "2026-09-25T04:16:37Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c3781ab9f5adc1037371b82abf0c216759eb260c",
+        "462750ea38495bbeca083b3726876a63631b9aae",
+        "3ffe0842ff3f1013dce5acff62333a6231a65f5b",
+        "76daee34c5bbd5b085b4fbc8457141cf8092c275",
+        "01c6e6ee2fa094473fe35a31840dd1bf2d57942f",
+        "bab22f9f52ef912c172d268ff17b3bcbbd451ad8",
+        "ec042256c3d4c32fe4b33fe111ef48e493082ac1"
+      ],
       "createdAt": "2026-09-25T19:03:34.037Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "touchedAt": "2026-09-25T20:45:43.752Z",
       "notes": [
         {
           "at": "2026-09-25T19:03:35.444Z",
@@ -10302,7 +10311,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1391,
+  "revision": 1399,
   "reviewMode": "thorough",
   "releases": [
     {
