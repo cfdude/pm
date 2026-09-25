@@ -5,9 +5,11 @@
 // Before this change the engine refused by calling `process.exit()`, at 194 sites in scripts/lib
 // and five in conductor.mjs. That is not testable in-process — an exit cannot be observed, only
 // survived — and it is the reason every assertion about a refusal had to spawn a `node`. It is
-// also unsafe under the assertion half's design: all of its files share ONE process
-// (`--test-isolation=none`), so a single stray exit takes every remaining test file down with it
-// and the failure reads as a catastrophe rather than as the one refusal it is.
+// also unsafe for any in-process caller: a single stray exit ends the caller's whole process — in
+// the assertion half, one test file's process, taking that file's remaining tests down with it (the
+// count floor then fires on the shortfall) — and the failure reads as a catastrophe rather than as
+// the one refusal it is. The rule itself is engine-invocation's: an in-process refusal returns a
+// status.
 //
 // So the engine refuses by THROWING (lib/command-exit.mjs), and this guard is what keeps that
 // true. It reads source, so it is deliberately dumb about everything except the one question:
@@ -126,7 +128,8 @@ test("the engine contains no executable process.exit( — a refusal throws inste
     for (const site of executableExitSites(src)) findings.push(`${file}:${site}`);
   }
   assert.deepEqual(findings, [],
-    "an executable process.exit() kills the assertion half's ONE shared process. Every refusal " +
+    "an executable process.exit() kills its caller's whole process (in this half, one test file's " +
+    "process and every test left in it). Every refusal " +
     "must go through die() in lib/command-exit.mjs, which writes the message and throws " +
     "CommandExit. The CLI tail assigns process.exitCode, which this guard does not match.");
 });

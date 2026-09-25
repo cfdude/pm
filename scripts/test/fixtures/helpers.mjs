@@ -70,9 +70,9 @@ export function manyEpics(n) {
  *  writer landed between this read and this write". It fires ONCE, so the retry lands; only
  *  `revision` is touched, so the retry still has something to heal.
  *
- *  THE RETURNED RESTORE IS NOT OPTIONAL. `fs` is ONE object for the whole assertion half — every
- *  file shares it under --test-isolation=none — so a caller that leaves the patch installed turns
- *  every later test's saveState into a conflict. It returns whether it FIRED, which is the
+ *  THE RETURNED RESTORE IS NOT OPTIONAL. `fs` is ONE object for the whole process — every test in
+ *  a file shares it — so a caller that leaves the patch installed turns every later test's saveState
+ *  into a conflict. It returns whether it FIRED, which is the
  *  non-vacuity proof the callers assert on: a seam that silently did not fire would otherwise make
  *  a green run mean "no conflict ever happened". */
 export function injectConflictOnce(dir) {

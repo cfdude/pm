@@ -56,8 +56,8 @@ const WRITE_NAMES = [
   "writeSync", "writevSync", "fchmodSync", "utimesSync",
 ];
 
-/** Armed for ONE test at a time — the rung runs in one process, sequentially, so a stack of one is
- *  the whole requirement. `actors` holds the path fragments that make a read the TEST's work. */
+/** Armed for ONE test at a time — a file's tests run in its process sequentially, so a stack of one
+ *  is the whole requirement. `actors` holds the path fragments that make a read the TEST's work. */
 let armed = false;
 let actors = [];
 const writes = [];

@@ -251,7 +251,7 @@ Commit mechanics, which bind every section below:
       coupling check needs the twin edited, not merely present. Run `certify.mjs functional` first. Mutation: the
       listener's `process.exitCode = 1` removed in a scratch copy → the functional test fails.
       Save `mutation-2.4c.txt`.
-- [ ] 2.5 Comments and one test title that state the retired mode as the rationale (design D3 rows
+- [x] 2.5 Comments and one test title that state the retired mode as the rationale (design D3 rows
       4–8 and 10):
       - `scripts/lib/invocation.mjs:10-13`, `:20-21`, `:67-68`;
       - `scripts/lib/constants.mjs:14-19`;

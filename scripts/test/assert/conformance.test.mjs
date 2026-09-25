@@ -47,6 +47,9 @@ const initializedRepo = fixtureOnce(() => {
 // the memory store does not share (probed: the same fixture returns 0 there, not 9).
 
 test("conformance: main() RETURNS its status — it is not a promise", () => {
+  // The half calls the engine in process, many invocations per file, from SYNCHRONOUS test callbacks;
+  // an entry point that answered with a Promise could not be called from them at all (the functional
+  // twin carries the full argument).
   const cwd = initializedRepo();
   const r = invokeEngine(["init"], { cwd });
   assert.equal(typeof r.status, "number", `main() must return a numeric status; got ${typeof r.status}`);

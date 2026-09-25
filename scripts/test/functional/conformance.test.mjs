@@ -355,8 +355,9 @@ test("conformance: the entry point never ends the calling process, whatever it i
 });
 
 test("conformance: main() RETURNS its status — it is not a promise", () => {
-  // WHY THIS IS A REQUIREMENT AND NOT A STYLE CHOICE. The assertion half runs one process for the
-  // whole suite, and 1,624 of the suite's 1,852 `test(...)` callbacks are SYNCHRONOUS. `await` inside
+  // WHY THIS IS A REQUIREMENT AND NOT A STYLE CHOICE. The assertion half calls the engine IN PROCESS,
+  // many invocations per test file, and 1,624 of the suite's 1,852 `test(...)` callbacks are
+  // SYNCHRONOUS. `await` inside
   // a sync callback is a syntax error, so an entry point that answered with a Promise would leave two
   // options, both bad: convert 1,624 callbacks, or keep spawning a child — which is the process
   // boundary the assertion half exists to remove. A sync status is what makes the in-process `run()`

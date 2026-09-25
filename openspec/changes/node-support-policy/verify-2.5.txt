@@ -1,0 +1,43 @@
+# verify-2.5 — `rg -n -i 'isolation=none|single process|one process|shared process' scripts/lib scripts/test` on the 2.5 tree
+# Every surviving line, with the reason it survives. No line claims the assertion half runs in one process
+# except the two OWNED BY 1.4 (the hook narrative, rewritten in the 1.4 + 1.5 commit, the next in landing order).
+# 39 lines.
+scripts/lib/subcommands.mjs:1008	HISTORY: records why a spawned engine was 'accidentally right' (one process, one root); the point is in-process callers serving many invocations
+scripts/lib/subcommands.mjs:1011	HISTORY: a dated measurement of gh#175 under the old single-process half; a record, kept as written
+scripts/lib/invocation.mjs:7	in-process caller: engine-invocation's two invocations in ONE process
+scripts/lib/invocation.mjs:104	in-process caller: one process serving many invocations
+scripts/lib/git.mjs:78	in-process caller: one process serves many invocations
+scripts/lib/store.mjs:453	NOT a runner-mode claim: lock-breaking concurrency between processes
+scripts/lib/git-gateway.mjs:201	NOT a runner-mode claim: `git cat-file --batch-check` resolves many commits in one git process
+scripts/lib/command-exit.mjs:14	in-process caller: two invocations in one process
+scripts/test/functional/conformance.test.mjs:392	in-process caller: one process able to serve many invocations
+scripts/test/functional/conformance.test.mjs:427	in-process caller: test title, two invocations in one process
+scripts/test/functional/conformance.test.mjs:463	in-process caller: every call in one file's process would register another listener (true per file)
+scripts/lib/constants.mjs:17	in-process caller: REWRITTEN by 2.5 to that rationale
+scripts/test/functional/per-call-roots.test.mjs:3	in-process caller: two roots in one process
+scripts/test/functional/per-call-roots.test.mjs:6	in-process caller: main() twice in one process
+scripts/test/functional/per-call-roots.test.mjs:52	in-process caller: test title
+scripts/test/functional/conductor-09.test.mjs:294	OWNED BY 1.4: the hook narrative in functional/conductor-09 is rewritten in the 1.4 + 1.5 commit (its twin re-points land there)
+scripts/test/fixtures/harness.mjs:81	in-process caller: many invocations share one process
+scripts/test/fixtures/git-gateway-capture.json:164	NOT a runner-mode claim: fixture copy of git-gateway.mjs:201
+scripts/test/fixtures/temp-dir.mjs:5	HISTORY: 'While the assertion half ran in one process' — past tense, explains the leak
+scripts/test/assert/conductor-09.test.mjs:99	OWNED BY 1.4: assert/conductor-09's :94-128 narrative is rewritten in the 1.4 + 1.5 commit
+scripts/test/assert/git-shim.test.mjs:6	HISTORY: past tense, explains the leak
+scripts/test/assert/conductor-12.test.mjs:12	in-process caller: two roots in ONE process
+scripts/test/assert/conductor-12.test.mjs:22	in-process caller: a second root in one process
+scripts/test/assert/store-seam.test.mjs:9	in-process caller: one invocation made twice in ONE process
+scripts/test/assert/store-seam.test.mjs:111	in-process caller: test title, two stores in one process
+scripts/test/assert/store-seam.test.mjs:112	in-process caller: one process, two stores
+scripts/test/assert/per-call-roots.test.mjs:4	in-process caller: two roots in one process
+scripts/test/assert/per-call-roots.test.mjs:12	in-process caller: REWRITTEN by 2.5 to that rationale
+scripts/test/assert/per-call-roots.test.mjs:24	in-process caller: test title
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:6	REWRITTEN by 2.5: the runner MAY start one process per file, no test starts one
+scripts/test/assert/assert-half-has-no-spawn.test.mjs:180	HISTORY: 2.1's walk explaining why the counter is per process
+scripts/test/assert/conformance.test.mjs:11	in-process caller: two invocations in one process
+scripts/test/assert/conformance.test.mjs:106	in-process caller: many invocations share one process
+scripts/test/assert/conformance.test.mjs:121	in-process caller: test title
+scripts/test/unit/head-attachment.test.mjs:17	in-process caller: two memory stores in one process
+scripts/test/unit/head-attachment.test.mjs:55	in-process caller: test title
+scripts/test/unit/conductor-12.test.mjs:9	in-process caller: a second root in one process
+scripts/test/unit/conformance.test.mjs:14	in-process caller: five brief invocations in one process
+scripts/test/unit/state-verb.test.mjs:39	in-process caller: test title

@@ -8,9 +8,9 @@
 // root, another in a subdirectory), which needs a real repository (design D5).
 //
 // 3.1 is the guarantee the whole split rests on, and it is the one that must fail LOUDLY on every
-// commit if a module-scope root ever comes back: under `--test-isolation=none` every file shares one
-// module graph, so a captured root would make every later test in this half write into the first
-// test's directory.
+// commit if a module-scope root ever comes back: every test in a file shares one module graph, and
+// this file drives several roots in one process, so a captured root would make every later test in
+// it write into the first test's directory.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

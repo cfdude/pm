@@ -2,9 +2,10 @@
 // 5.2 — THE ASSERTION-HALF GUARD (design D5, suite-certification's "No test in the assertion half
 // spawns a process or runs git" — 0.49.0's restatement of the requirement this file enforces).
 //
-// WHAT IT IS FOR. The assertion half's whole value is that it runs in ONE process on every commit,
-// on the git double, without booting Node once per assertion. A single `spawnSync` added to one file
-// takes that back for the whole half — and the way it happens is not malice, it is a test that needs
+// WHAT IT IS FOR. The assertion half's whole value is that it runs on every commit, on the git
+// double, without booting Node or git once per assertion — the runner may start one process per
+// FILE, but no TEST starts one. A single `spawnSync` added to one file takes that back for the whole
+// half — and the way it happens is not malice, it is a test that needs
 // "just one real git call": the file goes on passing, the half goes on passing, and the property the
 // half was split out for is gone with nothing to say so. The suite-certification capability states
 // the guard as a SHALL for exactly that reason.
@@ -140,7 +141,7 @@ test("5.2 the assertion half spawns no child process and runs no git", () => {
   assert.ok(files.length > 40, `the assertion half holds ${files.length} files; a walk over an empty or nearly-empty directory is not a check`);
   const found = files.flatMap(f => violations(f, fs.readFileSync(path.join(HERE, f), "utf8")));
   assert.deepEqual(found, [],
-    "the assertion half runs in ONE process, on the git double, and starts no engine subprocess. A " +
+    "no test in the assertion half starts a process: it runs on the git double and starts no engine subprocess. A " +
     "file that needs real git belongs in scripts/test/functional/ — it runs on the trigger there, " +
     "which is what makes a real git call affordable. Do not weaken this guard: add the test to the " +
     "functional half instead, or extend fixtures/fake-git.mjs if the call is scenery.");
@@ -271,7 +272,7 @@ test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the s
 
 const UNIT = path.join(HERE, "..", "unit");
 
-test("2.1 the unit rung performs no filesystem work at all, and lives in one process with the half", () => {
+test("2.1 the unit rung performs no filesystem work at all, and is a rung of the half", () => {
   const files = fs.readdirSync(UNIT).filter(f => f.endsWith(".test.mjs")).sort();
   // ─── 2.5 — THE NON-VACUITY ASSERTION, AND ITS NUMBER IS THIS RUNG'S OWN ───
   //

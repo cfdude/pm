@@ -43,9 +43,9 @@ export function refusalSummary(code) {
 
 /** Write `message` to the current invocation's stderr and throw `CommandExit(code)`.
  *
- *  Never `process.exit()`: under the assertion half's ONE shared process an exit takes every
- *  remaining test file with it, and a missed site reads as a catastrophic failure rather than as
- *  the one refusal it is. `scripts/test/assert/no-inline-exit.test.mjs` is the guard. */
+ *  Never `process.exit()`: an in-process caller may serve many invocations, and an exit takes its
+ *  whole process with it — in the assertion half, every remaining test in that file — so a missed
+ *  site reads as a catastrophic failure rather than as the one refusal it is. `scripts/test/assert/no-inline-exit.test.mjs` is the guard. */
 export function die(message, code = 1) {
   invocation().stderr.write(message);
   throw new CommandExit(code);
