@@ -7042,14 +7042,15 @@
       "externalUpdatedAt": "2026-09-12T06:31:42Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:22.066Z",
-      "touchedAt": "2026-09-14T18:18:24.035Z",
+      "touchedAt": "2026-09-25T19:26:10.189Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:24.032Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
-      ]
+      ],
+      "release": "0.50.0"
     },
     {
       "id": "gh-cfdude-pm-190",
@@ -7912,7 +7913,8 @@
       "description": "Code review 0.43.0 (B2, E1). add-epic.mjs EPIC_DEDUP_KEYS check sits inside `if (externalId !== undefined)`. Repro: five epics with the same issue URL, each command exit 0. Also: the add-epic duplicate message names external-id when the collision was the URL. Fix: one shared dedup check (URL-keyed) called by add-epic, update-epic and add-many.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:09.965Z",
-      "touchedAt": "2026-09-15T05:11:09.990Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "drift-heal-leaves-claim-on-archive",
@@ -7939,7 +7941,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:12.083Z",
-      "touchedAt": "2026-09-15T05:11:12.085Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "add-many-drops-input-silently",
@@ -7959,7 +7962,8 @@
       "description": "Code review 0.43.0 (B1, B2). add-many.mjs/links.mjs mergeLinks skips non-objects: links [\"depends-on:base\"] or \"depends-on:base\" vanish with exit 0; {type:'depends-on',epic:'ghost'} is stored dangling; {type:'blocks'} with no target is stored and cannot render; {parent,…,\"epic\":[…]} creates only the parent. Spec: a bulk write persists what it accepts or rejects by name. Fix: validate top-level keys and route links through parseLinkFlags-equivalent validation against existing plus batch ids.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:14.105Z",
-      "touchedAt": "2026-09-15T05:11:14.108Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "hooks-not-silent-before-init",
@@ -7979,14 +7983,15 @@
       "description": "Code review 0.43.0 (C1, E2). conductor.mjs warnRootDivergence / warnDetachedTree run before any isInitialized() check: snapshot (PreCompact) in a non-pm detached repo prints a 4-line 'about to write .conductor/brief.txt' and writes nothing; commit-nudge prints 'WRITING A DIFFERENT REPOSITORY' when CLAUDE_PROJECT_DIR is a non-pm repo. Breaks hooks/README.md 'silent until /pm:init'. Tests: mutating gate-guard's dormancy return to exit 2 (blocks Edit in every repo on the machine) survives 176 tests; removing snapshot's guard survives 131. Fix: skip both warnings when !isInitialized(); add dormancy tests for gate-guard, snapshot and brief like the existing commit-nudge/write-rules/lesson-advice ones.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:16.084Z",
-      "touchedAt": "2026-09-25T19:25:16.115Z",
+      "touchedAt": "2026-09-25T19:26:10.189Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:16.108Z",
           "actor": "agent",
           "text": "lane: claude-code not superpowers — dormancy-test half fixed in 0.44.0 (43ce728); what remains is one isInitialized() gate on two warnings plus a test; inventory 2026-09-25"
         }
-      ]
+      ],
+      "release": "0.50.0"
     },
     {
       "id": "gate-guard-bash-writes-unguarded",
@@ -8043,7 +8048,8 @@
       "description": "Code review 0.43.0 (C1, C2). lessons.mjs matchLessons compiles commandMatches with no complexity or input bound: detect {tool:Bash, commandMatches:'^(a+)+$'} on a 31-char command burned 60.4s CPU in the hook, on every Bash/Edit/Write call. An unknown key applies no predicate: {tool:Bash, commandMatch:'gh pr merge'} matched `ls`. CRLF frontmatter (/^---\\n/), a tool array and a bad regex are silently inert. Fix: allowlist detect keys, reject nested quantifiers or cap the matched text, accept CRLF, report rejects outside the hook.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:20.243Z",
-      "touchedAt": "2026-09-16T22:37:15.145Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "commit-watch-misses-commits",
@@ -8191,7 +8197,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:28.637Z",
-      "touchedAt": "2026-09-25T19:25:12.728Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "user-text-unescaped-in-render-brief-integrity",
@@ -8254,14 +8261,15 @@
       "description": "Code review 0.43.0 (A1, A2). (1) epic-progress.mjs epicProgress: after the change moves under archive/, tasks.md is not found and archive-as-delivered is accepted with 2 of 3 tasks unticked; archivedTasksPath() exists but is used only for backfilled epics (the gate-integrity spec currently permits reading zero — a spec-level check that cannot fail). (2) Array.isArray(epic.stories) is preferred over the tasks source: tasks.md at 1/3, `--add-story x`, `--story 1 --done --status archived --outcome delivered` archives with PROJECT.md showing 1/1. Fix: read the archived tasks.md when the live one is gone (amend the spec); count tasks and stories together or refuse to switch source.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-25T19:25:09.444Z",
+      "touchedAt": "2026-09-25T19:26:10.189Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:09.437Z",
           "actor": "agent",
           "text": "lane: openspec not superpowers — the fix amends gate-integrity and conductor-record ('Outstanding work is a defined quantity'); inventory 2026-09-25. Built together with gh-cfdude-pm-222 in one openspec change, which also removes the stale duplicate openspec/changes/functional-assertion-test-split/."
         }
-      ]
+      ],
+      "release": "0.50.0"
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -8324,7 +8332,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:36.863Z",
-      "touchedAt": "2026-09-18T05:34:30.586Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "verify-state-false-hand-edit",
@@ -8351,7 +8360,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:38.936Z",
-      "touchedAt": "2026-09-15T05:11:38.938Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "agent-docs-teach-stale-gate-evidence",
@@ -8402,7 +8412,8 @@
       "description": "Code review 0.43.0 (E2). .githooks/pre-commit runs node --test against the checkout: staging a failing test and restoring a passing copy unstaged commits green, and HEAD holds the failing test — required item 2 (the commit is the unit of verification) applied to the suite. The declared count uses the same glob as the runner, so renaming a test out of the glob drops it from both (repro: 1/1 passing with 5 tests present); conductor-09's test for the guard asserts status 0, and mutants flipping the comparison survive. ci.yml has no count guard and tests Node 18 only. Fix: run against the index (stash --keep-index or a worktree of the index), count declared tests across scripts/test/** by content, a fixture that must abort, and the same guard in CI.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:42.968Z",
-      "touchedAt": "2026-09-15T05:11:42.971Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "no-network-law-test-is-weak",
@@ -8429,7 +8440,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:44.956Z",
-      "touchedAt": "2026-09-15T05:11:44.959Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "triage-ignores-non-latin-text",
@@ -8456,7 +8468,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:46.984Z",
-      "touchedAt": "2026-09-15T05:11:46.987Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "sync-registers-ids-add-epic-refuses",
@@ -8476,7 +8489,8 @@
       "description": "Code review 0.43.0 (D1). subcommands.mjs sync/backfillArchive register 'Add Auth', 'x|y', '.hidden', 'My Plan.md' (the id format is enforced only in add-epic); x|y breaks the Epics table and spaces break every emitted update-epic line. An active claude-code epic add-auth is archived with outcome unknown and the active pointer cleared because an unrelated archive/2025-01-01-add-auth exists; sync prints 'synced (0 new…)'. Fix: one id validator shared by all registration paths; the heal matches by recorded spec path, not bare name.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:48.976Z",
-      "touchedAt": "2026-09-15T05:11:48.979Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "code-review-0-43-0-minors",
@@ -8533,7 +8547,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-17T17:34:06.180Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -10076,7 +10091,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-22T11:09:54.633Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     },
     {
       "id": "node-support-policy",
@@ -10196,14 +10212,15 @@
       "externalUpdatedAt": "2026-09-25T03:54:58Z",
       "attributedCommits": [],
       "createdAt": "2026-09-25T19:03:32.224Z",
-      "touchedAt": "2026-09-25T19:03:34.737Z",
+      "touchedAt": "2026-09-25T19:26:10.189Z",
       "notes": [
         {
           "at": "2026-09-25T19:03:34.734Z",
           "actor": "agent",
           "text": "lane: openspec not (none routed) — changes the archive gate's refusal set, which the gate-integrity spec governs"
         }
-      ]
+      ],
+      "release": "0.50.0"
     },
     {
       "id": "gh-cfdude-pm-224",
@@ -10225,14 +10242,15 @@
       "externalUpdatedAt": "2026-09-25T04:16:37Z",
       "attributedCommits": [],
       "createdAt": "2026-09-25T19:03:34.037Z",
-      "touchedAt": "2026-09-25T19:03:35.447Z",
+      "touchedAt": "2026-09-25T19:26:10.189Z",
       "notes": [
         {
           "at": "2026-09-25T19:03:35.444Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — test-harness only, multi-file sweep with a guard; resolve away from claude-code"
         }
-      ]
+      ],
+      "release": "0.50.0"
     },
     {
       "id": "gh-cfdude-pm-219",
@@ -10248,7 +10266,8 @@
       "externalUpdatedAt": "2026-09-22T12:11:09Z",
       "attributedCommits": [],
       "createdAt": "2026-09-25T19:25:05.286Z",
-      "touchedAt": "2026-09-25T19:25:05.295Z"
+      "touchedAt": "2026-09-25T19:26:10.189Z",
+      "release": "0.50.0"
     }
   ],
   "detourStack": [],
@@ -10259,7 +10278,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1382,
+  "revision": 1383,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10723,6 +10742,11 @@
         ],
         "reviewer": "two fresh-context lenses (coherence; falsifiability) + one confirmation: round 1 fail (BLOCKS: 'supported' R1/R2 contradiction over 23/25/27; bounded-wait over-wide; schedule filter unfalsifiable; zero-count CI pass; unfalsifiable version-default scenario; collapsed-half message; unit fs ban vs shim), fixed at 8a73f75; confirmation fail (end clause untested; twin coupling), fixed at 9fa4163; 2026-09-24"
       }
+    },
+    {
+      "id": "0.50.0",
+      "intent": "Close the 0.43.0 review's open findings, the archive gate's blind spots (#222, handoff), the test-harness temp-dir leak (#224), and the last fsync wall in the per-commit gate if measurement supports it",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
