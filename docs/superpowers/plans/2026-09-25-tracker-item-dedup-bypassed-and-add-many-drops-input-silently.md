@@ -1,6 +1,6 @@
 # Tracker-item dedup at every writer + add-many input validation — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** One tracker item maps to one epic on every write path, and an `add-many` batch persists
 everything it accepts or refuses it by name.
@@ -84,7 +84,7 @@ after every batch id is known.
 - `trackerKeyHolder(others: Epic[], candidate: {externalUrl?, externalId?}) → {holder: Epic, key: "externalUrl"|"externalId"} | null`
 - `trackerKeyRefusal(hit, candidate, {inBatch?: boolean}) → string` (no `conductor:` prefix, no newline)
 
-- [ ] **Step 1: failing tests** — in `tracker-item-dedup.test.mjs`, each on `memoryEngine(emptyRecord())`:
+- [x] **Step 1: failing tests** — in `tracker-item-dedup.test.mjs`, each on `memoryEngine(emptyRecord())`:
   - `add-epic --external-url U` twice with different ids and NO `--external-id` → second refused, stderr names `external-url` and the holder id; one epic.
   - `add-epic` with the exact emitted sync line shape (`--id gh-cfdude-pm-7 --title=… --status untriaged --external-id 7 --external-url=U …`) when `other` already holds `U` → refused naming `other`.
   - `update-epic d --external-url U` when `a` holds U → refused naming `a`; `d` unchanged.
@@ -93,8 +93,8 @@ after every batch id is known.
   - seeded record with two holders of U: `render`, `brief`, `update-epic b --priority P1` succeed; `update-epic b --external-url U` refused naming `a`; `update-epic a --clear external-url` then `update-epic b --external-url U` succeeds.
   - `--clear external-url` succeeds even when it leaves an `externalId` fallback collision.
   - the `externalId` fallback (no URL either side) is enforced by `update-epic --external-id`.
-- [ ] **Step 2:** `node --test scripts/test/unit/tracker-item-dedup.test.mjs > red-1.txt` — FAIL (duplicates accepted).
-- [ ] **Step 3: implement** `tracker-dedup.mjs`:
+- [x] **Step 2:** `node --test scripts/test/unit/tracker-item-dedup.test.mjs > red-1.txt` — FAIL (duplicates accepted).
+- [x] **Step 3: implement** `tracker-dedup.mjs`:
 
 ```js
 import { EPIC_DEDUP_KEYS, escapeControls } from "./constants.mjs";
@@ -118,25 +118,25 @@ export function trackerKeyRefusal({ holder, key }, candidate, { inBatch = false 
   `add-epic`: build `candidate` from `--external-url`/`--external-id`; when either is set, refuse on a hit.
   `update-epic`: when either flag is SET, candidate = supplied value, else the epic's current value
   unless that key is being cleared; compare against `state.epics` minus the epic itself.
-- [ ] **Step 4:** targeted run passes; update `conductor-04`'s `/external-id '42' already/` to the URL key it actually collided on.
-- [ ] **Step 5:** commit `fix(dedup): one tracker item maps to one epic at add-epic and update-epic` (under the certify lock).
+- [x] **Step 4:** targeted run passes; update `conductor-04`'s `/external-id '42' already/` to the URL key it actually collided on.
+- [x] **Step 5:** commit `fix(dedup): one tracker item maps to one epic at add-epic and update-epic` (under the certify lock).
 
 ### Task 2: add-many enforces the same guard, against the record and within the batch
 
 **Files:** Modify `scripts/lib/add-many.mjs`; Test `scripts/test/unit/tracker-item-dedup.test.mjs`.
 
-- [ ] **Step 1: failing tests:** a batch entry with `externalUrl` held by an existing epic → refused naming it, nothing written; two batch entries with one `externalUrl` → refused naming the first entry; `parent` + child sharing a URL → refused.
-- [ ] **Step 2:** save `red-2.txt`.
-- [ ] **Step 3: implement** a pass after the per-entry loop: for each entry in order, `trackerKeyHolder([...state.epics, ...earlierEntries], entry)`; refuse with `trackerKeyRefusal(hit, entry, { inBatch: earlierEntries.includes(hit.holder) })`.
-- [ ] **Step 4:** targeted run passes. **Step 5:** commit `fix(add-many): refuse a tracker item another epic or batch entry already holds`.
+- [x] **Step 1: failing tests:** a batch entry with `externalUrl` held by an existing epic → refused naming it, nothing written; two batch entries with one `externalUrl` → refused naming the first entry; `parent` + child sharing a URL → refused.
+- [x] **Step 2:** save `red-2.txt`.
+- [x] **Step 3: implement** a pass after the per-entry loop: for each entry in order, `trackerKeyHolder([...state.epics, ...earlierEntries], entry)`; refuse with `trackerKeyRefusal(hit, entry, { inBatch: earlierEntries.includes(hit.holder) })`.
+- [x] **Step 4:** targeted run passes. **Step 5:** commit `fix(add-many): refuse a tracker item another epic or batch entry already holds`.
 
 ### Task 3: add-many validates the document's own shape
 
 **Files:** Modify `scripts/lib/add-many.mjs`; Test `scripts/test/unit/add-many-input.test.mjs`.
 
-- [ ] **Step 1: failing tests:** `{"parent":{…},"epic":[…]}` refused naming `epic` and the supported keys, nothing written; `[]`, `null`, `"x"` refused as "must be a JSON object"; `{"epics":{}}` refused "epics must be an array"; `{"parent":"x"}` refused "parent must be an object".
-- [ ] **Step 2:** `red-3.txt`.
-- [ ] **Step 3: implement** before `loadState()`:
+- [x] **Step 1: failing tests:** `{"parent":{…},"epic":[…]}` refused naming `epic` and the supported keys, nothing written; `[]`, `null`, `"x"` refused as "must be a JSON object"; `{"epics":{}}` refused "epics must be an array"; `{"parent":"x"}` refused "parent must be an object".
+- [x] **Step 2:** `red-3.txt`.
+- [x] **Step 3: implement** before `loadState()`:
 
 ```js
 const DOC_KEYS = ["parent", "epics"];
@@ -147,29 +147,72 @@ if (doc.parent !== undefined && (!doc.parent || typeof doc.parent !== "object" |
 if (doc.epics !== undefined && !Array.isArray(doc.epics)) refuse("`epics` must be an array");
 ```
   (`refuse` moves above these lines.)
-- [ ] **Step 4/5:** passes; commit `fix(add-many): refuse a batch document with unknown or mis-shaped top-level keys`.
+- [x] **Step 4/5:** passes; commit `fix(add-many): refuse a batch document with unknown or mis-shaped top-level keys`.
 
 ### Task 4: add-many links pass the same validation as `--link`
 
 **Files:** Modify `scripts/lib/add-many.mjs`, `scripts/lib/add-epic.mjs` (extract `splitLinkSpec`); Test `scripts/test/unit/add-many-input.test.mjs`.
 
-- [ ] **Step 1: failing tests:** `links: ["depends-on:base"]` persists `{type:"depends-on",epic:"base"}`; `"depends-on:base:why"` keeps the reason; `links: "depends-on:base"` refused "links must be an array"; `links: null` refused; `{type:"depends-on",epic:"ghost"}` refused "'ghost' is not a known epic id"; `{type:"blocks"}` refused naming the missing target; `{type:"blocks",epic:"b",verdict:"valid"}` refused naming `verdict`; `42` refused; a link to a LATER batch entry accepted; a self-link accepted; unknown type still refused.
-- [ ] **Step 2:** `red-4.txt`.
-- [ ] **Step 3: implement** `splitLinkSpec(s) → {type, epic, reason}` in add-epic.mjs (used by `parseLinkFlags`), and in add-many a `batchLink(raw, known) → {type, epic, reason?}` that throws a named message; run it after ids are collected (`known = existingIds ∪ batchIds`), store the normalized list, and pass it to `mergeLinks([], …)` in the copy loop.
-- [ ] **Step 4/5:** passes; commit `fix(add-many): links persist or refuse by name — strings parsed, dangling and target-less refused`.
+- [x] **Step 1: failing tests:** `links: ["depends-on:base"]` persists `{type:"depends-on",epic:"base"}`; `"depends-on:base:why"` keeps the reason; `links: "depends-on:base"` refused "links must be an array"; `links: null` refused; `{type:"depends-on",epic:"ghost"}` refused "'ghost' is not a known epic id"; `{type:"blocks"}` refused naming the missing target; `{type:"blocks",epic:"b",verdict:"valid"}` refused naming `verdict`; `42` refused; a link to a LATER batch entry accepted; a self-link accepted; unknown type still refused.
+- [x] **Step 2:** `red-4.txt`.
+- [x] **Step 3: implement** `splitLinkSpec(s) → {type, epic, reason}` in add-epic.mjs (used by `parseLinkFlags`), and in add-many a `batchLink(raw, known) → {type, epic, reason?}` that throws a named message; run it after ids are collected (`known = existingIds ∪ batchIds`), store the normalized list, and pass it to `mergeLinks([], …)` in the copy loop.
+- [x] **Step 4/5:** passes; commit `fix(add-many): links persist or refuse by name — strings parsed, dangling and target-less refused`.
 
 ### Task 5: docs + changesets
 
-- [ ] README `add-many` row and the `externalUrl` dedup sentence; `commands/epic.md` `--external-url` row.
-- [ ] `.changesets/tracker-item-dedup-bypassed.md`, `.changesets/add-many-drops-input-silently.md` (user-facing prose only).
-- [ ] Commit `docs: tracker-item dedup on every writer; add-many batch validation`.
+- [x] README `add-many` row and the `externalUrl` dedup sentence; `commands/epic.md` `--external-url` row.
+- [x] `.changesets/tracker-item-dedup-bypassed.md`, `.changesets/add-many-drops-input-silently.md` (user-facing prose only).
+- [x] Commit `docs: tracker-item dedup on every writer; add-many batch validation`.
 
 ---
 
-## Required item 1 — call-site sweep (filled in after Task 4)
+## Required item 1 — call-site sweep
 
-_Pending execution._
+Derived with `rg -n "\.externalUrl\s*=|\.externalId\s*=|externalUrl:|externalId:|pushEpic\(|trackerKeyHolder\(" scripts/lib scripts/conductor.mjs`
+and `rg -n "mergeLinks\(|parseLinkFlags\(|splitLinkSpec\(|\.links\s*=" scripts/lib` at HEAD.
+
+**Writers of the dedup key (`externalUrl` / `externalId`) — the rule HOLDS at every one:**
+
+| site | writes | guard |
+| --- | --- | --- |
+| `add-epic.mjs` addEpic (`epic.externalId/externalUrl =`) | `--external-id`, `--external-url` | `trackerKeyHolder(state.epics, …)` whenever either is supplied |
+| `update-epic.mjs` updateEpic (`epic.externalId/externalUrl =`) | `--external-id`, `--external-url` | `trackerKeyHolder(others, after-write candidate)` whenever either is SET |
+| `add-many.mjs` addMany (registry copy loop) | `externalId`, `externalUrl` batch keys | `trackerKeyHolder([...record, ...earlier entries], …)` per entry |
+| inward sync | the emitted `add-epic … --external-id … --external-url=…` line (rules.mjs `registrationStep`) | covered by add-epic; pinned by a test running that line's exact shape |
+| `subcommands.mjs` pushEpic ×3 (sync of openspec changes, superpowers plans, archive backfill) | no dedup key | n/a — none of the three writes a URL or external id |
+| `migrations.mjs` | no write of either key | n/a |
+
+**Where the rule deliberately does NOT hold:** `update-epic --clear external-url|external-id`, which is
+the inverse and is never refused (Decision 3), and every write that does not SET a key. That is what
+keeps a pre-existing duplicate loadable and editable (Decision 4).
+
+**Inverses.**
+- Refusing a second holder is inverted by freeing the key. `update-epic <holder> --clear external-url`
+  (and `--clear external-id`) already existed and is now tested to free the item, including on an
+  archived holder. `remove-epic` also frees it, by removing the holder.
+- A link `add-many` adds is inverted by the existing `update-epic --clear-links` and by `remove-epic`,
+  whose `epicReferences` removal strips links that point at the removed epic.
+- The document and link validation are refusals, so they have no inverse.
+
+**Data references.** A batch link's `epic` holds another record's id.
+- It is now validated at write, against the record's ids plus the batch's.
+- It is read by render, brief and integrity, all through `isRenderableLink`.
+- It is removed by `remove-epic` (links.mjs `epicReferences` → `e.links.filter`).
+- `externalUrl` and `externalId` are not epic ids.
+
+**Other link writers.**
+- `parseLinkFlags` (add-epic, update-epic) now shares `splitLinkSpec` with add-many's string form.
+- `detour-stack.mjs` and `push-detour` write engine-built `may-invalidate` links from validated ids. They are out of scope, because no user input reaches them.
+- `migrations.mjs` normalizes stored links. That is a read-repair path, and it stays permissive by design (`isRenderableLink` comment).
+
+**Not shipped:** an integrity check that REPORTS a pre-existing duplicate. It is deferred to
+`scripts/lib/integrity.mjs`, which is out of this worktree's scope, and filed as cfdude/pm#231.
 
 ## Required item 7 — route what the work taught
 
-_Pending execution._
+- **Product gap (tracker):** integrity does not report pre-0.50.0 duplicate holders → **filed #231**.
+- **Tooling friction:** the certify record is shared across parallel worktrees, so this work
+  certified under an orchestrator-convention lock (`pm-certify.lock`) with a #230-style refusal
+  of unstaged certified-set files. Both are already filed, as #226 and #230, so nothing new was filed.
+- **Process lesson:** none new. The one test that had to change (`conductor-04`) was pinning the E1
+  bug's wording. The existing practice (fix the pin, and say so in the commit) covered it.

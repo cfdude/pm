@@ -183,6 +183,17 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   chaining, no write race.
 - JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
   batch works too.
+- **The document itself is checked too.** It must be a JSON object whose only keys are `parent`
+  (one entry object) and `epics` (an array). A misspelled `"epic": [...]` used to create the parent
+  alone and exit 0; it is now refused by name and nothing is created.
+- **`links`** is an array, and each element is either a `"<type>:<epic>[:<reason>]"` string (the
+  `--link` grammar) or a `{"type": …, "epic": …, "reason": …}` object — nothing else. The target
+  must be an epic already in the record or an entry of the same batch (earlier or later), and the
+  type must be a known link type. A string link used to be dropped, a link to a missing epic stored
+  dangling and a target-less link stored unrenderable, all with exit 0; each is now refused by name.
+- **A tracker item maps to one epic.** An entry whose `externalUrl` (or, with no URL on either side,
+  `externalId`) is already held by an epic in the record — archived ones included — or by an earlier
+  entry of the same batch is refused, naming the holder.
 - **A batch key is not a command-line flag.** `add-many --from b.json --external-id X`<!-- pm:refused unknown-flag --> is refused
   before the batch is read (`unknown flag --external-id for add-many — it accepts: --from,
   --force`); it used to create the batch and drop the flag.
@@ -249,7 +260,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
-| `--external-url <url>` | `externalUrl` | the globally unique dedup key |
+| `--external-url <url>` | `externalUrl` | the globally unique dedup key — one tracker item, one epic: setting a URL another epic holds (archived included) is refused naming it; `--clear external-url` on the holder frees it |
 | `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock — an ISO-8601 date-time WITH a zone (`…Z`, `…+00:00`, or Jira's `…+0000`); a bare date, a zoneless time or an impossible date is refused |
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order. Resolved at write time and stored as the FULL object name (`HEAD`, a short sha or an annotated tag records the commit it names now); a value that is not a commit in this clone refuses the whole invocation |
 | `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence (the last) of a commit this epic attributed and records why. Matched by commit IDENTITY where the value resolves — a full sha withdraws a legacy short entry of the same commit — and by exact spelling otherwise, so a legacy value that no longer resolves (`not-a-commit`, a commit this clone lost) stays withdrawable. The withdrawal records the stored entry removed. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
