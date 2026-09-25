@@ -77,7 +77,9 @@ export function readEvents({ dir = activityDir(), since = null, epic = null } = 
       // one that reads N-1 lines — but COUNTED, and the count is printed.
       try { e = JSON.parse(line); } catch { malformed++; continue; }
       if (scoped && Date.parse(e.at) < sinceMs) continue;
-      if (epic && e.epic !== epic) continue;
+      // A detour event is about TWO epics — the one paused (`epic`) and the one it was paused for
+      // (`detour`) — and `--epic` finds it under either.
+      if (epic && e.epic !== epic && e.detour !== epic) continue;
       events.push(e);
     }
   }
@@ -150,7 +152,10 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
   for (const e of events) {
     if (e.kind === "detour-push" || e.kind === "detour-pop") {
       r.detours[e.kind === "detour-push" ? "push" : "pop"]++;
-      if (e.epic) r.detours.byEpic[e.epic] = (r.detours.byEpic[e.epic] || 0) + 1;
+      // PUSHES ONLY: the question is "how many detours interrupted it", and one interruption is one
+      // push. Counting the pop too reported every interruption twice — invisible only while `epic`
+      // was always null.
+      if (e.kind === "detour-push" && e.epic) r.detours.byEpic[e.epic] = (r.detours.byEpic[e.epic] || 0) + 1;
     }
     if (e.kind === "epic-created" && e.lane) r.lanes[e.lane] = (r.lanes[e.lane] || 0) + 1;
     // A lane CHANGE is the only mechanical evidence the log holds for "did the work later prove

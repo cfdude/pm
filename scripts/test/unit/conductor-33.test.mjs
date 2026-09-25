@@ -639,20 +639,40 @@ unitTest("gh-111: purge-logs selectors — keep, over and older-than, unioned", 
 
 // ─────────────── the diff, as a pure function ───────────────
 
-unitTest("gh-111: diffEvents reports detour push/pop and a gate verdict", async () => {
+unitTest("activity-log-detour-events-lose-epic: detour events name the paused epic, from frames push-detour really writes", async () => {
+  // The test this replaces built its frame by hand as `{ epic: "e1" }` — a shape no verb writes —
+  // so it passed while every real detour event carried `epic: null`. The frames here come from the
+  // verbs themselves, so a reader keyed on the wrong field fails here rather than in a report.
+  const { buildReport } = await import(AREPORT);
+  const engine = loggingRepo();
+  engine(["add-epic", "--id", "d1", "--lane", "claude-code", "--title", "detour"]);
+  engine(["update-epic", "e1", "--status", "active"]);
+  engine(["push-detour", "e1", "--detour", "d1", "--reason", "blocked", "--no-reconcile"]);
+  engine(["pop-detour", "e1"]);
+  engine(["push-detour", "e1", "--detour", "d1", "--reason", "blocked again", "--no-reconcile"]);
+
+  const detourEvents = allEvents(engine).filter(e => e.kind.startsWith("detour-"));
+  assert.deepEqual(detourEvents.map(e => [e.kind, e.verb, e.epic, e.detour, e.depth]), [
+    ["detour-push", "push-detour", "e1", "d1", 1],
+    ["detour-pop", "pop-detour", "e1", "d1", 0],
+    ["detour-push", "push-detour", "e1", "d1", 1],
+  ]);
+  // EXACT, not non-empty: e1 was interrupted twice. Counting the pop too reads 4, and a test that
+  // only checked byEpic was populated would pass that double count.
+  assert.deepEqual(buildReport(allEvents(engine)).detours.byEpic, { e1: 2 });
+});
+
+unitTest("activity-log-detour-events-lose-epic: a frame naming no paused epic yields epic null, never a throw", async () => {
+  const { diffEvents } = await import(ALOG);
+  const push = diffEvents(
+    { revision: 1, epics: [], detourStack: [] },
+    { revision: 2, epics: [], detourStack: [{ reason: "hand-edited" }, null] }, { verb: "v" });
+  assert.deepEqual(push.filter(e => e.kind === "detour-push").map(e => [e.epic, e.detour]), [[null, null], [null, null]]);
+});
+
+unitTest("gh-111: diffEvents reports a gate verdict, and a quiet write still leaves a line", async () => {
   const { diffEvents } = await import(ALOG);
   const epic = (over = {}) => ({ id: "e1", status: "active", lane: "openspec", ...over });
-  const push = diffEvents(
-    { revision: 1, epics: [epic()], detourStack: [] },
-    { revision: 2, epics: [epic()], detourStack: [{ epic: "e1", reason: "blocked" }] },
-    { verb: "update-epic", at: "2026-01-01T00:00:00.000Z" });
-  assert.equal(push.find(e => e.kind === "detour-push").epic, "e1");
-
-  const pop = diffEvents(
-    { revision: 2, epics: [epic()], detourStack: [{ epic: "e1" }] },
-    { revision: 3, epics: [epic()], detourStack: [] }, { verb: "resume" });
-  assert.equal(pop.find(e => e.kind === "detour-pop").epic, "e1");
-
   const gate = diffEvents(
     { revision: 3, epics: [epic()], detourStack: [] },
     { revision: 4, epics: [epic({ gateReview: { gate2: { verdict: "pass" } } })], detourStack: [] },

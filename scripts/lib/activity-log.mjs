@@ -169,11 +169,30 @@ export function appendEvents(events) {
 // ───────────────────────── the diff ─────────────────────────
 
 const byId = (state) => new Map((state && state.epics ? state.epics : []).map(e => [e.id, e]));
-const topOf = (state) => {
-  const st = state && Array.isArray(state.detourStack) ? state.detourStack : [];
-  return st.length ? st[st.length - 1] : null;
-};
-const frameEpic = (f) => (f && typeof f === "object" ? (f.epic || f.epicId || f.id || null) : null);
+const framesOf = (state) => (state && Array.isArray(state.detourStack) ? state.detourStack : []);
+/** THE FIELDS push-detour WRITES — `{ pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }`,
+ *  the only frame shape any verb or migration has ever produced (`git log -S pausedEpic` reaches the
+ *  initial commit). This used to read `f.epic || f.epicId || f.id`, keys nothing writes, so every detour
+ *  event carried `epic: null` and its unit test passed only against a hand-built `{ epic }` frame. A
+ *  fallback to a key nobody writes is not tolerance; it is the defect. */
+const frameField = (f, k) => (f && typeof f === "object" && typeof f[k] === "string" && f[k] ? f[k] : null);
+/** A frame's IDENTITY across one invocation. push-detour refuses to pause an epic already on the stack,
+ *  so `pausedEpic` is unique among live frames; `pausedAt` separates a pop and re-push of the same
+ *  epic. Serialised with JSON.stringify so no separator character can collide. */
+const frameKey = (f) => JSON.stringify([frameField(f, "pausedEpic"), frameField(f, "pausedAt")]);
+/** The frames in `from` that `to` does not hold, as a MULTISET difference — two malformed frames share a
+ *  key, and a set difference would report one of them. Order is `from`'s. */
+function framesMissing(from, to) {
+  const left = new Map();
+  for (const f of framesOf(to)) left.set(frameKey(f), (left.get(frameKey(f)) || 0) + 1);
+  const out = [];
+  for (const f of framesOf(from)) {
+    const k = frameKey(f);
+    if (left.get(k)) left.set(k, left.get(k) - 1);
+    else out.push(f);
+  }
+  return out;
+}
 
 /** Every state transition this invocation caused, as event objects.
  *
@@ -257,10 +276,13 @@ export function diffEvents(before, after, meta = {}) {
   }
   for (const id of b.keys()) if (!a.has(id)) out.push(ev("epic-removed", { epic: id }));
 
-  const beforeDepth = before && Array.isArray(before.detourStack) ? before.detourStack.length : 0;
-  const afterDepth = after && Array.isArray(after.detourStack) ? after.detourStack.length : 0;
-  if (afterDepth > beforeDepth) out.push(ev("detour-push", { epic: frameEpic(topOf(after)), depth: afterDepth }));
-  else if (afterDepth < beforeDepth) out.push(ev("detour-pop", { epic: frameEpic(topOf(before)), depth: afterDepth }));
+  // BY FRAME IDENTITY, NOT BY DEPTH. A depth comparison names the TOP frame, which is the wrong frame
+  // whenever the one that left was buried, and it cannot see a write that removes one frame and adds
+  // another. Each frame that appeared is a push; each that left is a removal.
+  const depth = framesOf(after).length;
+  const about = (f) => ({ epic: frameField(f, "pausedEpic"), detour: frameField(f, "spawnedDetour"), depth });
+  for (const f of framesMissing(after, before)) out.push(ev("detour-push", about(f)));
+  for (const f of framesMissing(before, after)) out.push(ev("detour-pop", about(f)));
 
   const pa = before ? (before.active || null) : null;
   const na = after ? (after.active || null) : null;
