@@ -40,14 +40,19 @@ export function verifyWorktrees() {
     // to be orphaned. Any other failure — above all a git older than 2.36, which refuses `-z` as an
     // unknown switch (status 129) — used to print the same `[]`, a check that could not run reading
     // exactly like a clean one. Refused instead, with git's own words.
-    if (e && e.status === 128) {
+    // Matched on git's OWN words, not on status 128 alone (branch review): git exits 128 for
+    // "dubious ownership" and a corrupt repository too, and those have worktrees nobody checked.
+    const said = e && e.stderr ? String(e.stderr).trim() : "";
+    if (/not a git repository/i.test(said)) {
       outStream().write(jsonText({ orphaned: [] }) + "\n");
       return;
     }
-    const said = e && e.stderr ? String(e.stderr).trim() : "";
-    die(`conductor: verify-worktrees could not list worktrees (git exited ${escapeControls(String(e && e.status))})` +
+    const how = e && e.code === "ENOENT" ? "git was not found on PATH"
+      : e && Number.isInteger(e.status) ? `git exited ${escapeControls(String(e.status))}`
+      : `git could not be run (${escapeControls(String((e && (e.code || e.message)) || "unknown error"))})`;
+    die(`conductor: verify-worktrees could not list worktrees — ${how}` +
       (said ? `: ${escapeControls(said)}` : "") +
-      " — it reads `git worktree list --porcelain -z`, which needs git 2.36 or later. Nothing was checked.\n");
+      ". It reads `git worktree list --porcelain -z`, which needs git 2.36 or later. Nothing was checked.\n");
   }
   const orphaned = [];
   let currentPath = null;

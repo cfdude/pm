@@ -96,4 +96,20 @@ test("verify-worktrees REFUSES when git cannot list worktrees for any reason but
   const none = invokeEngine(["verify-worktrees"], { cwd, git: failing(128, "fatal: not a git repository") });
   assert.equal(none.status, 0);
   assert.deepEqual(JSON.parse(none.stdout).orphaned, [], "outside a repository, empty is the true answer");
+
+  // Branch review: 128 is not only "not a repository". Dubious ownership and a corrupt repository
+  // exit 128 too, and those HAVE worktrees; the empty answer is keyed on git's own words now.
+  const dubious = invokeEngine(["verify-worktrees"], { cwd,
+    git: failing(128, "fatal: detected dubious ownership in repository at '/x'") });
+  assert.notEqual(dubious.status, 0, "a 128 that is not 'not a repository' is refused");
+  assert.equal(dubious.stdout, "");
+  assert.match(dubious.stderr, /dubious ownership/);
+  // And git missing altogether names that, instead of "git exited undefined".
+  const missing = invokeEngine(["verify-worktrees"], { cwd, git: {
+    ...fakeGit({ noRepository: true }),
+    worktreeList: () => { const e = new Error("spawnSync git ENOENT"); e.code = "ENOENT"; throw e; },
+  } });
+  assert.notEqual(missing.status, 0);
+  assert.match(missing.stderr, /git was not found on PATH/);
+  assert.doesNotMatch(missing.stderr, /undefined/);
 });

@@ -23,9 +23,11 @@ worktree is flagged for either reason, and `reasons` names which:
   status says (the case where `git branch -d` failed with "used by worktree" after the merge).
 
 Only `hierarchy-child/*` branches are considered; any other worktree is yours and is never listed.
-Outside a git repository it prints `{ "orphaned": [] }` rather than failing — there are no worktrees
-there. Any other failure to list them is refused with git's own message instead of an empty list; it
-reads `git worktree list --porcelain -z`, which needs git 2.36 or later.
+Outside a git repository — when git itself answers "not a git repository" — it prints
+`{ "orphaned": [] }` rather than failing: there are no worktrees there. Any other failure to list
+them (an older git, dubious ownership, a corrupt repository, git missing from PATH) is refused with
+git's own message instead of an empty list; it reads `git worktree list --porcelain -z`, which
+needs git 2.36 or later.
 
 To clean up a flagged worktree: `git worktree remove <path>`, then `git worktree prune`, then
 `git branch -d hierarchy-child/<epic-id>`.
