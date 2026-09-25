@@ -109,6 +109,14 @@ LOCK_HELD=1
 echo $$ > "$LOCKDIR/pid"
 [ "$waited" -gt 0 ] && echo "pre-commit: acquired the suite lock after ${waited}s"
 
+# ─────────── THE INDEX SNAPSHOT (0.50.0) ─── why an export, and not a stash, is explained at the runner below.
+# Made FIRST, so that everything after it — the drift script included — runs the COMMIT's copy.
+SNAP=$(mktemp -d "${TMPDIR:-/tmp}/pm-precommit-index.XXXXXX")
+if ! GIT_INDEX_FILE="$INDEX_FILE" git checkout-index -a --prefix="$SNAP/"; then
+  echo "pre-commit: ABORT -- could not export the index ($INDEX_FILE) to $SNAP to test it" >&2
+  exit 1
+fi
+
 # ─────────── THE DRIFT SCRIPT (6.4) ───────────
 # ONE IMPLEMENTATION OF FOUR RULES, and this hook carries none of them itself. The enrolment check
 # lived here INLINE from 5.3 until this task, because a commit between the first file moving and the
@@ -134,7 +142,17 @@ echo $$ > "$LOCKDIR/pid"
 #
 # `-C "$PWD"` rather than a `cd`, and the git env vars are already unset above -- a drift run against
 # an inherited GIT_DIR would read the wrong index and answer about the wrong tree.
-if ! GIT_INDEX_FILE="$INDEX_FILE" node scripts/test/drift.mjs --root "$ROOT"; then
+#
+# WHICH DRIFT, AND ABOUT WHAT (0.50.0): the SNAPSHOT's drift.mjs — so an unstaged edit to the script
+# cannot judge the commit that does not contain it — run against the real repository (`--root`) with
+# the index git handed this hook. Every set it judges is read from that index (`indexReaders()` in
+# drift.mjs); only the certification record is read from the git common dir.
+# The working tree's copy is used ONLY when the index holds no drift.mjs at all — a hook-test fixture
+# that copies the script in without tracking it; in this repository the script is tracked, so the
+# snapshot's copy always runs.
+DRIFT="$SNAP/scripts/test/drift.mjs"
+[ -f "$DRIFT" ] || DRIFT="$ROOT/scripts/test/drift.mjs"
+if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT"; then
   echo "pre-commit: ABORT -- the drift script refused this commit (see above)." >&2
   echo "pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness." >&2
   exit 1
@@ -187,14 +205,14 @@ rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 # worst leftover of a SIGKILL is a directory under $TMPDIR. It lives in $TMPDIR rather than the git
 # common dir so that orphan is the OS's to reap, not a permanent directory inside every clone.
 #
-# THE CERTIFICATION RECORD AND THE LOCK stay in the git common dir: the drift script above ran in the
-# real checkout and read them there. The snapshot has no `.git`, and needs none — no assertion test
-# runs git or reads the record.
-SNAP=$(mktemp -d "${TMPDIR:-/tmp}/pm-precommit-index.XXXXXX")
-if ! GIT_INDEX_FILE="$INDEX_FILE" git checkout-index -a --prefix="$SNAP/"; then
-  echo "pre-commit: ABORT -- could not export the index ($INDEX_FILE) to $SNAP to test it" >&2
-  exit 1
-fi
+# THE SNAPSHOT IS MADE ABOVE, BEFORE THE DRIFT SCRIPT, so that drift too is the COMMIT's copy. The
+# certification record and the lock stay in the git common dir; the snapshot has no `.git` and needs
+# none — no assertion test runs git or reads the record.
+#
+# ONE KNOWN LIMIT: a tracked symlink is exported AS a symlink, so an ABSOLUTE one still points into
+# the working tree (or anywhere) and a test reading through it reads those bytes, not the index's.
+# This repository tracks no symlinks (`git ls-files -s | rg '^120000'` is empty), so nothing is lost
+# today; a tracked symlink added later is where this gate stops meaning "the index".
 cd "$SNAP"
 if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
   total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')

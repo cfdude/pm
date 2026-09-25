@@ -199,7 +199,8 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // counted by nothing and the floor alone cannot see it. 6.4 RETIRED THAT COPY, handing all four
   // checks to the drift script so one rule has one implementation — so this pins the handover, and
   // pins BOTH halves of "one implementation at a time, never two".
-  assert.match(hookText, /node scripts\/test\/drift\.mjs/,
+  // RE-POINTED IN 0.50.0: the hook runs the SNAPSHOT's drift.mjs (`node "$DRIFT"`, DRIFT set from $SNAP).
+  assert.match(hookText, /^DRIFT="\$SNAP\/scripts\/test\/drift\.mjs"$[\s\S]*node "\$DRIFT" --root/m,
     "the hook does not run the drift script, so nothing checks enrolment, the twin pairing, the " +
     "diff coupling or the record's freshness on this commit");
   assert.doesNotMatch(hookText, /grep -v -E '\^scripts\/test\//,
@@ -239,8 +240,21 @@ test("IX the hook verifies the INDEX: captured before the scrub, exported with c
   // 3. THE RUNNER NEVER SEES THE INDEX VARIABLE — the leak the scrub exists to stop. (Its line is pinned
   //    by equality in the test above; this names the property.) The drift script does see it.
   assert.doesNotMatch(lines[RUNNER_AT], /GIT_INDEX_FILE/, "the test runner must never inherit GIT_INDEX_FILE");
-  assert.ok(at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node scripts\/test\/drift\.mjs --root "\$ROOT"; then$/) > 0,
+  const driftAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node "\$DRIFT" --root "\$ROOT"; then$/);
+  assert.ok(driftAt > 0,
     "the drift script reads the index too, so it must be handed the one this commit is made from");
+  // AND IT IS THE COMMIT'S drift.mjs (branch review, minor 2): the snapshot is exported BEFORE drift
+  // runs, and DRIFT names the snapshot's copy, falling back to the working tree's only when the index
+  // holds none (a hook fixture that copies the script in untracked).
+  assert.ok(exportAt < driftAt, "the snapshot must exist before drift runs, so drift can be the commit's copy");
+  assert.equal(at(/^DRIFT="\$SNAP\/scripts\/test\/drift\.mjs"$/) + 1, at(/^\[ -f "\$DRIFT" \] \|\| DRIFT="\$ROOT\/scripts\/test\/drift\.mjs"$/),
+    "DRIFT must be the snapshot's copy, with the working tree's used only when the index holds none");
+  // THE MERGE-BLOCKING TEMP-DIR RULE (branch review): every temp dir the functional twin's IX
+  // fixtures make is wrapped in removeAtExit(), so a failed assertion cannot leak one.
+  const functionalSrc = fs.readFileSync(path.join(path.dirname(HOOK), "..", "scripts", "test", "functional", "conductor-09.test.mjs"), "utf8");
+  const ixSection = functionalSrc.slice(functionalSrc.indexOf("the hook verifies the INDEX, never the working tree"));
+  const unwrapped = ixSection.split("\n").filter((l) => /\bmkdtempSync\(/.test(l) && !/removeAtExit\(\s*fs\.mkdtempSync\(/.test(l));
+  assert.deepEqual(unwrapped, [], "an IX fixture makes a temp dir that is not scheduled with removeAtExit()");
 
   // 4. `declared` COUNTS THE SNAPSHOT'S BYTES, never the working tree's copy of a partially staged file.
   assert.ok(lines.some((l) => l.includes(`grep -cE '^(test|unitTest)\\(' "$SNAP/$f"`)),
