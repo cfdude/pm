@@ -16,6 +16,7 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 - No `--since` → entries newer than this repo's stamped version (what you'd gain by upgrading,
   or what the last upgrade brought).
-- `--since 0.3.0` → everything released after 0.3.0.
+- `--since 0.3.0` → everything released after 0.3.0. It takes only a version in `x.y.z` form —
+  anything else (`v0.3.0`, `0.3`, a typo) is refused rather than read as "since the beginning".
 - `/pm:upgrade` already prints this delta automatically for the versions it crosses; use this
   command to review it again or to inspect a different range on demand.

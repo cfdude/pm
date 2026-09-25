@@ -213,7 +213,7 @@ the runtime — so the exemption is a forward commitment, not a behaviour you ca
 and the scan runs per segment, so a write shape after a `&&` is caught. The command word is taken
 after its last `/`, and a leading `VAR=value`, `sudo`, `env` or `command` is skipped.
 
-**The two fail-open modes, stated plainly.**
+**The three fail-open modes, stated plainly.**
 
 - **An unreadable record allows every Bash call CARRYING A COMMAND** — see the next section. This
   is a carve-out, not a gap: one remedy the unreadable-state message prints redirects into the
@@ -221,6 +221,9 @@ after its last `/`, and a leading `VAR=value`, `sudo`, `env` or `command` is ski
 - **An absent record leaves the guard dormant.** With no `.conductor/state.json` the hook exits 0
   silently for every tool. That is the plugin's standing dormancy contract, and it is exactly why
   destroying the record is a shape.
+- **A hook line the engine refuses fails open too** — a hand-edited `hooks.json` line carrying a
+  flag `gate-guard` does not declare exits 1, and Claude Code runs the tool call unguarded (see
+  "A refused hook line fails OPEN, deliberately" above).
 
 **What it CANNOT see, and must never claim to:** a path built from a variable or `$(…)`; anything
 behind `eval`; a script or Makefile target invoked by name; an interpreter given inline source

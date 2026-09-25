@@ -1374,7 +1374,7 @@ conductor.mjs update-epic <id> — 31 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
-  --priority <P0|P1|P2|P3>
+  --priority <P0|P1|P2|P3|P?>
   --status <untriaged|queued|active|paused|later|blocked|planned|archived>
   --parent <a value>
   --external-id <a value>
