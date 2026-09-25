@@ -735,7 +735,7 @@ Commit mechanics, which bind every section below:
       Fix Critical and Important. Then record `record-gate-review node-support-policy --gate 2
       --verdict pass --reviewer "<identity>" --base-sha <parent of the first attributed commit>
       --head-sha <the last attributed commit>`.
-- [ ] 9.2 <!-- pm:lifecycle --> Archive — run `/opsx:archive node-support-policy`, then
+- [x] 9.2 <!-- pm:lifecycle --> Archive — run `/opsx:archive node-support-policy`, then
       `update-epic node-support-policy --status archived --outcome delivered --reason "pm supports
       the oldest non-EOL Node, CI proves it on every supported LTS line computed from the schedule,
       and the per-commit gate is one command on every supported major" --no-deferrals`. Replace

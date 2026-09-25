@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "node-support-policy",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10063,7 +10063,7 @@
       "id": "node-support-policy",
       "title": "Node support policy: support the oldest non-EOL Node major (floor 22 today, 24 after 2027-04-30); CI matrix 22/24/26; retire Node 18 pin, stale actions (v4 on EOL node20 runtime), and old-Node workarounds; correct every 'Node 18+' claim",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -10104,7 +10104,7 @@
         "f230e85fce761844dc53b2c8a8d38623045ce8f7"
       ],
       "createdAt": "2026-09-23T20:29:57.349Z",
-      "touchedAt": "2026-09-25T04:45:17.144Z",
+      "touchedAt": "2026-09-25T04:46:07.448Z",
       "notes": [
         {
           "at": "2026-09-23T20:29:58.242Z",
@@ -10139,7 +10139,23 @@
           "headSha": "f230e85fce761844dc53b2c8a8d38623045ce8f7",
           "reviewer": "two fresh-context lenses (A spec alignment + ~60 mutations on 22/26; B absent-edit sweep + commit integrity) + confirmation: round 1 A fail (3 I: CI unreadable-count refusal untested, certify count guards untested, harness shim install trusted) / B pass (6 M); all 11 fixed f84fe9d..f230e85 with mutation proofs; confirmation pass (original mutations now fail, 1305/1305 on 22 and 26, drift ok); 2026-09-24"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-25T04:46:07.444Z",
+        "reason": "pm supports the oldest non-EOL Node LTS line (support floor 22, NODE_FLOOR_MAJOR); CI tests every supported LTS line computed from nodejs/Release schedule.json with a committed, schedule-checked fallback (22/24/26 today); the assertion half runs per-file (hook 33.6s -> 24.0s on 16 cores; 28% slower on 4-core CI, accepted); every count site forces the spec reporter and refuses an unreadable or zero count; old-Node workarounds removed; brief warns below the floor; actions v7; #220 bounded; Gate 2 pass at f230e85"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-25T04:46:07.422Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "bounding synchronous child spawns in tests",
+            "reason": "out of scope by design D9 - no synchronous hang observed; CI timeout-minutes bounds them; the observed hang (#220) was the async class, now bounded"
+          }
+        ]
+      },
+      "completedAt": "2026-09-25T04:46:07.444Z"
     }
   ],
   "detourStack": [],
@@ -10150,7 +10166,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1372,
+  "revision": 1373,
   "reviewMode": "thorough",
   "releases": [
     {
