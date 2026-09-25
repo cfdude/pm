@@ -29,3 +29,20 @@ test("add-many refuses a batch entry's out-of-vocabulary priority or non-date wa
     externalId: "1", externalUpdatedAt: "2026-09-25T12:00:00.000+0000" }])], { cwd });
   assert.equal(readState(cwd).epics.find(e => e.id === "ok").priority, "P1");
 });
+
+// FILE RUNG because the fixture's first `set-tracker` writes CLAUDE.md, a file the store does not own.
+test("set-tracker refuses --remove on the PRIMARY tracker instead of merging or replacing", () => {
+  // The primary branch has no remove handler: bare, --remove exited 0 having removed nothing, and
+  // with a valid --repo it REPLACED the recorded repo — the opposite of what was asked.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "o/r"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  for (const args of [["--remove"], ["--role", "primary", "--remove", "--system", "github-issues", "--repo", "x/y"]]) {
+    const err = expectFail(() => run(["set-tracker", ...args], { cwd }));
+    assert.ok(err, `set-tracker ${args.join(" ")} is refused`);
+    assert.match(err.stderr, /--remove removes a SECONDARY tracker/);
+  }
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "state.json is byte-identical");
+  assert.equal(readState(cwd).tracker.repo, "o/r");
+});

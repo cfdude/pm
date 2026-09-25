@@ -239,8 +239,10 @@ the primary and a secondary alike, because the value lands in a shell line:
 - **`--remove` is exempt on the SECONDARY role only.** `set-tracker --role secondary --system
   github-issues --repo <recorded value> --remove` matches the recorded value exactly and writes
   nothing new, so a malformed secondary recorded before this rule stays removable. The primary
-  has no remove handler — `--remove` there falls through to the merge — so a primary `--remove`
-  with a malformed `--repo` is refused like any other.
+  has no remove handler, so a primary `--remove` is refused outright — with a malformed `--repo`
+  on that repo's shape first, and otherwise because there is no primary removal (it used to fall
+  through to the merge, exit 0 having removed nothing, and with a valid `--repo` REPLACE the
+  recorded one). Change the primary with `set-tracker --system …` instead.
 - **A repo recorded before the rule still loads**, and no emitter places it in a shell line: that
   tracker gets the vendor-neutral "list open items with your own tooling" step instead of `gh`.
   That loss is not silent — `integrity` reports `tracker-repo-not-a-github-repository` for it,

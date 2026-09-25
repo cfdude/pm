@@ -29,3 +29,7 @@
   Where git cannot list worktrees for any reason but "not a repository" — an older git among them
   — it now refuses with git's own message instead of printing the empty list a clean repository
   prints.
+* **`set-tracker --remove` on the primary tracker is refused.** The primary has no removal, so the
+  flag fell through to the merge: bare it exited 0 having removed nothing, and with a valid `--repo`
+  it replaced the recorded repo. It now refuses and writes nothing; `--role secondary … --remove`
+  is unchanged.

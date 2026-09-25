@@ -78,6 +78,17 @@ export function setTracker() {
         "Nothing was written.\n");
     }
   }
+  // A PRIMARY `--remove` IS REFUSED (code review 0.43.0 minors). The primary branch has no remove
+  // handler, so the flag fell through to the merge: bare it changed nothing and exited 0 as if it
+  // had removed something, and with a valid `--repo` it REPLACED the recorded repo — the opposite
+  // of what was asked. Placed after the shape check above, so a malformed repo is still refused on
+  // its shape first (Gate 2 E-C1). There is no primary removal to point at; the remedy is to change
+  // the primary, or to remove a secondary with the role that has a handler.
+  if (role === "primary" && f.remove) {
+    die("conductor: --remove removes a SECONDARY tracker, named with --role secondary and its recorded " +
+      "system and repo or project; the primary tracker has no removal — replace it by setting a new " +
+      "--system instead. Nothing was written.\n");
+  }
 
   if (role === "secondary") {
     const system = str(f.system);
