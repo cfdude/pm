@@ -27,7 +27,8 @@ test that names both values on a mismatch.
   every run — SHIPPED in 1.4, proven by functional/conductor-09's "1.5 the retired probe's
   pm-isolation-flag is removed" and its mutation (mutation-1.5.txt). Observed on this clone: the file
   existed before `b7ba061` and was gone after that commit's own hook run.
-- Its sunset (removing the `rm -f` line in 0.50.0) is a 6.8 deferral candidate for the archive.
+- The `rm -f` line is PERMANENT (coordinator, Gate 2, 2026-09-24): a clone can skip releases; no
+  sunset, no deferral.
 
 ### A requirement name is a data reference too
 

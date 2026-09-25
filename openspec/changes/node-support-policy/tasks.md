@@ -585,8 +585,8 @@ Commit mechanics, which bind every section below:
       per item actually deferred. Candidates to decide at that point:
       - widening `conductor-35`'s network set, if 3.3 declines it;
       - bounding the synchronous spawns D9 names;
-      - the hook's `rm -f pm-isolation-flag` line's sunset: removed in 0.50.0 (design D3), recorded
-        as `--deferral` against an epic registered for it, or declined with a reason.
+      - ~~the hook's `rm -f pm-isolation-flag` line's sunset~~ — NOT a candidate: the line is
+        PERMANENT (coordinator, Gate 2, 2026-09-24; design D3), so there is no deferral for it.
       `store-owns-claude-md-managed-block` is NOT dispositioned by this change (design D10).
 - [x] 6.9 **Route what the work taught you** (required task item 7). Name each finding as one of
       three kinds before the change closes. Candidates carried in from drafting:

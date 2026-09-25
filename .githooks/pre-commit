@@ -111,8 +111,9 @@ fi
 # Until 0.49.0 the hook probed once per clone for the runner's single-process flag and cached the answer in
 # `pm-isolation-flag` beside the suite lock. The probe and the flag are gone; a clone that ran an
 # older hook still holds the file, and an untracked file whose only writer is gone reads as a live
-# mechanism to the next person who finds it. `rm -f` is idempotent. Sunset: removed in 0.50.0, by
-# which time every contributor clone has run this hook at least once.
+# mechanism to the next person who finds it. `rm -f` is idempotent. PERMANENT, not sunset (decided
+# 2026-09-24, Gate 2): a contributor clone can skip releases, and a one-line idempotent cleanup costs
+# nothing.
 rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 
 # ─────────── THE RUNNER'S COMMAND LINE CARRIES THE TWO RUNG GLOBS (0.49.0, design D5) ───────────

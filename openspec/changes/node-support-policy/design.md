@@ -244,9 +244,11 @@ clone's git dir. The hook runs `rm -f` on it on every run (idempotent), which is
 inert, because an untracked file whose only writer is gone reads as a live mechanism to the next
 person who finds it.
 
-**Its sunset (POLISH).** The `rm -f` line is itself legacy: it has work to do only in a clone that ran
-a pre-0.49.0 hook. It is removed in the first release after 0.49.0 (0.50.0), recorded as a deferral
-at archive (task 6.8), by which time every contributor clone has run the 0.49.0 hook at least once.
+**It is permanent (decided by the coordinator at Gate 2, 2026-09-24).** The `rm -f` line has work to
+do only in a clone that ran a pre-0.49.0 hook, and an earlier draft sunset it in 0.50.0. That was
+reversed: a contributor clone can skip releases, so no release is late enough to be sure every clone
+has run the 0.49.0 hook, and a one-line idempotent cleanup costs nothing. There is no deferral to
+register for it.
 
 **Every place the half assumed one shared process**, derived from:
 - `rg -n -i 'isolation|single process|one process|same process|shared process|process-wide|singleton' scripts/test scripts/lib`;
