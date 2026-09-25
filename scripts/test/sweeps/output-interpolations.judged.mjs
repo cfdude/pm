@@ -395,7 +395,7 @@ x("lessons.mjs", "checkDetect", {
   "e.message": 2,
   "typeName(d)": 1,
   "unknown.map(k => JSON.stringify(k)).join(\", \")": 1,
-  "k": 4,
+  "k": 5,
   "d[k] === \"\" ? \"an empty string\" : typeName(d[k])": 1,
   "JSON.stringify(d.tool)": 1,
   "d.tool": 2,

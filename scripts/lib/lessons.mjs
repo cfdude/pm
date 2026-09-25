@@ -51,7 +51,7 @@ export function lessonsDir(root = currentEnv().CLAUDE_PROJECT_DIR || currentCwd(
  *  Windows editor or checked out under `core.autocrlf` is `---\r\n…`: before this, such a lesson
  *  never matched the block pattern and was silently retrieval-only — and every field read from it
  *  would have carried a trailing `\r` into the advice (code review 0.43.0, C1). */
-function frontmatterBlock(txt) {
+export function frontmatterBlock(txt) {
   const m = txt.replace(/\r\n?/g, "\n").match(/^---\n([\s\S]*?)\n---/);
   return m ? m[1] : null;
 }
@@ -189,8 +189,11 @@ export function checkDetect(raw) {
   if (d.pathEndsWith && d.tool === "Bash") {
     return { ok: false, reason: "pathEndsWith can never fire — a Bash call carries no path" };
   }
-  if (d.pathEndsWith && d.commandMatches) {
-    return { ok: false, reason: "pathEndsWith with commandMatches can never fire — no tool call carries both a path and a command" };
+  if (d.pathEndsWith && hasCommand) {
+    // With commandMatches the lesson can never fire; with commandLacks the suppression is inert
+    // (a call carrying a path carries no command) — or, for a regex matching "", total.
+    const k = d.commandMatches ? "commandMatches" : "commandLacks";
+    return { ok: false, reason: `pathEndsWith with ${k} can never work — no tool call carries both a path and a command` };
   }
   const regex = {};
   for (const k of REGEX_KEYS) {
@@ -274,7 +277,11 @@ export function matchLessons(event, lessons, { budgetMs = REGEX_BUDGET_MS } = {}
     const d = l.detect;
     if (d.tool && d.tool !== tool) return false;
     if (d.pathEndsWith && !filePath.endsWith(d.pathEndsWith)) return false;
+    // FAIL CLOSED: a command predicate with no compiled regex beside it (a caller that passed plain
+    // `{ detect }` objects, not classifyLessons() entries) is NOT a match. Skipping the check
+    // instead would fire the lesson on every call to its tool.
     const re = l.regex || {};
+    if (REGEX_KEYS.some(k => d[k] && !(re[k] instanceof RegExp))) return false;
     // A regex that ran out of budget (null) is NOT a match, whichever predicate it serves: a
     // lesson whose suppression half could not finish must not fire as though it had.
     if (re.commandMatches && test(re.commandMatches, cmdLine) !== true) return false;

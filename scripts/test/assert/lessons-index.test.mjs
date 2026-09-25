@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ADVISED_TOOLS, classifyLessons } from "../../lib/lessons.mjs";
+import { ADVISED_TOOLS, classifyLessons, frontmatterBlock } from "../../lib/lessons.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const DIR = path.join(ROOT, "docs", "lessons");
@@ -51,10 +51,11 @@ test("the README index links nothing that is not a lesson file", () => {
 test("every lesson carries the four contract fields", () => {
   for (const n of lessons) {
     const txt = fs.readFileSync(path.join(DIR, `${n}.md`), "utf8");
-    const fm = txt.match(/^---\n([\s\S]*?)\n---/);
-    assert.ok(fm, `${n}: no frontmatter block`);
+    // The ENGINE's reader, so this contract accepts exactly the line endings the hook does (CRLF).
+    const fm = frontmatterBlock(txt);
+    assert.ok(fm !== null, `${n}: no frontmatter block`);
     for (const key of ["trigger", "cost", "rule", "enforced_in"]) {
-      assert.match(fm[1], new RegExp(`^${key}: \\S`, "m"), `${n}: missing or empty \`${key}:\``);
+      assert.match(fm, new RegExp(`^${key}: \\S`, "m"), `${n}: missing or empty \`${key}:\``);
     }
   }
 });

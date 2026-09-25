@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 import {
   ADVISED_TOOLS, DETECT_KEYS, MATCH_TEXT_CAP, REGEX_BUDGET_MS,
-  checkDetect, matchLessons, nestedUnboundedQuantifier,
+  checkDetect, frontmatterBlock, matchLessons, nestedUnboundedQuantifier,
 } from "../../lib/lessons.mjs";
 
 const rejected = (raw, re) => {
@@ -84,6 +84,28 @@ unitTest("a predicate its tool can never satisfy is rejected", () => {
   rejected('{"tool":"Write","pathEndsWith":"a","commandLacks":"x"}', /only Bash carries a command/);
   rejected('{"tool":"Bash","pathEndsWith":"x.md"}', /a Bash call carries no path/);
   rejected('{"pathEndsWith":"x.md","commandMatches":"y"}', /no tool call carries both a path and a command/);
+  // commandLacks beside a path is inert: a call with a path carries no command to suppress on.
+  rejected('{"pathEndsWith":"x.md","commandLacks":"y"}', /no tool call carries both a path and a command/);
+});
+
+unitTest("a lesson with a command predicate but no compiled regex never matches — it fails closed", () => {
+  // A caller handing matchLessons() plain { detect } objects rather than classifyLessons() entries
+  // must not skip the regex checks: that would fire the lesson on every call to its tool.
+  const bare = { file: "bare.md", rule: "r", detect: { tool: "Bash", commandMatches: "^git" } };
+  assert.deepEqual(matchLessons({ tool_name: "Bash", tool_input: { command: "ls" } }, [bare]), []);
+  assert.deepEqual(matchLessons({ tool_name: "Bash", tool_input: { command: "git status" } }, [bare]), []);
+  const noLacks = {
+    file: "lacks.md", rule: "r",
+    detect: { tool: "Bash", commandMatches: "^git", commandLacks: "--dry-run" },
+    regex: { commandMatches: /^git/ },
+  };
+  assert.deepEqual(matchLessons({ tool_name: "Bash", tool_input: { command: "git push --dry-run" } }, [noLacks]), []);
+});
+
+unitTest("frontmatterBlock is the one frontmatter reader, and it accepts CRLF", () => {
+  assert.equal(frontmatterBlock("---\r\nrule: x\r\ndetect: {}\r\n---\r\nBody\r\n"), "rule: x\ndetect: {}");
+  assert.equal(frontmatterBlock("---\nrule: x\n---\n"), "rule: x");
+  assert.equal(frontmatterBlock("no frontmatter"), null);
 });
 
 unitTest("a regex that does not compile is rejected with the engine's reason", () => {
