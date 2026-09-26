@@ -1,0 +1,93 @@
+✔ 7.5: the checked-in 0.26.0 state carries none of this release's fields (0.479458ms)
+✔ 7.5: an un-upgraded 0.26.0 state briefs without an upgrade nudge for its own version (5.219292ms)
+✔ 7.1: a 0.26.0 state applies the entries above it, and the second run is a byte-identical no-op (55.710167ms)
+✔ 7.1: replaying the entry against its own output changes nothing (62.147459ms)
+✔ 7.2: a jira primary is stamped outward and a github-issues primary inward (67.614ms)
+✔ 7.2: an explicitly configured direction is never overwritten (17.666375ms)
+✔ 7.2: every secondary is pinned inward, and an explicit one is left alone (30.603541ms)
+✔ 7.4: the migration adds no attribution array to a pre-existing epic (23.968ms)
+✔ 7.4: the migration leaves an agent-recorded disposition untouched (22.192958ms)
+✔ 8.1: sync registers exactly the archived changes that have no epic, already archived (86.484583ms)
+✔ 8.1: re-running sync after a backfill adds nothing and modifies nothing (104.313209ms)
+✔ 8.2: a date-prefixed archive directory does not duplicate its existing epic (77.863042ms)
+✔ 8.3: an abandoned change registers with its unticked count intact (46.580959ms)
+✖ 8.3: an epic the conductor MANAGED renders its archived tasks.md too (handoff-demand-blind-spots D1) (73.624459ms)
+✔ 8.6: the first backfill announces the count and the ids, and records that it ran (66.4585ms)
+✔ 8.6: a repo already carrying the marker registers nothing and announces nothing (61.048375ms)
+✔ integrity: only the spec-sync check may degrade — every other check that throws fails the run (2.0925ms)
+✔ sync registers only ids add-epic accepts, names every skip, and counts the skips in its final line (70.451834ms)
+✔ add-epic, add-many and sync share ONE validator — no creation site tests the format itself (0.6785ms)
+✔ an archive dated before the epic existed neither ends it nor takes its active pointer, and sync names it (127.423667ms)
+✔ an archive dated on or after the epic's registration still heals it (86.747208ms)
+✖ the one resolver: the date rule, its one day of slack, the backfill exemption and the undatable fallback (1.795666ms)
+✔ every consumer of the resolver passes the RECORD, never the bare id (1.489458ms)
+✖ an ALREADY-archived epic dated after its archive keeps its counts, and sync advises nothing (112.5335ms)
+✔ set-active refuses an epic whose change is archived on disk before any heal has run (123.686375ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 22
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 971.811292
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-15.test.mjs:172:1
+✖ 8.3: an epic the conductor MANAGED renders its archived tasks.md too (handoff-demand-blind-spots D1) (73.624459ms)
+  AssertionError [ERR_ASSERTION]: a managed archived epic renders the archived counts, not `0/0`
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/sync-registers-ids-add-epic-refuses/head/scripts/test/assert/conductor-15.test.mjs:183:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '| P? | `managed-change` | openspec | epic | archived · unknown | — | - |',
+    expected: /1\/2/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/sync-registration-ids.test.mjs:90:1
+✖ the one resolver: the date rule, its one day of slack, the backfill exemption and the undatable fallback (1.795666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + null
+  - '2025-01-01-x'
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/sync-registers-ids-add-epic-refuses/head/scripts/test/assert/sync-registration-ids.test.mjs:101:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: '2025-01-01-x',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/sync-registration-ids.test.mjs:145:1
+✖ an ALREADY-archived epic dated after its archive keeps its counts, and sync advises nothing (112.5335ms)
+  AssertionError [ERR_ASSERTION]: no rename advice for an ended epic:
+  conductor: sync set aside archive directory '2026-07-01-recovered-late' — it predates epic 'recovered-late' (registered 2026-09-26), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work
+  conductor: synced (0 new epic(s) added as untriaged; 1 archive directory set aside — named above) — nothing was written to .conductor/state.json
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/sync-registers-ids-add-epic-refuses/head/scripts/test/assert/sync-registration-ids.test.mjs:153:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: sync set aside archive directory '2026-07-01-recovered-late' — it predates epic 'recovered-late' (registered 2026-09-26), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work\nconductor: synced (0 new epic(s) added as untriaged; 1 archive directory set aside — named above) — nothing was written to .conductor/state.json\n",
+    expected: /set aside archive directory/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

@@ -16,7 +16,11 @@ rule: An archive is one move with two halves: the change directory relocating un
   any hard reset, `git status --short` must be empty of `openspec/specs/` paths.
 enforced_in: The release-checklist skill's step 5 (.claude/skills/release-checklist/SKILL.md) — "stage
   openspec/ whole (or everything `git status --short openspec/` lists) — the archive rewrites
-  openspec/specs too" — added by 0.49.0's docs tasks (task 7.8).
+  openspec/specs too" — added by 0.49.0's docs tasks (task 7.8). Since 0.50.0 the record checks it too:
+  `integrity`'s `delivered-epic-spec-deltas-absent` (scripts/lib/spec-sync.mjs), also printed by the
+  SessionStart briefing and the `render` verb, reports a delivered epic whose archived deltas the main
+  specs in git's INDEX do not hold — so the 0.48.0 shape (archive committed, spec rewrite discarded) is
+  named on the next run instead of two days later. It reports; it does not refuse.
 ---
 
 ## What happened

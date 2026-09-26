@@ -102,3 +102,11 @@ unitTest("1.7 regression guard: an ACCEPTED call is still accepted after the ord
   engine(archive(engine, "e1"));
   assert.equal(readState(engine).epics.find(e => e.id === "e1").status, "archived");
 });
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — twin note for the functional file's fixture change.
+// The one archive resolver now sets aside an archive directory dated more than a day before the epic's
+// `createdAt`, and never ends an undated live epic on a bare name. The functional fixtures that
+// registered an epic and then archived its change under a FIXED past date (or hand-wrote a live epic
+// with no `createdAt`) described a history that cannot happen; they now date the directory with
+// `archiveDay()` (fixtures/helpers.mjs) or give the epic an earlier `createdAt`. Their assertions are
+// unchanged. The rule itself is asserted per commit in assert/sync-registration-ids.test.mjs.

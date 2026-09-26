@@ -19,6 +19,9 @@ description: >
 - **Stories/phases** live in the best available source: `tasks.md` checkboxes (openspec),
   `planPath` checkboxes (superpowers), inline `stories[]` (claude-code), or `—` (decision /
   external). Never copy these into `state.json` manually unless using inline `stories[]`.
+  Inline stories and a checkbox source are COUNTED TOGETHER (neither hides the other), and an
+  archived openspec change is read from its archived `tasks.md` — so outstanding work never reads
+  zero merely because `/opsx:archive` moved the change.
 - The conductor owns ONLY what no lane-specific tool can: cross-epic **priority/ordering**,
   the **detour stack**, and **epic links** (especially the reconcile relationship).
 - State of record is `.conductor/state.json`. `PROJECT.md` is a generated view — never
@@ -166,8 +169,8 @@ set the top-level active epic · `set-autonomy <id>` grant an epic broad executi
 `set-autonomy <id> --revoke <action> --revoke-reason "<why>"` take a grant back (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
-hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
-the last render's stamp (a mechanical check for an undetected hand-edit) · `render --diff-summary`
+hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json changed since
+the last render without an engine save (a mechanical check for an undetected hand-edit) · `render --diff-summary`
 prints `epic-relevant: yes|no` — normalizes away the "Last rendered" timestamp and "Recent
 detours" table rotation (both change on nearly every render without meaning anything actually
 changed) so deciding whether a PROJECT.md diff is safe to discard as noise is mechanical
@@ -188,7 +191,8 @@ file a bug report or feature request for `pm` itself against `cfdude/pm` — wri
 (deduping against open issues), else a prefilled `issues/new` URL, else `bugs@pm-plugin.dev`;
 `gh` is an OPTIONAL dependency and the command checks for it rather than assuming it (#105) ·
 `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules + run migrations
-+ print the changelog delta.
++ print the changelog delta · `/pm:verify-state`, `/pm:verify-worktrees`, `/pm:verify-specs` the
+read-only checks of the record, whose engine verbs are listed above.
 
 ## Writing state — exit codes, the lock, and what the engine refuses to guess
 
@@ -245,7 +249,11 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
 
 - **Hierarchy:** epics form a single-parent tree via `parent`. Nest with `--parent <id>`
   (validated: parent exists, no self/cycle) or bulk-create a parent + children atomically with
-  `add-many --from <json>`. PROJECT.md indents children and rolls up `X/Y children archived`;
+  `add-many --from <json>`. The batch document may hold only `parent` (an object) and `epics` (an
+  array); each entry's `links` is an array of `"<type>:<epic>[:<reason>]"` strings or
+  `{type, epic, reason}` objects naming an epic in the record or the batch, with a known type —
+  anything else refuses the whole batch by name and writes nothing.
+  PROJECT.md indents children and rolls up `X/Y children archived`;
   NEXT UP keeps global priority order (grouping is render-only).
 - **Effective priority (computed, never stored):** an epic's effective priority is the best of
   its own and every epic that transitively `depends-on` it. A `planned` P2 that a `queued` P1
@@ -912,7 +920,9 @@ commits touch is listed first. The hook never writes an attribution itself.
 ## Intake — triage an ask BEFORE it becomes an epic
 
 The conductor has always ACCEPTED work; it has not TRIAGED it. `add-epic` validates the id, the
-lane and the priority, refuses a duplicate `externalId`, and appends — that is the entire
+lane and the priority, refuses a tracker item another epic already holds (`externalUrl`
+first, bare `externalId` only when neither side has a URL — `add-epic`, `update-epic` and `add-many`
+alike), and appends — that is the entire
 admission process, and its dedup is **identity-based**: same id, or the same `externalUrl`. That
 catches a re-run of `/pm:sync` and nothing else. It cannot see that the same ask has already been
 registered under a different name.
@@ -1378,7 +1388,9 @@ syncIgnore[]  : [{ path, at, removedEpic?, reason? }] — source artifacts `sync
                 or `--spec` for a design document — the message names the right flag).
                 `removedEpic` is HISTORICAL and dangles by construction — never swept, never
                 reported as a dangling reference. Absent means empty; no migration.
-stories[]     : [{ title, done, disposition? }] — inline progress (highest-priority source).
+stories[]     : [{ title, done, disposition? }] — inline progress, COUNTED WITH any checkbox source
+                (plan file or tasks.md, archived tasks.md once the change moved): the union, so
+                neither part hides the other.
                 `disposition` = { state: "wont-do", reason, recordedAt } — the THIRD state a
                 checklist needs: not open, not completed, deliberately not being done. The row
                 and its reason always survive (deletion would destroy the record that the work

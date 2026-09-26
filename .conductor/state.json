@@ -7026,7 +7026,7 @@
       "id": "gh-cfdude-pm-194",
       "title": "A malformed lesson `detect:` is discarded silently — half of pm's own matchers are inert and nothing says so",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7040,16 +7040,39 @@
       "externalId": "194",
       "externalUrl": "https://github.com/cfdude/pm/issues/194",
       "externalUpdatedAt": "2026-09-12T06:31:42Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cb9a61035102aa30a895627badb5056280051515",
+        "1199f9faf5dc4dc99dd8f86a872747618ac87115",
+        "63690ef069610b69e9a9f99b7ed6b88de1c0a6a5",
+        "3d69524c4dfb1dd543622982290bcba5637c9730",
+        "77eff5de72385ed14352af641b14e9a25a8cade5",
+        "b3b75df16f459cd5238e6157f9ec042208b603dd",
+        "b9ff15415794a10a41eefe55be2cef0a0b33a2d0",
+        "d130f4974cdfccb2fdb227022411394671a4d195",
+        "aa4cd2c3aeb196a9f56030d7406beaf2da99ba21",
+        "19756a8f2b37466c61083b641d3f177c76bd3d58"
+      ],
       "createdAt": "2026-09-14T18:18:22.066Z",
-      "touchedAt": "2026-09-14T18:18:24.035Z",
+      "touchedAt": "2026-09-26T05:19:16.502Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:24.032Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
-      ]
+      ],
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:16.500Z",
+        "reason": "delivered with lesson-detect-matcher-hardening: a malformed detect: is rejected with a reason and the lessons-index test names it; reporting a consumer repo's rejects is #228"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:16.499Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:16.500Z"
     },
     {
       "id": "gh-cfdude-pm-190",
@@ -7898,7 +7921,7 @@
       "id": "tracker-item-dedup-bypassed",
       "title": "The one-epic-per-tracker-item guard runs only on add-epic --external-id; --external-url alone, update-epic and add-many skip it",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7910,15 +7933,44 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (B2, E1). add-epic.mjs EPIC_DEDUP_KEYS check sits inside `if (externalId !== undefined)`. Repro: five epics with the same issue URL, each command exit 0. Also: the add-epic duplicate message names external-id when the collision was the URL. Fix: one shared dedup check (URL-keyed) called by add-epic, update-epic and add-many.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3317dd3e4fbbda9342158ba746dca4352ff1e4ae",
+        "57bf10dfe02c34c33799fec289b7ca69d5a1202d",
+        "a3c64ea4eccb3b91694af190acac5eb659d174a8",
+        "6c3777f2545535302bcf8749861fd3a70d89afaa",
+        "3ffe2b314ea6e44ae1c133708451251c7ce9d02b",
+        "99c6067d4e396d8541645943c51f7d156e830ca5",
+        "1f7e495b6ccdf07af0c0b5e4bf1d2e72c284c02c",
+        "3149a128bf3eb621071eae61e30386e94db68098",
+        "a92274a75ed1fd23bcaa29643bcc7c71d40d8150"
+      ],
       "createdAt": "2026-09-15T05:11:09.965Z",
-      "touchedAt": "2026-09-15T05:11:09.990Z"
+      "touchedAt": "2026-09-26T05:19:38.138Z",
+      "release": "0.50.0",
+      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:38.135Z",
+        "reason": "one tracker URL maps to one epic at every writer (add-epic, update-epic, add-many, sync); URLs trimmed; archived holders still block and a reopened item reopens its holder (rules block)",
+        "correction": "the first record carried a mistaken --deferral to integrity-reports-set-aside-archive-dirs (section 'none'), passed together with --no-deferrals by operator error; nothing was deferred",
+        "superseded": {
+          "outcome": "delivered",
+          "recordedAt": "2026-09-26T05:19:12.739Z",
+          "reason": "one tracker URL maps to one epic at every writer (add-epic, update-epic, add-many, sync); URLs trimmed; archived holders still block and a reopened item reopens its holder (rules block)"
+        }
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:38.133Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:12.739Z"
     },
     {
       "id": "drift-heal-leaves-claim-on-archive",
       "title": "The archive-drift heal archives an epic but leaves its claim, and integrity then blames a hand-edit",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -7937,15 +7989,29 @@
           "text": "lane: claude-code — one-site fix plus test"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "675076ece539ac5aa62c27528a37f770c5ada125"
+      ],
       "createdAt": "2026-09-15T05:11:12.083Z",
-      "touchedAt": "2026-09-15T05:11:12.085Z"
+      "touchedAt": "2026-09-26T05:19:14.250Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:14.248Z",
+        "reason": "the archive heal releases an ended epic's claim through update-epic's one path (releaseClaimOfEndedEpic)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:14.247Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:14.248Z"
     },
     {
       "id": "add-many-drops-input-silently",
       "title": "add-many silently drops string links, stores target-less and dangling links, and ignores unknown top-level keys",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7957,17 +8023,37 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (B1, B2). add-many.mjs/links.mjs mergeLinks skips non-objects: links [\"depends-on:base\"] or \"depends-on:base\" vanish with exit 0; {type:'depends-on',epic:'ghost'} is stored dangling; {type:'blocks'} with no target is stored and cannot render; {parent,…,\"epic\":[…]} creates only the parent. Spec: a bulk write persists what it accepts or rejects by name. Fix: validate top-level keys and route links through parseLinkFlags-equivalent validation against existing plus batch ids.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3317dd3e4fbbda9342158ba746dca4352ff1e4ae",
+        "b71fa042df579bf980d2e24813d7b383ec43ee51",
+        "28cd5bb3a5bef1cf5f996117cccb918c08b2ffb4",
+        "6c3777f2545535302bcf8749861fd3a70d89afaa",
+        "3ffe2b314ea6e44ae1c133708451251c7ce9d02b",
+        "3149a128bf3eb621071eae61e30386e94db68098"
+      ],
       "createdAt": "2026-09-15T05:11:14.105Z",
-      "touchedAt": "2026-09-15T05:11:14.108Z"
+      "touchedAt": "2026-09-26T05:19:13.531Z",
+      "release": "0.50.0",
+      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:13.529Z",
+        "reason": "add-many persists or refuses by name: string links parsed, dangling and target-less links refused, unknown top-level keys refused"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:13.528Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:13.529Z"
     },
     {
       "id": "hooks-not-silent-before-init",
       "title": "Hook verbs print detached-checkout and root-divergence warnings in repos pm never initialised, and nothing tests gate-guard or snapshot dormancy",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "claude-code",
       "links": [
         {
           "type": "relates-to",
@@ -7977,9 +8063,31 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (C1, E2). conductor.mjs warnRootDivergence / warnDetachedTree run before any isInitialized() check: snapshot (PreCompact) in a non-pm detached repo prints a 4-line 'about to write .conductor/brief.txt' and writes nothing; commit-nudge prints 'WRITING A DIFFERENT REPOSITORY' when CLAUDE_PROJECT_DIR is a non-pm repo. Breaks hooks/README.md 'silent until /pm:init'. Tests: mutating gate-guard's dormancy return to exit 2 (blocks Edit in every repo on the machine) survives 176 tests; removing snapshot's guard survives 131. Fix: skip both warnings when !isInitialized(); add dormancy tests for gate-guard, snapshot and brief like the existing commit-nudge/write-rules/lesson-advice ones.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "fc149de6cedca656e33ea75e3b8c6a3f0fe54156",
+        "106ee6fb6fe9bb0183e59fc3bebb90bfbf5bd332"
+      ],
       "createdAt": "2026-09-15T05:11:16.084Z",
-      "touchedAt": "2026-09-15T05:11:16.087Z"
+      "touchedAt": "2026-09-26T05:19:14.916Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:25:16.108Z",
+          "actor": "agent",
+          "text": "lane: claude-code not superpowers — dormancy-test half fixed in 0.44.0 (43ce728); what remains is one isInitialized() gate on two warnings plus a test; inventory 2026-09-25"
+        }
+      ],
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:14.913Z",
+        "reason": "divergence and detached warnings fire only in an initialised repo (or for init); a non-hook verb refused for want of init names both repositories"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:14.913Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:14.913Z"
     },
     {
       "id": "gate-guard-bash-writes-unguarded",
@@ -8017,7 +8125,7 @@
       "id": "lesson-detect-matcher-hardening",
       "title": "lesson-advice: a catastrophic regex hangs every Bash/Edit call ~60s, a typo'd detect key matches every tool call, CRLF frontmatter is silently inert",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8034,9 +8142,32 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (C1, C2). lessons.mjs matchLessons compiles commandMatches with no complexity or input bound: detect {tool:Bash, commandMatches:'^(a+)+$'} on a 31-char command burned 60.4s CPU in the hook, on every Bash/Edit/Write call. An unknown key applies no predicate: {tool:Bash, commandMatch:'gh pr merge'} matched `ls`. CRLF frontmatter (/^---\\n/), a tool array and a bad regex are silently inert. Fix: allowlist detect keys, reject nested quantifiers or cap the matched text, accept CRLF, report rejects outside the hook.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cb9a61035102aa30a895627badb5056280051515",
+        "1199f9faf5dc4dc99dd8f86a872747618ac87115",
+        "63690ef069610b69e9a9f99b7ed6b88de1c0a6a5",
+        "3d69524c4dfb1dd543622982290bcba5637c9730",
+        "77eff5de72385ed14352af641b14e9a25a8cade5",
+        "b3b75df16f459cd5238e6157f9ec042208b603dd",
+        "b9ff15415794a10a41eefe55be2cef0a0b33a2d0",
+        "d130f4974cdfccb2fdb227022411394671a4d195",
+        "aa4cd2c3aeb196a9f56030d7406beaf2da99ba21",
+        "19756a8f2b37466c61083b641d3f177c76bd3d58"
+      ],
       "createdAt": "2026-09-15T05:11:20.243Z",
-      "touchedAt": "2026-09-16T22:37:15.145Z"
+      "touchedAt": "2026-09-26T05:19:15.665Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:15.661Z",
+        "reason": "a detect: either works or is rejected with a reason; CRLF, key allowlist, per-regex 50 ms budget with a 1 s cap per hook call, fail-closed matchLessons"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:15.661Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:15.662Z"
     },
     {
       "id": "commit-watch-misses-commits",
@@ -8153,9 +8284,9 @@
       "id": "release-member-moves-silently",
       "title": "release --member silently moves an epic out of another release with no amendment; re-running --defer overwrites the recorded reason",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -8175,11 +8306,34 @@
           "at": "2026-09-15T05:11:28.637Z",
           "actor": "agent",
           "text": "lane: claude-code — one loop plus test"
+        },
+        {
+          "at": "2026-09-25T19:25:12.720Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — refuse-vs-record and a reason-history shape are design decisions; inventory 2026-09-25"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "12b226e02b0c4577ca6fcd764c8727150c2173b2",
+        "b99969043fe7c0f431a17b74e123e58b6c8e2b44",
+        "439f7fb10fafb483f67ed4ba102a2df19a404d24",
+        "2d8c574bedb6ba63d2f440e20421b3e700917c66",
+        "5db02b52c9dc29339a191425cc98948bb7b2c869"
+      ],
       "createdAt": "2026-09-15T05:11:28.637Z",
-      "touchedAt": "2026-09-15T05:11:28.640Z"
+      "touchedAt": "2026-09-26T05:19:17.211Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:17.208Z",
+        "reason": "a cross-release --member records the move on the release it leaves; a changed --defer reason keeps the one it replaces"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:17.207Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:17.208Z"
     },
     {
       "id": "user-text-unescaped-in-render-brief-integrity",
@@ -8228,21 +8382,116 @@
       "id": "handoff-demand-blind-spots",
       "title": "The handoff demand reads 0/0 once /opsx:archive moves tasks.md, and adding one inline story hides every unticked tasks.md item",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [
         {
           "type": "relates-to",
           "epic": "comprehensive-code-review-after-0-43-0",
           "reason": "found by it"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-222",
+          "reason": "#222 (spec deltas never synced) is delivered by this change's spec-deltas standing report; one change, one carrier epic"
         }
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (A1, A2). (1) epic-progress.mjs epicProgress: after the change moves under archive/, tasks.md is not found and archive-as-delivered is accepted with 2 of 3 tasks unticked; archivedTasksPath() exists but is used only for backfilled epics (the gate-integrity spec currently permits reading zero — a spec-level check that cannot fail). (2) Array.isArray(epic.stories) is preferred over the tasks source: tasks.md at 1/3, `--add-story x`, `--story 1 --done --status archived --outcome delivered` archives with PROJECT.md showing 1/1. Fix: read the archived tasks.md when the live one is gone (amend the spec); count tasks and stories together or refuse to switch source.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6fe6b3d43150b80fdd87d56b0b42ce34b57127ff",
+        "0471ac3f081cca992f79dd0c2e32aeef96c1d753",
+        "a6e49014a754bba9a23aaace7f0d3fb6c270477c",
+        "101ebb777cbdd2a2b98a11a859a207d500d97c71",
+        "35798882b6093caaac6623f9028675bf38519450",
+        "8c62f47e439139191b00224dd772928668fa9d78",
+        "990d91a7c96a19510e8013c28195ce4f79e58afa",
+        "32a604381a427c87e4d4bd7bafe0fb2ebd0ced5a",
+        "51b7638c684ade8ccee51ee7359fdacc0ae93a7a",
+        "164a64024caab8f12a17297b91b5d8a9c4ac923c",
+        "df86f3c0015cb7fdc1f1733c015babbceec6106f",
+        "fc88cffcfca98b42aa2ec01958c8c02e07fae5bd",
+        "5b32904c456bf5982f6cc53f8c3ed1feb231918d",
+        "8158ec726488a4b0e6a3aafbd2e1ab3e2a69309c",
+        "7f58b30d33374710e940927fb892e7a3b6667d7b",
+        "9914c981317eb9be1e90ba37fbbfba6fc3034653",
+        "36d05ea98f044d519a312da1281f01ad3ccd5d6c",
+        "719b1e697cd2023f4ba0aa289a5a112c6e89d7f8",
+        "d361027cd38c98c9e332a3dc7d09d02fbc131a23",
+        "90d25ebc5098a36258da518c2189dc569cb1c430"
+      ],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-15T05:11:32.759Z"
+      "touchedAt": "2026-09-26T05:17:49.155Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:25:09.437Z",
+          "actor": "agent",
+          "text": "lane: openspec not superpowers — the fix amends gate-integrity and conductor-record ('Outstanding work is a defined quantity'); inventory 2026-09-25. Built together with gh-cfdude-pm-222 in one openspec change, which also removes the stale duplicate openspec/changes/functional-assertion-test-split/."
+        }
+      ],
+      "release": "0.50.0",
+      "startedAt": "2026-09-25T19:55:47.220Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-26T05:16:10.380Z",
+          "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+          "headSha": "04fc2cd81a7117d10095ea1b6771536eb748cdc2",
+          "reviewer": "re-recorded after the 0.50.0 date-rule amendment to its conductor-record delta + new output-text-integrity delta (72979f7a..04fc2cd8, authored by sync-registers-ids-add-epic-refuses): fresh-context Gate 1 round 1 fail (2 I contradictions with unmodified main requirements) — fixed with MODIFIED blocks; final check pass; 2026-09-25",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-25T20:53:46.239Z",
+            "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+            "headSha": "101ebb777cbdd2a2b98a11a859a207d500d97c71",
+            "reviewer": "two fresh-context lenses (A correctness: monorepo index paths, byte-vs-char sizes, no injectable reader, unreachable reset scenario; B absent edits: a functional test asserting the old behaviour, missed deliveredObligations readers, PROJECT.md leak) round 1 fail (14 I); fixed a6e4901; confirmation fail (1 BLOCK); fixed 101ebb7; final narrow check pass; minors (git -C <root> in the remedy, 5.1 asserts the printed text + REMOVED/RENAMED cases) folded into apply; 2026-09-25"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-26T02:34:59.534Z",
+          "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+          "headSha": "90d25ebc5098a36258da518c2189dc569cb1c430",
+          "reviewer": "two fresh-context lenses (A spec alignment + 42 mutations; B absent edits, commit integrity, perf n=3): round 1 fail (2 C: an index-read failure crashed brief/snapshot/render; exit 128 read as no-repository so a corrupt index reported 0 findings; 2 I: snapshot wrote the block into brief.txt tracked in 14/24 fleet repos; changeSpecRoot missed the one resolver) — fixed 36d05ea9..d361027c; confirmation fail (1 I: integrity's catch widened to every check, weakening 9+ negative tests) — narrowed to spec-sync with findingsFor asserting !unavailable at 90d25ebc; mutation-proven; functional 1227/1227; 2026-09-25"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:17:49.151Z",
+        "reason": "shipped in 0.50.0: every epic reads its archived tasks.md via one resolver; stories and tasks count together with per-part remedies; the delivered-epic spec-deltas report (integrity + briefing + render, index read, degrades instead of crashing) closes #222; the date rule keeps an unrelated older archive from ending a live epic; Gate 1, cross-spec (5 specs) and Gate 2 recorded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:17:49.136Z",
+        "deferrals": [
+          {
+            "epic": "spec-sync-waive-for-skip-specs",
+            "section": "a deliberately --skip-specs archive is reported forever (Gate 2's missing inverse)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "a refusal at the archive transition for unsynced specs",
+            "reason": "it deadlocks pm's own closeout (design D3)"
+          },
+          {
+            "what": "comparing MODIFIED requirement bodies",
+            "reason": "a later legitimate amendment changes the body, so a body check fires on routine work (design D4)"
+          },
+          {
+            "what": "mapping an epic to a change directory with a different id",
+            "reason": "the epic id stays the key, as for archivedTasksPath, isArchived and the heal"
+          },
+          {
+            "what": "reconstructing a moved plan file",
+            "reason": "plans have no archive convention to follow"
+          },
+          {
+            "what": "repairing the two live delivered records with open tasks",
+            "reason": "they are reported truthfully; correcting them is a separate decision on each record"
+          }
+        ]
+      },
+      "completedAt": "2026-09-26T05:17:49.151Z"
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -8279,7 +8528,7 @@
       "id": "activity-log-detour-events-lose-epic",
       "title": "Activity log records epic:null for every detour push/pop — frameEpic reads keys the stack never writes, and the test uses a fake frame",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8303,15 +8552,35 @@
           "text": "0.46.0's call-site sweep adds a THIRD instance to this epic's scope, found at an unedited sibling site: drop-detour reduces detourStack depth, so diffEvents' depth comparison records it as kind 'detour-pop'. Verified in-process against the shipped diffEvents on 2026-09-18 — a buried drop (p below, q on top) returns {kind:'detour-pop', epic:null, depth:1}. The drop ENDS a pause; the pop RESUMES one, and they differ in status, active pointer and obligation. The record is not wholly wrong (every event carries verb:'drop-detour'), which is why it was left rather than fixed inside operations-ship-their-inverses: activity-log.mjs is outside that change's stated Impact and no spec of it binds the log. Fix alongside the epic:null key fix — a 'detour-drop' kind, keyed on which frame left rather than on depth alone, plus an activity-report vocabulary row."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "41282ec79f77f1a246ab183f5e50bcb29919a1c2",
+        "dbb50a49d6bbfa87cc463124e49692a8e6f25fb1",
+        "b16cb798d987b394595508b0c14bee6ddd793464",
+        "d23e57892631471dd134e7b1e4ad02472bf0ce4f",
+        "4f66d044178d9ed8b85b21334058a83e4c43ed47",
+        "ee54fec53f12f15caceaea5e3df36fc5f79c5464",
+        "1eae6586f353dbd9903c1beae70899fa3b4dac60"
+      ],
       "createdAt": "2026-09-15T05:11:36.863Z",
-      "touchedAt": "2026-09-18T05:34:30.586Z"
+      "touchedAt": "2026-09-26T05:19:52.436Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:52.434Z",
+        "reason": "detour events carry the paused epic and the detour; drops log as detour-drop; reconcile, priority, autonomy and review-mode are named events; rows escaped through the report path"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:52.431Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:52.434Z"
     },
     {
       "id": "verify-state-false-hand-edit",
       "title": "verify-state reports an 'undetected hand-edit' after ordinary engine verbs that save without rendering",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8330,9 +8599,26 @@
           "text": "lane: claude-code — compare revision instead of mtime"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3b538188fabe9acf52f6165766c0cf19b97fe0a9",
+        "2252081570d918af7bd1caa7a94b5812f9f93a32",
+        "e23bb2fd013aafcb5402a9d7b9ce5b3de8b8c09c",
+        "cfa3fe5315c8cfccd62c5af4d0fd2ed6f1544b0d"
+      ],
       "createdAt": "2026-09-15T05:11:38.936Z",
-      "touchedAt": "2026-09-15T05:11:38.938Z"
+      "touchedAt": "2026-09-26T05:19:53.326Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:53.324Z",
+        "reason": "verify-state baselines on the engine's last write (render or save, stamped under the record lock); same revision with a newer mtime is a hand-edit"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:53.323Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:53.324Z"
     },
     {
       "id": "agent-docs-teach-stale-gate-evidence",
@@ -8369,7 +8655,7 @@
       "id": "commit-gate-tests-working-tree-not-index",
       "title": "The pre-commit suite gate tests the working tree, not the index, and its 'fewer tests than declared' guard cannot fire; CI has no count guard",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8381,15 +8667,38 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (E2). .githooks/pre-commit runs node --test against the checkout: staging a failing test and restoring a passing copy unstaged commits green, and HEAD holds the failing test — required item 2 (the commit is the unit of verification) applied to the suite. The declared count uses the same glob as the runner, so renaming a test out of the glob drops it from both (repro: 1/1 passing with 5 tests present); conductor-09's test for the guard asserts status 0, and mutants flipping the comparison survive. ci.yml has no count guard and tests Node 18 only. Fix: run against the index (stash --keep-index or a worktree of the index), count declared tests across scripts/test/** by content, a fixture that must abort, and the same guard in CI.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "11a714b2eabf776df1d0ab29db6eab2c4b456d8d",
+        "f39a12f1fa98b6ec3d3f9cb918b9ab6481adb1ce",
+        "5b47ffa4887cab967d0edcd9464b48e4cfd14851",
+        "6f975abe8bb46496253be3c93189a731597b6dc6",
+        "617ae90513cd19dfcd73eabde18c3edcbda2ac69",
+        "b00940f4740a818f3bf5636d3e394641bd374383",
+        "cbcb182f6525359ae992da1c2ad06e258a176d81",
+        "0682f33fd2d8eeaa77c319650cf338607f5d043b",
+        "2094b1c60a6bc6a63ed60c5537929401ead19343",
+        "3f68971d40789fdb926a5d8c78180d63725a5b84"
+      ],
       "createdAt": "2026-09-15T05:11:42.968Z",
-      "touchedAt": "2026-09-15T05:11:42.971Z"
+      "touchedAt": "2026-09-26T05:19:54.144Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:54.142Z",
+        "reason": "the pre-commit hook tests the index git hands it (checkout-index snapshot), drift judges what is staged, and runs from the snapshot"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:54.141Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:54.142Z"
     },
     {
       "id": "no-network-law-test-is-weak",
       "title": "The instruction-layer no-network test misses https/net/tls imports and spawning gh or curl",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8408,15 +8717,29 @@
           "text": "lane: claude-code — test-only change"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "810a521c523bd90f537101939969c8d96bf0f11b"
+      ],
       "createdAt": "2026-09-15T05:11:44.956Z",
-      "touchedAt": "2026-09-15T05:11:44.959Z"
+      "touchedAt": "2026-09-26T05:19:54.824Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:54.821Z",
+        "reason": "the no-network guard allowlists what the engine spawns (git from the gateway, node self-hosting, openspec from tool-currency) and bare-specifier network imports"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:54.821Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:54.821Z"
     },
     {
       "id": "triage-ignores-non-latin-text",
       "title": "triage finds no candidates for non-Latin text — tokenize splits on [^a-z0-9]",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8435,15 +8758,31 @@
           "text": "lane: claude-code — tokenizer change plus test"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d748fdf08787c678170f9729e584c4a95f91b13",
+        "e0093b883b81036193109baa50454a61410d449b",
+        "f1640a3b03aab72264bbbfbd65b464fe16dcbb5a"
+      ],
       "createdAt": "2026-09-15T05:11:46.984Z",
-      "touchedAt": "2026-09-15T05:11:46.987Z"
+      "touchedAt": "2026-09-26T05:19:55.507Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:55.505Z",
+        "reason": "triage tokenizes every script (NFC, letters/marks/digits); CJK as bigrams with a share floor so unrelated asks do not flood candidates"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:55.504Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:55.505Z"
     },
     {
       "id": "sync-registers-ids-add-epic-refuses",
       "title": "sync and the archive backfill register ids add-epic refuses, and sync silently archives an active epic on a name collision",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8455,15 +8794,48 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (D1). subcommands.mjs sync/backfillArchive register 'Add Auth', 'x|y', '.hidden', 'My Plan.md' (the id format is enforced only in add-epic); x|y breaks the Epics table and spaces break every emitted update-epic line. An active claude-code epic add-auth is archived with outcome unknown and the active pointer cleared because an unrelated archive/2025-01-01-add-auth exists; sync prints 'synced (0 new…)'. Fix: one id validator shared by all registration paths; the heal matches by recorded spec path, not bare name.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "92f1c98279f770db1a561597fb6f7f6afa7954f6",
+        "3c36c0557559d9a4d7a9e18d56dbf3a0d85f95b7",
+        "228fc55a61c6b908955488b49cb5c7e748fd18a1",
+        "10da235bc42d0233ae441c0b27d3679d87b3aab0",
+        "904c6d4082a85c2f35dd80727459e859d47b53bb",
+        "0e6c07bc1b089b923d22fdf2064e045aa3bfc596",
+        "72979f7a0d861a25d32e0a00b7c5330a5873a978",
+        "76f0700c6a3f0e16b63721c1715d6850b62350a1",
+        "2c450b3affeb0c857da5b63dcdf75312b98d24d9",
+        "04fc2cd81a7117d10095ea1b6771536eb748cdc2"
+      ],
       "createdAt": "2026-09-15T05:11:48.976Z",
-      "touchedAt": "2026-09-15T05:11:48.979Z"
+      "touchedAt": "2026-09-26T05:19:56.199Z",
+      "release": "0.50.0",
+      "planPath": "docs/superpowers/plans/2026-09-25-sync-registers-ids-add-epic-refuses.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:56.196Z",
+        "reason": "sync registers only ids add-epic accepts, names and counts every skip; an archive dir more than a day older than a live epic's createdAt cannot end it; archived epics still find their files by name"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:56.195Z",
+        "deferrals": [
+          {
+            "epic": "integrity-reports-set-aside-archive-dirs",
+            "section": "item-1 sweep gap — integrity does not report a set-aside directory"
+          },
+          {
+            "epic": "created-at-recovery-dates-too-late",
+            "section": "the date rule exposed createdAt values later than real registration"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:56.196Z"
     },
     {
       "id": "code-review-0-43-0-minors",
       "title": "Minor findings from the 0.43.0 comprehensive code review (batch)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8512,9 +8884,64 @@
           "text": "carried from user-text-never-forges-output Gate 2 (pre-existing): verify-worktrees reports a truncated nonexistent path for a worktree whose name holds a line feed — scripts/lib/worktree-hygiene.mjs:44 reads git worktree list --porcelain line by line; read --porcelain -z and split on NUL. Forges no line (output is escaped JSON)."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "ef0c4f7732c4c88acdc333f5223f83cca6161b14",
+        "99d9aa1a4b10093da95bce615a36aa0e11404cad",
+        "15307d258c081714c0f2153a5859242aaab8b257",
+        "b4ffe164f7d803fb6a41e07c0d5e587621f2a2c8",
+        "24591378f073bc8d8a6556ad190c914340d8a340",
+        "0e216f2186b2baa62b17d9c04ea2782e6f703106",
+        "35577730e633920e8ec5eb28b8bca72496902a44",
+        "12c45caf9b42dcb1aa80abe750bd59e60a03429f",
+        "cfb2d7121f1f57780cb489cb7bc4636dfdd12c4c",
+        "74cf39bc41a90877d4e8821f5e8a3ced8971c85c",
+        "7d5fb6862d9fe271a9a2aad75ce137430bc1e624",
+        "c07f4aaa9b4ca3dd4849997012837afa57f15916",
+        "04a4afdb16bb3bff38f3abb2bad1b037262630ab",
+        "2fbe8995f9384509fa19fbad309c34ace75adb31",
+        "bd5e24ecf5daa7567fc13f806f1da095855bf8cb",
+        "91029e926d421b39306e864a77a1591bb77c029f"
+      ],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-17T17:34:06.180Z"
+      "touchedAt": "2026-09-26T05:20:08.485Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:20:08.482Z",
+        "reason": "the small 0.43.0 findings still open at 0.50.0: priority vocabulary, ISO-8601 watermarks (and no older watermark), changelog --since as a version, tracker --intent pair and status validation, --remove on the primary refused, clearer handoff and write-conflict refusals, verify-* command docs, NUL-terminated worktree listing with a locale-independent empty answer; the rest re-checked as already fixed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:20:08.481Z",
+        "deferrals": [
+          {
+            "epic": "brief-snapshot-epipe-on-large-hook-payload",
+            "section": "brief/snapshot do not drain stdin (EPIPE)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "a policy for a doubled --platform",
+            "reason": "needs a repeated-flag policy for every verb; no harm observed"
+          },
+          {
+            "what": "remove-epic --cascade naming record-reconcile, and duplicate may-invalidate links",
+            "reason": "need design work; low impact"
+          },
+          {
+            "what": "rules item 3 wording",
+            "reason": "changes the managed rules block for a wording nit"
+          },
+          {
+            "what": "saveHookHeal writing two conflict entries",
+            "reason": "needs a new store option; cosmetic"
+          },
+          {
+            "what": "mutation-survivor tests for the conductor-13 destructuring scan, migration never-overwrite guards and linkOnce",
+            "reason": "test-hardening with no defect behind it"
+          }
+        ]
+      },
+      "completedAt": "2026-09-26T05:20:08.482Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -10042,7 +10469,7 @@
     },
     {
       "id": "store-owns-claude-md-managed-block",
-      "title": "0.49.0 candidate: make the managed rules block a store-owned artifact (removes the last fsync wall in the assertion half's file rung)",
+      "title": "Make init's repository-file writes (the CLAUDE.md managed block AND .gitignore) store-owned, so the tests that reach them can leave the disk (last lever on the per-commit gate)",
       "priority": "P3",
       "status": "planned",
       "role": "epic",
@@ -10057,7 +10484,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-22T11:09:54.633Z"
+      "touchedAt": "2026-09-25T21:14:34.667Z",
+      "notes": [
+        {
+          "at": "2026-09-25T21:14:34.648Z",
+          "actor": "agent",
+          "text": "Re-justified by measurement 2026-09-25 (profile-50, provisional n<=2 quiet runs at load <16): quiet hook ~15.4 s (the 24 s at 0.49.0 was contention); unit rung 3.4 s; file rung ~14.9 s. 323/546 file-rung tests reach init's CLAUDE.md or .gitignore write (318 CLAUDE.md alone; .gitignore adds 5) and carry 173 of ~180 s summed file-rung test time (96%); 54 files fsync, 23 of them fully reaching. Concurrency is not a lever (4/8 ~2.5x slower; 16 = default). Floor it cannot remove: gh-85 in assert/conductor-25 (~8.3 s, checks bytes/mtimes). Scope widened to .gitignore. Planned as the lead of 0.51.0 (0.50.0 is already 17 epics in flight); first task: decision-grade n=3 quiet measurement with an empty-preload control."
+        }
+      ]
     },
     {
       "id": "node-support-policy",
@@ -10156,17 +10590,259 @@
         ]
       },
       "completedAt": "2026-09-25T04:46:07.444Z"
+    },
+    {
+      "id": "gh-cfdude-pm-222",
+      "title": "pm's archive gate does not notice when an archived change's spec deltas never reached openspec/specs/",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "handoff-demand-blind-spots",
+          "reason": "both are archive-gate reads that go blind after /opsx:archive moves a change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "222",
+      "externalUrl": "https://github.com/cfdude/pm/issues/222",
+      "externalUpdatedAt": "2026-09-25T03:54:58Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-25T19:03:32.224Z",
+      "touchedAt": "2026-09-25T20:10:25.749Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:03:34.734Z",
+          "actor": "agent",
+          "text": "lane: openspec not (none routed) — changes the archive gate's refusal set, which the gate-integrity spec governs"
+        }
+      ],
+      "release": "0.50.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-09-25T19:53:59.271Z",
+        "externalUpdatedAt": "2026-09-25T03:54:58Z"
+      },
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-25T20:10:25.713Z",
+        "reason": "consolidated into handoff-demand-blind-spots, whose openspec change carries #222's fix (the delivered-epic spec-deltas standing report); issue #222 closes when that change ships"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-25T20:10:25.701Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-25T20:10:25.713Z"
+    },
+    {
+      "id": "gh-cfdude-pm-224",
+      "title": "Test suite leaks ~436 pm-test/pm-plugin/pm-cache temp dirs per run",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "unit-rung-and-fixture-snapshots",
+          "reason": "0.49.0 closed the two per-process leaks; this is the older pm-test/pm-plugin/pm-cache class"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "224",
+      "externalUrl": "https://github.com/cfdude/pm/issues/224",
+      "externalUpdatedAt": "2026-09-25T04:16:37Z",
+      "attributedCommits": [
+        "c3781ab9f5adc1037371b82abf0c216759eb260c",
+        "462750ea38495bbeca083b3726876a63631b9aae",
+        "3ffe0842ff3f1013dce5acff62333a6231a65f5b",
+        "76daee34c5bbd5b085b4fbc8457141cf8092c275",
+        "01c6e6ee2fa094473fe35a31840dd1bf2d57942f",
+        "bab22f9f52ef912c172d268ff17b3bcbbd451ad8",
+        "ec042256c3d4c32fe4b33fe111ef48e493082ac1",
+        "e061248bab406d4c0abff0ea79785fa4af3286b9"
+      ],
+      "createdAt": "2026-09-25T19:03:34.037Z",
+      "touchedAt": "2026-09-26T05:19:56.842Z",
+      "notes": [
+        {
+          "at": "2026-09-25T19:03:35.444Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — test-harness only, multi-file sweep with a guard; resolve away from claude-code"
+        }
+      ],
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:56.839Z",
+        "reason": "the suite leaves 0 pm-* temp dirs per run (was 436 in the assertion half); every mkdtemp is wrapped or listed with a verified cleanup"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:56.838Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:56.839Z"
+    },
+    {
+      "id": "gh-cfdude-pm-219",
+      "title": "A combined-invocation bucket run reported fail 1 non-reproducibly — the Real Numbers recipe needs its output captured",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "219",
+      "externalUrl": "https://github.com/cfdude/pm/issues/219",
+      "externalUpdatedAt": "2026-09-22T12:11:09Z",
+      "attributedCommits": [
+        "11a714b2eabf776df1d0ab29db6eab2c4b456d8d",
+        "f39a12f1fa98b6ec3d3f9cb918b9ab6481adb1ce",
+        "5b47ffa4887cab967d0edcd9464b48e4cfd14851",
+        "6f975abe8bb46496253be3c93189a731597b6dc6",
+        "617ae90513cd19dfcd73eabde18c3edcbda2ac69",
+        "b00940f4740a818f3bf5636d3e394641bd374383",
+        "cbcb182f6525359ae992da1c2ad06e258a176d81",
+        "0682f33fd2d8eeaa77c319650cf338607f5d043b",
+        "2094b1c60a6bc6a63ed60c5537929401ead19343"
+      ],
+      "createdAt": "2026-09-25T19:25:05.286Z",
+      "touchedAt": "2026-09-26T05:19:57.508Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:57.506Z",
+        "reason": "the Real Numbers recipe saves the full run to a dated, PID-suffixed file and publishes nothing unless pass == tests and fail == 0; the original flake is not identified — the saved output makes the next occurrence diagnosable"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:57.505Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:57.506Z"
+    },
+    {
+      "id": "brief-snapshot-epipe-on-large-hook-payload",
+      "title": "brief and snapshot do not drain stdin: a large hook payload can EPIPE the hook (0.43.0 review minor, left by the 0.50.0 minors pass because it is only testable at the process boundary)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "code-review-0-43-0-minors",
+          "reason": "split out of the minors pass — a hook failure deserves its own epic"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-25T21:57:39.453Z",
+      "touchedAt": "2026-09-25T21:57:39.457Z"
+    },
+    {
+      "id": "spec-sync-waive-for-skip-specs",
+      "title": "A delivered change deliberately archived with --skip-specs is reported by the spec-deltas check forever — no verb records that the deltas were intentionally not applied",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "handoff-demand-blind-spots",
+          "reason": "the missing inverse Gate 2 named for the new spec-sync standing report"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T01:35:07.603Z",
+      "touchedAt": "2026-09-26T01:35:07.607Z"
+    },
+    {
+      "id": "brief-txt-tracked-in-fleet-repos",
+      "title": ".conductor/brief.txt is tracked in 14 of 24 pm-managed repos: ensureGitignore() never ignores it, so every snapshot churns a committed file (found by 0.50.0 Gate 2)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T01:35:08.414Z",
+      "touchedAt": "2026-09-26T01:35:08.418Z"
+    },
+    {
+      "id": "integrity-reports-set-aside-archive-dirs",
+      "title": "integrity's archive-directory-has-no-epic does not report an archive directory the 0.50.0 date rule set aside (older than the epic it name-matches); only sync names it",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "sync-registers-ids-add-epic-refuses",
+          "reason": "the gap its item-1 sweep named"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T04:14:54.221Z",
+      "touchedAt": "2026-09-26T04:14:54.226Z"
+    },
+    {
+      "id": "created-at-recovery-dates-too-late",
+      "title": "0.40.0's createdAt recovery can stamp an epic LATER than its real registration (knowledge-store: stamped 07-09, git pickaxe dates the ids to 06-30, archives 07-01/07-06) — the recorded date is not the introducing commit",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "sync-registers-ids-add-epic-refuses",
+          "reason": "its archive date rule exposed the bad dates"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T04:36:40.106Z",
+      "touchedAt": "2026-09-26T04:36:40.112Z"
+    },
+    {
+      "id": "lesson-budget-tests-flake-under-load",
+      "title": "The lesson-detect timing tests ('a runaway lesson listed FIRST', the per-regex 50 ms budget) fail intermittently under machine load and pass on retry — a per-commit gate that flakes under load trains --retry habits",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "lesson-detect-matcher-hardening",
+          "reason": "its budget tests"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T04:56:10.683Z",
+      "touchedAt": "2026-09-26T04:56:10.689Z"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.48.0",
+  "pmVersion": "0.49.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1373,
+  "revision": 1555,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10629,6 +11305,67 @@
           }
         ],
         "reviewer": "two fresh-context lenses (coherence; falsifiability) + one confirmation: round 1 fail (BLOCKS: 'supported' R1/R2 contradiction over 23/25/27; bounded-wait over-wide; schedule filter unfalsifiable; zero-count CI pass; unfalsifiable version-default scenario; collapsed-half message; unit fs ban vs shim), fixed at 8a73f75; confirmation fail (end clause untested; twin coupling), fixed at 9fa4163; 2026-09-24"
+      }
+    },
+    {
+      "id": "0.50.0",
+      "intent": "Close the 0.43.0 review's open findings, the archive gate's blind spots (#222, handoff), the test-harness temp-dir leak (#224), and the last fsync wall in the per-commit gate if measurement supports it",
+      "deferred": [
+        {
+          "epic": "store-owns-claude-md-managed-block",
+          "reason": "the 0.50.0 inventory undercut its premise — owning CLAUDE.md alone moves ~22 content-checking tests, not the 323 file-rung tests that reach the write, because init also writes .gitignore outside the store; and the 24.0s per-file hook has not been profiled since 0.49.0 changed the mode. Re-justify from a measurement first",
+          "recordedAt": "2026-09-25T19:29:36.364Z"
+        }
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-26T05:16:09.527Z",
+        "specs": [
+          {
+            "key": "handoff-demand-blind-spots/specs/conductor-record/spec.md",
+            "sha256": "2a91780d90ffd317871f0b9571b86e5881fbfbd361d3a491583a29c0d05b0d1b"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/emitted-instructions/spec.md",
+            "sha256": "de625db2bab19e0c0b729bee9caf9626b200edd35d8755fb3734b20302363d55"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/epic-disposition/spec.md",
+            "sha256": "5a81d70345af25427ea2a9c60267b2a33a71cd6ecacf2fac5107321329116d07"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/gate-integrity/spec.md",
+            "sha256": "76daa6e8aca9b503e94699babc4d3b79477892fc1b2305b14ce05969e505706c"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/output-text-integrity/spec.md",
+            "sha256": "43f4a9cabd7910662475438e249872f285820f38f4032c6631ab4694a65fcce6"
+          }
+        ],
+        "reviewer": "re-review after the date-rule amendment (72979f7a..04fc2cd8) added output-text-integrity (5 specs): round 1 fail (2 I: 'Archive registration cannot produce duplicate epics' and 'sync reconciles the archive directory' contradicted the date rule) — MODIFIED blocks added; final check pass, 2 polish noted; falsifiability: slack 0/2-day and backfill-exemption mutants each fail; 2026-09-25",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-26T02:34:55.513Z",
+          "specs": [
+            {
+              "key": "handoff-demand-blind-spots/specs/conductor-record/spec.md",
+              "sha256": "4f6e6ac43f8be4f3efca9d7015b85b5023f1a13b4bba8fe789397af50786ad91"
+            },
+            {
+              "key": "handoff-demand-blind-spots/specs/emitted-instructions/spec.md",
+              "sha256": "de625db2bab19e0c0b729bee9caf9626b200edd35d8755fb3734b20302363d55"
+            },
+            {
+              "key": "handoff-demand-blind-spots/specs/epic-disposition/spec.md",
+              "sha256": "5a81d70345af25427ea2a9c60267b2a33a71cd6ecacf2fac5107321329116d07"
+            },
+            {
+              "key": "handoff-demand-blind-spots/specs/gate-integrity/spec.md",
+              "sha256": "0bb7de000335564ed76f04c83c046e6054637d9e6dfa1e84e0e7b9a543eb9965"
+            }
+          ],
+          "reviewer": "re-review after Gate 2 amended gate-integrity and conductor-record (101ebb7..90d25ebc): refusal wording, N/M items, the spec-sync degrade rule (only spec-sync may be UNAVAILABLE), confirm-128, snapshot exclusion — no BLOCKS; 3 POLISH declined; falsifiability: corrupt index exits 128 like no-repo; an index-read throw takes down brief/render/integrity without the degrade; 2026-09-25. Supersedes the 101ebb7 verdict."
+        }
       }
     }
   ],

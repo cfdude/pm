@@ -10,6 +10,7 @@ import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
 import { errStream } from "./invocation.mjs";
+import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -75,26 +76,103 @@ export function archivedChanges(dir = archiveDir()) {
   } catch { return []; }
 }
 
+/** THE ONE RESOLVER: which directory under `openspec/changes/archive/` is this id's archived change,
+ *  or `null` when none is. Every archive-identity question about ONE epic goes through it —
+ *  `isArchived()` ("is its change archived"), `archivedTasksPath()` ("where is its archived
+ *  tasks.md") and the spec-sync check ("where are its archived deltas") — so no two of them can
+ *  disagree about one epic (conductor-record, "One resolver decides which archived directory is an
+ *  epic's").
+ *
+ *  A directory matches when its name, with one leading `YYYY-MM-DD-` removed, equals the id with the
+ *  same prefix removed. Where several match (a change archived, re-proposed under the same id and
+ *  archived again), the LATEST date prefix wins and an undated directory ranks below every dated
+ *  one: `openspec archive` always writes a date, and an undated directory is the older manual
+ *  convention. Equal keys are broken by name so the answer never depends on directory order.
+ *
+ *  Before this resolver the two questions used different matches. `archivedTasksPath()` tried the
+ *  undated name and then took the FIRST stripped match in directory order — the oldest — while
+ *  `isArchived()` matched a regex over the literal id, so an id that itself carried a date prefix
+ *  could read as archived with no tasks found. */
+export function archivedChangeDir(epicOrId, dir = archiveDir()) {
+  const record = epicOrId && typeof epicOrId === "object" ? epicOrId : null;
+  const want = strippedChangeId(record ? record.id : epicOrId);
+  const dated = (name) => (/^\d{4}-\d{2}-\d{2}-/.test(name) ? name.slice(0, 10) : "");
+  const hits = archivedChanges(dir).filter(c => c.id === want).map(c => c.dir).filter(d => canBeArchiveOf(record, dated(d)));
+  if (!hits.length) return null;
+  hits.sort((a, b) => dated(b).localeCompare(dated(a)) || b.localeCompare(a));
+  return hits[0];
+}
+
+/** THE DATE RULE, applied inside the one resolver and nowhere else (sync-registers-ids-add-epic-refuses).
+ *  Can an archive directory dated `day` (`YYYY-MM-DD`, or "" when undated) be `record`'s archive?
+ *
+ *  A name is not an identity. `archive/2025-01-01-add-auth` matched an ACTIVE epic `add-auth` registered
+ *  months later, and the drift heal archived it (outcome `unknown`) and cleared the active pointer —
+ *  with sync still printing "synced". `openspec archive` dates the directory the day a change is
+ *  archived, and `createdAt` is stamped when the conductor first learned of the epic (pushEpic), so a
+ *  change archived BEFORE its epic existed is some other, older change that happened to share the name.
+ *
+ *  THE RULE DECIDES ONE THING: whether a LIVE epic gets ENDED by a directory on disk — the heal, the
+ *  active-pointer clear, set-active's refusal. It never takes an ALREADY-archived epic's files away.
+ *  `createdAt` is not proof of order for an ended epic: pm's own 0.40.0 recovery dates an epic from the
+ *  first commit that held it in state.json, which can be days AFTER its change was archived (measured
+ *  in the fleet: `knowledge-store`'s `bidirectional-sync-api` and `schema-source-reconciliation`,
+ *  createdAt 07-09 against archives dated 07-01 and 07-06 — a date rule over ended epics turned their
+ *  26/26 and 14/14 into `—` and dropped them from spec-sync and cross-spec scope).
+ *
+ *  - No record (a bare id): nothing to date — the name match stands.
+ *  - ENDED record (`status: archived`): the name match stands. It locates the epic's files; it ends
+ *    nothing, and the record already says the work ended.
+ *  - Registered BY the archive backfill: the epic was built FROM its archive — exempt.
+ *  - Undated directory: no date to compare — the name match stands, even for a live epic. Deliberately
+ *    unbounded: `openspec archive` always writes a date, so an undated directory is a hand-made move,
+ *    and the only evidence left about it is its name. Setting it aside would stop every repository
+ *    that archives by hand from healing, with no date to decide by; the incident this rule answers
+ *    (`archive/2025-01-01-add-auth`) was dated. The residual risk is the same collision class,
+ *    reachable only by hand-naming an unrelated directory exactly after a live epic.
+ *  - LIVE, datable record: the directory is set aside when its date is more than ONE DAY before the
+ *    epic's `createdAt` day. The slack is because openspec writes a LOCAL date and `createdAt` is UTC,
+ *    so an epic registered on a US evening carries the next UTC day.
+ *  - LIVE, UNDATABLE record (`createdAt` absent, null or unparseable): matches nothing — the resolver
+ *    never ends live work on a bare name. That failure is visible and reversible (the epic stays open;
+ *    an openspec one reads "no change on disk"; `recover-created-at` dates it from history, after which
+ *    the date rule decides), where the other failure is a silent archive that takes the active pointer
+ *    with it. */
+export function canBeArchiveOf(record, day) {
+  if (!record || record.status === "archived" || isArchiveBackfilled(record) || !day) return true;
+  const created = typeof record.createdAt === "string" ? Date.parse(record.createdAt) : NaN;
+  if (Number.isNaN(created)) return false;
+  const earliest = new Date(created - 86400000).toISOString().slice(0, 10);
+  return day >= earliest;
+}
+
+/** The archive directories that MATCH `record` by name and that the date rule set aside — so a
+ *  caller can say why an epic was not healed rather than leaving the directory silently orphaned.
+ *  Same enumeration and same rule as archivedChangeDir(); it only reports the complement. */
+export function setAsideArchiveDirs(record, dir = archiveDir()) {
+  if (!record || typeof record !== "object") return [];
+  const want = strippedChangeId(record.id);
+  const dated = (name) => (/^\d{4}-\d{2}-\d{2}-/.test(name) ? name.slice(0, 10) : "");
+  return archivedChanges(dir).filter(c => c.id === want).map(c => c.dir).filter(d => !canBeArchiveOf(record, dated(d)));
+}
+
 /** Where an archived change's task source actually sits, or a path that does not exist.
  *
  *  `CHANGES_DIR/<id>/tasks.md` cannot exist once a change is archived — openspec MOVES the
- *  directory — so a consumer that needs the counts has to look where the file went. Both archive
- *  namings are tried, the same two `isArchived()` matches. */
-export function archivedTasksPath(id) {
-  const exact = path.join(archiveDir(), id, "tasks.md");
-  if (fs.existsSync(exact)) return exact;
-  const hit = archivedChanges().find(c => c.id === strippedChangeId(id));
-  return hit ? path.join(archiveDir(), hit.dir, "tasks.md") : exact;
+ *  directory — so a consumer that needs the counts has to look where the file went: the directory
+ *  the one resolver names, the same one `isArchived()` answers from. Takes the RECORD, so the date
+ *  rule applies (a bare id still resolves by name). */
+export function archivedTasksPath(epicOrId) {
+  const hit = archivedChangeDir(epicOrId);
+  const id = epicOrId && typeof epicOrId === "object" ? epicOrId.id : epicOrId;
+  return path.join(archiveDir(), hit ?? String(id), "tasks.md");
 }
 
-/** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
- *  so an exact-name check misses it. Match the exact id (older/manual) OR a date-prefixed dir. */
-export function isArchived(id) {
-  if (fs.existsSync(path.join(archiveDir(), id))) return true;
-  let entries;
-  try { entries = fs.readdirSync(archiveDir(), { withFileTypes: true }); } catch { return false; }
-  const re = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
-  return entries.some(d => d.isDirectory() && re.test(d.name));
+/** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`, and an
+ *  older/manual archive is `archive/<id>`: both are the one resolver's matches, so this answer and
+ *  `archivedTasksPath()`'s can never disagree. Pass the epic RECORD — a bare id skips the date rule. */
+export function isArchived(epicOrId) {
+  return archivedChangeDir(epicOrId) !== null;
 }
 
 /** Heal drift between the conductor and the on-disk archive: any epic whose change is
@@ -109,8 +187,11 @@ export function isArchived(id) {
 export function reconcileArchived(state) {
   let changed = false;
   for (const e of state.epics) {
-    if (e.status !== "archived" && isArchived(e.id)) {
+    if (e.status !== "archived" && isArchived(e)) {
       e.status = "archived";
+      // An ended epic holds no claim — the same removal `update-epic` makes, through the same helper.
+      const released = releaseClaimOfEndedEpic(e);
+      if (released) errStream().write(released);
       // ONE record for the transition, whose TWO HALVES BIND DIFFERENT SETS OF EPICS. Written
       // together on purpose: two independent writes are exactly what produces an epic carrying
       // the bypass and not the outcome.
@@ -146,7 +227,9 @@ export function reconcileArchived(state) {
     const a = state.epics.find(e => e.id === state.active);
     // Missing entirely (!a), archived, or archived on disk — any of these means the
     // pointer no longer refers to a real, in-flight epic.
-    if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }
+    // The RECORD, not the id: the pointer is cleared only for an archive the date rule accepts as this
+    // epic's, so an unrelated older directory can never take it (sync-registers-ids-add-epic-refuses).
+    if (!a || a.status === "archived" || isArchived(a)) { state.active = null; changed = true; }
   }
   // reconcileNeeded is a genuine state-TRANSITION flag, not a pure function of current state:
   // POP removes the detour-stack frame BEFORE reconciliation runs, so "is there still a live frame"
@@ -234,7 +317,8 @@ export function countCheckboxes(absPath) {
   return { done, total, excluded, exists };
 }
 
-/** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none.
+/** Resolve an epic's progress: the UNION of its story part and its checkbox source (planPath, else
+ *  an openspec change's tasks.md, live then archived), each also returned with its own counts.
  *
  *  A missing progress SOURCE must never be reported as an em dash, because `bar()` also renders
  *  an em dash for "this epic legitimately has no source" and for "the source exists and is
@@ -257,50 +341,83 @@ export function countCheckboxes(absPath) {
 export function epicProgress(epic) {
   // An archived epic's source is SUPPOSED to be gone; suppress rather than cry wolf.
   const archived = epic.status === "archived";
+
+  // THE UNION (conductor-record; design D2). An epic's progress source is TWO PARTS, computed
+  // independently and summed, and neither may hide the other. Before this, the presence of any
+  // inline story made the checkbox source unread: a tasks.md at 1/3, one `--add-story`, one
+  // `--story 1 --done` and an archive recorded `delivered` with two tasks open, rendering `1/1`.
+  // The union counts; it does not refuse a second source — an item counted twice is visible in the
+  // rendered record, and an item never counted is not.
+
+  // THE STORY PART. A DISPOSED story leaves BOTH sides of the ratio, exactly as a
+  // `<!-- pm:lifecycle -->` task does in countCheckboxes() (which `continue`s before `total++`).
+  // Three renderings were possible and two of them are wrong: counting a dropped story as `done`
+  // would claim completion for work nobody did, and counting it as outstanding would leave the
+  // archive gate refusing forever with no honest key. Excluding it says what happened — the work is
+  // not outstanding AND was not delivered — and the reason stays on the row either way.
+  let stories = null;
   if (Array.isArray(epic.stories)) {
-    // A DISPOSED story leaves BOTH sides of the ratio, exactly as a `<!-- pm:lifecycle -->`
-    // task does in countCheckboxes() (which `continue`s before `total++`). Three renderings
-    // were possible and two of them are wrong: counting a dropped story as `done` would claim
-    // completion for work nobody did, and counting it as outstanding would leave the archive
-    // gate refusing forever with no honest key. Excluding it says what happened — the work is
-    // not outstanding AND was not delivered — and the reason stays on the row either way.
     const counted = epic.stories.filter(s => s && !isStoryDisposed(s));
-    const excluded = epic.stories.length - counted.length;
-    const total = counted.length;
     const done = counted.filter(s => s.done).length;
-    // `excludedLabel` exists because bar() would otherwise call these "lifecycle", which is a
-    // different declaration made by a different mechanism in a different place.
-    return { done, total, excluded, excludedLabel: "disposed", source: "stories", warn: null };
+    stories = { done, total: counted.length, excluded: epic.stories.length - counted.length,
+      open: counted.length - done };
   }
+
+  // THE CHECKBOX SOURCE: the plan file where the epic records one, otherwise — for an openspec-lane
+  // epic, an absent lane read as openspec — the change's tasks.md, live or archived. `expected`
+  // without `exists` is the missing-source case, decided by this part ALONE: a story no longer
+  // suppresses the warning, because a source that stops being read because another one appeared is
+  // the missing-source defect reached by a different path.
+  let checkbox = null;
+  let warn = null;
   if (epic.planPath) {
     const c = countCheckboxes(path.join(engineRoot(), epic.planPath));
+    checkbox = { kind: "plan", done: c.done, total: c.total, excluded: c.excluded, open: c.total - c.done, exists: c.exists };
+    if (!c.exists && !archived) warn = "planPath missing";
+  } else if (isOpenspecLane(epic)) {
+    let c = countCheckboxes(path.join(changesDir(), epic.id, "tasks.md"));
     if (!c.exists) {
-      return { done: 0, total: 0, excluded: 0, source: "plan", warn: archived ? null : "planPath missing" };
-    }
-    return { done: c.done, total: c.total, excluded: c.excluded, source: "plan", warn: null };
-  }
-  if ((epic.lane || "openspec") === "openspec") {
-    const c = countCheckboxes(path.join(changesDir(), epic.id, "tasks.md"));
-    if (!c.exists) {
-      // A BACKFILLED epic reads its counts from the archived artifacts. It never passed through
-      // the conductor while it was in flight, so `0/0` here is not "a managed epic whose source
-      // legitimately moved" — it is the evidence being discarded at the moment it is registered.
-      // A change archived with 12 of its tasks unticked is the most informative row in an audit,
-      // and preserving the row while throwing away the counts preserves nothing.
+      // The checkbox source of an ARCHIVED change is its archived tasks.md, for EVERY epic
+      // (conductor-record; design D1). `openspec archive` moves `changes/<id>/`, so a reader of
+      // the live path alone sees zero outstanding work at exactly the moment the archive gate asks
+      // — which is how two epics here were recorded `delivered` at 53/54 and 46/47. This used to
+      // be scoped to BACKFILLED epics, on the premise that the handoff demand was written against
+      // a quantity that "reads zero for an archived epic whose source is gone"; that premise was
+      // the blind spot, and the gate-integrity requirement that stated it is amended with this.
       //
-      // Deliberately SCOPED to the backfill rather than applied to every archived epic.
-      // `archiveGate()` documents that outstanding work "reads zero for an archived epic whose
-      // source is gone" and the interactive verb's handoff demand rests on that; reading archived
-      // artifacts for every archived epic would move a quantity out from under a gate written
-      // against it. The stamp is exactly what the spec says it is for — telling a record
-      // reconstructed from disk apart from one the conductor managed.
-      const a = isArchiveBackfilled(epic) ? countCheckboxes(archivedTasksPath(epic.id)) : { exists: false };
-      if (a.exists) return { done: a.done, total: a.total, excluded: a.excluded, source: "openspec", warn: null };
-      return { done: 0, total: 0, excluded: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
+      // The LIVE path still wins while it exists: it is authoritative for a change in flight, and
+      // a change can be un-archived and re-proposed under the same id.
+      c = countCheckboxes(archivedTasksPath(epic));
     }
-    return { done: c.done, total: c.total, excluded: c.excluded, source: "openspec", warn: null };
+    checkbox = { kind: "openspec", done: c.done, total: c.total, excluded: c.excluded, open: c.total - c.done, exists: c.exists };
+    if (!c.exists && !archived) warn = "tasks.md missing";
   }
-  return { done: 0, total: 0, excluded: 0, source: "none", warn: null };
+
+  // WHICH PARTS CONTRIBUTE. A checkbox source that cannot be read contributes nothing, and an EMPTY
+  // story list contributes only where no checkbox source was read (a story-only epic whose stories
+  // were never added still reads `stories`, as it always did). `source` stays the single value it
+  // always was when one part contributes, and is two-part (`stories+openspec`, `stories+plan`) when
+  // both do; `parts` is the list a consumer tests MEMBERSHIP on, and each part carries its OWN open
+  // count — a consumer choosing a remedy keys on that count, never on `source`.
+  const hasBox = !!(checkbox && checkbox.exists);
+  const parts = [];
+  if (stories && (stories.total + stories.excluded > 0 || !hasBox)) parts.push("stories");
+  if (hasBox) parts.push(checkbox.kind);
+  const source = parts.length ? parts.join("+") : (checkbox ? checkbox.kind : "none");
+  const storyPart = parts.includes("stories") ? stories : null;
+  const boxPart = hasBox ? checkbox : null;
+  const sum = (k) => (storyPart ? storyPart[k] : 0) + (boxPart ? boxPart[k] : 0);
+  // `excludedLabel` exists because bar() would otherwise call a disposed story "lifecycle", which is
+  // a different declaration made by a different mechanism in a different place. It names BOTH kinds
+  // when both are present, and bar() then counts each.
+  const storyExcl = storyPart ? storyPart.excluded : 0;
+  const boxExcl = boxPart ? boxPart.excluded : 0;
+  const excludedLabel = storyExcl && boxExcl ? "disposed+lifecycle" : storyExcl ? "disposed" : undefined;
+  return {
+    done: sum("done"), total: sum("total"), excluded: sum("excluded"),
+    ...(excludedLabel ? { excludedLabel } : {}),
+    source, parts, stories: storyPart, checkbox: boxPart, warn,
+  };
 }
 
 /** THE definition of an epic's OUTSTANDING WORK, and the only counter. Every consumer keys on
@@ -347,7 +464,7 @@ export function resolveEpics(state) {
     if (!onDisk.has(e.id)) {
       const lane = e.lane || "openspec";
       out.push({ ...e, lane, progress: epicProgress({ ...e, lane }),
-        status: isArchived(e.id) ? "archived" : e.status, present: false });
+        status: isArchived(e) ? "archived" : e.status, present: false });
     }
   }
   // EFFECTIVE priority, attached here and nowhere else. resolveEpics() is the ONE place the
@@ -382,7 +499,7 @@ export function resolveEpics(state) {
  *  no change on disk BY DESIGN and it must never show the warning, regardless of whether the
  *  on-disk archive-dir naming convention still matches. */
 export function missing(e) {
-  return isOpenspecLane(e) && !e.present && !isArchived(e.id) &&
+  return isOpenspecLane(e) && !e.present && !isArchived(e) &&
     e.status !== "planned" && e.status !== "archived";
 }
 
@@ -452,7 +569,15 @@ export function bar(p) {
   // `<!-- pm:lifecycle -->` marker) and an inline story says "disposed" (a recorded --wont-do).
   // Defaulted here rather than required, so a progress object built before this field existed
   // renders exactly as it always did.
-  const lifecycle = p.excluded ? ` · ${p.excluded} ${p.excludedLabel || "lifecycle"}` : "";
-  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}${lifecycle}`;
+  // Both kinds at once (the union, design D2) are counted separately, so a disposed story is never
+  // called lifecycle bookkeeping and a declared task is never called disposed.
+  const lifecycle = !p.excluded ? ""
+    : p.excludedLabel === "disposed+lifecycle" && p.stories && p.checkbox
+      ? ` · ${p.stories.excluded} disposed · ${p.checkbox.excluded} lifecycle`
+      : ` · ${p.excluded} ${p.excludedLabel || "lifecycle"}`;
+  // The unit word is unchanged for a single part; a two-part source counts "items", because its
+  // total holds stories and tasks together.
+  const unit = p.source === "plan" ? "tasks" : String(p.source || "").includes("+") ? "items" : "stories";
+  if (p.total > 0) return `${p.done}/${p.total} ${unit}${lifecycle}`;
   return p.excluded ? `0/0${lifecycle}` : "—";
 }

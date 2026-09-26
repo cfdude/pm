@@ -10,7 +10,9 @@ rule: Run `set-active` on the member you are actually working. An in-flight rele
   turned into noise by an operator omission, not by a defect.
 enforced_in: Nothing mechanical. `integrity.mjs`'s own comment states the heuristic and names this
   exact failure; the gap is operator behaviour, which is why this is a lesson and not a guard.
-detect: conductor\.mjs (release|update-epic) [^\n]*--(member|status archived)
+  The `detect:` matcher advises on the engine command (`conductor.mjs` or `"$ENGINE"`) that adds
+  a release member or archives an epic.
+detect: {"tool":"Bash","commandMatches":"(conductor\\.mjs|\\$\\{?ENGINE\\}?)\"? (release|update-epic) .*--(member|status archived)"}
 ---
 
 ## What happened

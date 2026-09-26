@@ -10,6 +10,7 @@ import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./li
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
+import { specSyncFindings } from "./spec-sync.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, asCode, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
@@ -63,7 +64,49 @@ export const BRIEF_REMEDIES = [
 ];
 const briefRemedy = (id, ...args) => BRIEF_REMEDIES.find(r => r.id === id).render(...args);
 
-export function buildBrief(state, { consume = false } = {}) {
+/** The SPEC-SYNC block (handoff-demand-blind-spots D6): the `delivered-epic-spec-deltas-absent` set,
+ *  computed by specSyncFindings() — the same function `integrity` reads, so the two surfaces cannot name
+ *  different sets — under its own heading, capped, with an overflow line pointing at `integrity` (the
+ *  remedy lives there), never at PROJECT.md. `[]` when nothing is reported. `opts.readIndex` is the
+ *  injection point a test uses; the surfaces pass none. Lines only: every caller joins them through a
+ *  line sink (buildBrief's L, the render verb's escapeControls). */
+export function specSyncBlock(state, { readIndex } = {}) {
+  // THE DEGRADE RULE (Gate 2 C1; gate-integrity): a check that CANNOT RUN — a failed index read, a
+  // malformed `cat-file` answer — never takes the briefing or the render verb down with it. It
+  // becomes ONE line naming the reason, and everything else is still emitted: the SessionStart
+  // briefing is the one thing a session is guaranteed to see, and losing all of it to one check is
+  // worse than any finding. `integrity` reports the same failure as the check being unavailable.
+  let findings;
+  try {
+    findings = specSyncFindings((state && state.epics) || [], readIndex ? { readIndex } : {});
+  } catch (e) {
+    return [specSyncUnavailable(e), ""];
+  }
+  if (!findings.length) return [];
+  const CAP = 5;
+  const word = { absent: "absent", present: "still present", unpaired: "unpaired RENAMED line" };
+  const L = ["SPEC DELTAS ABSENT FROM THE MAIN SPECS (a delivered change's archived spec deltas the main " +
+    "specs in git's index do not hold — clears when the index holds them; run `integrity` for each remedy):"];
+  // Destructured, so this emitter never spells the tracker-direction property scan's `.direction`
+  // (conductor-14): a finding's `direction` says which way a header fails, nothing about a tracker.
+  for (const { epic, dir, capability, direction: way, headers } of findings.slice(0, CAP)) {
+    L.push(`  • \`${epic}\` — \`${dir}\` · \`${capability}\`: ${word[way]} ` +
+      headers.map(h => JSON.stringify(h)).join(", "));
+  }
+  if (findings.length > CAP) L.push(`  (+${findings.length - CAP} more — see \`integrity\`)`);
+  L.push("");
+  return L;
+}
+
+/** The one line a surface prints when the spec-sync check cannot run: the reason, escaped, first line
+ *  only. Shared by the briefing, the render verb and `integrity`, so the three say it the same way. */
+export function specSyncUnavailable(e) {
+  const code = e && (e.code || (typeof e.status === "number" ? `exit ${e.status}` : null));
+  const msg = String((e && e.message) || e || "unknown failure").split("\n")[0];
+  return `spec-sync check unavailable: ${escapeControls(code ? `${code} — ${msg}` : msg)}`;
+}
+
+export function buildBrief(state, { consume = false, specSync = false } = {}) {
   const epics = resolveEpics(state);
   const byId = Object.fromEntries(epics.map(e => [e.id, e]));
   const L = [];
@@ -279,6 +322,13 @@ export function buildBrief(state, { consume = false } = {}) {
     if (withdrawnArchives.length > NEXT_CAP) L.push(`  (+${withdrawnArchives.length - NEXT_CAP} more — see \`integrity\`)`);
     L.push("");
   }
+
+  // THE SPEC-SYNC BLOCK — only when the caller asks (brief() and snapshot() do). render()'s embedding
+  // into PROJECT.md does NOT: the condition depends on git's INDEX, so a render between
+  // `openspec archive` and `git add` would write a finding about a correct archive into a tracked
+  // file that the closeout then commits, and PROJECT.md would change with staging state rather than
+  // with the record (design D6). The `render` VERB prints it on stdout instead (render.mjs renderVerb).
+  if (specSync) L.push(...specSyncBlock(state, specSync === true ? {} : specSync));
 
   // Both ends of every handoff, so the epic that INHERITED work is as legible as the one that
   // carried it out — a relationship visible from one side only is how a remainder disappears.

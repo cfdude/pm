@@ -1,0 +1,98 @@
+call-site-sweep-6.1 — handoff-demand-blind-spots (required task item 1). Every list DERIVED with rg over
+scripts/ excluding scripts/test/, comment lines dropped, at the 5.2 tree (after 5b32904's successor).
+
+═══ A. Callers of epicProgress / outstandingWork / outstandingSummary / deliveredObligations ═══
+rg -n "epicProgress\(|outstandingWork\(|outstandingSummary\(|deliveredObligations\(" scripts --glob '!scripts/test/**'
+
+  epic-progress.mjs outstandingWork()          → epicProgress(): union + archived read HOLD (same call).
+  epic-progress.mjs resolveEpics() ×2          → epicProgress(): HOLD — PROJECT.md, the brief and /pm:next
+                                                  render the union and the archived counts (bar()).
+  archive-gate.mjs outstandingSummary()        → epicProgress()+outstandingWork(): HOLD; now carries each
+                                                  part's own open count (storiesOpen, tasksOpen).
+  archive-gate.mjs handoff detect/remedy/archiveFlags → outstandingSummary(): HOLD — remedy keys on
+                                                  storiesOpen, archiveFlags on tasksOpen (never `source`).
+  archive-gate.mjs archiveGate() handoff refusal → outstandingSummary(): HOLD — per-part conjunction.
+  archive-gate.mjs archiveGate()               → deliveredObligations(): HOLD (interactive verb).
+  archive-gate.mjs blockedDelivered()          → deliveredObligations(): HOLD, INHERITED without an edit;
+                                                  read by unconsideredOutcomes() → `unconsidered-outcomes`
+                                                  and by dispositionInvocation() (the offered outcomes).
+                                                  Tested: assert/progress-union 2.3 (both parts).
+  integrity.mjs archived-with-zero-ticked-tasks → epicProgress(): HOLD — gains 17 candidates, 0 findings
+                                                  (live-record-1.4.txt).
+  integrity.mjs heal-archived-epic-passed-gate-2 → deliveredObligations(): HOLD, inherited through
+                                                  obligationRemedy()/obligationArchiveFlags(); tested
+                                                  (assert/progress-union 2.3 drift-heal case).
+  integrity.mjs delivered-release-epic-left-open → deliveredObligations(): HOLD, inherited; tested
+                                                  (assert/progress-union 2.3 delivered-release guard).
+  update-epic.mjs deliveredRegression() ×2      → deliveredObligations() before/after: HOLD, inherited.
+                                                  An archived delivered epic whose handoff newly fails
+                                                  under D1 (the two live 53/54 and 46/47 records) was
+                                                  ALREADY failing before any edit, so before/after compare
+                                                  equal and no update is refused for it. Its refusal's
+                                                  `carry` comes from obligationArchiveFlags() → tasksOpen.
+  subcommands.mjs AMEND commit hook (line ~431) → deliveredRegression(): HOLD, inherited, same argument.
+  NOT HOLDING: none.
+
+═══ B. Readers of archivedTasksPath / isArchived / isArchiveBackfilled (and the new archivedChangeDir) ═══
+rg -n "archivedTasksPath|isArchived\(|isArchiveBackfilled\(|archivedChangeDir\(" scripts --glob '!scripts/test/**'
+
+  archivedTasksPath(), isArchived()            → both call archivedChangeDir(): ONE resolver.
+  epic-progress.mjs reconcileArchived() ×2     → isArchived(): through the resolver. 1.1(f) measured 0
+                                                  ids where it would write differently, here and in 5
+                                                  other repos. (drift-heal-leaves-claim-on-archive also
+                                                  edits reconcileArchived(); this change did not touch
+                                                  its body — only the function it calls.)
+  epic-progress.mjs epicProgress()             → archivedTasksPath(): the archived read, every epic.
+  epic-progress.mjs resolveEpics(), missing()  → isArchived(): through the resolver.
+  active-pointer.mjs, update-epic.mjs:146,
+  integrity.mjs:177 (ungatedArchives)          → isArchived(): through the resolver.
+  spec-sync.mjs inSpecSyncScope(),
+  specSyncFindings()                           → archivedChangeDir() directly: the SAME resolver, so
+                                                  integrity and the briefing read the same directory.
+  isArchiveBackfilled(): integrity.mjs:70 (inCompletionScope), state.mjs:151 (attribution seeding) —
+                                                  UNCHANGED; the backfill's own path is unchanged. Its
+                                                  former reader in epicProgress() is gone (D1).
+  WIDENED AFTER GATE 2 (I4): the rg above only finds the NAMED resolvers, so a site that re-derives
+  the match itself was invisible. The widened derivation also enumerates the building blocks:
+    rg -n "archivedChanges\(|strippedChangeId\(" scripts/lib scripts/conductor.mjs
+  Per-ID resolutions found (each must go through archivedChangeDir()):
+    cross-spec-review.mjs changeSpecRoot() — took the FIRST (oldest) stripped match; FIXED to call
+      archivedChangeDir(changeId, <changes>/archive) (Gate 2 I4, tested in assert/cross-spec-review).
+  Set enumerations found (a different question — "does this directory have an epic", "is this one change
+  registered twice", "every archived change" — so no resolver applies):
+    subcommands.mjs backfillArchive() and the duplicate-registration test; integrity.mjs
+    archive-directory-has-no-epic and change-registered-under-two-lanes; spec-sync.mjs's enumeration of
+    every archived change for discharge; epic-progress.mjs archivedChanges()/archivedChangeDir() themselves.
+  subcommands.mjs backfillArchive()            → iterates archivedChanges() with strippedChangeId(), the
+                                                  resolver's own normalization; it asks "does this
+                                                  directory have an epic", a different question, and is
+                                                  unchanged.
+
+═══ C. Every archive path gate-integrity names — the spec-synced condition refuses on NONE ═══
+  interactive archive verb (update-epic → archiveGate): not a DELIVERED_OBLIGATIONS entry; spec-sync.mjs
+    is not imported by archive-gate.mjs (proved: 5.4 + mutation-5.4.txt).
+  archive-drift heal (reconcileArchived): reflects disk; no disposition, no refusal of any kind.
+  archive backfill registration (subcommands backfillArchive): registers history; refuses nothing.
+  archived-at-creation ×2 (add-epic --status archived, add-many): creation stamps; no gate.
+  WHY none refuses: design D3 — pm's own closeout records `delivered` before `openspec archive` moves the
+  change, so a refusal needs the archive commit before the disposition it gates (deadlock); a
+  working-tree read would have passed 0.48.0; and a delivered obligation would join the regression
+  comparison for no gain (an update-epic cannot change the index).
+
+═══ D. Every surface that renders standing conditions ═══
+rg -n "ungatedArchives|buildBrief\(|specSyncFindings\(|specSyncBlock\(" scripts --glob '!scripts/test/**'
+
+  CARRY the block: integrity (CHECKS entry → specSyncFindings), brief() (buildBrief specSync: true),
+    the `render` VERB's stdout (renderVerb → specSyncBlock).
+  snapshot() does NOT (Gate 2 I3): its .conductor/brief.txt is TRACKED in 14 of 24 fleet repos.
+  DELIBERATELY DO NOT (design D6, justified): render()'s embedding into PROJECT.md (render.mjs:316 —
+    PROJECT.md is tracked and the condition depends on the index); render() run in-process by snapshot,
+    commit-nudge, sync, upgrade and the mutating verbs/hooks (a block + a git process in every one of
+    those outputs); `render --diff-summary` (a machine-read line). Tested: functional/spec-sync-surfaces
+    5.2 cases + mutation-5.2.txt.
+  ungatedArchives(): unchanged; its two surfaces are unaffected.
+
+═══ E. The new gateway operation's callers ═══
+rg -n "indexBlobs|indexFileContents\(" scripts/lib → git.mjs indexFileContents() (the one caller of
+  gitOps().indexBlobs), spec-sync.mjs specSyncFindings() (the one caller of indexFileContents, as its
+  default reader). No other module reaches the operation.

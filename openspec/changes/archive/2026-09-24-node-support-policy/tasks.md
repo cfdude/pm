@@ -670,7 +670,7 @@ Commit mechanics, which bind every section below:
       - Fixed: #220; the hook's skipped floor on an unreadable count; the shim's temp-dir leak.
       - Removed: the isolation probe and the Node-18 loop.
       The release cut folds it into `0.49.0`.
-- [ ] 7.6 The docs site belongs to the release cut via `mintlify-doc-sync`, not to this change. Hand
+- [x] 7.6 The docs site belongs to the release cut via `mintlify-doc-sync`, not to this change. Hand
       it this list, re-derived at the cut:
       - `installation.md` `:7`, `:9`, `:14`
       - `index.md` `:15`, `:107`

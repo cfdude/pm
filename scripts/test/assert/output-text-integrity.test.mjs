@@ -38,3 +38,34 @@ test("1.2 escapeControls is idempotent over its own output", () => {
   assert.match(mod, /export (function|const) escapeTableCell/);
 });
 
+
+// The functional recipe "add-many --link" used to reach the record with a control-character link
+// TARGET, because add-many stored a link to any id. add-many-drops-input-silently made that a refusal,
+// and the recipe now poisons only the reason. This is the per-commit half of that move: the forged
+// target is refused, its refusal prints no forged line, and state.json's bytes are untouched.
+test("add-many refuses a link whose target holds a control character, printing no forged line and writing nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const before = fs.readFileSync(statePath, "utf8");
+  const batch = path.join(cwd, "batch.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [{ id: "mlk", lane: "claude-code",
+    links: [{ type: "relates-to", epic: "x\nconductor: FORGED", reason: "r" }] }] }));
+  const err = expectFail(() => run(["add-many", "--from", batch], { cwd }));
+  assert.ok(err, "the forged link target must be refused");
+  assert.doesNotMatch(String(err.stderr), FORGED);
+  assert.equal(fs.readFileSync(statePath, "utf8"), before);
+});
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — the twin of the functional 6.5 / 6.6a / 6.6c edit,
+// whose uppercase-plan half was superseded: sync now applies add-epic's own rule. This per-commit half
+// pins the refusal side of that one rule — add-epic refuses each id sync used to register, and a
+// refusal writes nothing.
+test("add-epic refuses every id sync no longer registers, and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const before = fs.readFileSync(statePath, "utf8");
+  for (const id of ["x|y", ".hidden", "MASTER-plan"]) {
+    assert.ok(expectFail(() => run(["add-epic", "--id", id, "--lane", "claude-code"], { cwd })), `add-epic refuses '${id}'`);
+  }
+  assert.equal(fs.readFileSync(statePath, "utf8"), before);
+});

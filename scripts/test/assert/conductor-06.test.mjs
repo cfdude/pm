@@ -24,6 +24,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, fixturePluginRoot } from "../fixtures/assert-harness.mjs";
+import { fakeGit } from "../fixtures/fake-git.mjs";
+// The UNBOUND entry point: the harness's own `invokeEngine` pins the no-repository double per call,
+// and this file's last test hands the engine a listing of its own.
+import { invokeEngine } from "../fixtures/harness.mjs";
 
 // ───────────────────────── 0.5.0: link migration ─────────────────────────
 
@@ -49,4 +53,74 @@ test("0.5.0 migration repairs colon-string links, drops unrecoverable, is idempo
   const first = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), first);
+});
+
+// (The functional test's scratch parent is scheduled with removeAtExit(); this twin makes no temp dir of its own.)
+// The twin of the functional "reports the WHOLE path of a worktree whose directory name holds a line
+// feed". This half cannot create a worktree, but it can hand the engine the listing git would print:
+// the double's no-repository gateway with the one listing answered, NUL-terminated as `-z` prints it.
+// The path's line feed must survive into the report, and the BRANCH line after it must still be read.
+test("verify-worktrees parses a NUL-terminated listing: a line feed inside a path stays in the path", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "lf-child", "--lane", "claude-code", "--status", "archived"], { cwd });
+  const wt = "/tmp/pm-wt/line\nfeed";
+  const git = {
+    ...fakeGit({ noRepository: true }),
+    worktreeList: () => `worktree ${cwd}\0HEAD aaaa\0branch refs/heads/main\0\0` +
+      `worktree ${wt}\0HEAD bbbb\0branch refs/heads/hierarchy-child/lf-child\0\0`,
+    mergeBaseIsAncestorOfHead: () => { const e = new Error("not an ancestor"); e.status = 1; throw e; },
+  };
+  const r = invokeEngine(["verify-worktrees"], { cwd, git });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.deepEqual(out.orphaned.map(o => o.path), [wt], "the whole path, line feed included");
+  assert.deepEqual(out.orphaned[0].reasons, ["epic-archived"]);
+});
+
+// `-z` needs git 2.36+. An older git refuses the switch (status 129), and that failure used to print
+// the same `{orphaned: []}` as a clean repository — a check that could not run, reading as a pass.
+// Only "not a repository" (128) is an honest empty answer.
+test("verify-worktrees REFUSES when git cannot list worktrees for any reason but 'not a repository'", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const failing = (status, stderr) => ({
+    ...fakeGit({ noRepository: true }),
+    worktreeList: () => { const e = new Error(stderr); e.status = status; e.stderr = stderr; throw e; },
+  });
+  const old = invokeEngine(["verify-worktrees"], { cwd, git: failing(129, "error: unknown switch `z'") });
+  assert.notEqual(old.status, 0, "an old git is refused, not reported clean");
+  assert.equal(old.stdout, "", "and no JSON verdict is printed");
+  assert.match(old.stderr, /needs git 2\.36 or later/);
+  assert.match(old.stderr, /unknown switch/, "the message git printed is carried");
+  const none = invokeEngine(["verify-worktrees"], { cwd, git: failing(128, "fatal: not a git repository") });
+  assert.equal(none.status, 0);
+  assert.deepEqual(JSON.parse(none.stdout).orphaned, [], "outside a repository, empty is the true answer");
+
+  // Branch review: 128 is not only "not a repository". Dubious ownership and a corrupt repository
+  // exit 128 too, and those HAVE worktrees; the empty answer is keyed on git's own words now.
+  const dubious = invokeEngine(["verify-worktrees"], { cwd,
+    git: failing(128, "fatal: detected dubious ownership in repository at '/x'") });
+  assert.notEqual(dubious.status, 0, "a 128 that is not 'not a repository' is refused");
+  assert.equal(dubious.stdout, "");
+  assert.match(dubious.stderr, /dubious ownership/);
+  // And git missing altogether names that, instead of "git exited undefined".
+  const missing = invokeEngine(["verify-worktrees"], { cwd, git: {
+    ...fakeGit({ noRepository: true }),
+    worktreeList: () => { const e = new Error("spawnSync git ENOENT"); e.code = "ENOENT"; throw e; },
+  } });
+  assert.notEqual(missing.status, 0);
+  assert.match(missing.stderr, /git was not found on PATH/);
+  assert.doesNotMatch(missing.stderr, /undefined/);
+});
+
+// The twin of the functional "still reads 'not a git repository' under a non-English locale". This
+// half runs no git, so it holds the SOURCE to the property the functional test observes: the one
+// gateway operation whose stderr the engine reads as TEXT runs git with LC_ALL=C. The sweep that
+// found it being the only one: `rg -n 'stderr' scripts/lib | rg -i 'not a|fatal|match|includes|test\('`.
+test("the worktree listing runs git with LC_ALL=C, because its stderr is read as text", () => {
+  const src = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "lib", "git-gateway.mjs"), "utf8");
+  const op = src.slice(src.indexOf("worktreeList: () =>"), src.indexOf("mergeBaseIsAncestorOfHead:"));
+  assert.ok(op.length > 0, "the gateway still defines worktreeList before mergeBaseIsAncestorOfHead");
+  assert.match(op, /LC_ALL: "C"/, "a localized 'not a git repository' would read as a failure");
 });

@@ -9,9 +9,10 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, EPIC_ID_FORMAT, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
+import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { rankOf } from "./epic-progress.mjs";
 import { assertKnownPlatform, platformFlag } from "./platform.mjs";
 import { die } from "./command-exit.mjs";
@@ -139,22 +140,32 @@ export function requirePlatformFlag(command) {
   if (declared) assertKnownPlatform(declared);
 }
 
+/** THE `<type>:<epic>[:<reason>]` grammar, split — the reason is everything after the second colon,
+ *  so it may hold colons itself. Shared by parseLinkFlags (`--link`) and add-many's string links, so
+ *  the two spellings of one link cannot come to parse differently. Validates nothing. */
+export function splitLinkSpec(s) {
+  const [type, epic, ...rest] = s.split(":");
+  return { type, epic, reason: rest.join(":").trim() };
+}
+
 /** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}
  *  objects. Rejects malformed input (fewer than two segments, or an `epic` that isn't a
  *  real known epic id) by THROWING, instead of the prior behavior of silently storing a
  *  garbage link object — a typo like "type:related:epic:..." used to parse successfully
  *  (type="type", epic="related") because nothing checked that "related" was a real epic.
- *  Shared by add-epic and update-epic.
+ *  Used by add-epic and update-epic.
  *
  *  BOTH halves are checked now (gh#100). #70 shipped the epic half; the type half was the
  *  vocabulary it did not have, so `--link "depends_on:x"` stored an edge that every consumer
- *  ignores forever and that the next agent copies as precedent. This is the ONE write path —
- *  add-epic, update-epic and add-many all reach the store through here — which is why the check
- *  lives at the shared function rather than at each verb. The read paths deliberately stay
+ *  ignores forever and that the next agent copies as precedent. `--link` reaches the store only
+ *  through here, for add-epic and update-epic, which is why the check lives at the shared function
+ *  rather than at each verb. add-many's batch links do NOT come through here — they are JSON values,
+ *  not flag strings — and are checked by add-many.mjs's batchLink(), which shares this function's
+ *  grammar (splitLinkSpec) and its order (epic half, then type half). The read paths deliberately stay
  *  permissive; see isRenderableLink() in links.mjs for why. */
 export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
-    const [type, epic, ...rest] = s.split(":");
+    const { type, epic, reason } = splitLinkSpec(s);
     if (!type || !epic) {
       throw new Error(`bad --link '${escapeControls(s)}': expected "<type>:<epic>[:<reason>]"`);
     }
@@ -169,7 +180,6 @@ export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
     if (!isKnownLinkType(type)) {
       throw new Error(unknownLinkTypeMessage(s, type, { owingEpic }));
     }
-    const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };
   });
 }
@@ -358,12 +368,18 @@ export function addEpic() {
   try { stories = parseStoryFlags(f["add-story"]); }
   catch (e) { die(`conductor: ${e.message}\n`); }
   const id = str(f.id);
-  if (!id || !EPIC_ID_FORMAT.test(id)) {
+  if (!STORABLE_EPIC_ID(id)) {
     die(`conductor: --id required, format ${EPIC_ID_FORMAT.source}\n`);
   }
   const lane = str(f.lane);
   if (!lane || !KNOWN_LANES.includes(lane)) {
     die(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`);
+  }
+  if (str(f.priority) !== undefined && priorityValueError(str(f.priority))) {
+    die(`conductor: ${escapeControls(priorityValueError(str(f.priority)))}\n`);
+  }
+  if (str(f["external-updated-at"]) !== undefined && timestampValueError(str(f["external-updated-at"]))) {
+    die(`conductor: ${escapeControls(timestampValueError(str(f["external-updated-at"])))}\n`);
   }
   const status = str(f.status) || "queued";
   if (!KNOWN_STATUSES.includes(status)) {
@@ -374,28 +390,19 @@ export function addEpic() {
     die(`conductor: epic '${escapeControls(id)}' already exists\n`);
   }
   const externalId = str(f["external-id"]);
-  const externalUrl = str(f["external-url"]);
-  if (externalId !== undefined) {
-    // Dedup by externalUrl when BOTH sides have one — a bare externalId is only unique WITHIN
-    // one tracker/repo (e.g. GitHub issue numbers restart at #1 per repo), so two epics sourced
-    // from different secondary trackers can legitimately share the same externalId. Bare
-    // externalId is compared only when NEITHER side has a URL. When exactly one side has a URL
-    // and the other doesn't, they are never treated as a duplicate — falling back to an
-    // externalId-only comparison in that case would let a URL-less legacy epic falsely block a
-    // genuinely distinct, URL-bearing one sharing the same bare id (Gate 2 finding).
-    // The two key names come from EPIC_DEDUP_KEYS, not from literals here: the nullable-clearing
-    // sweep derives its cross-record population from that declaration, and a declaration nothing
-    // reads is a comment. The COMPARISON is unchanged — only where the names come from is.
-    const { primary, fallback } = EPIC_DEDUP_KEYS;
-    const supplied = { [primary]: externalUrl, [fallback]: externalId };
-    const dup = state.epics.find(e => {
-      if (supplied[primary] !== undefined && e[primary] !== undefined) return e[primary] === supplied[primary];
-      if (supplied[primary] === undefined && e[primary] === undefined) return e[fallback] === supplied[fallback];
-      return false;
-    });
-    if (dup) {
-      die(`conductor: epic with external-id '${escapeControls(externalId)}' already exists ('${escapeControls(dup.id)}') — skipped\n`);
-    }
+  // TRIMMED, here and at the other two writers: a URL arriving with a shell's or a copy-paste's
+  // surrounding whitespace was stored verbatim, so it neither opened nor matched its bare self in the
+  // dedup. Nothing else is normalised — the comparison is exact (a trailing `/`, the host's case or a
+  // query string make a different URL), because guessing which URLs a tracker treats as one is not
+  // the engine's to do. A value that is blank after trimming is refused by requireFlagValues().
+  const externalUrl = str(f["external-url"]) === undefined ? undefined : str(f["external-url"]).trim();
+  // One tracker item, one epic — the shared rule in tracker-dedup.mjs (URL against URL when both
+  // sides carry one, bare externalId only when neither does). It used to sit inside
+  // `if (externalId !== undefined)`, so `--external-url` alone skipped it entirely, and its
+  // message named external-id even when the URL was what collided (code review 0.43.0 B2/E1).
+  if (externalId !== undefined || externalUrl !== undefined) {
+    const hit = trackerKeyHolder(state.epics, { externalUrl, externalId });
+    if (hit) { die(`conductor: ${trackerKeyRefusal(hit, { externalUrl, externalId })}\n`); }
   }
   let links;
   try {
@@ -448,7 +455,7 @@ export function addEpic() {
   if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
-  if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
+  if (externalUrl !== undefined) epic.externalUrl = externalUrl;
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   const previousActive = state.active;
   pushEpic(state, epic);

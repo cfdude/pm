@@ -7,7 +7,9 @@ Run this **before** `add-epic`, every time an ask arrives — a GitHub issue you
 mirror, a request in conversation, a line from a roadmap doc.
 
 The conductor has always ACCEPTED work; it has not TRIAGED it. `add-epic` validates the id, the
-lane and the priority, refuses a duplicate `externalId`, and appends. The only dedup that exists
+lane and the priority, refuses a tracker item another epic already holds (matched on
+`externalUrl` first, bare `externalId` only when neither side has a URL — at every writer, not only
+`add-epic`), and appends. The only dedup that exists
 is **identity-based** — same id, or the same `externalUrl` — which correctly stops `/pm:sync`
 from mirroring the same issue twice and does nothing at all about *the same ask arriving under a
 different name*. That failure has exactly one symptom: the backlog only ever grows, and every
@@ -55,7 +57,12 @@ line (shown expanded below for reading; parse it, do not match its layout):
   Each carries the `shared` tokens that put it there, so you can dismiss a bad hit in a glance.
   Vocabulary the whole backlog uses (`conductor`, `epic`, `plan` in this repo) counts for almost
   nothing; a word only one or two epics use counts for a lot — which is why "Implementation Plan"
-  in a title does not drag half the backlog into the result.
+  in a title does not drag half the backlog into the result. A word is a run of letters, marks
+  and digits in any script, of three or more characters; Chinese, Japanese and Korean text, which
+  puts no spaces between words, is split into overlapping two-character tokens instead, so a
+  reworded ask still shares tokens with the epic it matches. Because a long CJK ask carries one
+  such token per character, an epic that shares ONLY those needs at least two of them, and at
+  least one for every ten in the ask — so common words like 新的 "new" do not fill the list.
 - **`superseded: true`** — some other epic already holds a `supersedes` link to this one. It is
   already dead; do not consolidate a fourth ask into it.
 - **`lane`** — the repo's own `suggest-lane` answer, carried here so intake is one call, not two.

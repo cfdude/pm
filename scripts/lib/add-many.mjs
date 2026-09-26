@@ -6,14 +6,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { die } from "./command-exit.mjs";
-import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { newStory, parentError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 import { currentArgv } from "./invocation.mjs";
+import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -32,20 +33,41 @@ export function addMany() {
   let doc;
   try { doc = JSON.parse(raw); } catch { die("conductor: --from is not valid JSON\n"); }
 
+  // This module's own spelling of the ONE exit path (command-exit.mjs), carrying the verb name
+  // add-many's refusals have always had. See the import for why it is not called `die`.
+  const refuse = (msg) => die(`conductor: add-many: ${msg}\n`);
+
+  // The DOCUMENT's own shape, before any entry is read (add-many-drops-input-silently). Its keys
+  // used to be read by name and everything else ignored: `"epic": [...]` for `"epics"` created the
+  // parent alone, exit 0, and a non-array `epics` silently became no children. A bulk write
+  // persists what it accepts or refuses it by name, so an unknown key or a mis-shaped value refuses
+  // the whole batch here — the same rule the per-entry key allowlist below applies one level down.
+  const DOC_KEYS = ["parent", "epics"];
+  const isObject = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  if (!isObject(doc)) refuse("the batch must be a JSON object with `parent` and/or `epics`");
+  const unknownDocKeys = Object.keys(doc).filter(k => !DOC_KEYS.includes(k));
+  if (unknownDocKeys.length) {
+    refuse(`unsupported top-level key(s) ${escapeControls(unknownDocKeys.join(", "))} (supported: ${DOC_KEYS.join(", ")})`);
+  }
+  if (doc.parent !== undefined && !isObject(doc.parent)) refuse("`parent` must be an object (one epic entry)");
+  if (doc.epics !== undefined && !Array.isArray(doc.epics)) refuse("`epics` must be an array of epic entries");
+
   const state = loadState();
   const parentId = doc.parent && typeof doc.parent.id === "string" ? doc.parent.id : undefined;
   const incoming = [];
-  if (doc.parent) incoming.push({ ...doc.parent });
-  for (const e of Array.isArray(doc.epics) ? doc.epics : []) {
+  if (doc.parent !== undefined) incoming.push({ ...doc.parent });
+  for (const e of doc.epics || []) {
     const entry = { ...e };
     if (parentId && entry.parent === undefined) entry.parent = parentId;
     incoming.push(entry);
   }
+  // externalUrl is TRIMMED, as add-epic and update-epic trim it (see addEpic): surrounding whitespace
+  // made a stored URL that neither opened nor matched its bare self. Blank-after-trim is still refused
+  // below by the non-empty-string rule, which judges the trimmed value.
+  for (const entry of incoming) {
+    if (typeof entry.externalUrl === "string") entry.externalUrl = entry.externalUrl.trim();
+  }
   if (!incoming.length) { die("conductor: add-many: nothing to add (need `parent` and/or `epics`)\n"); }
-
-  // This module's own spelling of the ONE exit path (command-exit.mjs), carrying the verb name
-  // add-many's refusals have always had. See the import for why it is not called `die`.
-  const refuse = (msg) => die(`conductor: add-many: ${msg}\n`);
 
   // The keys a batch entry may carry, derived from the shared EPIC_FLAGS registry rather than
   // restated here. add-many used to copy a fixed key set and drop every other key without a
@@ -62,7 +84,7 @@ export function addMany() {
   const batchIds = new Set();
   for (const e of incoming) {
     const id = e.id;
-    if (typeof id !== "string" || !EPIC_ID_FORMAT.test(id)) refuse(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
+    if (!STORABLE_EPIC_ID(id)) refuse(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
     if (existingIds.has(id)) refuse(`epic '${escapeControls(id)}' already exists`);
     if (batchIds.has(id)) refuse(`duplicate id '${escapeControls(id)}' within the batch`);
     const unknownKeys = Object.keys(e).filter(k => !allowedKeys.includes(k));
@@ -110,19 +132,30 @@ export function addMany() {
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) refuse(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
     if (!KNOWN_STATUSES.includes(status)) refuse(`epic '${escapeControls(id)}': status must be one of ${KNOWN_STATUSES.join("|")}`);
-    // The SIBLING write path. `--link` reaches the store through parseLinkFlags for add-epic and
-    // update-epic; a batch entry's `links` is a JSON array copied verbatim by the registry loop
-    // below, so a rule added only at parseLinkFlags would hold at two of three write paths and
-    // be silently absent here — the defect class this repo's own audit calls the dominant one.
-    // Type only: the EPIC half is still unvalidated on this path (a pre-existing gap from #70,
-    // and a batch may legitimately link to an epic created later in the same batch), which is
-    // its own issue rather than something to widen here.
-    for (const l of Array.isArray(e.links) ? e.links : []) {
-      if (l && typeof l.type === "string" && !isKnownLinkType(l.type)) {
-        refuse(`epic '${escapeControls(id)}': link type '${escapeControls(l.type)}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
-      }
+    if (e.priority !== undefined && priorityValueError(e.priority, "priority")) {
+      refuse(`epic '${escapeControls(id)}': ${escapeControls(priorityValueError(e.priority, "priority"))}`);
+    }
+    if (e.externalUpdatedAt !== undefined && timestampValueError(e.externalUpdatedAt, "externalUpdatedAt")) {
+      refuse(`epic '${escapeControls(id)}': ${escapeControls(timestampValueError(e.externalUpdatedAt, "externalUpdatedAt"))}`);
     }
     batchIds.add(id);
+  }
+  // LINKS — the sibling write path, validated the way `--link` is (add-many-drops-input-silently).
+  // They were copied through mergeLinks(), which skips every non-object: `["depends-on:base"]` was
+  // dropped, a link to `ghost` was stored dangling and `{type:"blocks"}` with no target was stored
+  // unrenderable, all exit 0. Now every element either becomes a `{type, epic, reason?}` or refuses
+  // the batch by name. Checked in a pass AFTER every id is known, because a batch may link to an
+  // entry that appears later in it — the known set is the record's ids plus the batch's.
+  const knownIds = new Set([...existingIds, ...batchIds]);
+  const batchLinks = new Map();
+  for (const e of incoming) {
+    if (e.links === undefined) continue;
+    const where = `epic '${escapeControls(e.id)}'`;
+    if (!Array.isArray(e.links)) {
+      refuse(`${where}: links must be an array of "<type>:<epic>[:<reason>]" strings or {type, epic, reason} ` +
+        `objects (got ${escapeControls(JSON.stringify(e.links))})`);
+    }
+    batchLinks.set(e.id, e.links.map(l => batchLink(l, knownIds, where, refuse)));
   }
   const projected = [...state.epics, ...incoming.map(e => ({ id: e.id, parent: e.parent }))];
   for (const e of incoming) {
@@ -130,6 +163,20 @@ export function addMany() {
       const perr = parentError(projected, e.id, e.parent);
       if (perr) refuse(perr);
     }
+  }
+  // One tracker item, one epic — the same rule add-epic and update-epic call (tracker-dedup.mjs).
+  // A batch entry's `externalUrl` used to be copied verbatim, so add-many was the one writer of the
+  // key that never looked (tracker-item-dedup-bypassed). Judged in batch order against the record
+  // AND every earlier entry, so two entries of one batch cannot claim one item either. The values
+  // were validated as non-empty strings above.
+  const claimed = [];
+  for (const e of incoming) {
+    const candidate = { externalUrl: e.externalUrl, externalId: e.externalId };
+    if (candidate.externalUrl !== undefined || candidate.externalId !== undefined) {
+      const hit = trackerKeyHolder([...state.epics, ...claimed], candidate);
+      if (hit) refuse(`epic '${escapeControls(e.id)}': ${trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })}`);
+    }
+    claimed.push(e);
   }
   for (const e of incoming) {
     // Seeded with the defaults a batch entry may omit, plus the two fields the ENGINE owns and
@@ -148,7 +195,7 @@ export function addMany() {
       // THE sibling write path this file's own comment names, now reading the same rule as the
       // other two: a batch listing one identity twice is one relationship, and copying the array
       // verbatim recorded it twice.
-      if (key === "links") { if (Array.isArray(v)) epic.links = mergeLinks([], v); continue; }
+      if (key === "links") { epic.links = mergeLinks([], batchLinks.get(e.id)); continue; }
       // Normalized through newStory() rather than copied verbatim: a batch may write a bare
       // title string, and every other writer produces `{title, done}`. One row shape, one
       // constructor — see newStory() in add-epic.mjs. Validated above, so this cannot throw.
@@ -183,4 +230,41 @@ export function addMany() {
     unchanged: `conductor: every epic in the batch was already recorded exactly as supplied — ` +
       `${STATE_UNCHANGED}`,
   });
+}
+
+/** The keys a link OBJECT in a batch may carry — exactly what `--link` can express. Anything else
+ *  is refused rather than spread onto the stored edge by mergeLinks(): a batch must not be able to
+ *  write a `verdict` or an arming record onto a `may-invalidate` link that no gate produced. */
+const BATCH_LINK_KEYS = ["type", "epic", "reason"];
+
+/** One batch link element → `{type, epic, reason?}`, or a refusal naming the entry and the element.
+ *  The same checks, in the same order, as parseLinkFlags(): shape, then the EPIC half (a mis-split
+ *  value is best diagnosed by the half that reveals it), then the TYPE half. */
+function batchLink(raw, knownIds, where, refuse) {
+  const shown = escapeControls(JSON.stringify(raw));
+  let type, epic, reason;
+  if (typeof raw === "string") {
+    ({ type, epic, reason } = splitLinkSpec(raw));
+    if (!type || !epic) refuse(`${where}: bad link ${shown}: expected "<type>:<epic>[:<reason>]"`);
+  } else if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const extra = Object.keys(raw).filter(k => !BATCH_LINK_KEYS.includes(k));
+    if (extra.length) {
+      refuse(`${where}: link ${shown}: unsupported link key(s) ${escapeControls(extra.join(", "))} ` +
+        `(supported: ${BATCH_LINK_KEYS.join(", ")})`);
+    }
+    if (typeof raw.type !== "string" || !raw.type) refuse(`${where}: link ${shown} needs a string \`type\``);
+    if (typeof raw.epic !== "string" || !raw.epic) refuse(`${where}: link ${shown} needs a string \`epic\` (the target epic's id)`);
+    if (raw.reason !== undefined && typeof raw.reason !== "string") refuse(`${where}: link ${shown}: reason must be a string`);
+    ({ type, epic } = raw);
+    reason = typeof raw.reason === "string" ? raw.reason.trim() : "";
+  } else {
+    refuse(`${where}: link ${shown} must be a "<type>:<epic>[:<reason>]" string or a {type, epic, reason} object`);
+  }
+  if (!knownIds.has(epic)) {
+    refuse(`${where}: link ${shown}: '${escapeControls(epic)}' is not a known epic id (neither in the record nor in this batch)`);
+  }
+  if (!isKnownLinkType(type)) {
+    refuse(`${where}: link type '${escapeControls(type)}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
+  }
+  return reason ? { type, epic, reason } : { type, epic };
 }

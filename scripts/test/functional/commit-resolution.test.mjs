@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import { execFileSync, spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, parseBrief, fixtureCommits, fixtureCommit } from "../fixtures/functional-harness.mjs";
 
@@ -270,7 +271,7 @@ test("5.2 REGRESSION GUARD: re-recording the verdict clears the finding, and a r
 test("g2-1 a stored value shaped like a git option creates no file through integrity, brief or render", () => {
   const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
   run(["add-epic", "--id", "f", "--lane", "openspec"], { cwd });
-  const outDir = fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-"));
+  const outDir = removeAtExit(fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-")));
   const viaAttributed = path.join(outDir, "via-attributed");
   const viaHead = path.join(outDir, "via-head");
   const s = readState(cwd);
@@ -388,10 +389,13 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
     assert.match(gatewayOperationBody(gw, op), GIT_NO_LAZY_FETCH,
       `${op}'s git call must not fetch from a promisor remote`);
   }
-  // The override is not ambient: exactly the two operations that inherited a call passing it carry
-  // it, so a third op acquiring it (or one of these losing it) is a change rather than a detail.
-  assert.equal((gw.match(/GIT_NO_LAZY_FETCH/g) || []).length, 2,
-    "exactly two gateway operations pass GIT_NO_LAZY_FETCH");
+  // The override is not ambient: exactly the operations that name it carry it, so a further op
+  // acquiring it (or one of these losing it) is a change rather than a detail. handoff-demand-blind-
+  // spots added the THIRD deliberately: `indexBlobs` (`cat-file --batch` over the index) follows
+  // batchCheckCommits' shape, because a partial clone must not fetch a blob to answer it either.
+  assert.match(gatewayOperationBody(gw, "indexBlobs"), GIT_NO_LAZY_FETCH, "indexBlobs must not fetch either");
+  assert.equal((gw.match(/GIT_NO_LAZY_FETCH/g) || []).length, 3,
+    "exactly three gateway operations pass GIT_NO_LAZY_FETCH");
 });
 
 test("g2-3 git calls whose input is already filtered to commit-name hex pass no --end-of-options, so an old git cannot fail them open", () => {

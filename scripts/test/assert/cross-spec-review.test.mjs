@@ -25,8 +25,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { run, runCombined, tmpRepo, readState, writeState, projectMd, parseBrief, expectFail } from "../fixtures/assert-harness.mjs";
-import { releaseSpecFiles, crossSpecStaleness } from "../../lib/cross-spec-review.mjs";
+import { run, runCombined, tmpRepo, readState, writeState, projectMd, parseBrief, expectFail, archiveDay } from "../fixtures/assert-harness.mjs";
+import { releaseSpecFiles, crossSpecStaleness, changeSpecRoot } from "../../lib/cross-spec-review.mjs";
 
 /** Write `openspec/changes/<changeId>/specs/<cap>/spec.md` for each capability. */
 function withChange(cwd, changeId, caps, { archived = false, body = "# spec\n" } = {}) {
@@ -170,7 +170,7 @@ test("the ARCHIVE MOVE does not make a verdict stale", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["record-cross-spec-review", "rel", "--verdict", "pass"], { cwd });
   const from = path.join(cwd, "openspec", "changes", "big-change");
-  const to = path.join(cwd, "openspec", "changes", "archive", "2026-08-26-big-change");
+  const to = path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-big-change`);
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.renameSync(from, to);
   const state = readState(cwd);
@@ -219,4 +219,18 @@ test("the usage line and the command doc both name the new subcommand", () => {
   const doc = fs.readFileSync(
     path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "..", "commands", "cross-spec-review.md"), "utf8");
   assert.match(doc, /record-cross-spec-review/);
+});
+
+test("I4 changeSpecRoot: a change archived twice resolves to the LATEST dated directory (the one resolver)", () => {
+  // handoff-demand-blind-spots Gate 2 I4: it took the first stripped match in directory order — the
+  // OLDEST — so a re-archived change was reviewed against its stale specs.
+  const cwd = tmpRepo();
+  for (const dir of ["2026-08-01-twice", "2026-09-01-twice", "twice"]) {
+    fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", dir, "specs", "cap"), { recursive: true });
+    fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", dir, "specs", "cap", "spec.md"), `# ${dir}\n`);
+  }
+  const got = changeSpecRoot("twice", cwd);
+  assert.equal(path.basename(got.root), "2026-09-01-twice", "the latest date wins; undated ranks below dated");
+  assert.equal(got.id, "twice");
+  assert.equal(path.basename(changeSpecRoot("2026-01-01-twice", cwd).root), "2026-09-01-twice", "a dated id resolves the same way");
 });

@@ -19,7 +19,7 @@
 - **The ENGINE is ZERO-RUNTIME-DEPENDENCY.** `scripts/conductor.mjs` + `scripts/lib/*.mjs` use Node
   built-ins only (Node 22+ — pm supports the oldest Node LTS line that is not end-of-life;
   `NODE_FLOOR_MAJOR` in `scripts/lib/runtime-support.mjs`): `node:child_process`, `node:crypto`,
-  `node:fs`, `node:os`, `node:path`, `node:tty`, `node:url` — the code users
+  `node:fs`, `node:os`, `node:path`, `node:tty`, `node:url`, `node:vm` — the code users
   run in real time ships with no `node_modules` and nothing to install. **Never** add an npm package to
   the engine. If a format needs parsing, prefer JSON (native) over pulling a parser.
   **Dev-only dependencies are permitted**: anything used only to develop and test the source

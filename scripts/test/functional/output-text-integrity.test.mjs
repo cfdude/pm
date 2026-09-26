@@ -548,6 +548,9 @@ test("6.4c A primary tracker system with a newline is refused even with --remove
 });
 
 test("6.5 REGRESSION GUARD: well-formed and legacy release ids, uppercase and held plans, and the add-epic/add-many id refusals", () => {
+  // sync-registers-ids-add-epic-refuses (0.50.0) SUPERSEDES this test's uppercase half: every
+  // registration path now applies add-epic's own rule, so an uppercase plan is SKIPPED with a
+  // runnable `add-epic --id <lowercased> --plan` rather than stored under an id add-epic refuses.
   const cwd = initRepo();
   ok(cwd, ["release", "0.46.0", "--intent", "next batch"]);
   assert.ok((readState(cwd).releases || []).some(r => r.id === "0.46.0"), "a well-formed release id is created");
@@ -561,8 +564,9 @@ test("6.5 REGRESSION GUARD: well-formed and legacy release ids, uppercase and he
   fs.writeFileSync(path.join(plans, "Legacy-Plan.md"), "# legacy\n");
   legacyWrite(cwd, s => { s.epics.push({ id: "Legacy-Plan", title: "legacy", priority: "P2", status: "queued", role: "epic", lane: "superpowers", links: [] }); });
   const r = ok(cwd, ["sync"]);
-  assert.ok(readState(cwd).epics.some(e => e.id === "MASTER-platform-stabilization"), "an uppercase plan filename still registers");
-  assert.doesNotMatch(r.stderr, /control character or whitespace/, `no skip line for either file:\n${r.stderr}`);
+  assert.ok(!readState(cwd).epics.some(e => e.id === "MASTER-platform-stabilization"), "an uppercase plan filename is not stored under an id add-epic refuses");
+  assert.match(r.stderr, /sync skipped plan 'MASTER-platform-stabilization\.md'[^\n]*add-epic --id master-platform-stabilization/, `the uppercase plan is skipped with a runnable remedy:\n${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /sync skipped plan 'Legacy-Plan\.md' — its name is not a valid epic id/, `a HELD legacy plan is never reported as unstorable:\n${r.stderr}`);
 
   const before = bytesOf(cwd, ".conductor/state.json");
   assert.notEqual(pm(cwd, ["add-epic", "--id", "e1" + LF + "x", "--lane", "claude-code"]).status, 0, "add-epic refuses a control-character id");
@@ -589,8 +593,8 @@ test("6.6a REGRESSION GUARD (Gate 2 T-I6): init's QUIET sync still names a skipp
   fs.mkdirSync(plans, { recursive: true });
   fs.writeFileSync(path.join(plans, "px" + LF + "forged.md"), "# p\n");
   const r = ok(cwd, ["init", "--platform", "claude-code"]);   // init runs sync(quiet = true)
-  assert.match(r.stderr, /sync skipped change '[^\n]*' — its name holds a control character or whitespace/, `the change skip is said under quiet:\n${r.stderr}`);
-  assert.match(r.stderr, /sync skipped plan '[^\n]*' — its name holds a control character or whitespace/, `the plan skip is said under quiet:\n${r.stderr}`);
+  assert.match(r.stderr, /sync skipped change '[^\n]*' — its name is not a valid epic id/, `the change skip is said under quiet:\n${r.stderr}`);
+  assert.match(r.stderr, /sync skipped plan '[^\n]*' — its name is not a valid epic id/, `the plan skip is said under quiet:\n${r.stderr}`);
   assert.deepEqual(linesBeginning(r.stderr, "NOW: forged"), []);
   assert.equal(hasControlId(cwd), false);
 });
@@ -603,7 +607,7 @@ test("6.6b REGRESSION GUARD (Gate 2 T-M3): a CLAIMED plan file whose name holds 
   ok(cwd, ["add-epic", "--id", "my-plan", "--lane", "superpowers", "--plan", path.join("docs", "superpowers", "plans", "My Plan.md")]);
   const r = ok(cwd, ["sync"]);
   assert.match(r.stderr, /already claimed by epic 'my-plan'/, `the claimed rung answers first:\n${r.stderr}`);
-  assert.doesNotMatch(r.stderr, /control character or whitespace/, `the final-rung check never fires for a held entry:\n${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /not a valid epic id/, `the final-rung check never fires for a held entry:\n${r.stderr}`);
 });
 
 test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id itself, whichever path calls it", async () => {
@@ -613,9 +617,11 @@ test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id i
     assert.throws(() => pushEpic(state, { id, title: "t", lane: "claude-code", links: [] }), InvalidEpicIdError, `pushEpic refuses ${JSON.stringify(id)}`);
     assert.equal(state.epics.length, 0, "and stores nothing");
   }
+  // sync-registers-ids-add-epic-refuses: the sink applies add-epic's own rule, uppercase included.
+  assert.throws(() => pushEpic({ epics: [] }, { id: "MASTER-ok", title: "t", lane: "superpowers", links: [] }), InvalidEpicIdError, "an uppercase id is refused");
   const state = { epics: [] };
-  pushEpic(state, { id: "MASTER-ok", title: "t", lane: "superpowers", links: [] });
-  assert.equal(state.epics.length, 1, "an uppercase id is storable");
+  pushEpic(state, { id: "master-ok", title: "t", lane: "superpowers", links: [] });
+  assert.equal(state.epics.length, 1, "a well-formed id is storable");
 });
 
 test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable builder's result in a code span itself", () => {
@@ -1009,7 +1015,7 @@ const fresh = (p) => `${p}-${++seq}`;
 recipe("add-epic --id", { exempt: EXEMPT.idFormat, run: (c, v) => pm(c.cwd, ["add-epic", "--id", v, "--lane", "claude-code"]) });
 recipe("add-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("t"), ...planned, "--title", v]) });
 recipe("add-epic --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("l"), "--lane", v]) });
-recipe("add-epic --priority", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("p"), ...planned, "--priority", v]) });   // not a vocabulary: stored and rendered
+recipe("add-epic --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("p"), ...planned, "--priority", v]) });
 recipe("add-epic --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("s"), "--lane", "claude-code", "--status", v]) });
 recipe("add-epic --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("pa"), "--lane", "claude-code", "--parent", v]) });
 recipe("add-epic --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => ["add-epic", "--id", id, "--lane", "claude-code", "--external-id", v]) });
@@ -1019,7 +1025,7 @@ recipe("add-epic --spec", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic"
 recipe("add-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("lk"), ...planned, "--link", `relates-to:base:${v}`]) });
 recipe("add-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("d"), ...planned, "--description", v]) });
 recipe("add-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("n"), ...planned, "--notes", v]) });
-recipe("add-epic --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
+recipe("add-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
 recipe("add-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   const id = fresh("as");
   ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code", "--add-story", v]);
@@ -1047,19 +1053,21 @@ function refreshOwed(c, register) {
 recipe("add-many --id", { exempt: EXEMPT.idFormat, run: (c, v) => batch(c, { id: v, lane: "claude-code" }) });
 recipe("add-many --title", { rendered: true, run: (c, v) => batch(c, { id: fresh("mt"), lane: "claude-code", status: "planned", title: v }) });
 recipe("add-many --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => batch(c, { id: fresh("ml"), lane: v }) });
-recipe("add-many --priority", { rendered: true, run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
+recipe("add-many --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
 recipe("add-many --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => batch(c, { id: fresh("ms"), lane: "claude-code", status: v }) });
 recipe("add-many --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => batch(c, { id: fresh("mpa"), lane: "claude-code", parent: v }) });
 recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: v })) });
 recipe("add-many --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: "X-2", externalUrl: v })) });
 recipe("add-many --plan", { notRendered: "a plan path is read as a progress source and printed by no surface", run: (c, v) => batch(c, { id: fresh("mpl"), lane: "superpowers", status: "planned", planPath: v }) });
 recipe("add-many --spec", { rendered: true, run: (c, v) => batch(c, { id: fresh("msp"), lane: "claude-code", status: "planned", specPath: v }) });
-// Both halves poisoned: the EPIC half of an add-many link is not validated (a batch may link to an epic
-// created later in the same batch), so this is how a control-character id reaches the record through
-// argv today — every read of it must stay safe (task 8.1's DATA-reference sweep).
-recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: v, reason: v }] }) });
+// The REASON half poisoned. The epic half used to be poisoned too, because add-many stored a link to
+// any id at all; since add-many-drops-input-silently it must name an epic in the record or the batch,
+// and no epic id can hold a control character, so a poisoned target is REFUSED at the write. The
+// DATA-reference sweep over stored control-character link ids (task 8.1) now reaches them through
+// legacyWrite() — the deferral-note recipe in LEGACY_RECIPES — which is the only route left.
+recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: "base", reason: v }] }) });
 recipe("add-many --description", { rendered: true, run: (c, v) => batch(c, { id: fresh("md"), lane: "claude-code", status: "planned", description: v }) });
-recipe("add-many --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
+recipe("add-many --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
 recipe("add-many --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   const id = fresh("mas");
   const r = batch(c, { id, lane: "claude-code", stories: [v] });
@@ -1076,7 +1084,7 @@ for (const verb of ["brief", "commit-nudge", "gate-guard", "init", "lesson-advic
 // ── read verbs ──
 recipe("activity --since", { notRendered: "an unparseable --since filters nothing and is printed by no surface", run: (c, v) => pm(c.cwd, ["activity", "--since", v]) });
 recipe("activity --epic", { notRendered: "--epic only filters the events read; the report does not echo it", run: (c, v) => pm(c.cwd, ["activity", "--epic", v]) });
-recipe("changelog --since", { notRendered: "--since selects changelog sections and is not echoed", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
+recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and anything else is refused", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
 recipe("rules --epic", { notRendered: "--epic selects the review mode the block states and is not echoed", run: (c, v) => pm(c.cwd, ["rules", "--epic", v]) });
 recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });
@@ -1097,7 +1105,7 @@ recipe("unclaim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["unclaim
 // ── update-epic ──
 recipe("update-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--title", v]) });
 recipe("update-epic --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--lane", v]) });
-recipe("update-epic --priority", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--priority", v]) });
+recipe("update-epic --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--priority", v]) });
 recipe("update-epic --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--status", v]) });
 recipe("update-epic --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--parent", v]) });
 recipe("update-epic --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => { ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code"]); return ["update-epic", id, "--external-id", v]; }) });
@@ -1108,7 +1116,7 @@ recipe("update-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["update
 recipe("update-epic --clear", { exempt: "--clear must name a field this command can unset", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear", v]) });
 recipe("update-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--description", v]) });
 recipe("update-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--notes", v]) });
-recipe("update-epic --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
+recipe("update-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
 recipe("update-epic --attribute-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--attribute-commit", v]) });
 recipe("update-epic --withdraw-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-commit", v, "--withdrawal-reason", "r"]) });
 recipe("update-epic --withdrawal-reason", { rendered: true, run: (c, v) => {
@@ -1148,7 +1156,7 @@ recipe("record-reconcile --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c,
 recipe("record-reconcile --amendments", { notRendered: "amendments are stored on the reconcile link and printed by no surface", run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", "valid", "--amendments", v]) });
 recipe("record-reconcile --amendment", { notRendered: "amendments are stored on the reconcile link and printed by no surface", run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", "invalidated", "--amendment", v]) });
 recipe("record-tracker-refresh --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", v, "--external-updated-at", "2026-09-01T00:00:00Z"]) });
-recipe("record-tracker-refresh --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "unchanged", "--external-updated-at", v]) });
+recipe("record-tracker-refresh --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "unchanged", "--external-updated-at", v]) });
 recipe("record-tracker-refresh --summary", { notRendered: "a refresh summary is stored and printed by no surface", run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "material-change", "--external-updated-at", "2026-09-01T00:00:00Z", "--summary", v]) });
 
 // ── releases ──
@@ -1282,9 +1290,10 @@ export const LEGACY_RECIPES = [
   } },
   { key: "honcho-memory push over add-many may-invalidate link ids (the deferral note)", rendered: true, run: (c, v) => {
     const id = fresh("mi");
-    // The EPIC half of an add-many link is not validated (a batch may link forward), so this is argv's
-    // route to a stored control-character link id — and deferralNote() prints every one of them.
-    ok(c.cwd, batchArgs(c, { id, lane: "claude-code", links: [{ type: "may-invalidate", epic: "a-" + v }, { type: "may-invalidate", epic: "b-" + v }] }));
+    // A stored control-character link id — written directly, since add-many-drops-input-silently closed
+    // argv's last route to one (add-many now refuses a link to an epic that does not exist). A record an
+    // older engine wrote can still hold one, and deferralNote() prints every one of them.
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { links: [{ type: "may-invalidate", epic: "a-" + v }, { type: "may-invalidate", epic: "b-" + v }] })); });
     return pm(c.cwd, ["honcho-memory", "push", id, "why"]);
   } },
   { key: "integrity over a legacy archived epic whose claim session holds a control character (the unclaim remedy)", rendered: true, run: (c, v) => {

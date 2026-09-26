@@ -595,7 +595,13 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
   return { rows, counts, findings };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// realpath on both sides, as drift.mjs does: macOS $TMPDIR is /var/... -> /private/var/..., and a bare
+// path comparison made this CLI a silent no-op when run from a symlinked directory.
+const invokedDirectly = (() => {
+  try { return fs.realpathSync(path.resolve(process.argv[1])) === fs.realpathSync(fileURLToPath(import.meta.url)); }
+  catch { return false; }  // no argv[1], or one that is not a file: imported, not run
+})();
+if (invokedDirectly) {
   const { rows, counts, findings } = sweepInterpolations();
   const out = [];
   if (process.argv.includes("--all")) for (const r of rows) out.push(`${r.cls.padEnd(22)} ${r.where} [${r.fn}] ${r.how} ${r.expr.slice(0, 160)}`);

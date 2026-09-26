@@ -298,3 +298,88 @@ unitTest("U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JS
   assert.equal(hit.status, status, "the parsed value is exactly the stored value");
   assert.equal(parsed.backlog.byStatus[status], 1);
 });
+
+// ───────────── triage-ignores-non-latin-text (code review 0.43.0, D1) ─────────────
+// tokenize() split on [^a-z0-9], so every letter outside ASCII was a separator: an epic titled in
+// Cyrillic and the identical ask both reduced to ZERO tokens and triage answered `candidates: []` —
+// the same answer as "no overlap" at intake's mandatory first step. The titles are built from code
+// points so this file carries no literal it has to trust an editor to have preserved.
+const cp = (...ns) => String.fromCodePoint(...ns);
+// "Экспорт отчётов" — "export of reports"
+const CYRILLIC_TITLE = cp(0x42d, 0x43a, 0x441, 0x43f, 0x43e, 0x440, 0x442) + " " +
+  cp(0x43e, 0x442, 0x447, 0x451, 0x442, 0x43e, 0x432);
+// "Größe ändern" — letters with diacritics inside an otherwise Latin word
+const GERMAN_TITLE = "Gr" + cp(0xf6, 0xdf) + "e " + cp(0xe4) + "ndern";
+
+unitTest("a Cyrillic epic is a candidate for the identical ask", () => {
+  const engine = repoWith([
+    { id: "reports-export", title: CYRILLIC_TITLE },
+    { id: "unrelated", title: "render the backlog table" },
+  ]);
+  const got = triage(engine, CYRILLIC_TITLE);
+  assert.deepEqual(got.candidates.map(c => c.id), ["reports-export"]);
+});
+
+unitTest("tokenize keeps letters outside ASCII inside their word, and still splits on punctuation", async () => {
+  const { tokenize } = await import(TRIAGE);
+  assert.deepEqual(tokenize(GERMAN_TITLE), [("Gr" + cp(0xf6, 0xdf) + "e").toLowerCase(), cp(0xe4) + "ndern"],
+    "an umlaut is a letter, not a separator that cuts a word in two");
+  assert.deepEqual(tokenize("Epic-Hierarchy Orchestration"), ["epic", "hierarchy", "orchestration"]);
+  assert.deepEqual(tokenize(CYRILLIC_TITLE).length, 2);
+});
+
+unitTest("a decomposed accent is the same word as the composed one — NFC before the split", async () => {
+  const { tokenize } = await import(TRIAGE);
+  // "a" + COMBINING DIAERESIS: without NFC the mark is a separate code point; without \p{M} it splits the word.
+  assert.deepEqual(tokenize(cp(0x61, 0x308) + "ndern"), tokenize(cp(0xe4) + "ndern"));
+});
+
+// Branch review: Chinese, Japanese and Korean put no spaces between words, so a whole phrase was ONE
+// token — the identical title matched, any rewording matched nothing. Split into character bigrams.
+// 导出报告功能 "export-report feature" vs the ask 报告导出 "report export": no shared phrase, two
+// shared words.
+const HAN_TITLE = cp(0x5bfc, 0x51fa, 0x62a5, 0x544a, 0x529f, 0x80fd);
+const HAN_ASK = cp(0x62a5, 0x544a, 0x5bfc, 0x51fa);
+
+unitTest("a reworded Chinese ask still finds the epic that shares its words", () => {
+  const engine = repoWith([
+    { id: "report-export", title: HAN_TITLE },
+    { id: "unrelated", title: "render the backlog table" },
+  ]);
+  const got = triage(engine, HAN_ASK);
+  assert.deepEqual(got.candidates.map(c => c.id), ["report-export"]);
+});
+
+unitTest("tokenize splits a Han run into bigrams and leaves the Latin words around it alone", async () => {
+  const { tokenize } = await import(TRIAGE);
+  assert.deepEqual(tokenize(HAN_ASK), [cp(0x62a5, 0x544a), cp(0x544a, 0x5bfc), cp(0x5bfc, 0x51fa)]);
+  assert.deepEqual(tokenize("export " + cp(0x5bfc, 0x51fa) + "api"), ["export", cp(0x5bfc, 0x51fa), "api"]);
+  assert.deepEqual(tokenize(cp(0x5bfc)), [cp(0x5bfc)], "a single Han character is a word, not noise");
+});
+
+// Confirmation review: a long unrelated Chinese ask filled every candidate slot through common
+// bigrams — 新的 "new" and 功能 "feature" — because a 46-character ask carries ~45 bigrams, many of
+// them spanning a word boundary, where a Latin ask of the same meaning carries ~10 words. A
+// candidate surfaced ONLY by CJK bigrams must now share a number that grows with the ask.
+const cps = (...ns) => String.fromCodePoint(...ns);
+// 我们需要一个新的功能来支持用户在移动设备上查看历史订单并且可以按照日期筛选和导出新的报表功能
+const LONG_ASK = cps(0x6211,0x4eec,0x9700,0x8981,0x4e00,0x4e2a,0x65b0,0x7684,0x529f,0x80fd,0x6765,0x652f,0x6301,0x7528,0x6237,0x5728,0x79fb,0x52a8,0x8bbe,0x5907,0x4e0a,0x67e5,0x770b,0x5386,0x53f2,0x8ba2,0x5355,0x5e76,0x4e14,0x53ef,0x4ee5,0x6309,0x7167,0x65e5,0x671f,0x7b5b,0x9009,0x548c,0x5bfc,0x51fa,0x65b0,0x7684,0x62a5,0x8868,0x529f,0x80fd);
+unitTest("common CJK bigrams alone do not fill the candidate list; the epic the ask restates does", () => {
+  const engine = repoWith([
+    { id: "orders-history", title: cps(0x7528,0x6237,0x67e5,0x770b,0x5386,0x53f2,0x8ba2,0x5355,0x5e76,0x6309,0x65e5,0x671f,0x7b5b,0x9009) }, // 用户查看历史订单并按日期筛选
+    { id: "login", title: cps(0x6dfb,0x52a0,0x65b0,0x7684,0x767b,0x5f55,0x529f,0x80fd) },          // 添加新的登录功能
+    { id: "notify", title: cps(0x65b0,0x7684,0x901a,0x77e5,0x529f,0x80fd,0x8bbe,0x8ba1) },         // 新的通知功能设计
+    { id: "search", title: cps(0x641c,0x7d22,0x529f,0x80fd,0x4f18,0x5316) },                       // 搜索功能优化
+    { id: "theme", title: cps(0x65b0,0x7684,0x4e3b,0x9898,0x989c,0x8272) },                        // 新的主题颜色
+    { id: "flags", title: cps(0x529f,0x80fd,0x5f00,0x5173,0x7ba1,0x7406) },                        // 功能开关管理
+    { id: "payments", title: cps(0x652f,0x4ed8,0x529f,0x80fd,0x91cd,0x6784) },                     // 支付功能重构
+  ]);
+  assert.deepEqual(triage(engine, LONG_ASK).candidates.map(c => c.id), ["orders-history"]);
+});
+
+unitTest("a Latin ask's candidates are untouched by the CJK threshold", async () => {
+  const { candidateSet } = await import(TRIAGE);
+  const epics = [{ id: "new-login-feature", title: "new login feature" }, { id: "other", title: "render table" }];
+  // Two generic shared words still surface a Latin candidate, exactly as before the CJK rule.
+  assert.deepEqual(candidateSet(epics, "add a new export feature", { limit: 5 }).map(c => c.id), ["new-login-feature"]);
+});

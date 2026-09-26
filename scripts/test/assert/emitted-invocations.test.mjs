@@ -15,6 +15,10 @@
 // per-commit path, where a doc edit that names a flag the engine dropped is caught in the same
 // commit that made it.
 
+// TEMP DIRECTORIES (gh-cfdude-pm-224). The functional file's scratch directories are scheduled for
+// removal at process exit through `fixtures/temp-dir.mjs`; the rule that EVERY such site in the tree
+// is scheduled or enrolled is `assert/temp-dir-cleanup.test.mjs`'s, not this file's.
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -130,6 +134,18 @@ test("6.3 the hand-edit scanner: the emitted text never tells a reader to edit s
   assert.deepEqual(offenders, [], "pm's own surfaces must send a reader through a verb, never to the file");
 });
 
+test("Layer B registry: every integrity CHECKS id has a builder in the functional file (source read)", async () => {
+  // The functional registry test fails a CHECKS id with no builder, but it runs on a trigger. This
+  // half reads the functional file's SOURCE (never executes it) so a check added without its builder —
+  // handoff-demand-blind-spots added `delivered-epic-spec-deltas-absent` — fails on the commit.
+  const { CHECKS } = await import("../../lib/integrity.mjs");
+  const src = fs.readFileSync(path.join(REPO, "scripts", "test", "functional", "emitted-invocations.test.mjs"), "utf8");
+  const registry = src.slice(src.indexOf("const INTEGRITY_BUILDERS = {"));
+  // An entry is one builder (`"id": {`) or a list of alternatives (`"id": [`).
+  const missing = CHECKS.map(c => c.id).filter(id => !registry.includes(`"${id}": {`) && !registry.includes(`"${id}": [`));
+  assert.deepEqual(missing, [], "each integrity check needs an INTEGRITY_BUILDERS entry");
+});
+
 // ───────────────────────── the deliberate omissions ─────────────────────────
 //
 // The 1.1 extractor family (wrapped spans, parenthesised alternatives, `A | B | C` forms, spaced
@@ -138,3 +154,15 @@ test("6.3 the hand-edit scanner: the emitted text never tells a reader to edit s
 // all drive the extractor and the emitted text through the functional file's own exported helpers —
 // which cannot be imported here without executing that file. What survives the narrowing is the
 // INVARIANT the extractor exists for, asserted above against the same shipped tree.
+
+// The printed-remedy check for the one-item-one-epic refusal (tracker-item-dedup-bypassed) lives on
+// the UNIT rung, scripts/test/unit/emitted-invocations.test.mjs: its observables are an exit status and
+// a printed line, which are values, not bytes.
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — twin note for the functional file's fixture change.
+// The one archive resolver now sets aside an archive directory dated more than a day before the epic's
+// `createdAt`, and never ends an undated live epic on a bare name. The functional fixtures that
+// registered an epic and then archived its change under a FIXED past date (or hand-wrote a live epic
+// with no `createdAt`) described a history that cannot happen; they now date the directory with
+// `archiveDay()` (fixtures/helpers.mjs) or give the epic an earlier `createdAt`. Their assertions are
+// unchanged. The rule itself is asserted per commit in assert/sync-registration-ids.test.mjs.

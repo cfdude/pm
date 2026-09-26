@@ -6,6 +6,271 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.50.0] — 2026-09-25
+
+The per-commit gate now tests the commit itself: the index git hands it, `git commit -a` and
+`git commit -- <path>` included, rather than the working tree, and a pre-commit run leaves 0 `pm-*`
+temp directories where it used to leave 436. A new `delivered-epic-spec-deltas-absent` integrity
+check would have caught 0.48.0's lost main-spec sync, and it flagged this release's own archive
+until `openspec/` was staged. Closes #194, #219, #222 and #224. The assertion half passes 1523/1523
+and the functional half 1227/1227. Run `/reload-plugins` after updating. There is no `state.json`
+schema change, so no migration runs.
+
+### Added
+
+* **`integrity` and the briefing now report a delivered change whose spec deltas never reached
+  `openspec/specs/`.** The new `delivered-epic-spec-deltas-absent` check compares each `delivered`
+  epic's archived delta specs with the main specs held in git's index. It compares headers only, and
+  a later archived change touching the same header discharges it. It names the epic, the change, the
+  capability and each header. It never blocks an archive. It would have caught 0.48.0's lost
+  main-spec sync. Between `openspec archive` and `git add` a correct archive is reported too, and
+  this release's own archive was flagged until `openspec/` was staged; stage `openspec/` and it
+  clears. It is printed by `integrity`, the SessionStart briefing and `render`'s own output (so
+  `/pm:status` shows it), and is never written into `PROJECT.md`. Its remedy: make the main spec
+  hold what the archived delta requires, then `git -C <conductor root> add openspec/`.
+* **Reconcile verdicts, autonomy changes, priority changes and review-mode changes are named
+  activity-log events.** Before, each was logged as a bare `state-write` with no epic.
+  `record-reconcile` now logs `reconcile-recorded`, which appears in the GATES sequence as
+  `reconcile vs <detour>=<verdict>` and is marked `(correction)` when it replaces an earlier
+  verdict. `set-autonomy` logs `epic-autonomy`, carrying the level change and counts of grants
+  added, grants revoked and notifications. A priority change logs `epic-priority`.
+  `set-review-mode` and `update-epic --review-mode` log `review-mode`. The report lists the last
+  three in a new SETTINGS section, and `activity --epic` shows the epic-scoped ones.
+* **`/pm:verify-state`, `/pm:verify-worktrees` and `/pm:verify-specs` are slash commands.** The
+  three read-only `verify-*` verbs had no command doc, so they were reachable only by calling the
+  engine directly. Each now has one, saying what it compares, what each exit means and, for
+  `verify-state`, what it cannot see.
+
+### Changed
+
+* **The pre-commit hook tests what you are committing, not your working tree.** It exports the
+  index with `git checkout-index -a` into a private temp directory and runs the assertion half
+  there. A failing test that is staged can no longer commit green because a passing copy sits
+  unstaged beside it; an untracked test file neither runs nor counts; a partially staged file is
+  tested, and its tests counted by the floor, as its staged half. The hook honours the index git
+  hands it, so `git commit -a` and `git commit -- <path>`, whose index is not `.git/index`, are
+  tested, drift-checked and counted as what they commit. The drift script that runs first is the
+  commit's own copy, and it reads every set it judges (certified engine modules, test ids,
+  conformance rows) from that index rather than from disk, so an engine module staged and then
+  deleted from the working tree can no longer slip past the certification check. The hook never
+  writes the working tree or the index. A `git stash` approach was measured and rejected: it
+  rewrites the tree, fails before a repository's first commit, and shares one stash stack across
+  every worktree. The snapshot and the suite lock are removed on exit, including on Ctrl-C.
+* **Archived tasks now count.** Once `/opsx:archive` moves a change under
+  `openspec/changes/archive/`, its epic's progress is read from the archived `tasks.md`, for every
+  epic and not only one the archive backfill registered. An archived epic renders its real counts
+  instead of `0/0`, and archiving as `delivered` with tasks still open is refused on the documented
+  path (archive, heal, then `update-epic --status archived --outcome delivered`) instead of being
+  accepted. Where one change id was archived twice, the latest date's directory is the one read, and
+  the same directory decides whether the change is archived at all. Expect some archived epics in
+  your record to show open work they already had: they are reported, not changed.
+* **Stories no longer hide tasks.** An epic's progress is its inline stories and its task source
+  (plan file or `tasks.md`) counted together. Adding one story to an epic with a `tasks.md` used to
+  make the tasks unread, so it could be archived `delivered` at `1/1` with tasks open. Where both
+  hold open work, the archive refusal names each part's remedy and says both must be done (or
+  `--carried-to` for the whole remainder), and `integrity` and `unconsidered-outcomes` print
+  `--story <n> --done` first and the `--carried-to` archive for what remains. A missing `tasks.md`
+  or plan now warns even when the epic has stories.
+* **`/pm:sync` registers only ids `add-epic` itself would accept.** Since 0.45.0 sync and the
+  archive backfill skipped a name holding whitespace or a control character, but still registered
+  a change directory `x|y` (whose pipe splits PROJECT.md's Epics table), `.hidden`, or an uppercase
+  plan file under ids `add-epic` refuses. Every registration path now applies the same id rule
+  (`^[a-z0-9][a-z0-9._-]*# Changelog
+
+All notable changes to the `pm` plugin are documented here.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+This project adheres to [Semantic Versioning](https://semver.org/).
+
+---
+
+). A skipped entry is named on stderr every run, sync's final line counts
+  the skips instead of a bare "synced", and an uppercase plan such as `MASTER-plan.md` is given a
+  runnable `add-epic --id master-plan --lane superpowers --plan …` that registers and claims it.
+  Epics already stored under a legacy id keep loading, rendering and updating.
+* **`add-many` saves what it accepts or refuses it by name.** Four kinds of input used to vanish
+  with exit 0: a string link such as `"depends-on:base"` was dropped; a link to an epic that does
+  not exist was stored, pointing at nothing; a link with no target was stored and could never
+  render; and a misspelled top-level key, such as `"epic"` for `"epics"`, created the parent and
+  silently skipped every child. The batch must now be a JSON object whose only keys are `parent`
+  and `epics`. Each `links` element is either a `"<type>:<epic>[:<reason>]"` string, the same
+  grammar as `--link`, or a `{type, epic, reason}` object. It must name an epic that is in the
+  record or anywhere in the batch, and use a known link type. Any other input refuses the whole
+  batch, and nothing is created.
+* **Moving an epic between releases now leaves a record on the release it left.** `release r2
+  --member e1`, with `e1` in `r1`, still moves it, but `r1` now gets an `unmember` amendment marked
+  `via: "member"` and `to: "r2"`, and stderr names both releases. `release show r1` shows "moved to
+  `r2`"; before, it showed no members, no amendment, and nothing on stderr. Re-adding an epic to
+  the release it is already in writes nothing.
+* **Re-deferring an epic with a new reason keeps the old reason.** `deferred[]` holds the current
+  reason, and the replaced one goes into the release's `amendments[]` as a `redefer` entry with
+  `was` and `wasRecordedAt`, so `release show` renders both. Re-running `--defer` with the same
+  reason writes nothing, and no longer refreshes `recordedAt`. A `state.json` written by 0.49.0
+  loads unchanged.
+* **`triage` finds candidates in any script, not only ASCII.** Its tokenizer treated every letter
+  outside `a-z` as a separator, so an epic titled in Cyrillic and the identical ask both reduced to
+  no words at all and `triage` returned `candidates: []`, the same answer as "nothing overlaps",
+  while an umlaut cut a German word in two. Letters, combining marks and digits of every script are
+  now word characters, and text is NFC-normalised first so a composed and a decomposed spelling of
+  one word match. Chinese, Japanese and Korean text, which puts no spaces between words, is split
+  into overlapping two-character tokens, so a reworded ask still finds the epic whose words it
+  shares. An epic matched only by those tokens needs a share of them that grows with the ask, so
+  common words such as "new" and "feature" do not fill the candidate list.
+* **The "tests in the engine" number on pm-plugin.dev comes only from a clean run, and the run is
+  kept (#219).** The release checklist's Real Numbers recipe used to pipe the combined test run
+  straight into a count, so a run that also had a failing test still produced a number to publish,
+  and the output that could have identified the failure was thrown away. The recipe now saves the
+  whole run to a UTC-dated file under the git common dir (`pm-real-numbers/`), names that file, and
+  publishes nothing unless the runner exited 0 with `fail 0`, `cancelled 0`, more than zero tests
+  and every counted test passed (a skipped or todo test is not a pass). The log name carries the
+  PID, so two runs in one second keep two logs. A failed run is recorded against #219 before it is
+  re-run, so a flake cannot be retried away silently. The flaky test #219 reported is not
+  identified yet; this makes its next occurrence diagnosable.
+
+### Fixed
+
+* **cfdude/pm#194 — a malformed lesson `detect:` is rejected with a reason instead of being
+  discarded silently.** The engine now tells three cases apart: a lesson with no matcher, which is
+  retrieval-only by design; one whose matcher works; and one whose matcher cannot work. A matcher
+  in the last group is rejected and named with its reason, for example not JSON, an unknown key, a
+  regex that does not compile, or a JSON `\b` that decoded to a backspace. The hook stays silent
+  about rejects. For now only pm's own repository reports them, through a per-commit test that fails
+  naming each one; a consumer repository gets no report yet, and cfdude/pm#228 tracks that. pm's own
+  six inert matchers were fixed: four now fire, and two that matched file content no matcher can see
+  are now retrieval-only.
+* **A lesson's `detect:` regex can no longer stall a tool call.** The `lesson-advice` hook runs
+  before every Bash, Edit, Write and NotebookEdit call, and a catastrophic matcher such as
+  `^(a+)+# Changelog
+
+All notable changes to the `pm` plugin are documented here.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+This project adheres to [Semantic Versioning](https://semver.org/).
+
+---
+
+ used to hold each call until Claude Code's 60 s hook timeout. Now each regex gets its
+  own 50 ms budget, and one hook run spends at most 1 s on regexes in total. Each regex sees at most
+  the first 4096 characters of the command's first line. A regex that runs out of time counts as
+  not matched, so a runaway lesson loses only its own advice; the lessons after it still fire. The
+  unambiguous catastrophic shape, a repeated group whose whole body is one repeated atom such as
+  `(a+)+`, is rejected before it reaches the hook. Delimited repetitions such as `(\S+\s+)*` are
+  accepted.
+* **A typo'd `detect:` key no longer matches every tool call.** An unknown key such as
+  `commandMatch` used to apply no predicate, so the lesson fired on `ls`. `detect:` now accepts
+  only `tool`, `pathEndsWith`, `commandMatches` and `commandLacks`, and rejects any other key. It
+  also rejects a matcher that could never fire or would always fire: a tool the hook is never sent,
+  a `tool` array, no positive predicate, a command predicate on a non-Bash tool, or a
+  `pathEndsWith` paired with a command predicate.
+* **Lessons saved with CRLF line endings now fire**, and a `pathEndsWith` matcher on
+  `NotebookEdit` now reads the path that tool actually sends (`notebook_path`).
+* **cfdude/pm#224 — running pm's own test suite no longer fills your temp directory.** The scratch
+  repositories and fixture directories the suite creates are now removed when the test process
+  exits. Before this, one run of the per-commit tests left 436 directories in the OS temp dir and
+  one run of the functional tests left 1,517 more, so a contributor's machine accumulated tens of
+  thousands of `pm-test-*`, `pm-plugin-*` and `pm-cache-*` directories over months, and slow runs
+  were blamed on the suite. A pre-commit run now leaves 0. A per-commit test refuses any new
+  temp-directory site that is not scheduled for removal, and a functional test runs the fixture
+  helpers in an isolated temp dir and fails if anything survives. This affects only people
+  developing pm itself; the plugin you install is unchanged.
+* **One tracker item maps to one epic on every write path.** The duplicate check ran only when
+  `add-epic` was given `--external-id`. So `add-epic --external-url` alone, `update-epic
+  --external-url` and an `add-many` entry carrying `externalUrl` could each register a second epic
+  for an issue already mirrored, and every one of those commands exited 0. All of them, and the
+  inward sync through its `add-epic` line, now refuse a tracker item another epic already holds.
+  The refusal names that epic and its status, and names the key that actually matched; it used to
+  say `external-id` even when the URL was the match. An archived epic still holds its item. For an
+  item that was genuinely reopened, `update-epic <holder> --clear external-url` frees it. Two
+  entries of one `add-many` batch cannot claim the same item either. A `state.json` that already
+  holds a duplicate still loads, and a write to either epic that does not set the key still goes
+  through.
+* **An unrelated old archive directory no longer ends a live epic.** An active epic `add-auth` was
+  archived by the drift heal, with outcome `unknown` and its active pointer cleared, because an
+  unrelated `openspec/changes/archive/2025-01-01-add-auth` shared its name. An archive directory
+  dated more than a day before a LIVE epic was registered (`createdAt`) no longer ends it, clears
+  its active pointer or blocks `set-active`. A live epic with no registration date is never ended by
+  a bare name match (`recover-created-at` dates it). An epic that is already archived still finds
+  its archive by name: its task counts, spec-sync and cross-spec scope are unchanged, even where
+  pm's own date recovery dated it after its archive. `sync` names each directory it set aside for a
+  live epic, every run, and counts them in its final line; where that directory is really the
+  epic's own archive (the epic was registered late), the same line prints the `update-epic …
+  --status archived --outcome … --no-deferrals` invocation that ends it.
+* **An epic archived by `/opsx:archive` no longer keeps its advisory claim.** `update-epic
+  --status archived` already cleared the claim of an epic that ended, but the archive-drift heal,
+  the path an `/opsx:archive`d change usually takes to `archived`, did not, and `integrity` then
+  reported the leftover claim as one that "predates that rule or was hand-edited". Both paths now
+  clear it the same way and say so: `cleared the advisory claim held by '<session>' — '<id>' has
+  ended`.
+* **The activity log now names the epic on every detour event, and tells a resumed pause from an
+  ended one.** Detour events used to record `epic: null`, because the log read field names the
+  detour stack never writes. As a result the report's per-epic DETOURS list was always empty and
+  `activity --epic <id>` left out every detour. Each detour event now carries the paused `epic` and
+  its `detour`, and `--epic` finds the event under either one. The per-epic figure counts
+  interruptions: one per `push-detour`, where the pop used to be counted as a second. `drop-detour`
+  is logged as `detour-drop` rather than as a pop, and it names the frame that was actually dropped
+  even when that frame was buried under another. The DETOURS line reads
+  `N push(es), N pop(s), N drop(s)`.
+* **`verify-state` no longer accuses the engine of a hand-edit, and still catches the ones that
+  happen.** It compared only `state.json`'s mtime to the last render, so any verb that saves
+  without re-rendering (a claim, `set-activity-log`, platform recording) made it exit 1 claiming an
+  undetected hand-edit. Every engine save now records its own revision and mtime on the render stamp
+  (`lastSave`), and the check compares against the engine's last recorded write: saves since the
+  render exit 0 with a note that PROJECT.md may be stale; bytes changed at that revision, a revision
+  that went backwards, or one past any the engine recorded exit 1. A stamp written by an older pm
+  has no `lastSave`, so the first check after upgrading may report "cannot rule out a hand-edit"
+  until the next save or `/pm:status`.
+* **pm's hooks are silent in a repository pm never initialised, as documented.** The
+  root-divergence ("WRITING A DIFFERENT REPOSITORY") and detached-checkout warnings ran before the
+  engine checked for `/pm:init`, so `commit-nudge` warned on every Bash call when
+  `CLAUDE_PROJECT_DIR` pointed at a non-pm repository, and `snapshot` printed a four-line "about to
+  write .conductor/brief.txt" in a detached non-pm checkout, both for a write the dormant hook never
+  makes. Both warnings now fire only once pm is initialised there, except for `init` itself, which
+  is the one verb that writes into an uninitialised repository and still warns before it scaffolds
+  the wrong one. A non-hook verb refused there for want of `/pm:init` still prints the
+  wrong-repository warning first, naming both repositories, so following its advice does not
+  initialise the wrong one.
+* **A priority outside `P0`–`P3` and `P?` is refused.** `add-epic`, `update-epic` and `add-many`
+  stored any value: `--priority banana` became a band of its own that ranked last and rendered as
+  if it were real. All three now refuse it by name and write nothing; a record an older engine
+  wrote with another value still loads.
+* **An `--external-updated-at` watermark must be a timestamp.** The tracker watermark was stored
+  whatever it held, so a non-date compared against nothing and the "item changed since you read it"
+  check could never fire. `add-epic`, `update-epic`, `add-many` (`externalUpdatedAt`) and
+  `record-tracker-refresh` now require an ISO-8601 date-time with a zone in the shapes trackers
+  report (`2026-09-25T12:00:00Z`, `…000Z`, or Jira's `…000+0000`) and refuse impossible dates such
+  as February 30. `record-tracker-refresh` also refuses a watermark older than the one already
+  recorded (a tracker's updated time only moves forward) and names `update-epic
+  --external-updated-at` as the correction path when the recorded one is wrong.
+* **`changelog --since` refuses a value that is not a version.** Any non-version read as `0.0.0`,
+  so `--since garbage` printed the entire changelog, about 3,400 lines, instead of saying the value
+  was wrong. It now takes only `x.y.z`.
+* **`set-tracker --intent` refuses a malformed pair.** A value with no `:` or an empty half was
+  dropped without a word: the command exited 0 with "tracker set" and the intent recorded nowhere.
+  It is now refused by name and nothing is written. The part before `:` must be one of pm's
+  statuses, and `--intent` is refused with `--role secondary` (a secondary tracker is
+  inward-only), where it used to be dropped silently.
+* **`set-tracker --remove` on the primary tracker is refused.** The primary has no removal, so the
+  flag fell through to the merge: bare, it exited 0 having removed nothing, and with a valid
+  `--repo` it replaced the recorded repo. It now refuses and writes nothing; `--role secondary …
+  --remove` is unchanged.
+* **`verify-worktrees` reports the whole path of a worktree whose name holds a line feed.** It read
+  `git worktree list` line by line, so such a path arrived truncated at the break, naming a
+  directory that does not exist. It now reads the NUL-terminated listing (`--porcelain -z`, git 2.36
+  or later). Where git cannot list worktrees for any reason but "not a git repository" (an older
+  git, dubious ownership, a corrupt repository, git missing) it now refuses with git's own message
+  instead of printing the empty list a clean repository prints.
+* **A write conflict says how to get past it.** When another write lands first, the refusal now adds
+  "re-run the command to apply yours on top of it, or pass --force only if you mean to overwrite
+  that newer revision". `--force` is accepted on every mutating verb, and the one message it
+  answers never mentioned it.
+* **Two refusals read correctly.** The archive gate's open-work refusal said "2 of 1/3 task(s)
+  outstanding"; it now says "2 task(s) outstanding (1/3 done)". A state lock that is a FIFO, socket
+  or device is described as a special file rather than "a other".
+* **`drift.mjs`, `certify.mjs` and `node-majors.mjs` no longer do nothing when run through a
+  symlinked path.** Each compared its own path against the command line without resolving
+  symlinks, so run from under macOS's `$TMPDIR` (`/var` → `/private/var`) it exited 0 without
+  running; they now compare real paths.
+
+---
+
 ## [0.49.0] — 2026-09-24
 
 ### Changed

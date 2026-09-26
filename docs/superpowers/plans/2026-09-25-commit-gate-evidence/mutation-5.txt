@@ -1,0 +1,16 @@
+# Mutation proofs, branch-review round (mutate2.sh in the scratchpad). Each mutant edits ONE file in a copy
+# of the worktree; the IX tests (functional IX-* and the assert-twin IX shape test) are run; failing ones listed.
+# Every mutant is killed, and the four the review named are killed BEHAVIOURALLY (a functional IX-* test),
+# not only by the shape test.
+== [I] drift reads its sets from fs, not the index (drift.mjs): failing -> IX-i | IX-j
+== minor1a drift not handed GIT_INDEX_FILE (pre-commit): failing -> IX (shape) | IX-i
+== minor1b declared reads the default index (pre-commit): failing -> IX-h   (and the non-IX shape test's `declared=` regex)
+== minor2 drift from the working tree, DRIFT="$ROOT/…" (pre-commit): failing -> IX (shape) | IX-k
+== realpath: drift's invokedDirectly without realpath (drift.mjs): failing -> IX-k
+== temp dir unwrapped (functional conductor-09): failing -> IX (shape)
+
+# FOUND WHILE DOING MINOR 2: drift.mjs's `invokedDirectly` compared path.resolve(argv[1]) with the module's
+# URL path. Node resolves the main module to its REALPATH, so run from the snapshot under macOS $TMPDIR
+# (/var/… -> /private/var/…) the comparison was false and drift DID NOTHING AND EXITED 0 — IX-k's first
+# run showed `pre-commit: 1/1 passing` with no drift line at all. The same line was in certify.mjs and
+# node-majors.mjs; all three now compare realpaths.

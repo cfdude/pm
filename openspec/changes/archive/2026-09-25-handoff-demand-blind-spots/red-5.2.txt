@@ -1,0 +1,100 @@
+✔ 5.1 twin: each finding names the epic, the change directory, the capability, the headers and the direction (49.157583ms)
+✔ 5.1 twin: a reader returning null (git cannot answer) → no presence or absence finding; unpaired still reported (9.719625ms)
+✔ 5.1 twin: nothing in scope → the index is never read (8.340833ms)
+✔ 5.1 twin: the stored status does not decide scope — the one resolver's directory does (14.879041ms)
+✔ 5.1 twin: the remedy names the delta, the ## Requirements edit and `git -C <root> add openspec/`, shell-quoted (0.283583ms)
+✔ 5.1 twin: the check is registered in integrity, and is NOT a delivered obligation (a standing condition) (0.192125ms)
+✔ 5.1 twin: under the half's double (no repository) integrity reports no presence/absence finding for it (135.24475ms)
+✖ 5.2 twin: buildBrief carries the block only when asked, and names the SAME epic set as specSyncFindings (98.33175ms)
+✔ 5.1 integrity names the epic, the change directory, the capability and both lost ADDED headers (400.092ms)
+✔ 5.1 the staged-then-reset SEQUENCE: staged rewrite → nothing; `git reset --hard` → the lost header (475.542083ms)
+✔ 5.1 the REMEDY clears a lost ADDED header: copy the block into ## Requirements, then the printed git line (334.105584ms)
+✔ 5.1 the REMEDY clears a REMOVED header still present: delete its block, then the printed git line (299.420208ms)
+✔ 5.1 the REMEDY clears a RENAMED pair: rename the FROM header to its TO, then the printed git line (279.975667ms)
+✔ 5.1 an outcome other than delivered is out of scope (158.314625ms)
+✖ 5.2 brief names the SAME epic set as integrity, under its own heading (331.327916ms)
+✖ 5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it (171.854625ms)
+✔ 5.2 `render --diff-summary` prints only its epic-relevant line; commit-nudge and snapshot stdout carry no block (364.4065ms)
+✔ 5.2 the archive-to-`git add` window: integrity names the epic and PROJECT.md does not; after `git add openspec/` nothing (318.383708ms)
+✔ 5.4 a delivered archive whose delta header the index lacks SUCCEEDS, and the next integrity names it (343.639833ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 16
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4112.902792
+
+✖ failing tests:
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:115:1
+✖ 5.2 twin: buildBrief carries the block only when asked, and names the SAME epic set as specSyncFindings (98.33175ms)
+  AssertionError [ERR_ASSERTION]: the block has its own heading:
+  CONDUCTOR STATE — where we are and what's next
+  Progress is claimed completion — ticked checkboxes, not verified delivery.
+  
+  NOW: (no active epic set)
+  
+  DISPOSITIONS (recorded outcomes):
+    • `lost` — delivered (2026-09-25)
+  
+  LIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.
+  
+  RULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.
+  
+  Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/spec-sync-surfaces.test.mjs:131:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:136:1
+✖ 5.2 brief names the SAME epic set as integrity, under its own heading (331.327916ms)
+  AssertionError [ERR_ASSERTION]: one function feeds both surfaces
+  + actual - expected
+  
+  + []
+  - [
+  -   'lost'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:141:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'lost' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:144:1
+✖ 5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it (171.854625ms)
+  AssertionError [ERR_ASSERTION]: render's stdout carries the block:
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:148:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

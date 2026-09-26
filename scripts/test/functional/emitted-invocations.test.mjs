@@ -15,9 +15,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import os from "node:os";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, observationRepo as helperObservationRepo, tmpRepo } from "../fixtures/functional-harness.mjs";
+import { ENGINE, EMPTY_CACHE, observationRepo as helperObservationRepo, tmpRepo, archiveDay } from "../fixtures/functional-harness.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const lib = (name) => new URL(`../../lib/${name}`, import.meta.url).href;
@@ -483,7 +484,7 @@ test("1.3 Layer A: every engine invocation in shipped docs passes the pre-dispat
 
 /** A constructed pm-shaped document tree in a temp dir: `commands/probe.md` holding `body`. */
 function constructedRoot(body) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-"));
+  const root = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-")));
   fs.mkdirSync(path.join(root, "commands"), { recursive: true });
   fs.writeFileSync(path.join(root, "commands", "probe.md"), body);
   return root;
@@ -878,7 +879,8 @@ const passGate2 = (repo, id, base, head) =>
   repo.ok(["record-gate-review", id, "--gate", "2", "--verdict", "pass", "--base-sha", base, "--head-sha", head]);
 /** Archive by the drift heal: the change directory lands under archive/ and `render` heals. */
 function healArchive(repo, id) {
-  repo.file(`openspec/changes/archive/2026-09-01-${id}/proposal.md`, "# archived\n");
+  // Dated today: an archive older than the epic is not its archive (sync-registers-ids-add-epic-refuses).
+  repo.file(`openspec/changes/archive/${archiveDay()}-${id}/proposal.md`, "# archived\n");
   repo.ok(["render"]);
   assert.equal(repo.epic(id).status, "archived", "fixture: the heal archived the epic");
 }
@@ -899,11 +901,31 @@ const INTEGRITY_BUILDERS = {
       const repo = remedyRepo();
       repo.ok(["add-epic", "--id", "zt", "--lane", "openspec", "--title", "zt"]);
       repo.file("openspec/changes/zt/tasks.md", "## 1\n\n- [ ] 1.1 never ticked\n");
-      repo.file("openspec/changes/archive/2026-09-01-zt/tasks.md", "## 1\n\n- [ ] 1.1 never ticked\n");
+      repo.file(`openspec/changes/archive/${archiveDay()}-zt/tasks.md`, "## 1\n\n- [ ] 1.1 never ticked\n");
       repo.ok(["render"]);
       return { repo, epicId: "zt" };
     },
     produce: integrityProducer("archived-with-zero-ticked-tasks"),
+    reported: blockHas(),
+  },
+  // handoff-demand-blind-spots 5.1. CONSTRUCTABLE, so not declared unconstructable (design D6): this
+  // hermetic repo's index holds a main spec lacking a header a delivered epic's archived delta ADDED.
+  // `prints: "none"` because the remedy is an edit plus `git -C <root> add openspec/` — no engine
+  // invocation — which is why following it is its own case in functional/spec-sync-surfaces.test.mjs.
+  "delivered-epic-spec-deltas-absent": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.file("openspec/specs/cap/spec.md", "# cap\n\n## Requirements\n\n### Requirement: Kept\nThe system SHALL keep.\n");
+      repo.file("openspec/changes/archive/2026-09-01-sd/specs/cap/spec.md",
+        "## ADDED Requirements\n\n### Requirement: Lost\nThe system SHALL be lost.\n");
+      fixtureGit(repo.cwd, "add", "-A");
+      fixtureGit(repo.cwd, "commit", "-q", "-m", "archive move without the spec sync");
+      repo.write({ epics: [{ id: "sd", title: "sd", priority: "P1", status: "archived", role: "epic", lane: "openspec",
+        links: [], disposition: agentDisposition({ outcome: "delivered", recordedAt: AT }) }] });
+      return { repo, epicId: "sd" };
+    },
+    produce: integrityProducer("delivered-epic-spec-deltas-absent"),
     reported: blockHas(),
   },
   "verdict-range-omits-cited-commits": {
@@ -2878,6 +2900,14 @@ const PRINTER_FIXTURES = {
       [repo.run(["clear-active"]), /record-reconcile rp --detour <detourId>/],
     ];
   },
+  "a tracker item another epic already holds (tracker-item-dedup-bypassed)"() {
+    // The one-item-one-epic refusal names the clear that frees the item. Printed by
+    // tracker-dedup.mjs for add-epic, update-epic and add-many alike; reached here through add-epic.
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "th", "--lane", "claude-code", "--title", "th", "--external-url", "https://x.test/1"]);
+    return [[repo.run(["add-epic", "--id", "t2", "--lane", "claude-code", "--external-url", "https://x.test/1"]),
+      /update-epic th --clear external-url/]];
+  },
   "archiving an epic a live detour frame still pauses"() {
     // The frame-drop refusal's remedy. It is an arm of the archive gate itself — not an INTEGRITY
     // check and not a DELIVERED_OBLIGATIONS variant — so it reaches Layer A through a printer
@@ -3049,7 +3079,7 @@ test("R-M4 the template scan reaches a single-quoted span and a double-quoted on
   // opened inside a single-quoted string, and a double-quoted string ending `" +` with the id on the
   // next line. Each must be reported; the same lines through printedId() must not.
   const BT = "`";
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-")));
   fs.writeFileSync(path.join(dir, "shapes.mjs"), [
     "export const a = (detourId) => `detour '${detourId}' not found (` + '" + BT + "add-epic --id ' + detourId + ' ' +",
     '  "…' + BT + '), register it";',

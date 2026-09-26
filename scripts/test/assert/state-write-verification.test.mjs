@@ -11,6 +11,10 @@
 // functional file drove through a spawned verb. These are the assertions that make "reported
 // success" mean something, and they belong on the per-commit path.
 
+// TEMP DIRECTORIES (gh-cfdude-pm-224). The functional file's scratch directories are scheduled for
+// removal at process exit through `fixtures/temp-dir.mjs`; the rule that EVERY such site in the tree
+// is scheduled or enrolled is `assert/temp-dir-cleanup.test.mjs`'s, not this file's.
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { tmpRepo, run, readState, writeState } from "../fixtures/assert-harness.mjs";

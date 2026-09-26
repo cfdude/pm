@@ -1,0 +1,21 @@
+6.9 — ROUTE WHAT THE WORK TAUGHT (required task item 7), each named by kind.
+
+PRACTICE: none arose. The per-commit mechanics used here (certify under the shared lock, refuse on
+unstaged changes under scripts/) were the orchestrator's brief, not a practice invented by this change.
+
+TOOLING FRICTION (two, both already filed — no duplicate issue created):
+  1. A change proposed under one id and carried by an epic with another reads `0/0` on the epic; here it
+     took a directory re-key and a hand-supersede of the tracker epic. Covered by the OPEN cfdude/pm#200
+     ("integrity: an archived OpenSpec change cannot be associated with an epic of a different name").
+     This change's design deliberately keeps the epic id as the key (a declined deferral in 9.2).
+  2. Hit during this apply: the shared certification record lost this worktree's `engine-source` entry
+     between `certify sweeps` passing and the commit, because a parallel worktree certified its own
+     content in between; the commit was refused and sweeps had to be re-certified. A second instance: a
+     functional certify run picked up an UNTRACKED new functional test from the working tree and named it
+     in the record's covers, so that test had to join the same commit. Both are covered by the OPEN
+     cfdude/pm#226 (one shared entry per trigger across worktrees) and cfdude/pm#230 (certify reads the
+     working tree, the commit records the index).
+
+PROCESS: docs/lessons/an-archive-writes-outside-the-change-dir.md `enforced_in` now names the new check
+(`integrity`'s delivered-epic-spec-deltas-absent, the briefing and the render verb) — an edit to the
+existing lesson, not a new one.

@@ -10,9 +10,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
-const tmp = (p) => fs.mkdtempSync(path.join(os.tmpdir(), p));
+const tmp = (p) => removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), p)));
 
 test("a fixture git init copies no hooks, even when a template directory is configured", () => {
   // Configure a template that WOULD install a hook, at a precedence (command-line -c) higher than

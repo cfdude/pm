@@ -29,6 +29,8 @@ import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 import { getAutonomy, grantLabel } from "./autonomy.mjs";
 import { die } from "./command-exit.mjs";
 import { outStream } from "./invocation.mjs";
+import { engineRoot } from "./constants.mjs";
+import { specSyncDetail, specSyncFindings } from "./spec-sync.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -172,7 +174,7 @@ export function ungatedArchives(epics) {
     // The disk test runs LAST — isArchived() reads a directory per epic.
     if (!isOpenspecLane(e) || !inCompletionScope(e)) continue;
     const withdrawal = withdrawnGate(e, 2);
-    if (!withdrawal || !(e.status === "archived" || isArchived(e.id))) continue;
+    if (!withdrawal || !(e.status === "archived" || isArchived(e))) continue;
     // ANY Gate 2 withdrawal that took back a verdict which had superseded an `ungated` stamp —
     // not only the latest — so a re-record and a second withdrawal can never hide "never reviewed".
     const archivedUngated = (Array.isArray(e.withdrawnGateReviews) ? e.withdrawnGateReviews : [])
@@ -209,9 +211,11 @@ export const CHECKS = [
         if (e.status !== "archived" || !inCompletionScope(e)) continue;
         const p = epicProgress(e);
         // Gated on `total > 0`, NEVER on `done === 0`. epicProgress() returns `{done: 0,
-        // total: 0}` for an archived epic whose source is gone — the ordinary case for most of
-        // them — so a `done === 0` test reports every source-less archived epic in the repo and
-        // says nothing about any of them. `total > 0` means a real source with real checkboxes.
+        // total: 0}` for an epic with no readable source — a lane with none, or a plan file that
+        // moved — so a `done === 0` test reports every source-less archived epic in the repo and
+        // says nothing about any of them. An archived openspec change is NOT that case any more:
+        // its archived `tasks.md` is read (design D1), so it reaches this check with real counts.
+        // `total > 0` means a real source with real checkboxes.
         if (p.total > 0 && p.done === 0) {
           out.push({ epic: e.id, detail: `archived at ${p.done}/${p.total} (source: ${p.source})` });
         }
@@ -345,8 +349,9 @@ export const CHECKS = [
       return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail: STORABLE_EPIC_ID(c.id)
         ? `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
           "registers it; this check only reports it"
-        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name holds a ` +
-          "control character or whitespace, so it cannot be an epic id — rename the directory to register it" }));
+        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name is not a ` +
+          "valid epic id (lowercase letters, digits, `.`, `_`, `-`), so `/pm:sync` skips it — rename the " +
+          "directory to register it" }));
     },
   },
   {
@@ -802,6 +807,20 @@ export const CHECKS = [
     },
   },
   {
+    id: "delivered-epic-spec-deltas-absent",
+    title: "a delivered epic whose archived spec deltas are absent from the main specs in git's index",
+    /** gate-integrity: "A delivered epic whose archived spec deltas are absent from the main specs is
+     *  reported until they arrive" (handoff-demand-blind-spots, cfdude/pm#222). A STANDING CONDITION and
+     *  never a refusal (design D3): no archive path imports spec-sync.mjs. The finding set is
+     *  specSyncFindings()'s — the one function the briefing reads too — and the main specs come from
+     *  git's INDEX, so where git cannot answer (the assertion half's double, a non-repository) no
+     *  presence or absence finding is made. The remedy is an edit plus `git -C <root> add openspec/`,
+     *  printed by specSyncDetail(); it names no engine invocation. */
+    run(state) {
+      return specSyncFindings(state.epics).map(f => ({ epic: f.epic, detail: specSyncDetail(f, engineRoot()) }));
+    },
+  },
+  {
     id: "recorded-sha-the-repository-cannot-resolve",
     title: "a recorded commit sha this repository can no longer resolve — orphaned, or already gone",
     /** The recorded shas ARE the evidence: a Gate 2 verdict means "a reviewer read this range",
@@ -1010,15 +1029,42 @@ export const CHECKS = [
 ];
 
 /** Run every check. Returns one entry PER CHECK, including the ones that found nothing. */
+/** The ONE check allowed to report itself UNAVAILABLE instead of failing: it reads git's index, and
+ *  gate-integrity's degrade rule covers it alone. */
+export const DEGRADABLE_CHECKS = new Set(["delivered-epic-spec-deltas-absent"]);
+
 export function runIntegrity(state) {
-  return CHECKS.map(c => ({ id: c.id, title: c.title, findings: c.run(state) || [] }));
+  // THE SPEC-SYNC CHECK ONLY (Gate 2 C1, narrowed at the confirmation review): if it throws it is
+  // reported UNAVAILABLE with its reason, every other check still runs, and `integrity()` exits
+  // non-zero, so "could not check" never reads as "clean". ANY OTHER check that throws still fails
+  // loudly, exactly as before — catching those too was unspecified, and it turned a crashing check
+  // into an empty finding list that a test asserting `[]` would read as a pass.
+  return CHECKS.map(c => {
+    if (!DEGRADABLE_CHECKS.has(c.id)) return { id: c.id, title: c.title, findings: c.run(state) || [] };
+    try {
+      return { id: c.id, title: c.title, findings: c.run(state) || [] };
+    } catch (e) {
+      return { id: c.id, title: c.title, findings: [], unavailable: unavailableReason(e) };
+    }
+  });
+}
+
+/** A thrown failure's reason, one line: its code or exit status, then the message's first line. */
+function unavailableReason(e) {
+  const code = e && (e.code || (typeof e.status === "number" ? `exit ${e.status}` : null));
+  const msg = String((e && e.message) || e || "unknown failure").split("\n")[0];
+  return code ? `${code} — ${msg}` : msg;
 }
 
 /** The report, as text. One block per check, count first, then the findings. */
 export function formatIntegrity(report) {
   const L = ["INTEGRITY — records that cannot be true.",
     "Findings are reported, never repaired: nothing here writes state or blocks a command.", ""];
-  for (const { id, title, findings } of report) {
+  for (const { id, title, findings, unavailable } of report) {
+    if (unavailable) {
+      L.push(`${id} — UNAVAILABLE (the check could not run: ${unavailable}): ${title}`);
+      continue;
+    }
     L.push(`${id} — ${findings.length} finding(s): ${title}`);
     for (const f of findings) {
       L.push(`  • ${f.epic ? `\`${f.epic}\` — ` : ""}${f.detail}`);
@@ -1039,5 +1085,11 @@ export function formatIntegrity(report) {
  *  being audited. Read-only means the file is byte-identical afterwards. */
 export function integrity() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  outStream().write(formatIntegrity(runIntegrity(loadState())) + "\n");
+  const report = runIntegrity(loadState());
+  outStream().write(formatIntegrity(report) + "\n");
+  const down = report.filter(c => c.unavailable).map(c => c.id);
+  if (down.length) {
+    die(`conductor: integrity: ${down.length} check(s) could not run (${down.join(", ")}) — the report above ` +
+      "is incomplete, so this exits non-zero rather than reading as clean.\n");
+  }
 }

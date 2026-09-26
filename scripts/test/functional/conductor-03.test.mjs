@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, withArchivedChange, gitRepo, commitFiles } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, withArchivedChange, gitRepo, commitFiles, archiveDay } from "../fixtures/functional-harness.mjs";
 
 // ─────────────── 0.7.0: set-active / clear-active + active↔status ───────────────
 
@@ -30,7 +30,7 @@ test("set-active rejects an unknown or archived id and writes nothing", () => {
   assert.ok(expectFail(() => run(["set-active", "ghost"], { cwd })), "unknown id rejected");
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
   // archived id
-  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-07-08-done"), { recursive: true });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-done`), { recursive: true });
   run(["add-epic", "--id", "done", "--lane", "openspec"], { cwd });
   assert.ok(expectFail(() => run(["set-active", "done"], { cwd })), "archived id rejected");
 });

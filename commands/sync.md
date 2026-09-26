@@ -48,20 +48,32 @@ same for a design document.
 
 ## A name that cannot be an epic id is skipped, and named every run
 
-An epic id is pasted into every command the engine prints, so a name holding a **control
-character** (a newline, a tab, U+2028, …) **or whitespace** can never become one. A change
-directory under `openspec/changes/`, a plan file, or an archive directory whose name holds either
-is **not registered**: `sync` registers everything else in the same run and prints one stderr line
-naming the entry, with its control characters escaped:
+An epic id is pasted into every command the engine prints and into PROJECT.md's tables, so
+`sync` registers an entry only under an id `add-epic` itself would accept: `^[a-z0-9][a-z0-9._-]*$`
+(lowercase letters, digits, `.`, `_`, `-`). Every registration path — change directories, plan
+files, the archive backfill — asks the same validator `add-epic` and `add-many` do. A change
+directory under `openspec/changes/`, a plan file, or an archive directory whose name fails it
+(`x|y`, `.hidden`, `My Plan.md`, `MASTER-plan.md`, a name holding a newline) is **not registered**:
+`sync` registers everything else in the same run and prints one stderr line naming the entry, with
+its control characters escaped:
 
-`conductor: sync skipped <kind> '<name>' — its name holds a control character or whitespace, so it cannot be an epic id; rename it to register it`
+```
+conductor: sync skipped <kind> '<name>' — its name is not a valid epic id (format ^[a-z0-9][a-z0-9._-]*$: lowercase letters, digits, `.`, `_`, `-`); rename it to register it
+```
+
+A **plan** whose lowercased name is a valid id gets a runnable registration instead of the rename
+advice — `add-epic --id master-plan --lane superpowers --plan docs/superpowers/plans/MASTER-plan.md`
+for `MASTER-plan.md` — and `add-epic --plan` claims the file, so
+the next sync answers "already claimed". The run's final line counts what was skipped:
+`conductor: synced (1 new epic(s) added as untriaged; 2 skipped — each named above, none registered)`.
 
 The line is printed on **every** run while the entry exists, including the quiet sync the commit
 hook runs, because a skipped change has no other reported condition — silencing it would make an
-unregistered change look like a clean sync. **Rename it to register it**; no verb can register it
-under its current name. The check runs at the final registration step, after the claimed, known,
-tombstone and near-match rungs above, so a name an epic already holds prints nothing. Uppercase
-names are unaffected. An archive directory is additionally reported by `integrity`'s
+unregistered change look like a clean sync. **Rename it to register it** (or, for a plan, run the
+`add-epic --plan` line it names); no verb can register it under its current name. The check runs at the final registration step, after the claimed, known,
+tombstone and near-match rungs above, so a name an epic already holds prints nothing — an epic
+stored under a legacy id (`MASTER-…`, `My Plan`) keeps loading, rendering and updating; only a NEW
+registration is refused. An archive directory is additionally reported by `integrity`'s
 `archive-directory-has-no-epic`, whose detail says it must be renamed rather than that `/pm:sync`
 registers it.
 
@@ -81,6 +93,31 @@ passed through the conductor while in flight, so it has no verdict, no start tim
 ticked tasks. Writing an `ungated` verdict for it would assert a permanent, unclearable condition
 against every change archived before the conductor existed, and the completion-shaped integrity
 checks exclude it for the same reason.
+
+## An archive older than the epic is not its archive
+
+The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a
+**name is not an identity**. An archive directory dated (`YYYY-MM-DD-<id>`) more than a day before
+a LIVE epic's `createdAt` is some older, unrelated change that happens to share the name, so it
+**neither ends the epic nor clears its active pointer**, and `set-active` still accepts the epic.
+(The day of slack covers openspec's local date against `createdAt`'s UTC.) A live epic with no
+`createdAt` at all is never ended by a bare name match. The rule decides only whether LIVE work is
+ended: an epic that is already archived finds its archive by name, because `createdAt` is not proof
+of order for it — pm's own date recovery can date an epic after its archive. Every surface asks the
+same resolver, so none of them can disagree. `sync` names each directory it set aside for a live
+epic, every run, and counts them in its final line:
+
+```
+conductor: sync set aside archive directory '2025-01-01-add-auth' — it predates epic 'add-auth' (registered 2026-09-25), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work. If it IS this epic's archive (registered after the change was archived), end the epic: `update-epic add-auth --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals`
+```
+
+A set-aside directory is not registered as a new epic either: its name is held. An UNDATED directory
+(a hand-made move — `openspec archive` always writes a date) still matches a live epic by name, since
+its name is the only evidence about it.
+
+For an epic with no registration date the line says so and names `recover-created-at`, which dates
+it from git history; the next sync then decides by the rule. An epic registered BY the archive
+backfill is exempt — it was built from that very directory.
 
 ## What sync does about your tracker(s) — decided by direction, not by vendor
 
@@ -146,7 +183,11 @@ direction:
     --verdict unchanged|material-change --external-updated-at <iso> [--summary "<what changed>"]
   ```
 
-  `<iso>` is the **tracker's own** updated timestamp, never a local clock reading.
+  `<iso>` is the **tracker's own** updated timestamp, never a local clock reading — an ISO-8601
+  date-time with a zone. A tracker's updated time only moves forward, so a watermark OLDER than the
+  one already recorded (compared as instants, so `…Z` and `…+02:00` spellings compare correctly) is
+  refused and nothing is written; if the recorded one is the wrong one, correct it with
+  `update-epic <id> --external-updated-at <iso>`.
 - **The epic has no `externalId`** → re-read its LOCAL source: its plan document, or its OpenSpec
   proposal plus tasks. That is instruction only; nothing is recorded in state for it, and
   `record-tracker-refresh` refuses such an epic by name.

@@ -7,7 +7,7 @@ import { loadState } from "./state.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
-import { buildBrief } from "./briefing.mjs";
+import { buildBrief, specSyncBlock } from "./briefing.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
@@ -27,6 +27,20 @@ import { currentArgv, errStream, outStream } from "./invocation.mjs";
  *  suite's source guard fails any other `md.push` that begins a row with an interpolated value. */
 export function tableRow(...cells) {
   return `| ${cells.map(escapeTableCell).join(" | ")} |`;
+}
+
+/** THE `render` VERB, as dispatched from the command line — render(), then the SPEC-SYNC block on
+ *  stdout (handoff-demand-blind-spots D6). The block is printed HERE and not inside render(), because
+ *  render() runs in-process under snapshot, commit-nudge, sync, upgrade and most mutating verbs (several
+ *  of them hooks), and printing there would put the block — and a git process — into every one of those
+ *  outputs. Never under `--diff-summary`, whose stdout is one machine-read line. `/pm:status` runs this
+ *  verb, and commands/status.md tells the reader to read this output as well as PROJECT.md. */
+export function renderVerb() {
+  const status = render();
+  if (parseFlags(currentArgv().slice(3))["diff-summary"]) return status;
+  const lines = specSyncBlock(loadState());
+  if (lines.length) outStream().write(lines.map(escapeControls).join("\n") + "\n");
+  return status;
 }
 
 export function render() {
@@ -360,23 +374,29 @@ export function normalizeForDiffSummary(content) {
 }
 
 /** Records when PROJECT.md was last generated FROM the current state.json content, so
- *  `verify-state` can catch an undetected hand-edit: if state.json's mtime is newer than
- *  this stamp, someone modified it outside the render pipeline (CLAUDE.md forbids
+ *  `verify-state` can catch an undetected hand-edit: bytes newer than this stamp at the SAME
+ *  revision were written by something other than the engine (CLAUDE.md forbids
  *  hand-editing state.json/PROJECT.md — the state of record must go through the engine's
  *  subcommands so ordering/detour-stack/link invariants stay consistent). Sidecar file
  *  (not a state.json field) so stamping never itself perturbs the content being verified. */
 export function writeRenderStamp() {
+  // UNDER THE RECORD LOCK (confirmation review): a save stamps `lastSave` under it, and this read-modify-
+  // write of the same file, unlocked, could carry an OLDER `lastSave` over a newer one. A lock that
+  // cannot be had skips the stamp — the next render writes it.
   const store = storeOps();
+  store.withRecordLock(() => writeRenderStampLocked(store));
+}
+function writeRenderStampLocked(store) {
   // THE SKIP DECISION IS A STORE QUESTION ABOUT THE STATE, not a stat of it (task 1.3, I3). It used
   // to compare state.json's mtimeMs, and an mtime is precisely what a store that produces no path
   // cannot answer. What it records instead is the RECORD'S IDENTITY — its revision — which is the
   // same statement in a form both implementations can supply: writeRecord() advances the revision
   // on every save that changes content and returns early without writing when nothing changed, so
   // "the revision moved" and "the record was written" are the same fact. The observed behaviour is
-  // unchanged: nothing reads stateRevision back for correctness, and the stamp is still rewritten
-  // only when the record it was taken from has moved.
+  // unchanged, and the stamp is still rewritten only when the record it was taken from has moved.
+  // `verify-state` reads stateRevision back, to tell an engine save from a hand-edit.
   const stateIdentity = store.recordIdentity();
-  // stateMtimeMs is KEPT and is still what `verify-state` reads (worktree-hygiene.mjs), which is a
+  // stateMtimeMs is KEPT: `verify-state` (worktree-hygiene.mjs) reads it at an EQUAL revision, which is a
   // filesystem check by construction and stays on the file rung. Null when the store has no path —
   // a memory store writes no stamp anybody verifies.
   const stateMtimeMs = store.mtimeMs(ARTIFACT.RECORD);
@@ -385,5 +405,8 @@ export function writeRenderStamp() {
   if (existingRead.kind === "ok") { try { existing = JSON.parse(existingRead.text); } catch { existing = null; } }
   if (existing && existing.stateRevision === stateIdentity && existing.stateMtimeMs === stateMtimeMs) return;
   const stamp = { renderedAt: new Date().toISOString(), stateRevision: stateIdentity, stateMtimeMs };
+  // `lastSave` belongs to saveState() (state.mjs recordEngineSave) and is carried through a render,
+  // never recomputed here: a render does not save.
+  if (existing && existing.lastSave) stamp.lastSave = existing.lastSave;
   store.write(ARTIFACT.RENDER_STAMP, JSON.stringify(stamp, null, 2) + "\n");
 }

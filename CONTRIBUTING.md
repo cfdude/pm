@@ -55,7 +55,18 @@ After that, `git commit` runs `.githooks/pre-commit` automatically, which runs t
 coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
 invocation:
 `FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
-— and blocks the commit on any failure. The reporter is forced and colour is off so the summary is
+— and blocks the commit on any failure. **It tests the INDEX, not your working tree** (0.50.0): the
+hook exports exactly what is staged — `git checkout-index -a` into a private directory under
+`$TMPDIR` — and runs the half there, so a failing test you staged cannot pass on the strength of a
+fixed copy you left unstaged, an untracked test file neither runs nor counts, and a partially
+staged file is tested as its staged half. It honours the index git hands it, so `git commit -a`
+and `git commit <path>` are tested as what they commit. It never writes your working tree or your
+index, so an interrupted hook cannot lose work; the snapshot is removed on exit, Ctrl-C included.
+The drift script that runs first is the snapshot's own copy, and every set it judges (certified
+modules, test ids, conformance rows) is read from that index too. One known limit: a tracked
+symlink is exported as a symlink, so an absolute one still reads outside the index — this repository
+tracks none.
+To run the suite over your working tree instead, run the command above yourself. The reporter is forced and colour is off so the summary is
 the same bytes on every supported Node, and a count the hook cannot read, or a run of zero tests, is
 a refusal rather than a pass. The drift script refuses, naming the file: a tracked
 test file in NEITHER half
@@ -98,7 +109,8 @@ same summary on every major.)
 
 ### `node --test --watch` — the loop
 
-Both rungs in one runner invocation, the same file set the pre-commit hook runs:
+Both rungs in one runner invocation, the same file set the pre-commit hook runs — this runs your
+working tree's copy; the hook runs the index's:
 
 ```bash
 node --test --watch scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
@@ -177,6 +189,28 @@ scan of the test file can see.
 are the two TRIGGERED buckets. They do not run per commit: CI runs them, and
 `node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when you ran
 one locally. A drift-script refusal names the command to run.
+
+### Temp directories — every fixture directory is removed, and a per-commit test holds it
+
+`tmpRepo()`, `fixtureCache()`, `fixturePluginRoot()`, `addHierarchyWorktree()` and the git-gateway
+fixture already schedule what they make, so a test that uses them owes nothing. **A test or fixture
+that calls `mkdtempSync` itself must do one of two things:**
+
+- **wrap it** — `removeAtExit(fs.mkdtempSync(…))`, from `scripts/test/fixtures/temp-dir.mjs`, which
+  removes the directory when the process exits. This is the default, and the only shape the scan
+  accepts as scheduled.
+- **or enrol it in `KNOWN`** in `scripts/test/assert/temp-dir-cleanup.test.mjs`, when the directory
+  is removed some other way (a `finally`, an `after()` hook, an exit listener). The entry names its
+  `cleanup` — the text of the removing call — and a `within` line count, and the test checks that the
+  cleanup appears in code within that many lines after the site. It is NOT trusted by hand: deleting
+  the cleanup fails the test. What it proves is presence near the site, not that the cleanup runs on
+  every path — the functional twin, which counts what is actually left on disk, covers that.
+
+The scan counts any code mention of the `mkdtemp` / `mkdtempSync` name — a call, an alias, a
+destructure, `fs.promises.mkdtemp(` — so an alias must be enrolled too; comments and names inside
+string or regex literals are not sites. Its stated limit: a name built at run time, or a directory a
+spawned process makes, is not seen. Before this rule (measured 2026-09-25) one assertion-half run left
+436 directories in the OS temp dir and one functional-half run left 1,517.
 
 ## Developing pm with pm (required one-time setup)
 

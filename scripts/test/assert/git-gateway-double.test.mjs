@@ -83,5 +83,43 @@ test("4.4 the fake-vs-live check is a FUNCTIONAL test, and the capture says so",
   assert.match(doubled, /byte-identical/i, "the live check lives in the functional half");
 });
 
+test("the worktree listing is captured NUL-terminated — the shape verify-worktrees parses", () => {
+  // code-review-0-43-0-minors: the gateway reads `git worktree list --porcelain -z`, so a path
+  // holding a line feed stays one field. A capture still in the newline form would feed the
+  // NUL-splitting reader one giant field and every verify-worktrees test in this half would pass
+  // against nothing.
+  const { value } = CAPTURE.operations.worktreeList.cases[0];
+  assert.ok(value.includes("\0worktree "), "records are NUL-separated");
+  assert.ok(!value.includes("\n"), "and no field ends in a line feed");
+  assert.match(GIT_OPERATIONS.find(o => o.name === "worktreeList").command, / -z$/);
+});
+
+test("indexBlobs is captured as BYTES, handed back as a Buffer, and parses to the staged specs exactly", async () => {
+  // handoff-demand-blind-spots D5: the one byte-valued operation. Its capture is base64 under an
+  // explicit `encoding` tag (a JSON string cannot carry invalid UTF-8 without changing its length),
+  // the double hands back the Buffer, and the wrapper's byte-offset parse over it yields each staged
+  // multi-byte spec byte-for-byte — which a string-valued double would never exercise.
+  const { SPECS, INDEX_BLOBS_INPUT, BYTE_VALUED } = await import("../fixtures/git-gateway-repo.mjs");
+  const { parseCatFileBatch } = await import("../../lib/git.mjs");
+  assert.equal(BYTE_VALUED, "indexBlobs");
+  const entry = CAPTURE.operations.indexBlobs.cases[0];
+  assert.equal(entry.encoding, "base64", "the byte-valued answer carries its encoding tag");
+  assert.equal(entry.args[0], INDEX_BLOBS_INPUT);
+  const answer = fakeGit({ roots: [] }).indexBlobs(INDEX_BLOBS_INPUT);
+  assert.ok(Buffer.isBuffer(answer), "the double answers a Buffer, as the real operation does");
+  const names = INDEX_BLOBS_INPUT.split("\n").filter(Boolean);
+  const parsed = parseCatFileBatch(answer, names);
+  assert.equal(parsed.get(names[0]), SPECS.alpha, "a multi-byte spec decodes exactly");
+  assert.equal(parsed.get(names[1]), SPECS.beta, "and so does the SECOND, framed after the first's byte size");
+  assert.equal(parsed.get(names[2]), null, "a path the index lacks is `missing` → null");
+  assert.ok(Buffer.byteLength(SPECS.alpha) > SPECS.alpha.length, "the fixture really is multi-byte");
+  // Every OTHER operation's capture is untouched text: the byte form is keyed on this one name.
+  for (const [op, e] of Object.entries(CAPTURE.operations)) {
+    if (op === "indexBlobs") continue;
+    assert.ok(e.cases.every(c => c.encoding === undefined), `${op} carries no encoding tag`);
+  }
+  assert.equal(CAPTURE.noRepository.indexBlobs.status, 128, "no repository answers 128, as for every operation");
+});
+
 void run;
 void path;

@@ -1,0 +1,12 @@
+# Mutation proofs, task 1. Each mutant is applied to a COPY of the new .githooks/pre-commit inside a copy
+# of the worktree; the IX tests (functional IX-a..IX-g + the assert-twin IX shape test) are then run.
+# Script: scratchpad wt-50/commit-gate-tests-working-tree-not-index/mutate.sh (perl substitutions).
+# Every mutant is killed. `no-term-trap` is killed by the shape test only: macOS /bin/sh (bash) runs the
+# EXIT trap on SIGTERM anyway, so IX-f survives it there; the trap stays for shells that do not.
+== old-hook: failing -> IX (shape)|IX-a|IX-b|IX-c|IX-d|IX-g
+== no-cd-into-snapshot: failing -> IX (shape)|IX-a|IX-b|IX-c|IX-d|IX-g
+== capture-dropped (INDEX_FILE= instead of ${GIT_INDEX_FILE:-}): failing -> IX (shape)|IX-d
+== cleanup-keeps-snapshot: failing -> IX (shape)|IX-e|IX-f
+== relative-lockdir (--git-common-dir without --path-format=absolute): failing -> IX (shape)|IX-e|IX-f
+== no-term-trap: failing -> IX (shape)
+== declared-reads-worktree ("$ROOT/$f" for "$SNAP/$f"): failing -> IX (shape)|IX-g

@@ -23,6 +23,7 @@ const x = (f, fn, exprs, cls, why) => {
 };
 
 // ── line-sink flow, and the first judgments of each sink's neighbours
+j("briefing.mjs", "specSyncBlock", ALL, "sink-flow", "the spec-sync block's lines (handoff-demand-blind-spots D6): its only consumers are buildBrief's L (joined through L.map(escapeControls)) and renderVerb(), which joins them through lines.map(escapeControls); header names are JSON-quoted");
 j("briefing.mjs", "buildBrief", ALL, "sink-flow", "every line is pushed onto L, joined through L.map(escapeControls) at buildBrief's return");
 j("briefing.mjs", "BRIEF_REMEDIES", ALL, "sink-flow", "each render() result is pushed onto buildBrief's L (briefRemedy) or its trackerLines, which join L's sink; ids in commands go through printedId/asCode");
 j("render.mjs", "render", ALL, "sink-flow", "every PROJECT.md line is pushed onto md, joined through md.map(escapeControls); cells additionally through tableRow's escapeTableCell");
@@ -33,14 +34,31 @@ x("render.mjs", "normalizeForDiffSummary", {
   "out.slice(0, afterHeading)": 1,
   "out.slice(end)": 1,
 }, "not-output", "slices PROJECT.md text for a diff comparison; prints nothing");
-x("render.mjs", "writeRenderStamp", {
+x("render.mjs", "writeRenderStampLocked", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the render stamp's file body — an ISO timestamp, a revision number and an mtime. It was automatically `not-output` while it sat inside the fs.writeFileSync the sweep recognises; task 1.3 moved the write onto the store, so the sink is no longer visible to the scanner and the judgment has to be explicit");
+x("state.mjs", "seedCreationFields", {
+  "EPIC_ID_FORMAT.source": 1,
+}, "engine", "InvalidEpicIdError's message (the scanner attributes the class to the declaration before it): the engine's own id regex source; the id itself is escaped");
+x("state.mjs", "recordEngineSave", {
+  "JSON.stringify(stamp, null, 2)": 1,
+}, "not-output", "the same render-stamp file body writeRenderStamp writes, with `lastSave: {revision, mtimeMs}` added — numbers and the stamp's own fields, written through the store, never printed");
 j("integrity.mjs", "CHECKS", ALL, "sink-flow", "every finding detail is printed only by formatIntegrity(), whose L joins through L.map(escapeControls); runIntegrity's sole caller is integrity(). Ids in commands go through printedId/orNoRemedy/asCode/commandValue, and the secondary tracker's shellQuote(t.repo) is reached only when CONTROL_CHARACTER.test(t.repo) is false");
 j("integrity.mjs", "recordedShas", ALL, "sink-flow", "`where` labels (gate1/gate2 + engine key) feed CHECKS details only");
 x("integrity.mjs", "integrity", {
-  "formatIntegrity(runIntegrity(loadState()))": 1,
+  "formatIntegrity(report)": 1,
 }, "escaped", "formatIntegrity() returns the sink-joined report");
+x("integrity.mjs", "integrity", {
+  "down.join(\", \")": 1,
+}, "engine", "CHECKS ids of the checks that could not run (Gate 2 C1) — registry vocabulary");
+x("integrity.mjs", "unavailableReason", {
+  "e.status": 1,
+  "code": 1,
+  "msg": 1,
+}, "sink-flow", "a thrown failure's reason, printed only inside formatIntegrity()'s L.map(escapeControls) (Gate 2 C1)");
+x("briefing.mjs", "specSyncUnavailable", {
+  "e.status": 1,
+}, "engine", "a process exit status number; the composed reason is escapeControls()d before it is returned (Gate 2 C1)");
 j("rules.mjs", "rulesBlock", ALL, "sink-flow", "the managed block's lines join through lines.map(escapeControls)");
 j("rules.mjs", "closedItemStep", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (pmCmd also names a platform-vocabulary command prefix)");
 j("rules.mjs", "gateProcedureLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (pmCmd also names a platform-vocabulary command prefix)");
@@ -163,6 +181,9 @@ x("add-epic.mjs", "addEpic", {
   "e.message": 2,
   "perr": 1,
 }, "passthrough", "parseStoryFlags / parseLinkFlags / parentError messages, each escaping the values it quotes where it is built");
+x("add-epic.mjs", "addEpic", {
+  "trackerKeyRefusal(hit, { externalUrl, externalId })": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
 x("add-epic.mjs", "planHierarchy", {
   "jsonText(plan)": 1,
 }, "json", "the plan is one JSON document");
@@ -182,6 +203,16 @@ x("add-many.mjs", "addMany", {
   "allowedKeys.join(\", \")": 1,
   "k": 1,
 }, "engine", "the id-format source and the batch key allowlist; k is filtered to allowedKeys before");
+x("add-many.mjs", "addMany", {
+  "trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
+x("add-many.mjs", "addMany", {
+  "where": 1,
+}, "escaped", "where is `epic '${escapeControls(e.id)}'`, escaped where it is built on the line above its use");
+x("add-many.mjs", "batchLink", {
+  "where": 8,
+  "shown": 7,
+}, "escaped", "where is built by addMany through escapeControls(e.id); shown is escapeControls(JSON.stringify(raw)) at the top of batchLink");
 x("add-many.mjs", "addMany", {
   "msg": 1,
 }, "passthrough", "die(): every caller escapes the values it quotes");
@@ -223,7 +254,13 @@ x("archive-gate.mjs", "archiveGate", {
 x("archive-gate.mjs", "archiveGate", {
   "outcomeOf(epic)": 1,
   "i.n": 1,
-}, "engine", "outcomeOf() answers from KNOWN_OUTCOMES or `unknown`; a story number");
+  "storiesOpen": 1,
+  "tasksOpen": 1,
+}, "engine", "outcomeOf() answers from KNOWN_OUTCOMES or `unknown`; a story number; each union part's open count (handoff-demand-blind-spots D2)");
+x("archive-gate.mjs", "archiveGate", {
+  "storyRemedy": 2,
+  "taskRemedy": 1,
+}, "passthrough", "the handoff's per-part remedy prose, composed in archiveGate() from an asCode() remedy line, engine flag text and the LIFECYCLE_MARKER constant");
 x("argv-surface.mjs", "checkCommandLine", {
   "badFlag.name": 2,
   "verb": 1,
@@ -303,7 +340,11 @@ x("constants.mjs", "printedId", {
 }, "engine", "kind is the literal epic|release");
 x("constants.mjs", "unstorableSkipLine", {
   "kind": 1,
-}, "engine", "kind is a literal (change|plan|archive directory)");
+  "EPIC_ID_FORMAT.source": 1,
+}, "engine", "kind is a literal (change|plan|archive directory); the id format is the engine's own regex source");
+x("constants.mjs", "unstorableSkipLine", {
+  "remedy": 1,
+}, "passthrough", "sync's plan-rung remedy: an orNoRemedy() result built in sync, whose id goes through printedId and whose path through commandValue");
 x("constants.mjs", "shellQuote", {
   "String(token).replace(/'/g, \"'\\\\''\")": 1,
 }, "justified", "the quoter itself; every printing caller is judged at its own site");
@@ -363,6 +404,18 @@ x("git.mjs", "differsFromHead", {
 x("git.mjs", "resolveCommits", {
   "v": 1,
 }, "not-output", "a git argument — one line of the batch-check stdin payload, peeled to ^{commit}. It was SINK-FLOW inside the execFileSync `input` option until 4.2 moved the call to the injected gateway, which is why the judgment moves from the sink heuristic to here. A value reaching this point has already had whitespace and control characters filtered out above it, and the loop's own `unresolved` message escapes every value it names");
+j("spec-sync.mjs", "specSyncDetail", ALL, "sink-flow", "an integrity finding's detail (handoff-demand-blind-spots D6): its only caller is the delivered-epic-spec-deltas-absent CHECKS entry, printed through formatIntegrity()'s L.map(escapeControls); header names are JSON-quoted and the root is shellQuote()d");
+x("spec-sync.mjs", "compareSpecSync", {
+  "u.side": 1,
+  "u.name": 1,
+}, "not-output", "a finding's `headers` DATA (an unpaired RENAMED side and name); every surface that prints it goes through a line sink (integrity's formatter, buildBrief's L)");
+x("spec-sync.mjs", "specPath", {
+  "cap": 1,
+}, "passthrough", "a capability directory name read from the archive, composed into a relative path that is either a git stdin line (not output) or printed inside specSyncDetail's sink-flow text");
+x("git.mjs", "indexFileContents", {
+  "String(p).replace(/^\\.\\//, \"\")": 1,
+  "n": 1,
+}, "not-output", "git arguments — the `:./<path>` lines of the cat-file --batch stdin payload (handoff-demand-blind-spots D5); the paths are engine-built `openspec/specs/<cap>/spec.md` names and never printed");
 x("git.mjs", "unresolvedCommitsMessage", {
   "flags": 1,
 }, "engine", "flags is a literal flag list passed by each caller; the values are escaped");
@@ -391,6 +444,21 @@ j("worktree-hygiene.mjs", "verifyWorktrees", ALL, "json", "one JSON document; th
 x("lessons.mjs", "adviceText", {
   "body": 1,
 }, "escaped", "body is built from escapeControls(rule) and escapeControls(file)");
+x("lessons.mjs", "checkDetect", {
+  "e.message": 2,
+  "typeName(d)": 1,
+  "unknown.map(k => JSON.stringify(k)).join(\", \")": 1,
+  "k": 5,
+  "d[k] === \"\" ? \"an empty string\" : typeName(d[k])": 1,
+  "JSON.stringify(d.tool)": 1,
+  "d.tool": 2,
+  "code": 1,
+  "JSON.stringify(nested)": 1,
+  "cp.toString(16).toUpperCase().padStart(4, \"0\")": 1,
+}, "not-output", "a rejected detect's `reason` is returned as DATA by checkDetect()/classifyLessons() and printed by nothing in the engine — the lesson-advice hook never reports a reject, and the one reader is lessons-index.test.mjs. Several values are workspace-authored (a lesson's keys, tool, regex text, a parse error quoting it), so a surface that ever PRINTS a reason must pass it through escapeControls at that site, where this sweep will see the new interpolation");
+x("lessons.mjs", "classifyLessons", {
+  "e.code || e.message": 1,
+}, "not-output", "an unreadable lesson's `reason`, returned as data by classifyLessons() and printed by nothing in the engine (see checkDetect)");
 x("links.mjs", "ordinal", {
   "n": 2,
   "{ 1: \"st\", 2: \"nd\", 3: \"rd\" }[n % 10] || \"th\"": 1,
@@ -558,6 +626,9 @@ x("releases.mjs", "release", {
 x("releases.mjs", "release", {
   "releaseLine(releaseSummaries(state, state.epics).find(s => s.id === id))": 1,
 }, "escaped", "releaseLine() escapes the release id (Gate 2 T-I3); the rest are counts");
+x("update-epic.mjs", "updateEpic", {
+  "trackerKeyRefusal(hit, candidate)": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
 x("remove-epic.mjs", "removeEpic", {
   "epicSummaryTable([epic, ...descendants])": 1,
 }, "escaped", "the summary table escapes each cell; each id through escapeControls (cite(), a whole call to escapeControls, is trusted as its alias since Gate 2 W-M2 stopped a \"; \" string ending its declaration)");
@@ -606,7 +677,15 @@ x("subcommands.mjs", "runNudge", {
 x("subcommands.mjs", "sync", {
   "claim.label": 1,
   "added": 2,
-}, "engine", "a literal artifact label and a count");
+  "skipped": 1,
+  "setAside": 1,
+}, "engine", "a literal artifact label and counts");
+x("subcommands.mjs", "sync", {
+  "day": 1,
+}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day");
+x("subcommands.mjs", "sync", {
+  "skipNote": 2,
+}, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");
 x("subcommands.mjs", "sync", {
   "backfilled.join(\", \")": 2,
 }, "engine", "backfilled ids passed STORABLE_EPIC_ID (no control character) before registration");

@@ -1,0 +1,119 @@
+mutation-5.2 — handoff-demand-blind-spots. Each in a scratch COPY of scripts/ (never the tree), running
+  node --test --test-reporter=spec --test-name-pattern=^5.2 scripts/test/functional/spec-sync-surfaces.test.mjs
+
+(1) A SECOND COMPUTATION: specSyncBlock() feeds the briefing its own scope
+    (`state.epics.filter(e => e.status !== "archived")`) instead of specSyncFindings()'s.
+    FAILS "5.2 brief names the SAME epic set as integrity" — "one function feeds both surfaces" — and
+    the render-stdout case.
+(2) EMBEDDED IN PROJECT.md: render() calls buildBrief(state, { specSync: true }).
+    FAILS "5.2 `render` PRINTS the block … PROJECT.md … does NOT carry it" and the
+    archive-to-`git add` window case.
+
+──────── (1) second computation ────────
+✖ 5.2 brief names the SAME epic set as integrity, under its own heading (165.027167ms)
+✖ 5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it (143.709ms)
+✔ 5.2 `render --diff-summary` prints only its epic-relevant line; commit-nudge and snapshot stdout carry no block (168.163959ms)
+✔ 5.2 the archive-to-`git add` window: integrity names the epic and PROJECT.md does not; after `git add openspec/` nothing (154.558292ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 879.594833
+
+✖ failing tests:
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:136:1
+✖ 5.2 brief names the SAME epic set as integrity, under its own heading (165.027167ms)
+  AssertionError [ERR_ASSERTION]: one function feeds both surfaces
+  + actual - expected
+  
+  + []
+  - [
+  -   'lost'
+  - ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/functional/spec-sync-surfaces.test.mjs:141:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'lost' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:144:1
+✖ 5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it (143.709ms)
+  AssertionError [ERR_ASSERTION]: render's stdout carries the block:
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/functional/spec-sync-surfaces.test.mjs:148:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+──────── (2) embedded in PROJECT.md ────────
+✔ 5.2 brief names the SAME epic set as integrity, under its own heading (189.561208ms)
+✖ 5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it (200.273625ms)
+✔ 5.2 `render --diff-summary` prints only its epic-relevant line; commit-nudge and snapshot stdout carry no block (267.184167ms)
+✖ 5.2 the archive-to-`git add` window: integrity names the epic and PROJECT.md does not; after `git add openspec/` nothing (129.268583ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1087.134625
+
+✖ failing tests:
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:144:1
+✖ 5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it (200.273625ms)
+  AssertionError [ERR_ASSERTION]: a tracked file never carries a condition of the index
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/functional/spec-sync-surfaces.test.mjs:150:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:164:1
+✖ 5.2 the archive-to-`git add` window: integrity names the epic and PROJECT.md does not; after `git add openspec/` nothing (129.268583ms)
+  AssertionError [ERR_ASSERTION]: PROJECT.md rendered in the window does not carry it
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/functional/spec-sync-surfaces.test.mjs:186:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

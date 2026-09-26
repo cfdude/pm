@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, archiveDay, REFRESH_GATE_HEADING, fixtureCommits } from "../fixtures/functional-harness.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -535,7 +535,7 @@ test("8.2: a change registered while active and archived later resolves to ONE e
   // Now archive it the way openspec does: the directory moves under archive/ with a date prefix.
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", "live-change"),
-    path.join(cwd, "openspec", "changes", "archive", "2026-08-20-live-change"));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-live-change`));
   run(["sync"], { cwd });
   const matches = readState(cwd).epics.filter(e => e.id.endsWith("live-change"));
   assert.equal(matches.length, 1, "the existing epic flips to archived; no second epic appears");
@@ -544,12 +544,10 @@ test("8.2: a change registered while active and archived later resolves to ONE e
 
 // ───────────── 8.3: a backfilled epic keeps its real counts ─────────────
 //
-// `epicProgress()` returns `{done: 0, total: 0}` for an archived epic whose task source is gone,
-// and suppresses the missing-source warning — correct for an epic the conductor managed, whose
-// source legitimately moved. Applied to a backfilled epic it discards the only evidence the
-// backfill exists to preserve: a change archived with 12 of its tasks still unticked is the most
-// informative row in the whole audit, and registering it as `0/0` keeps the row and throws away
-// what makes it worth keeping.
+// A backfilled epic reads its counts from the archived artifacts: a change archived with 12 of its
+// tasks still unticked is the most informative row in the whole audit, and registering it as `0/0`
+// keeps the row and throws away what makes it worth keeping. Since handoff-demand-blind-spots (D1)
+// the same holds for an epic the conductor MANAGED — the last case below.
 
 /** Register one archived change from disk with an explicit ticked/unticked split. */
 function backfilledFixture(id, { ticked, unticked }) {
@@ -582,22 +580,23 @@ test("8.3: a fully ticked archived change registers as complete and is distingui
     "complete must read complete, and differently from the abandoned case");
 });
 
-test("8.3: an epic the conductor MANAGED keeps its suppressed missing-source behavior", () => {
-  // The scope of the fallback is deliberate. `archiveGate()` documents that outstanding work
-  // "reads zero for an archived epic whose source is gone", and the interactive verb's handoff
-  // demand rests on it. Reading archived artifacts for every archived epic would move that
-  // quantity under a gate written against it — a change no task in this group authorizes.
+test("8.3: an epic the conductor MANAGED reads its archived tasks.md too (handoff-demand-blind-spots D1)", () => {
+  // This case used to assert the OPPOSITE: that a managed epic's archived source stays unread and
+  // renders `0/0`, because `archiveGate()` documented that outstanding work "reads zero for an
+  // archived epic whose source is gone". That premise was the blind spot — it let two epics in this
+  // repository be recorded `delivered` at 53/54 and 46/47 — and conductor-record now makes the
+  // archived tasks.md the checkbox source of EVERY archived openspec change, not only a backfilled one.
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");
+  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");  // FIXED on purpose: an epic registered already-archived, AFTER its archive (review [I])
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [ ] the archive instruction\n");
   run(["add-epic", "--id", "managed-change", "--lane", "openspec", "--status", "archived"], { cwd });
   run(["render"], { cwd });
   const row = rowFor(cwd, "managed-change");
-  assert.ok(!/1\/2/.test(row),
-    "an epic registered through a creation path is not a backfilled one, and its source going " +
-    "away at archive time is the documented, suppressed case");
+  assert.match(row, /1\/2/,
+    "a managed epic whose change moved under archive/ renders the archived counts, exactly as a " +
+    "backfilled one does — `0/0` there is the handoff demand going inert");
 });
 
 // ───────────── 8.4 / 8.5: the stamp is unconditional, and no gate2 is written ─────────────
@@ -808,6 +807,8 @@ const liveState = () => JSON.parse(fs.readFileSync(path.join(REPO, ".conductor",
 const findingsFor = (id, state) => {
   const c = runIntegrity(state).find(x => x.id === id);
   assert.ok(c, `no check registered as ${id}`);
+  // A check that could not run has no findings to compare; an empty list must never pass for one.
+  assert.ok(!c.unavailable, `${id} could not run: ${c.unavailable}`);
   return c.findings;
 };
 
@@ -1206,7 +1207,7 @@ function healArchivedWithGates(cwd, id) {
   writeState(cwd, state);
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", id),
-    path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`));
   run(["sync"], { cwd });
 }
 
@@ -1351,7 +1352,7 @@ function healArchivedUngated(cwd, id) {
   run(["sync"], { cwd });
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", id),
-    path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`));
   run(["sync"], { cwd });
 }
 

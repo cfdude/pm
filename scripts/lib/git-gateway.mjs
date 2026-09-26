@@ -18,7 +18,8 @@
 // it imported would cycle through the module every other module depends on.
 //
 // ONE OPERATION PER INVOCATION, not one generic runner. Twenty-three call sites became twenty-three
-// operations (the count is DERIVED at apply time, never typed — see the guard in
+// operations, and handoff-demand-blind-spots added a twenty-fourth, `indexBlobs` (the count is
+// DERIVED at apply time, never typed — see the guard in
 // scripts/test/git-gateway-guard.test.mjs, which re-runs the derivation against this file's source
 // and fails when the two disagree). A generic `git(args)` would put the arg shapes in the callers,
 // which is where the fake could not answer them; a named operation is also the unit a fresh capture
@@ -47,7 +48,7 @@ export function realGit(context) {
   const env = () => context().env;
 
   return {
-    // ── lib/git.mjs, 11 sites ──────────────────────────────────────────────────────────────────
+    // ── lib/git.mjs, 12 sites ──────────────────────────────────────────────────────────────────
     // git.mjs:11 — the abbreviated HEAD, or a throw the caller turns into "-".
     shortHead: () =>
       execSync("git rev-parse --short HEAD", { cwd: root(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim(),
@@ -97,6 +98,21 @@ export function realGit(context) {
     batchCheckCommits: (lines) =>
       execFileSync("git", ["cat-file", "--batch-check"], {
         cwd: root(), encoding: "utf8", input: lines,
+        stdio: ["pipe", "pipe", "ignore"], env: { ...env(), GIT_NO_LAZY_FETCH: "1" },
+      }),
+
+    // git.mjs indexFileContents() — ONE `cat-file --batch` for every path the caller names, fed as
+    // `:./<path>` lines on stdin (handoff-demand-blind-spots D5). `:./` resolves from the cwd — the
+    // conductor root — so a conductor in a SUBDIRECTORY of its repository reads its own files; a bare
+    // `:<path>` resolves from the top level and would answer `missing` for every one of them. The
+    // answer is BYTES: NO `encoding`, so this returns a Buffer, because `<size>` counts bytes and a
+    // decoded string sliced by it misreads every file after the first multi-byte one. `maxBuffer` is
+    // explicit (the default 1 MiB is below what the main specs already total), and an overflow
+    // (ENOBUFS) is thrown like any other failure for the caller to rethrow. The same lazy-fetch
+    // override as batchCheckCommits: a partial clone must never fetch to answer.
+    indexBlobs: (lines) =>
+      execFileSync("git", ["cat-file", "--batch"], {
+        cwd: root(), input: lines, maxBuffer: 256 * 1024 * 1024,
         stdio: ["pipe", "pipe", "ignore"], env: { ...env(), GIT_NO_LAZY_FETCH: "1" },
       }),
 
@@ -154,10 +170,18 @@ export function realGit(context) {
       execFileSync("git", args, { cwd: at ?? root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(),
 
     // ── lib/worktree-hygiene.mjs, 2 sites ──────────────────────────────────────────────────────
-    // worktree-hygiene.mjs:37 — the porcelain worktree listing. A SHELL command at its call site,
-    // kept as one (D4): the string is a constant.
+    // worktree-hygiene.mjs:37 — the porcelain worktree listing, NUL-TERMINATED (`-z`, git 2.36+).
+    // It was the newline form, and a worktree path holding a line feed arrived as two fields: the
+    // reader took the text before the break as the path and reported a truncated directory that
+    // does not exist (code review 0.43.0 minors). With -z every attribute ends in NUL and a record
+    // ends in an extra NUL, so no byte a path can hold is also a separator.
+    // LC_ALL=C (confirmation review of bd5e24e): the caller reads this operation's STDERR — it keys
+    // "not a git repository" on git's own words — and git localizes them, so under a German locale
+    // an uninitialised non-git folder was refused instead of answering []. LC_ALL overrides LANG
+    // and LANGUAGE; the -z stdout is locale-independent either way.
     worktreeList: () =>
-      execSync("git worktree list --porcelain", { cwd: root(), encoding: "utf8" }),
+      execFileSync("git", ["worktree", "list", "--porcelain", "-z"],
+        { cwd: root(), encoding: "utf8", env: { ...env(), LC_ALL: "C" } }),
 
     // worktree-hygiene.mjs:77 — is this worktree's head already merged into HEAD. `stdio: "ignore"`
     // at the call site, which is not the same option as the `["ignore","ignore","ignore"]` above.
@@ -199,6 +223,7 @@ export const GIT_OPERATIONS = [
   { name: "refsContaining", command: "git for-each-ref --contains=<sha> --count=1 --format=%(refname)", asks: "is the commit reachable from any ref" },
   { name: "diffNamesAgainstHead", command: "git diff -z --name-only HEAD -- <paths...>", asks: "which of these paths differ from HEAD" },
   { name: "batchCheckCommits", command: "git cat-file --batch-check", asks: "resolve a set of commit values in one process" },
+  { name: "indexBlobs", command: "git cat-file --batch", asks: "the index's bytes for a set of `:./<path>` names, in one process" },
   { name: "revListNotReached", command: "git rev-list <commits...> ^<head>", asks: "which of these are not reached by head" },
   { name: "isShallowRepository", command: "git rev-parse --is-shallow-repository", asks: "is this a shallow clone" },
   { name: "gitPath", command: "git rev-parse --git-path <name>", asks: "a git-internal path, relative to this directory" },
@@ -208,7 +233,7 @@ export const GIT_OPERATIONS = [
   { name: "commitSubject", command: "git log -1 --format=%s <sha>", asks: "one commit's subject line" },
   { name: "headSubject", command: "git log -1 --format=%s", asks: "HEAD's subject line" },
   { name: "commitWatchGit", command: "git <args...>", asks: "commit-watch's own plumbing, for the three arg lists it passes" },
-  { name: "worktreeList", command: "git worktree list --porcelain", asks: "every worktree, its HEAD and its branch" },
+  { name: "worktreeList", command: "git worktree list --porcelain -z", asks: "every worktree, its HEAD and its branch" },
   { name: "mergeBaseIsAncestorOfHead", command: "git merge-base --is-ancestor <sha> HEAD", asks: "is a worktree's head already merged into HEAD" },
   { name: "lsFiles", command: "git ls-files -- <paths...>", asks: "the tracked files under a pathspec" },
   { name: "describeExactTag", command: "git describe --tags --exact-match HEAD", asks: "the tag HEAD is exactly at, if any" },

@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import * as constants from "../../lib/constants.mjs";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief, gitInitWithCommit, commitFiles, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief, gitInitWithCommit, commitFiles, fixtureCommits, archiveDay } from "../fixtures/functional-harness.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -181,7 +181,7 @@ function healArchived(cwd, id, { beforeArchive } = {}) {
   if (beforeArchive) beforeArchive();
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", id),
-    path.join(cwd, "openspec", "changes", "archive", `2026-09-14-${id}`));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`));
   run(["sync"], { cwd });
 }
 
@@ -434,7 +434,7 @@ function healedWithdrawn(id, reason = "copied from the change epic", { heal = tr
   const archive = () => {
     fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
     fs.renameSync(path.join(cwd, "openspec", "changes", id),
-      path.join(cwd, "openspec", "changes", "archive", `2026-09-14-${id}`));
+      path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`));
   };
   fs.mkdirSync(path.join(cwd, "openspec", "changes", id), { recursive: true });
   fs.writeFileSync(path.join(cwd, "openspec", "changes", id, "tasks.md"), "# tasks\n\n- [x] a\n");

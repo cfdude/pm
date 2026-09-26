@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles, fixtureCommits, archiveDay } from "../fixtures/functional-harness.mjs";
 import { AGENT_OUTCOMES } from "../../lib/archive-gate.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
@@ -1471,7 +1471,7 @@ test("a delivered archive with outstanding work names BOTH remedies and the same
     ["update-epic", "remainder", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
   assert.ok(err);
   const msg = String(err.stderr || err.message);
-  assert.match(msg, /3 of 78\/81/, "the refusal states the same count the record renders");
+  assert.match(msg, /3 task\(s\) outstanding \(78\/81 done\)/, "the refusal states the same count the record renders");
   assert.match(msg, /--carried-to/, "remedy one: say where the work went");
   assert.ok(msg.includes(MARKER),
     "remedy two, quoted as the literal token: declare the item as lifecycle bookkeeping. A " +
@@ -1533,7 +1533,9 @@ function unhealed(cwd, id, lane) {
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-08-01-${id}`), { recursive: true });
   writeState(cwd, {
     version: 1, active: null, detourStack: [],
-    epics: [{ id, title: id, priority: "P1", status: "queued", role: "epic",
+    // Registered before its change was archived: the one resolver's date rule sets aside an archive
+    // older than the epic, and never ends an undated live epic (sync-registers-ids-add-epic-refuses).
+    epics: [{ id, title: id, priority: "P1", status: "queued", role: "epic", createdAt: "2025-01-01T00:00:00.000Z", 
       links: [], reconcileNeeded: false, ...(lane === undefined ? {} : { lane }) }],
   });
 }
@@ -1593,7 +1595,7 @@ test("an existing gate2 verdict is never overwritten by the heal", () => {
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-08-01-reviewed"), { recursive: true });
   writeState(cwd, {
     version: 1, active: null, detourStack: [],
-    epics: [{ id: "reviewed", title: "reviewed", priority: "P1", status: "queued", role: "epic",
+    epics: [{ id: "reviewed", title: "reviewed", priority: "P1", status: "queued", role: "epic", createdAt: "2025-01-01T00:00:00.000Z", 
       lane: "openspec", links: [], reconcileNeeded: false,
       gateReview: { gate2: { verdict: "pass", reviewedAt: "2026-07-01T00:00:00.000Z", baseSha: "aaa1111", headSha: "bbb2222" } } }],
   });
@@ -1661,7 +1663,7 @@ test("the documented sequence ends with the real disposition recorded", () => {
   // /opsx:archive moves the change directory on disk...
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", "shipped-properly"),
-    path.join(cwd, "openspec", "changes", "archive", "2026-08-24-shipped-properly"));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-shipped-properly`));
   // ...the heal observes it and flips the status, stamping `unknown` because nobody was asked.
   run(["render"], { cwd });
   const healed = readState(cwd).epics.find(e => e.id === "shipped-properly");
@@ -1710,7 +1712,7 @@ test("the heal archives an epic with 12 unticked tasks, counts intact, no refusa
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-01-01-abandoned-long-ago"), { recursive: true });
   writeState(cwd, {
     version: 1, active: null, detourStack: [],
-    epics: [{ id: "abandoned-long-ago", title: "x", priority: "P2", status: "queued", role: "epic",
+    epics: [{ id: "abandoned-long-ago", title: "x", priority: "P2", status: "queued", role: "epic", createdAt: "2025-01-01T00:00:00.000Z",
       lane: "superpowers", planPath: plan, links: [], reconcileNeeded: false }],
   });
   run(["render"], { cwd });
@@ -1752,7 +1754,7 @@ test("after an upgrade, every archived epic carries a disposition RECORD, not a 
   writeState(cwd, {
     version: 1, pmVersion: "0.26.0", active: null, detourStack: [],
     epics: [
-      { id: "healed-during-upgrade", title: "x", priority: "P1", status: "queued", role: "epic",
+      { id: "healed-during-upgrade", title: "x", priority: "P1", status: "queued", role: "epic", createdAt: "2025-01-01T00:00:00.000Z", 
         lane: "openspec", links: [], reconcileNeeded: false },
       { id: "created-archived", title: "y", priority: "P2", status: "archived", role: "epic",
         lane: "claude-code", links: [], reconcileNeeded: false,

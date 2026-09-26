@@ -1,0 +1,91 @@
+✖ add-epic refuses a second epic claiming an external-url with NO external-id (the bypass) (14.673209ms)
+✖ the refusal names the key that collided — the URL, not external-id (E1) (2.41675ms)
+✔ the emitted inward-sync registration line is refused when another epic already holds the item's URL (2.268375ms)
+✖ an ARCHIVED holder still blocks, and the refusal names the clear that frees it (3.207667ms)
+✖ update-epic --external-url refuses a URL another epic holds, naming it, and writes nothing (5.682166ms)
+✔ update-epic re-stating an epic's OWN url is not a collision (2.902ms)
+✖ update-epic --external-id enforces the URL-less fallback key (5.0735ms)
+✔ --clear external-url is never refused, even when it leaves an external-id fallback collision (4.6435ms)
+✔ an existing duplicate still loads, renders and briefs (2.64425ms)
+✔ an existing duplicate does not block an unrelated write to either holder (2.773792ms)
+✖ an existing duplicate: re-setting the key refuses naming the other holder; clearing one frees it (1.646875ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 5
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 214.306375
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ add-epic refuses a second epic claiming an external-url with NO external-id (the bypass) (14.673209ms)
+  TypeError [Error]: Cannot read properties of null (reading 'stderr')
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:16:37)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:23:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the refusal names the key that collided — the URL, not external-id (E1) (2.41675ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /external-url 'https:\/\/github\.com\/cfdude\/pm\/issues\/7'/. Input:
+  
+  "conductor: epic with external-id '7' already exists ('a') — skipped\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:33:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: epic with external-id '7' already exists ('a') — skipped\n",
+    expected: /external-url 'https:\/\/github\.com\/cfdude\/pm\/issues\/7'/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an ARCHIVED holder still blocks, and the refusal names the clear that frees it (3.207667ms)
+  TypeError [Error]: Cannot read properties of null (reading 'stderr')
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:16:37)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:51:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ update-epic --external-url refuses a URL another epic holds, naming it, and writes nothing (5.682166ms)
+  TypeError [Error]: Cannot read properties of null (reading 'stderr')
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:16:37)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:65:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ update-epic --external-id enforces the URL-less fallback key (5.0735ms)
+  TypeError [Error]: Cannot read properties of null (reading 'stderr')
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:16:37)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:82:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an existing duplicate: re-setting the key refuses naming the other holder; clearing one frees it (1.646875ms)
+  TypeError [Error]: Cannot read properties of null (reading 'stderr')
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:16:37)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:122:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)

@@ -1,0 +1,105 @@
+✔ a cross-release --member records an unmember amendment on the OLD release, naming where it went (182.229083ms)
+✔ a cross-release --member says so on stderr, naming both releases (16.792167ms)
+✔ `release show` of the old release renders the move, not "no reason given" (14.985333ms)
+✔ re-membering into the SAME release writes nothing (11.380416ms)
+✔ a pointer to a release that no longer exists is replaced with a stderr line, and nothing throws (9.222541ms)
+✔ one --member that undefers on the new release AND moves off the old one records both, on two releases (13.47775ms)
+✖ re-deferring with a NEW reason keeps the old one in the amendments trail (6.757834ms)
+✖ a re-defer names the reason it replaced on stderr, and `release show` renders both (9.796166ms)
+✖ re-deferring with the IDENTICAL reason writes nothing — not even a fresh recordedAt (7.593583ms)
+✖ three reasons in a row leave a readable chain: each amendment's `was` is the one before (11.150333ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 6
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 656.585083
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ re-deferring with a NEW reason keeps the old one in the amendments trail (6.757834ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'map')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:103:33
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a re-defer names the reason it replaced on stderr, and `release show` renders both (9.796166ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /depends on X landing/. Input:
+  
+  'conductor: rendered PROJECT.md\n' +
+    "conductor: release 'r1' — `r1`: 0 epics, 1 deferred\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:113:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: release 'r1' — `r1`: 0 epics, 1 deferred\n",
+    expected: /depends on X landing/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ re-deferring with the IDENTICAL reason writes nothing — not even a fresh recordedAt (7.593583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  ... Skipped lines
+  
+    '{\n' +
+      '  "version": 1,\n' +
+      '  "active": null,\n' +
+      '  "epics": [\n' +
+      '    {\n' +
+  ...
+      '  "detourStack": [],\n' +
+  +   '  "revision": 4,\n' +
+  -   '  "revision": 3,\n' +
+      '  "releases": [\n' +
+      '    {\n' +
+      '      "id": "r1",\n' +
+      '      "intent": "one",\n' +
+      '      "deferred": [\n' +
+  ...
+      '          "reason": "depends on X landing",\n' +
+  +   '          "recordedAt": "2026-09-25T19:39:35.664Z"\n' +
+  -   '          "recordedAt": "2026-09-25T19:39:35.662Z"\n' +
+      '        }\n' +
+      '      ]\n' +
+      '    }\n' +
+      '  ]\n' +
+      '}\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:123:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '{\n  "version": 1,\n  "active": null,\n  "epics": [\n    {\n      "id": "e0",\n      "title": "t0",\n      "priority": "P?",\n      "status": "queued",\n      "role": "epic",\n      "lane": "claude-code",\n      "links": [],\n      "reconcileNeeded": false,\n      "attributedCommits": [],\n      "createdAt": "2026-09-25T19:39:35.659Z",\n      "touchedAt": "2026-09-25T19:39:35.659Z"\n    },\n    {\n      "id": "e1",\n      "title": "t1",\n      "priority": "P?",\n      "status": "queued",\n      "role": "epic",\n      "lane": "claude-code",\n      "links": [],\n      "reconcileNeeded": false,\n      "attributedCommits": [],\n      "createdAt": "2026-09-25T19:39:35.660Z",\n      "touchedAt": "2026-09-25T19:39:35.660Z"\n    }\n  ],\n  "detourStack": [],\n  "revision": 4,\n  "releases": [\n    {\n      "id": "r1",\n      "intent": "one",\n      "deferred": [\n        {\n          "epic": "e1",\n          "reason": "depends on X landing",\n          "recordedAt": "2026-09-25T19:39:35.664Z"\n        }\n      ]\n    }\n  ]\n}\n',
+    expected: '{\n  "version": 1,\n  "active": null,\n  "epics": [\n    {\n      "id": "e0",\n      "title": "t0",\n      "priority": "P?",\n      "status": "queued",\n      "role": "epic",\n      "lane": "claude-code",\n      "links": [],\n      "reconcileNeeded": false,\n      "attributedCommits": [],\n      "createdAt": "2026-09-25T19:39:35.659Z",\n      "touchedAt": "2026-09-25T19:39:35.659Z"\n    },\n    {\n      "id": "e1",\n      "title": "t1",\n      "priority": "P?",\n      "status": "queued",\n      "role": "epic",\n      "lane": "claude-code",\n      "links": [],\n      "reconcileNeeded": false,\n      "attributedCommits": [],\n      "createdAt": "2026-09-25T19:39:35.660Z",\n      "touchedAt": "2026-09-25T19:39:35.660Z"\n    }\n  ],\n  "detourStack": [],\n  "revision": 3,\n  "releases": [\n    {\n      "id": "r1",\n      "intent": "one",\n      "deferred": [\n        {\n          "epic": "e1",\n          "reason": "depends on X landing",\n          "recordedAt": "2026-09-25T19:39:35.662Z"\n        }\n      ]\n    }\n  ]\n}\n',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ three reasons in a row leave a readable chain: each amendment's `was` is the one before (11.150333ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'map')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/unit/release-membership-history.test.mjs:131:48
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a688decd26b3f57b7/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)

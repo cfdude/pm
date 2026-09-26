@@ -18,13 +18,17 @@ export const ENGINE = path.join(path.dirname(fileURLToPath(import.meta.url)), ".
 // alone — which is the loud failure rather than a silent one, and is why it was caught here.
 import { EMPTY_CACHE } from "./harness.mjs";
 export { EMPTY_CACHE };
+// gh-cfdude-pm-224: every directory a helper here makes is scheduled for removal when the process
+// exits — 0.49.0's one mechanism (`temp-dir.mjs`), not a second one. Unscheduled, `tmpRepo()` alone
+// left ~1,850 directories in the OS temp dir per full run (both halves).
+import { removeAtExit } from "./temp-dir.mjs";
 // The half's `run`, registered by whichever harness module the importing test used. Helpers that
 // drive the engine themselves (parseBrief, setupHierarchy, nudgeAndReadLog) go through it, so they
 // are in-process with the same gateway the calling test got and not a second, spawned route.
 import { runner } from "./harness.mjs";
 
 export function tmpRepo() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "pm-test-"));
+  return removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-test-")));
 }
 // `run` and `runCombined` are NO LONGER DEFINED HERE (5.1). They call `main(argv, io)` in the
 // running process, and the only thing that differs between the halves is the git gateway the
@@ -99,7 +103,7 @@ export function expectFail(fn) {
 }
 
 export function fixtureCache(versions) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pm-cache-"));
+  const root = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-cache-")));
   for (const v of versions) {
     const dir = path.join(root, "mp", "pm", v, ".claude-plugin");
     fs.mkdirSync(dir, { recursive: true });
@@ -109,7 +113,7 @@ export function fixtureCache(versions) {
 }
 
 export function fixturePluginRoot(version, changelog) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-plugin-"));
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-plugin-")));
   fs.mkdirSync(path.join(dir, ".claude-plugin"), { recursive: true });
   fs.writeFileSync(path.join(dir, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "pm", version }) + "\n");
   if (changelog) fs.writeFileSync(path.join(dir, "CHANGELOG.md"), changelog);
@@ -141,10 +145,21 @@ export const FIXTURE_CHANGELOG = `# Changelog
 
 // ──────────────── 0.6.1: date-prefixed archive detection ────────────────
 
+/** Today's LOCAL date, `YYYY-MM-DD` — the day `openspec archive` would stamp on a change archived now.
+ *  A fixture that archives an epic's change AFTER registering that epic names the directory with it:
+ *  the one resolver's date rule (sync-registers-ids-add-epic-refuses) treats an archive dated more than
+ *  a day before the epic's `createdAt` as some other, older change, so a fixed past date would describe
+ *  a history that cannot happen and would stop healing as the calendar moves on. */
+export function archiveDay(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function withArchivedChange(cwd, id) {
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-06-25-${id}`), { recursive: true });
   writeState(cwd, { version: 1, active: id, detourStack: [], epics: [
-    { id, title: id, priority: "P0", status: "active", role: "epic", lane: "openspec", links: [] }] });
+    // Registered BEFORE its change was archived (sync-registers-ids-add-epic-refuses): an archive dated
+    // before the epic existed is, by the one resolver's date rule, not its archive.
+    { id, title: id, priority: "P0", status: "active", role: "epic", lane: "openspec", links: [], createdAt: "2026-06-01T00:00:00.000Z" }] });
 }
 
 // ───────── recompute-don't-remember: active validity + reconcileNeeded self-heal ─────────
@@ -197,7 +212,7 @@ export function gitInitWithCommit(cwd) {
 
 export function addHierarchyWorktree(cwd, epicId) {
   const branch = `hierarchy-child/${epicId}`;
-  const wtPath = fs.mkdtempSync(path.join(os.tmpdir(), "pm-wt-"));
+  const wtPath = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-wt-")));
   fs.rmdirSync(wtPath); // git worktree add requires the target not exist yet
   execFileSync("git", ["worktree", "add", "-b", branch, wtPath], { cwd });
   return wtPath;

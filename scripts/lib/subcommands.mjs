@@ -20,7 +20,8 @@ import { STORABLE_EPIC_ID, asCode, escapeControls, jsonText, printedId, orNoReme
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
-import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
+import { dispositionInvocation } from "./archive-gate.mjs";
+import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, setAsideArchiveDirs, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { engineRoot, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
@@ -132,7 +133,9 @@ export function brief() {
   requirePlatformFlag("brief");
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
-  const brief = buildBrief(loadState(), { consume: true });
+  // specSync: true — the SessionStart briefing carries the spec-sync block (handoff-demand-blind-spots
+  // D6), from the same specSyncFindings() `integrity` reads.
+  const brief = buildBrief(loadState(), { consume: true, specSync: true });
   // 0.49.0 (runtime-support) — ONE line, and only here: below the support floor, prepended at the top
   // for the reason briefing.mjs gives its currency lines. NOT in buildBrief(), which PROJECT.md (a
   // tracked file) and the PreCompact snapshot also embed — one machine's Node must never land in
@@ -163,6 +166,10 @@ export function snapshot() {
   // THE BRIEF IS A STORE ARTIFACT (0.48.0 task 1.4): `.conductor/brief.txt` is written into the
   // record directory by this verb and read by nothing in the engine, which is exactly the shape the
   // store owns. The detached-tree suppression above is unchanged.
+  // NO spec-sync block (Gate 2 I3): `.conductor/brief.txt` is TRACKED in 14 of 24 fleet repositories,
+  // and the block depends on git's index, so writing it here would put a staging-state finding into a
+  // committed file — the reason it is kept out of PROJECT.md. Its surfaces are integrity, the
+  // SessionStart briefing and the render verb's output.
   if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state) + "\n");
   errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
@@ -772,11 +779,14 @@ export function sync(quiet = false) {
   }
   const known = new Set(state.epics.map(e => e.id));
   let added = 0;
+  // Every entry skipped for its NAME, counted into the final line: a sync that skipped something must
+  // not read as a clean "synced" (sync-registers-ids-add-epic-refuses).
+  let skipped = 0;
   for (const id of activeChangeIds()) {
     if (!known.has(id)) {
       // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
       // silent skip would read as a clean sync (design D4).
-      if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); continue; }
+      if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); skipped++; continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
@@ -849,7 +859,16 @@ export function sync(quiet = false) {
 
     // 5. Real backlog — the final registration step, so only an entry no rung above matched is
     //    tested: a name no epic id can carry is skipped and named on every run (design D4).
-    if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("plan", fname)); continue; }
+    if (!STORABLE_EPIC_ID(id)) {
+      // A plan is registered under an id the operator may CHOOSE (`add-epic --plan` claims it, so the
+      // next sync answers at rung 1). Where the lowercased stem is a valid id — the uppercase
+      // `MASTER-…` plans the fleet holds — that is a runnable command; otherwise there is none to offer.
+      const lower = id.toLowerCase();
+      const remedy = STORABLE_EPIC_ID(lower) && !known.has(lower)
+        ? orNoRemedy(() => `\`add-epic --id ${printedId(lower)} --lane superpowers --plan ${commandValue(planPath, "<plan path>")}\``)
+        : undefined;
+      errStream().write(unstorableSkipLine("plan", fname, remedy)); skipped++; continue;
+    }
     const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
@@ -866,8 +885,30 @@ export function sync(quiet = false) {
   const skippedArchives = [];
   const backfilled = backfillArchive(state, skippedArchives);
   for (const dir of skippedArchives) errStream().write(unstorableSkipLine("archive directory", dir));
+  skipped += skippedArchives.length;
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
+  // An archive directory that matches an epic by NAME but that the resolver's date rule set aside is
+  // neither that epic's archive nor registered by the backfill (the name is held), so it would sit
+  // unexplained. Said on EVERY run, quiet included, like the unstorable skips: it is the only report
+  // of why a live epic was NOT archived by it (sync-registers-ids-add-epic-refuses).
+  let setAside = 0;
+  for (const e of state.epics) {
+    for (const dir of setAsideArchiveDirs(e)) {
+      const day = typeof e.createdAt === "string" && !Number.isNaN(Date.parse(e.createdAt)) ? e.createdAt.slice(0, 10) : null;
+      errStream().write(day
+        ? `conductor: sync set aside archive directory '${escapeControls(dir)}' — it predates epic '${escapeControls(e.id)}' ` +
+          `(registered ${day}), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work. ` +
+          // The other reading: the epic was registered AFTER its own change was archived. Then the
+          // operator ends it deliberately, with the archive gate's own invocation (never a bare
+          // `--status archived`, which the gate refuses).
+          `If it IS this epic's archive (registered after the change was archived), end the epic: ${asCode(dispositionInvocation(e))}\n`
+        : `conductor: sync set aside archive directory '${escapeControls(dir)}' — epic '${escapeControls(e.id)}' has no registration ` +
+          "date (`createdAt`) to compare it with, so a live epic is never ended by a bare name match; run " +
+          "`recover-created-at` to date it from git history, and the next sync decides by the date rule\n");
+      setAside++;
+    }
+  }
   const saved = saveState(state);
   // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
   // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
@@ -881,12 +922,14 @@ export function sync(quiet = false) {
       : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
   }
   if (!quiet) {
+    const skipNote = (skipped ? `; ${skipped} skipped — each named above, none registered` : "") +
+      (setAside ? `; ${setAside} archive director${setAside === 1 ? "y" : "ies"} set aside — named above` : "");
     reportSave(saved, {
-      changed: `conductor: synced (${added} new epic(s) added as untriaged)`,
+      changed: `conductor: synced (${added} new epic(s) added as untriaged${skipNote})`,
       // `added` counts registrations, and it is NOT the same question as "did the file change":
       // a sync that registers nothing still rewrites state when it heals an archive drift or
       // stamps the backfill marker. The save's own answer is the only one that is true of the file.
-      unchanged: `conductor: synced (${added} new epic(s) added as untriaged) — ${STATE_UNCHANGED}`,
+      unchanged: `conductor: synced (${added} new epic(s) added as untriaged${skipNote}) — ${STATE_UNCHANGED}`,
     });
     // What sync instructs EXTERNALLY follows direction. The engine performs none of it — it
     // reads no tracker and never will — but saying which branch applies is the difference

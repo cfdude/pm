@@ -62,7 +62,7 @@
  *                  record a disposition. The spec says an agent ASKS the engine; this is the ask
  *   integrity      READ-ONLY audit of the record itself — shapes that cannot be true
  *                  (reports; never writes state, never blocks a command)
- *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
+ *   verify-state   fail loudly if state.json changed since the last render without an engine save
  *                  (a mechanical check for an undetected hand-edit)
  *   verify-specs   READ-ONLY inventory: for every design document under a root (default
  *                  docs/superpowers/specs, override with --root), how many epics were drawn
@@ -101,7 +101,7 @@ import { verbHelp } from "./lib/help.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
-import { render } from "./lib/render.mjs";
+import { render, renderVerb } from "./lib/render.mjs";
 import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
@@ -317,7 +317,21 @@ function runInvocation(argv, io = {}) {
   //
   // The predicate is cheap (two realpaths and one existsSync) and, by construction, silent in
   // every case except two live conductors with the wrong one selected.
-  if (VERB_EFFECTS[cmd]?.effect !== "read-only") {
+  //
+  // AND NOT BEFORE INIT (code review 0.43.0, C1). A root pm never initialised is one where every verb
+  // but `init` is dormant or refuses, so it writes nothing there and a warning about that write is
+  // false — and the hooks are wired into EVERY repository on the machine, which hooks/README.md
+  // promises are silent until /pm:init. `init` keeps both warnings: it is the one verb that writes
+  // into an uninitialised root, and scaffolding the wrong repository is what they exist to catch.
+  // ONE MORE CASE for the divergence warning, and only for it (branch review): a NON-HOOK verb in an
+  // uninitialised root is about to refuse with "run /pm:init first", and when the caller is
+  // standing in a different, initialised repository that advice initialises the WRONG one. The
+  // warning names both before the refusal does. A hook stays silent — it refuses nothing there.
+  const initialized = isInitialized();
+  if (VERB_EFFECTS[cmd]?.effect !== "read-only" && !initialized && cmd !== "init" && VERB_EFFECTS[cmd]?.hook !== true) {
+    warnRootDivergence();
+  }
+  if (VERB_EFFECTS[cmd]?.effect !== "read-only" && (cmd === "init" || initialized)) {
     warnRootDivergence();
     // gh#175. THE SAME GATE, deliberately. 0.40.0 stopped the divergence warning above crying wolf
     // on the 17 read-only verbs; a second warning built beside it must inherit that gate or it
@@ -390,7 +404,9 @@ function runInvocation(argv, io = {}) {
   // Promise for the caller. See the sync-entry-point note above.
   status = ({
     init,
-    render,
+    // The VERB prints the spec-sync block after rendering; render() itself, run in-process by other
+    // verbs and hooks, never does (handoff-demand-blind-spots D6).
+    render: renderVerb,
     brief,
     snapshot,
     "commit-nudge": commitNudge,

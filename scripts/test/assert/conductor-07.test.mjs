@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, expectFail, invokeEngine, withAssertInvocation } from "../fixtures/assert-harness.mjs";
 
 // ─────────────── 4.1 SPLIT THIS FILE, AND THIS IS THE FILE-RUNG HALF ───────────────
 //
@@ -69,4 +69,103 @@ test("verify-state fails loudly when state.json is hand-edited after the last re
   assert.ok(err);
   const out = runCombined(["verify-state"], { cwd });
   assert.match(out, /hand-edit|re-render|\/pm:status/i);
+});
+
+// verify-state-false-hand-edit (code review 0.43.0, C2). A verb that SAVES without rendering —
+// `set-activity-log`, a claim — advances the record's revision and moves its mtime past the stamp.
+// Comparing mtime alone called that a hand-edit. The revision is what an engine write advances and
+// a hand-edit does not, so a newer mtime with a NEWER revision is the engine's own write. The mtime
+// is forced forward after the engine writes, so the old comparison fails however coarse the clock.
+test("verify-state does not call an engine write that saved without rendering a hand-edit", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-activity-log", "on"], { cwd });
+  run(["add-epic", "--id", "c", "--lane", "claude-code"], { cwd });
+  run(["claim", "c", "--session", "s1"], { cwd });
+  const out = runCombined(["verify-state"], { cwd });
+  assert.doesNotMatch(out, /hand-edit(?! detected)|cannot rule out/i);
+  assert.match(out, /no hand-edit detected/);
+  assert.match(out, /\/pm:status/, "a record written since the render still says PROJECT.md may be stale");
+});
+
+// Branch review of the fix above: trusting ANY revision ahead of the render stamp as the engine's
+// own made the check blind to a hand-edit made after a non-rendering save — `init`,
+// `set-activity-log on`, hand-edit → exit 0, where the old mtime check caught it. Every engine save
+// now records `{revision, mtimeMs}` on the stamp as `lastSave`, so a hand-edit after it is bytes that
+// moved at the last SAVED revision, exactly as one after a render is at the rendered revision.
+test("verify-state catches a hand-edit made AFTER an engine save that did not render", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-activity-log", "on"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const state = readState(cwd);
+  state.epics.push({ id: "hand-edited", title: "Hand edited", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false });
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  const future = new Date(Date.now() + 60_000);
+  fs.utimesSync(statePath, future, future);
+  assert.ok(expectFail(() => run(["verify-state"], { cwd })), "the hand-edit is reported");
+  const said = runCombined(["verify-state"], { cwd });
+  assert.match(said, /undetected hand-edit/);
+  assert.match(said, /after the engine last wrote it \(its last render or save/i, "it names the baseline it compared against");
+  assert.doesNotMatch(said, /AFTER the last render/, "not the render alone, which this edit came after a save to");
+});
+test("verify-state cannot rule out a hand-edit when the revision moved past the last recorded save", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const state = readState(cwd);
+  state.revision += 5;   // no engine save recorded this revision
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  assert.ok(expectFail(() => run(["verify-state"], { cwd })), "an unrecorded revision is not trusted");
+  assert.match(runCombined(["verify-state"], { cwd }), /cannot rule out a hand-edit/);
+});
+test("verify-state fails loudly when state.json's revision went BACKWARDS since the last render", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  const state = readState(cwd);
+  state.revision = 0;
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  const err = expectFail(() => run(["verify-state"], { cwd }));
+  assert.ok(err, "a rewound revision must fail verify-state");
+  assert.match(runCombined(["verify-state"], { cwd }), /revision went backwards/i);
+});
+
+// Confirmation review: `lastSave` was stamped AFTER writeRecord released the record lock, and the
+// render stamp's read-modify-write took no lock at all, so two concurrent writers could land an OLDER
+// `lastSave` last — a false "cannot rule out a hand-edit". Both now write the stamp holding the lock.
+// Observed here as the lock FILE existing at the moment each stamp write runs.
+const LOCK = (cwd) => path.join(cwd, ".conductor", "state.json.lock");
+test("an engine save stamps lastSave while it still holds the record lock", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { loadState, saveState } = await import(new URL("../../lib/state.mjs", import.meta.url).href);
+  await withAssertInvocation(cwd, async () => {
+    const s = loadState();
+    s.epics.push({ id: "x", title: "x", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false });
+    let heldAtStamp = null;
+    saveState(s, { onWritten: () => { heldAtStamp = fs.existsSync(LOCK(cwd)); } });
+    assert.equal(heldAtStamp, true, "the save's bookkeeping ran inside the lock");
+    assert.equal(fs.existsSync(LOCK(cwd)), false, "and the lock is released afterwards");
+  });
+  const stamp = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "render-stamp.json"), "utf8"));
+  assert.equal(stamp.lastSave.revision, readState(cwd).revision, "the stamped save is the one that landed");
+});
+test("the render stamp's read-modify-write runs holding the record lock", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { storeOps } = await import(new URL("../../lib/store.mjs", import.meta.url).href);
+  await withAssertInvocation(cwd, async () => {
+    const store = storeOps();
+    const realWrite = store.write.bind(store);
+    let heldAtWrite = null;
+    store.write = (name, text) => { if (name === "render-stamp.json") heldAtWrite = fs.existsSync(LOCK(cwd)); return realWrite(name, text); };
+    try {
+      const { writeRenderStamp } = await import(new URL("../../lib/render.mjs", import.meta.url).href);
+      fs.utimesSync(path.join(cwd, ".conductor", "state.json"), new Date(Date.now() + 60_000), new Date(Date.now() + 60_000));
+      writeRenderStamp();
+    } finally { store.write = realWrite; }
+    assert.equal(heldAtWrite, true, "the stamp was written, and under the lock");
+  });
 });

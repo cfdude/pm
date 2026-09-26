@@ -60,6 +60,14 @@ stop at this skill's steps alone.
    was absent from the merged file — a second PR had to restore it. `read` the page and confirm
    every edit is present before `save`.
 
+   **`edit_page` can rewrite the WHOLE page, not just the matched string — `diff` before `save`.**
+   Measured on 0.49.0: one `edit_page` on `changelog` re-serialized the entire page. It mangled an
+   older entry's `` `$` ``/`` `$&` `` code-span line and joined several multi-line list items into one
+   line. Run the session's `diff` and confirm it touches ONLY the lines you meant to change. If it
+   touches anything else, `discard_session` and make the edit as a plain git PR on `cfdude/pm-docs`
+   instead: clone, edit the `.mdx`, commit, `gh pr create`, then this step's merge. The branch
+   cleanup in step 7 still applies. That route is what shipped 0.49.0's sync.
+
 5. **Save as a PR, merge it live in the same pass — never leave it open for later review:**
    ```bash
    # mcp__Mintlify__save({ title, mode: "pr", body })  →  returns prUrl

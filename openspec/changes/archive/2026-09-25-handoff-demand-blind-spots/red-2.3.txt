@@ -1,0 +1,65 @@
+✖ 2.3 the archive refusal over BOTH parts names each part's remedy as a conjunction, and the handoff (172.331459ms)
+✖ 2.3 unconsidered-outcomes over both parts: --story alone leaves the handoff named; the --carried-to archive clears it (133.76725ms)
+✖ 2.3 the drift-heal disposition step integrity prints names --story first AND carries --carried-to; followed, it clears (78.58525ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 571.966792
+
+✖ failing tests:
+
+test at scripts/test/assert/progress-union.test.mjs:98:1
+✖ 2.3 the archive refusal over BOTH parts names each part's remedy as a conjunction, and the handoff (172.331459ms)
+  AssertionError [ERR_ASSERTION]: the count the record renders
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:107:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: cannot archive \'mixed\' as delivered — 1 task(s) outstanding (0/1 done). The outstanding story is:\n  [ ] 1. the open story\nFinish them, or record what happened to each: `update-epic mixed --story <n> --done` (it shipped) or --story <n> --wont-do "<reason>" (it will not be done, and why — the row and its reason stay on the record). If the whole remainder moved to another epic, --carried-to <epicId> --reason "<which stories moved>" instead. Naming a receiver for work nobody carried anywhere is a fabricated record.\n',
+    expected: /2 task\(s\) outstanding \(1\/3 done\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/progress-union.test.mjs:140:1
+✖ 2.3 unconsidered-outcomes over both parts: --story alone leaves the handoff named; the --carried-to archive clears it (133.76725ms)
+  AssertionError [ERR_ASSERTION]: and the checkbox source's handoff too
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:145:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/progress-union.test.mjs:159:1
+✖ 2.3 the drift-heal disposition step integrity prints names --story first AND carries --carried-to; followed, it clears (78.58525ms)
+  AssertionError [ERR_ASSERTION]: and the archive carrying --carried-to comes after it
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:167:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

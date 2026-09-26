@@ -1,0 +1,47 @@
+✔ every lesson file appears in the README index (2.022459ms)
+✔ every lesson file appears in the enforced-in table (0.425166ms)
+✔ the README index links nothing that is not a lesson file (0.264833ms)
+✔ every lesson carries the four contract fields (6.662916ms)
+✖ every declared detect: matcher is accepted by the engine's classifier (2.183833ms)
+✔ the README index's 🔔 column names exactly the lessons the hook can fire (1.233166ms)
+✔ ADVISED_TOOLS equals the lesson-advice matcher in hooks/hooks.json (0.203167ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 173.25475
+
+✖ failing tests:
+
+test at scripts/test/assert/lessons-index.test.mjs:71:1
+✖ every declared detect: matcher is accepted by the engine's classifier (2.183833ms)
+  AssertionError [ERR_ASSERTION]: a lesson's detect: is rejected — fix it, or remove it if the trigger cannot be matched precisely
+  + actual - expected
+  
+  + [
+  +   `a-fixture-reconstructed-from-live-data-dies-when-the-data-improves.md: detect: is not JSON (Unexpected token '(', "(readFileS"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`,
+  +   `a-silent-noop-edit-reports-success.md: detect: is not JSON (Unexpected token '(', "(str\\.repl"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`,
+  +   `an-unused-active-pointer-turns-a-true-check-into-noise.md: detect: is not JSON (Unexpected token 'c', "conductor\\"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`,
+  +   'cite-a-symbol-not-a-line-number.md: detect: is not JSON (No number after minus sign in JSON at position 1 (line 1 column 2)) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex',
+  +   `second-resolution-timestamps-collide-on-fast-machines.md: detect: is not JSON (Unexpected token '(', "(notStrict"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`,
+  +   `stacked-background-commits-collide-on-the-lock.md: detect: is not JSON (Unexpected token '(', "(run_in_ba"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a8b916f4e55074182/scripts/test/assert/lessons-index.test.mjs:73:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ `a-fixture-reconstructed-from-live-data-dies-when-the-data-improves.md: detect: is not JSON (Unexpected token '(', "(readFileS"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`, `a-silent-noop-edit-reports-success.md: detect: is not JSON (Unexpected token '(', "(str\\.repl"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`, `an-unused-active-pointer-turns-a-true-check-into-noise.md: detect: is not JSON (Unexpected token 'c', "conductor\\"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`, 'cite-a-symbol-not-a-line-number.md: detect: is not JSON (No number after minus sign in JSON at position 1 (line 1 column 2)) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex', `second-resolution-timestamps-collide-on-fast-machines.md: detect: is not JSON (Unexpected token '(', "(notStrict"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex`, `stacked-background-commits-collide-on-the-lock.md: detect: is not JSON (Unexpected token '(', "(run_in_ba"... is not valid JSON) — write an object like {"tool":"Bash","commandMatches":"…"}, not a bare regex` ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,37 @@
+mutation-5.4 — handoff-demand-blind-spots. 5.4 is a REGRESSION GUARD (it passed on arrival). A scratch
+COPY of scripts/ (never the tree): the check added to DELIVERED_OBLIGATIONS as a `spec-sync` variant
+whose detect() calls specSyncFindings(), and archiveGate() refusing on it. Running
+  node --test --test-reporter=spec --test-name-pattern=^5.4 scripts/test/functional/spec-sync-surfaces.test.mjs
+the archive is then refused ("cannot archive 'gate' — spec deltas absent from the index") and 5.4 FAILS.
+
+✖ 5.4 a delivered archive whose delta header the index lacks SUCCEEDS, and the next integrity names it (181.319416ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 426.159541
+
+✖ failing tests:
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:193:1
+✖ 5.4 a delivered archive whose delta header the index lacks SUCCEEDS, and the next integrity names it (181.319416ms)
+  AssertionError [ERR_ASSERTION]: a standing condition, never a refusal at the transition: conductor: cannot archive 'gate' — spec deltas absent from the index
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/functional/spec-sync-surfaces.test.mjs:212:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

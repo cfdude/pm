@@ -61,7 +61,7 @@ test("a secondary tracker is pinned to inward — any other direction is refused
 test("setting the primary tracker merges every unnamed field and never writes secondaryTrackers", () => {
   const cwd = repo();
   run(["set-tracker", "--system", "jira", "--project", "ABC"], { cwd });
-  run(["set-tracker", "--intent", "the intent"], { cwd });
+  run(["set-tracker", "--intent", "paused:todo"], { cwd });  // a well-formed pair: a malformed one is refused now
   const t = tracker(cwd);
   assert.equal(t.system, "jira");
   assert.equal(t.projectKey, "ABC");

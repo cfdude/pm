@@ -19,13 +19,13 @@
 import fs from "node:fs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
-import { STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
 import { stdinSource } from "./invocation.mjs";
 import {
   StateConflictError, StatePersistError, StateUnreadableError,
   breakStaleLock, breakStaleLockAt, conflictExitCode, defaultState, inspectLock, isStaleLock,
   lockContent, lockHolderAlive, persistFailure, revisionOfText, sameLock, shapeProblem, storeOps,
-  TIMEKEEPING_FIELDS, unreadableStateMessage,
+  TIMEKEEPING_FIELDS, unreadableStateMessage, ARTIFACT,
 } from "./store.mjs";
 
 // RE-EXPORTED, so every existing importer of these from state.mjs is unchanged: `refusal.mjs`
@@ -156,12 +156,12 @@ function seedCreationFields(epic) {
   }
 }
 
-/** pushEpic()'s refusal of an id no epic may carry (a control character or whitespace). Carries the
+/** pushEpic()'s refusal of an id no NEW epic may carry — one failing EPIC_ID_FORMAT. Carries the
  *  raw id; its message escapes it. Every caller checks STORABLE_EPIC_ID first, so reaching this is a
  *  creation path that skipped the check — loud by design. */
 export class InvalidEpicIdError extends Error {
   constructor(id) {
-    super(`epic id '${escapeControls(String(id))}' holds a control character or whitespace — it cannot be stored`);
+    super(`epic id '${escapeControls(String(id))}' does not match ${EPIC_ID_FORMAT.source} — it cannot be stored`);
     this.name = "InvalidEpicIdError";
     this.id = id;
   }
@@ -181,5 +181,30 @@ export class InvalidEpicIdError extends Error {
  *  verbs. The in-memory store reproduces the comparisons and the normalisation and drops the
  *  durability — a different sink, never a weaker engine. */
 export function saveState(state, opts = {}) {
-  return storeOps().writeRecord(state, opts);
+  // The stamp is written by the store INSIDE the record lock (`onWritten`), never after it is
+  // released: two concurrent saves stamping outside it could land the older `lastSave` last.
+  const onWritten = (revision) => {
+    recordEngineSave(revision);
+    if (typeof opts.onWritten === "function") opts.onWritten(revision);
+  };
+  return storeOps().writeRecord(state, { ...opts, onWritten });
+}
+
+/** Stamp the engine's OWN save onto the render stamp as `lastSave: {revision, mtimeMs}` — the
+ *  baseline `verify-state` compares a later mtime against (code review 0.43.0 C2, branch review).
+ *  Without it, a revision ahead of the render could only be TRUSTED (blind to a hand-edit made after
+ *  a non-rendering save) or DISTRUSTED (the false "hand-edit" after every claim). The render fields
+ *  (`renderedAt`, `stateRevision`, `stateMtimeMs`) are untouched, so the stamp still says what
+ *  PROJECT.md was rendered from. Only when a stamp exists — before the first render there is no
+ *  baseline to extend. Observability: it never breaks the save it records. */
+function recordEngineSave(revision) {
+  try {
+    const store = storeOps();
+    const read = store.read(ARTIFACT.RENDER_STAMP);
+    if (read.kind !== "ok" || !Number.isInteger(revision)) return;
+    const stamp = JSON.parse(read.text);
+    if (!stamp || typeof stamp !== "object") return;
+    stamp.lastSave = { revision, mtimeMs: store.mtimeMs(ARTIFACT.RECORD) };
+    store.write(ARTIFACT.RENDER_STAMP, JSON.stringify(stamp, null, 2) + "\n");
+  } catch { /* the save already landed; a missed stamp reads as "cannot rule out", never as clean */ }
 }

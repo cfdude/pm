@@ -34,10 +34,23 @@ import { fakeGit, loadCapture } from "../fixtures/fake-git.mjs";
  *  `key value` shape, the KEY — because "the porcelain format changed" and "the fixture gained a
  *  worktree" are different diagnoses and a bare offset tells them apart badly. */
 function describeDifference(expected, actual) {
+  // BYTES ARE COMPARED AS BYTES (handoff-demand-blind-spots D5): `indexBlobs` answers a Buffer, and a
+  // String() of it would decode invalid UTF-8 to U+FFFD on both sides and call two different answers equal.
+  if (Buffer.isBuffer(expected) || Buffer.isBuffer(actual)) {
+    const x = Buffer.isBuffer(expected) ? expected : Buffer.from(String(expected ?? ""), "utf8");
+    const y = Buffer.isBuffer(actual) ? actual : Buffer.from(String(actual ?? ""), "utf8");
+    if (x.equals(y)) return null;
+    let at = 0;
+    while (at < x.length && x[at] === y[at]) at++;
+    return `byte ${at + 1} of ${x.length} canned / ${y.length} live — canned ${x.subarray(at, at + 16).toString("hex")}, ` +
+      `live ${y.subarray(at, at + 16).toString("hex")}`;
+  }
   const a = expected === null || expected === undefined ? "" : String(expected);
   const b = actual === null || actual === undefined ? "" : String(actual);
   if (a === b) return null;
-  const linesA = a.split("\n"), linesB = b.split("\n");
+  // A NUL is a field end too: `worktreeList` reads `--porcelain -z`, and a field the check names must
+  // still be a field there.
+  const linesA = a.split(/[\n\0]/), linesB = b.split(/[\n\0]/);
   for (let i = 0; i < Math.max(linesA.length, linesB.length); i++) {
     if (linesA[i] === linesB[i]) continue;
     const key = /^([a-z][a-z-]*) /.exec(linesB[i] ?? "") || /^([a-z][a-z-]*) /.exec(linesA[i] ?? "");
@@ -55,7 +68,8 @@ function describeDifference(expected, actual) {
 function callFake(gateway, op, args) {
   try {
     const r = gateway[op](...args);
-    return { status: 0, value: r === undefined || r === null ? null : String(r) };
+    // A Buffer stays a Buffer, so the byte-valued operation is compared byte for byte.
+    return { status: 0, value: r === undefined || r === null ? null : Buffer.isBuffer(r) ? r : String(r) };
   } catch (e) {
     return { status: e && typeof e.status === "number" ? e.status : -1, value: null, stderr: String(e && e.stderr || "") };
   }
@@ -126,6 +140,7 @@ test("4.4 the NO-REPOSITORY answers are the real git's too, operation by operati
     abbreviateCommit: [aSha], verifyCommitName: [aSha], mergeBaseIsAncestor: [aSha, aSha],
     committerDate: [aSha], commitExists: [aSha], refsContaining: [aSha],
     diffNamesAgainstHead: [["README.md"]], batchCheckCommits: [`${aSha}^{commit}\n`],
+    indexBlobs: [":./openspec/specs/x/spec.md\n"],
     revListNotReached: [[aSha], aSha], gitPath: ["shallow"], logPickaxe: ["x", ".conductor/state.json"],
     diffTreeNames: [aSha], commitSubject: [aSha], mergeBaseIsAncestorOfHead: [aSha],
     lsFiles: [[".claude/skills"]],

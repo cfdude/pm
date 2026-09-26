@@ -1,0 +1,345 @@
+✔ 1.1 every real source class yields at least one invocation (57.169916ms)
+✔ 1.3 every emitted invocation names a DISPATCHED verb (2.329708ms)
+✔ 1.3 a known invocation passes the engine's pre-dispatch check (3.849042ms)
+✔ 6.3 the hand-edit scanner: the emitted text never tells a reader to edit state.json by hand (4.967041ms)
+✔ Layer B registry: every integrity CHECKS id has a builder in the functional file (source read) (1.18525ms)
+✔ 5.1 twin: each finding names the epic, the change directory, the capability, the headers and the direction (57.011792ms)
+✔ 5.1 twin: a reader returning null (git cannot answer) → no presence or absence finding; unpaired still reported (2.2995ms)
+✔ 5.1 twin: nothing in scope → the index is never read (1.474708ms)
+✔ 5.1 twin: the stored status does not decide scope — the one resolver's directory does (1.978125ms)
+✔ 5.1 twin: the remedy names the delta, the ## Requirements edit and `git -C <root> add openspec/`, shell-quoted (0.124583ms)
+✖ 5.1 twin: the check is registered in integrity, and is NOT a delivered obligation (a standing condition) (0.32125ms)
+✖ 5.1 twin: under the half's double (no repository) integrity reports no presence/absence finding for it (137.59525ms)
+✖ 5.1 integrity names the epic, the change directory, the capability and both lost ADDED headers (237.95975ms)
+✖ 5.1 the staged-then-reset SEQUENCE: staged rewrite → nothing; `git reset --hard` → the lost header (206.7785ms)
+✖ 5.1 the REMEDY clears a lost ADDED header: copy the block into ## Requirements, then the printed git line (171.83175ms)
+✖ 5.1 the REMEDY clears a REMOVED header still present: delete its block, then the printed git line (159.600375ms)
+✖ 5.1 the REMEDY clears a RENAMED pair: rename the FROM header to its TO, then the printed git line (128.158584ms)
+✖ 5.1 an outcome other than delivered is out of scope (113.423708ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 10
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1464.745917
+
+✖ failing tests:
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:92:1
+✖ 5.1 twin: the check is registered in integrity, and is NOT a delivered obligation (a standing condition) (0.32125ms)
+  AssertionError [ERR_ASSERTION]: integrity carries delivered-epic-spec-deltas-absent
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/spec-sync-surfaces.test.mjs:93:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:97:1
+✖ 5.1 twin: under the half's double (no repository) integrity reports no presence/absence finding for it (137.59525ms)
+  AssertionError [ERR_ASSERTION]: the check is listed, at zero or more
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/spec-sync-surfaces.test.mjs:105:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:62:1
+✖ 5.1 integrity names the epic, the change directory, the capability and both lost ADDED headers (237.95975ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no delivered-epic-spec-deltas-absent block:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  self-referential-epic-id — 0 finding(s): a stored epic id whose value is the id of the epic that holds it
+  empty-epic-id — 0 finding(s): a stored epic id whose value is an empty string
+  grant-names-nothing — 0 finding(s): an autonomy pre-authorization whose action and category are both empty
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 21 check(s).
+  
+      at block (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:49:10)
+      at integrity (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:57:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:64:17)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:70:1
+✖ 5.1 the staged-then-reset SEQUENCE: staged rewrite → nothing; `git reset --hard` → the lost header (206.7785ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no delivered-epic-spec-deltas-absent block:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  self-referential-epic-id — 0 finding(s): a stored epic id whose value is the id of the epic that holds it
+  empty-epic-id — 0 finding(s): a stored epic id whose value is an empty string
+  grant-names-nothing — 0 finding(s): an autonomy pre-authorization whose action and category are both empty
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 21 check(s).
+  
+      at block (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:49:10)
+      at integrity (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:57:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:74:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:95:1
+✖ 5.1 the REMEDY clears a lost ADDED header: copy the block into ## Requirements, then the printed git line (171.83175ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no delivered-epic-spec-deltas-absent block:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  self-referential-epic-id — 0 finding(s): a stored epic id whose value is the id of the epic that holds it
+  empty-epic-id — 0 finding(s): a stored epic id whose value is an empty string
+  grant-names-nothing — 0 finding(s): an autonomy pre-authorization whose action and category are both empty
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 21 check(s).
+  
+      at block (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:49:10)
+      at integrity (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:57:10)
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:82:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:97:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:100:1
+✖ 5.1 the REMEDY clears a REMOVED header still present: delete its block, then the printed git line (159.600375ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no delivered-epic-spec-deltas-absent block:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  self-referential-epic-id — 0 finding(s): a stored epic id whose value is the id of the epic that holds it
+  empty-epic-id — 0 finding(s): a stored epic id whose value is an empty string
+  grant-names-nothing — 0 finding(s): an autonomy pre-authorization whose action and category are both empty
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 21 check(s).
+  
+      at block (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:49:10)
+      at integrity (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:57:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:102:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:106:1
+✖ 5.1 the REMEDY clears a RENAMED pair: rename the FROM header to its TO, then the printed git line (128.158584ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no delivered-epic-spec-deltas-absent block:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  self-referential-epic-id — 0 finding(s): a stored epic id whose value is the id of the epic that holds it
+  empty-epic-id — 0 finding(s): a stored epic id whose value is an empty string
+  grant-names-nothing — 0 finding(s): an autonomy pre-authorization whose action and category are both empty
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 21 check(s).
+  
+      at block (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:49:10)
+      at integrity (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:57:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:108:17)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:114:1
+✖ 5.1 an outcome other than delivered is out of scope (113.423708ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no delivered-epic-spec-deltas-absent block:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  self-referential-epic-id — 0 finding(s): a stored epic id whose value is the id of the epic that holds it
+  empty-epic-id — 0 finding(s): a stored epic id whose value is an empty string
+  grant-names-nothing — 0 finding(s): an autonomy pre-authorization whose action and category are both empty
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 21 check(s).
+  
+      at block (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:49:10)
+      at integrity (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:57:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/functional/spec-sync-surfaces.test.mjs:116:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

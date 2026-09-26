@@ -680,10 +680,19 @@ Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epic
 reconciles `openspec/changes/archive/` — an archived change the conductor never knew about is
 registered as an epic already in `archived` status. That backfill is announced once and marked by
 `archiveBackfilledAt`, never a silent side effect. A change directory, plan file or archive
-directory whose name holds a control character or whitespace is **skipped and named on stderr on
-every run** — it cannot be an epic id, so rename it to register it. Where a tracker's `direction` includes `inward`
+directory whose name is not an id `add-epic` would accept (`^[a-z0-9][a-z0-9._-]*$` — so `x|y`,
+`.hidden` or `MASTER-plan.md`) is **skipped and named on stderr on every run**, and the final line
+counts the skips; rename it to register it (an uppercase plan is given a runnable `add-epic --id
+<lowercased> --plan …` instead). An archive directory dated before a live epic was registered
+never ends that epic or clears its active pointer, and `sync` names it; an already-archived epic
+still finds its archive by name. Where a tracker's `direction` includes `inward`
 **and** it names a scope to read, `/pm:sync` also pulls open items in as untriaged epics,
-deduplicated by `externalUrl` (globally unique) rather than bare `externalId`.
+deduplicated by `externalUrl` (globally unique) rather than bare `externalId`. The engine
+enforces the same rule on every writer — `add-epic`, `update-epic` (setting `--external-url` or
+`--external-id`) and `add-many` each refuse a tracker item another epic (archived included) already holds, naming it;
+`update-epic <holder> --clear external-url` frees it. The URL is compared **exactly**, after trimming surrounding
+whitespace: a trailing `/`, a different host case or a query string make a different URL, so
+mirror the item's canonical URL as the tracker reports it.
 
 A **plan file is matched to its epic by association, not by filename**. Plan filenames carry a
 date prefix and epic ids do not, so a filename match fired only by luck and every other epic's
@@ -705,7 +714,7 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | Subcommand | Does |
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
-| `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
+| `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. The document may hold only `parent` and `epics`; `links` take the `--link` grammar or `{type, epic, reason}` objects and must name an epic in the record or the batch — anything else refuses the batch by name. |
 | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at write time and stored as the full object name (`HEAD` or a tag records the commit it names now); a value that is not a commit in this clone is refused with nothing written. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. Matched by commit identity where the value resolves (a full sha withdraws a legacy short entry of the same commit), and by exact spelling otherwise, so a legacy value that no longer resolves stays withdrawable. The array stays append-only, so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
@@ -770,8 +779,18 @@ exactly as a `<!-- pm:lifecycle -->` task does (`3/3 stories · 2 disposed`), an
 disposition is never silently replaced.
 
 This adds **no new archive refusal.** The archive gate already refuses `--outcome delivered`
-while any work is outstanding, and inline stories are the *first* progress source it reads — so
-an epic with an unticked story has been blocked since that gate shipped. What was missing was an
+while any work is outstanding, and it counts inline stories along with any task source — so
+an epic with an unticked story has been blocked since that gate shipped.
+
+**Stories and a task source count together, and an archived change is still read.** An epic's
+progress is the UNION of its inline stories and its checkbox source — its plan file, or for an
+openspec-lane epic the change's `tasks.md`. Neither hides the other: before 0.50.0 one
+`--add-story` on an epic with a `tasks.md` at 1/3 made the tasks unread, and an archive recorded
+`delivered` at `1/1` with two tasks open. And once `/opsx:archive` has moved
+`openspec/changes/<id>/`, the checkbox source is the ARCHIVED `tasks.md` for every epic, not only a
+backfilled one — so the archive gate's handoff demand no longer reads `0/0` at exactly the moment it
+asks (two epics in pm's own record had been recorded `delivered` at 53/54 and 46/47 that way). Where
+both parts hold open work, the refusal names each part's remedy and says both must be done. What was missing was an
 honest way past it: the refusal's other remedy, the `<!-- pm:lifecycle -->` marker, cannot be
 written on an inline story at all (there is no task source), which left only `--carried-to` —
 naming a receiving epic for work that was *dropped* rather than moved, i.e. the fabricated
@@ -1024,6 +1043,13 @@ removes an exclusion, keeps what it said, and does **not** make the epic a membe
 undefer `--member` has always performed is now recorded the same way, marked `via: "member"` and
 carrying no invented reason.
 
+**Nothing a release recorded disappears silently.** `--member` on an epic that belongs to another
+release still moves it, and now records the move on the release it left — an `unmember` amendment
+with `via: "member"` and `to: "<new release>"` — and says so on stderr, so `release show <old>`
+reads "moved to `<new>`" instead of quietly holding one epic fewer. Re-running `--defer` with a new
+reason keeps the old one as a `redefer` amendment (`was`, `wasRecordedAt`); the same reason again
+writes nothing.
+
 **`--defer` also takes its reason inline** — `--defer "<epicId>:<why>"`, split on the first colon,
 the same rule `--deferral` uses — because deferral was one concept spelled three ways across two
 verbs and no two agreed. `--deferral` now accepts `::` as well as `:` for the same reason, and
@@ -1045,8 +1071,22 @@ again (`archived-with-withdrawn-gate-2`), an epic the archive-drift heal flipped
 while carrying a passing Gate 2, an epic sitting in a status the engine does not define, a dangling
 epic reference, an archive directory no epic corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
 open in a release that has already delivered, an epic another epic declares it supersedes
-that never ended, and a `github-issues` tracker whose recorded repo is not `[HOST/]owner/name`
-(`tracker-repo-not-a-github-repository`, which gets no `gh` listing step until it is re-recorded).
+that never ended, a `github-issues` tracker whose recorded repo is not `[HOST/]owner/name`
+(`tracker-repo-not-a-github-repository`, which gets no `gh` listing step until it is re-recorded),
+and a `delivered` openspec epic whose archived spec deltas never reached `openspec/specs/`
+(`delivered-epic-spec-deltas-absent`).
+
+**The spec-sync check reads git's INDEX.** For each `delivered` openspec epic whose change is
+archived, every ADDED/MODIFIED header (and RENAMED `TO`) of its archived delta specs must be under the
+main spec's `## Requirements`, and every REMOVED header (and RENAMED `FROM`) must not be — headers
+only, with a later archived change that touched the same header discharging it. The main spec is read
+from the index in one `git cat-file --batch` (the working tree would have passed 0.48.0's real loss:
+its archive rewrote two main specs, the commit staged only `openspec/changes`, and a hard reset then
+discarded four requirements). Between `openspec archive` and `git add` a correct archive is reported
+too — stage `openspec/` whole and it clears. It is a standing condition, never a refusal, reported by
+`integrity`, the SessionStart briefing and the `render` verb's printed output, and never written into
+`PROJECT.md`. Its remedy: make the main spec hold what the archived delta requires, then
+`git -C <conductor root> add openspec/`.
 
 **The release one closes a real loop.** A release object carries no delivery marker, so "this
 release delivered" is read from its members: at least one holds a `delivered` disposition, and
@@ -1315,10 +1355,14 @@ structurally could not place the other two — the many-to-one cases `specPath` 
 <details>
 <summary><code>verify-state</code> — Detect an undetected hand-edit of state.json</summary>
 
-Compares `state.json`'s filesystem mtime against the timestamp recorded at the last
-`render()`. Fails loudly (non-zero exit) if `state.json` was modified after the last render —
-mechanical evidence of a hand-edit, which is against the rules (`state.json` should only
-change through the engine's own subcommands).
+Compares `state.json`'s revision and filesystem mtime against the engine's last recorded write:
+the stamp the last `render()` wrote, or the `lastSave` every engine save adds to it, whichever is
+later. A hand-edit advances neither, so it fails loudly (non-zero exit) when the file changed at the
+same revision as that write, when the revision went backwards, or when it moved past any revision
+the engine recorded — mechanical evidence of a hand-edit, which is against the rules (`state.json`
+should only change through the engine's own subcommands). Saves by verbs that do not re-render (a
+claim, `set-activity-log`) exit 0 and say PROJECT.md may be stale. It cannot see a hand-edit
+followed by an engine save, which re-baselines over it; `commands/verify-state.md` lists the rest.
 
 </details>
 
@@ -1363,7 +1407,7 @@ conductor.mjs update-epic <id> — 31 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
-  --priority <P0|P1|P2|P3>
+  --priority <P0|P1|P2|P3|P?>
   --status <untriaged|queued|active|paused|later|blocked|planned|archived>
   --parent <a value>
   --external-id <a value>
@@ -1567,7 +1611,7 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
 | PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps an observation record (`.conductor/commit-observe.json`, git-ignored) holding a **reflog anchor** — the byte size of HEAD's reflog and its last line, stored as bytes (`anchor.lineBase64`), since a reflog is not guaranteed to be UTF-8 — and the set of shas it has already reported. Each run reports every `commit…` reflog entry after the anchor, oldest first, whatever happened to HEAD afterwards, so `-m`, `-am`, `-F`, an editor commit, a commit inside a script, a commit followed by a `checkout`, several commits in one call and a commit inside a call that then failed are all noticed, while a command that merely *mentions* `git commit`, a rejected commit, a commit in another repo and a plain `checkout`/`reset` are silent. A commit reachable from no branch (rewritten by `pull --rebase`, reset away) is named as rewritten or abandoned and gets no row and no attribution command. Every report says the commits **landed since the last observation — this call, another terminal, or a parallel call**; the hook cannot tell which. The observation runs under an O_EXCL lock broken on **liveness**: at once when its holder is confirmed dead, after 10 s when liveness cannot be confirmed, never for age alone while the holder is confirmed alive (a 10-minute pid-reuse backstop aside); a run that cannot take it within 200 ms skips and the next run reports. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and never for a commit touching that epic's own artifacts or only pm's own generated files, compared from the conductor root). A wrong automatic row is corrected with `retract-detour`. An amend replaces: the replaced commit's row is retracted and, where it is attributed, the `update-epic <id> --withdraw-commit` to run first is printed. On an **observed** commit it also prints the attribution command for every **candidate** — the detour epic and each paused epic while a detour is live, otherwise the active epic — one runnable `update-epic <id> --attribute-commit <sha>…` each, stating that choosing is the agent's, so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while a lone candidate's `attributedCommits` is still empty and one line thereafter, and it is absent where the engine would be guessing: no candidate, an epic with no attribution array, or an unobserved commit. It never writes an attribution itself. |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Matched for `Bash` too, where it blocks only a member of a closed, documented list of write shapes (a redirection to a file, an in-place stream editor, `tee`, a copier, `git apply`, destroying the conductor record) and passes everything else; the list is incomplete by construction and the block says so. Also blocks while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown — with one carve-out that keeps the remedies runnable: an affirmed `Bash` call carrying command text is allowed whatever its shape. |
-| PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. |
+| PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. A matcher that cannot work (not a JSON object, an unknown key, a regex that does not compile or repeats a group whose whole body is one repeated atom, like `(a+)+`) is rejected rather than guessed at. Each regex gets its own 50 ms budget and the whole regex phase at most 1 s, so a pathological matcher costs its own advice, never the tool call's time or another lesson's advice. |
 
 **Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
 CLI you upgrade by hand** — and `openspec update`, which regenerates the per-project instruction
@@ -1721,6 +1765,7 @@ pm/ (this repo)
 ├── commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync
 │                                 /pm:epic /pm:hierarchy /pm:tracker /pm:feedback /pm:lane-routing
 │                                 /pm:review-mode /pm:gate-guard /pm:changelog /pm:upgrade
+│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md
 ├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PostToolUseFailure · PreToolUse
