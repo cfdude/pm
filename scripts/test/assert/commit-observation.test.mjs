@@ -71,3 +71,11 @@ test("2.4 the observation record is not consulted when it is corrupt — the hoo
 // behaviour, the retract-detour rows, the AUTO-DETOUR shapes and the detour hint's candidates — all
 // require a real repository whose reflog can be read and whose commits can be moved (design D5).
 // The decisions taken when nothing can be observed are asserted above, on the per-commit path.
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — twin note for the functional file's fixture change.
+// The one archive resolver now sets aside an archive directory dated more than a day before the epic's
+// `createdAt`, and never ends an undated live epic on a bare name. The functional fixtures that
+// registered an epic and then archived its change under a FIXED past date (or hand-wrote a live epic
+// with no `createdAt`) described a history that cannot happen; they now date the directory with
+// `archiveDay()` (fixtures/helpers.mjs) or give the epic an earlier `createdAt`. Their assertions are
+// unchanged. The rule itself is asserted per commit in assert/sync-registration-ids.test.mjs.

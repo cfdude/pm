@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, archiveDay, REFRESH_GATE_HEADING, fixtureCommits } from "../fixtures/functional-harness.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -535,7 +535,7 @@ test("8.2: a change registered while active and archived later resolves to ONE e
   // Now archive it the way openspec does: the directory moves under archive/ with a date prefix.
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", "live-change"),
-    path.join(cwd, "openspec", "changes", "archive", "2026-08-20-live-change"));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-live-change`));
   run(["sync"], { cwd });
   const matches = readState(cwd).epics.filter(e => e.id.endsWith("live-change"));
   assert.equal(matches.length, 1, "the existing epic flips to archived; no second epic appears");
@@ -588,7 +588,7 @@ test("8.3: an epic the conductor MANAGED reads its archived tasks.md too (handof
   // archived tasks.md the checkbox source of EVERY archived openspec change, not only a backfilled one.
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");
+  const dir = path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-managed-change`);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [ ] the archive instruction\n");
   run(["add-epic", "--id", "managed-change", "--lane", "openspec", "--status", "archived"], { cwd });
@@ -1207,7 +1207,7 @@ function healArchivedWithGates(cwd, id) {
   writeState(cwd, state);
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", id),
-    path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`));
   run(["sync"], { cwd });
 }
 
@@ -1352,7 +1352,7 @@ function healArchivedUngated(cwd, id) {
   run(["sync"], { cwd });
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
   fs.renameSync(path.join(cwd, "openspec", "changes", id),
-    path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`));
+    path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`));
   run(["sync"], { cwd });
 }
 

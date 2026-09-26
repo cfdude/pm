@@ -98,7 +98,7 @@ export function setActive() {
   const state = loadState();
   const t = state.epics.find(e => e.id === id);
   if (!t) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
-  if (t.status === "archived" || isArchived(id)) {
+  if (t.status === "archived" || isArchived(t)) {
     die(`conductor: epic '${escapeControls(id)}' is archived — cannot make it active\n`);
   }
   const previous = state.active;

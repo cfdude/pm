@@ -262,7 +262,7 @@ function readDeltas(dir, root) {
  *  "archived" here, whatever the stored status says, so integrity and the briefing read the same
  *  directory), its lane is openspec (absent read as openspec) and its outcome is `delivered`. */
 export function inSpecSyncScope(epic) {
-  return !!epic && isOpenspecLane(epic) && outcomeOf(epic) === "delivered" && archivedChangeDir(epic.id) !== null;
+  return !!epic && isOpenspecLane(epic) && outcomeOf(epic) === "delivered" && archivedChangeDir(epic) !== null;
 }
 
 /**
@@ -271,7 +271,7 @@ export function inSpecSyncScope(epic) {
  * is in scope. `readIndex` defaults to git.mjs indexFileContents(); a test hands it a stub.
  */
 export function specSyncFindings(epics, { readIndex = indexFileContents } = {}) {
-  const inScope = (epics || []).filter(inSpecSyncScope).map(e => ({ epic: e.id, dir: archivedChangeDir(e.id) }));
+  const inScope = (epics || []).filter(inSpecSyncScope).map(e => ({ epic: e.id, dir: archivedChangeDir(e) }));
   if (!inScope.length) return [];
   const root = archiveDir();
   const scopeDirs = new Set(inScope.map(s => s.dir));

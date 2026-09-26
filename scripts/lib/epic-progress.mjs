@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { engineRoot, changesDir, archiveDir, plansDir, laneRank, isOpenspecLane, withdrawnGate, escapeControls } from "./constants.mjs";
-import { engineStamp, isStoryDisposed } from "./disposition.mjs";
+import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
 import { errStream } from "./invocation.mjs";
@@ -93,30 +93,72 @@ export function archivedChanges(dir = archiveDir()) {
  *  undated name and then took the FIRST stripped match in directory order — the oldest — while
  *  `isArchived()` matched a regex over the literal id, so an id that itself carried a date prefix
  *  could read as archived with no tasks found. */
-export function archivedChangeDir(id, dir = archiveDir()) {
-  const want = strippedChangeId(id);
+export function archivedChangeDir(epicOrId, dir = archiveDir()) {
+  const record = epicOrId && typeof epicOrId === "object" ? epicOrId : null;
+  const want = strippedChangeId(record ? record.id : epicOrId);
   const dated = (name) => (/^\d{4}-\d{2}-\d{2}-/.test(name) ? name.slice(0, 10) : "");
-  const hits = archivedChanges(dir).filter(c => c.id === want).map(c => c.dir);
+  const hits = archivedChanges(dir).filter(c => c.id === want).map(c => c.dir).filter(d => canBeArchiveOf(record, dated(d)));
   if (!hits.length) return null;
   hits.sort((a, b) => dated(b).localeCompare(dated(a)) || b.localeCompare(a));
   return hits[0];
+}
+
+/** THE DATE RULE, applied inside the one resolver and nowhere else (sync-registers-ids-add-epic-refuses).
+ *  Can an archive directory dated `day` (`YYYY-MM-DD`, or "" when undated) be `record`'s archive?
+ *
+ *  A name is not an identity. `archive/2025-01-01-add-auth` matched an ACTIVE epic `add-auth` registered
+ *  months later, and the drift heal archived it (outcome `unknown`) and cleared the active pointer —
+ *  with sync still printing "synced". `openspec archive` dates the directory the day a change is
+ *  archived, and `createdAt` is stamped when the conductor first learned of the epic (pushEpic), so a
+ *  change archived BEFORE its epic existed is some other, older change that happened to share the name.
+ *
+ *  - No record (a bare id): nothing to date — the name match stands.
+ *  - Registered BY the archive backfill: the epic was built FROM its archive, so its `createdAt`
+ *    postdates the archive by construction — exempt.
+ *  - Undated directory: no date to compare — the name match stands (the older manual convention).
+ *  - Datable record: the directory is set aside when its date is more than ONE DAY before the epic's
+ *    `createdAt` day. The slack is because openspec writes a LOCAL date and `createdAt` is UTC, so an
+ *    epic registered on a US evening carries the next UTC day.
+ *  - UNDATABLE record (`createdAt` absent, null or unparseable): a LIVE epic matches nothing — the
+ *    resolver never ends live work on a bare name — while an ENDED one still locates its files. That
+ *    failure is visible and reversible (the epic stays open; an openspec one reads "no change on disk";
+ *    `recover-created-at` dates it from history, after which the date rule decides), where the other failure is a
+ *    silent archive that takes the active pointer with it. */
+function canBeArchiveOf(record, day) {
+  if (!record || isArchiveBackfilled(record) || !day) return true;
+  const created = typeof record.createdAt === "string" ? Date.parse(record.createdAt) : NaN;
+  if (Number.isNaN(created)) return record.status === "archived";
+  const earliest = new Date(created - 86400000).toISOString().slice(0, 10);
+  return day >= earliest;
+}
+
+/** The archive directories that MATCH `record` by name and that the date rule set aside — so a
+ *  caller can say why an epic was not healed rather than leaving the directory silently orphaned.
+ *  Same enumeration and same rule as archivedChangeDir(); it only reports the complement. */
+export function setAsideArchiveDirs(record, dir = archiveDir()) {
+  if (!record || typeof record !== "object") return [];
+  const want = strippedChangeId(record.id);
+  const dated = (name) => (/^\d{4}-\d{2}-\d{2}-/.test(name) ? name.slice(0, 10) : "");
+  return archivedChanges(dir).filter(c => c.id === want).map(c => c.dir).filter(d => !canBeArchiveOf(record, dated(d)));
 }
 
 /** Where an archived change's task source actually sits, or a path that does not exist.
  *
  *  `CHANGES_DIR/<id>/tasks.md` cannot exist once a change is archived — openspec MOVES the
  *  directory — so a consumer that needs the counts has to look where the file went: the directory
- *  the one resolver names, the same one `isArchived()` answers from. */
-export function archivedTasksPath(id) {
-  const hit = archivedChangeDir(id);
+ *  the one resolver names, the same one `isArchived()` answers from. Takes the RECORD, so the date
+ *  rule applies (a bare id still resolves by name). */
+export function archivedTasksPath(epicOrId) {
+  const hit = archivedChangeDir(epicOrId);
+  const id = epicOrId && typeof epicOrId === "object" ? epicOrId.id : epicOrId;
   return path.join(archiveDir(), hit ?? String(id), "tasks.md");
 }
 
 /** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`, and an
  *  older/manual archive is `archive/<id>`: both are the one resolver's matches, so this answer and
- *  `archivedTasksPath()`'s can never disagree. */
-export function isArchived(id) {
-  return archivedChangeDir(id) !== null;
+ *  `archivedTasksPath()`'s can never disagree. Pass the epic RECORD — a bare id skips the date rule. */
+export function isArchived(epicOrId) {
+  return archivedChangeDir(epicOrId) !== null;
 }
 
 /** Heal drift between the conductor and the on-disk archive: any epic whose change is
@@ -131,7 +173,7 @@ export function isArchived(id) {
 export function reconcileArchived(state) {
   let changed = false;
   for (const e of state.epics) {
-    if (e.status !== "archived" && isArchived(e.id)) {
+    if (e.status !== "archived" && isArchived(e)) {
       e.status = "archived";
       // An ended epic holds no claim — the same removal `update-epic` makes, through the same helper.
       const released = releaseClaimOfEndedEpic(e);
@@ -171,7 +213,9 @@ export function reconcileArchived(state) {
     const a = state.epics.find(e => e.id === state.active);
     // Missing entirely (!a), archived, or archived on disk — any of these means the
     // pointer no longer refers to a real, in-flight epic.
-    if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }
+    // The RECORD, not the id: the pointer is cleared only for an archive the date rule accepts as this
+    // epic's, so an unrelated older directory can never take it (sync-registers-ids-add-epic-refuses).
+    if (!a || a.status === "archived" || isArchived(a)) { state.active = null; changed = true; }
   }
   // reconcileNeeded is a genuine state-TRANSITION flag, not a pure function of current state:
   // POP removes the detour-stack frame BEFORE reconciliation runs, so "is there still a live frame"
@@ -329,7 +373,7 @@ export function epicProgress(epic) {
       //
       // The LIVE path still wins while it exists: it is authoritative for a change in flight, and
       // a change can be un-archived and re-proposed under the same id.
-      c = countCheckboxes(archivedTasksPath(epic.id));
+      c = countCheckboxes(archivedTasksPath(epic));
     }
     checkbox = { kind: "openspec", done: c.done, total: c.total, excluded: c.excluded, open: c.total - c.done, exists: c.exists };
     if (!c.exists && !archived) warn = "tasks.md missing";
@@ -406,7 +450,7 @@ export function resolveEpics(state) {
     if (!onDisk.has(e.id)) {
       const lane = e.lane || "openspec";
       out.push({ ...e, lane, progress: epicProgress({ ...e, lane }),
-        status: isArchived(e.id) ? "archived" : e.status, present: false });
+        status: isArchived(e) ? "archived" : e.status, present: false });
     }
   }
   // EFFECTIVE priority, attached here and nowhere else. resolveEpics() is the ONE place the
@@ -441,7 +485,7 @@ export function resolveEpics(state) {
  *  no change on disk BY DESIGN and it must never show the warning, regardless of whether the
  *  on-disk archive-dir naming convention still matches. */
 export function missing(e) {
-  return isOpenspecLane(e) && !e.present && !isArchived(e.id) &&
+  return isOpenspecLane(e) && !e.present && !isArchived(e) &&
     e.status !== "planned" && e.status !== "archived";
 }
 

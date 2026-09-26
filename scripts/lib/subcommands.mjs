@@ -20,7 +20,7 @@ import { STORABLE_EPIC_ID, asCode, escapeControls, jsonText, printedId, orNoReme
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
-import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
+import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, setAsideArchiveDirs, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { engineRoot, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
@@ -887,6 +887,23 @@ export function sync(quiet = false) {
   skipped += skippedArchives.length;
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
+  // An archive directory that matches an epic by NAME but that the resolver's date rule set aside is
+  // neither that epic's archive nor registered by the backfill (the name is held), so it would sit
+  // unexplained. Said on EVERY run, quiet included, like the unstorable skips: it is the only report
+  // of why a live epic was NOT archived by it (sync-registers-ids-add-epic-refuses).
+  let setAside = 0;
+  for (const e of state.epics) {
+    for (const dir of setAsideArchiveDirs(e)) {
+      const day = typeof e.createdAt === "string" && !Number.isNaN(Date.parse(e.createdAt)) ? e.createdAt.slice(0, 10) : null;
+      errStream().write(day
+        ? `conductor: sync set aside archive directory '${escapeControls(dir)}' — it predates epic '${escapeControls(e.id)}' ` +
+          `(registered ${day}), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work\n`
+        : `conductor: sync set aside archive directory '${escapeControls(dir)}' — epic '${escapeControls(e.id)}' has no registration ` +
+          "date (`createdAt`) to compare it with, so a live epic is never ended by a bare name match; run " +
+          "`recover-created-at` to date it from git history, and the next sync decides by the date rule\n");
+      setAside++;
+    }
+  }
   const saved = saveState(state);
   // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
   // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
@@ -900,7 +917,8 @@ export function sync(quiet = false) {
       : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
   }
   if (!quiet) {
-    const skipNote = skipped ? `; ${skipped} skipped — each named above, none registered` : "";
+    const skipNote = (skipped ? `; ${skipped} skipped — each named above, none registered` : "") +
+      (setAside ? `; ${setAside} archive director${setAside === 1 ? "y" : "ies"} set aside — named above` : "");
     reportSave(saved, {
       changed: `conductor: synced (${added} new epic(s) added as untriaged${skipNote})`,
       // `added` counts registrations, and it is NOT the same question as "did the file change":

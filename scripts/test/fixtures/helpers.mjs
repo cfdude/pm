@@ -145,10 +145,21 @@ export const FIXTURE_CHANGELOG = `# Changelog
 
 // ──────────────── 0.6.1: date-prefixed archive detection ────────────────
 
+/** Today's LOCAL date, `YYYY-MM-DD` — the day `openspec archive` would stamp on a change archived now.
+ *  A fixture that archives an epic's change AFTER registering that epic names the directory with it:
+ *  the one resolver's date rule (sync-registers-ids-add-epic-refuses) treats an archive dated more than
+ *  a day before the epic's `createdAt` as some other, older change, so a fixed past date would describe
+ *  a history that cannot happen and would stop healing as the calendar moves on. */
+export function archiveDay(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function withArchivedChange(cwd, id) {
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-06-25-${id}`), { recursive: true });
   writeState(cwd, { version: 1, active: id, detourStack: [], epics: [
-    { id, title: id, priority: "P0", status: "active", role: "epic", lane: "openspec", links: [] }] });
+    // Registered BEFORE its change was archived (sync-registers-ids-add-epic-refuses): an archive dated
+    // before the epic existed is, by the one resolver's date rule, not its archive.
+    { id, title: id, priority: "P0", status: "active", role: "epic", lane: "openspec", links: [], createdAt: "2026-06-01T00:00:00.000Z" }] });
 }
 
 // ───────── recompute-don't-remember: active validity + reconcileNeeded self-heal ─────────

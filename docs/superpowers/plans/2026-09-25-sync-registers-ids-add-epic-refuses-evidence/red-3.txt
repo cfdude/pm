@@ -1,0 +1,84 @@
+✔ sync registers only ids add-epic accepts, names every skip, and counts the skips in its final line (74.421375ms)
+✔ pushEpic, the one creation sink, refuses every id add-epic refuses (0.326917ms)
+✔ add-epic, add-many and sync share ONE validator — no creation site tests the format itself (0.541667ms)
+✖ an archive dated before the epic existed neither ends it nor takes its active pointer, and sync names it (73.261334ms)
+✔ an archive dated on or after the epic's registration still heals it (80.813459ms)
+✖ the one resolver: the date rule, its one day of slack, the backfill exemption and the undatable fallback (1.306625ms)
+✖ every consumer of the resolver passes the RECORD, never the bare id (0.980167ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 372.69175
+
+✖ failing tests:
+
+test at scripts/test/assert/sync-registration-ids.test.mjs:69:1
+✖ an archive dated before the epic existed neither ends it nor takes its active pointer, and sync names it (73.261334ms)
+  AssertionError [ERR_ASSERTION]: the live epic is not ended by an older, unrelated archive
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/assert/sync-registration-ids.test.mjs:77:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'archived',
+    expected: 'archived',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/sync-registration-ids.test.mjs:95:1
+✖ the one resolver: the date rule, its one day of slack, the backfill exemption and the undatable fallback (1.306625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + null
+  - '2026-09-25-y'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/assert/sync-registration-ids.test.mjs:107:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: '2026-09-25-y',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/sync-registration-ids.test.mjs:120:1
+✖ every consumer of the resolver passes the RECORD, never the bare id (0.980167ms)
+  AssertionError [ERR_ASSERTION]: epic-progress.mjs calls the resolver with a bare id
+  + actual - expected
+  
+  + [
+  +   'export function isArchived(id) {',
+  +   '    if (e.status !== "archived" && isArchived(e.id)) {',
+  +   '    if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }',
+  +   '      c = countCheckboxes(archivedTasksPath(epic.id));',
+  +   '        status: isArchived(e.id) ? "archived" : e.status, present: false });',
+  +   '  return isOpenspecLane(e) && !e.present && !isArchived(e.id) &&'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/assert/sync-registration-ids.test.mjs:128:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'export function isArchived(id) {', '    if (e.status !== "archived" && isArchived(e.id)) {', '    if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }', '      c = countCheckboxes(archivedTasksPath(epic.id));', '        status: isArchived(e.id) ? "archived" : e.status, present: false });', '  return isOpenspecLane(e) && !e.present && !isArchived(e.id) &&' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

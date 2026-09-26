@@ -94,6 +94,25 @@ ticked tasks. Writing an `ungated` verdict for it would assert a permanent, uncl
 against every change archived before the conductor existed, and the completion-shaped integrity
 checks exclude it for the same reason.
 
+## An archive older than the epic is not its archive
+
+The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a
+**name is not an identity**. An archive directory dated (`YYYY-MM-DD-<id>`) more than a day before
+the epic's `createdAt` is some older, unrelated change that happens to share the name, so it
+**neither ends the epic nor clears its active pointer**. (The day of slack covers openspec's local
+date against `createdAt`'s UTC.) A live epic with no `createdAt` at all is never ended by a bare name
+match. Every surface asks the same resolver — the heal, `set-active`, the briefing, the archived
+task counts, the spec-sync check and the cross-spec review — so none of them can disagree. `sync`
+names each directory it set aside, every run, and counts them in its final line:
+
+```
+conductor: sync set aside archive directory '2025-01-01-add-auth' — it predates epic 'add-auth' (registered 2026-09-25), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work
+```
+
+For an epic with no registration date the line says so and names `recover-created-at`, which dates
+it from git history; the next sync then decides by the rule. An epic registered BY the archive
+backfill is exempt — it was built from that very directory.
+
 ## What sync does about your tracker(s) — decided by direction, not by vendor
 
 The engine's `sync` only scans local files (OpenSpec changes, Superpowers plans) — it never

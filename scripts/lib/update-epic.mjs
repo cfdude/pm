@@ -144,7 +144,7 @@ function echoedTokens(tokens) {
 export function deliveredRegression(id, snapshot, next, { status } = {}) {
   const asString = (v) => (typeof v === "string" ? v : undefined);
   if (outcomeOf(snapshot) !== "delivered" || asString(status) === "archived") return [];
-  if (!(isArchived(id) || (snapshot.status === "archived" && status === undefined))) return [];
+  if (!(isArchived({ ...snapshot, id }) || (snapshot.status === "archived" && status === undefined))) return [];
   const carriedToOf = (e) => (e.disposition && e.disposition.carriedTo) || undefined;
   const before = deliveredObligations(snapshot, { carriedTo: carriedToOf(snapshot) });
   const after = deliveredObligations(next, { carriedTo: carriedToOf(next) });

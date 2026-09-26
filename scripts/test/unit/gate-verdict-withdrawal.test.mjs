@@ -218,3 +218,11 @@ unitTest("4.5 diffEvents emits gate-withdrawn on GROWTH of withdrawnGateReviews,
 // archived agent-recorded delivered epic" and the replay of the end-to-end remedy all depend on a
 // Gate 2 PASS, which requires a real commit range — functional-only by subject (design D5). The
 // refusals and the record shape above are the part of the same surface this half can prove.
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — twin note for the functional file's fixture change.
+// The one archive resolver now sets aside an archive directory dated more than a day before the epic's
+// `createdAt`, and never ends an undated live epic on a bare name. The functional fixtures that
+// registered an epic and then archived its change under a FIXED past date (or hand-wrote a live epic
+// with no `createdAt`) described a history that cannot happen; they now date the directory with
+// `archiveDay()` (fixtures/helpers.mjs) or give the epic an earlier `createdAt`. Their assertions are
+// unchanged. The rule itself is asserted per commit in assert/sync-registration-ids.test.mjs.

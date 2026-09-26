@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import os from "node:os";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, observationRepo as helperObservationRepo, tmpRepo } from "../fixtures/functional-harness.mjs";
+import { ENGINE, EMPTY_CACHE, observationRepo as helperObservationRepo, tmpRepo, archiveDay } from "../fixtures/functional-harness.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const lib = (name) => new URL(`../../lib/${name}`, import.meta.url).href;
@@ -879,7 +879,8 @@ const passGate2 = (repo, id, base, head) =>
   repo.ok(["record-gate-review", id, "--gate", "2", "--verdict", "pass", "--base-sha", base, "--head-sha", head]);
 /** Archive by the drift heal: the change directory lands under archive/ and `render` heals. */
 function healArchive(repo, id) {
-  repo.file(`openspec/changes/archive/2026-09-01-${id}/proposal.md`, "# archived\n");
+  // Dated today: an archive older than the epic is not its archive (sync-registers-ids-add-epic-refuses).
+  repo.file(`openspec/changes/archive/${archiveDay()}-${id}/proposal.md`, "# archived\n");
   repo.ok(["render"]);
   assert.equal(repo.epic(id).status, "archived", "fixture: the heal archived the epic");
 }
@@ -900,7 +901,7 @@ const INTEGRITY_BUILDERS = {
       const repo = remedyRepo();
       repo.ok(["add-epic", "--id", "zt", "--lane", "openspec", "--title", "zt"]);
       repo.file("openspec/changes/zt/tasks.md", "## 1\n\n- [ ] 1.1 never ticked\n");
-      repo.file("openspec/changes/archive/2026-09-01-zt/tasks.md", "## 1\n\n- [ ] 1.1 never ticked\n");
+      repo.file(`openspec/changes/archive/${archiveDay()}-zt/tasks.md`, "## 1\n\n- [ ] 1.1 never ticked\n");
       repo.ok(["render"]);
       return { repo, epicId: "zt" };
     },

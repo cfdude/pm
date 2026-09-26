@@ -678,7 +678,11 @@ x("subcommands.mjs", "sync", {
   "claim.label": 1,
   "added": 2,
   "skipped": 1,
+  "setAside": 1,
 }, "engine", "a literal artifact label and counts");
+x("subcommands.mjs", "sync", {
+  "day": 1,
+}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day");
 x("subcommands.mjs", "sync", {
   "skipNote": 2,
 }, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");

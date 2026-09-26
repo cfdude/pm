@@ -56,7 +56,7 @@ then. One day of slack because openspec writes a LOCAL date and `createdAt` is U
   ENDS a live epic by name alone — a live (status not `archived`) undatable epic matches no archive
   — while an ended epic still locates its files by name. The failure this chooses is visible and
   reversible (the epic stays open, an openspec one shows "no change on disk", and
-  `recover-created-at` or `update-epic --status archived` resolves it), never a silent archive that
+  `recover-created-at` dates it from history, after which the date rule decides), never a silent archive that
   clears the active pointer.
 - Measured on this repository before committing to the rule: 17 epics match an archive directory
   by name, and the rule changes the answer for 0 of them.

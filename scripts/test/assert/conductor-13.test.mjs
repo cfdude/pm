@@ -165,3 +165,11 @@ test("a task that merely DOCUMENTS the marker is not excluded by it", () => {
 // under scripts/lib/ reads .outcome or .recordedBy off an epic" and "no module decides openspec-lane
 // membership with a strict comparison" are source sweeps whose population is the whole tree. All are
 // functional-only by subject (design D5), and the RULES they protect are asserted above.
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — twin note for the functional file's fixture change.
+// The one archive resolver now sets aside an archive directory dated more than a day before the epic's
+// `createdAt`, and never ends an undated live epic on a bare name. The functional fixtures that
+// registered an epic and then archived its change under a FIXED past date (or hand-wrote a live epic
+// with no `createdAt`) described a history that cannot happen; they now date the directory with
+// `archiveDay()` (fixtures/helpers.mjs) or give the epic an earlier `createdAt`. Their assertions are
+// unchanged. The rule itself is asserted per commit in assert/sync-registration-ids.test.mjs.

@@ -174,7 +174,7 @@ export function ungatedArchives(epics) {
     // The disk test runs LAST — isArchived() reads a directory per epic.
     if (!isOpenspecLane(e) || !inCompletionScope(e)) continue;
     const withdrawal = withdrawnGate(e, 2);
-    if (!withdrawal || !(e.status === "archived" || isArchived(e.id))) continue;
+    if (!withdrawal || !(e.status === "archived" || isArchived(e))) continue;
     // ANY Gate 2 withdrawal that took back a verdict which had superseded an `ungated` stamp —
     // not only the latest — so a re-record and a second withdrawal can never hide "never reviewed".
     const archivedUngated = (Array.isArray(e.withdrawnGateReviews) ? e.withdrawnGateReviews : [])

@@ -47,11 +47,12 @@ export const NO_CROSS_SPEC_REVIEW = "no cross-spec review";
  *  directory order (the OLDEST), so a change archived twice was reviewed against its stale specs
  *  (Gate 2 I4 of handoff-demand-blind-spots). A second date-prefix rule written here is a second
  *  place for the archive move to be handled wrongly. */
-export function changeSpecRoot(changeId, root = engineRoot()) {
+export function changeSpecRoot(epicOrId, root = engineRoot()) {
+  const changeId = epicOrId && typeof epicOrId === "object" ? epicOrId.id : epicOrId;
   const changesDir = path.join(root, "openspec", "changes");
   const live = path.join(changesDir, changeId);
   if (fs.existsSync(path.join(live, "specs"))) return { root: live, id: strippedChangeId(changeId) };
-  const dir = archivedChangeDir(changeId, path.join(changesDir, "archive"));
+  const dir = archivedChangeDir(epicOrId, path.join(changesDir, "archive"));
   if (dir) {
     const arch = path.join(changesDir, "archive", dir);
     if (fs.existsSync(path.join(arch, "specs"))) return { root: arch, id: strippedChangeId(dir) };
@@ -95,7 +96,7 @@ function walkMarkdown(dir) {
 export function releaseSpecFiles(state, epics, releaseId, root = engineRoot()) {
   const seen = new Map();
   for (const epic of releaseMembers(epics, releaseId)) {
-    const r = changeSpecRoot(epic.id, root);
+    const r = changeSpecRoot(epic, root);
     if (!r) continue;
     for (const abs of walkMarkdown(path.join(r.root, "specs"))) {
       const key = `${r.id}/${path.relative(r.root, abs).split(path.sep).join("/")}`;

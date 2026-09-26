@@ -11,7 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, withAssertInvocation, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, readState, writeState, withAssertInvocation, invokeEngine, archiveDay } from "../fixtures/assert-harness.mjs";
 import { bar, epicProgress, outstandingWork } from "../../lib/epic-progress.mjs";
 
 const writeTasks = (cwd, rel, lines) => {
@@ -20,7 +20,7 @@ const writeTasks = (cwd, rel, lines) => {
   fs.writeFileSync(path.join(d, "tasks.md"), "# Tasks\n\n" + lines.join("\n") + "\n");
 };
 const liveTasks = (cwd, id, lines) => writeTasks(cwd, path.join("openspec", "changes", id), lines);
-const archivedTasks = (cwd, id, lines) => writeTasks(cwd, path.join("openspec", "changes", "archive", `2026-09-20-${id}`), lines);
+const archivedTasks = (cwd, id, lines) => writeTasks(cwd, path.join("openspec", "changes", "archive", `${archiveDay()}-${id}`), lines);
 const epic = (over) => ({ id: "u", title: "u", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [], ...over });
 const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 

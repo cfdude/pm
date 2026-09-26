@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, expectFail, archiveDay } from "../fixtures/assert-harness.mjs";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
 const LEGACY = () => JSON.parse(fs.readFileSync(path.join(FIX, "state-0.26.0.json"), "utf8"));
@@ -174,7 +174,7 @@ test("8.3: an epic the conductor MANAGED renders its archived tasks.md too (hand
   // source stays unread). Read from PROJECT.md, the surface a human reads.
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");
+  const dir = path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-managed-change`);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [ ] the archive instruction\n");
   run(["add-epic", "--id", "managed-change", "--lane", "openspec", "--status", "archived"], { cwd });
