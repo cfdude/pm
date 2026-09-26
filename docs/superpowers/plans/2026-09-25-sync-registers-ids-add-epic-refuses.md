@@ -92,6 +92,20 @@ then. One day of slack because openspec writes a LOCAL date and `createdAt` is U
    MODIFIED delta in `openspec/changes/handoff-demand-blind-spots/`; the date rule joins that
    change's `conductor-record` delta with scenarios.
 
+## Task 6 — Gate 1 / cross-spec review fixes
+
+1. RED (`…-evidence/red-8.txt`): the one-day slack edge as a pure predicate (unit rung, now that
+   `canBeArchiveOf` is exported), a REOPENED backfilled epic, and the set-aside line's runnable
+   `update-epic … --status archived` for a late-registered epic.
+2. GREEN: export `canBeArchiveOf`; the set-aside line appends the archive gate's own
+   `dispositionInvocation(e)`. Undated directories stay name-matched, with the reason written down.
+3. Specs (change deltas only): MODIFIED *sync reconciles the archive directory* and *Archive
+   registration cannot produce duplicate epics* (registration identity stays name-only; a set-aside
+   directory is held and reported); the resolver paragraph states the rule's purpose, the undated
+   rationale, the backfill exemption for live epics and three new scenarios; gate-integrity's
+   spec-sync scope no longer says "whatever the stored status says"; the output-text-integrity
+   ADDED block names the line requirement instead of "above".
+
 ## Required item 1 — call-site sweep
 
 Derived with `rg` at Task 4 (comment lines excluded).

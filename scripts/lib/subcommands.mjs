@@ -20,6 +20,7 @@ import { STORABLE_EPIC_ID, asCode, escapeControls, jsonText, printedId, orNoReme
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
+import { dispositionInvocation } from "./archive-gate.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, setAsideArchiveDirs, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
@@ -897,7 +898,11 @@ export function sync(quiet = false) {
       const day = typeof e.createdAt === "string" && !Number.isNaN(Date.parse(e.createdAt)) ? e.createdAt.slice(0, 10) : null;
       errStream().write(day
         ? `conductor: sync set aside archive directory '${escapeControls(dir)}' — it predates epic '${escapeControls(e.id)}' ` +
-          `(registered ${day}), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work\n`
+          `(registered ${day}), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work. ` +
+          // The other reading: the epic was registered AFTER its own change was archived. Then the
+          // operator ends it deliberately, with the archive gate's own invocation (never a bare
+          // `--status archived`, which the gate refuses).
+          `If it IS this epic's archive (registered after the change was archived), end the epic: ${asCode(dispositionInvocation(e))}\n`
         : `conductor: sync set aside archive directory '${escapeControls(dir)}' — epic '${escapeControls(e.id)}' has no registration ` +
           "date (`createdAt`) to compare it with, so a live epic is never ended by a bare name match; run " +
           "`recover-created-at` to date it from git history, and the next sync decides by the date rule\n");

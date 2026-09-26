@@ -124,7 +124,12 @@ export function archivedChangeDir(epicOrId, dir = archiveDir()) {
  *  - ENDED record (`status: archived`): the name match stands. It locates the epic's files; it ends
  *    nothing, and the record already says the work ended.
  *  - Registered BY the archive backfill: the epic was built FROM its archive — exempt.
- *  - Undated directory: no date to compare — the name match stands (the older manual convention).
+ *  - Undated directory: no date to compare — the name match stands, even for a live epic. Deliberately
+ *    unbounded: `openspec archive` always writes a date, so an undated directory is a hand-made move,
+ *    and the only evidence left about it is its name. Setting it aside would stop every repository
+ *    that archives by hand from healing, with no date to decide by; the incident this rule answers
+ *    (`archive/2025-01-01-add-auth`) was dated. The residual risk is the same collision class,
+ *    reachable only by hand-naming an unrelated directory exactly after a live epic.
  *  - LIVE, datable record: the directory is set aside when its date is more than ONE DAY before the
  *    epic's `createdAt` day. The slack is because openspec writes a LOCAL date and `createdAt` is UTC,
  *    so an epic registered on a US evening carries the next UTC day.
@@ -133,7 +138,7 @@ export function archivedChangeDir(epicOrId, dir = archiveDir()) {
  *    an openspec one reads "no change on disk"; `recover-created-at` dates it from history, after which
  *    the date rule decides), where the other failure is a silent archive that takes the active pointer
  *    with it. */
-function canBeArchiveOf(record, day) {
+export function canBeArchiveOf(record, day) {
   if (!record || record.status === "archived" || isArchiveBackfilled(record) || !day) return true;
   const created = typeof record.createdAt === "string" ? Date.parse(record.createdAt) : NaN;
   if (Number.isNaN(created)) return false;

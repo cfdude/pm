@@ -169,3 +169,17 @@ test("set-active refuses an epic whose change is archived on disk before any hea
   assert.notEqual(r.status, 0, `set-active must refuse:\n${r.stderr}`);
   assert.match(r.stderr, /is archived — cannot make it active/);
 });
+
+// Gate 1 minor: the set-aside line offered only "rename it if unrelated". When the directory IS the
+// epic's own archive (the epic was registered after its change was archived), the operator needs a
+// runnable way to END it — the archive gate's own disposition invocation.
+test("the set-aside line also prints a runnable way to end the epic, for a directory that IS its archive", () => {
+  const cwd = initRepo();
+  run(["add-epic", "--id", "late-registered", "--lane", "claude-code"], { cwd });
+  mkdirs(cwd, "openspec/changes/archive/2025-01-01-late-registered");
+  const r = invokeEngine(["sync"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  const line = r.stderr.split("\n").find(l => l.includes("set aside archive directory '2025-01-01-late-registered'")) || "";
+  assert.match(line, /rename the directory if it is unrelated work/, line);
+  assert.match(line, /`update-epic late-registered --status archived --outcome <[a-z|]+> --reason "<why>" --no-deferrals`/, line);
+});

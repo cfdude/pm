@@ -14,4 +14,6 @@
   a bare name match (`recover-created-at` dates it). An epic that is already archived still finds its
   archive by name — its task counts, spec-sync and cross-spec scope are unchanged, even where pm's
   own date recovery dated it after its archive. `sync` names each directory it set aside for a live
-  epic, every run, and counts them in its final line.
+  epic, every run, and counts them in its final line; where that directory is really the epic's own
+  archive (the epic was registered late), the same line prints the `update-epic … --status archived
+  --outcome … --no-deferrals` invocation that ends it.

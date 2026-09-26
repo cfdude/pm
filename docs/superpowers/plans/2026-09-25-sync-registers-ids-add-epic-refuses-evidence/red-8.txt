@@ -1,0 +1,65 @@
+✔ sync registers only ids add-epic accepts, names every skip, and counts the skips in its final line (102.518625ms)
+✔ add-epic, add-many and sync share ONE validator — no creation site tests the format itself (0.681167ms)
+✔ an archive dated before the epic existed neither ends it nor takes its active pointer, and sync names it (518.646625ms)
+✔ an archive dated on or after the epic's registration still heals it (226.645917ms)
+✔ the one resolver: the date rule, its one day of slack, the backfill exemption and the undatable fallback (5.724916ms)
+✔ every consumer of the resolver passes the RECORD, never the bare id (3.847167ms)
+✔ an ALREADY-archived epic dated after its archive keeps its counts, and sync advises nothing (196.550125ms)
+✔ set-active refuses an epic whose change is archived on disk before any heal has run (138.6275ms)
+✖ the set-aside line also prints a runnable way to end the epic, for a directory that IS its archive (144.806042ms)
+✔ pushEpic, the one creation sink, refuses every id add-epic refuses (5.121625ms)
+✖ the date rule: one day of slack, exactly — day-1 matches, day-2 is set aside (0.48725ms)
+✖ the backfill exemption stands on its own: a REOPENED backfilled epic still matches its older archive (0.102417ms)
+✖ an ended record and an undated directory resolve by name; a live undatable record matches no dated directory (0.100042ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 9
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2057.842917
+
+✖ failing tests:
+
+test at scripts/test/assert/sync-registration-ids.test.mjs:176:1
+✖ the set-aside line also prints a runnable way to end the epic, for a directory that IS its archive (144.806042ms)
+  AssertionError [ERR_ASSERTION]: conductor: sync set aside archive directory '2025-01-01-late-registered' — it predates epic 'late-registered' (registered 2026-09-26), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/assert/sync-registration-ids.test.mjs:184:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: sync set aside archive directory '2025-01-01-late-registered' — it predates epic 'late-registered' (registered 2026-09-26), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work",
+    expected: /`update-epic late-registered --status archived --outcome <[a-z|]+> --reason "<why>" --no-deferrals`/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the date rule: one day of slack, exactly — day-1 matches, day-2 is set aside (0.48725ms)
+  TypeError [Error]: canBeArchiveOf is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/unit/sync-registration-ids.test.mjs:28:16
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the backfill exemption stands on its own: a REOPENED backfilled epic still matches its older archive (0.102417ms)
+  TypeError [Error]: canBeArchiveOf is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/unit/sync-registration-ids.test.mjs:37:16
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an ended record and an undated directory resolve by name; a live undatable record matches no dated directory (0.100042ms)
+  TypeError [Error]: canBeArchiveOf is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/unit/sync-registration-ids.test.mjs:43:16
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a1e30e9eac09f6846/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

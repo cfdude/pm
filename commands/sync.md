@@ -108,8 +108,12 @@ same resolver, so none of them can disagree. `sync` names each directory it set 
 epic, every run, and counts them in its final line:
 
 ```
-conductor: sync set aside archive directory '2025-01-01-add-auth' — it predates epic 'add-auth' (registered 2026-09-25), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work
+conductor: sync set aside archive directory '2025-01-01-add-auth' — it predates epic 'add-auth' (registered 2026-09-25), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work. If it IS this epic's archive (registered after the change was archived), end the epic: `update-epic add-auth --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals`
 ```
+
+A set-aside directory is not registered as a new epic either: its name is held. An UNDATED directory
+(a hand-made move — `openspec archive` always writes a date) still matches a live epic by name, since
+its name is the only evidence about it.
 
 For an epic with no registration date the line says so and names `recover-created-at`, which dates
 it from git history; the next sync then decides by the rule. An epic registered BY the archive
