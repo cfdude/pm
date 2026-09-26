@@ -488,6 +488,9 @@ agent) do:
    `externalId`: item numbers are unique only within one tracker/repo, so two trackers can each
    hold an item numbered the same without those being the same item. Where one side has no URL,
    they are not a duplicate either — a URL-less legacy epic must not block a genuinely distinct item.
+   An ARCHIVED epic still holds its item's URL — the engine refuses a second epic for it and names
+   the holder. When an item comes back REOPENED, never register a second epic for it: propose
+   `update-epic <id> --status untriaged` on the archived holder to the user instead.
 3. Otherwise register a new untriaged epic, running this line as written with only its
    placeholders filled in. Fill every placeholder taken from the item — `<issue-title>`, `<issue-url>` — as
    ONE shell-quoted word: wrap the value in single quotes and write each `'` inside it as `'\''`.

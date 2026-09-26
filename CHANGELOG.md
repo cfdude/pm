@@ -75,15 +75,7 @@ schema change, so no migration runs.
   archive backfill skipped a name holding whitespace or a control character, but still registered
   a change directory `x|y` (whose pipe splits PROJECT.md's Epics table), `.hidden`, or an uppercase
   plan file under ids `add-epic` refuses. Every registration path now applies the same id rule
-  (`^[a-z0-9][a-z0-9._-]*# Changelog
-
-All notable changes to the `pm` plugin are documented here.
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-This project adheres to [Semantic Versioning](https://semver.org/).
-
----
-
-). A skipped entry is named on stderr every run, sync's final line counts
+  (`^[a-z0-9][a-z0-9._-]*$`). A skipped entry is named on stderr every run, sync's final line counts
   the skips instead of a bare "synced", and an uppercase plan such as `MASTER-plan.md` is given a
   runnable `add-epic --id master-plan --lane superpowers --plan …` that registers and claims it.
   Epics already stored under a legacy id keep loading, rendering and updating.
@@ -139,15 +131,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   are now retrieval-only.
 * **A lesson's `detect:` regex can no longer stall a tool call.** The `lesson-advice` hook runs
   before every Bash, Edit, Write and NotebookEdit call, and a catastrophic matcher such as
-  `^(a+)+# Changelog
-
-All notable changes to the `pm` plugin are documented here.
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-This project adheres to [Semantic Versioning](https://semver.org/).
-
----
-
- used to hold each call until Claude Code's 60 s hook timeout. Now each regex gets its
+  `^(a+)+$` used to hold each call until Claude Code's 60 s hook timeout. Now each regex gets its
   own 50 ms budget, and one hook run spends at most 1 s on regexes in total. Each regex sees at most
   the first 4096 characters of the command's first line. A regex that runs out of time counts as
   not matched, so a runaway lesson loses only its own advice; the lessons after it still fire. The
