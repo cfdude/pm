@@ -8339,7 +8339,7 @@
         "90d25ebc5098a36258da518c2189dc569cb1c430"
       ],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-26T02:33:17.222Z",
+      "touchedAt": "2026-09-26T05:16:10.383Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:09.437Z",
@@ -8352,10 +8352,24 @@
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-25T20:53:46.239Z",
+          "reviewedAt": "2026-09-26T05:16:10.380Z",
           "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
-          "headSha": "101ebb777cbdd2a2b98a11a859a207d500d97c71",
-          "reviewer": "two fresh-context lenses (A correctness: monorepo index paths, byte-vs-char sizes, no injectable reader, unreachable reset scenario; B absent edits: a functional test asserting the old behaviour, missed deliveredObligations readers, PROJECT.md leak) round 1 fail (14 I); fixed a6e4901; confirmation fail (1 BLOCK); fixed 101ebb7; final narrow check pass; minors (git -C <root> in the remedy, 5.1 asserts the printed text + REMOVED/RENAMED cases) folded into apply; 2026-09-25"
+          "headSha": "04fc2cd81a7117d10095ea1b6771536eb748cdc2",
+          "reviewer": "re-recorded after the 0.50.0 date-rule amendment to its conductor-record delta + new output-text-integrity delta (72979f7a..04fc2cd8, authored by sync-registers-ids-add-epic-refuses): fresh-context Gate 1 round 1 fail (2 I contradictions with unmodified main requirements) — fixed with MODIFIED blocks; final check pass; 2026-09-25",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-25T20:53:46.239Z",
+            "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+            "headSha": "101ebb777cbdd2a2b98a11a859a207d500d97c71",
+            "reviewer": "two fresh-context lenses (A correctness: monorepo index paths, byte-vs-char sizes, no injectable reader, unreachable reset scenario; B absent edits: a functional test asserting the old behaviour, missed deliveredObligations readers, PROJECT.md leak) round 1 fail (14 I); fixed a6e4901; confirmation fail (1 BLOCK); fixed 101ebb7; final narrow check pass; minors (git -C <root> in the remedy, 5.1 asserts the printed text + REMOVED/RENAMED cases) folded into apply; 2026-09-25"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-26T02:34:59.534Z",
+          "baseSha": "12fa65fa7cd51dffbc5411a9984055d3141fe34c",
+          "headSha": "90d25ebc5098a36258da518c2189dc569cb1c430",
+          "reviewer": "two fresh-context lenses (A spec alignment + 42 mutations; B absent edits, commit integrity, perf n=3): round 1 fail (2 C: an index-read failure crashed brief/snapshot/render; exit 128 read as no-repository so a corrupt index reported 0 findings; 2 I: snapshot wrote the block into brief.txt tracked in 14/24 fleet repos; changeSpecRoot missed the one resolver) — fixed 36d05ea9..d361027c; confirmation fail (1 I: integrity's catch widened to every check, weakening 9+ negative tests) — narrowed to spec-sync with findingsFor asserting !unavailable at 90d25ebc; mutation-proven; functional 1227/1227; 2026-09-25"
         }
       }
     },
@@ -8605,10 +8619,22 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (D1). subcommands.mjs sync/backfillArchive register 'Add Auth', 'x|y', '.hidden', 'My Plan.md' (the id format is enforced only in add-epic); x|y breaks the Epics table and spaces break every emitted update-epic line. An active claude-code epic add-auth is archived with outcome unknown and the active pointer cleared because an unrelated archive/2025-01-01-add-auth exists; sync prints 'synced (0 new…)'. Fix: one id validator shared by all registration paths; the heal matches by recorded spec path, not bare name.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "92f1c98279f770db1a561597fb6f7f6afa7954f6",
+        "3c36c0557559d9a4d7a9e18d56dbf3a0d85f95b7",
+        "228fc55a61c6b908955488b49cb5c7e748fd18a1",
+        "10da235bc42d0233ae441c0b27d3679d87b3aab0",
+        "904c6d4082a85c2f35dd80727459e859d47b53bb",
+        "0e6c07bc1b089b923d22fdf2064e045aa3bfc596",
+        "72979f7a0d861a25d32e0a00b7c5330a5873a978",
+        "76f0700c6a3f0e16b63721c1715d6850b62350a1",
+        "2c450b3affeb0c857da5b63dcdf75312b98d24d9",
+        "04fc2cd81a7117d10095ea1b6771536eb748cdc2"
+      ],
       "createdAt": "2026-09-15T05:11:48.976Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:16:22.578Z",
+      "release": "0.50.0",
+      "planPath": "docs/superpowers/plans/2026-09-25-sync-registers-ids-add-epic-refuses.md"
     },
     {
       "id": "code-review-0-43-0-minors",
@@ -10495,6 +10521,63 @@
       "attributedCommits": [],
       "createdAt": "2026-09-26T01:35:08.414Z",
       "touchedAt": "2026-09-26T01:35:08.418Z"
+    },
+    {
+      "id": "integrity-reports-set-aside-archive-dirs",
+      "title": "integrity's archive-directory-has-no-epic does not report an archive directory the 0.50.0 date rule set aside (older than the epic it name-matches); only sync names it",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "sync-registers-ids-add-epic-refuses",
+          "reason": "the gap its item-1 sweep named"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T04:14:54.221Z",
+      "touchedAt": "2026-09-26T04:14:54.226Z"
+    },
+    {
+      "id": "created-at-recovery-dates-too-late",
+      "title": "0.40.0's createdAt recovery can stamp an epic LATER than its real registration (knowledge-store: stamped 07-09, git pickaxe dates the ids to 06-30, archives 07-01/07-06) — the recorded date is not the introducing commit",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "sync-registers-ids-add-epic-refuses",
+          "reason": "its archive date rule exposed the bad dates"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T04:36:40.106Z",
+      "touchedAt": "2026-09-26T04:36:40.112Z"
+    },
+    {
+      "id": "lesson-budget-tests-flake-under-load",
+      "title": "The lesson-detect timing tests ('a runaway lesson listed FIRST', the per-regex 50 ms budget) fail intermittently under machine load and pass on retry — a per-commit gate that flakes under load trains --retry habits",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "lesson-detect-matcher-hardening",
+          "reason": "its budget tests"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-26T04:56:10.683Z",
+      "touchedAt": "2026-09-26T04:56:10.689Z"
     }
   ],
   "detourStack": [],
@@ -10505,7 +10588,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1518,
+  "revision": 1537,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -10982,11 +11065,11 @@
       ],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-09-25T20:53:44.874Z",
+        "reviewedAt": "2026-09-26T05:16:09.527Z",
         "specs": [
           {
             "key": "handoff-demand-blind-spots/specs/conductor-record/spec.md",
-            "sha256": "6ab1724f006e2c5d13d47259102d68ce591d9bea601901839e8f02c1381f655e"
+            "sha256": "2a91780d90ffd317871f0b9571b86e5881fbfbd361d3a491583a29c0d05b0d1b"
           },
           {
             "key": "handoff-demand-blind-spots/specs/emitted-instructions/spec.md",
@@ -10998,10 +11081,37 @@
           },
           {
             "key": "handoff-demand-blind-spots/specs/gate-integrity/spec.md",
-            "sha256": "9eb6a08bef812fecae812f68dbe63bad5f1348f4f3dee1e85c4786f2c62795d8"
+            "sha256": "76daa6e8aca9b503e94699babc4d3b79477892fc1b2305b14ce05969e505706c"
+          },
+          {
+            "key": "handoff-demand-blind-spots/specs/output-text-integrity/spec.md",
+            "sha256": "43f4a9cabd7910662475438e249872f285820f38f4032c6631ab4694a65fcce6"
           }
         ],
-        "reviewer": "one fresh-context reviewer over coherence+falsifiability, then two confirmations: round 1 fail (BLOCK: epic-disposition story remedy vs the stories+tasks union); fixed a6e4901 (+epic-disposition, emitted-instructions deltas, 4 specs); confirmation fail (BLOCK: spec-deltas remedy named commands that cannot run on an archived change); fixed 101ebb7 (edit main spec to match delta, then git add openspec/ — run literally in a scratch repo for ADDED/REMOVED/RENAMED); final check pass with 3 minors folded into apply; 2026-09-25"
+        "reviewer": "re-review after the date-rule amendment (72979f7a..04fc2cd8) added output-text-integrity (5 specs): round 1 fail (2 I: 'Archive registration cannot produce duplicate epics' and 'sync reconciles the archive directory' contradicted the date rule) — MODIFIED blocks added; final check pass, 2 polish noted; falsifiability: slack 0/2-day and backfill-exemption mutants each fail; 2026-09-25",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-26T02:34:55.513Z",
+          "specs": [
+            {
+              "key": "handoff-demand-blind-spots/specs/conductor-record/spec.md",
+              "sha256": "4f6e6ac43f8be4f3efca9d7015b85b5023f1a13b4bba8fe789397af50786ad91"
+            },
+            {
+              "key": "handoff-demand-blind-spots/specs/emitted-instructions/spec.md",
+              "sha256": "de625db2bab19e0c0b729bee9caf9626b200edd35d8755fb3734b20302363d55"
+            },
+            {
+              "key": "handoff-demand-blind-spots/specs/epic-disposition/spec.md",
+              "sha256": "5a81d70345af25427ea2a9c60267b2a33a71cd6ecacf2fac5107321329116d07"
+            },
+            {
+              "key": "handoff-demand-blind-spots/specs/gate-integrity/spec.md",
+              "sha256": "0bb7de000335564ed76f04c83c046e6054637d9e6dfa1e84e0e7b9a543eb9965"
+            }
+          ],
+          "reviewer": "re-review after Gate 2 amended gate-integrity and conductor-record (101ebb7..90d25ebc): refusal wording, N/M items, the spec-sync degrade rule (only spec-sync may be UNAVAILABLE), confirm-128, snapshot exclusion — no BLOCKS; 3 POLISH declined; falsifiability: corrupt index exits 128 like no-repo; an index-read throw takes down brief/render/integrity without the degrade; 2026-09-25. Supersedes the 101ebb7 verdict."
+        }
       }
     }
   ],

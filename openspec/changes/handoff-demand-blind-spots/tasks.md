@@ -32,7 +32,7 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (orchestrator), review mode `thorough`: two fresh-context lenses over these artifacts BY PATH.
+- [x] 0.1 **Gate 1** (orchestrator), review mode `thorough`: two fresh-context lenses over these artifacts BY PATH.
       - Lens A: is every WHEN/THEN in the four delta files (`specs/conductor-record/spec.md`,
         `specs/gate-integrity/spec.md`, `specs/epic-disposition/spec.md`,
         `specs/emitted-instructions/spec.md`) reachable and testable against the engine AS IT STANDS
@@ -57,7 +57,7 @@ These rules bind every section below.
       `specs/epic-disposition/spec.md` and `specs/emitted-instructions/spec.md`, all under
       `openspec/changes/handoff-demand-blind-spots/`.
       Verify: the verdict appears in `node scripts/conductor.mjs status`.
-- [ ] 0.2 **Cross-spec review** (orchestrator) (required task item 5). Release 0.50.0 holds this change's FOUR spec
+- [x] 0.2 **Cross-spec review** (orchestrator) (required task item 5). Release 0.50.0 holds this change's FOUR spec
       files (`conductor-record`, `gate-integrity`, `epic-disposition`, `emitted-instructions`), plus
       every other member change's, counted flat. Run the `cross-spec-review` skill after Gate 1 with
       two lenses and ask the six questions. The engine hashes the spec set it enumerates, so any
@@ -354,7 +354,7 @@ These rules bind every section below.
       Mutation proof `mutation-5.2.txt`: feed the briefing a second computation in a scratch copy, and
       show the identity assertion fails; and embed the block in `PROJECT.md` in a scratch copy and
       show the window case fails.
-- [ ] 5.3 **Cost.** Measure the wall time of `brief` AND of `render` over three runs each in a hermetic
+- [x] 5.3 **Cost.** Measure the wall time of `brief` AND of `render` over three runs each in a hermetic
       clone, before and after 5.2, and record it in `evidence-5.3.txt`. Verify: one git process added
       per invocation, not one per capability (count the spawns).
 - [x] 5.4 **REGRESSION GUARD** — the archive transition is not refused. FUNCTIONAL, in
@@ -405,11 +405,11 @@ These rules bind every section below.
       source was authored. This matters more here than anywhere else: this change makes the
       ARCHIVED `tasks.md` count, so an unmarked disposition task would make the handoff refuse this
       very change.
-- [ ] 6.6 **Attribute every commit** (orchestrator) (item 4). The orchestrator runs
+- [x] 6.6 **Attribute every commit** (orchestrator) (item 4). The orchestrator runs
       `update-epic handoff-demand-blind-spots --attribute-commit <sha>` for each implementation
       commit, in the order the commits landed, after the merge. The archive-move commit is NOT
       attributed.
-- [ ] 6.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it after any concurrent amendment to a
+- [x] 6.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it after any concurrent amendment to a
       0.50.0 spec, and record the verdict again.
 - [x] 6.8 **Disposition** (item 6). It is recorded by 9.2, whose flags are specified there.
       This task checks that 9.2's declined deferrals still name every non-goal in `design.md`
@@ -456,14 +456,14 @@ These rules bind every section below.
 
 ## 8. Integration
 
-- [ ] 8.1 Every test is green on the final tree: the drift script, the assertion half, and
+- [x] 8.1 Every test is green on the final tree: the drift script, the assertion half, and
       `certify.mjs functional|sweeps` where permitted. `openspec validate handoff-demand-blind-spots --strict`
       passes. Re-run 1.1's measurements, `unconsidered-outcomes` included, into `baseline-after.md`,
       and explain every difference from `baseline-before.md`.
 
 ## 9. Close
 
-- [ ] 9.1 **Gate 2**, mode `thorough`: two fresh-context reviewers over `BASE..HEAD`, where HEAD is
+- [x] 9.1 **Gate 2**, mode `thorough`: two fresh-context reviewers over `BASE..HEAD`, where HEAD is
       the last attributed commit. They check:
       - spec alignment across all four delta files;
       - that the D3 non-refusal holds in code;
