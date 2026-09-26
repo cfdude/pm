@@ -1,0 +1,14 @@
+7.5 — Mintlify pages for the 0.50.0 release cut (mintlify-doc-sync), applied by the RELEASE, not by this
+change's branch. For the 0.50.0 release-notes handoff:
+
+- /commands/status — the `delivered-epic-spec-deltas-absent` integrity check (index read, headers only,
+  later-change discharge, the archive-to-`git add` window, never a refusal, the remedy
+  `git -C <conductor root> add openspec/`); the SPEC DELTAS ABSENT FROM THE MAIN SPECS briefing block;
+  that the `render` verb PRINTS the block and never writes it into PROJECT.md, so /pm:status reads the
+  render output as well as PROJECT.md; progress = stories plus the checkbox source, archived tasks.md read.
+- /commands/epic — progress: inline stories and a task source counted together (the `items` unit), and
+  the both-parts archive refusal (per-part remedies as a conjunction, or --carried-to).
+- the concept page that defines outstanding work — the union, and the archived tasks.md as the checkbox
+  source of an archived openspec change, for every epic.
+Source text: commands/status.md, commands/epic.md, README.md and .changesets/handoff-demand-blind-spots.md
+at this change's HEAD.

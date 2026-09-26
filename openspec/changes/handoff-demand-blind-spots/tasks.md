@@ -425,7 +425,7 @@ These rules bind every section below.
 
 ## 7. Docs
 
-- [ ] 7.1 `commands/status.md`: the new integrity check id and title; the briefing block; that
+- [x] 7.1 `commands/status.md`: the new integrity check id and title; the briefing block; that
       the `render` verb PRINTS the block on its output rather than writing it into `PROJECT.md`; the
       index reading, the reason for it, and the archive-to-`git add` window; and the
       archived-`tasks.md` and union rules for progress.
@@ -437,13 +437,13 @@ These rules bind every section below.
       Verify: `rg -n "read \`PROJECT.md\`" commands/status.md` shows the step now names the `render`
       output too; `docs/parity-ledger.json` still claims the file (`scripts/test/parity.test.mjs`
       green).
-- [ ] 7.2 `README.md`: the progress rule (stories plus tasks, and the archived tasks read) and the
+- [x] 7.2 `README.md`: the progress rule (stories plus tasks, and the archived tasks read) and the
       new standing condition, wherever the README describes integrity or progress
       (`rg -n "integrity|outstanding|progress" README.md`).
-- [ ] 7.3 `skills/conductor/SKILL.md` and `commands/epic.md`: wherever they state that stories take
+- [x] 7.3 `skills/conductor/SKILL.md` and `commands/epic.md`: wherever they state that stories take
       precedence over a task source, or that outstanding work reads zero after an archive
       (`rg -n "precedence|stories" skills/conductor/SKILL.md commands/epic.md`).
-- [ ] 7.4 `.changesets/handoff-demand-blind-spots.md`: user-facing bullets only, in `CHANGELOG.md`'s
+- [x] 7.4 `.changesets/handoff-demand-blind-spots.md`: user-facing bullets only, in `CHANGELOG.md`'s
       bullet format:
       - archived tasks now count;
       - stories no longer hide tasks;

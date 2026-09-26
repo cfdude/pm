@@ -624,8 +624,16 @@ A disposed story leaves **both** sides of the progress ratio, exactly as a `<!--
 task does: `3/3 stories · 2 disposed`, never `5/5` (which would claim completion for work nobody
 did) and never `3/5` (which would leave the archive gate refusing forever with no honest key).
 
+> **Stories and a task source count TOGETHER.** An epic's progress is the sum of its inline stories
+> and its checkbox source (a plan file, or an openspec change's `tasks.md` — the ARCHIVED one once
+> `/opsx:archive` has moved it); neither hides the other, so adding a story to an epic that has a
+> `tasks.md` leaves every task counted (the ratio then reads `items`). Where both parts hold open
+> work, the archive refusal names each part's remedy and says BOTH must be done — `--story <n>
+> --done` / `--wont-do` for the stories, ticking or the `<!-- pm:lifecycle -->` declaration for the
+> tasks — or `--carried-to` for the whole remainder.
+>
 > **There is no new archive refusal here.** The gate already refuses `--outcome delivered` while
-> any work is outstanding, and inline stories are the FIRST progress source it reads — so an
+> any work is outstanding, and it counts inline stories along with any task source — so an
 > epic with an unticked story has been blocked since that gate shipped. What was missing was a
 > way past it that tells the truth: the refusal's other remedy, the `<!-- pm:lifecycle -->`
 > marker, cannot be written on an inline story at all (there is no task source), leaving only
