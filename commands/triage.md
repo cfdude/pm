@@ -7,7 +7,9 @@ Run this **before** `add-epic`, every time an ask arrives — a GitHub issue you
 mirror, a request in conversation, a line from a roadmap doc.
 
 The conductor has always ACCEPTED work; it has not TRIAGED it. `add-epic` validates the id, the
-lane and the priority, refuses a duplicate `externalId`, and appends. The only dedup that exists
+lane and the priority, refuses a tracker item another epic already holds (matched on
+`externalUrl` first, bare `externalId` only when neither side has a URL — at every writer, not only
+`add-epic`), and appends. The only dedup that exists
 is **identity-based** — same id, or the same `externalUrl` — which correctly stops `/pm:sync`
 from mirroring the same issue twice and does nothing at all about *the same ask arriving under a
 different name*. That failure has exactly one symptom: the backlog only ever grows, and every

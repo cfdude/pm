@@ -246,7 +246,11 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
 
 - **Hierarchy:** epics form a single-parent tree via `parent`. Nest with `--parent <id>`
   (validated: parent exists, no self/cycle) or bulk-create a parent + children atomically with
-  `add-many --from <json>`. PROJECT.md indents children and rolls up `X/Y children archived`;
+  `add-many --from <json>`. The batch document may hold only `parent` (an object) and `epics` (an
+  array); each entry's `links` is an array of `"<type>:<epic>[:<reason>]"` strings or
+  `{type, epic, reason}` objects naming an epic in the record or the batch, with a known type —
+  anything else refuses the whole batch by name and writes nothing.
+  PROJECT.md indents children and rolls up `X/Y children archived`;
   NEXT UP keeps global priority order (grouping is render-only).
 - **Effective priority (computed, never stored):** an epic's effective priority is the best of
   its own and every epic that transitively `depends-on` it. A `planned` P2 that a `queued` P1
@@ -913,7 +917,9 @@ commits touch is listed first. The hook never writes an attribution itself.
 ## Intake — triage an ask BEFORE it becomes an epic
 
 The conductor has always ACCEPTED work; it has not TRIAGED it. `add-epic` validates the id, the
-lane and the priority, refuses a duplicate `externalId`, and appends — that is the entire
+lane and the priority, refuses a tracker item another epic already holds (`externalUrl`
+first, bare `externalId` only when neither side has a URL — `add-epic`, `update-epic` and `add-many`
+alike), and appends — that is the entire
 admission process, and its dedup is **identity-based**: same id, or the same `externalUrl`. That
 catches a re-run of `/pm:sync` and nothing else. It cannot see that the same ask has already been
 registered under a different name.
