@@ -154,3 +154,7 @@ test("Layer B registry: every integrity CHECKS id has a builder in the functiona
 // all drive the extractor and the emitted text through the functional file's own exported helpers —
 // which cannot be imported here without executing that file. What survives the narrowing is the
 // INVARIANT the extractor exists for, asserted above against the same shipped tree.
+
+// The printed-remedy check for the one-item-one-epic refusal (tracker-item-dedup-bypassed) lives on
+// the UNIT rung, scripts/test/unit/emitted-invocations.test.mjs: its observables are an exit status and
+// a printed line, which are values, not bytes.

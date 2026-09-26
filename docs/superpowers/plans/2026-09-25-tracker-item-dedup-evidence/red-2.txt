@@ -1,0 +1,76 @@
+✔ add-epic refuses a second epic claiming an external-url with NO external-id (the bypass) (8.127709ms)
+✔ the refusal names the key that collided — the URL, not external-id (E1) (2.212416ms)
+✔ the emitted inward-sync registration line is refused when another epic already holds the item's URL (1.663125ms)
+✔ an ARCHIVED holder still blocks, and the refusal names the clear that frees it (10.762041ms)
+✔ update-epic --external-url refuses a URL another epic holds, naming it, and writes nothing (2.7785ms)
+✔ update-epic re-stating an epic's OWN url is not a collision (2.851208ms)
+✔ update-epic --external-id enforces the URL-less fallback key (7.723625ms)
+✔ --clear external-url is never refused, even when it leaves an external-id fallback collision (18.896084ms)
+✔ update-epic judges the record AFTER its own --clear: clearing the URL while setting external-id meets the fallback key (9.512375ms)
+✖ add-many refuses an entry whose externalUrl an existing epic holds, naming it, and creates nothing (13.295292ms)
+✖ add-many refuses two entries of ONE batch claiming the same externalUrl, naming the first (3.026042ms)
+✖ add-many applies the externalId fallback within the batch and against the record (2.65525ms)
+✔ an existing duplicate still loads, renders and briefs (2.541209ms)
+✔ an existing duplicate does not block an unrelated write to either holder (2.530292ms)
+✔ an existing duplicate: re-setting the key refuses naming the other holder; clearing one frees it (2.580417ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 12
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 301.045167
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ add-many refuses an entry whose externalUrl an existing epic holds, naming it, and creates nothing (13.295292ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the write was ACCEPTED
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:17:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:118:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ add-many refuses two entries of ONE batch claiming the same externalUrl, naming the first (3.026042ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the write was ACCEPTED
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:17:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:126:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ add-many applies the externalId fallback within the batch and against the record (2.65525ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the write was ACCEPTED
+      at errText (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:17:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/tracker-item-dedup.test.mjs:134:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

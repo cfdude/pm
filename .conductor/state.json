@@ -7922,10 +7922,21 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (B2, E1). add-epic.mjs EPIC_DEDUP_KEYS check sits inside `if (externalId !== undefined)`. Repro: five epics with the same issue URL, each command exit 0. Also: the add-epic duplicate message names external-id when the collision was the URL. Fix: one shared dedup check (URL-keyed) called by add-epic, update-epic and add-many.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3317dd3e4fbbda9342158ba746dca4352ff1e4ae",
+        "57bf10dfe02c34c33799fec289b7ca69d5a1202d",
+        "a3c64ea4eccb3b91694af190acac5eb659d174a8",
+        "6c3777f2545535302bcf8749861fd3a70d89afaa",
+        "3ffe2b314ea6e44ae1c133708451251c7ce9d02b",
+        "99c6067d4e396d8541645943c51f7d156e830ca5",
+        "1f7e495b6ccdf07af0c0b5e4bf1d2e72c284c02c",
+        "3149a128bf3eb621071eae61e30386e94db68098",
+        "a92274a75ed1fd23bcaa29643bcc7c71d40d8150"
+      ],
       "createdAt": "2026-09-15T05:11:09.965Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T00:57:33.959Z",
+      "release": "0.50.0",
+      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md"
     },
     {
       "id": "drift-heal-leaves-claim-on-archive",
@@ -7973,10 +7984,18 @@
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (B1, B2). add-many.mjs/links.mjs mergeLinks skips non-objects: links [\"depends-on:base\"] or \"depends-on:base\" vanish with exit 0; {type:'depends-on',epic:'ghost'} is stored dangling; {type:'blocks'} with no target is stored and cannot render; {parent,…,\"epic\":[…]} creates only the parent. Spec: a bulk write persists what it accepts or rejects by name. Fix: validate top-level keys and route links through parseLinkFlags-equivalent validation against existing plus batch ids.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3317dd3e4fbbda9342158ba746dca4352ff1e4ae",
+        "b71fa042df579bf980d2e24813d7b383ec43ee51",
+        "28cd5bb3a5bef1cf5f996117cccb918c08b2ffb4",
+        "6c3777f2545535302bcf8749861fd3a70d89afaa",
+        "3ffe2b314ea6e44ae1c133708451251c7ce9d02b",
+        "3149a128bf3eb621071eae61e30386e94db68098"
+      ],
       "createdAt": "2026-09-15T05:11:14.105Z",
-      "touchedAt": "2026-09-25T19:26:10.189Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T00:57:53.124Z",
+      "release": "0.50.0",
+      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md"
     },
     {
       "id": "hooks-not-silent-before-init",
@@ -10438,7 +10457,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1483,
+  "revision": 1500,
   "reviewMode": "thorough",
   "releases": [
     {

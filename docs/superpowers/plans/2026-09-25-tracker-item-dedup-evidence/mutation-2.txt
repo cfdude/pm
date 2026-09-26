@@ -1,0 +1,26 @@
+mutation proofs — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/dedup/mut, worktree untouched
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M8 add-many compares against the record only (within-batch duplicates pass)
+  mutation: scripts/lib/add-many.mjs: "trackerKeyHolder([...state.epics, ...claimed], candidate)" -> "trackerKeyHolder([...state.epics], candidate)"
+  exit 1 — CAUGHT
+  ✖ add-many refuses two entries of ONE batch claiming the same externalUrl, naming the first (1.173708ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M9 add-many compares within the batch only (record holders pass)
+  mutation: scripts/lib/add-many.mjs: "trackerKeyHolder([...state.epics, ...claimed], candidate)" -> "trackerKeyHolder([...claimed], candidate)"
+  exit 1 — CAUGHT
+  ✖ add-many refuses an entry whose externalUrl an existing epic holds, naming it, and creates nothing (2.197834ms)
+  ✖ add-many applies the externalId fallback within the batch and against the record (2.909584ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M10 add-many guard removed
+  mutation: scripts/lib/add-many.mjs: "if (hit) refuse(`epic '${escapeControls(e.id)}': ${trackerKeyRefusal" -> "if (false) refuse(`epic '${escapeControls(e.id)}': ${trackerKeyRefusal"
+  exit 1 — CAUGHT
+  ✖ add-many refuses an entry whose externalUrl an existing epic holds, naming it, and creates nothing (1.911167ms)
+  ✖ add-many refuses two entries of ONE batch claiming the same externalUrl, naming the first (0.769875ms)
+  ✖ add-many applies the externalId fallback within the batch and against the record (1.4755ms)
+  ✖ failing tests:
+
