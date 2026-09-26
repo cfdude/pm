@@ -1,0 +1,140 @@
+mutation-4.2 — handoff-demand-blind-spots
+Two mutations, each in a scratch COPY of scripts/ (never the tree), each running
+  node --test --test-reporter=spec --test-name-pattern=^4.2 scripts/test/unit/spec-sync.test.mjs
+
+(1) DROP THE DISCHARGE: compareSpecSync()'s `discharged` always false. Named cases fail:
+    "4.2 a later REMOVED → no finding for A's ADDED, and none for B's REMOVED" and
+    "4.2 same-date and undated pairs are unordered". (The later-MODIFIED case still passes by design:
+    the main spec holds the header there, so it proves the MODIFIED header is not reported, not the
+    discharge.)
+(2) INVERT THE SAME-DATE RULE: mayDischarge() answers false for an equal or missing date. Named case
+    fails: "4.2 same-date and undated pairs are unordered".
+
+──────── (1) discharge dropped ────────
+✔ 4.2 a lost ADDED requirement is reported absent, naming the epic, directory, capability and headers (1.447333ms)
+✔ 4.2 a REMOVED requirement still in the main spec is reported present (0.223459ms)
+✔ 4.2 a later MODIFIED of the same requirement → no finding for either change (0.124083ms)
+✖ 4.2 a later REMOVED → no finding for A's ADDED, and none for B's REMOVED (1.449666ms)
+✔ 4.2 an EARLIER opposite change does not discharge (0.282667ms)
+✖ 4.2 same-date and undated pairs are unordered — both directions, whichever the index holds (0.560458ms)
+✔ 4.2 RENAMED is checked on both sides: FROM present is reported, TO present is not (0.347333ms)
+✔ 4.2 a main spec absent from the index reports every ADDED header, and no REMOVED one (0.158625ms)
+✔ 4.2 a header the main file holds only under ## Notes is reported absent (0.178ms)
+✔ 4.2 git cannot answer → no presence or absence finding, and an unpaired RENAMED is still reported (8.607667ms)
+✔ 4.2 the comparison reads only the in-scope pairs it is handed (outcome scope is the caller's) (0.182875ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 9
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 359.373917
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 a later REMOVED → no finding for A's ADDED, and none for B's REMOVED (1.449666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   {
+  +     capability: 'c',
+  +     dir: '2026-09-01-a',
+  +     direction: 'absent',
+  +     epic: 'a',
+  +     headers: [
+  +       'X'
+  +     ]
+  +   }
+  + ]
+  - []
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/unit/spec-sync.test.mjs:123:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { epic: 'a', dir: '2026-09-01-a', capability: 'c', direction: 'absent', headers: [Array] } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 same-date and undated pairs are unordered — both directions, whichever the index holds (0.560458ms)
+  AssertionError [ERR_ASSERTION]: 2026-09-05-a vs 2026-09-05-b
+  + actual - expected
+  
+  + [
+  +   {
+  +     capability: 'c',
+  +     dir: '2026-09-05-b',
+  +     direction: 'present',
+  +     epic: 'b',
+  +     headers: [
+  +       'X'
+  +     ]
+  +   }
+  + ]
+  - []
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/unit/spec-sync.test.mjs:144:14
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { epic: 'b', dir: '2026-09-05-b', capability: 'c', direction: 'present', headers: [Array] } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+──────── (2) same-date rule inverted ────────
+✔ 4.2 a lost ADDED requirement is reported absent, naming the epic, directory, capability and headers (1.334083ms)
+✔ 4.2 a REMOVED requirement still in the main spec is reported present (0.238291ms)
+✔ 4.2 a later MODIFIED of the same requirement → no finding for either change (0.133542ms)
+✔ 4.2 a later REMOVED → no finding for A's ADDED, and none for B's REMOVED (0.170208ms)
+✔ 4.2 an EARLIER opposite change does not discharge (0.5115ms)
+✖ 4.2 same-date and undated pairs are unordered — both directions, whichever the index holds (1.12325ms)
+✔ 4.2 RENAMED is checked on both sides: FROM present is reported, TO present is not (0.466125ms)
+✔ 4.2 a main spec absent from the index reports every ADDED header, and no REMOVED one (0.154375ms)
+✔ 4.2 a header the main file holds only under ## Notes is reported absent (0.121208ms)
+✔ 4.2 git cannot answer → no presence or absence finding, and an unpaired RENAMED is still reported (7.491375ms)
+✔ 4.2 the comparison reads only the in-scope pairs it is handed (outcome scope is the caller's) (0.158708ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 482.988042
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 same-date and undated pairs are unordered — both directions, whichever the index holds (1.12325ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/unit/spec-sync.test.mjs:137:12
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

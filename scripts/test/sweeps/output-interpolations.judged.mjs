@@ -372,6 +372,14 @@ x("git.mjs", "differsFromHead", {
 x("git.mjs", "resolveCommits", {
   "v": 1,
 }, "not-output", "a git argument — one line of the batch-check stdin payload, peeled to ^{commit}. It was SINK-FLOW inside the execFileSync `input` option until 4.2 moved the call to the injected gateway, which is why the judgment moves from the sink heuristic to here. A value reaching this point has already had whitespace and control characters filtered out above it, and the loop's own `unresolved` message escapes every value it names");
+j("spec-sync.mjs", "specSyncDetail", ALL, "sink-flow", "an integrity finding's detail (handoff-demand-blind-spots D6): its only caller is the delivered-epic-spec-deltas-absent CHECKS entry, printed through formatIntegrity()'s L.map(escapeControls); header names are JSON-quoted and the root is shellQuote()d");
+x("spec-sync.mjs", "compareSpecSync", {
+  "u.side": 1,
+  "u.name": 1,
+}, "not-output", "a finding's `headers` DATA (an unpaired RENAMED side and name); every surface that prints it goes through a line sink (integrity's formatter, buildBrief's L)");
+x("spec-sync.mjs", "specPath", {
+  "cap": 1,
+}, "passthrough", "a capability directory name read from the archive, composed into a relative path that is either a git stdin line (not output) or printed inside specSyncDetail's sink-flow text");
 x("git.mjs", "indexFileContents", {
   "String(p).replace(/^\\.\\//, \"\")": 1,
   "n": 1,

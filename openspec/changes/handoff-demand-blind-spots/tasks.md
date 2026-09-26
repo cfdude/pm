@@ -254,7 +254,7 @@ These rules bind every section below.
 
 ## 4. The spec-sync comparison (gate-integrity ADDED requirement, design D4)
 
-- [ ] 4.1 **TDD** — the delta parser, UNIT rung, a pure function of text.
+- [x] 4.1 **TDD** — the delta parser, UNIT rung, a pure function of text.
       - RED: `red-4.1.txt`, one fixture per rule the ADDED requirement states:
         - ADDED, MODIFIED and REMOVED plain headers;
         - REMOVED as a `-`, `*` or `+` bullet with backticks;
@@ -273,7 +273,7 @@ These rules bind every section below.
       - GREEN: the parser in the new module (working name `scripts/lib/spec-sync.mjs`), with a
         comment naming `@fission-ai/openspec` 1.13.2 `dist/core/parsers/requirement-blocks.js` as
         the grammar it mirrors.
-- [ ] 4.2 **TDD** — the comparison and the later-change discharge, UNIT rung, text in and findings
+- [x] 4.2 **TDD** — the comparison and the later-change discharge, UNIT rung, text in and findings
       out, no path.
       - RED: `red-4.2.txt`, every scenario of the ADDED requirement that needs no git:
         - lost ADDED;
