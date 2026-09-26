@@ -153,13 +153,15 @@ export function splitLinkSpec(s) {
  *  real known epic id) by THROWING, instead of the prior behavior of silently storing a
  *  garbage link object — a typo like "type:related:epic:..." used to parse successfully
  *  (type="type", epic="related") because nothing checked that "related" was a real epic.
- *  Shared by add-epic and update-epic.
+ *  Used by add-epic and update-epic.
  *
  *  BOTH halves are checked now (gh#100). #70 shipped the epic half; the type half was the
  *  vocabulary it did not have, so `--link "depends_on:x"` stored an edge that every consumer
- *  ignores forever and that the next agent copies as precedent. This is the ONE write path —
- *  add-epic, update-epic and add-many all reach the store through here — which is why the check
- *  lives at the shared function rather than at each verb. The read paths deliberately stay
+ *  ignores forever and that the next agent copies as precedent. `--link` reaches the store only
+ *  through here, for add-epic and update-epic, which is why the check lives at the shared function
+ *  rather than at each verb. add-many's batch links do NOT come through here — they are JSON values,
+ *  not flag strings — and are checked by add-many.mjs's batchLink(), which shares this function's
+ *  grammar (splitLinkSpec) and its order (epic half, then type half). The read paths deliberately stay
  *  permissive; see isRenderableLink() in links.mjs for why. */
 export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
@@ -388,7 +390,12 @@ export function addEpic() {
     die(`conductor: epic '${escapeControls(id)}' already exists\n`);
   }
   const externalId = str(f["external-id"]);
-  const externalUrl = str(f["external-url"]);
+  // TRIMMED, here and at the other two writers: a URL arriving with a shell's or a copy-paste's
+  // surrounding whitespace was stored verbatim, so it neither opened nor matched its bare self in the
+  // dedup. Nothing else is normalised — the comparison is exact (a trailing `/`, the host's case or a
+  // query string make a different URL), because guessing which URLs a tracker treats as one is not
+  // the engine's to do. A value that is blank after trimming is refused by requireFlagValues().
+  const externalUrl = str(f["external-url"]) === undefined ? undefined : str(f["external-url"]).trim();
   // One tracker item, one epic — the shared rule in tracker-dedup.mjs (URL against URL when both
   // sides carry one, bare externalId only when neither does). It used to sit inside
   // `if (externalId !== undefined)`, so `--external-url` alone skipped it entirely, and its
@@ -448,7 +455,7 @@ export function addEpic() {
   if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
-  if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
+  if (externalUrl !== undefined) epic.externalUrl = externalUrl;
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   const previousActive = state.active;
   pushEpic(state, epic);

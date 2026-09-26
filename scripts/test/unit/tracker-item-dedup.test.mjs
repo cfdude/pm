@@ -140,6 +140,24 @@ unitTest("add-many applies the externalId fallback within the batch and against 
   assert.deepEqual(ids(engine), ["a", "x", "y"]);
 });
 
+// ─────────────── surrounding whitespace is trimmed on every writer ───────────────
+// A leading or trailing space was stored verbatim, so ` U` and `U` were two items to the dedup and
+// the stored URL did not open. The comparison is otherwise EXACT (see README): only the whitespace
+// a shell or a copy-paste adds is removed.
+unitTest("add-epic, update-epic and add-many store the URL trimmed, and a padded copy collides with the bare one", () => {
+  const engine = memoryEngine(emptyRecord());
+  engine(["add-epic", "--id", "a", "--lane", "claude-code", "--external-url", `  ${U} `]);
+  assert.equal(epic(engine, "a").externalUrl, U);
+  assert.match(errText(expectFail(() => engine(["add-epic", "--id", "b", "--lane", "claude-code", "--external-url", `${U}\t`]))), /'a'/);
+  engine(["add-epic", "--id", "c", "--lane", "claude-code"]);
+  engine(["update-epic", "c", "--external-url", " https://x.test/c "]);
+  assert.equal(epic(engine, "c").externalUrl, "https://x.test/c");
+  assert.match(errText(expectFail(() => engine(["update-epic", "c", "--external-url", ` ${U}`]))), /'a'/);
+  addMany(engine, { epics: [{ id: "d", lane: "claude-code", externalUrl: " https://x.test/d\n" }] });
+  assert.equal(epic(engine, "d").externalUrl, "https://x.test/d");
+  assert.match(errText(expectFail(() => addMany(engine, { epics: [{ id: "e", lane: "claude-code", externalUrl: ` ${U} ` }] }))), /'a'/);
+});
+
 // ─────────────── a state file that ALREADY holds a duplicate ───────────────
 function twoHolders() {
   const rec = emptyRecord();

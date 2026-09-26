@@ -514,7 +514,8 @@ export function updateEpic() {
   // inverse, and the way a URL is FREED — is never refused, even when the now URL-less epic meets
   // another on the externalId fallback. The candidate is the record as it will stand after this
   // write, compared against every OTHER epic, so re-stating an epic's own URL is not a collision.
-  const setUrl = str(f["external-url"]);
+  // Trimmed, as add-epic and add-many trim it (see addEpic); blank-after-trim was refused already.
+  const setUrl = str(f["external-url"]) === undefined ? undefined : str(f["external-url"]).trim();
   const setExternalId = str(f["external-id"]);
   if (setUrl !== undefined || setExternalId !== undefined) {
     const clearedKeys = new Set(clearedRows.map(r => r.key));
@@ -815,7 +816,7 @@ export function updateEpic() {
 
   if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
-  if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
+  if (setUrl !== undefined) epic.externalUrl = setUrl;
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   if (parent !== undefined) epic.parent = parent;
   if (status !== undefined) epic.status = status;

@@ -686,7 +686,9 @@ every run** — it cannot be an epic id, so rename it to register it. Where a tr
 deduplicated by `externalUrl` (globally unique) rather than bare `externalId`. The engine
 enforces the same rule on every writer — `add-epic`, `update-epic` (setting `--external-url` or
 `--external-id`) and `add-many` each refuse a tracker item another epic (archived included) already holds, naming it;
-`update-epic <holder> --clear external-url` frees it.
+`update-epic <holder> --clear external-url` frees it. The URL is compared **exactly**, after trimming surrounding
+whitespace: a trailing `/`, a different host case or a query string make a different URL, so
+mirror the item's canonical URL as the tracker reports it.
 
 A **plan file is matched to its epic by association, not by filename**. Plan filenames carry a
 date prefix and epic ids do not, so a filename match fired only by luck and every other epic's

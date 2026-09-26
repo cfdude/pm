@@ -61,6 +61,12 @@ export function addMany() {
     if (parentId && entry.parent === undefined) entry.parent = parentId;
     incoming.push(entry);
   }
+  // externalUrl is TRIMMED, as add-epic and update-epic trim it (see addEpic): surrounding whitespace
+  // made a stored URL that neither opened nor matched its bare self. Blank-after-trim is still refused
+  // below by the non-empty-string rule, which judges the trimmed value.
+  for (const entry of incoming) {
+    if (typeof entry.externalUrl === "string") entry.externalUrl = entry.externalUrl.trim();
+  }
   if (!incoming.length) { die("conductor: add-many: nothing to add (need `parent` and/or `epics`)\n"); }
 
   // The keys a batch entry may carry, derived from the shared EPIC_FLAGS registry rather than
