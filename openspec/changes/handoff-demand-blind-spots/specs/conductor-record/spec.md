@@ -69,18 +69,32 @@ later — the drift heal archived it with outcome `unknown` and cleared the acti
 epic whose `status` is NOT `archived`, a DATE-PREFIXED directory SHALL NOT match when its date is more
 than one day before the epic's `createdAt` day (the day of slack because `openspec archive` writes a
 local date and `createdAt` is UTC), and a live epic with no parseable `createdAt` SHALL match no
-date-prefixed directory — the resolver never ends live work on a dated name it cannot compare. An
-UNDATED directory carries no date to compare and matches by name, as before. The rule decides only
-whether live work is ENDED: the heal, the active-pointer clear and `set-active`'s refusal.
+date-prefixed directory — the resolver never ends live work on a dated name it cannot compare.
+
+The rule's PURPOSE is that a live epic is never ended by someone else's archive. It applies wherever
+the one resolver answers for a live epic — the heal, the active-pointer clear, `set-active`'s refusal,
+and equally that epic's archived progress source, its missing-source warning and the change directory
+the cross-spec review reads — so no two of those can disagree about which directory is the epic's.
+
+An UNDATED directory matches by name, even for a live epic, and that is deliberate rather than an
+oversight. `openspec archive` always writes a date, so an undated directory is a move made by hand, and
+its name is the only evidence there is about it; setting it aside would stop every repository that
+archives by hand from healing, with nothing to decide by. The incident this rule answers was a DATED
+directory. The residual risk is the same collision class, reachable only by hand-naming an unrelated
+directory exactly after a live epic.
 
 An epic whose `status` IS `archived` SHALL match by name alone, whatever its `createdAt` says. For an
 ended epic `createdAt` is not evidence of order: pm's own `createdAt` recovery dates an epic from the
 first commit that held it, which can postdate its archive, and a rule over ended epics would take
 their archived task counts, their spec-sync scope and their cross-spec scope away. An epic registered
-BY the archive backfill is likewise matched by name. A caller that asks with a bare id, holding no
+BY the archive backfill is likewise matched by name, live or not: it was built FROM that directory,
+so its `createdAt` postdates the archive by construction, and reopening it does not change where its
+work is. A caller that asks with a bare id, holding no
 epic record, gets the name match. `sync` SHALL name, on every run, each directory the rule set aside
 for a live epic, and count them in its final line; it SHALL never advise renaming a directory an
-already-archived epic resolves to.
+already-archived epic resolves to. Because the set-aside directory may also be the epic's OWN archive
+(an epic registered after its change was archived), that line SHALL also print the archive gate's
+disposition invocation that ends the epic deliberately.
 
 A plan file that has moved is read where the epic records it and nowhere else. Plans have no archive
 convention to follow, so a moved plan is not reconstructed here.
@@ -154,6 +168,81 @@ stories.
 - **THEN** the heal does not archive it and `sync` names the directory, pointing at
   `recover-created-at`
 
+#### Scenario: The one day of slack is exact
+- **WHEN** a live epic's `createdAt` falls on 2026-09-26 (UTC) and a directory `archive/2026-09-25-<id>/`
+  is the only match
+- **THEN** the directory is the epic's archive; and **WHEN** the only match is dated 2026-09-24
+- **THEN** it is set aside
+
+#### Scenario: A reopened backfilled epic still matches the archive it was built from
+- **WHEN** an epic registered BY the archive backfill from `archive/2020-01-01-<id>/`, with `createdAt`
+  in 2026, is reopened to a live status
+- **THEN** that directory is still its archive, and the heal re-archives it
+
+#### Scenario: A late-registered epic is told how to end itself
+- **WHEN** a live epic registered today matches only `archive/2025-01-01-<id>/`
+- **THEN** `sync`'s set-aside line names the directory and also prints
+  `update-epic <id> --status archived --outcome <…> --reason "<why>" --no-deferrals`
+
 #### Scenario: A story-only epic is unchanged
 - **WHEN** an epic in a lane with no checkbox source and no plan file carries 3 stories, 1 done
 - **THEN** its progress renders `1/3`, as before this requirement
+
+### Requirement: sync reconciles the archive directory
+`sync` SHALL reconcile `openspec/changes/archive/` in addition to `openspec/changes/`. An archived
+change on disk with no corresponding epic SHALL be registered as an epic already in `status:
+"archived"` — preserving the record without pretending the change was managed. `reconcileArchived()`
+only flips epics that already exist and MUST continue to create nothing; registration is `sync`'s
+job.
+
+"Corresponding" is decided by NAME, exactly as registration identity is (see *Archive registration
+cannot produce duplicate epics*). A directory whose name an existing epic holds, but which the one
+resolver's date rule sets aside for that live epic, is therefore neither that epic's archive nor
+registered as a new epic — its id is taken. `sync` SHALL instead report it on every run and count it in
+its final line, so every directory is accounted for: an epic's archive, a registered epic, or a
+reported set-aside.
+
+#### Scenario: An archived change with no epic is registered
+- **WHEN** `sync` runs in a repo with 24 archived changes on disk, 8 of them have no epic, and none is
+  set aside by the date rule
+- **THEN** 8 epics are registered, each with `status: "archived"`, and the conductor's archived count
+  matches the directory
+
+#### Scenario: A change archived before the conductor was initialized is not lost
+- **WHEN** a change was archived before `/pm:init` ever ran in the repo
+- **THEN** the next reconciliation registers it, rather than it remaining permanently invisible
+  because it was never active while a sync ran
+
+#### Scenario: A set-aside directory is held by name and reported, not registered
+- **WHEN** a live epic `add-auth` registered today exists and `archive/2025-01-01-add-auth/` is on disk
+- **THEN** no epic is registered for that directory, `add-auth` stays live, and `sync` names the
+  directory on stderr and counts it as set aside in its final line
+
+### Requirement: Archive registration cannot produce duplicate epics
+Identity for archive registration SHALL be the change id, derived by the same NAME normalization the
+one resolver uses — an archive directory named `<YYYY-MM-DD>-<id>` and one named `<id>` resolve to the
+same id, and neither may register a second epic for a change the conductor already holds. Registration
+identity stays NAME-ONLY: the resolver's date rule decides whether a directory is a live epic's
+ARCHIVE, never whether its name is HELD, so a directory the rule sets aside is still not registered.
+This registration path MUST NOT become a third way to produce duplicates alongside the
+over-registration behaviors already filed against `sync`.
+
+#### Scenario: A date-prefixed archive directory does not duplicate its epic
+- **WHEN** the archive contains `archive/2026-08-01-port-domain-health-system` and an epic
+  `port-domain-health-system` already exists
+- **THEN** no new epic is created, and the existing epic is used
+
+#### Scenario: Re-running sync after a backfill adds nothing
+- **WHEN** `sync` is run again immediately after an archive reconciliation registered new epics
+- **THEN** zero epics are added and no epic is modified
+
+#### Scenario: An active change and its archived form are one epic
+- **WHEN** a change registered while active — so its epic's `createdAt` is no later than the archive
+  day plus one — is later archived and `sync` runs
+- **THEN** the existing epic flips to `archived` and no second epic is registered for the archive
+  directory
+
+#### Scenario: A live epic with no createdAt is not flipped, and still not duplicated
+- **WHEN** a live epic with no `createdAt` holds the name of `archive/2026-08-01-<id>/`
+- **THEN** the epic is not flipped to `archived`, no second epic is registered, and `sync` reports the
+  directory as set aside

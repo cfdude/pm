@@ -31,8 +31,8 @@ entries skipped for their name. The check SHALL apply
 only at the step that would create the epic — after an entry has been matched to an existing epic by
 any route (claimed artifact, known id, tombstone, near-match) — so an entry already held by an epic is
 never reported as skipped. A sweep SHALL still register every other entry in the same run, SHALL exit as
-it would have without the skipped entry, and SHALL name each skipped entry on stderr under the line rule
-above on every run, whether or not it is running quietly. A report that tells the reader `sync` will
+it would have without the skipped entry, and SHALL name each skipped entry on stderr under the requirement
+*A value the engine did not write never begins a line of output* on every run, whether or not it is running quietly. A report that tells the reader `sync` will
 register an entry SHALL NOT say so of an entry `sync` skips.
 
 #### Scenario: sync skips a change directory whose name holds a newline
