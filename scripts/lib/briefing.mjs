@@ -71,7 +71,17 @@ const briefRemedy = (id, ...args) => BRIEF_REMEDIES.find(r => r.id === id).rende
  *  injection point a test uses; the surfaces pass none. Lines only: every caller joins them through a
  *  line sink (buildBrief's L, the render verb's escapeControls). */
 export function specSyncBlock(state, { readIndex } = {}) {
-  const findings = specSyncFindings((state && state.epics) || [], readIndex ? { readIndex } : {});
+  // THE DEGRADE RULE (Gate 2 C1; gate-integrity): a check that CANNOT RUN — a failed index read, a
+  // malformed `cat-file` answer — never takes the briefing or the render verb down with it. It
+  // becomes ONE line naming the reason, and everything else is still emitted: the SessionStart
+  // briefing is the one thing a session is guaranteed to see, and losing all of it to one check is
+  // worse than any finding. `integrity` reports the same failure as the check being unavailable.
+  let findings;
+  try {
+    findings = specSyncFindings((state && state.epics) || [], readIndex ? { readIndex } : {});
+  } catch (e) {
+    return [specSyncUnavailable(e), ""];
+  }
   if (!findings.length) return [];
   const CAP = 5;
   const word = { absent: "absent", present: "still present", unpaired: "unpaired RENAMED line" };
@@ -86,6 +96,14 @@ export function specSyncBlock(state, { readIndex } = {}) {
   if (findings.length > CAP) L.push(`  (+${findings.length - CAP} more — see \`integrity\`)`);
   L.push("");
   return L;
+}
+
+/** The one line a surface prints when the spec-sync check cannot run: the reason, escaped, first line
+ *  only. Shared by the briefing, the render verb and `integrity`, so the three say it the same way. */
+export function specSyncUnavailable(e) {
+  const code = e && (e.code || (typeof e.status === "number" ? `exit ${e.status}` : null));
+  const msg = String((e && e.message) || e || "unknown failure").split("\n")[0];
+  return `spec-sync check unavailable: ${escapeControls(code ? `${code} — ${msg}` : msg)}`;
 }
 
 export function buildBrief(state, { consume = false, specSync = false } = {}) {

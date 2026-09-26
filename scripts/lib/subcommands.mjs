@@ -165,9 +165,11 @@ export function snapshot() {
   // THE BRIEF IS A STORE ARTIFACT (0.48.0 task 1.4): `.conductor/brief.txt` is written into the
   // record directory by this verb and read by nothing in the engine, which is exactly the shape the
   // store owns. The detached-tree suppression above is unchanged.
-  // specSync: true — the snapshot is a briefing for the next session (`.conductor/brief.txt`, untracked),
-  // so it carries the spec-sync block like brief() does. Never stdout: this verb's stdout stays empty.
-  if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state, { specSync: true }) + "\n");
+  // NO spec-sync block (Gate 2 I3): `.conductor/brief.txt` is TRACKED in 14 of 24 fleet repositories,
+  // and the block depends on git's index, so writing it here would put a staging-state finding into a
+  // committed file — the reason it is kept out of PROJECT.md. Its surfaces are integrity, the
+  // SessionStart briefing and the render verb's output.
+  if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state) + "\n");
   errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
       "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"

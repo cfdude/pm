@@ -1,0 +1,216 @@
+✖ C2 twin: a 128 where the repository EXISTS (a corrupt index) is RETHROWN, not read as no repository (0.989917ms)
+✖ C1 twin: brief degrades to ONE line and exits 0 (114.19075ms)
+✖ C1 twin: the render verb degrades to ONE line on stdout and still renders (47.853083ms)
+✖ C1 twin: integrity names the check UNAVAILABLE with its reason, runs the rest, no stack, exits non-zero (57.429334ms)
+✖ I3 twin: snapshot's brief.txt never carries the block, even when the reader has a finding (47.026833ms)
+✖ C2 a CORRUPT index (exit 128) is rethrown, never read as 'no repository' (81.629292ms)
+✖ C1 brief: a failing index read → exit 0, ONE `spec-sync check unavailable` line, and the rest of the briefing (307.578541ms)
+✖ C1 render verb: a failing index read → exit 0, PROJECT.md written, ONE unavailable line on stdout (135.162458ms)
+✖ C1 integrity: a failing index read → the check UNAVAILABLE with its reason, every other check reported, no stack, exit non-zero (131.900458ms)
+✖ C2 a CORRUPT index is not 'no repository': integrity reports the check unavailable and exits non-zero (112.480458ms)
+✖ I3 snapshot never carries the block — neither its stdout nor the brief.txt it writes (113.554042ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 0
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1006.546667
+
+✖ failing tests:
+
+test at scripts/test/assert/spec-sync-index.test.mjs:65:1
+✖ C2 twin: a 128 where the repository EXISTS (a corrupt index) is RETHROWN, not read as no repository (0.989917ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: gitPath answers, so the repository exists and the 128 was some other fatal error
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-index.test.mjs:66:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /git failed/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:159:1
+✖ C1 twin: brief degrades to ONE line and exits 0 (114.19075ms)
+  Error: Command failed: cat-file --batch
+      at Object.indexBlobs (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-surfaces.test.mjs:148:33)
+      at indexFileContents (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git.mjs:470:20)
+      at specSyncFindings (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/spec-sync.mjs:282:33)
+      at specSyncBlock (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/briefing.mjs:74:20)
+      at buildBrief (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/briefing.mjs:313:27)
+      at brief (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/subcommands.mjs:137:17)
+      at runInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:489:6)
+      at main (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:180:12)
+      at invokeEngine (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/fixtures/harness.mjs:99:14)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-surfaces.test.mjs:161:13) {
+    status: 1
+  }
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:167:1
+✖ C1 twin: the render verb degrades to ONE line on stdout and still renders (47.853083ms)
+  Error: Command failed: cat-file --batch
+      at Object.indexBlobs (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-surfaces.test.mjs:148:33)
+      at indexFileContents (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git.mjs:470:20)
+      at specSyncFindings (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/spec-sync.mjs:282:33)
+      at specSyncBlock (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/briefing.mjs:74:20)
+      at renderVerb (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/render.mjs:41:17)
+      at runInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:489:6)
+      at main (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:180:12)
+      at invokeEngine (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/fixtures/harness.mjs:99:14)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-surfaces.test.mjs:169:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14) {
+    status: 1
+  }
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:175:1
+✖ C1 twin: integrity names the check UNAVAILABLE with its reason, runs the rest, no stack, exits non-zero (57.429334ms)
+  Error: Command failed: cat-file --batch
+      at Object.indexBlobs (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-surfaces.test.mjs:148:33)
+      at indexFileContents (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git.mjs:470:20)
+      at specSyncFindings (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/spec-sync.mjs:282:33)
+      at Object.run (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/integrity.mjs:819:14)
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/integrity.mjs:1032:67
+      at Array.map (<anonymous>)
+      at runIntegrity (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/integrity.mjs:1032:17)
+      at integrity (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/integrity.mjs:1060:37)
+      at runInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:489:6)
+      at main (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:180:12) {
+    status: 1
+  }
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:184:1
+✖ I3 twin: snapshot's brief.txt never carries the block, even when the reader has a finding (47.026833ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!fs.readFileSync(path.join(cwd, ".conductor", "brief.txt"), "utf8").includes(SS_HEADING))
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/spec-sync-surfaces.test.mjs:191:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-index.test.mjs:93:1
+✖ C2 a CORRUPT index (exit 128) is rethrown, never read as 'no repository' (81.629292ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: git exits 128 for every fatal error; the confirming question finds a repository, so this rethrows
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/functional/spec-sync-index.test.mjs:98:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:234:1
+✖ C1 brief: a failing index read → exit 0, ONE `spec-sync check unavailable` line, and the rest of the briefing (307.578541ms)
+  Error: Command failed: git cat-file --batch
+      at genericNodeError (node:internal/errors:999:15)
+      at wrappedFn (node:internal/errors:544:14)
+      at checkExecSyncError (node:child_process:943:11)
+      at execFileSync (node:child_process:979:15)
+      at Object.indexBlobs (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git-gateway.mjs:114:7)
+      at indexFileContents (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git.mjs:470:20)
+      at specSyncFindings (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/spec-sync.mjs:282:33)
+      at specSyncBlock (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/briefing.mjs:74:20)
+      at buildBrief (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/briefing.mjs:313:27)
+      at brief (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/subcommands.mjs:137:17) {
+    status: 1,
+    signal: null,
+    output: [ null, <Buffer >, null ],
+    pid: 11600,
+    stdout: <Buffer >,
+    stderr: null
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:247:1
+✖ C1 render verb: a failing index read → exit 0, PROJECT.md written, ONE unavailable line on stdout (135.162458ms)
+  Error: Command failed: git cat-file --batch
+      at genericNodeError (node:internal/errors:999:15)
+      at wrappedFn (node:internal/errors:544:14)
+      at checkExecSyncError (node:child_process:943:11)
+      at execFileSync (node:child_process:979:15)
+      at Object.indexBlobs (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git-gateway.mjs:114:7)
+      at indexFileContents (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git.mjs:470:20)
+      at specSyncFindings (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/spec-sync.mjs:282:33)
+      at specSyncBlock (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/briefing.mjs:74:20)
+      at renderVerb (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/render.mjs:41:17)
+      at runInvocation (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/conductor.mjs:489:6) {
+    status: 1,
+    signal: null,
+    output: [ null, <Buffer >, null ],
+    pid: 11652,
+    stdout: <Buffer >,
+    stderr: null
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:255:1
+✖ C1 integrity: a failing index read → the check UNAVAILABLE with its reason, every other check reported, no stack, exit non-zero (131.900458ms)
+  Error: Command failed: git cat-file --batch
+      at genericNodeError (node:internal/errors:999:15)
+      at wrappedFn (node:internal/errors:544:14)
+      at checkExecSyncError (node:child_process:943:11)
+      at execFileSync (node:child_process:979:15)
+      at Object.indexBlobs (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git-gateway.mjs:114:7)
+      at indexFileContents (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/git.mjs:470:20)
+      at specSyncFindings (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/spec-sync.mjs:282:33)
+      at Object.run (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/integrity.mjs:819:14)
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/lib/integrity.mjs:1032:67
+      at Array.map (<anonymous>) {
+    status: 1,
+    signal: null,
+    output: [ null, <Buffer >, null ],
+    pid: 11701,
+    stdout: <Buffer >,
+    stderr: null
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:264:1
+✖ C2 a CORRUPT index is not 'no repository': integrity reports the check unavailable and exits non-zero (112.480458ms)
+  AssertionError [ERR_ASSERTION]: a corrupt index must not print 0 findings and exit 0
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/functional/spec-sync-surfaces.test.mjs:268:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/spec-sync-surfaces.test.mjs:272:1
+✖ I3 snapshot never carries the block — neither its stdout nor the brief.txt it writes (113.554042ms)
+  AssertionError [ERR_ASSERTION]: brief.txt is tracked in most fleet repos; a condition of the index stays out of it
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/functional/spec-sync-surfaces.test.mjs:279:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

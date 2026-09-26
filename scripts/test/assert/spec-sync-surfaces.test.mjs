@@ -12,6 +12,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, withAssertInvocation } from "../fixtures/assert-harness.mjs";
+import { fakeGit } from "../fixtures/fake-git.mjs";
+// The harness's own entry point, NOT the half's bound `invokeEngine` (which always substitutes the
+// no-repository double): these cases hand in a double whose index read fails another way.
+import { invokeEngine as invokeWithGit } from "../fixtures/harness.mjs";
 import { specSyncFindings, specSyncDetail } from "../../lib/spec-sync.mjs";
 import { CHECKS } from "../../lib/integrity.mjs";
 import { DELIVERED_OBLIGATIONS } from "../../lib/archive-gate.mjs";
@@ -135,4 +139,57 @@ test("5.2 twin: buildBrief carries the block only when asked, and names the SAME
   assert.deepEqual(named, [...new Set(findings.map(f => f.epic))].sort(), "the briefing reads specSyncFindings(), nothing else");
   assert.ok(block.some(l => l.includes("integrity")) || withBlock.includes("`integrity`"), "it points at integrity for the remedy");
   assert.ok(!embedded.includes(SS_HEADING), "render()'s embedding (no option) never carries it");
+});
+
+// ───────────── Gate 2 C1 / I3 twin — a check that cannot run degrades every surface ─────────────
+
+/** The half's double ("no repository here") with the index read failing for another reason. */
+const failingIndex = () => ({ ...fakeGit({ noRepository: true }),
+  indexBlobs: () => { const e = new Error("Command failed: cat-file --batch"); e.status = 1; throw e; } });
+function inScopeRepo() {
+  const cwd = archiveFixture();
+  run(["init"], { cwd });
+  const st = readState(cwd);
+  st.epics.push(delivered("lost"));
+  writeState(cwd, st);
+  return cwd;
+}
+const UNAVAILABLE = /^spec-sync check unavailable: exit 1 — Command failed: cat-file --batch$/;
+
+test("C1 twin: brief degrades to ONE line and exits 0", () => {
+  const cwd = inScopeRepo();
+  const r = invokeWithGit(["brief"], { cwd, git: failingIndex() });
+  assert.equal(r.status, 0, r.stderr);
+  const lines = JSON.parse(r.stdout).hookSpecificOutput.additionalContext.split("\n");
+  assert.equal(lines.filter(l => UNAVAILABLE.test(l)).length, 1, lines.join("\n"));
+});
+
+test("C1 twin: the render verb degrades to ONE line on stdout and still renders", () => {
+  const cwd = inScopeRepo();
+  const r = invokeWithGit(["render"], { cwd, git: failingIndex() });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.split("\n").filter(l => UNAVAILABLE.test(l)).length, 1, r.stdout);
+  assert.ok(fs.existsSync(path.join(cwd, "PROJECT.md")));
+});
+
+test("C1 twin: integrity names the check UNAVAILABLE with its reason, runs the rest, no stack, exits non-zero", () => {
+  const cwd = inScopeRepo();
+  const r = invokeWithGit(["integrity"], { cwd, git: failingIndex() });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stdout, new RegExp(`^${CHECK} — UNAVAILABLE \\(the check could not run: exit 1 — Command failed: cat-file --batch\\)`, "m"));
+  assert.match(r.stdout, /^advisory-claim-shape — \d+ finding\(s\)/m, "every other check still reports");
+  assert.ok(!/\n\s+at .+:\d+:\d+/.test(r.stdout + r.stderr), "no raw stack");
+});
+
+test("I3 twin: snapshot's brief.txt never carries the block, even when the reader has a finding", async () => {
+  const cwd = inScopeRepo();
+  const { read } = stubReader({ "engine-invocation": main("Old"), other: main() });
+  const state = readState(cwd);
+  const withReader = await withAssertInvocation(cwd, () => buildBrief(state, { specSync: { readIndex: read } }));
+  assert.ok(withReader.includes(SS_HEADING), "a finding exists");
+  run(["snapshot"], { cwd, input: "{}" });
+  assert.ok(!fs.readFileSync(path.join(cwd, ".conductor", "brief.txt"), "utf8").includes(SS_HEADING));
+  const src = fs.readFileSync(new URL("../../lib/subcommands.mjs", import.meta.url), "utf8");
+  const snap = src.slice(src.indexOf("export function snapshot()"), src.indexOf("export function snapshot()") + 2500);
+  assert.ok(!/specSync/.test(snap.replace(/\/\/.*$/gm, "")), "snapshot() passes no specSync option");
 });

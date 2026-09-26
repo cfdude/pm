@@ -42,22 +42,29 @@ test("3.2 twin: a malformed or truncated answer THROWS rather than guessing", ()
 });
 
 /** Run indexFileContents() under a hand-built gateway whose `indexBlobs` does `impl`. */
-function withGateway(impl, fn) {
+function withGateway(impl, fn, gitPath = () => ".git/index") {
   const cwd = tmpRepo();
   const prev = installedInvocation();
   setInvocation({ cwd, root: cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd }, argv: ["node", "conductor.mjs"],
     stdin: { read: () => "", isTTY: false }, stdout: { write: () => true }, stderr: { write: () => true },
-    git: { indexBlobs: impl } });
+    git: { indexBlobs: impl, gitPath } });
   try { return fn(); } finally { setInvocation(prev); }
 }
 const failing = (props) => () => { const e = new Error("git failed"); Object.assign(e, props); throw e; };
 
-test("3.2 twin: null overall ONLY for no repository (128) or no git (ENOENT)", async () => {
-  assert.equal(withGateway(failing({ status: 128 }), () => indexFileContents(["openspec/specs/a/spec.md"])), null);
+test("3.2 twin: null overall ONLY for a CONFIRMED no repository (128 twice) or no git (ENOENT)", async () => {
+  // Gate 2 C2: 128 alone is any fatal error; the gitPath question confirms there is no repository.
+  assert.equal(withGateway(failing({ status: 128 }), () => indexFileContents(["openspec/specs/a/spec.md"]),
+    failing({ status: 128 })), null);
   assert.equal(withGateway(failing({ code: "ENOENT" }), () => indexFileContents(["openspec/specs/a/spec.md"])), null);
   // And the assertion half's own double, which models "no repository here":
   const cwd = tmpRepo();
   assert.equal(await withAssertInvocation(cwd, () => indexFileContents(["openspec/specs/a/spec.md"])), null);
+});
+
+test("C2 twin: a 128 where the repository EXISTS (a corrupt index) is RETHROWN, not read as no repository", () => {
+  assert.throws(() => withGateway(failing({ status: 128 }), () => indexFileContents(["openspec/specs/a/spec.md"])),
+    /git failed/, "gitPath answers, so the repository exists and the 128 was some other fatal error");
 });
 
 test("3.2 twin: ENOBUFS and every other failure are RETHROWN — never reported as 'git cannot answer'", () => {

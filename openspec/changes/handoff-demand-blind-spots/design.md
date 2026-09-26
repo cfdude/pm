@@ -343,7 +343,8 @@ case on the file rung.
   `integrity`, never at `PROJECT.md`.
 - **The block is NOT written into `PROJECT.md`.** `render()` embeds `buildBrief(state)` into
   `PROJECT.md`, a tracked file. Decided: `buildBrief()` gains an option that includes the block, which
-  `brief()` and `snapshot()` pass and `render()`'s embedding does not. The `render` VERB, at its
+  `brief()` passes and `render()`'s embedding does not. (`snapshot()` does NOT pass it either — Gate 2
+  I3: its `.conductor/brief.txt` is tracked in 14 of 24 fleet repositories, so it is a tracked file too.) The `render` VERB, at its
   command-line dispatch and not inside `render()`, writes the block to its stdout after writing the
   file. `render()` itself runs in-process under `snapshot`, `commit-nudge`, `sync`, `upgrade` and most
   mutating verbs, several of them hooks, so printing there would put the block (and a git process)

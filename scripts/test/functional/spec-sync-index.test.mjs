@@ -89,3 +89,12 @@ test("3.2 a conductor root that is a SUBDIRECTORY of its repository reads ITS OW
   const got = atRoot(path.join(top, "sub"), () => indexFileContents([A]));
   assert.equal(got.get(A), COMMITTED, "`:./` resolves from the conductor root — a bare `:<path>` would read the top level's or `missing`");
 });
+
+test("C2 a CORRUPT index (exit 128) is rethrown, never read as 'no repository'", () => {
+  const cwd = repo();
+  write(cwd, A, COMMITTED);
+  fixtureGit(cwd, "add", "-A");
+  fs.writeFileSync(path.join(cwd, ".git", "index"), "garbage");
+  assert.throws(() => atRoot(cwd, () => indexFileContents([A])), (e) => e.status === 128,
+    "git exits 128 for every fatal error; the confirming question finds a repository, so this rethrows");
+});

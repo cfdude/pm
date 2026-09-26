@@ -1029,14 +1029,34 @@ export const CHECKS = [
 
 /** Run every check. Returns one entry PER CHECK, including the ones that found nothing. */
 export function runIntegrity(state) {
-  return CHECKS.map(c => ({ id: c.id, title: c.title, findings: c.run(state) || [] }));
+  // A check that THROWS is reported UNAVAILABLE with its reason, and every other check still runs
+  // (Gate 2 C1): a raw stack in place of the report, or a crash that hides twenty checks behind one,
+  // is not an audit. `integrity()` then exits non-zero, so "could not check" never reads as "clean".
+  return CHECKS.map(c => {
+    try {
+      return { id: c.id, title: c.title, findings: c.run(state) || [] };
+    } catch (e) {
+      return { id: c.id, title: c.title, findings: [], unavailable: unavailableReason(e) };
+    }
+  });
+}
+
+/** A thrown failure's reason, one line: its code or exit status, then the message's first line. */
+function unavailableReason(e) {
+  const code = e && (e.code || (typeof e.status === "number" ? `exit ${e.status}` : null));
+  const msg = String((e && e.message) || e || "unknown failure").split("\n")[0];
+  return code ? `${code} — ${msg}` : msg;
 }
 
 /** The report, as text. One block per check, count first, then the findings. */
 export function formatIntegrity(report) {
   const L = ["INTEGRITY — records that cannot be true.",
     "Findings are reported, never repaired: nothing here writes state or blocks a command.", ""];
-  for (const { id, title, findings } of report) {
+  for (const { id, title, findings, unavailable } of report) {
+    if (unavailable) {
+      L.push(`${id} — UNAVAILABLE (the check could not run: ${unavailable}): ${title}`);
+      continue;
+    }
     L.push(`${id} — ${findings.length} finding(s): ${title}`);
     for (const f of findings) {
       L.push(`  • ${f.epic ? `\`${f.epic}\` — ` : ""}${f.detail}`);
@@ -1057,5 +1077,11 @@ export function formatIntegrity(report) {
  *  being audited. Read-only means the file is byte-identical afterwards. */
 export function integrity() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
-  outStream().write(formatIntegrity(runIntegrity(loadState())) + "\n");
+  const report = runIntegrity(loadState());
+  outStream().write(formatIntegrity(report) + "\n");
+  const down = report.filter(c => c.unavailable).map(c => c.id);
+  if (down.length) {
+    die(`conductor: integrity: ${down.length} check(s) could not run (${down.join(", ")}) — the report above ` +
+      "is incomplete, so this exits non-zero rather than reading as clean.\n");
+  }
 }

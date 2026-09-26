@@ -452,15 +452,27 @@ export function parseCatFileBatch(buf, names) {
 }
 
 /** The INDEX's content of each path, relative to the conductor root: `Map<path, string|null>` (`null`
- *  = absent from the index), or `null` OVERALL when git cannot answer at all — no repository (exit
- *  128) or no git (ENOENT). ONE `git cat-file --batch` process for the whole set, fed `:./<path>`.
+ *  = absent from the index), or `null` OVERALL when git cannot answer at all — no repository, or no
+ *  git (ENOENT). ONE `git cat-file --batch` process for the whole set, fed `:./<path>`.
  *
  *  THAT IS THE ONLY `null`. Every other failure is RETHROWN — above all ENOBUFS, the index holding more
  *  than the read can buffer — because "git cannot answer" is a statement about the repository, and a
  *  read that failed for any other reason is not evidence that nothing is there (gate-integrity: "A read
- *  that fails for any OTHER reason ... SHALL NOT be reported as 'git cannot answer'"). The operation's
- *  stderr is ignored, so the exit status and the error code are the only signals, and 128 is git's
- *  status for "not a git repository". */
+ *  that fails for any OTHER reason ... SHALL NOT be reported as 'git cannot answer'").
+ *
+ *  EXIT 128 IS NOT "NO REPOSITORY" ON ITS OWN (Gate 2 C2). git exits 128 for EVERY fatal error — a
+ *  corrupt `.git/index` too — and this operation's stderr is ignored, so the status alone cannot tell
+ *  them apart; reading it as "no repository" made a corrupt index report zero findings and exit 0. So a
+ *  128 is CONFIRMED with a second, locale-independent question that reads no index: `rev-parse
+ *  --git-path index` (the existing `gitPath` operation). Only when that ALSO fails with 128 (or git is
+ *  absent) is there no repository; if it answers, the repository exists and the original failure is
+ *  rethrown. */
+/** Is there really no repository at the invocation's root? Asked only to confirm a 128. */
+function noRepositoryHere() {
+  try { gitOps().gitPath("index"); return false; }
+  catch (e) { return !!e && (e.status === 128 || e.code === "ENOENT"); }
+}
+
 export function indexFileContents(paths) {
   const list = [...new Set(Array.isArray(paths) ? paths : [])];
   if (!list.length) return new Map();
@@ -469,7 +481,8 @@ export function indexFileContents(paths) {
   try {
     buf = gitOps().indexBlobs(names.map(n => `${n}\n`).join(""));
   } catch (e) {
-    if (e && (e.status === 128 || e.code === "ENOENT")) return null;
+    if (e && e.code === "ENOENT") return null;
+    if (e && e.status === 128 && noRepositoryHere()) return null;
     throw e;
   }
   const parsed = parseCatFileBatch(buf, names);

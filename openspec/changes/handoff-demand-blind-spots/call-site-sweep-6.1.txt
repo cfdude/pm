@@ -72,8 +72,8 @@ rg -n "archivedTasksPath|isArchived\(|isArchiveBackfilled\(|archivedChangeDir\("
 rg -n "ungatedArchives|buildBrief\(|specSyncFindings\(|specSyncBlock\(" scripts --glob '!scripts/test/**'
 
   CARRY the block: integrity (CHECKS entry → specSyncFindings), brief() (buildBrief specSync: true),
-    snapshot() (buildBrief specSync: true → the untracked .conductor/brief.txt; its stdout stays empty),
     the `render` VERB's stdout (renderVerb → specSyncBlock).
+  snapshot() does NOT (Gate 2 I3): its .conductor/brief.txt is TRACKED in 14 of 24 fleet repos.
   DELIBERATELY DO NOT (design D6, justified): render()'s embedding into PROJECT.md (render.mjs:316 —
     PROJECT.md is tracked and the condition depends on the index); render() run in-process by snapshot,
     commit-nudge, sync, upgrade and the mutating verbs/hooks (a block + a git process in every one of

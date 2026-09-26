@@ -345,7 +345,7 @@ These rules bind every section below.
           and rewriting the main spec in the fixture (the openspec CLI is not a test dependency), both
           present and unstaged → `integrity` names the epic and `PROJECT.md` does not; after `git add openspec/`
           → nothing named.
-      - GREEN: `buildBrief()` gains an option that includes the block; `brief()` and `snapshot()` pass
+      - GREEN: `buildBrief()` gains an option that includes the block; `brief()` passes (Gate 2 I3: NOT `snapshot()`, whose `brief.txt` is tracked in most fleet repos)
         it; `render()`'s embedding does not. The `render` VERB's command-line dispatch (not
         `render()`, which hooks and other verbs run in-process) writes the block to stdout after
         writing the file, and never under `--diff-summary`. The overflow line points at `integrity`.
@@ -382,7 +382,7 @@ These rules bind every section below.
         both creation paths): state for each that the specs-synced condition refuses on none, and
         why;
       - every surface that renders standing conditions (`rg -n "ungatedArchives|buildBrief\(" scripts`):
-        `integrity`, `brief`, `snapshot` and the `render` verb's stdout carry the new block;
+        `integrity`, `brief` and the `render` verb's stdout carry the new block (Gate 2 I3: not `snapshot`);
         `render()`'s embedding into `PROJECT.md`, `render()` run in-process by other verbs and hooks,
         and `render --diff-summary` deliberately do not (design D6), and those omissions are the
         justified ones.

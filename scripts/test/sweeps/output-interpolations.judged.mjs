@@ -43,8 +43,19 @@ x("state.mjs", "recordEngineSave", {
 j("integrity.mjs", "CHECKS", ALL, "sink-flow", "every finding detail is printed only by formatIntegrity(), whose L joins through L.map(escapeControls); runIntegrity's sole caller is integrity(). Ids in commands go through printedId/orNoRemedy/asCode/commandValue, and the secondary tracker's shellQuote(t.repo) is reached only when CONTROL_CHARACTER.test(t.repo) is false");
 j("integrity.mjs", "recordedShas", ALL, "sink-flow", "`where` labels (gate1/gate2 + engine key) feed CHECKS details only");
 x("integrity.mjs", "integrity", {
-  "formatIntegrity(runIntegrity(loadState()))": 1,
+  "formatIntegrity(report)": 1,
 }, "escaped", "formatIntegrity() returns the sink-joined report");
+x("integrity.mjs", "integrity", {
+  "down.join(\", \")": 1,
+}, "engine", "CHECKS ids of the checks that could not run (Gate 2 C1) — registry vocabulary");
+x("integrity.mjs", "unavailableReason", {
+  "e.status": 1,
+  "code": 1,
+  "msg": 1,
+}, "sink-flow", "a thrown failure's reason, printed only inside formatIntegrity()'s L.map(escapeControls) (Gate 2 C1)");
+x("briefing.mjs", "specSyncUnavailable", {
+  "e.status": 1,
+}, "engine", "a process exit status number; the composed reason is escapeControls()d before it is returned (Gate 2 C1)");
 j("rules.mjs", "rulesBlock", ALL, "sink-flow", "the managed block's lines join through lines.map(escapeControls)");
 j("rules.mjs", "closedItemStep", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (pmCmd also names a platform-vocabulary command prefix)");
 j("rules.mjs", "gateProcedureLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (pmCmd also names a platform-vocabulary command prefix)");
@@ -537,7 +548,7 @@ x("subcommands.mjs", "appendHonchoMemory", {
   "line": 2,
 }, "escaped", "honchoMemoryLine() escapes the epic id and reason (design D7). TWO occurrences since 0.48.0 task 1.4: the line is printed to stdout AND appended to the log through the store, where before the append came from a path the declaration did not mention");
 x("subcommands.mjs", "snapshot", {
-  "buildBrief(state, { specSync: true })": 1,
+  "buildBrief(state)": 1,
 }, "not-output", "the brief SNAPSHOT's file BODY (`.conductor/brief.txt`), written through the store since task 1.4; buildBrief's own lines are the sink the briefing judgments already cover");
 x("subcommands.mjs", "changedFiles", {
   "p": 1,
