@@ -19,7 +19,7 @@
 import fs from "node:fs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
-import { STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
 import { stdinSource } from "./invocation.mjs";
 import {
   StateConflictError, StatePersistError, StateUnreadableError,
@@ -156,12 +156,12 @@ function seedCreationFields(epic) {
   }
 }
 
-/** pushEpic()'s refusal of an id no epic may carry (a control character or whitespace). Carries the
+/** pushEpic()'s refusal of an id no NEW epic may carry — one failing EPIC_ID_FORMAT. Carries the
  *  raw id; its message escapes it. Every caller checks STORABLE_EPIC_ID first, so reaching this is a
  *  creation path that skipped the check — loud by design. */
 export class InvalidEpicIdError extends Error {
   constructor(id) {
-    super(`epic id '${escapeControls(String(id))}' holds a control character or whitespace — it cannot be stored`);
+    super(`epic id '${escapeControls(String(id))}' does not match ${EPIC_ID_FORMAT.source} — it cannot be stored`);
     this.name = "InvalidEpicIdError";
     this.id = id;
   }

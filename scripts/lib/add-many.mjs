@@ -10,7 +10,7 @@ import { newStory, parentError, parseFlags, requireFlagValues, splitLinkSpec } f
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 import { currentArgv } from "./invocation.mjs";
@@ -84,7 +84,7 @@ export function addMany() {
   const batchIds = new Set();
   for (const e of incoming) {
     const id = e.id;
-    if (typeof id !== "string" || !EPIC_ID_FORMAT.test(id)) refuse(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
+    if (!STORABLE_EPIC_ID(id)) refuse(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
     if (existingIds.has(id)) refuse(`epic '${escapeControls(id)}' already exists`);
     if (batchIds.has(id)) refuse(`duplicate id '${escapeControls(id)}' within the batch`);
     const unknownKeys = Object.keys(e).filter(k => !allowedKeys.includes(k));

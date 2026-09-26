@@ -174,8 +174,13 @@ cell SHALL be written so that, under that splitting, it stays inside its cell an
 ### Requirement: An epic id holding a control character or whitespace is never stored
 `add-epic` and `add-many` SHALL keep refusing an id that does not match `^[a-z0-9][a-z0-9._-]*$`, exit
 non-zero and write nothing. `sync`'s registration of an active OpenSpec change and of a plan file, and
-the archive backfill, SHALL NOT store an epic whose derived id contains a control character or
-whitespace; uppercase and other characters they register today stay accepted. The check SHALL apply
+the archive backfill, SHALL NOT store an epic whose derived id does not match that same format, and
+every one of these paths SHALL ask one shared validator rather than test the format itself
+(sync-registers-ids-add-epic-refuses, 0.50.0, which superseded the 0.45.0 allowance for uppercase and
+other characters). A stored epic whose id predates the rule SHALL still load, render and update. For
+a skipped plan file whose lowercased name matches the format, the skip line SHALL carry a runnable
+`add-epic --id <lowercased> --lane superpowers --plan <path>`, and `sync`'s final line SHALL count the
+entries skipped for their name. The check SHALL apply
 only at the step that would create the epic — after an entry has been matched to an existing epic by
 any route (claimed artifact, known id, tombstone, near-match) — so an entry already held by an epic is
 never reported as skipped. A sweep SHALL still register every other entry in the same run, SHALL exit as
@@ -198,12 +203,18 @@ register an entry SHALL NOT say so of an entry `sync` skips.
 - **THEN** `state.json` holds no epic whose id contains a control character, and `integrity`'s report
   for that directory does not say that `sync` registers it
 
-#### Scenario: An uppercase plan filename still registers, and a held one is not reported
+#### Scenario: An uppercase plan filename is skipped with a runnable remedy, and a held one is not reported
 - **WHEN** the plans directory holds `MASTER-platform-stabilization.md`, not yet registered, and
   `Legacy-Plan.md`, already held by an epic with id `Legacy-Plan`, and `sync` runs
-- **THEN** `state.json` holds an epic `MASTER-platform-stabilization`, and stderr carries no
-  control-character-or-whitespace skip line for either file (the existing already-claimed or
-  id-already-exists line for `Legacy-Plan.md` is unaffected)
+- **THEN** `state.json` holds no epic `MASTER-platform-stabilization`, stderr names that file with
+  `add-epic --id master-platform-stabilization --lane superpowers --plan …`, and carries no
+  not-a-valid-epic-id skip line for `Legacy-Plan.md` (its already-claimed or id-already-exists line is
+  unaffected)
+
+#### Scenario: A change directory with a pipe is not registered
+- **WHEN** `openspec/changes/` holds `x|y` and `good-change`, and `sync` runs
+- **THEN** `state.json` holds `good-change` and no epic `x|y`, stderr names `x|y`, and the final line
+  says `1 skipped`
 
 ### Requirement: A release id that does not match the id format is never created
 Creating a release SHALL require its id to match `^[a-z0-9][a-z0-9._-]*$`, checked before any other

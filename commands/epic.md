@@ -137,8 +137,8 @@ written:
 ## Ids are refused at input; free text is escaped on display
 
 An **epic id** must match `^[a-z0-9][a-z0-9._-]*$` at `add-epic` and `add-many` (a batch with one
-bad id writes nothing), and no path can store one holding a control character or whitespace —
-`sync` and the archive backfill skip such a name (see `/pm:sync`). A **release id** must match the
+bad id writes nothing), and every other registration path applies the same rule — `sync` and the
+archive backfill skip a name that fails it and say so (see `/pm:sync`). A **release id** must match the
 same format when the release is created (see `release` in `/pm:status`).
 
 **Free text is stored exactly as written** — titles, descriptions, notes, story titles, every

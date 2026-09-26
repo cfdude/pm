@@ -778,11 +778,14 @@ export function sync(quiet = false) {
   }
   const known = new Set(state.epics.map(e => e.id));
   let added = 0;
+  // Every entry skipped for its NAME, counted into the final line: a sync that skipped something must
+  // not read as a clean "synced" (sync-registers-ids-add-epic-refuses).
+  let skipped = 0;
   for (const id of activeChangeIds()) {
     if (!known.has(id)) {
       // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
       // silent skip would read as a clean sync (design D4).
-      if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); continue; }
+      if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); skipped++; continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
@@ -855,7 +858,16 @@ export function sync(quiet = false) {
 
     // 5. Real backlog — the final registration step, so only an entry no rung above matched is
     //    tested: a name no epic id can carry is skipped and named on every run (design D4).
-    if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("plan", fname)); continue; }
+    if (!STORABLE_EPIC_ID(id)) {
+      // A plan is registered under an id the operator may CHOOSE (`add-epic --plan` claims it, so the
+      // next sync answers at rung 1). Where the lowercased stem is a valid id — the uppercase
+      // `MASTER-…` plans the fleet holds — that is a runnable command; otherwise there is none to offer.
+      const lower = id.toLowerCase();
+      const remedy = STORABLE_EPIC_ID(lower) && !known.has(lower)
+        ? orNoRemedy(() => `\`add-epic --id ${printedId(lower)} --lane superpowers --plan ${commandValue(planPath, "<plan path>")}\``)
+        : undefined;
+      errStream().write(unstorableSkipLine("plan", fname, remedy)); skipped++; continue;
+    }
     const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
@@ -872,6 +884,7 @@ export function sync(quiet = false) {
   const skippedArchives = [];
   const backfilled = backfillArchive(state, skippedArchives);
   for (const dir of skippedArchives) errStream().write(unstorableSkipLine("archive directory", dir));
+  skipped += skippedArchives.length;
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
   const saved = saveState(state);
@@ -887,12 +900,13 @@ export function sync(quiet = false) {
       : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
   }
   if (!quiet) {
+    const skipNote = skipped ? `; ${skipped} skipped — each named above, none registered` : "";
     reportSave(saved, {
-      changed: `conductor: synced (${added} new epic(s) added as untriaged)`,
+      changed: `conductor: synced (${added} new epic(s) added as untriaged${skipNote})`,
       // `added` counts registrations, and it is NOT the same question as "did the file change":
       // a sync that registers nothing still rewrites state when it heals an archive drift or
       // stamps the backfill marker. The save's own answer is the only one that is true of the file.
-      unchanged: `conductor: synced (${added} new epic(s) added as untriaged) — ${STATE_UNCHANGED}`,
+      unchanged: `conductor: synced (${added} new epic(s) added as untriaged${skipNote}) — ${STATE_UNCHANGED}`,
     });
     // What sync instructs EXTERNALLY follows direction. The engine performs none of it — it
     // reads no tracker and never will — but saying which branch applies is the difference

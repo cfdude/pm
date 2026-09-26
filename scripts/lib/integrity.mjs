@@ -349,8 +349,9 @@ export const CHECKS = [
       return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail: STORABLE_EPIC_ID(c.id)
         ? `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
           "registers it; this check only reports it"
-        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name holds a ` +
-          "control character or whitespace, so it cannot be an epic id — rename the directory to register it" }));
+        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name is not a ` +
+          "valid epic id (lowercase letters, digits, `.`, `_`, `-`), so `/pm:sync` skips it — rename the " +
+          "directory to register it" }));
     },
   },
   {

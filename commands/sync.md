@@ -48,20 +48,32 @@ same for a design document.
 
 ## A name that cannot be an epic id is skipped, and named every run
 
-An epic id is pasted into every command the engine prints, so a name holding a **control
-character** (a newline, a tab, U+2028, …) **or whitespace** can never become one. A change
-directory under `openspec/changes/`, a plan file, or an archive directory whose name holds either
-is **not registered**: `sync` registers everything else in the same run and prints one stderr line
-naming the entry, with its control characters escaped:
+An epic id is pasted into every command the engine prints and into PROJECT.md's tables, so
+`sync` registers an entry only under an id `add-epic` itself would accept: `^[a-z0-9][a-z0-9._-]*$`
+(lowercase letters, digits, `.`, `_`, `-`). Every registration path — change directories, plan
+files, the archive backfill — asks the same validator `add-epic` and `add-many` do. A change
+directory under `openspec/changes/`, a plan file, or an archive directory whose name fails it
+(`x|y`, `.hidden`, `My Plan.md`, `MASTER-plan.md`, a name holding a newline) is **not registered**:
+`sync` registers everything else in the same run and prints one stderr line naming the entry, with
+its control characters escaped:
 
-`conductor: sync skipped <kind> '<name>' — its name holds a control character or whitespace, so it cannot be an epic id; rename it to register it`
+```
+conductor: sync skipped <kind> '<name>' — its name is not a valid epic id (format ^[a-z0-9][a-z0-9._-]*$: lowercase letters, digits, `.`, `_`, `-`); rename it to register it
+```
+
+A **plan** whose lowercased name is a valid id gets a runnable registration instead of the rename
+advice — `add-epic --id master-plan --lane superpowers --plan docs/superpowers/plans/MASTER-plan.md`
+for `MASTER-plan.md` — and `add-epic --plan` claims the file, so
+the next sync answers "already claimed". The run's final line counts what was skipped:
+`conductor: synced (1 new epic(s) added as untriaged; 2 skipped — each named above, none registered)`.
 
 The line is printed on **every** run while the entry exists, including the quiet sync the commit
 hook runs, because a skipped change has no other reported condition — silencing it would make an
-unregistered change look like a clean sync. **Rename it to register it**; no verb can register it
-under its current name. The check runs at the final registration step, after the claimed, known,
-tombstone and near-match rungs above, so a name an epic already holds prints nothing. Uppercase
-names are unaffected. An archive directory is additionally reported by `integrity`'s
+unregistered change look like a clean sync. **Rename it to register it** (or, for a plan, run the
+`add-epic --plan` line it names); no verb can register it under its current name. The check runs at the final registration step, after the claimed, known,
+tombstone and near-match rungs above, so a name an epic already holds prints nothing — an epic
+stored under a legacy id (`MASTER-…`, `My Plan`) keeps loading, rendering and updating; only a NEW
+registration is refused. An archive directory is additionally reported by `integrity`'s
 `archive-directory-has-no-epic`, whose detail says it must be renamed rather than that `/pm:sync`
 registers it.
 

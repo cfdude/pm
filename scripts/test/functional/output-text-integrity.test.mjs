@@ -548,6 +548,9 @@ test("6.4c A primary tracker system with a newline is refused even with --remove
 });
 
 test("6.5 REGRESSION GUARD: well-formed and legacy release ids, uppercase and held plans, and the add-epic/add-many id refusals", () => {
+  // sync-registers-ids-add-epic-refuses (0.50.0) SUPERSEDES this test's uppercase half: every
+  // registration path now applies add-epic's own rule, so an uppercase plan is SKIPPED with a
+  // runnable `add-epic --id <lowercased> --plan` rather than stored under an id add-epic refuses.
   const cwd = initRepo();
   ok(cwd, ["release", "0.46.0", "--intent", "next batch"]);
   assert.ok((readState(cwd).releases || []).some(r => r.id === "0.46.0"), "a well-formed release id is created");
@@ -561,8 +564,9 @@ test("6.5 REGRESSION GUARD: well-formed and legacy release ids, uppercase and he
   fs.writeFileSync(path.join(plans, "Legacy-Plan.md"), "# legacy\n");
   legacyWrite(cwd, s => { s.epics.push({ id: "Legacy-Plan", title: "legacy", priority: "P2", status: "queued", role: "epic", lane: "superpowers", links: [] }); });
   const r = ok(cwd, ["sync"]);
-  assert.ok(readState(cwd).epics.some(e => e.id === "MASTER-platform-stabilization"), "an uppercase plan filename still registers");
-  assert.doesNotMatch(r.stderr, /control character or whitespace/, `no skip line for either file:\n${r.stderr}`);
+  assert.ok(!readState(cwd).epics.some(e => e.id === "MASTER-platform-stabilization"), "an uppercase plan filename is not stored under an id add-epic refuses");
+  assert.match(r.stderr, /sync skipped plan 'MASTER-platform-stabilization\.md'[^\n]*add-epic --id master-platform-stabilization/, `the uppercase plan is skipped with a runnable remedy:\n${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /sync skipped plan 'Legacy-Plan\.md' — its name is not a valid epic id/, `a HELD legacy plan is never reported as unstorable:\n${r.stderr}`);
 
   const before = bytesOf(cwd, ".conductor/state.json");
   assert.notEqual(pm(cwd, ["add-epic", "--id", "e1" + LF + "x", "--lane", "claude-code"]).status, 0, "add-epic refuses a control-character id");
@@ -589,8 +593,8 @@ test("6.6a REGRESSION GUARD (Gate 2 T-I6): init's QUIET sync still names a skipp
   fs.mkdirSync(plans, { recursive: true });
   fs.writeFileSync(path.join(plans, "px" + LF + "forged.md"), "# p\n");
   const r = ok(cwd, ["init", "--platform", "claude-code"]);   // init runs sync(quiet = true)
-  assert.match(r.stderr, /sync skipped change '[^\n]*' — its name holds a control character or whitespace/, `the change skip is said under quiet:\n${r.stderr}`);
-  assert.match(r.stderr, /sync skipped plan '[^\n]*' — its name holds a control character or whitespace/, `the plan skip is said under quiet:\n${r.stderr}`);
+  assert.match(r.stderr, /sync skipped change '[^\n]*' — its name is not a valid epic id/, `the change skip is said under quiet:\n${r.stderr}`);
+  assert.match(r.stderr, /sync skipped plan '[^\n]*' — its name is not a valid epic id/, `the plan skip is said under quiet:\n${r.stderr}`);
   assert.deepEqual(linesBeginning(r.stderr, "NOW: forged"), []);
   assert.equal(hasControlId(cwd), false);
 });
@@ -603,7 +607,7 @@ test("6.6b REGRESSION GUARD (Gate 2 T-M3): a CLAIMED plan file whose name holds 
   ok(cwd, ["add-epic", "--id", "my-plan", "--lane", "superpowers", "--plan", path.join("docs", "superpowers", "plans", "My Plan.md")]);
   const r = ok(cwd, ["sync"]);
   assert.match(r.stderr, /already claimed by epic 'my-plan'/, `the claimed rung answers first:\n${r.stderr}`);
-  assert.doesNotMatch(r.stderr, /control character or whitespace/, `the final-rung check never fires for a held entry:\n${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /not a valid epic id/, `the final-rung check never fires for a held entry:\n${r.stderr}`);
 });
 
 test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id itself, whichever path calls it", async () => {
@@ -613,9 +617,11 @@ test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id i
     assert.throws(() => pushEpic(state, { id, title: "t", lane: "claude-code", links: [] }), InvalidEpicIdError, `pushEpic refuses ${JSON.stringify(id)}`);
     assert.equal(state.epics.length, 0, "and stores nothing");
   }
+  // sync-registers-ids-add-epic-refuses: the sink applies add-epic's own rule, uppercase included.
+  assert.throws(() => pushEpic({ epics: [] }, { id: "MASTER-ok", title: "t", lane: "superpowers", links: [] }), InvalidEpicIdError, "an uppercase id is refused");
   const state = { epics: [] };
-  pushEpic(state, { id: "MASTER-ok", title: "t", lane: "superpowers", links: [] });
-  assert.equal(state.epics.length, 1, "an uppercase id is storable");
+  pushEpic(state, { id: "master-ok", title: "t", lane: "superpowers", links: [] });
+  assert.equal(state.epics.length, 1, "a well-formed id is storable");
 });
 
 test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable builder's result in a code span itself", () => {

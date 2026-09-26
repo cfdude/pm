@@ -55,3 +55,17 @@ test("add-many refuses a link whose target holds a control character, printing n
   assert.doesNotMatch(String(err.stderr), FORGED);
   assert.equal(fs.readFileSync(statePath, "utf8"), before);
 });
+
+// sync-registers-ids-add-epic-refuses (0.50.0) — the twin of the functional 6.5 / 6.6a / 6.6c edit,
+// whose uppercase-plan half was superseded: sync now applies add-epic's own rule. This per-commit half
+// pins the refusal side of that one rule — add-epic refuses each id sync used to register, and a
+// refusal writes nothing.
+test("add-epic refuses every id sync no longer registers, and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const before = fs.readFileSync(statePath, "utf8");
+  for (const id of ["x|y", ".hidden", "MASTER-plan"]) {
+    assert.ok(expectFail(() => run(["add-epic", "--id", id, "--lane", "claude-code"], { cwd })), `add-epic refuses '${id}'`);
+  }
+  assert.equal(fs.readFileSync(statePath, "utf8"), before);
+});
