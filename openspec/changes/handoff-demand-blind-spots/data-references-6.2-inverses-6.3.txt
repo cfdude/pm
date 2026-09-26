@@ -1,0 +1,26 @@
+6.2 — DATA REFERENCES (required task item 1). The new check STORES NOTHING: no field is added to
+state.json, no record gains an id, no MIGRATIONS entry. It READS two keys:
+
+  the EPIC ID → the key into openspec/changes/archive/ (through archivedChangeDir(): the directory whose
+    name, with one date prefix stripped, equals the id, latest date winning).
+    Written by: `openspec archive` (moves changes/<id>/ to archive/<YYYY-MM-DD>-<id>/), and by whoever
+      registers the epic (add-epic, add-many, sync, the backfill) — the id is the change id by convention.
+    Removed by: deleting or renaming the archive directory (the stale-directory removal 0ffb025 is the
+      live example — a LIVE copy removed, leaving the archived one authoritative); remove-epic removes the
+      epic side. Either removal makes the epic out of scope; nothing dangles, because nothing is stored.
+  the CAPABILITY NAME → the key into openspec/specs/<capability>/spec.md.
+    Written by: `openspec archive` (applies the delta to the main spec) and /opsx:sync; by hand when the
+      printed remedy is followed.
+    Removed by: deleting a capability's main spec. The check then reads it as absent from the index
+      (null → holds no headers) and reports every ADDED header — the defined behaviour, not a dangling
+      reference.
+
+6.3 — EVERY OPERATION HAS AN INVERSE (required task item 1):
+  counting a story  ↔ disposing one: SHIPPED (`update-epic --story <n> --wont-do "<reason>"`); under the
+    union a disposed story leaves both sides, exactly as before.
+  reading the archived source ↔ the live one: the LIVE path wins while it exists (epicProgress reads
+    changes/<id>/tasks.md first); un-archiving a change restores the live read. No new inverse needed.
+  the finding ↔ its clearing: SHIPPED — it clears when the index holds what the deltas require (the
+    printed remedy, proved end to end in functional/spec-sync-surfaces for ADDED, REMOVED and RENAMED).
+  the new gateway read (indexBlobs): a READ has no inverse — it writes nothing.
+  the new `specSync` option on buildBrief(): off is the default (render()'s embedding); nothing to undo.

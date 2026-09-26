@@ -367,7 +367,7 @@ These rules bind every section below.
 
 ## 6. Required task items
 
-- [ ] 6.1 **Call-site completeness sweep** (item 1), recorded in `call-site-sweep-6.1.txt`, every
+- [x] 6.1 **Call-site completeness sweep** (item 1), recorded in `call-site-sweep-6.1.txt`, every
       list derived with `rg`:
       - every caller of `epicProgress`, `outstandingWork`, `outstandingSummary` and
         `deliveredObligations` (`rg -n "epicProgress\(|outstandingWork\(|outstandingSummary\(|deliveredObligations\(" scripts`):
@@ -386,21 +386,21 @@ These rules bind every section below.
         `render()`'s embedding into `PROJECT.md`, `render()` run in-process by other verbs and hooks,
         and `render --diff-summary` deliberately do not (design D6), and those omissions are the
         justified ones.
-- [ ] 6.2 **Data references** (item 1). The new check stores nothing, so say so. The references it
+- [x] 6.2 **Data references** (item 1). The new check stores nothing, so say so. The references it
       READS are the epic id, the key into `openspec/changes/archive/`, and the capability name, the
       key into `openspec/specs/`. Name where each is written (`openspec archive`, `sync`) and where
       it is removed (the stale-directory removal, `0ffb025`, is the live example).
-- [ ] 6.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
+- [x] 6.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
       - counting a story against disposing one: already shipped (`--wont-do`);
       - reading the archived source against the live one: the live path wins while it exists;
       - the finding against its clearing: shipped, because it clears when the index holds the
         headers;
       - a new gateway read: a read has no inverse, so say so.
-- [ ] 6.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
+- [x] 6.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
       check that every file the task claims is in THAT commit. Record the results in
       `commit-verification-6.4.txt`. Pay particular attention to 3.1's NINE files, 1.2's
       `conductor-15` pair, 5.1's `emitted-invocations` pair, and every functional test's twin.
-- [ ] 6.5 **Declare lifecycle bookkeeping** (item 3). The disposition task 9.2 and the archive task
+- [x] 6.5 **Declare lifecycle bookkeeping** (item 3). The disposition task 9.2 and the archive task
       9.3 each carry `<!-- pm:lifecycle -->` on their own first line. They were marked when this
       source was authored. This matters more here than anywhere else: this change makes the
       ARCHIVED `tasks.md` count, so an unmarked disposition task would make the handoff refuse this
@@ -411,11 +411,11 @@ These rules bind every section below.
       attributed.
 - [ ] 6.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it after any concurrent amendment to a
       0.50.0 spec, and record the verdict again.
-- [ ] 6.8 **Disposition** (item 6). It is recorded by 9.2, whose flags are specified there.
+- [x] 6.8 **Disposition** (item 6). It is recorded by 9.2, whose flags are specified there.
       This task checks that 9.2's declined deferrals still name every non-goal in `design.md`
       before Gate 2. Verify: each of the SIX non-goals maps to a flag in 9.2, or is justified there as
       not being a deferral.
-- [ ] 6.9 **Route what the work taught** (item 7), and name which of the three kinds each item is.
+- [x] 6.9 **Route what the work taught** (item 7), and name which of the three kinds each item is.
       - PRACTICE: none expected. Say so if none arose.
       - TOOLING FRICTION: a change proposed under one id and carried by an epic with another reads
         `0/0` on the epic; here it took a directory re-key and a hand-supersede of the tracker epic.
