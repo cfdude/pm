@@ -143,9 +143,10 @@ plan. No field holding another record's id was added.
 
 ## Required item 7 — route what was learned
 
-- **Process lesson** — `docs/lessons/a-fixed-date-fixture-describes-a-history-that-cannot-happen.md`
-  (+ README rows): 14 assertion-half and 42 functional failures (14 test files plus one shared fixture) registered an epic today and archived its change under a
-  fixed past date; the date rule exposed every one.
+- **Process lesson** — `docs/lessons/a-failing-fixture-may-be-the-rules-first-real-counterexample.md`
+  (+ README rows). First filed as "a fixed-date fixture describes a history that cannot happen";
+  review showed one of the 56 failures (conductor-15 8.3) was a real history pm's own createdAt
+  recovery writes, so the lesson was reframed around that.
 - **Tooling friction (not pm's)** — the worktree agent's Bash guard refuses `trap`, so the certify
   lock could not be released by a trap as the orchestrator's brief required; it was taken with
   `mkdir` and released by an explicit `rmdir` after each commit. Reported to the orchestrator.
