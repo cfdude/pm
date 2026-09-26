@@ -140,6 +140,17 @@ unitTest("add-many applies the externalId fallback within the batch and against 
   assert.deepEqual(ids(engine), ["a", "x", "y"]);
 });
 
+// ─────────────── the emitted sync procedure says what the engine enforces ───────────────
+unitTest("the rules block tells every inward sync that an archived epic still holds its item, and what a REOPENED item gets", () => {
+  const engine = memoryEngine({ ...emptyRecord(), tracker: { system: "github-issues", repo: "o/n" },
+    secondaryTrackers: [{ system: "github-issues", repo: "o/m" }] });
+  const rules = engine(["rules"]);
+  const said = rules.match(/An ARCHIVED epic still holds its item's URL/g) || [];
+  assert.equal(said.length, 2, "once in the primary inward procedure and once in the secondary tracker's");
+  assert.equal((rules.match(/propose\s+`update-epic <id> --status untriaged` on the archived holder/g) || []).length, 2);
+  assert.match(rules, /never register a second epic for it/);
+});
+
 // ─────────────── surrounding whitespace is trimmed on every writer ───────────────
 // A leading or trailing space was stored verbatim, so ` U` and `U` were two items to the dedup and
 // the stored URL did not open. The comparison is otherwise EXACT (see README): only the whitespace

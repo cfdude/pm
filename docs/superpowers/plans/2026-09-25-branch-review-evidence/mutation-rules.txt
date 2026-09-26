@@ -1,0 +1,9 @@
+mutation proofs — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/dedup/mut, worktree untouched
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M30 the rules block's archived-holder / reopened-item lines removed
+  mutation: scripts/lib/rules.mjs: "  \"   An ARCHIVED epic still holds its item's URL" -> "  //\"   An ARCHIVED epic still holds its item's URL"
+  exit 1 — CAUGHT
+  ✖ the rules block tells every inward sync that an archived epic still holds its item, and what a REOPENED item gets (7.153625ms)
+  ✖ failing tests:
+

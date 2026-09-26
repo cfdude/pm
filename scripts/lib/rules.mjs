@@ -562,7 +562,8 @@ function inwardListStep(tracker, sys, scope) {
   ];
 }
 
-/** The dedup step, shared. Reads the record; reading `.conductor/state.json` is not an edit, and pm
+/** The dedup step, shared by the primary inward sync and every secondary tracker's (one line, so the
+ *  archived-holder rule cannot hold in one procedure and not the other). Reads the record; reading `.conductor/state.json` is not an edit, and pm
  *  ships no `/pm:epic list` command to point at. */
 const dedupStep = () => [
   "2. For each item, check `.conductor/state.json` for an epic whose `externalUrl` matches that",
@@ -571,6 +572,9 @@ const dedupStep = () => [
   "   `externalId`: item numbers are unique only within one tracker/repo, so two trackers can each",
   "   hold an item numbered the same without those being the same item. Where one side has no URL,",
   "   they are not a duplicate either — a URL-less legacy epic must not block a genuinely distinct item.",
+  "   An ARCHIVED epic still holds its item's URL — the engine refuses a second epic for it and names",
+  "   the holder. When an item comes back REOPENED, never register a second epic for it: propose",
+  "   `update-epic <id> --status untriaged` on the archived holder to the user instead.",
 ];
 
 /** The registration step, shared: the quoting instruction, then the line, then lane routing. Item
