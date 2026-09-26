@@ -216,3 +216,18 @@ test("8.6: a repo already carrying the marker registers nothing and announces no
 // rollback sequence restores state and re-renders from it" drives a sequence through real `git`
 // restore. Both are functional-only by subject (design D5). The migration's own rules — idempotence,
 // direction stamping, leave-an-agent's-record-alone — are asserted above against the same fixture.
+
+test("integrity: only the spec-sync check may degrade — every other check that throws fails the run", async () => {
+  // Confirmation review of handoff-demand-blind-spots: runIntegrity() caught ANY check, so a crashing
+  // check read as an empty finding list. The catch is narrowed to DEGRADABLE_CHECKS.
+  const integ = await import("../../lib/integrity.mjs");
+  assert.deepEqual([...integ.DEGRADABLE_CHECKS], ["delivered-epic-spec-deltas-absent"]);
+  const victim = integ.CHECKS.find(c => c.id === "archived-with-zero-ticked-tasks");
+  const original = victim.run;
+  victim.run = () => { throw new Error("boom"); };
+  try {
+    assert.throws(() => integ.runIntegrity({ epics: [] }), /boom/, "a non-spec-sync check that throws fails loudly");
+  } finally {
+    victim.run = original;
+  }
+});

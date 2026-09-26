@@ -186,7 +186,8 @@ index read that errs as above, or an answer the check cannot parse), the Session
 control characters escaped, and emit everything else they would have emitted, exiting as they would
 have. The `integrity` report never prints a raw stack: it reports this check as unavailable, naming the
 reason, still runs and reports every other check, and exits non-zero, so "could not check" never reads
-as "nothing found".
+as "nothing found". The degrade applies to THIS check only; any other integrity check that fails still
+fails the run as it did before.
 
 **It is a standing condition, never a refusal.** No archive path SHALL refuse on it: not the
 interactive archive verb, not the archive-drift heal, not the backfill registration, and not the
@@ -203,7 +204,8 @@ id), the SessionStart briefing (its own heading), and the standard output of the
 invoked directly, which is what `/pm:status` runs. That output is the verb's only: the internal
 render that other verbs and hooks run after their own writes does not print it, and neither does
 `render --diff-summary`, whose output is a machine-read line. It SHALL NOT be written into
-`PROJECT.md`. `PROJECT.md` is tracked and committed,
+`PROJECT.md`, and the PreCompact snapshot does not carry it either, because its
+`.conductor/brief.txt` is a tracked file in many repositories. `PROJECT.md` is tracked and committed,
 and this condition depends on the index: a render between `openspec archive` and `git add` would
 write a finding about a correct archive into a file that then gets committed with it, and the file's
 contents would change with staging state rather than with the record. A block that overflows its cap

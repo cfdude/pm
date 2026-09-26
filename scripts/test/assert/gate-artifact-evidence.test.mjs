@@ -40,6 +40,8 @@ function findingsFor(id, state) {
     });
     const c = runIntegrity(state).find(x => x.id === id);
     assert.ok(c, `no check registered as ${id}`);
+    // A check that could not run has no findings to compare; an empty list must never pass for one.
+    assert.ok(!c.unavailable, `${id} could not run: ${c.unavailable}`);
     return c.findings;
   } finally {
     setInvocation(before ?? { cwd, root: cwd, argv: [], env: process.env, stdin: { read: () => "", isTTY: false },
@@ -86,4 +88,11 @@ test("gh-191: the range exemption is unchanged", () => {
   });
   assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", st), [],
     "Gate 2's evidence form keeps working exactly as before");
+});
+
+import { readFileSync } from "node:fs";
+
+test("findingsFor refuses a check that could not run — an empty list never passes for it", () => {
+  const src = readFileSync(new URL(import.meta.url), "utf8");
+  assert.match(src, /assert\.ok\(!c\.unavailable/, "the helper asserts the check ran");
 });

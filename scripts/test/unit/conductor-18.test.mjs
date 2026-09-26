@@ -116,3 +116,9 @@ unitTest("gh-137/gh-112: both checks appear in the report even when they find no
   countLine(out, DELIVERED);
   countLine(out, SUPERSEDED);
 });
+
+unitTest("integrity: no check reports itself UNAVAILABLE on an ordinary record (only spec-sync may degrade)", () => {
+  // Twin of the functional findingsFor hardening: a check that could not run is never an empty list.
+  const engine = repoWith({ epics: [epic("a")] });
+  assert.doesNotMatch(engine(["integrity"]), /UNAVAILABLE/);
+});

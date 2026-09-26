@@ -1028,11 +1028,18 @@ export const CHECKS = [
 ];
 
 /** Run every check. Returns one entry PER CHECK, including the ones that found nothing. */
+/** The ONE check allowed to report itself UNAVAILABLE instead of failing: it reads git's index, and
+ *  gate-integrity's degrade rule covers it alone. */
+export const DEGRADABLE_CHECKS = new Set(["delivered-epic-spec-deltas-absent"]);
+
 export function runIntegrity(state) {
-  // A check that THROWS is reported UNAVAILABLE with its reason, and every other check still runs
-  // (Gate 2 C1): a raw stack in place of the report, or a crash that hides twenty checks behind one,
-  // is not an audit. `integrity()` then exits non-zero, so "could not check" never reads as "clean".
+  // THE SPEC-SYNC CHECK ONLY (Gate 2 C1, narrowed at the confirmation review): if it throws it is
+  // reported UNAVAILABLE with its reason, every other check still runs, and `integrity()` exits
+  // non-zero, so "could not check" never reads as "clean". ANY OTHER check that throws still fails
+  // loudly, exactly as before — catching those too was unspecified, and it turned a crashing check
+  // into an empty finding list that a test asserting `[]` would read as a pass.
   return CHECKS.map(c => {
+    if (!DEGRADABLE_CHECKS.has(c.id)) return { id: c.id, title: c.title, findings: c.run(state) || [] };
     try {
       return { id: c.id, title: c.title, findings: c.run(state) || [] };
     } catch (e) {
