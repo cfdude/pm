@@ -29,6 +29,8 @@ import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 import { getAutonomy, grantLabel } from "./autonomy.mjs";
 import { die } from "./command-exit.mjs";
 import { outStream } from "./invocation.mjs";
+import { engineRoot } from "./constants.mjs";
+import { specSyncDetail, specSyncFindings } from "./spec-sync.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -801,6 +803,20 @@ export const CHECKS = [
         }
       }
       return out;
+    },
+  },
+  {
+    id: "delivered-epic-spec-deltas-absent",
+    title: "a delivered epic whose archived spec deltas are absent from the main specs in git's index",
+    /** gate-integrity: "A delivered epic whose archived spec deltas are absent from the main specs is
+     *  reported until they arrive" (handoff-demand-blind-spots, cfdude/pm#222). A STANDING CONDITION and
+     *  never a refusal (design D3): no archive path imports spec-sync.mjs. The finding set is
+     *  specSyncFindings()'s — the one function the briefing reads too — and the main specs come from
+     *  git's INDEX, so where git cannot answer (the assertion half's double, a non-repository) no
+     *  presence or absence finding is made. The remedy is an edit plus `git -C <root> add openspec/`,
+     *  printed by specSyncDetail(); it names no engine invocation. */
+    run(state) {
+      return specSyncFindings(state.epics).map(f => ({ epic: f.epic, detail: specSyncDetail(f, engineRoot()) }));
     },
   },
   {

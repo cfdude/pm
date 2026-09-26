@@ -134,6 +134,18 @@ test("6.3 the hand-edit scanner: the emitted text never tells a reader to edit s
   assert.deepEqual(offenders, [], "pm's own surfaces must send a reader through a verb, never to the file");
 });
 
+test("Layer B registry: every integrity CHECKS id has a builder in the functional file (source read)", async () => {
+  // The functional registry test fails a CHECKS id with no builder, but it runs on a trigger. This
+  // half reads the functional file's SOURCE (never executes it) so a check added without its builder —
+  // handoff-demand-blind-spots added `delivered-epic-spec-deltas-absent` — fails on the commit.
+  const { CHECKS } = await import("../../lib/integrity.mjs");
+  const src = fs.readFileSync(path.join(REPO, "scripts", "test", "functional", "emitted-invocations.test.mjs"), "utf8");
+  const registry = src.slice(src.indexOf("const INTEGRITY_BUILDERS = {"));
+  // An entry is one builder (`"id": {`) or a list of alternatives (`"id": [`).
+  const missing = CHECKS.map(c => c.id).filter(id => !registry.includes(`"${id}": {`) && !registry.includes(`"${id}": [`));
+  assert.deepEqual(missing, [], "each integrity check needs an INTEGRITY_BUILDERS entry");
+});
+
 // ───────────────────────── the deliberate omissions ─────────────────────────
 //
 // The 1.1 extractor family (wrapped spans, parenthesised alternatives, `A | B | C` forms, spaced

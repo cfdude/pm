@@ -306,7 +306,7 @@ These rules bind every section below.
 
 ## 5. The surfaces (design D6)
 
-- [ ] 5.1 **TDD** — the integrity check (working id `delivered-epic-spec-deltas-absent`) and its
+- [x] 5.1 **TDD** — the integrity check (working id `delivered-epic-spec-deltas-absent`) and its
       exported function.
       - RED: `red-5.1.txt`:
         - ASSERT rung: `specSyncFindings(epics, { readIndex })` called directly with a stub reader
