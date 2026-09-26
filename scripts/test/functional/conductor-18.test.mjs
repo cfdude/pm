@@ -22,6 +22,8 @@ const liveState = () => JSON.parse(fs.readFileSync(path.join(REPO, ".conductor",
 const findingsFor = (id, state) => {
   const c = runIntegrity(state).find(x => x.id === id);
   assert.ok(c, `no check registered as ${id}`);
+  // A check that could not run has no findings to compare; an empty list must never pass for one.
+  assert.ok(!c.unavailable, `${id} could not run: ${c.unavailable}`);
   return c.findings;
 };
 

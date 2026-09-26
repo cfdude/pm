@@ -775,8 +775,18 @@ exactly as a `<!-- pm:lifecycle -->` task does (`3/3 stories · 2 disposed`), an
 disposition is never silently replaced.
 
 This adds **no new archive refusal.** The archive gate already refuses `--outcome delivered`
-while any work is outstanding, and inline stories are the *first* progress source it reads — so
-an epic with an unticked story has been blocked since that gate shipped. What was missing was an
+while any work is outstanding, and it counts inline stories along with any task source — so
+an epic with an unticked story has been blocked since that gate shipped.
+
+**Stories and a task source count together, and an archived change is still read.** An epic's
+progress is the UNION of its inline stories and its checkbox source — its plan file, or for an
+openspec-lane epic the change's `tasks.md`. Neither hides the other: before 0.50.0 one
+`--add-story` on an epic with a `tasks.md` at 1/3 made the tasks unread, and an archive recorded
+`delivered` at `1/1` with two tasks open. And once `/opsx:archive` has moved
+`openspec/changes/<id>/`, the checkbox source is the ARCHIVED `tasks.md` for every epic, not only a
+backfilled one — so the archive gate's handoff demand no longer reads `0/0` at exactly the moment it
+asks (two epics in pm's own record had been recorded `delivered` at 53/54 and 46/47 that way). Where
+both parts hold open work, the refusal names each part's remedy and says both must be done. What was missing was an
 honest way past it: the refusal's other remedy, the `<!-- pm:lifecycle -->` marker, cannot be
 written on an inline story at all (there is no task source), which left only `--carried-to` —
 naming a receiving epic for work that was *dropped* rather than moved, i.e. the fabricated
@@ -1057,8 +1067,22 @@ again (`archived-with-withdrawn-gate-2`), an epic the archive-drift heal flipped
 while carrying a passing Gate 2, an epic sitting in a status the engine does not define, a dangling
 epic reference, an archive directory no epic corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
 open in a release that has already delivered, an epic another epic declares it supersedes
-that never ended, and a `github-issues` tracker whose recorded repo is not `[HOST/]owner/name`
-(`tracker-repo-not-a-github-repository`, which gets no `gh` listing step until it is re-recorded).
+that never ended, a `github-issues` tracker whose recorded repo is not `[HOST/]owner/name`
+(`tracker-repo-not-a-github-repository`, which gets no `gh` listing step until it is re-recorded),
+and a `delivered` openspec epic whose archived spec deltas never reached `openspec/specs/`
+(`delivered-epic-spec-deltas-absent`).
+
+**The spec-sync check reads git's INDEX.** For each `delivered` openspec epic whose change is
+archived, every ADDED/MODIFIED header (and RENAMED `TO`) of its archived delta specs must be under the
+main spec's `## Requirements`, and every REMOVED header (and RENAMED `FROM`) must not be — headers
+only, with a later archived change that touched the same header discharging it. The main spec is read
+from the index in one `git cat-file --batch` (the working tree would have passed 0.48.0's real loss:
+its archive rewrote two main specs, the commit staged only `openspec/changes`, and a hard reset then
+discarded four requirements). Between `openspec archive` and `git add` a correct archive is reported
+too — stage `openspec/` whole and it clears. It is a standing condition, never a refusal, reported by
+`integrity`, the SessionStart briefing and the `render` verb's printed output, and never written into
+`PROJECT.md`. Its remedy: make the main spec hold what the archived delta requires, then
+`git -C <conductor root> add openspec/`.
 
 **The release one closes a real loop.** A release object carries no delivery marker, so "this
 release delivered" is read from its members: at least one holds a `delivered` disposition, and

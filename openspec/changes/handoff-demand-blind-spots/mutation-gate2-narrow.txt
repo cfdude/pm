@@ -1,0 +1,37 @@
+mutation-gate2-narrow — scratch COPY of scripts/: runIntegrity's catch widened back to every check. The assert/conductor-15 case (a non-spec-sync check made to throw) then FAILS — the throw is swallowed as UNAVAILABLE instead of failing the run. (The functional conductor-15 file cannot run in a non-git scratch copy; its findingsFor now asserts !c.unavailable, which is the hardening the twin pins.)
+
+──── mut-WIDE.out ────
+✖ integrity: only the spec-sync check may degrade — every other check that throws fails the run (1.955458ms)
+fatal: not a git repository (or any of the parent directories): .git
+ℹ Error: A resource generated asynchronous activity after the test ended. This activity created the error "Error: Command failed: git rev-list --first-parent --abbrev=7 --abbrev-commit -n 12 HEAD
+fatal: not a git repository (or any of the parent directories): .git
+" which triggered an uncaughtException event, caught by the test runner.
+✖ scripts/test/functional/conductor-15.test.mjs (161.691666ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 168.039208
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-15.test.mjs:220:1
+✖ integrity: only the spec-sync check may degrade — every other check that throws fails the run (1.955458ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: a non-spec-sync check that throws fails loudly
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/conductor-15.test.mjs:229:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /boom/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-15.test.mjs:1:1
+✖ scripts/test/functional/conductor-15.test.mjs (161.691666ms)
+  'test failed'

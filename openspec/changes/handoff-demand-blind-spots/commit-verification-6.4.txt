@@ -1,0 +1,130 @@
+commit-verification-6.4 — required task item 2: every task's claimed files checked against
+`git show --stat` of THAT commit (never the working tree). Range fcdd11b..HEAD on this branch.
+Claims per commit (from tasks.md and the commit body) are listed first; the stat follows verbatim.
+
+3579888 1.1   claims: baseline-before.md, tasks.md                                        — PRESENT
+8c62f47 1.2+1.3 claims: epic-progress.mjs, archive-gate.mjs, integrity.mjs (comments),
+              functional/conductor-15 + its twin assert/conductor-15, assert/archived-progress,
+              red-1.2, red-1.3, mutation-1.3                                              — PRESENT
+990d91a 1.4   claims: live-record-1.4.txt (no test moved)                                 — PRESENT
+32a6043 2.1-2.3 claims: epic-progress.mjs, archive-gate.mjs, unit+assert progress-union,
+              sweeps judged, red-2.1/2.2/2.3, mutation-2.2                                — PRESENT
+51b7638 2.3 guard claims: assert/progress-union, mutation-2.3-release                    — PRESENT
+164a640 3.1+3.2 claims 3.1's NINE: git-gateway.mjs, git.mjs, fake-git.mjs,
+              git-gateway-capture.json, git-gateway-repo.mjs, functional/git-gateway-double,
+              assert/git-gateway-double (twin), assert/git-gateway-guard,
+              functional/git-gateway-guard; plus functional/commit-resolution + its twin,
+              functional/spec-sync-index + twin assert/spec-sync-index, red-3.1, red-3.2      — PRESENT
+df86f3c 4.1+4.2 claims: spec-sync.mjs, unit/spec-sync, sweeps judged, red-4.1/4.2, mutation-4.2 — PRESENT
+fc88cff 4.3   claims: evidence-4.3.txt                                                    — PRESENT
+5b32904 5.1   claims: integrity.mjs, functional/spec-sync-surfaces + twin assert/spec-sync-surfaces,
+              functional/emitted-invocations + twin assert/emitted-invocations, red-5.1    — PRESENT
+8158ec72 5.2+5.4 claims: briefing.mjs, render.mjs, conductor.mjs, subcommands.mjs,
+              functional/spec-sync-surfaces + twin, sweeps judged, integrity-day-one.md,
+              red-5.2, mutation-5.2, mutation-5.4, evidence-5.3                           — PRESENT
+7f58b30d 7.1-7.5 claims: commands/status.md, README.md, skills/conductor/SKILL.md,
+              commands/epic.md, .changesets/handoff-demand-blind-spots.md, mintlify-7.5  — PRESENT
+(the 6.x commit that adds THIS file is verified by the same command after it lands)
+
+════ 35798882 docs(handoff-demand-blind-spots): 1.1 baseline measured before any engine edit
+ .../handoff-demand-blind-spots/baseline-before.md  | 107 +++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |   2 +-
+ 2 files changed, 108 insertions(+), 1 deletion(-)
+════ 8c62f47e fix(epic-progress): read the archived tasks.md for every epic, through one resolver (1.2, 1.3)
+ .../handoff-demand-blind-spots/mutation-1.3.txt    | 126 ++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/red-1.2.txt | 109 ++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/red-1.3.txt |  28 +++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |   4 +-
+ scripts/lib/archive-gate.mjs                       |  17 +--
+ scripts/lib/epic-progress.mjs                      |  71 +++++++-----
+ scripts/lib/integrity.mjs                          |   8 +-
+ scripts/test/assert/archived-progress.test.mjs     | 127 +++++++++++++++++++++
+ scripts/test/assert/conductor-15.test.mjs          |  14 +++
+ scripts/test/functional/conductor-15.test.mjs      |  27 +++--
+ 10 files changed, 479 insertions(+), 52 deletions(-)
+════ 990d91a7 docs(handoff-demand-blind-spots): 1.4 live-record fallout re-measured — nothing moved
+ .../handoff-demand-blind-spots/live-record-1.4.txt  | 21 +++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md     |  2 +-
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+════ 32a60438 fix(epic-progress): stories and the checkbox source count together (2.1, 2.2, 2.3)
+ .../handoff-demand-blind-spots/mutation-2.2.txt    | 177 +++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/red-2.1.txt | 132 +++++++++++++++
+ .../changes/handoff-demand-blind-spots/red-2.2.txt |  27 ++++
+ .../changes/handoff-demand-blind-spots/red-2.3.txt |  65 ++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |   6 +-
+ scripts/lib/archive-gate.mjs                       |  63 +++++---
+ scripts/lib/epic-progress.mjs                      |  96 ++++++++---
+ scripts/test/assert/progress-union.test.mjs        | 173 ++++++++++++++++++++
+ .../test/sweeps/output-interpolations.judged.mjs   |   8 +-
+ scripts/test/unit/progress-union.test.mjs          |  42 +++++
+ 10 files changed, 740 insertions(+), 49 deletions(-)
+════ 51b7638c test(progress-union): the delivered-release alternative over both parts (2.3 guard)
+ .../mutation-2.3-release.txt                       | 36 ++++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |  8 ++---
+ scripts/test/assert/progress-union.test.mjs        | 31 +++++++++++++++++++
+ 3 files changed, 71 insertions(+), 4 deletions(-)
+════ 164a6402 feat(git-gateway): indexBlobs — read index content as BYTES in one cat-file --batch (3.1, 3.2)
+ .../changes/handoff-demand-blind-spots/red-3.1.txt | 35 +++++++++
+ .../changes/handoff-demand-blind-spots/red-3.2.txt | 40 ++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |  4 +-
+ scripts/lib/git-gateway.mjs                        | 21 ++++-
+ scripts/lib/git.mjs                                | 56 +++++++++++++
+ scripts/test/assert/commit-resolution.test.mjs     |  5 +-
+ scripts/test/assert/git-gateway-double.test.mjs    | 27 +++++++
+ scripts/test/assert/git-gateway-guard.test.mjs     |  2 +-
+ scripts/test/assert/spec-sync-index.test.mjs       | 76 ++++++++++++++++++
+ scripts/test/fixtures/fake-git.mjs                 |  3 +
+ scripts/test/fixtures/git-gateway-capture.json     | 18 +++++
+ scripts/test/fixtures/git-gateway-repo.mjs         | 37 ++++++++-
+ scripts/test/functional/commit-resolution.test.mjs | 11 ++-
+ .../test/functional/git-gateway-double.test.mjs    | 15 +++-
+ scripts/test/functional/git-gateway-guard.test.mjs |  2 +-
+ scripts/test/functional/spec-sync-index.test.mjs   | 91 ++++++++++++++++++++++
+ .../test/sweeps/output-interpolations.judged.mjs   |  4 +
+ 17 files changed, 434 insertions(+), 13 deletions(-)
+════ df86f3c0 feat(spec-sync): the delta grammar and the header comparison (4.1, 4.2)
+ .../handoff-demand-blind-spots/mutation-4.2.txt    | 140 ++++++++++
+ .../changes/handoff-demand-blind-spots/red-4.1.txt |  35 +++
+ .../changes/handoff-demand-blind-spots/red-4.2.txt |  35 +++
+ .../changes/handoff-demand-blind-spots/tasks.md    |   4 +-
+ scripts/lib/spec-sync.mjs                          | 311 +++++++++++++++++++++
+ .../test/sweeps/output-interpolations.judged.mjs   |   8 +
+ scripts/test/unit/spec-sync.test.mjs               | 187 +++++++++++++
+ 7 files changed, 718 insertions(+), 2 deletions(-)
+════ fc88cffc docs(handoff-demand-blind-spots): 4.3 live, replay and mutation evidence for the spec-sync comparison
+ .../handoff-demand-blind-spots/evidence-4.3.txt    | 30 ++++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |  2 +-
+ 2 files changed, 31 insertions(+), 1 deletion(-)
+════ 5b32904c feat(integrity): delivered-epic-spec-deltas-absent — archived deltas the index lacks (5.1)
+ .../changes/handoff-demand-blind-spots/red-5.1.txt | 345 +++++++++++++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |   2 +-
+ scripts/lib/integrity.mjs                          |  16 +
+ scripts/test/assert/emitted-invocations.test.mjs   |  12 +
+ scripts/test/assert/spec-sync-surfaces.test.mjs    | 108 +++++++
+ .../test/functional/emitted-invocations.test.mjs   |  20 ++
+ .../test/functional/spec-sync-surfaces.test.mjs    | 117 +++++++
+ 7 files changed, 619 insertions(+), 1 deletion(-)
+════ 8158ec72 feat(briefing): the spec-sync block in brief, snapshot and the render verb's stdout (5.2, 5.4)
+ .../integrity-day-one.md                           |  12 +++
+ .../handoff-demand-blind-spots/evidence-5.3.txt    |  19 ++++
+ .../handoff-demand-blind-spots/mutation-5.2.txt    | 119 +++++++++++++++++++++
+ .../handoff-demand-blind-spots/mutation-5.4.txt    |  37 +++++++
+ .../changes/handoff-demand-blind-spots/red-5.2.txt | 100 +++++++++++++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |   4 +-
+ scripts/conductor.mjs                              |   6 +-
+ scripts/lib/briefing.mjs                           |  34 +++++-
+ scripts/lib/render.mjs                             |  16 ++-
+ scripts/lib/subcommands.mjs                        |   8 +-
+ scripts/test/assert/spec-sync-surfaces.test.mjs    |  30 ++++++
+ .../test/functional/spec-sync-surfaces.test.mjs    |  98 +++++++++++++++++
+ .../test/sweeps/output-interpolations.judged.mjs   |   3 +-
+ 13 files changed, 477 insertions(+), 9 deletions(-)
+════ 7f58b30d docs(handoff-demand-blind-spots): status, README, conductor skill, epic doc and the changeset (7.1–7.5)
+ .changesets/handoff-demand-blind-spots.md          | 24 +++++++++
+ README.md                                          | 32 ++++++++++--
+ commands/epic.md                                   | 10 +++-
+ commands/status.md                                 | 58 ++++++++++++++++++++--
+ .../handoff-demand-blind-spots/mintlify-7.5.txt    | 14 ++++++
+ .../changes/handoff-demand-blind-spots/tasks.md    |  8 +--
+ skills/conductor/SKILL.md                          |  7 ++-
+ 7 files changed, 139 insertions(+), 14 deletions(-)

@@ -77,7 +77,7 @@ test("gateway: no engine module outside the gateway spawns git — the call site
   assert.deepEqual(outside.map(s => `${s.rel}: ${s.call}`), [],
     "a git call site outside the injected gateway is a call site the assertion half's double cannot " +
     "answer — it must be given an operation in " + GATEWAY);
-  assert.equal(found.length, 23,
+  assert.equal(found.length, 24,
     `the engine makes ${found.length} git invocations and ${GATEWAY} must hold every one of them; ` +
     "this count is the derivation's, not a number in a document");
 });

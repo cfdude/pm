@@ -11,7 +11,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 (If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" render`)
 
-Then read `PROJECT.md` and summarize for the user. **The shape below is a default, not a house
+Then read the output `render` just printed, AND read `PROJECT.md`, and summarize both for the
+user. The `render` output can carry a block that `PROJECT.md` never does (**SPEC DELTAS ABSENT FROM
+THE MAIN SPECS**, below): it depends on git's index rather than on the record, so it is printed, not
+written into a tracked file. Reading only `PROJECT.md` misses it. **The shape below is a default, not a house
 style** — if the user has an output style or a communication contract in their CLAUDE.md, render
 this summary in THAT shape. What must survive the reshaping is the CONTENT and the ordering
 constraint, not the headings: reshape freely, drop nothing.
@@ -36,12 +39,30 @@ constraint, not the headings: reshape freely, drop nothing.
   a review that was recorded and taken back; each entry quotes the withdrawal reason, and says so
   where the epic was archived ungated before the withdrawn review. Cleared the same way: record a
   real verdict.
+- **SPEC DELTAS ABSENT FROM THE MAIN SPECS**, if any — read from the `render` OUTPUT, never from
+  `PROJECT.md`: a `delivered` openspec epic whose archived change's spec deltas the main specs in
+  git's index do not hold (an ADDED/MODIFIED/RENAMED-`TO` header missing, or a REMOVED/RENAMED-`FROM`
+  header still there). The same set `integrity`'s `delivered-epic-spec-deltas-absent` reports, and
+  the SessionStart briefing carries it under the same heading. A standing condition: it clears only
+  when the index holds what the deltas require. Run `integrity` for each finding's remedy.
 - **HANDOFFS**, from both ends — the epic that carried work out and the epic that inherited it.
   A relationship visible from one side only is how a remainder disappears.
 - each **release**'s `N epics, M deferred`.
 
-Story counts are derived live from each proposal's `openspec/changes/<id>/tasks.md` — if
-they look stale, the tasks.md checkboxes are the source of truth, not the index.
+Story counts are derived live from each change's `tasks.md` — `openspec/changes/<id>/tasks.md` while
+the change is in flight, and its archived copy under `openspec/changes/archive/` once `/opsx:archive`
+has moved it — if they look stale, the tasks.md checkboxes are the source of truth, not the index.
+
+**Progress is the UNION of two parts, and an archived change is still read.** An epic's count sums
+its inline **stories** (a story recorded `--wont-do` leaves both sides of the ratio) and its
+**checkbox source** — its plan file, or for an openspec-lane epic the change's `tasks.md`. Neither
+hides the other: adding a story to an epic that has a `tasks.md` no longer makes the tasks unread,
+and the ratio then counts `items`. Once `/opsx:archive` has moved `openspec/changes/<id>/`, the
+checkbox source is the ARCHIVED `tasks.md` (`openspec/changes/archive/<YYYY-MM-DD>-<id>/`, the
+latest date winning where one id was archived twice) — for every epic, not only a backfilled one —
+so an archived epic renders its real counts instead of `0/0`, and the archive gate's handoff demand
+reads the same count. A missing `tasks.md` or plan still warns while the epic is not archived, whether
+or not it has stories.
 
 **Progress excludes lifecycle bookkeeping.** A task carrying the literal marker
 `<!-- pm:lifecycle -->` on its own line is bookkeeping about the change's own lifecycle rather
@@ -88,7 +109,9 @@ and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-dr
 that reads `outcome: unknown` while carrying a passing Gate 2, an epic sitting in a status the
 engine does not define, a dangling epic reference, an archive directory no epic corresponds to, a
 recorded commit sha this repository can no longer resolve, an epic still open in a release that
-has already delivered, an epic another epic declares it supersedes that never ended, and a
+has already delivered, an epic another epic declares it supersedes that never ended, a `delivered`
+openspec epic whose archived spec deltas never reached the main specs
+(`delivered-epic-spec-deltas-absent`, below), and a
 `github-issues` tracker whose recorded repo is not `owner/name` or `HOST/owner/name`
 (`tracker-repo-not-a-github-repository` — such a repo, saved before `set-tracker` refused the
 shape, gets no `gh` listing step, and the finding prints the re-record that restores it; for a
@@ -110,6 +133,33 @@ archive, and a checkbox source (an OpenSpec `tasks.md` or a plan) with open task
 carrying the handoff — tick the tasks, or record where they went with
 `update-epic <id> --status archived --outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals`.
 Before this, the printed archive was refused by the gate it was meant to satisfy.
+
+`delivered-epic-spec-deltas-absent` is the one that reads git's INDEX. For every `delivered`
+openspec-lane epic whose change sits under `openspec/changes/archive/`, it reads each delta
+`specs/<capability>/spec.md` there and checks the main spec `openspec/specs/<capability>/spec.md`:
+every ADDED and MODIFIED requirement header, and each RENAMED `TO`, must be under its
+`## Requirements`; every REMOVED header, and each RENAMED `FROM`, must not be. Headers only, never
+bodies — a later legitimate amendment changes a body, and a check that fired on routine work would be
+ignored. A later archived change that touched the same header the other way discharges it (same-date
+or undated pairs discharge both ways, because the archive records no finer order). An unpaired
+RENAMED line in an archived delta is reported too, since nobody can check it.
+The main spec is read from the **index**, not the working tree and not `HEAD`, in ONE
+`git cat-file --batch`, relative to the conductor root (so a conductor in a subdirectory of its
+repository reads its own specs). The working tree would pass the exact loss this exists for —
+0.48.0's archive rewrote two main specs, the commit staged only `openspec/changes`, and a later hard
+reset discarded four ADDED requirements for two days. The index equals `HEAD` at rest and, between
+`git add` and `git commit`, is what the next commit will record. **The stated cost: from
+`openspec archive` until `git add`, the index still holds the old main specs, so a CORRECT archive is
+reported in that window too** — stage `openspec/` whole and it clears. That window is why the
+condition is never written into `PROJECT.md` (a tracked file that would then change with staging
+state): `integrity`, the SessionStart briefing and the `render` verb's printed output carry it. It is a
+standing condition, **never a refusal**: no archive path is refused on it, because pm's own closeout
+records `delivered` before `openspec archive` moves the change. Where git cannot answer at all (no
+repository), no presence or absence finding is made. The remedy it prints runs against a change that
+is already archived (neither `openspec archive` nor `/opsx:sync` acts on one): edit the main spec's
+`## Requirements` so it holds what the archived delta requires — copy each block reported absent from
+that delta, delete each block reported present, rename a RENAMED `FROM` header to its `TO` — then
+`git -C <conductor root> add openspec/`.
 
 `recorded-sha-the-repository-cannot-resolve` is the one with a deadline. A squash-merge orphans
 every commit on the merged branch — they are reachable from no ref and the next `git gc` deletes
@@ -145,9 +195,10 @@ heal flow lands on `outcome: unknown` rather than `delivered`: the migration onl
 already `archived` in state, and the heal flips the rest afterwards, so they miss it by one step.
 That is expected, not a bug. Each finding prints its step — at its simplest
 `update-epic <id> --status archived --outcome delivered --no-deferrals`, but the step consults what
-`delivered` requires of that epic: a stories source with an open story names
+`delivered` requires of that epic, one part at a time: an open inline story names
 `update-epic <id> --story <n> --done` first, and a checkbox source with open tasks gets the archive
-carrying `--carried-to <epicId> --reason "<which tasks moved>"`. Run the step the finding prints, not
+carrying `--carried-to <epicId> --reason "<which tasks moved>"` — both, in that order, when both
+parts hold open work. Run the step the finding prints, not
 the bare form, which the gate refuses on open work. The archive gate lets an agent replace an
 engine-written stamp, so nothing is frozen at `unknown`.
 

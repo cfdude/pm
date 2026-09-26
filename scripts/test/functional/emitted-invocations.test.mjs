@@ -907,6 +907,26 @@ const INTEGRITY_BUILDERS = {
     produce: integrityProducer("archived-with-zero-ticked-tasks"),
     reported: blockHas(),
   },
+  // handoff-demand-blind-spots 5.1. CONSTRUCTABLE, so not declared unconstructable (design D6): this
+  // hermetic repo's index holds a main spec lacking a header a delivered epic's archived delta ADDED.
+  // `prints: "none"` because the remedy is an edit plus `git -C <root> add openspec/` — no engine
+  // invocation — which is why following it is its own case in functional/spec-sync-surfaces.test.mjs.
+  "delivered-epic-spec-deltas-absent": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.file("openspec/specs/cap/spec.md", "# cap\n\n## Requirements\n\n### Requirement: Kept\nThe system SHALL keep.\n");
+      repo.file("openspec/changes/archive/2026-09-01-sd/specs/cap/spec.md",
+        "## ADDED Requirements\n\n### Requirement: Lost\nThe system SHALL be lost.\n");
+      fixtureGit(repo.cwd, "add", "-A");
+      fixtureGit(repo.cwd, "commit", "-q", "-m", "archive move without the spec sync");
+      repo.write({ epics: [{ id: "sd", title: "sd", priority: "P1", status: "archived", role: "epic", lane: "openspec",
+        links: [], disposition: agentDisposition({ outcome: "delivered", recordedAt: AT }) }] });
+      return { repo, epicId: "sd" };
+    },
+    produce: integrityProducer("delivered-epic-spec-deltas-absent"),
+    reported: blockHas(),
+  },
   "verdict-range-omits-cited-commits": {
     prints: "none",
     setup() {

@@ -23,6 +23,7 @@ const x = (f, fn, exprs, cls, why) => {
 };
 
 // ── line-sink flow, and the first judgments of each sink's neighbours
+j("briefing.mjs", "specSyncBlock", ALL, "sink-flow", "the spec-sync block's lines (handoff-demand-blind-spots D6): its only consumers are buildBrief's L (joined through L.map(escapeControls)) and renderVerb(), which joins them through lines.map(escapeControls); header names are JSON-quoted");
 j("briefing.mjs", "buildBrief", ALL, "sink-flow", "every line is pushed onto L, joined through L.map(escapeControls) at buildBrief's return");
 j("briefing.mjs", "BRIEF_REMEDIES", ALL, "sink-flow", "each render() result is pushed onto buildBrief's L (briefRemedy) or its trackerLines, which join L's sink; ids in commands go through printedId/asCode");
 j("render.mjs", "render", ALL, "sink-flow", "every PROJECT.md line is pushed onto md, joined through md.map(escapeControls); cells additionally through tableRow's escapeTableCell");
@@ -42,8 +43,19 @@ x("state.mjs", "recordEngineSave", {
 j("integrity.mjs", "CHECKS", ALL, "sink-flow", "every finding detail is printed only by formatIntegrity(), whose L joins through L.map(escapeControls); runIntegrity's sole caller is integrity(). Ids in commands go through printedId/orNoRemedy/asCode/commandValue, and the secondary tracker's shellQuote(t.repo) is reached only when CONTROL_CHARACTER.test(t.repo) is false");
 j("integrity.mjs", "recordedShas", ALL, "sink-flow", "`where` labels (gate1/gate2 + engine key) feed CHECKS details only");
 x("integrity.mjs", "integrity", {
-  "formatIntegrity(runIntegrity(loadState()))": 1,
+  "formatIntegrity(report)": 1,
 }, "escaped", "formatIntegrity() returns the sink-joined report");
+x("integrity.mjs", "integrity", {
+  "down.join(\", \")": 1,
+}, "engine", "CHECKS ids of the checks that could not run (Gate 2 C1) — registry vocabulary");
+x("integrity.mjs", "unavailableReason", {
+  "e.status": 1,
+  "code": 1,
+  "msg": 1,
+}, "sink-flow", "a thrown failure's reason, printed only inside formatIntegrity()'s L.map(escapeControls) (Gate 2 C1)");
+x("briefing.mjs", "specSyncUnavailable", {
+  "e.status": 1,
+}, "engine", "a process exit status number; the composed reason is escapeControls()d before it is returned (Gate 2 C1)");
 j("rules.mjs", "rulesBlock", ALL, "sink-flow", "the managed block's lines join through lines.map(escapeControls)");
 j("rules.mjs", "closedItemStep", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (pmCmd also names a platform-vocabulary command prefix)");
 j("rules.mjs", "gateProcedureLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (pmCmd also names a platform-vocabulary command prefix)");
@@ -239,7 +251,13 @@ x("archive-gate.mjs", "archiveGate", {
 x("archive-gate.mjs", "archiveGate", {
   "outcomeOf(epic)": 1,
   "i.n": 1,
-}, "engine", "outcomeOf() answers from KNOWN_OUTCOMES or `unknown`; a story number");
+  "storiesOpen": 1,
+  "tasksOpen": 1,
+}, "engine", "outcomeOf() answers from KNOWN_OUTCOMES or `unknown`; a story number; each union part's open count (handoff-demand-blind-spots D2)");
+x("archive-gate.mjs", "archiveGate", {
+  "storyRemedy": 2,
+  "taskRemedy": 1,
+}, "passthrough", "the handoff's per-part remedy prose, composed in archiveGate() from an asCode() remedy line, engine flag text and the LIFECYCLE_MARKER constant");
 x("argv-surface.mjs", "checkCommandLine", {
   "badFlag.name": 2,
   "verb": 1,
@@ -379,6 +397,18 @@ x("git.mjs", "differsFromHead", {
 x("git.mjs", "resolveCommits", {
   "v": 1,
 }, "not-output", "a git argument — one line of the batch-check stdin payload, peeled to ^{commit}. It was SINK-FLOW inside the execFileSync `input` option until 4.2 moved the call to the injected gateway, which is why the judgment moves from the sink heuristic to here. A value reaching this point has already had whitespace and control characters filtered out above it, and the loop's own `unresolved` message escapes every value it names");
+j("spec-sync.mjs", "specSyncDetail", ALL, "sink-flow", "an integrity finding's detail (handoff-demand-blind-spots D6): its only caller is the delivered-epic-spec-deltas-absent CHECKS entry, printed through formatIntegrity()'s L.map(escapeControls); header names are JSON-quoted and the root is shellQuote()d");
+x("spec-sync.mjs", "compareSpecSync", {
+  "u.side": 1,
+  "u.name": 1,
+}, "not-output", "a finding's `headers` DATA (an unpaired RENAMED side and name); every surface that prints it goes through a line sink (integrity's formatter, buildBrief's L)");
+x("spec-sync.mjs", "specPath", {
+  "cap": 1,
+}, "passthrough", "a capability directory name read from the archive, composed into a relative path that is either a git stdin line (not output) or printed inside specSyncDetail's sink-flow text");
+x("git.mjs", "indexFileContents", {
+  "String(p).replace(/^\\.\\//, \"\")": 1,
+  "n": 1,
+}, "not-output", "git arguments — the `:./<path>` lines of the cat-file --batch stdin payload (handoff-demand-blind-spots D5); the paths are engine-built `openspec/specs/<cap>/spec.md` names and never printed");
 x("git.mjs", "unresolvedCommitsMessage", {
   "flags": 1,
 }, "engine", "flags is a literal flag list passed by each caller; the values are escaped");

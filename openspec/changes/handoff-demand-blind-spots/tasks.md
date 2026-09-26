@@ -32,7 +32,7 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1**, review mode `thorough`: two fresh-context lenses over these artifacts BY PATH.
+- [ ] 0.1 **Gate 1** (orchestrator), review mode `thorough`: two fresh-context lenses over these artifacts BY PATH.
       - Lens A: is every WHEN/THEN in the four delta files (`specs/conductor-record/spec.md`,
         `specs/gate-integrity/spec.md`, `specs/epic-disposition/spec.md`,
         `specs/emitted-instructions/spec.md`) reachable and testable against the engine AS IT STANDS
@@ -57,7 +57,7 @@ These rules bind every section below.
       `specs/epic-disposition/spec.md` and `specs/emitted-instructions/spec.md`, all under
       `openspec/changes/handoff-demand-blind-spots/`.
       Verify: the verdict appears in `node scripts/conductor.mjs status`.
-- [ ] 0.2 **Cross-spec review** (required task item 5). Release 0.50.0 holds this change's FOUR spec
+- [ ] 0.2 **Cross-spec review** (orchestrator) (required task item 5). Release 0.50.0 holds this change's FOUR spec
       files (`conductor-record`, `gate-integrity`, `epic-disposition`, `emitted-instructions`), plus
       every other member change's, counted flat. Run the `cross-spec-review` skill after Gate 1 with
       two lenses and ask the six questions. The engine hashes the spec set it enumerates, so any
@@ -88,7 +88,7 @@ These rules bind every section below.
 
 ## 1. Measure, then read the archived tasks.md for every epic (conductor-record, design D1)
 
-- [ ] 1.1 **BASELINE** in `baseline-before.md`, measured on the day and never copied from `design.md`.
+- [x] 1.1 **BASELINE** in `baseline-before.md`, measured on the day and never copied from `design.md`.
       - (a) Count the managed archived openspec epics whose render moves off `0/0` once the archived
         `tasks.md` is read, and list those with outstanding work above zero, each with its outcome.
       - (b) Run `node scripts/conductor.mjs integrity` in full and save the finding count per check
@@ -108,7 +108,7 @@ These rules bind every section below.
         path, through `isArchived()`) would write differently under the resolver. 1.2 adds a test for
         any non-zero count.
       Verify: the file exists and names the commit it was measured at.
-- [ ] 1.2 **TDD** — one resolver, and the archived `tasks.md` for a non-backfilled epic.
+- [x] 1.2 **TDD** — one resolver, and the archived `tasks.md` for a non-backfilled epic.
       - RED: `red-1.2.txt`, an ASSERT-rung test in `scripts/test/assert/` (its fixture writes
         `openspec/changes/archive/…`, which the unit rung refuses):
         - an archived openspec-lane epic with no backfill stamp and an archived `tasks.md` at 1/3:
@@ -134,16 +134,16 @@ These rules bind every section below.
           half at 1188/1189 with D1 applied and this test unchanged, while the hook stayed green.
       Verify: the assertion half is green, `certify.mjs functional` is green where permitted, and the
       file-rung backfill tests are unchanged.
-- [ ] 1.3 **TDD** — the documented sequence refuses a delivered archive with open archived tasks.
+- [x] 1.3 **TDD** — the documented sequence refuses a delivered archive with open archived tasks.
       - RED: `red-1.3.txt`, an ASSERT-rung verb test: Gate 2 recorded, the change moved under
         `archive/`, the heal run, then `update-epic <id> --status archived --outcome delivered --no-deferrals`.
-        It asserts exit non-zero, `2 of 1/3 task(s) outstanding` in the refusal, and the store
+        It asserts exit non-zero, `2 task(s) outstanding (1/3 done)` in the refusal, and the store
         unchanged.
       - The paired case (every undeclared task ticked, archive task declared) asserts success.
       - GREEN: 1.2's change. If nothing further is needed, say so in the commit message.
       Mutation proof `mutation-1.3.txt`: restore the backfill scope in a scratch copy and show the
       refusal test fails.
-- [ ] 1.4 **Live-record fallout.** Re-run 1.1(b), (c) and (d). For every expectation that moves, fix it
+- [x] 1.4 **Live-record fallout.** Re-run 1.1(b), (c) and (d). For every expectation that moves, fix it
       in this commit and justify each movement in the commit body. At drafting:
       `archived-with-zero-ticked-tasks` gains candidates but no findings, and the two delivered epics
       render 53/54 and 46/47. Name those two epics in the commit body. Verify: the live-record tests
@@ -151,7 +151,7 @@ These rules bind every section below.
 
 ## 2. Stories and the checkbox source count together (conductor-record, epic-disposition, emitted-instructions, design D2)
 
-- [ ] 2.1 **TDD** — the union.
+- [x] 2.1 **TDD** — the union.
       - RED: `red-2.1.txt`, split by rung:
         - UNIT (`scripts/test/unit/`, no path touched): a story-only epic → unchanged; a disposed
           story leaves both sides; `excludedLabel` over stories alone;
@@ -164,13 +164,13 @@ These rules bind every section below.
         is single-valued for one part and two-part (e.g. `stories+openspec`) for both, with a parts
         list consumers test membership on, and each part's own open count.
       Verify: the half is green.
-- [ ] 2.2 **TDD** — the reproduction from the 0.43.0 review (A2).
+- [x] 2.2 **TDD** — the reproduction from the 0.43.0 review (A2).
       - RED: `red-2.2.txt`, an ASSERT-rung verb test: `tasks.md` at 1/3, `update-epic --add-story x`,
         then `update-epic --story 1 --done --status archived --outcome delivered --no-deferrals`.
         It asserts exit non-zero, a refusal naming 2 outstanding, and the store unchanged.
       - GREEN: 2.1, plus 2.3's consumers.
       Mutation proof `mutation-2.2.txt`: reinstate the stories-first early return in a scratch copy.
-- [ ] 2.3 **Every consumer of `source`, in the same commit as 2.1 or immediately after it.** Enumerate
+- [x] 2.3 **Every consumer of `source`, in the same commit as 2.1 or immediately after it.** Enumerate
       with `rg -n "\.source\b|source ===|source:" scripts/lib` and record the list in the commit
       body. At drafting:
       - `outstandingSummary`: `items` whenever stories contribute;
@@ -199,7 +199,7 @@ These rules bind every section below.
 
 ## 3. The git gateway reads the index (design D5)
 
-- [ ] 3.1 **TDD** — the operation.
+- [x] 3.1 **TDD** — the operation.
       - RED: `red-3.1.txt`, the gateway guard, failing on an exec site with no `GIT_OPERATIONS` row,
         or the reverse.
       - GREEN, all in ONE commit, every file listed (6.4 checks each against this commit):
@@ -235,7 +235,7 @@ These rules bind every section below.
           functional file, so its assertion twin above is edited in the same commit).
       Verify: the guard is green in both halves, and the capture's byte-identity check against real
       git passes on the multi-byte case.
-- [ ] 3.2 **TDD** — the index read against real git, FUNCTIONAL (new id, working name
+- [x] 3.2 **TDD** — the index read against real git, FUNCTIONAL (new id, working name
       `functional/spec-sync-index.test.mjs`), with its assertion twin
       (`assert/spec-sync-index.test.mjs`, the wrapper's parsing over a captured `Buffer`) EDITED in the
       same commit.
@@ -254,7 +254,7 @@ These rules bind every section below.
 
 ## 4. The spec-sync comparison (gate-integrity ADDED requirement, design D4)
 
-- [ ] 4.1 **TDD** — the delta parser, UNIT rung, a pure function of text.
+- [x] 4.1 **TDD** — the delta parser, UNIT rung, a pure function of text.
       - RED: `red-4.1.txt`, one fixture per rule the ADDED requirement states:
         - ADDED, MODIFIED and REMOVED plain headers;
         - REMOVED as a `-`, `*` or `+` bullet with backticks;
@@ -273,7 +273,7 @@ These rules bind every section below.
       - GREEN: the parser in the new module (working name `scripts/lib/spec-sync.mjs`), with a
         comment naming `@fission-ai/openspec` 1.13.2 `dist/core/parsers/requirement-blocks.js` as
         the grammar it mirrors.
-- [ ] 4.2 **TDD** — the comparison and the later-change discharge, UNIT rung, text in and findings
+- [x] 4.2 **TDD** — the comparison and the later-change discharge, UNIT rung, text in and findings
       out, no path.
       - RED: `red-4.2.txt`, every scenario of the ADDED requirement that needs no git:
         - lost ADDED;
@@ -289,7 +289,7 @@ These rules bind every section below.
         (1.2), the openspec lane (an absent lane normalized) and outcome `delivered`.
       Mutation proofs `mutation-4.2.txt`: drop the discharge, and invert the same-date rule. Each in
       a scratch copy fails a named case.
-- [ ] 4.3 **EVIDENCE ONLY, not a test** — the live repository. It is not a functional test because an
+- [x] 4.3 **EVIDENCE ONLY, not a test** — the live repository. It is not a functional test because an
       assertion on this repository's own archive is a live-record test whose expectation moves with
       every archive, and the replay needs history a shallow CI clone lacks. The ongoing guard is the
       check itself in `integrity`. Save in `evidence-4.3.txt`:
@@ -306,7 +306,7 @@ These rules bind every section below.
 
 ## 5. The surfaces (design D6)
 
-- [ ] 5.1 **TDD** — the integrity check (working id `delivered-epic-spec-deltas-absent`) and its
+- [x] 5.1 **TDD** — the integrity check (working id `delivered-epic-spec-deltas-absent`) and its
       exported function.
       - RED: `red-5.1.txt`:
         - ASSERT rung: `specSyncFindings(epics, { readIndex })` called directly with a stub reader
@@ -334,7 +334,7 @@ These rules bind every section below.
       - GREEN: `specSyncFindings()` in `spec-sync.mjs` with the reader as a parameter defaulting to
         the `git.mjs` wrapper; a `CHECKS` entry in `integrity.mjs` that calls it and prints the
         remedy sequence gate-integrity specifies.
-- [ ] 5.2 **TDD** — the briefing block and `render`'s output.
+- [x] 5.2 **TDD** — the briefing block and `render`'s output.
       - RED: `red-5.2.txt`, FUNCTIONAL, in `functional/spec-sync-surfaces.test.mjs` (twin
         `assert/spec-sync-surfaces.test.mjs` edited in the same commit), over a
         hermetic repository with one real finding so both sets are NON-EMPTY:
@@ -345,7 +345,7 @@ These rules bind every section below.
           and rewriting the main spec in the fixture (the openspec CLI is not a test dependency), both
           present and unstaged → `integrity` names the epic and `PROJECT.md` does not; after `git add openspec/`
           → nothing named.
-      - GREEN: `buildBrief()` gains an option that includes the block; `brief()` and `snapshot()` pass
+      - GREEN: `buildBrief()` gains an option that includes the block; `brief()` passes (Gate 2 I3: NOT `snapshot()`, whose `brief.txt` is tracked in most fleet repos)
         it; `render()`'s embedding does not. The `render` VERB's command-line dispatch (not
         `render()`, which hooks and other verbs run in-process) writes the block to stdout after
         writing the file, and never under `--diff-summary`. The overflow line points at `integrity`.
@@ -357,7 +357,7 @@ These rules bind every section below.
 - [ ] 5.3 **Cost.** Measure the wall time of `brief` AND of `render` over three runs each in a hermetic
       clone, before and after 5.2, and record it in `evidence-5.3.txt`. Verify: one git process added
       per invocation, not one per capability (count the spawns).
-- [ ] 5.4 **REGRESSION GUARD** — the archive transition is not refused. FUNCTIONAL, in
+- [x] 5.4 **REGRESSION GUARD** — the archive transition is not refused. FUNCTIONAL, in
       `functional/spec-sync-surfaces.test.mjs` (twin `assert/spec-sync-surfaces.test.mjs` edited in
       the same commit), because the check it proves silent at the
       transition only fires against a real index: a `delivered` archive with a delta whose header the
@@ -367,7 +367,7 @@ These rules bind every section below.
 
 ## 6. Required task items
 
-- [ ] 6.1 **Call-site completeness sweep** (item 1), recorded in `call-site-sweep-6.1.txt`, every
+- [x] 6.1 **Call-site completeness sweep** (item 1), recorded in `call-site-sweep-6.1.txt`, every
       list derived with `rg`:
       - every caller of `epicProgress`, `outstandingWork`, `outstandingSummary` and
         `deliveredObligations` (`rg -n "epicProgress\(|outstandingWork\(|outstandingSummary\(|deliveredObligations\(" scripts`):
@@ -382,40 +382,40 @@ These rules bind every section below.
         both creation paths): state for each that the specs-synced condition refuses on none, and
         why;
       - every surface that renders standing conditions (`rg -n "ungatedArchives|buildBrief\(" scripts`):
-        `integrity`, `brief`, `snapshot` and the `render` verb's stdout carry the new block;
+        `integrity`, `brief` and the `render` verb's stdout carry the new block (Gate 2 I3: not `snapshot`);
         `render()`'s embedding into `PROJECT.md`, `render()` run in-process by other verbs and hooks,
         and `render --diff-summary` deliberately do not (design D6), and those omissions are the
         justified ones.
-- [ ] 6.2 **Data references** (item 1). The new check stores nothing, so say so. The references it
+- [x] 6.2 **Data references** (item 1). The new check stores nothing, so say so. The references it
       READS are the epic id, the key into `openspec/changes/archive/`, and the capability name, the
       key into `openspec/specs/`. Name where each is written (`openspec archive`, `sync`) and where
       it is removed (the stale-directory removal, `0ffb025`, is the live example).
-- [ ] 6.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
+- [x] 6.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
       - counting a story against disposing one: already shipped (`--wont-do`);
       - reading the archived source against the live one: the live path wins while it exists;
       - the finding against its clearing: shipped, because it clears when the index holds the
         headers;
       - a new gateway read: a read has no inverse, so say so.
-- [ ] 6.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
+- [x] 6.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
       check that every file the task claims is in THAT commit. Record the results in
       `commit-verification-6.4.txt`. Pay particular attention to 3.1's NINE files, 1.2's
       `conductor-15` pair, 5.1's `emitted-invocations` pair, and every functional test's twin.
-- [ ] 6.5 **Declare lifecycle bookkeeping** (item 3). The disposition task 9.2 and the archive task
+- [x] 6.5 **Declare lifecycle bookkeeping** (item 3). The disposition task 9.2 and the archive task
       9.3 each carry `<!-- pm:lifecycle -->` on their own first line. They were marked when this
       source was authored. This matters more here than anywhere else: this change makes the
       ARCHIVED `tasks.md` count, so an unmarked disposition task would make the handoff refuse this
       very change.
-- [ ] 6.6 **Attribute every commit** (item 4). The orchestrator runs
+- [ ] 6.6 **Attribute every commit** (orchestrator) (item 4). The orchestrator runs
       `update-epic handoff-demand-blind-spots --attribute-commit <sha>` for each implementation
       commit, in the order the commits landed, after the merge. The archive-move commit is NOT
       attributed.
-- [ ] 6.7 **Cross-spec review** (item 5). This is 0.2. Re-run it after any concurrent amendment to a
+- [ ] 6.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it after any concurrent amendment to a
       0.50.0 spec, and record the verdict again.
-- [ ] 6.8 **Disposition** (item 6). It is recorded by 9.2, whose flags are specified there.
+- [x] 6.8 **Disposition** (item 6). It is recorded by 9.2, whose flags are specified there.
       This task checks that 9.2's declined deferrals still name every non-goal in `design.md`
       before Gate 2. Verify: each of the SIX non-goals maps to a flag in 9.2, or is justified there as
       not being a deferral.
-- [ ] 6.9 **Route what the work taught** (item 7), and name which of the three kinds each item is.
+- [x] 6.9 **Route what the work taught** (item 7), and name which of the three kinds each item is.
       - PRACTICE: none expected. Say so if none arose.
       - TOOLING FRICTION: a change proposed under one id and carried by an epic with another reads
         `0/0` on the epic; here it took a directory re-key and a hand-supersede of the tracker epic.
@@ -425,7 +425,7 @@ These rules bind every section below.
 
 ## 7. Docs
 
-- [ ] 7.1 `commands/status.md`: the new integrity check id and title; the briefing block; that
+- [x] 7.1 `commands/status.md`: the new integrity check id and title; the briefing block; that
       the `render` verb PRINTS the block on its output rather than writing it into `PROJECT.md`; the
       index reading, the reason for it, and the archive-to-`git add` window; and the
       archived-`tasks.md` and union rules for progress.
@@ -437,13 +437,13 @@ These rules bind every section below.
       Verify: `rg -n "read \`PROJECT.md\`" commands/status.md` shows the step now names the `render`
       output too; `docs/parity-ledger.json` still claims the file (`scripts/test/parity.test.mjs`
       green).
-- [ ] 7.2 `README.md`: the progress rule (stories plus tasks, and the archived tasks read) and the
+- [x] 7.2 `README.md`: the progress rule (stories plus tasks, and the archived tasks read) and the
       new standing condition, wherever the README describes integrity or progress
       (`rg -n "integrity|outstanding|progress" README.md`).
-- [ ] 7.3 `skills/conductor/SKILL.md` and `commands/epic.md`: wherever they state that stories take
+- [x] 7.3 `skills/conductor/SKILL.md` and `commands/epic.md`: wherever they state that stories take
       precedence over a task source, or that outstanding work reads zero after an archive
       (`rg -n "precedence|stories" skills/conductor/SKILL.md commands/epic.md`).
-- [ ] 7.4 `.changesets/handoff-demand-blind-spots.md`: user-facing bullets only, in `CHANGELOG.md`'s
+- [x] 7.4 `.changesets/handoff-demand-blind-spots.md`: user-facing bullets only, in `CHANGELOG.md`'s
       bullet format:
       - archived tasks now count;
       - stories no longer hide tasks;

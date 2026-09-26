@@ -389,10 +389,13 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
     assert.match(gatewayOperationBody(gw, op), GIT_NO_LAZY_FETCH,
       `${op}'s git call must not fetch from a promisor remote`);
   }
-  // The override is not ambient: exactly the two operations that inherited a call passing it carry
-  // it, so a third op acquiring it (or one of these losing it) is a change rather than a detail.
-  assert.equal((gw.match(/GIT_NO_LAZY_FETCH/g) || []).length, 2,
-    "exactly two gateway operations pass GIT_NO_LAZY_FETCH");
+  // The override is not ambient: exactly the operations that name it carry it, so a further op
+  // acquiring it (or one of these losing it) is a change rather than a detail. handoff-demand-blind-
+  // spots added the THIRD deliberately: `indexBlobs` (`cat-file --batch` over the index) follows
+  // batchCheckCommits' shape, because a partial clone must not fetch a blob to answer it either.
+  assert.match(gatewayOperationBody(gw, "indexBlobs"), GIT_NO_LAZY_FETCH, "indexBlobs must not fetch either");
+  assert.equal((gw.match(/GIT_NO_LAZY_FETCH/g) || []).length, 3,
+    "exactly three gateway operations pass GIT_NO_LAZY_FETCH");
 });
 
 test("g2-3 git calls whose input is already filtered to commit-name hex pass no --end-of-options, so an old git cannot fail them open", () => {

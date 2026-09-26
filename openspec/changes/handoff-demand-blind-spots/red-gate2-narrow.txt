@@ -1,0 +1,18 @@
+✖ integrity: only the spec-sync check may degrade — every other check that throws fails the run (0.5245ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 146.02825
+
+✖ failing tests:
+
+test at scripts/test/assert/conductor-15.test.mjs:220:1
+✖ integrity: only the spec-sync check may degrade — every other check that throws fails the run (0.5245ms)
+  TypeError [Error]: integ.DEGRADABLE_CHECKS is not iterable
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/conductor-15.test.mjs:224:30)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

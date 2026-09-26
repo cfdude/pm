@@ -1,0 +1,27 @@
+✖ 2.2 tasks.md at 1/3, --add-story x, then --story 1 --done with a delivered archive → REFUSED, 2 outstanding (87.458959ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 265.015167
+
+✖ failing tests:
+
+test at scripts/test/assert/progress-union.test.mjs:83:1
+✖ 2.2 tasks.md at 1/3, --add-story x, then --story 1 --done with a delivered archive → REFUSED, 2 outstanding (87.458959ms)
+  AssertionError [ERR_ASSERTION]: one inline story must not hide a whole tasks.md
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a421928dde9de6258/scripts/test/assert/progress-union.test.mjs:91:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

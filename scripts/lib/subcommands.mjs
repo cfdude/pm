@@ -132,7 +132,9 @@ export function brief() {
   requirePlatformFlag("brief");
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
-  const brief = buildBrief(loadState(), { consume: true });
+  // specSync: true — the SessionStart briefing carries the spec-sync block (handoff-demand-blind-spots
+  // D6), from the same specSyncFindings() `integrity` reads.
+  const brief = buildBrief(loadState(), { consume: true, specSync: true });
   // 0.49.0 (runtime-support) — ONE line, and only here: below the support floor, prepended at the top
   // for the reason briefing.mjs gives its currency lines. NOT in buildBrief(), which PROJECT.md (a
   // tracked file) and the PreCompact snapshot also embed — one machine's Node must never land in
@@ -163,6 +165,10 @@ export function snapshot() {
   // THE BRIEF IS A STORE ARTIFACT (0.48.0 task 1.4): `.conductor/brief.txt` is written into the
   // record directory by this verb and read by nothing in the engine, which is exactly the shape the
   // store owns. The detached-tree suppression above is unchanged.
+  // NO spec-sync block (Gate 2 I3): `.conductor/brief.txt` is TRACKED in 14 of 24 fleet repositories,
+  // and the block depends on git's index, so writing it here would put a staging-state finding into a
+  // committed file — the reason it is kept out of PROJECT.md. Its surfaces are integrity, the
+  // SessionStart briefing and the render verb's output.
   if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state) + "\n");
   errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +

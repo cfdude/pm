@@ -58,7 +58,7 @@ and is not restated here.
   `tasks.md` holds 3 undeclared tasks with only 1 ticked: `/opsx:archive` moves the change, the heal
   flips the epic, and the agent runs the interactive archive verb with `outcome: delivered`, no
   `--carried-to` and a deferral assertion
-- **THEN** it exits non-zero naming 2 of 1/3 task(s) outstanding, which is the count the record
+- **THEN** it exits non-zero naming `2 task(s) outstanding (1/3 done)`, which is the count the record
   renders for the epic, and `state.json` is byte-identical
 
 #### Scenario: The moved tasks.md, fully ticked, does not refuse
@@ -175,7 +175,19 @@ whose main spec is absent from the index holds no headers: each of its ADDED, MO
 headers is reported, and none of its REMOVED ones is. When git cannot answer at all (no repository,
 no git), no presence or absence finding is reported for any epic. A read nobody could make is not
 evidence that the specs are missing. A read that fails for any OTHER reason, such as index content
-larger than the read can hold, is an error and SHALL NOT be reported as "git cannot answer".
+larger than the read can hold or a corrupt index, is an error and SHALL NOT be reported as "git cannot
+answer". git exits 128 for every fatal error, so an exit status of 128 alone does not establish that
+there is no repository: it SHALL be confirmed by a second question that reads no index before the read
+is treated as "git cannot answer".
+
+**A check that cannot run degrades; it never takes a surface down.** Where the check itself fails (an
+index read that errs as above, or an answer the check cannot parse), the SessionStart briefing and the
+`render` verb's output each print ONE line, `spec-sync check unavailable: <reason>` with the reason's
+control characters escaped, and emit everything else they would have emitted, exiting as they would
+have. The `integrity` report never prints a raw stack: it reports this check as unavailable, naming the
+reason, still runs and reports every other check, and exits non-zero, so "could not check" never reads
+as "nothing found". The degrade applies to THIS check only; any other integrity check that fails still
+fails the run as it did before.
 
 **It is a standing condition, never a refusal.** No archive path SHALL refuse on it: not the
 interactive archive verb, not the archive-drift heal, not the backfill registration, and not the
@@ -192,7 +204,8 @@ id), the SessionStart briefing (its own heading), and the standard output of the
 invoked directly, which is what `/pm:status` runs. That output is the verb's only: the internal
 render that other verbs and hooks run after their own writes does not print it, and neither does
 `render --diff-summary`, whose output is a machine-read line. It SHALL NOT be written into
-`PROJECT.md`. `PROJECT.md` is tracked and committed,
+`PROJECT.md`, and the PreCompact snapshot does not carry it either, because its
+`.conductor/brief.txt` is a tracked file in many repositories. `PROJECT.md` is tracked and committed,
 and this condition depends on the index: a render between `openspec archive` and `git add` would
 write a finding about a correct archive into a file that then gets committed with it, and the file's
 contents would change with staging state rather than with the record. A block that overflows its cap
@@ -305,6 +318,19 @@ archived delta file, which the check reads from disk.
 - **WHEN** the check runs where git cannot answer
 - **THEN** no epic is reported as having a header absent or present, and an unpaired RENAMED line in
   an archived delta is still reported, because it is read from the delta alone
+
+#### Scenario: A corrupt index is not read as no repository
+
+- **WHEN** the index file of the conductor's repository is corrupt, so the index read exits 128
+- **THEN** the check does not report zero findings as though git could not answer: `integrity` reports
+  it unavailable and exits non-zero
+
+#### Scenario: A failing check degrades each surface
+
+- **WHEN** the index read fails for a reason other than "no repository"
+- **THEN** the SessionStart briefing and the `render` verb each exit as they otherwise would and carry
+  exactly one `spec-sync check unavailable:` line plus everything else, and `integrity` names the check
+  unavailable with its reason, reports every other check, prints no stack, and exits non-zero
 
 #### Scenario: The archive transition is not refused
 

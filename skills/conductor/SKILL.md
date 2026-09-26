@@ -19,6 +19,9 @@ description: >
 - **Stories/phases** live in the best available source: `tasks.md` checkboxes (openspec),
   `planPath` checkboxes (superpowers), inline `stories[]` (claude-code), or `—` (decision /
   external). Never copy these into `state.json` manually unless using inline `stories[]`.
+  Inline stories and a checkbox source are COUNTED TOGETHER (neither hides the other), and an
+  archived openspec change is read from its archived `tasks.md` — so outstanding work never reads
+  zero merely because `/opsx:archive` moved the change.
 - The conductor owns ONLY what no lane-specific tool can: cross-epic **priority/ordering**,
   the **detour stack**, and **epic links** (especially the reconcile relationship).
 - State of record is `.conductor/state.json`. `PROJECT.md` is a generated view — never
@@ -1385,7 +1388,9 @@ syncIgnore[]  : [{ path, at, removedEpic?, reason? }] — source artifacts `sync
                 or `--spec` for a design document — the message names the right flag).
                 `removedEpic` is HISTORICAL and dangles by construction — never swept, never
                 reported as a dangling reference. Absent means empty; no migration.
-stories[]     : [{ title, done, disposition? }] — inline progress (highest-priority source).
+stories[]     : [{ title, done, disposition? }] — inline progress, COUNTED WITH any checkbox source
+                (plan file or tasks.md, archived tasks.md once the change moved): the union, so
+                neither part hides the other.
                 `disposition` = { state: "wont-do", reason, recordedAt } — the THIRD state a
                 checklist needs: not open, not completed, deliberately not being done. The row
                 and its reason always survive (deletion would destroy the record that the work

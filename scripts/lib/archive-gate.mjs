@@ -34,11 +34,16 @@ export function outstandingSummary(epic) {
   return {
     outstanding: outstandingWork(epic), claimed: `${p.done}/${p.total}`, excluded: p.excluded,
     source: p.source,
+    // EACH PART'S OWN OPEN COUNT (design D2). Under the union an epic can hold open work in its
+    // story part AND its checkbox source at once, so every consumer choosing a remedy keys on these
+    // two numbers — never on `source`, which names what contributes, not what is open.
+    storiesOpen: p.stories ? p.stories.open : 0,
+    tasksOpen: p.checkbox ? p.checkbox.open : 0,
     // The outstanding items BY NAME, and only where the record actually holds them: inline
-    // stories live on the epic, so an archived epic can still be told what it left behind. The
-    // checkbox sources cannot answer — by archive time `openspec/changes/<id>/` has moved and a
-    // plan file may have moved too — so `items` is empty there rather than guessed at.
-    items: p.source === "stories" ? outstandingStories(epic) : [],
+    // stories live on the epic, so an archived epic can still be told what it left behind. A
+    // checkbox source's task lines are counted, not quoted — they are free text in a file, not titled
+    // rows the record holds — so `items` names the open stories whenever the story part has any.
+    items: p.stories && p.stories.open > 0 ? outstandingStories(epic) : [],
   };
 }
 
@@ -188,10 +193,12 @@ export function gateTableRows(epics) {
  * as grounds to skip would leave EVERY openspec epic following the documented workflow at
  * `unknown` — the 42-of-49 headline defect, reproduced in the field built to close it.
  *
- * Every input below is read from the RECORD and none from `openspec/changes/<id>/`: by that
- * point the directory has moved under `archive/`. The Gate 2 verdict and its evidence, the
- * outstanding-work quantity (which reads zero for an archived epic whose source is gone), the
- * deferral assertion and the attribution array are all durable on the epic.
+ * No input below is read from the live `openspec/changes/<id>/`: by that point the directory has
+ * moved under `archive/`. The Gate 2 verdict and its evidence, the deferral assertion and the
+ * attribution array are durable on the epic, and the outstanding-work quantity is
+ * epic-progress.mjs's, which reads the ARCHIVED `tasks.md` where the live one is gone — it never
+ * reads zero because the change moved (gate-integrity, "The interactive archive verb accepts an
+ * epic that is already archived").
  *
  * @param {object} epic     the epic as it stands BEFORE the transition.
  * @param {object} [request] what the caller is asking for at this transition — the interactive
@@ -431,9 +438,11 @@ export const DELIVERED_OBLIGATIONS = [
       return summary.outstanding > 0
         ? { items: summary.items, detail: `${summary.outstanding} task(s) outstanding (${summary.claimed} done)` } : null;
     },
-    // Per source: only the STORIES source has a verb that records a story done. A checkbox source is
-    // ticked in its own file, and moved work is recorded with `--carried-to` on the archive itself.
-    remedy: (epic) => (outstandingSummary(epic).source === "stories"
+    // PER PART, keyed on each part's OWN open count (design D2; emitted-instructions): only the story
+    // part has a verb that records a story done, so `--story <n> --done` is offered whenever an inline
+    // story is open — whether or not a checkbox source is open too. A checkbox source is ticked in its
+    // own file, and moved work is recorded with `--carried-to` on the archive itself (archiveFlags).
+    remedy: (epic) => (outstandingSummary(epic).storiesOpen > 0
       ? [orNoRemedy(() => `update-epic ${printedId(epic.id)} --story <n> --done`)] : []),
     // A checkbox source has no standalone remedy command — no verb ticks a checkbox — so the handoff
     // travels ON the archive invocation itself (design Decision 2: tick the tasks, or record
@@ -442,8 +451,11 @@ export const DELIVERED_OBLIGATIONS = [
     // update-epic's regression refusal through dispositionInvocation()'s `carry` (Gate 2 R-I1), and
     // blockedDelivered()'s remedy, through deliveredArchiveInvocation() (Gate 2 U-I1);
     // without them the printed archive is refused "task(s) outstanding".
-    archiveFlags: (epic) => (outstandingSummary(epic).source === "stories"
-      ? [] : ["--carried-to <epicId>", "--reason \"<which tasks moved>\""]),
+    // Keyed on the CHECKBOX SOURCE'S open count, never on `source`: a story-only epic needs no handoff
+    // flag once its stories are recorded, and an epic with an open story AND an open task needs both
+    // the story remedy above and this flag for what remains.
+    archiveFlags: (epic) => (outstandingSummary(epic).tasksOpen > 0
+      ? ["--carried-to <epicId>", "--reason \"<which tasks moved>\""] : []),
   },
 ];
 
@@ -661,9 +673,10 @@ export function archiveGate(epic, request = {}) {
     // disposal as the normal route and get work disposed of that should have been done —
     // a completion prompt turned into a paperwork step, which is worse than no gate.
     //
-    // Only the STORIES source can name them: those rows are on the epic and survive archiving.
-    // A checkbox source cannot be read here at all — by this point `openspec/changes/<id>/`
-    // has moved — so it keeps the unnamed form rather than guessing at titles. The titles come
+    // Only the STORY part can name them: those rows are on the epic and carry titles. A checkbox
+    // source IS read here — its archived `tasks.md` where the change has moved (design D1) — but
+    // its count is what the refusal cites; its task lines are not titled rows the record holds, so
+    // it keeps the unnamed form rather than quoting free text out of a file. The titles come
     // from the finding's `items`, each escaped so a title cannot begin a line of the refusal (and so
     // cannot forge the invocation below it — user-text-never-forges-output repro D).
     const { items } = handoffFailure;
@@ -671,19 +684,34 @@ export function archiveGate(epic, request = {}) {
       ? ` The outstanding stor${items.length === 1 ? "y is" : "ies are"}:\n` +
         items.map(i => `  [ ] ${i.n}. ${escapeControls(i.title)}`).join("\n") + "\n"
       : " ";
-    // The REMEDY IS PER SOURCE, and offering the wrong one is a dead end the caller cannot
+    // The REMEDY IS PER PART, and offering the wrong one is a dead end the caller cannot
     // detect: an inline story has no task source, so `<!-- pm:lifecycle -->` has nowhere to
     // be written and the only key was `--carried-to`, naming a receiver for work that was
     // dropped rather than moved — the fabricated record this very message warns against.
-    const remedy = outstandingSummary(epic).source === "stories"
-      ? `Finish them, or record what happened to each: ${asCode(obligationRemedy(epic, handoffFailure)[0])} (it shipped) or ` +
-        `--story <n> --wont-do "<reason>" (it will not be done, and why — the row and its ` +
-        `reason stay on the record). If the whole remainder moved to another epic, ` +
-        `--carried-to <epicId> --reason "<which stories moved>" instead.`
-      : `Either record where the work went with --carried-to <epicId> --reason "<which tasks ` +
-        `moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery ` +
-        `— declare it in the task source by putting the literal ${LIFECYCLE_MARKER} on that ` +
-        `task's own line.`;
+    //
+    // WHICH PARTS, from each part's OWN open count (epic-disposition; design D2), never from a single
+    // source label: under the union an epic can hold open work in both parts at once. Where both do,
+    // the per-part remedies are a CONJUNCTION — BOTH must be done, because either alone is refused
+    // again on the other part — and the handoff is the one remedy that covers the whole union.
+    const { storiesOpen, tasksOpen } = outstandingSummary(epic);
+    const storyRemedy = `${asCode(obligationRemedy(epic, handoffFailure)[0])} (it shipped) or ` +
+      `--story <n> --wont-do "<reason>" (it will not be done, and why — the row and its reason stay on the record)`;
+    const taskRemedy = `tick each open task in the task source if it was done, and where an open item is ` +
+      `lifecycle bookkeeping rather than delivery, declare it by putting the literal ${LIFECYCLE_MARKER} on ` +
+      `that task's own line`;
+    const remedy = storiesOpen > 0 && tasksOpen > 0
+      ? `BOTH parts hold open work, so BOTH of these must be done — neither alone clears this refusal:\n` +
+        `  1. for the ${storiesOpen} open stor${storiesOpen === 1 ? "y" : "ies"}: ${storyRemedy}; AND\n` +
+        `  2. for the ${tasksOpen} open task(s) in the task source: ${taskRemedy}.\n` +
+        `If instead the whole remainder moved to another epic, record that on its own: --carried-to <epicId> ` +
+        `--reason "<which stories and which tasks moved>".`
+      : storiesOpen > 0
+        ? `Finish them, or record what happened to each: ${storyRemedy}. If the whole remainder moved to ` +
+          `another epic, --carried-to <epicId> --reason "<which stories moved>" instead.`
+        : `Either record where the work went with --carried-to <epicId> --reason "<which tasks ` +
+          `moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery ` +
+          `— declare it in the task source by putting the literal ${LIFECYCLE_MARKER} on that ` +
+          `task's own line.`;
     return { ok: false, message:
       `cannot archive '${escapeControls(epic.id)}' as delivered — ${handoffFailure.detail}.${named}${remedy} Naming a receiver ` +
       `for work nobody carried anywhere is a fabricated record.` };

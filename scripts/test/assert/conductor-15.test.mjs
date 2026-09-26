@@ -169,6 +169,20 @@ test("8.3: an abandoned change registers with its unticked count intact", () => 
   assert.equal(epics.length, 1, "the epic is registered under its own id, once");
 });
 
+test("8.3: an epic the conductor MANAGED renders its archived tasks.md too (handoff-demand-blind-spots D1)", () => {
+  // The twin of the functional case that used to assert the opposite (a managed epic's archived
+  // source stays unread). Read from PROJECT.md, the surface a human reads.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [ ] the archive instruction\n");
+  run(["add-epic", "--id", "managed-change", "--lane", "openspec", "--status", "archived"], { cwd });
+  run(["render"], { cwd });
+  const row = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8").split("\n").find(l => l.includes("`managed-change`"));
+  assert.match(row, /1\/2/, "a managed archived epic renders the archived counts, not `0/0`");
+});
+
 test("8.6: the first backfill announces the count and the ids, and records that it ran", () => {
   const cwd = tmpRepo();
   const dir = path.join(cwd, "openspec", "changes", "archive", "2026-01-01-old-thing");
@@ -202,3 +216,18 @@ test("8.6: a repo already carrying the marker registers nothing and announces no
 // rollback sequence restores state and re-renders from it" drives a sequence through real `git`
 // restore. Both are functional-only by subject (design D5). The migration's own rules — idempotence,
 // direction stamping, leave-an-agent's-record-alone — are asserted above against the same fixture.
+
+test("integrity: only the spec-sync check may degrade — every other check that throws fails the run", async () => {
+  // Confirmation review of handoff-demand-blind-spots: runIntegrity() caught ANY check, so a crashing
+  // check read as an empty finding list. The catch is narrowed to DEGRADABLE_CHECKS.
+  const integ = await import("../../lib/integrity.mjs");
+  assert.deepEqual([...integ.DEGRADABLE_CHECKS], ["delivered-epic-spec-deltas-absent"]);
+  const victim = integ.CHECKS.find(c => c.id === "archived-with-zero-ticked-tasks");
+  const original = victim.run;
+  victim.run = () => { throw new Error("boom"); };
+  try {
+    assert.throws(() => integ.runIntegrity({ epics: [] }), /boom/, "a non-spec-sync check that throws fails loudly");
+  } finally {
+    victim.run = original;
+  }
+});
