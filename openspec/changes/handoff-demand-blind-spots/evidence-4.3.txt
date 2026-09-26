@@ -1,0 +1,30 @@
+evidence-4.3 — handoff-demand-blind-spots: the spec-sync comparison against THIS repository (not a test).
+Script: evidence43.mjs in the implementing session's scratchpad. It imports the worktree's own
+scripts/lib/spec-sync.mjs, git.mjs and epic-progress.mjs with an invocation rooted at the worktree and
+the REAL gateway; the mutation runs in a scratch `git clone`, never in the tree.
+
+Verdicts:
+- The index read is a NON-NULL map: 15 entries, one per capability named by an in-scope delta, all 15
+  non-null. So the zero below is a real answer, not the cannot-answer case.
+- Live run against the index at df86f3c: 0 findings over 17 in-scope epics and 186 requirement
+  headers — as the design's measurement found. Nothing to STOP on.
+- Replay against 3256cc2^ (7b222be), excluding changes archived after it (16 archive directories then):
+  exactly 0.48.0's FOUR lost ADDED headers — store seam, CLI-store parity (engine-invocation), fixture
+  snapshots, rung membership (suite-certification) — all on unit-rung-and-fixture-snapshots, and
+  nothing else.
+- Mutation: one in-scope ADDED header removed from a main spec in a scratch clone and `git add`ed —
+  the run names exactly that header. It is named against each of the three archived changes whose
+  deltas require it present (ADDED by one, MODIFIED by two later ones), which is the comparison
+  working as specified: each is a delivered record claiming that requirement.
+
+Raw output:
+HEAD df86f3c — in-scope epics (delivered, openspec, archived dir): 17
+index read: non-null map, 15 entries for 15 capabilities named by in-scope deltas, 15 non-null
+live findings: 0 (over 186 requirement headers)
+replay at 3256cc2^ (7b222be): 16 archive dirs then, 16 in-scope epics archived by then; findings: 2
+   {"epic":"unit-rung-and-fixture-snapshots","dir":"2026-09-22-unit-rung-and-fixture-snapshots","capability":"engine-invocation","direction":"absent","headers":["The record store is supplied per call, and a verb's decision is separable from its persistence","The store the command line builds writes the record the command line has always written"]}
+   {"epic":"unit-rung-and-fixture-snapshots","dir":"2026-09-22-unit-rung-and-fixture-snapshots","capability":"suite-certification","direction":"absent","headers":["A fixture is built once per file and restored per test","A rung's membership is decided by what a test observes, and a rung that stops observing it moves"]}
+mutation: removed "Primary tracker configuration" (ADDED by multi-tracker-primary-secondary-support) from openspec/specs/tracker-sync/spec.md and staged it; findings: 3
+   {"epic":"multi-tracker-primary-secondary-support","dir":"2026-07-19-multi-tracker-primary-secondary-support","capability":"tracker-sync","direction":"absent","headers":["Primary tracker configuration"]}
+   {"epic":"conductor-tells-the-truth","dir":"2026-08-25-conductor-tells-the-truth","capability":"tracker-sync","direction":"absent","headers":["Primary tracker configuration"]}
+   {"epic":"emitted-commands-run-as-written","dir":"2026-09-17-emitted-commands-run-as-written","capability":"tracker-sync","direction":"absent","headers":["Primary tracker configuration"]}

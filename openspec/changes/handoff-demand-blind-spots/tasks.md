@@ -289,7 +289,7 @@ These rules bind every section below.
         (1.2), the openspec lane (an absent lane normalized) and outcome `delivered`.
       Mutation proofs `mutation-4.2.txt`: drop the discharge, and invert the same-date rule. Each in
       a scratch copy fails a named case.
-- [ ] 4.3 **EVIDENCE ONLY, not a test** — the live repository. It is not a functional test because an
+- [x] 4.3 **EVIDENCE ONLY, not a test** — the live repository. It is not a functional test because an
       assertion on this repository's own archive is a live-record test whose expectation moves with
       every archive, and the replay needs history a shallow CI clone lacks. The ongoing guard is the
       check itself in `integrity`. Save in `evidence-4.3.txt`:
