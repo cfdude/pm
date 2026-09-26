@@ -472,7 +472,7 @@ These rules bind every section below.
       - that `PROJECT.md` never carries the new block.
       Fix Critical and Important findings, then
       `record-gate-review handoff-demand-blind-spots --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
-- [ ] 9.2 <!-- pm:lifecycle --> Disposition and tracker close. Archive the carrier epic ONLY:
+- [x] 9.2 <!-- pm:lifecycle --> Disposition and tracker close. Archive the carrier epic ONLY:
       `update-epic handoff-demand-blind-spots --status archived --outcome delivered --reason "<what shipped>"`
       with one `--declined-deferral` per non-goal in `design.md`:
       - `--declined-deferral "a refusal at the archive transition for unsynced specs::it deadlocks pm's own closeout (design D3)"`;
