@@ -74,8 +74,60 @@ then. One day of slack because openspec writes a LOCAL date and `createdAt` is U
 
 ## Required item 1 — call-site sweep
 
-(Filled in at Task 4 from `rg`.)
+Derived with `rg` at Task 4 (comment lines excluded).
+
+**Registration paths** — `rg -n "pushEpic\(" scripts/lib`:
+
+| Site | Rule holds? |
+|---|---|
+| `state.mjs` pushEpic() (the sink) | yes — throws `InvalidEpicIdError` on a failing id |
+| `add-epic.mjs` | yes — `STORABLE_EPIC_ID(id)` before pushEpic |
+| `add-many.mjs` | yes — `STORABLE_EPIC_ID(id)` per entry, whole batch refused |
+| `subcommands.mjs` sync, change rung | yes — skipped, named, counted |
+| `subcommands.mjs` sync, plan rung 5 | yes — skipped, named, counted; runnable `add-epic` where the lowercased stem passes |
+| `subcommands.mjs` backfillArchive() | yes — skipped via `skipped[]`, named and counted by sync |
+
+No module appends to `state.epics` outside pushEpic() (conductor-13's source scan). `integrity`'s
+`archive-directory-has-no-epic` detail uses the same predicate to decide whether it may say "sync
+registers it". `releases.mjs` and `verify-specs.mjs` still test `EPIC_ID_FORMAT` directly: a release
+id is not an epic id, and verify-specs READS candidates rather than registering — both are outside
+the rule by subject.
+
+**Writers of `status: "archived"`** — `rg -n 'status = "archived"|status: "archived"|\.status = '`:
+
+| Site | Through the date rule? |
+|---|---|
+| `epic-progress.mjs` reconcileArchived() (the heal; callers: sync, render, commit-nudge, `migrations.mjs` upgrade) | yes — `isArchived(e)` with the record |
+| `subcommands.mjs` backfillArchive() | n/a — registers an UNHELD directory as archived; it cannot end a live epic |
+| `update-epic.mjs` `--status archived` | n/a — an explicit operator transition through the archive gate, not inferred from disk |
+| `add-epic` / `add-many` `--status archived` | n/a — created archived by the operator |
+
+**Resolver consumers** — `rg -n "isArchived\(|archivedChangeDir\(|archivedTasksPath\(|changeSpecRoot\("`:
+every one now passes the record — heal (`epic-progress.mjs`), the active-pointer clear, `resolveEpics()`'s
+disk status, `missing()`, `epicProgress()`'s archived task counts, `active-pointer.mjs` set-active,
+`update-epic.mjs` deliveredRegression(), `integrity.mjs` withdrawn-Gate-2 scope, `spec-sync.mjs` scope
+and directory, `cross-spec-review.mjs` changeSpecRoot(). The per-commit scan in
+`sync-registration-ids.test.mjs` refuses a bare-id call in those six files.
+
+**Where the rule does not hold, and why.** The name-keyed `held` sets in backfillArchive() and
+integrity's `archive-directory-has-no-epic` still treat a SET-ASIDE directory as held (its name is
+taken): the backfill cannot register it (the id belongs to the live epic) and integrity does not
+report it. sync names it every run instead. A matching integrity check is a follow-up, not done here.
+
+**Inverses.** The date rule has no override ("treat this older directory as the epic's archive
+anyway"). Not shipped, deliberately: the case is an epic registered by hand AFTER its change was
+archived, and its remedy is the ordinary one — `update-epic <id> --status archived --outcome …`. For
+an undatable epic the inverse of "never ended by a bare name" is `recover-created-at`. The id rule's
+inverse (registering a refused name) is renaming the entry, or `add-epic --id <valid> --plan` for a
+plan. No field holding another record's id was added.
 
 ## Required item 7 — route what was learned
 
-(Filled in at Task 4.)
+- **Process lesson** — `docs/lessons/a-fixed-date-fixture-describes-a-history-that-cannot-happen.md`
+  (+ README rows): 37 tests across 13 files registered an epic today and archived its change under a
+  fixed past date; the date rule exposed every one.
+- **Tooling friction (not pm's)** — the worktree agent's Bash guard refuses `trap`, so the certify
+  lock could not be released by a trap as the orchestrator's brief required; it was taken with
+  `mkdir` and released by an explicit `rmdir` after each commit. Reported to the orchestrator.
+- **pm friction** — none genuinely new; `update-epic` has no set form for `createdAt` by design
+  (only `--clear created-at`), so fixtures write it directly.
