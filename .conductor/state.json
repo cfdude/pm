@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "handoff-demand-blind-spots",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8299,7 +8299,7 @@
       "id": "handoff-demand-blind-spots",
       "title": "The handoff demand reads 0/0 once /opsx:archive moves tasks.md, and adding one inline story hides every unticked tasks.md item",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8339,7 +8339,7 @@
         "90d25ebc5098a36258da518c2189dc569cb1c430"
       ],
       "createdAt": "2026-09-15T05:11:32.756Z",
-      "touchedAt": "2026-09-26T05:16:10.383Z",
+      "touchedAt": "2026-09-26T05:17:49.155Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:09.437Z",
@@ -8371,7 +8371,44 @@
           "headSha": "90d25ebc5098a36258da518c2189dc569cb1c430",
           "reviewer": "two fresh-context lenses (A spec alignment + 42 mutations; B absent edits, commit integrity, perf n=3): round 1 fail (2 C: an index-read failure crashed brief/snapshot/render; exit 128 read as no-repository so a corrupt index reported 0 findings; 2 I: snapshot wrote the block into brief.txt tracked in 14/24 fleet repos; changeSpecRoot missed the one resolver) — fixed 36d05ea9..d361027c; confirmation fail (1 I: integrity's catch widened to every check, weakening 9+ negative tests) — narrowed to spec-sync with findingsFor asserting !unavailable at 90d25ebc; mutation-proven; functional 1227/1227; 2026-09-25"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:17:49.151Z",
+        "reason": "shipped in 0.50.0: every epic reads its archived tasks.md via one resolver; stories and tasks count together with per-part remedies; the delivered-epic spec-deltas report (integrity + briefing + render, index read, degrades instead of crashing) closes #222; the date rule keeps an unrelated older archive from ending a live epic; Gate 1, cross-spec (5 specs) and Gate 2 recorded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:17:49.136Z",
+        "deferrals": [
+          {
+            "epic": "spec-sync-waive-for-skip-specs",
+            "section": "a deliberately --skip-specs archive is reported forever (Gate 2's missing inverse)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "a refusal at the archive transition for unsynced specs",
+            "reason": "it deadlocks pm's own closeout (design D3)"
+          },
+          {
+            "what": "comparing MODIFIED requirement bodies",
+            "reason": "a later legitimate amendment changes the body, so a body check fires on routine work (design D4)"
+          },
+          {
+            "what": "mapping an epic to a change directory with a different id",
+            "reason": "the epic id stays the key, as for archivedTasksPath, isArchived and the heal"
+          },
+          {
+            "what": "reconstructing a moved plan file",
+            "reason": "plans have no archive convention to follow"
+          },
+          {
+            "what": "repairing the two live delivered records with open tasks",
+            "reason": "they are reported truthfully; correcting them is a separate decision on each record"
+          }
+        ]
+      },
+      "completedAt": "2026-09-26T05:17:49.151Z"
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -10588,7 +10625,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1537,
+  "revision": 1538,
   "reviewMode": "thorough",
   "releases": [
     {

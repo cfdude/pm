@@ -118,9 +118,13 @@ adding one is a visible change to the test.
 - **THEN** in each fixture every command offered exits zero and a re-run of `integrity` no longer
   reports that member; for an openspec-lane member with no passing Gate 2, the archive alternative
   names the Gate 2 precondition before offering `--outcome delivered` (today it offers an archive the
-  gate refuses with exit 1); and for a member whose task source is a checkbox file with a task still
-  open, the archive alternative carries `--carried-to <epicId>` (no verb ticks a checkbox), so filled
-  it exits zero (before Gate 2 E-I5 it offered a bare archive refused "task(s) outstanding")
+  gate refuses with exit 1); and for a member whose checkbox source has a task still open, the
+  archive alternative carries `--carried-to <epicId>` (no verb ticks a checkbox), so filled it exits
+  zero (before Gate 2 E-I5 it offered a bare archive refused "task(s) outstanding"). The alternative
+  keys on each part of the `conductor-record` union separately: a member that ALSO has an open inline
+  story is offered `--story <n> --done` for the story first, so a shipped story is not recorded as
+  carried, as well as `--carried-to` for the task, and followed in the order printed each line exits
+  zero and the finding clears
 
 #### Scenario: The regression refusal's remedy runs
 - **WHEN** an edit to an archived `delivered` openspec-lane epic is refused because it would break
@@ -137,10 +141,13 @@ adding one is a visible change to the test.
 
 #### Scenario: The drift-heal disposition step meets what delivered requires
 - **WHEN** `integrity` reports an epic the heal archived with a passing Gate 2 and no disposition, and
-  that epic has an open task in a checkbox source or an open inline story
-- **THEN** the step offering `--outcome delivered` carries `--carried-to <epicId>` for the checkbox
-  source, or names `--story <n> --done` first for the story, and followed it exits zero and clears the
-  finding (before Gate 2 R-I1 it offered a bare archive refused "task(s) outstanding")
+  that epic has an open task in a checkbox source, an open inline story, or both
+- **THEN** the step offering `--outcome delivered` carries `--carried-to <epicId>` whenever the
+  checkbox source has an open task, and names `--story <n> --done` first whenever an inline story is
+  open — BOTH when both parts contribute, `--story <n> --done` first so a shipped story is recorded as
+  delivered rather than as carried, and `--carried-to` for what remains — and followed it exits zero
+  and clears the finding
+  (before Gate 2 R-I1 it offered a bare archive refused "task(s) outstanding")
 
 #### Scenario: The regression refusal's remedy runs when the edit withdraws the last attributed commit
 - **WHEN** a `--withdraw-commit` of the only commit attributed to an archived `delivered` openspec-lane

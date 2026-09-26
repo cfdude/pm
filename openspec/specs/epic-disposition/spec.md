@@ -301,7 +301,7 @@ every fully delivered change and the release would ship a guard that refuses its
 The refusal MUST state the same count the record renders for that epic.
 
 **The refusal MUST name BOTH remedies.** The exclusion `conductor-record` defines is marker-gated,
-so a task source authored before this release — carrying a real archive instruction with no
+so a checkbox source authored before this release — carrying a real archive instruction with no
 `<!-- pm:lifecycle -->` declaration — still counts that item as outstanding and still refuses.
 There are therefore two correct responses to this refusal, and the message SHALL name each: record
 a `carried-to` reference where work genuinely moved to another epic, **or** add the
@@ -309,6 +309,39 @@ a `carried-to` reference where work genuinely moved to another epic, **or** add 
 lifecycle bookkeeping rather than delivery. A refusal naming only the handoff steers an agent
 holding a fully delivered change toward inventing a receiver for work nobody carried anywhere,
 which is a fabricated record produced by a guard built to prevent fabricated records.
+
+**The refusal names the remedy for EACH part that contributes outstanding work.** An epic's
+outstanding work is the union `conductor-record` defines: its **story part** (undisposed inline
+stories) and its **checkbox source** (a plan file, or an openspec change's `tasks.md`, archived or
+live). One remedy covers the whole union, and the others each reach only their own part:
+
+- a `carried-to` reference is the handoff this requirement demands, and it accounts for ALL the
+  outstanding work, stories and tasks alike; where both parts contribute, its reason SHALL say which
+  stories and which tasks moved;
+- the per-item remedies reach one part only: for the checkbox source, the `<!-- pm:lifecycle -->`
+  declaration where the open item is bookkeeping; for the story part, `--story <n> --done` where the
+  story shipped, or `--story <n> --wont-do "<reason>"` where it will not be done. The lifecycle marker
+  has nowhere to be written for a story, and no story verb ticks a task.
+
+Where both parts contribute, the refusal SHALL name the per-item remedies of BOTH parts, each against
+the part it clears, as well as the handoff. Naming one part's per-item remedy alone leaves the agent a
+remedy that, followed, is refused again on the other part.
+
+**The per-part remedies are printed as a CONJUNCTION, not as alternatives.** Where both parts
+contribute, the refusal offers exactly two ways out: the handoff on its own, OR the story part's
+remedy AND the checkbox source's remedy together. It SHALL say that the per-part remedies must BOTH be
+done, and it MUST NOT print them joined by "or", because either one alone is refused again. (This is
+a different pairing from the carried-to-or-declaration pair above, which names two alternatives for
+the checkbox source alone.) This is how the requirement agrees with `emitted-instructions`, whose
+rule is that "each alternative SHALL clear the condition on its own": there, an alternative is the
+WHOLE printed sequence, not each line of it. The both-parts sequence is one alternative, and followed
+in full it clears the refusal. `emitted-instructions` already reads it that way in its
+delivered-release scenario, where a member with both parts is followed "in the order printed" and
+each line exits zero. This requirement owns the refusal's wording and does not restate that rule. A shipped story is named for
+`--story <n> --done` before any handoff, so that it is recorded as delivered rather than as carried
+elsewhere; that ordering keeps the record honest and is not itself a refusal. The refusal decides
+which remedies to name from each part's own open count, never from a single source label, because
+under the union an epic has no single source.
 
 The guard binds the **interactive archive verb** only. Every other archive path `gate-integrity`
 enumerates — the **archive-drift heal**, the **archive backfill registration** and the two
@@ -348,11 +381,21 @@ in the audited archive, and none of those paths receives a named receiver from a
 
 #### Scenario: The refusal names the declaration as well as the handoff
 - **WHEN** a fully delivered change is archived through the interactive verb and its only
-  outstanding item is an un-declared archive instruction in a task source written before this
+  outstanding item is an un-declared archive instruction in a checkbox source written before this
   release
 - **THEN** the refusal names both remedies — record a `carried-to` reference, or mark the item with
   the literal `<!-- pm:lifecycle -->` declaration — so the agent is not steered into naming a
   receiver for work that went nowhere
+
+#### Scenario: A refusal over both parts names the remedy for each
+- **WHEN** an openspec-lane epic whose `tasks.md` holds one open undeclared task also carries one open
+  inline story, and it is archived through the interactive verb as `outcome: delivered` with no
+  `carried-to` reference
+- **THEN** the refusal states the outstanding count of 2 the record renders, names the story's own
+  remedy (`--story <n> --done` or `--wont-do`) against the story, the task's own remedy (the
+  `<!-- pm:lifecycle -->` declaration) against the task, stating that those two must BOTH be done
+  rather than joining them with "or", and the `carried-to` handoff as the one remedy covering both,
+  and the state of record is byte-identical to before the call
 
 #### Scenario: A killed epic with every task outstanding needs no handoff
 - **WHEN** an epic is archived with `outcome: killed` and its reason, with all 47 of its tasks
@@ -362,7 +405,7 @@ in the audited archive, and none of those paths receives a named receiver from a
   without a Gate 2 verdict
 
 #### Scenario: The change's own archive instruction alone demands no handoff
-- **WHEN** a fully delivered change is archived and the only item its task source leaves unticked is
+- **WHEN** a fully delivered change is archived and the only item its checkbox source leaves unticked is
   the lifecycle-bookkeeping task instructing the agent to archive this very change, carrying the
   declaration marker that `conductor-record` requires for exclusion
 - **THEN** the archive succeeds with no handoff demanded, because the epic's outstanding work is
@@ -486,16 +529,26 @@ withdrawn one, then that commit's `--attribute-commit`, then the invocation.
   `delivered` exits zero
 
 #### Scenario: An entry blocked by open work names the way past it
-- **WHEN** the unconsidered set holds an epic whose task source still has open work — a checkbox file
-  with a task open, or an open inline story
+- **WHEN** the unconsidered set holds an epic whose outstanding work comes from ONE part only — a
+  checkbox source with a task open and no open story, or a story-only epic with an open inline story
 - **THEN** its entry names the handoff obligation with a remedy that is never empty: for the checkbox
   source, the `delivered` archive carrying `--carried-to <epicId>` and `--reason`, which filled with a
-  receiving epic exits zero and removes the entry; for the story, `--story <n> --done`, after which the
-  entry names nothing blocking `delivered` (before Gate 2 U-I1 the checkbox entry's remedy was empty)
+  receiving epic exits zero and removes the entry; for the story-only epic, `--story <n> --done`,
+  after which the entry names nothing blocking `delivered` (before Gate 2 U-I1 the checkbox entry's
+  remedy was empty)
+
+#### Scenario: An entry blocked by open work in both parts names both remedies
+- **WHEN** the unconsidered set holds an epic with an open inline story AND a checkbox source with a
+  task open, which `conductor-record` counts as one union
+- **THEN** its entry's handoff obligation names both remedies; after `--story <n> --done` alone the
+  entry STILL names the handoff obligation, now for the open task only; and following that with the
+  `delivered` archive carrying `--carried-to <epicId>` and `--reason`, filled with a receiving epic,
+  exits zero and removes the entry. Recording the story alone is not the way past a union with a
+  task still open
 
 #### Scenario: An entry blocked twice lists its remedies in the order they run
-- **WHEN** the unconsidered set holds an openspec-lane epic with no passing Gate 2 whose task source is a
-  checkbox file with a task open
+- **WHEN** the unconsidered set holds an openspec-lane epic with no passing Gate 2 whose checkbox source
+  has a task open
 - **THEN** its entry names the Gate 2 obligation first and the handoff second; running the handoff's
   archive first is refused on the missing Gate 2; and running every entry's remedy lines in the order
   listed, filled with a range and a receiving epic, exits zero at each step and removes the entry

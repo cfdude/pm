@@ -449,7 +449,7 @@ These rules bind every section below.
       - stories no longer hide tasks;
       - `integrity` and the briefing now report a delivered change whose spec deltas never reached
         `openspec/specs/`.
-- [ ] 7.5 **Mintlify list for the release cut** (`mintlify-doc-sync`), applied by the release, not by
+- [ ] 7.5 <!-- pm:lifecycle --> **Mintlify list for the release cut** (`mintlify-doc-sync`), applied by the release, not by
       this change's branch: `/commands/status` (integrity check and briefing block), `/commands/epic`
       (progress: stories plus tasks), and the concept page that defines outstanding work. Verify:
       the list is in the 0.50.0 release notes handoff.
@@ -487,7 +487,7 @@ These rules bind every section below.
       epic. Instead close its issue with the ship evidence:
       `gh issue close 222 --repo cfdude/pm --comment "Shipped in 0.50.0 by handoff-demand-blind-spots: <commit range>, integrity check delivered-epic-spec-deltas-absent and its briefing block."`
       Verify: `gh issue view 222 --repo cfdude/pm --json state` reads `CLOSED`.
-- [ ] 9.3 <!-- pm:lifecycle --> Archive: run `/opsx:archive handoff-demand-blind-spots`, then
+- [x] 9.3 <!-- pm:lifecycle --> Archive: run `/opsx:archive handoff-demand-blind-spots`, then
       stage `openspec/` WHOLE, because the archive rewrites `openspec/specs/` too. Verify: the new
       integrity check reports nothing for this change once `openspec/` is staged (the window closes at
       staging), and still nothing once that commit is made.
