@@ -101,7 +101,7 @@ import { verbHelp } from "./lib/help.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
-import { render } from "./lib/render.mjs";
+import { render, renderVerb } from "./lib/render.mjs";
 import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
@@ -404,7 +404,9 @@ function runInvocation(argv, io = {}) {
   // Promise for the caller. See the sync-entry-point note above.
   status = ({
     init,
-    render,
+    // The VERB prints the spec-sync block after rendering; render() itself, run in-process by other
+    // verbs and hooks, never does (handoff-demand-blind-spots D6).
+    render: renderVerb,
     brief,
     snapshot,
     "commit-nudge": commitNudge,

@@ -1,0 +1,19 @@
+evidence-5.3 — handoff-demand-blind-spots: the cost of the spec-sync block on `brief` and `render`.
+Script: cost53.mjs in the implementing session's scratchpad. A `git clone` of this repository at 5b32904
+(the 5.1 commit, BEFORE 5.2), then the same clone with the 5.2 working tree's scripts/ copied in
+(AFTER). Each verb is run in-process through main() with the REAL gateway wrapped by a call counter,
+three runs each; the counts are the last run's (they are identical across runs).
+
+THE SPAWN COUNT — the Verify, and it holds: ONE git process added per invocation, not one per capability
+(17 in-scope epics, 15 capabilities read):
+  before brief:  47 git spawns  {"batchCheckCommits":21,"revListNotReached":26}
+  after  brief:  48 git spawns  {"batchCheckCommits":21,"revListNotReached":26,"indexBlobs":1}
+  before render: 48 git spawns  {"headRef":1,"batchCheckCommits":21,"revListNotReached":26}
+  after  render: 49 git spawns  {"headRef":1,"batchCheckCommits":21,"revListNotReached":26,"indexBlobs":1}
+
+WALL TIME — recorded, and NOT a measurement: taken while seven agents ran suites in parallel on this
+machine (1-minute load average 16–30 at the time, 185+ an hour earlier). The orchestrator's load note
+says not to report wall-clock numbers taken under that load as measurements, so task 5.3 stays
+UNTICKED until they are re-taken on a quiet machine with the same script.
+  before brief  ms: 1338, 1181, 1146      after brief  ms: 1108, 1052, 1006
+  before render ms: 1229, 1584, 1272      after render ms: 1603, 1599, 1563

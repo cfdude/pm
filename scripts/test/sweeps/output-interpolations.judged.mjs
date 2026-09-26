@@ -23,6 +23,7 @@ const x = (f, fn, exprs, cls, why) => {
 };
 
 // ── line-sink flow, and the first judgments of each sink's neighbours
+j("briefing.mjs", "specSyncBlock", ALL, "sink-flow", "the spec-sync block's lines (handoff-demand-blind-spots D6): its only consumers are buildBrief's L (joined through L.map(escapeControls)) and renderVerb(), which joins them through lines.map(escapeControls); header names are JSON-quoted");
 j("briefing.mjs", "buildBrief", ALL, "sink-flow", "every line is pushed onto L, joined through L.map(escapeControls) at buildBrief's return");
 j("briefing.mjs", "BRIEF_REMEDIES", ALL, "sink-flow", "each render() result is pushed onto buildBrief's L (briefRemedy) or its trackerLines, which join L's sink; ids in commands go through printedId/asCode");
 j("render.mjs", "render", ALL, "sink-flow", "every PROJECT.md line is pushed onto md, joined through md.map(escapeControls); cells additionally through tableRow's escapeTableCell");
@@ -523,7 +524,7 @@ x("subcommands.mjs", "appendHonchoMemory", {
   "line": 2,
 }, "escaped", "honchoMemoryLine() escapes the epic id and reason (design D7). TWO occurrences since 0.48.0 task 1.4: the line is printed to stdout AND appended to the log through the store, where before the append came from a path the declaration did not mention");
 x("subcommands.mjs", "snapshot", {
-  "buildBrief(state)": 1,
+  "buildBrief(state, { specSync: true })": 1,
 }, "not-output", "the brief SNAPSHOT's file BODY (`.conductor/brief.txt`), written through the store since task 1.4; buildBrief's own lines are the sink the briefing judgments already cover");
 x("subcommands.mjs", "changedFiles", {
   "p": 1,

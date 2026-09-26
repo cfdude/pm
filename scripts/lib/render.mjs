@@ -7,7 +7,7 @@ import { loadState } from "./state.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
-import { buildBrief } from "./briefing.mjs";
+import { buildBrief, specSyncBlock } from "./briefing.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
@@ -27,6 +27,20 @@ import { currentArgv, errStream, outStream } from "./invocation.mjs";
  *  suite's source guard fails any other `md.push` that begins a row with an interpolated value. */
 export function tableRow(...cells) {
   return `| ${cells.map(escapeTableCell).join(" | ")} |`;
+}
+
+/** THE `render` VERB, as dispatched from the command line — render(), then the SPEC-SYNC block on
+ *  stdout (handoff-demand-blind-spots D6). The block is printed HERE and not inside render(), because
+ *  render() runs in-process under snapshot, commit-nudge, sync, upgrade and most mutating verbs (several
+ *  of them hooks), and printing there would put the block — and a git process — into every one of those
+ *  outputs. Never under `--diff-summary`, whose stdout is one machine-read line. `/pm:status` runs this
+ *  verb, and commands/status.md tells the reader to read this output as well as PROJECT.md. */
+export function renderVerb() {
+  const status = render();
+  if (parseFlags(currentArgv().slice(3))["diff-summary"]) return status;
+  const lines = specSyncBlock(loadState());
+  if (lines.length) outStream().write(lines.map(escapeControls).join("\n") + "\n");
+  return status;
 }
 
 export function render() {

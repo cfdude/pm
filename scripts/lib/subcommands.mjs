@@ -132,7 +132,9 @@ export function brief() {
   requirePlatformFlag("brief");
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
-  const brief = buildBrief(loadState(), { consume: true });
+  // specSync: true — the SessionStart briefing carries the spec-sync block (handoff-demand-blind-spots
+  // D6), from the same specSyncFindings() `integrity` reads.
+  const brief = buildBrief(loadState(), { consume: true, specSync: true });
   // 0.49.0 (runtime-support) — ONE line, and only here: below the support floor, prepended at the top
   // for the reason briefing.mjs gives its currency lines. NOT in buildBrief(), which PROJECT.md (a
   // tracked file) and the PreCompact snapshot also embed — one machine's Node must never land in
@@ -163,7 +165,9 @@ export function snapshot() {
   // THE BRIEF IS A STORE ARTIFACT (0.48.0 task 1.4): `.conductor/brief.txt` is written into the
   // record directory by this verb and read by nothing in the engine, which is exactly the shape the
   // store owns. The detached-tree suppression above is unchanged.
-  if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state) + "\n");
+  // specSync: true — the snapshot is a briefing for the next session (`.conductor/brief.txt`, untracked),
+  // so it carries the spec-sync block like brief() does. Never stdout: this verb's stdout stays empty.
+  if (!detached) storeOps().write(ARTIFACT.BRIEF, buildBrief(state, { specSync: true }) + "\n");
   errStream().write(detached
     ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
       "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"

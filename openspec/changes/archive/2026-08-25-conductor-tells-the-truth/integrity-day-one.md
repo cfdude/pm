@@ -159,3 +159,15 @@ re-record that restores the step (a secondary's exact-match `--remove` first).
 Zero here, measured 2026-09-17: this repository's one tracker is the github-issues primary
 `cfdude/pm`, which has the shape, and it records no secondary. The check RAN; a repo carrying a
 legacy value would be named here.
+
+## `delivered-epic-spec-deltas-absent` — 0 findings
+
+Added 2026-09-25 by `handoff-demand-blind-spots` (cfdude/pm#222). For every `delivered` openspec-lane
+epic whose change is archived, the ADDED/MODIFIED/RENAMED-`TO` headers of its archived delta specs must
+sit under the main spec's `## Requirements` in git's INDEX, and its REMOVED/RENAMED-`FROM` headers must
+not; a later archived change touching the same header the other way discharges it. A standing condition,
+never a refusal.
+
+Zero here, measured 2026-09-25 against the index: 17 in-scope epics, 186 requirement headers, the index
+read answering for all 15 capabilities. Replayed against `3256cc2^` it names exactly 0.48.0's four lost
+ADDED headers, which is the loss it exists for (that change's `evidence-4.3.txt`). The check RAN.

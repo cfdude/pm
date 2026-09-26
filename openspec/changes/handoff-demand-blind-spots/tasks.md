@@ -334,7 +334,7 @@ These rules bind every section below.
       - GREEN: `specSyncFindings()` in `spec-sync.mjs` with the reader as a parameter defaulting to
         the `git.mjs` wrapper; a `CHECKS` entry in `integrity.mjs` that calls it and prints the
         remedy sequence gate-integrity specifies.
-- [ ] 5.2 **TDD** — the briefing block and `render`'s output.
+- [x] 5.2 **TDD** — the briefing block and `render`'s output.
       - RED: `red-5.2.txt`, FUNCTIONAL, in `functional/spec-sync-surfaces.test.mjs` (twin
         `assert/spec-sync-surfaces.test.mjs` edited in the same commit), over a
         hermetic repository with one real finding so both sets are NON-EMPTY:
@@ -357,7 +357,7 @@ These rules bind every section below.
 - [ ] 5.3 **Cost.** Measure the wall time of `brief` AND of `render` over three runs each in a hermetic
       clone, before and after 5.2, and record it in `evidence-5.3.txt`. Verify: one git process added
       per invocation, not one per capability (count the spawns).
-- [ ] 5.4 **REGRESSION GUARD** — the archive transition is not refused. FUNCTIONAL, in
+- [x] 5.4 **REGRESSION GUARD** — the archive transition is not refused. FUNCTIONAL, in
       `functional/spec-sync-surfaces.test.mjs` (twin `assert/spec-sync-surfaces.test.mjs` edited in
       the same commit), because the check it proves silent at the
       transition only fires against a real index: a `delivered` archive with a delta whose header the

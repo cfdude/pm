@@ -115,3 +115,101 @@ test("5.1 an outcome other than delivered is out of scope", () => {
   const cwd = fixture({ delta: ADDED_TWO, outcome: "killed" });
   assert.equal(integrity(cwd), "");
 });
+
+// ───────────── 5.2 — the briefing block and `render`'s output ─────────────
+
+const briefText = (cwd) => {
+  const r = invokeEngine(["brief"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout).hookSpecificOutput.additionalContext;
+};
+const briefBlock = (text) => {
+  const lines = text.split("\n");
+  const at = lines.findIndex(l => l.startsWith(HEADING));
+  if (at === -1) return [];
+  const out = [];
+  for (let i = at + 1; i < lines.length && lines[i].startsWith("  "); i++) out.push(lines[i]);
+  return out;
+};
+const epicsIn = (lines) => [...new Set(lines.map(l => (/`([^`]+)`/.exec(l) || [])[1]).filter(Boolean))].sort();
+
+test("5.2 brief names the SAME epic set as integrity, under its own heading", () => {
+  const cwd = fixture({ delta: ADDED_TWO });
+  const fromIntegrity = epicsIn(integrity(cwd).split("\n"));
+  const fromBrief = epicsIn(briefBlock(briefText(cwd)));
+  assert.deepEqual(fromIntegrity, ["lost"], "one real finding, so the set is NON-EMPTY");
+  assert.deepEqual(fromBrief, fromIntegrity, "one function feeds both surfaces");
+});
+
+test("5.2 `render` PRINTS the block on its stdout, and the PROJECT.md it writes does NOT carry it", () => {
+  const cwd = fixture({ delta: ADDED_TWO });
+  const r = invokeEngine(["render"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(r.stdout.includes(HEADING) && r.stdout.includes("`lost`"), `render's stdout carries the block:\n${r.stdout}`);
+  const md = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  assert.ok(!md.includes(HEADING), "a tracked file never carries a condition of the index");
+});
+
+test("5.2 `render --diff-summary` prints only its epic-relevant line; commit-nudge and snapshot stdout carry no block", () => {
+  const cwd = fixture({ delta: ADDED_TWO });
+  const d = invokeEngine(["render", "--diff-summary"], { cwd });
+  assert.equal(d.status, 0, d.stderr);
+  assert.match(d.stdout, /^epic-relevant: (yes|no)\n$/, `a machine-read line and nothing else:\n${d.stdout}`);
+  for (const verb of [["commit-nudge"], ["snapshot"]]) {
+    const r = invokeEngine(verb, { cwd, input: "{}" });
+    assert.ok(!r.stdout.includes(HEADING), `${verb[0]}'s stdout carries no spec-sync block:\n${r.stdout}`);
+  }
+});
+
+test("5.2 the archive-to-`git add` window: integrity names the epic and PROJECT.md does not; after `git add openspec/` nothing", () => {
+  // SIMULATED as `openspec archive` would leave it (the CLI is not a test dependency): the change moved
+  // under archive/ and the main spec rewritten, both present and UNSTAGED.
+  const cwd = tmpRepo();
+  fixtureGit(cwd, "init", "-q", "-b", "main");
+  fixtureGit(cwd, "config", "user.email", "test@example.com");
+  fixtureGit(cwd, "config", "user.name", "Test");
+  run(["init"], { cwd });
+  write(cwd, "openspec/specs/engine-invocation/spec.md", mainSpec("Existing"));
+  write(cwd, "openspec/changes/win/specs/engine-invocation/spec.md", `## ADDED Requirements\n\n${req("Fresh")}`);
+  write(cwd, "openspec/changes/win/tasks.md", "- [x] 1 done\n");
+  fixtureGit(cwd, "add", "-A");
+  fixtureGit(cwd, "commit", "-q", "-m", "in flight");
+  const st = readState(cwd);
+  st.epics.push({ id: "win", title: "win", priority: "P1", status: "archived", role: "epic", lane: "openspec", links: [],
+    disposition: agentDisposition({ outcome: "delivered" }) });
+  writeState(cwd, st);
+  fs.mkdirSync(path.join(cwd, "openspec/changes/archive"), { recursive: true });
+  fs.renameSync(path.join(cwd, "openspec/changes/win"), path.join(cwd, "openspec/changes/archive/2026-09-25-win"));
+  write(cwd, "openspec/specs/engine-invocation/spec.md", mainSpec("Existing", "Fresh"));
+  assert.match(integrity(cwd), /`win`[^\n]*"Fresh"/, "a CORRECT archive is reported until it is staged — the stated cost of the index");
+  run(["render"], { cwd });
+  assert.ok(!fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8").includes(HEADING), "PROJECT.md rendered in the window does not carry it");
+  fixtureGit(cwd, "add", "openspec/");
+  assert.equal(integrity(cwd), "", "the window closes at staging");
+});
+
+// ───────────── 5.4 — the archive transition is not refused ─────────────
+
+test("5.4 a delivered archive whose delta header the index lacks SUCCEEDS, and the next integrity names it", () => {
+  const cwd = tmpRepo();
+  fixtureGit(cwd, "init", "-q", "-b", "main");
+  fixtureGit(cwd, "config", "user.email", "test@example.com");
+  fixtureGit(cwd, "config", "user.name", "Test");
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "gate", "--lane", "openspec", "--status", "active"], { cwd });
+  const st = readState(cwd);
+  const e = st.epics.find(x => x.id === "gate");
+  e.gateReview = { gate2: { verdict: "pass", reviewer: "r", reviewedAt: "2026-09-25T00:00:00.000Z" } };
+  delete e.attributedCommits;
+  writeState(cwd, st);
+  write(cwd, "openspec/specs/engine-invocation/spec.md", mainSpec("Existing"));
+  write(cwd, "openspec/changes/archive/2026-09-25-gate/specs/engine-invocation/spec.md", `## ADDED Requirements\n\n${req("Never synced")}`);
+  write(cwd, "openspec/changes/archive/2026-09-25-gate/tasks.md", "- [x] 1 done\n");
+  fixtureGit(cwd, "add", "-A");
+  fixtureGit(cwd, "commit", "-q", "-m", "archive move, specs never synced");
+  run(["sync"], { cwd });
+  const r = invokeEngine(["update-epic", "gate", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(r.status, 0, `a standing condition, never a refusal at the transition: ${r.stderr}`);
+  assert.equal(readState(cwd).epics.find(x => x.id === "gate").disposition.outcome, "delivered");
+  assert.match(integrity(cwd), /`gate`[^\n]*"Never synced"/, "and the next integrity names it");
+});

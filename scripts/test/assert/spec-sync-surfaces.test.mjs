@@ -15,6 +15,7 @@ import { tmpRepo, run, readState, writeState, withAssertInvocation } from "../fi
 import { specSyncFindings, specSyncDetail } from "../../lib/spec-sync.mjs";
 import { CHECKS } from "../../lib/integrity.mjs";
 import { DELIVERED_OBLIGATIONS } from "../../lib/archive-gate.mjs";
+import { buildBrief } from "../../lib/briefing.mjs";
 
 const CHECK = "delivered-epic-spec-deltas-absent";
 const req = (n) => `### Requirement: ${n}\nThe system SHALL ${n}.\n`;
@@ -105,4 +106,33 @@ test("5.1 twin: under the half's double (no repository) integrity reports no pre
   assert.ok(line, "the check is listed, at zero or more");
   const bullets = out.split("\n").filter(l => l.includes("`lost`") && !l.includes("unpaired RENAMED"));
   assert.deepEqual(bullets.filter(l => /ABSENT|PRESENT/.test(l)), [], "no presence or absence finding where git cannot answer");
+});
+
+// ───────────── 5.2 twin — the briefing block, fed by the same function ─────────────
+
+const SS_HEADING = "SPEC DELTAS ABSENT FROM THE MAIN SPECS";
+
+test("5.2 twin: buildBrief carries the block only when asked, and names the SAME epic set as specSyncFindings", async () => {
+  const cwd = archiveFixture();
+  run(["init"], { cwd });
+  const st = readState(cwd);
+  st.epics.push(delivered("lost"));
+  writeState(cwd, st);
+  const { read } = stubReader({ "engine-invocation": main("Old"), other: main() });
+  const state = readState(cwd);
+  const [findings, withBlock, embedded] = await withAssertInvocation(cwd, () => [
+    specSyncFindings(state.epics, { readIndex: read }),
+    buildBrief(state, { specSync: { readIndex: read } }),
+    buildBrief(state),
+  ]);
+  assert.ok(findings.length > 0, "a NON-EMPTY set, so the comparison is not two empty sets");
+  const lines = withBlock.split("\n");
+  const at = lines.findIndex(l => l.startsWith(SS_HEADING));
+  assert.notEqual(at, -1, `the block has its own heading:\n${withBlock}`);
+  const block = [];
+  for (let i = at + 1; i < lines.length && lines[i].startsWith("  "); i++) block.push(lines[i]);
+  const named = [...new Set(block.map(l => (/`([^`]+)`/.exec(l) || [])[1]).filter(Boolean))].sort();
+  assert.deepEqual(named, [...new Set(findings.map(f => f.epic))].sort(), "the briefing reads specSyncFindings(), nothing else");
+  assert.ok(block.some(l => l.includes("integrity")) || withBlock.includes("`integrity`"), "it points at integrity for the remedy");
+  assert.ok(!embedded.includes(SS_HEADING), "render()'s embedding (no option) never carries it");
 });
