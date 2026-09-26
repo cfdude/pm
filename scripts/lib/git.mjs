@@ -420,6 +420,62 @@ export function resolveCommits(values) {
   return { resolved, unresolved };
 }
 
+/** Parse `git cat-file --batch` output — a BUFFER — into `Map<name, string|null>`, one entry per
+ *  requested name in order. PURE, and exported so the assertion half can drive it over a captured
+ *  Buffer (handoff-demand-blind-spots D5).
+ *
+ *  THE FRAMING IS BYTES. Each answer is a header line `<oid> <type> <size>` followed by EXACTLY `<size>`
+ *  bytes and one newline, or the line `<name> missing`. `<size>` counts bytes, and the main specs hold
+ *  multi-byte text (all 15 differ between byte and UTF-16 length, measured 2026-09-25), so the blob is
+ *  sliced by byte offset and decoded as UTF-8 only AFTER slicing — slicing a decoded string by `<size>`
+ *  would misread every file after the first multi-byte one. A `missing` answer is the definite "absent
+ *  from the index" and maps to `null`. A header of any other shape is a protocol violation and throws:
+ *  a parse that guessed would report headers present or absent on nothing. */
+export function parseCatFileBatch(buf, names) {
+  const out = new Map();
+  const bytes = Buffer.isBuffer(buf) ? buf : Buffer.from(String(buf ?? ""), "utf8");
+  let at = 0;
+  for (const name of names) {
+    const nl = bytes.indexOf(0x0a, at);
+    if (nl === -1) throw new Error(`cat-file --batch: no answer for ${escapeControls(JSON.stringify(name))}`);
+    const header = bytes.subarray(at, nl).toString("utf8");
+    at = nl + 1;
+    if (header.endsWith(" missing")) { out.set(name, null); continue; }
+    const m = /^[0-9a-f]{40}(?:[0-9a-f]{24})? (\w+) (\d+)$/.exec(header);
+    if (!m) throw new Error(`cat-file --batch: unexpected header ${escapeControls(JSON.stringify(header))} for ${escapeControls(JSON.stringify(name))}`);
+    const size = Number(m[2]);
+    if (at + size > bytes.length) throw new Error(`cat-file --batch: truncated content for ${escapeControls(JSON.stringify(name))}`);
+    out.set(name, m[1] === "blob" ? bytes.subarray(at, at + size).toString("utf8") : null);
+    at += size + 1;   // the content, then its terminating newline
+  }
+  return out;
+}
+
+/** The INDEX's content of each path, relative to the conductor root: `Map<path, string|null>` (`null`
+ *  = absent from the index), or `null` OVERALL when git cannot answer at all — no repository (exit
+ *  128) or no git (ENOENT). ONE `git cat-file --batch` process for the whole set, fed `:./<path>`.
+ *
+ *  THAT IS THE ONLY `null`. Every other failure is RETHROWN — above all ENOBUFS, the index holding more
+ *  than the read can buffer — because "git cannot answer" is a statement about the repository, and a
+ *  read that failed for any other reason is not evidence that nothing is there (gate-integrity: "A read
+ *  that fails for any OTHER reason ... SHALL NOT be reported as 'git cannot answer'"). The operation's
+ *  stderr is ignored, so the exit status and the error code are the only signals, and 128 is git's
+ *  status for "not a git repository". */
+export function indexFileContents(paths) {
+  const list = [...new Set(Array.isArray(paths) ? paths : [])];
+  if (!list.length) return new Map();
+  const names = list.map(p => `:./${String(p).replace(/^\.\//, "")}`);
+  let buf;
+  try {
+    buf = gitOps().indexBlobs(names.map(n => `${n}\n`).join(""));
+  } catch (e) {
+    if (e && (e.status === 128 || e.code === "ENOENT")) return null;
+    throw e;
+  }
+  const parsed = parseCatFileBatch(buf, names);
+  return new Map(list.map((p, i) => [p, parsed.get(names[i]) ?? null]));
+}
+
 /** The one refusal wording for commit values that did not resolve, named together so a caller
  *  fixes every one in a single re-run. */
 export function unresolvedCommitsMessage(unresolved, flags) {

@@ -173,6 +173,20 @@
         }
       ]
     },
+    "indexBlobs": {
+      "asks": "the index's bytes for a set of `:./<path>` names, in one process",
+      "refreshWhen": "the fixture's staged SPECS change (the blob ids and byte sizes move with them), or git changes `cat-file --batch`'s `<oid> blob <size>` / `<name> missing` framing. The value is stored base64 under `encoding`, because it is BYTES",
+      "cases": [
+        {
+          "args": [
+            ":./openspec/specs/alpha/spec.md\n:./openspec/specs/beta/spec.md\n:./openspec/specs/absent/spec.md\n"
+          ],
+          "status": 0,
+          "encoding": "base64",
+          "value": "MTY1YjE0Y2U5ZTRlNDJmZWNkZTIzNDcxNjQ3ZjNiNWM4MDNiYzA4NiBibG9iIDEzMQojIENhZsOpIOKAlCBuYcOvdmUgc3BlYwoKIyMgUmVxdWlyZW1lbnRzCgojIyMgUmVxdWlyZW1lbnQ6IFLDqXN1bcOpIOKckyBpcyByZWFkIGJ5dGUtZXhhY3QKVGhlIHN5c3RlbSBTSEFMTCDigJQgwqtwcsOpY2lzw6ltZW50wrsuCgo3MjFhZDIxOTUwMmY5NTAyNmNjZWY0Y2YzYjE2NzYwM2RkNTdkMmZhIGJsb2IgODUKIyDOsiBzcGVjCgojIyBSZXF1aXJlbWVudHMKCiMjIyBSZXF1aXJlbWVudDog5pel5pys6KqeIGhlYWRlcgpUaGUgc3lzdGVtIFNIQUxMIHdvcmsuCgo6Li9vcGVuc3BlYy9zcGVjcy9hYnNlbnQvc3BlYy5tZCBtaXNzaW5nCg=="
+        }
+      ]
+    },
     "revListNotReached": {
       "asks": "which of these are not reached by head",
       "refreshWhen": "the fixture in git-gateway-repo.mjs changes (a new commit, path or tag moves this answer), or a git release changes this command's output. Never refresh to make a failing check pass — read the difference the failure names first",
@@ -426,6 +440,10 @@
       "value": null
     },
     "batchCheckCommits": {
+      "status": 128,
+      "value": null
+    },
+    "indexBlobs": {
       "status": 128,
       "value": null
     },

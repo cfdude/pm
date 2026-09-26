@@ -52,7 +52,7 @@ test("gateway: no engine module outside the gateway spawns git — the call site
   assert.deepEqual(outside, [],
     "every git invocation must live in lib/git-gateway.mjs, so a caller can be handed a double; a " +
     "call site anywhere else is a site the fake cannot answer and the assertion half cannot run");
-  assert.equal(gitTotal, 23,
+  assert.equal(gitTotal, 24,
     `the derivation found ${gitTotal} git invocations across the engine — ${GATEWAY}'s own count, ` +
     "not a number in a document");
 });

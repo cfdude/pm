@@ -1,0 +1,35 @@
+✖ gateway: no engine module outside the gateway spawns git — the call sites are DERIVED, not listed (17.002792ms)
+✔ gateway: the derived call count matches the declared table — a site added without an operation fails (0.165541ms)
+✔ gateway: nothing imports it — callers are HANDED it, through the invocation (2.344542ms)
+✔ gateway: every declared operation is a named function on the gateway object (0.58725ms)
+✔ gateway: the non-git spawns are EXACTLY the two the omission names (4.6985ms)
+✔ gateway: the derivation DISCRIMINATES — every shape the old pattern missed is seen (0.533875ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 126.167875
+
+✖ failing tests:
+
+test at scripts/test/assert/git-gateway-guard.test.mjs:43:1
+✖ gateway: no engine module outside the gateway spawns git — the call sites are DERIVED, not listed (17.002792ms)
+  AssertionError [ERR_ASSERTION]: the derivation found 23 git invocations across the engine — /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red31/scripts/lib/git-gateway.mjs's own count, not a number in a document
+  
+  23 !== 24
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red31/scripts/test/assert/git-gateway-guard.test.mjs:55:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 23,
+    expected: 24,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

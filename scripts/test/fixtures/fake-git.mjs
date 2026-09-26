@@ -116,6 +116,9 @@ export function fakeGit({ capture = loadCapture(), roots = [], noRepository = fa
         err.stderr = c.stderr || "";
         throw err;
       }
+      // A byte-valued answer (`encoding: "base64"`) is handed back as the Buffer it was captured as,
+      // because its caller parses by byte offset and a string would never exercise that parse.
+      if (c.encoding === "base64") return Buffer.from(c.value, "base64");
       return c.value === null ? undefined : c.value;
     };
   }

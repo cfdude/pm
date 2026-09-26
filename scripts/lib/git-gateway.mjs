@@ -18,7 +18,8 @@
 // it imported would cycle through the module every other module depends on.
 //
 // ONE OPERATION PER INVOCATION, not one generic runner. Twenty-three call sites became twenty-three
-// operations (the count is DERIVED at apply time, never typed — see the guard in
+// operations, and handoff-demand-blind-spots added a twenty-fourth, `indexBlobs` (the count is
+// DERIVED at apply time, never typed — see the guard in
 // scripts/test/git-gateway-guard.test.mjs, which re-runs the derivation against this file's source
 // and fails when the two disagree). A generic `git(args)` would put the arg shapes in the callers,
 // which is where the fake could not answer them; a named operation is also the unit a fresh capture
@@ -47,7 +48,7 @@ export function realGit(context) {
   const env = () => context().env;
 
   return {
-    // ── lib/git.mjs, 11 sites ──────────────────────────────────────────────────────────────────
+    // ── lib/git.mjs, 12 sites ──────────────────────────────────────────────────────────────────
     // git.mjs:11 — the abbreviated HEAD, or a throw the caller turns into "-".
     shortHead: () =>
       execSync("git rev-parse --short HEAD", { cwd: root(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim(),
@@ -97,6 +98,21 @@ export function realGit(context) {
     batchCheckCommits: (lines) =>
       execFileSync("git", ["cat-file", "--batch-check"], {
         cwd: root(), encoding: "utf8", input: lines,
+        stdio: ["pipe", "pipe", "ignore"], env: { ...env(), GIT_NO_LAZY_FETCH: "1" },
+      }),
+
+    // git.mjs indexFileContents() — ONE `cat-file --batch` for every path the caller names, fed as
+    // `:./<path>` lines on stdin (handoff-demand-blind-spots D5). `:./` resolves from the cwd — the
+    // conductor root — so a conductor in a SUBDIRECTORY of its repository reads its own files; a bare
+    // `:<path>` resolves from the top level and would answer `missing` for every one of them. The
+    // answer is BYTES: NO `encoding`, so this returns a Buffer, because `<size>` counts bytes and a
+    // decoded string sliced by it misreads every file after the first multi-byte one. `maxBuffer` is
+    // explicit (the default 1 MiB is below what the main specs already total), and an overflow
+    // (ENOBUFS) is thrown like any other failure for the caller to rethrow. The same lazy-fetch
+    // override as batchCheckCommits: a partial clone must never fetch to answer.
+    indexBlobs: (lines) =>
+      execFileSync("git", ["cat-file", "--batch"], {
+        cwd: root(), input: lines, maxBuffer: 256 * 1024 * 1024,
         stdio: ["pipe", "pipe", "ignore"], env: { ...env(), GIT_NO_LAZY_FETCH: "1" },
       }),
 
@@ -207,6 +223,7 @@ export const GIT_OPERATIONS = [
   { name: "refsContaining", command: "git for-each-ref --contains=<sha> --count=1 --format=%(refname)", asks: "is the commit reachable from any ref" },
   { name: "diffNamesAgainstHead", command: "git diff -z --name-only HEAD -- <paths...>", asks: "which of these paths differ from HEAD" },
   { name: "batchCheckCommits", command: "git cat-file --batch-check", asks: "resolve a set of commit values in one process" },
+  { name: "indexBlobs", command: "git cat-file --batch", asks: "the index's bytes for a set of `:./<path>` names, in one process" },
   { name: "revListNotReached", command: "git rev-list <commits...> ^<head>", asks: "which of these are not reached by head" },
   { name: "isShallowRepository", command: "git rev-parse --is-shallow-repository", asks: "is this a shallow clone" },
   { name: "gitPath", command: "git rev-parse --git-path <name>", asks: "a git-internal path, relative to this directory" },

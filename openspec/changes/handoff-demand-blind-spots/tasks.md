@@ -199,7 +199,7 @@ These rules bind every section below.
 
 ## 3. The git gateway reads the index (design D5)
 
-- [ ] 3.1 **TDD** — the operation.
+- [x] 3.1 **TDD** — the operation.
       - RED: `red-3.1.txt`, the gateway guard, failing on an exec site with no `GIT_OPERATIONS` row,
         or the reverse.
       - GREEN, all in ONE commit, every file listed (6.4 checks each against this commit):
@@ -235,7 +235,7 @@ These rules bind every section below.
           functional file, so its assertion twin above is edited in the same commit).
       Verify: the guard is green in both halves, and the capture's byte-identity check against real
       git passes on the multi-byte case.
-- [ ] 3.2 **TDD** — the index read against real git, FUNCTIONAL (new id, working name
+- [x] 3.2 **TDD** — the index read against real git, FUNCTIONAL (new id, working name
       `functional/spec-sync-index.test.mjs`), with its assertion twin
       (`assert/spec-sync-index.test.mjs`, the wrapper's parsing over a captured `Buffer`) EDITED in the
       same commit.

@@ -67,6 +67,16 @@ const IDENTITY = {
 /** The needle `created-at.mjs`'s pickaxe looks for, in the shape it looks for it: the record's own
  *  `"id": "<id>"` key, which is what makes the search precise rather than matching a title. */
 const EPIC_ID = "e1";
+
+/** The staged main specs `indexBlobs` reads — multi-byte on purpose: `<size>` counts bytes. */
+export const SPECS = {
+  "alpha": "# Café — naïve spec\n\n## Requirements\n\n### Requirement: Résumé ✓ is read byte-exact\nThe system SHALL — «précisément».\n",
+  "beta": "# β spec\n\n## Requirements\n\n### Requirement: 日本語 header\nThe system SHALL work.\n",
+};
+/** The `indexBlobs` stdin every capture and check sends: both staged specs and one path the index lacks. */
+export const INDEX_BLOBS_INPUT = [
+  ":./openspec/specs/alpha/spec.md", ":./openspec/specs/beta/spec.md", ":./openspec/specs/absent/spec.md",
+].map(l => `${l}\n`).join("");
 const STATE_JSON = JSON.stringify({ revision: 1, epics: [{ id: EPIC_ID, title: "first", status: "queued" }] }, null, 2) + "\n";
 
 /** Run git in `cwd` with the fixture's fixed identity, failing loudly on a non-zero status — a
@@ -147,6 +157,16 @@ function buildAt(prefix, { detach = false } = {}) {
   // than with nothing.
   fs.writeFileSync(path.join(root, "README.md"), "one\ntwo\ndirty\n");
 
+  // TWO MULTI-BYTE SPECS, STAGED AND NEVER COMMITTED (handoff-demand-blind-spots D5), for `indexBlobs`:
+  // its answer frames each blob by BYTE size, and a multi-byte file is the only shape in which a
+  // string-sliced parse goes wrong. Index-only and after every commit, so no commit object — and so no
+  // other captured answer — moves.
+  for (const [cap, text] of Object.entries(SPECS)) {
+    fs.mkdirSync(path.join(root, "openspec", "specs", cap), { recursive: true });
+    fs.writeFileSync(path.join(root, "openspec", "specs", cap, "spec.md"), text);
+    git(root, "add", "--", path.join("openspec", "specs", cap, "spec.md"));
+  }
+
   let worktree = null;
   if (!detach) {
     // Beside the root, not inside it, so it is scheduled on its own (gh-cfdude-pm-224).
@@ -201,6 +221,7 @@ export function buildNoRepositoryCapture(plain) {
     abbreviateCommit: [aSha], verifyCommitName: [aSha], mergeBaseIsAncestor: [aSha, aSha],
     committerDate: [aSha], commitExists: [aSha], refsContaining: [aSha],
     diffNamesAgainstHead: [["README.md"]], batchCheckCommits: [`${aSha}^{commit}\n`],
+    indexBlobs: [":./openspec/specs/x/spec.md\n"],
     revListNotReached: [[aSha], aSha], gitPath: ["shallow"], logPickaxe: ["x", ".conductor/state.json"],
     diffTreeNames: [aSha], commitSubject: [aSha], mergeBaseIsAncestorOfHead: [aSha],
     lsFiles: [[".claude/skills"]],
@@ -244,6 +265,7 @@ export function casesFor(fx) {
     { op: "diffNamesAgainstHead", args: [["README.md"]] },
     { op: "diffNamesAgainstHead", args: [["PROJECT.md"]] },
     { op: "batchCheckCommits", args: [`${a.c2}^{commit}\n${absent}^{commit}\n`] },
+    { op: "indexBlobs", args: [INDEX_BLOBS_INPUT] },
     { op: "revListNotReached", args: [[a.c3], a.c2] },
     { op: "revListNotReached", args: [[a.c2], a.c2] },
     { op: "isShallowRepository", args: [] },
@@ -264,6 +286,10 @@ export function casesFor(fx) {
   ];
 }
 
+/** The ONE operation whose answer is bytes rather than text — keyed by name, so no other capture entry
+ *  changes shape (handoff-demand-blind-spots D5). */
+export const BYTE_VALUED = "indexBlobs";
+
 /** The operation names the case list must cover — the gateway's own table, so the two cannot drift. */
 export const REQUIRED_OPERATIONS = GIT_OPERATIONS.map(o => o.name);
 
@@ -277,6 +303,7 @@ export const REQUIRED_OPERATIONS = GIT_OPERATIONS.map(o => o.name);
 const REFRESH_WHEN = {
   worktreeList: "the porcelain format changes in a git release, OR the fixture gains or loses a worktree — both change the number of entries, which is the field a failure names",
   batchCheckCommits: "the fixture's commit content changes (the object size on the second field moves with it), or git stops printing `<name> commit <size>` for a peeled value",
+  indexBlobs: "the fixture's staged SPECS change (the blob ids and byte sizes move with them), or git changes `cat-file --batch`'s `<oid> blob <size>` / `<name> missing` framing. The value is stored base64 under `encoding`, because it is BYTES",
   logPickaxe: "the fixture's first commit changes, or the pickaxe's output format moves",
 };
 const REFRESH_DEFAULT =
@@ -301,7 +328,12 @@ export function buildCapture(fx) {
     operations[c.op].cases.push({
       args: rootToToken(c.args, roots),
       status: answer.status,
-      value: rootToToken(answer.value, roots),
+      // A BYTE-VALUED answer (`indexBlobs`) is stored base64 under an explicit `encoding` tag and never
+      // passes through rootToToken(): it holds no path, and a JSON string cannot carry invalid UTF-8
+      // without changing its length — which would shift every later `<size>` frame (design D5).
+      ...(Buffer.isBuffer(answer.value)
+        ? { encoding: "base64", value: answer.value.toString("base64") }
+        : { value: rootToToken(answer.value, roots) }),
       ...(answer.stderr ? { stderr: rootToToken(answer.stderr, roots) } : {}),
     });
   }
@@ -325,6 +357,9 @@ export function callReal(gateway, op, args) {
     // `undefined` and `null` are the same answer here: the four status-only operations return
     // whatever `execFileSync` gives back when every stdio is ignored, which is `null`.
     if (r === undefined || r === null) return { status: 0, value: null };
+    // `indexBlobs` answers BYTES and keeps them: its caller slices by byte offset, so a decoded string
+    // here would test a different answer than the engine gets. Every other Buffer answer is text.
+    if (op === BYTE_VALUED && Buffer.isBuffer(r)) return { status: 0, value: Buffer.from(r) };
     return { status: 0, value: Buffer.isBuffer(r) ? r.toString("utf8") : String(r) };
   } catch (e) {
     return { status: e && typeof e.status === "number" ? e.status : -1, value: null, stderr: String((e && e.stderr) || "") };

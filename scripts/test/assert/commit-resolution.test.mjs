@@ -59,8 +59,11 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
   const gw = fs.readFileSync(path.join(LIB, "git-gateway.mjs"), "utf8");
   const withFlag = gw.split("\n").filter(l => l.includes("GIT_NO_LAZY_FETCH"));
   assert.ok(withFlag.length >= 2, "both record-walking operations must set it");
+  // handoff-demand-blind-spots added `indexBlobs` (cat-file --batch over the index) to the set, and
+  // the count is exact so a further op acquiring the override is a visible change.
+  assert.equal(withFlag.length, 3, "exactly three operations set it — the two record walkers and indexBlobs");
   for (const { name } of [
-    { name: "batchCheckCommits" }, { name: "revListNotReached" },
+    { name: "batchCheckCommits" }, { name: "revListNotReached" }, { name: "indexBlobs" },
   ]) {
     const block = gw.slice(gw.indexOf(`${name}: (`), gw.indexOf(`${name}: (`) + 400);
     assert.match(block, /GIT_NO_LAZY_FETCH/, `${name} must set GIT_NO_LAZY_FETCH`);
