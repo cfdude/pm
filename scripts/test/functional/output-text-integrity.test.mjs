@@ -1054,10 +1054,12 @@ recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v)
 recipe("add-many --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: "X-2", externalUrl: v })) });
 recipe("add-many --plan", { notRendered: "a plan path is read as a progress source and printed by no surface", run: (c, v) => batch(c, { id: fresh("mpl"), lane: "superpowers", status: "planned", planPath: v }) });
 recipe("add-many --spec", { rendered: true, run: (c, v) => batch(c, { id: fresh("msp"), lane: "claude-code", status: "planned", specPath: v }) });
-// Both halves poisoned: the EPIC half of an add-many link is not validated (a batch may link to an epic
-// created later in the same batch), so this is how a control-character id reaches the record through
-// argv today — every read of it must stay safe (task 8.1's DATA-reference sweep).
-recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: v, reason: v }] }) });
+// The REASON half poisoned. The epic half used to be poisoned too, because add-many stored a link to
+// any id at all; since add-many-drops-input-silently it must name an epic in the record or the batch,
+// and no epic id can hold a control character, so a poisoned target is REFUSED at the write. The
+// DATA-reference sweep over stored control-character link ids (task 8.1) now reaches them through
+// legacyWrite() — the deferral-note recipe in LEGACY_RECIPES — which is the only route left.
+recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: "base", reason: v }] }) });
 recipe("add-many --description", { rendered: true, run: (c, v) => batch(c, { id: fresh("md"), lane: "claude-code", status: "planned", description: v }) });
 recipe("add-many --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
 recipe("add-many --add-story", { rendered: true, expect: "fail", run: (c, v) => {
@@ -1282,9 +1284,10 @@ export const LEGACY_RECIPES = [
   } },
   { key: "honcho-memory push over add-many may-invalidate link ids (the deferral note)", rendered: true, run: (c, v) => {
     const id = fresh("mi");
-    // The EPIC half of an add-many link is not validated (a batch may link forward), so this is argv's
-    // route to a stored control-character link id — and deferralNote() prints every one of them.
-    ok(c.cwd, batchArgs(c, { id, lane: "claude-code", links: [{ type: "may-invalidate", epic: "a-" + v }, { type: "may-invalidate", epic: "b-" + v }] }));
+    // A stored control-character link id — written directly, since add-many-drops-input-silently closed
+    // argv's last route to one (add-many now refuses a link to an epic that does not exist). A record an
+    // older engine wrote can still hold one, and deferralNote() prints every one of them.
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { links: [{ type: "may-invalidate", epic: "a-" + v }, { type: "may-invalidate", epic: "b-" + v }] })); });
     return pm(c.cwd, ["honcho-memory", "push", id, "why"]);
   } },
   { key: "integrity over a legacy archived epic whose claim session holds a control character (the unclaim remedy)", rendered: true, run: (c, v) => {

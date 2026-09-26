@@ -1,0 +1,189 @@
+✔ an unknown top-level key is refused by name, and nothing is created (`epic` for `epics`) (2.852958ms)
+✔ a batch that is not a JSON object is refused by name (1.082208ms)
+✔ `epics` that is not an array, and `parent` that is not an object, are refused by name (0.579542ms)
+✖ a string link in the --link grammar is PERSISTED, reason included (15.979542ms)
+✖ links that is not an array — a bare string, null, an object — is refused by name (3.011084ms)
+✖ a link to an epic that exists nowhere is refused, not stored dangling (2.639709ms)
+✖ a link with no target, or no type, is refused naming what is missing (2.590375ms)
+✖ a link element that is neither a string nor an object, or carries a key a link does not have, is refused (2.4395ms)
+✖ an unknown link type is still refused, and the epic half is checked first (2.8675ms)
+✖ a link to an entry LATER in the same batch is accepted, and so is a self-link (as update-epic --link accepts one) (2.714334ms)
+✖ a hand-supplied may-invalidate edge is still written disarmed, as every other writer writes it (2.748417ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 3
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 198.698084
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a string link in the --link grammar is PERSISTED, reason included (15.979542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     epic: 'base',
+  -     type: 'depends-on'
+  -   }
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:61:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { type: 'depends-on', epic: 'base' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ links that is not an array — a bare string, null, an object — is refused by name (3.011084ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the batch was ACCEPTED
+      at refusal (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:20:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:68:18
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a link to an epic that exists nowhere is refused, not stored dangling (2.639709ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the batch was ACCEPTED
+      at refusal (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:20:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:77:18
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a link with no target, or no type, is refused naming what is missing (2.590375ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the batch was ACCEPTED
+      at refusal (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:20:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:85:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a link element that is neither a string nor an object, or carries a key a link does not have, is refused (2.4395ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the batch was ACCEPTED
+      at refusal (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:20:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:96:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an unknown link type is still refused, and the epic half is checked first (2.8675ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, but the batch was ACCEPTED
+      at refusal (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:20:10)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:109:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a link to an entry LATER in the same batch is accepted, and so is a self-link (as update-epic --link accepts one) (2.714334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     epic: 'second',
+  -     type: 'depends-on'
+  -   }
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:121:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { type: 'depends-on', epic: 'second' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a hand-supplied may-invalidate edge is still written disarmed, as every other writer writes it (2.748417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     epic: 'base',
+  -     reason: 'why',
+  -     reconcileOnResume: false,
+  -     type: 'may-invalidate'
+  -   }
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/unit/add-many-input.test.mjs:128:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a6bcf797cc13f3aaf/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { type: 'may-invalidate', epic: 'base', reason: 'why', reconcileOnResume: false } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

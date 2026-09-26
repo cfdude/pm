@@ -146,7 +146,9 @@ unitTest("add-epic rejects a duplicate --external-id, leaving state unchanged (d
   const err = expectFail(() => engine(["add-epic", "--id", "gh-42-dup", "--lane", "claude-code",
        "--status", "untriaged", "--external-id", "42",
        "--external-url", "https://github.com/cfdude/pm/issues/42"]));
-  assert.match(String(err.stderr || err.message), /external-id '42' already/);
+  // Both keys match here, and the one that COLLIDED is the URL — the primary key. This line used to
+  // assert `external-id '42' already`, pinning the mis-named refusal code review 0.43.0 (E1) found.
+  assert.match(String(err.stderr || err.message), /external-url 'https:\/\/github\.com\/cfdude\/pm\/issues\/42' is already held by epic 'gh-42'/);
   const after = readState(engine);
   assert.equal(after.epics.length, before);
   assert.ok(!after.epics.some(e => e.id === "gh-42-dup"));

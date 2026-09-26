@@ -166,6 +166,9 @@ x("add-epic.mjs", "addEpic", {
   "e.message": 2,
   "perr": 1,
 }, "passthrough", "parseStoryFlags / parseLinkFlags / parentError messages, each escaping the values it quotes where it is built");
+x("add-epic.mjs", "addEpic", {
+  "trackerKeyRefusal(hit, { externalUrl, externalId })": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
 x("add-epic.mjs", "planHierarchy", {
   "jsonText(plan)": 1,
 }, "json", "the plan is one JSON document");
@@ -185,6 +188,16 @@ x("add-many.mjs", "addMany", {
   "allowedKeys.join(\", \")": 1,
   "k": 1,
 }, "engine", "the id-format source and the batch key allowlist; k is filtered to allowedKeys before");
+x("add-many.mjs", "addMany", {
+  "trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
+x("add-many.mjs", "addMany", {
+  "where": 1,
+}, "escaped", "where is `epic '${escapeControls(e.id)}'`, escaped where it is built on the line above its use");
+x("add-many.mjs", "batchLink", {
+  "where": 8,
+  "shown": 7,
+}, "escaped", "where is built by addMany through escapeControls(e.id); shown is escapeControls(JSON.stringify(raw)) at the top of batchLink");
 x("add-many.mjs", "addMany", {
   "msg": 1,
 }, "passthrough", "die(): every caller escapes the values it quotes");
@@ -576,6 +589,9 @@ x("releases.mjs", "release", {
 x("releases.mjs", "release", {
   "releaseLine(releaseSummaries(state, state.epics).find(s => s.id === id))": 1,
 }, "escaped", "releaseLine() escapes the release id (Gate 2 T-I3); the rest are counts");
+x("update-epic.mjs", "updateEpic", {
+  "trackerKeyRefusal(hit, candidate)": 1,
+}, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
 x("remove-epic.mjs", "removeEpic", {
   "epicSummaryTable([epic, ...descendants])": 1,
 }, "escaped", "the summary table escapes each cell; each id through escapeControls (cite(), a whole call to escapeControls, is trusted as its alias since Gate 2 W-M2 stopped a \"; \" string ending its declaration)");

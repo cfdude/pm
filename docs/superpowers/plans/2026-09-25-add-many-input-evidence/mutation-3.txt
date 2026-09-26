@@ -1,0 +1,30 @@
+mutation proofs — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/dedup/mut, worktree untouched
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M11 unknown top-level keys ignored again
+  mutation: scripts/lib/add-many.mjs: "if (unknownDocKeys.length) {" -> "if (false) {"
+  exit 1 — CAUGHT
+  ✖ an unknown top-level key is refused by name, and nothing is created (`epic` for `epics`) (122.478ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M12 non-object document accepted
+  mutation: scripts/lib/add-many.mjs: "if (!isObject(doc)) refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ a batch that is not a JSON object is refused by name (1.3305ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M13 non-array epics accepted
+  mutation: scripts/lib/add-many.mjs: "if (doc.epics !== undefined && !Array.isArray(doc.epics)) refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ `epics` that is not an array, and `parent` that is not an object, are refused by name (1.540916ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M14 non-object parent accepted
+  mutation: scripts/lib/add-many.mjs: "if (doc.parent !== undefined && !isObject(doc.parent)) refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ `epics` that is not an array, and `parent` that is not an object, are refused by name (1.368167ms)
+  ✖ failing tests:
+

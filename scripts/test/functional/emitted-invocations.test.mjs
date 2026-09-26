@@ -2879,6 +2879,14 @@ const PRINTER_FIXTURES = {
       [repo.run(["clear-active"]), /record-reconcile rp --detour <detourId>/],
     ];
   },
+  "a tracker item another epic already holds (tracker-item-dedup-bypassed)"() {
+    // The one-item-one-epic refusal names the clear that frees the item. Printed by
+    // tracker-dedup.mjs for add-epic, update-epic and add-many alike; reached here through add-epic.
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "th", "--lane", "claude-code", "--title", "th", "--external-url", "https://x.test/1"]);
+    return [[repo.run(["add-epic", "--id", "t2", "--lane", "claude-code", "--external-url", "https://x.test/1"]),
+      /update-epic th --clear external-url/]];
+  },
   "archiving an epic a live detour frame still pauses"() {
     // The frame-drop refusal's remedy. It is an arm of the archive gate itself — not an INTEGRITY
     // check and not a DELIVERED_OBLIGATIONS variant — so it reaches Layer A through a printer

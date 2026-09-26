@@ -1,0 +1,92 @@
+mutation proofs — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/dedup/mut, worktree untouched
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M15 string links dropped again (batchLink bypassed for strings)
+  mutation: scripts/lib/add-many.mjs: "batchLinks.set(e.id, e.links.map(l => batchLink(l, knownIds, where, refuse)));" -> "batchLinks.set(e.id, e.links.filter(l => typeof l !== \"string\").map(l => batchLink(l, knownIds, where, refuse)));"
+  exit 1 — CAUGHT
+  ✖ a string link in the --link grammar is PERSISTED, reason included (13.87175ms)
+  ✖ a link to an epic that exists nowhere is refused, not stored dangling (2.521417ms)
+  ✖ a link with no target, or no type, is refused naming what is missing (3.255875ms)
+  ✖ an unknown link type is still refused, and the epic half is checked first (2.297125ms)
+  ✖ a link to an entry LATER in the same batch is accepted, and so is a self-link (as update-epic --link accepts one) (3.460375ms)
+  ✖ a hand-supplied may-invalidate edge is still written disarmed, as every other writer writes it (2.333041ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M16 non-array links accepted
+  mutation: scripts/lib/add-many.mjs: "if (!Array.isArray(e.links)) {" -> "if (false) {"
+  exit 1 — CAUGHT
+  ✖ links that is not an array — a bare string, null, an object — is refused by name (1.808833ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M17 epic half unchecked (dangling links stored)
+  mutation: scripts/lib/add-many.mjs: "if (!knownIds.has(epic)) {" -> "if (false) {"
+  exit 1 — CAUGHT
+  ✖ a link to an epic that exists nowhere is refused, not stored dangling (1.7375ms)
+  ✖ an unknown link type is still refused, and the epic half is checked first (6.182125ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M18 known set = record only (a link to a later batch entry refused)
+  mutation: scripts/lib/add-many.mjs: "const knownIds = new Set([...existingIds, ...batchIds]);" -> "const knownIds = new Set([...existingIds]);"
+  exit 1 — CAUGHT
+  ✖ a link to an entry LATER in the same batch is accepted, and so is a self-link (as update-epic --link accepts one) (0.998042ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M19 target-less link object accepted
+  mutation: scripts/lib/add-many.mjs: "if (typeof raw.epic !== \"string\" || !raw.epic) refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ a link with no target, or no type, is refused naming what is missing (1.751458ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M20 extra link keys allowed (verdict smuggled)
+  mutation: scripts/lib/add-many.mjs: "if (extra.length) {" -> "if (false) {"
+  exit 1 — CAUGHT
+  ✖ a link element that is neither a string nor an object, or carries a key a link does not have, is refused (8.7425ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M21 type half unchecked
+  mutation: scripts/lib/add-many.mjs: "if (!isKnownLinkType(type)) {" -> "if (false) {"
+  exit 1 — CAUGHT
+  ✖ an unknown link type is still refused, and the epic half is checked first (2.189167ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M22 type checked before epic (order)
+  mutation: scripts/lib/add-many.mjs: "  if (!knownIds.has(epic)) {" -> "  if (!isKnownLinkType(type)) refuse(`${where}: link type '${escapeControls(type)}' is not one of ${KNOWN_LINK_TYPES.join(\"|\")}`);\n  if (!knownIds.has(epic)) {"
+  exit 1 — CAUGHT
+  ✖ an unknown link type is still refused, and the epic half is checked first (1.678208ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M23 non-string non-object element accepted
+  mutation: scripts/lib/add-many.mjs: "    refuse(`${where}: link ${shown} must be a" -> "    return { type: \"relates-to\", epic: [...knownIds][0] }; refuse(`${where}: link ${shown} must be a"
+  exit 1 — CAUGHT
+  ✖ a link element that is neither a string nor an object, or carries a key a link does not have, is refused (2.468417ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M24 non-string reason accepted
+  mutation: scripts/lib/add-many.mjs: "if (raw.reason !== undefined && typeof raw.reason !== \"string\") refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ a link element that is neither a string nor an object, or carries a key a link does not have, is refused (3.452292ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M25 typeless link object accepted
+  mutation: scripts/lib/add-many.mjs: "if (typeof raw.type !== \"string\" || !raw.type) refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ a link with no target, or no type, is refused naming what is missing (2.286792ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/add-many-input.test.mjs: exit 0
+M26 malformed string accepted
+  mutation: scripts/lib/add-many.mjs: "if (!type || !epic) refuse(" -> "if (false) refuse("
+  exit 1 — CAUGHT
+  ✖ a link with no target, or no type, is refused naming what is missing (1.537875ms)
+  ✖ failing tests:
+

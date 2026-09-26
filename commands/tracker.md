@@ -219,7 +219,11 @@ Once set, the CLAUDE.md rules block gains a "GitHub issue sync" section. As part
    - **`--external-updated-at`** carries the item's own updated timestamp, so a freshly mirrored
      epic starts with a watermark instead of instantly polluting the "never re-read" count.
 4. `add-epic` rejects a duplicate (exits non-zero, writes nothing) as a second line of defense
-   against a stale local view producing one.
+   against a stale local view producing one — and so do `update-epic` (when it sets `--external-url`
+   or `--external-id`) and `add-many`. The refusal names the epic already holding the item and its status (an archived
+   epic still holds it). If that item was REOPENED, do not register a second epic: propose
+   `update-epic <holder> --status untriaged` to bring the archived holder back. Only when the holder
+   is genuinely no longer mirrored, free the URL with `update-epic <holder> --clear external-url`.
 
 The emitted section then carries the watermark step (re-read each linked item updated since its
 `externalUpdatedAt`, and record it) and the closed-item step (propose a disposition for a linked

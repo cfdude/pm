@@ -1,0 +1,23 @@
+mutation proofs — scratch copy /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/dedup/mut, worktree untouched
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M27 add-epic stores the URL untrimmed
+  mutation: scripts/lib/add-epic.mjs: "str(f[\"external-url\"]).trim();" -> "str(f[\"external-url\"]);"
+  exit 1 — CAUGHT
+  ✖ add-epic, update-epic and add-many store the URL trimmed, and a padded copy collides with the bare one (5.853708ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M28 update-epic stores the URL untrimmed
+  mutation: scripts/lib/update-epic.mjs: "str(f[\"external-url\"]).trim();" -> "str(f[\"external-url\"]);"
+  exit 1 — CAUGHT
+  ✖ add-epic, update-epic and add-many store the URL trimmed, and a padded copy collides with the bare one (11.279125ms)
+  ✖ failing tests:
+
+baseline scripts/test/unit/tracker-item-dedup.test.mjs: exit 0
+M29 add-many stores the URL untrimmed
+  mutation: scripts/lib/add-many.mjs: "entry.externalUrl = entry.externalUrl.trim();" -> "entry.externalUrl = entry.externalUrl;"
+  exit 1 — CAUGHT
+  ✖ add-epic, update-epic and add-many store the URL trimmed, and a padded copy collides with the bare one (3.396084ms)
+  ✖ failing tests:
+
