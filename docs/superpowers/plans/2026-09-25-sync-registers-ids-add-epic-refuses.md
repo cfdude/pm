@@ -124,7 +124,7 @@ plan. No field holding another record's id was added.
 ## Required item 7 — route what was learned
 
 - **Process lesson** — `docs/lessons/a-fixed-date-fixture-describes-a-history-that-cannot-happen.md`
-  (+ README rows): 37 tests across 13 files registered an epic today and archived its change under a
+  (+ README rows): 14 assertion-half and 42 functional failures (14 test files plus one shared fixture) registered an epic today and archived its change under a
   fixed past date; the date rule exposed every one.
 - **Tooling friction (not pm's)** — the worktree agent's Bash guard refuses `trap`, so the certify
   lock could not be released by a trap as the orchestrator's brief required; it was taken with
