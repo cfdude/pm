@@ -7026,7 +7026,7 @@
       "id": "gh-cfdude-pm-194",
       "title": "A malformed lesson `detect:` is discarded silently — half of pm's own matchers are inert and nothing says so",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7053,7 +7053,7 @@
         "19756a8f2b37466c61083b641d3f177c76bd3d58"
       ],
       "createdAt": "2026-09-14T18:18:22.066Z",
-      "touchedAt": "2026-09-25T21:03:31.044Z",
+      "touchedAt": "2026-09-26T05:19:16.502Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:24.032Z",
@@ -7061,7 +7061,18 @@
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
       ],
-      "release": "0.50.0"
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:16.500Z",
+        "reason": "delivered with lesson-detect-matcher-hardening: a malformed detect: is rejected with a reason and the lessons-index test names it; reporting a consumer repo's rejects is #228"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:16.499Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:16.500Z"
     },
     {
       "id": "gh-cfdude-pm-190",
@@ -7910,7 +7921,7 @@
       "id": "tracker-item-dedup-bypassed",
       "title": "The one-epic-per-tracker-item guard runs only on add-epic --external-id; --external-url alone, update-epic and add-many skip it",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7934,15 +7945,32 @@
         "a92274a75ed1fd23bcaa29643bcc7c71d40d8150"
       ],
       "createdAt": "2026-09-15T05:11:09.965Z",
-      "touchedAt": "2026-09-26T00:57:33.959Z",
+      "touchedAt": "2026-09-26T05:19:38.138Z",
       "release": "0.50.0",
-      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md"
+      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:38.135Z",
+        "reason": "one tracker URL maps to one epic at every writer (add-epic, update-epic, add-many, sync); URLs trimmed; archived holders still block and a reopened item reopens its holder (rules block)",
+        "correction": "the first record carried a mistaken --deferral to integrity-reports-set-aside-archive-dirs (section 'none'), passed together with --no-deferrals by operator error; nothing was deferred",
+        "superseded": {
+          "outcome": "delivered",
+          "recordedAt": "2026-09-26T05:19:12.739Z",
+          "reason": "one tracker URL maps to one epic at every writer (add-epic, update-epic, add-many, sync); URLs trimmed; archived holders still block and a reopened item reopens its holder (rules block)"
+        }
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:38.133Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:12.739Z"
     },
     {
       "id": "drift-heal-leaves-claim-on-archive",
       "title": "The archive-drift heal archives an epic but leaves its claim, and integrity then blames a hand-edit",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -7965,14 +7993,25 @@
         "675076ece539ac5aa62c27528a37f770c5ada125"
       ],
       "createdAt": "2026-09-15T05:11:12.083Z",
-      "touchedAt": "2026-09-25T23:21:29.947Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:14.250Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:14.248Z",
+        "reason": "the archive heal releases an ended epic's claim through update-epic's one path (releaseClaimOfEndedEpic)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:14.247Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:14.248Z"
     },
     {
       "id": "add-many-drops-input-silently",
       "title": "add-many silently drops string links, stores target-less and dangling links, and ignores unknown top-level keys",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7993,15 +8032,26 @@
         "3149a128bf3eb621071eae61e30386e94db68098"
       ],
       "createdAt": "2026-09-15T05:11:14.105Z",
-      "touchedAt": "2026-09-26T00:57:53.124Z",
+      "touchedAt": "2026-09-26T05:19:13.531Z",
       "release": "0.50.0",
-      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md"
+      "planPath": "docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:13.529Z",
+        "reason": "add-many persists or refuses by name: string links parsed, dangling and target-less links refused, unknown top-level keys refused"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:13.528Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:13.529Z"
     },
     {
       "id": "hooks-not-silent-before-init",
       "title": "Hook verbs print detached-checkout and root-divergence warnings in repos pm never initialised, and nothing tests gate-guard or snapshot dormancy",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8018,7 +8068,7 @@
         "106ee6fb6fe9bb0183e59fc3bebb90bfbf5bd332"
       ],
       "createdAt": "2026-09-15T05:11:16.084Z",
-      "touchedAt": "2026-09-25T23:21:33.665Z",
+      "touchedAt": "2026-09-26T05:19:14.916Z",
       "notes": [
         {
           "at": "2026-09-25T19:25:16.108Z",
@@ -8026,7 +8076,18 @@
           "text": "lane: claude-code not superpowers — dormancy-test half fixed in 0.44.0 (43ce728); what remains is one isInitialized() gate on two warnings plus a test; inventory 2026-09-25"
         }
       ],
-      "release": "0.50.0"
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:14.913Z",
+        "reason": "divergence and detached warnings fire only in an initialised repo (or for init); a non-hook verb refused for want of init names both repositories"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:14.913Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:14.913Z"
     },
     {
       "id": "gate-guard-bash-writes-unguarded",
@@ -8064,7 +8125,7 @@
       "id": "lesson-detect-matcher-hardening",
       "title": "lesson-advice: a catastrophic regex hangs every Bash/Edit call ~60s, a typo'd detect key matches every tool call, CRLF frontmatter is silently inert",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8094,8 +8155,19 @@
         "19756a8f2b37466c61083b641d3f177c76bd3d58"
       ],
       "createdAt": "2026-09-15T05:11:20.243Z",
-      "touchedAt": "2026-09-25T21:03:09.923Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:15.665Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:15.661Z",
+        "reason": "a detect: either works or is rejected with a reason; CRLF, key allowlist, per-regex 50 ms budget with a 1 s cap per hook call, fail-closed matchLessons"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:15.661Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:15.662Z"
     },
     {
       "id": "commit-watch-misses-commits",
@@ -8212,7 +8284,7 @@
       "id": "release-member-moves-silently",
       "title": "release --member silently moves an epic out of another release with no amendment; re-running --defer overwrites the recorded reason",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8249,8 +8321,19 @@
         "5db02b52c9dc29339a191425cc98948bb7b2c869"
       ],
       "createdAt": "2026-09-15T05:11:28.637Z",
-      "touchedAt": "2026-09-25T21:01:37.469Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:17.211Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:17.208Z",
+        "reason": "a cross-release --member records the move on the release it leaves; a changed --defer reason keeps the one it replaces"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:17.207Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:17.208Z"
     },
     {
       "id": "user-text-unescaped-in-render-brief-integrity",
@@ -8445,7 +8528,7 @@
       "id": "activity-log-detour-events-lose-epic",
       "title": "Activity log records epic:null for every detour push/pop — frameEpic reads keys the stack never writes, and the test uses a fake frame",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8479,14 +8562,25 @@
         "1eae6586f353dbd9903c1beae70899fa3b4dac60"
       ],
       "createdAt": "2026-09-15T05:11:36.863Z",
-      "touchedAt": "2026-09-25T21:02:49.056Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:52.436Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:52.434Z",
+        "reason": "detour events carry the paused epic and the detour; drops log as detour-drop; reconcile, priority, autonomy and review-mode are named events; rows escaped through the report path"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:52.431Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:52.434Z"
     },
     {
       "id": "verify-state-false-hand-edit",
       "title": "verify-state reports an 'undetected hand-edit' after ordinary engine verbs that save without rendering",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8512,8 +8606,19 @@
         "cfa3fe5315c8cfccd62c5af4d0fd2ed6f1544b0d"
       ],
       "createdAt": "2026-09-15T05:11:38.936Z",
-      "touchedAt": "2026-09-25T23:21:29.219Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:53.326Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:53.324Z",
+        "reason": "verify-state baselines on the engine's last write (render or save, stamped under the record lock); same revision with a newer mtime is a hand-edit"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:53.323Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:53.324Z"
     },
     {
       "id": "agent-docs-teach-stale-gate-evidence",
@@ -8550,7 +8655,7 @@
       "id": "commit-gate-tests-working-tree-not-index",
       "title": "The pre-commit suite gate tests the working tree, not the index, and its 'fewer tests than declared' guard cannot fire; CI has no count guard",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8575,14 +8680,25 @@
         "3f68971d40789fdb926a5d8c78180d63725a5b84"
       ],
       "createdAt": "2026-09-15T05:11:42.968Z",
-      "touchedAt": "2026-09-25T21:26:01.081Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:54.144Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:54.142Z",
+        "reason": "the pre-commit hook tests the index git hands it (checkout-index snapshot), drift judges what is staged, and runs from the snapshot"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:54.141Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:54.142Z"
     },
     {
       "id": "no-network-law-test-is-weak",
       "title": "The instruction-layer no-network test misses https/net/tls imports and spawning gh or curl",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8605,14 +8721,25 @@
         "810a521c523bd90f537101939969c8d96bf0f11b"
       ],
       "createdAt": "2026-09-15T05:11:44.956Z",
-      "touchedAt": "2026-09-25T23:21:34.453Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:54.824Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:54.821Z",
+        "reason": "the no-network guard allowlists what the engine spawns (git from the gateway, node self-hosting, openspec from tool-currency) and bare-specifier network imports"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:54.821Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:54.821Z"
     },
     {
       "id": "triage-ignores-non-latin-text",
       "title": "triage finds no candidates for non-Latin text — tokenize splits on [^a-z0-9]",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8637,14 +8764,25 @@
         "f1640a3b03aab72264bbbfbd65b464fe16dcbb5a"
       ],
       "createdAt": "2026-09-15T05:11:46.984Z",
-      "touchedAt": "2026-09-25T23:21:32.186Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:55.507Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:55.505Z",
+        "reason": "triage tokenizes every script (NFC, letters/marks/digits); CJK as bigrams with a share floor so unrelated asks do not flood candidates"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:55.504Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:55.505Z"
     },
     {
       "id": "sync-registers-ids-add-epic-refuses",
       "title": "sync and the archive backfill register ids add-epic refuses, and sync silently archives an active epic on a name collision",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8669,15 +8807,35 @@
         "04fc2cd81a7117d10095ea1b6771536eb748cdc2"
       ],
       "createdAt": "2026-09-15T05:11:48.976Z",
-      "touchedAt": "2026-09-26T05:16:22.578Z",
+      "touchedAt": "2026-09-26T05:19:56.199Z",
       "release": "0.50.0",
-      "planPath": "docs/superpowers/plans/2026-09-25-sync-registers-ids-add-epic-refuses.md"
+      "planPath": "docs/superpowers/plans/2026-09-25-sync-registers-ids-add-epic-refuses.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:56.196Z",
+        "reason": "sync registers only ids add-epic accepts, names and counts every skip; an archive dir more than a day older than a live epic's createdAt cannot end it; archived epics still find their files by name"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:56.195Z",
+        "deferrals": [
+          {
+            "epic": "integrity-reports-set-aside-archive-dirs",
+            "section": "item-1 sweep gap — integrity does not report a set-aside directory"
+          },
+          {
+            "epic": "created-at-recovery-dates-too-late",
+            "section": "the date rule exposed createdAt values later than real registration"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:56.196Z"
     },
     {
       "id": "code-review-0-43-0-minors",
       "title": "Minor findings from the 0.43.0 comprehensive code review (batch)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -8745,8 +8903,45 @@
         "91029e926d421b39306e864a77a1591bb77c029f"
       ],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-25T23:21:46.903Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:20:08.485Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:20:08.482Z",
+        "reason": "the small 0.43.0 findings still open at 0.50.0: priority vocabulary, ISO-8601 watermarks (and no older watermark), changelog --since as a version, tracker --intent pair and status validation, --remove on the primary refused, clearer handoff and write-conflict refusals, verify-* command docs, NUL-terminated worktree listing with a locale-independent empty answer; the rest re-checked as already fixed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:20:08.481Z",
+        "deferrals": [
+          {
+            "epic": "brief-snapshot-epipe-on-large-hook-payload",
+            "section": "brief/snapshot do not drain stdin (EPIPE)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "a policy for a doubled --platform",
+            "reason": "needs a repeated-flag policy for every verb; no harm observed"
+          },
+          {
+            "what": "remove-epic --cascade naming record-reconcile, and duplicate may-invalidate links",
+            "reason": "need design work; low impact"
+          },
+          {
+            "what": "rules item 3 wording",
+            "reason": "changes the managed rules block for a wording nit"
+          },
+          {
+            "what": "saveHookHeal writing two conflict entries",
+            "reason": "needs a new store option; cosmetic"
+          },
+          {
+            "what": "mutation-survivor tests for the conductor-13 destructuring scan, migration never-overwrite guards and linkOnce",
+            "reason": "test-hardening with no defect behind it"
+          }
+        ]
+      },
+      "completedAt": "2026-09-26T05:20:08.482Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -10446,7 +10641,7 @@
       "id": "gh-cfdude-pm-224",
       "title": "Test suite leaks ~436 pm-test/pm-plugin/pm-cache temp dirs per run",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10471,7 +10666,7 @@
         "e061248bab406d4c0abff0ea79785fa4af3286b9"
       ],
       "createdAt": "2026-09-25T19:03:34.037Z",
-      "touchedAt": "2026-09-25T21:08:14.307Z",
+      "touchedAt": "2026-09-26T05:19:56.842Z",
       "notes": [
         {
           "at": "2026-09-25T19:03:35.444Z",
@@ -10479,13 +10674,24 @@
           "text": "lane: superpowers not (none routed) — test-harness only, multi-file sweep with a guard; resolve away from claude-code"
         }
       ],
-      "release": "0.50.0"
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:56.839Z",
+        "reason": "the suite leaves 0 pm-* temp dirs per run (was 436 in the assertion half); every mkdtemp is wrapped or listed with a verified cleanup"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:56.838Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:56.839Z"
     },
     {
       "id": "gh-cfdude-pm-219",
       "title": "A combined-invocation bucket run reported fail 1 non-reproducibly — the Real Numbers recipe needs its output captured",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -10505,8 +10711,19 @@
         "2094b1c60a6bc6a63ed60c5537929401ead19343"
       ],
       "createdAt": "2026-09-25T19:25:05.286Z",
-      "touchedAt": "2026-09-25T21:25:03.601Z",
-      "release": "0.50.0"
+      "touchedAt": "2026-09-26T05:19:57.508Z",
+      "release": "0.50.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-26T05:19:57.506Z",
+        "reason": "the Real Numbers recipe saves the full run to a dated, PID-suffixed file and publishes nothing unless pass == tests and fail == 0; the original flake is not identified — the saved output makes the next occurrence diagnosable"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-26T05:19:57.505Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-26T05:19:57.506Z"
     },
     {
       "id": "brief-snapshot-epipe-on-large-hook-payload",
@@ -10625,7 +10842,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1538,
+  "revision": 1555,
   "reviewMode": "thorough",
   "releases": [
     {
