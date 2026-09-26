@@ -40,3 +40,9 @@ unitTest("2.1 each part carries its OWN open count, so a consumer never keys on 
   assert.equal(p.stories.open, 2, "the story part's open count");
   assert.equal(p.checkbox, null, "a lane with no checkbox source has no checkbox part");
 });
+
+unitTest("2.1 a two-part source renders `N/M items`, since its total holds stories and tasks together", () => {
+  const p = { done: 2, total: 4, excluded: 0, source: "stories+openspec", parts: ["stories", "openspec"], warn: null };
+  assert.equal(bar(p), "2/4 items");
+  assert.equal(bar({ ...p, source: "stories+plan" }), "2/4 items");
+});

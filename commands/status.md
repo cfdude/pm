@@ -49,8 +49,9 @@ constraint, not the headings: reshape freely, drop nothing.
   A relationship visible from one side only is how a remainder disappears.
 - each **release**'s `N epics, M deferred`.
 
-Story counts are derived live from each proposal's `openspec/changes/<id>/tasks.md` — if
-they look stale, the tasks.md checkboxes are the source of truth, not the index.
+Story counts are derived live from each change's `tasks.md` — `openspec/changes/<id>/tasks.md` while
+the change is in flight, and its archived copy under `openspec/changes/archive/` once `/opsx:archive`
+has moved it — if they look stale, the tasks.md checkboxes are the source of truth, not the index.
 
 **Progress is the UNION of two parts, and an archived change is still read.** An epic's count sums
 its inline **stories** (a story recorded `--wont-do` leaves both sides of the ratio) and its

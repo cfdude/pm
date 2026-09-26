@@ -1,0 +1,126 @@
+mutation-gate2-I5-minors — each a REGRESSION GUARD that passed on arrival, proved in a scratch COPY of scripts/: (I5) MODIFIED dropped from the presence obligations; (OVF) the overflow line pointing at PROJECT.md; (MAXBUF) indexBlobs' maxBuffer removed; (AND) the per-part remedies joined by '; or'. Each fails its named case.
+
+──── mut-I5.out ────
+✖ I5 a MODIFIED header missing from the main spec is reported absent (1.655958ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 147.635958
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ I5 a MODIFIED header missing from the main spec is reported absent (1.655958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     'absent',
+  -     [
+  -       'Reworded'
+  -     ]
+  -   ]
+  - ]
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/unit/spec-sync.test.mjs:207:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ 'absent', [Array] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+──── mut-OVF.out ────
+✖ 5.2 twin: more than five findings end in an overflow line pointing at `integrity`, never PROJECT.md (59.422709ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 208.013458
+
+✖ failing tests:
+
+test at scripts/test/assert/spec-sync-surfaces.test.mjs:197:1
+✖ 5.2 twin: more than five findings end in an overflow line pointing at `integrity`, never PROJECT.md (59.422709ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\(\+1 more — see `integrity`\)/. Input:
+  
+  '  (+1 more — see PROJECT.md)'
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/spec-sync-surfaces.test.mjs:214:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '  (+1 more — see PROJECT.md)',
+    expected: /\(\+1 more — see `integrity`\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+──── mut-MAXBUF.out ────
+✖ 3.2 twin: indexBlobs keeps its explicit 256 MiB maxBuffer (the default 1 MiB is below the main specs) (0.739583ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 148.99175
+
+✖ failing tests:
+
+test at scripts/test/assert/spec-sync-index.test.mjs:31:1
+✖ 3.2 twin: indexBlobs keeps its explicit 256 MiB maxBuffer (the default 1 MiB is below the main specs) (0.739583ms)
+  AssertionError [ERR_ASSERTION]: an overflow must be ENOBUFS at 256 MiB, never at the 1 MiB default
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/spec-sync-index.test.mjs:35:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '    indexBlobs: (lines) =>\n      execFileSync("git", ["cat-file", "--batch"], {\n        cwd: root(), input: lines,\n        stdio: ["pipe", "pipe", "ignore"], env: { ...env(), GIT_NO_LAZY_FETCH: "1" },\n      }),\n\n    // git.mjs:438 — which of these full object names `head` does not reach, in one rev-list.\n',
+    expected: /maxBuffer: 256 \* 1024 \* 1024/,
+    operator: 'match',
+    diff: 'simple'
+  }
+──── mut-AND.out ────
+✖ 2.3 the archive refusal over BOTH parts names each part's remedy as a conjunction, and the handoff (61.936083ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 215.36375
+
+✖ failing tests:
+
+test at scripts/test/assert/progress-union.test.mjs:98:1
+✖ 2.3 the archive refusal over BOTH parts names each part's remedy as a conjunction, and the handoff (61.936083ms)
+  AssertionError [ERR_ASSERTION]: the story remedy's line ends in `; AND` — joined as a conjunction, never `; or`
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/mut/scripts/test/assert/progress-union.test.mjs:116:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -113,6 +113,8 @@ test("2.3 the archive refusal over BOTH parts names each part's remedy as a conj
   // Never joined by "or": the story remedy's sentence and the lifecycle remedy's sentence are
   // separated by AND, and no single line offers one part's remedy as an alternative to the other's.
   assert.doesNotMatch(msg, /--wont-do[^\n]*\bor\b[^\n]*pm:lifecycle/, "the two parts' remedies are not alternatives");
+  assert.ok(msg.includes("; AND\n"), "the story remedy's line ends in `; AND` — joined as a conjunction, never `; or`");
+  assert.ok(!/; or\b/i.test(msg), "no `; or` between the per-part remedies");
   assert.equal(stateBytes(cwd), before);
 });
 

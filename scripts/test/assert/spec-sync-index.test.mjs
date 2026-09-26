@@ -25,20 +25,14 @@ function batchAnswer(entries) {
   return Buffer.concat(parts);
 }
 
-test("3.2 twin: the parse frames by BYTE size, so a second blob after a multi-byte one decodes exactly", () => {
-  const a = "## Requirements\n\n### Requirement: Résumé — «é» ✓\n", b = "### Requirement: 日本語\n";
-  const names = [":./openspec/specs/a/spec.md", ":./openspec/specs/b/spec.md", ":./openspec/specs/c/spec.md"];
-  const got = parseCatFileBatch(batchAnswer([[names[0], a], [names[1], b], [names[2], null]]), names);
-  assert.equal(got.get(names[0]), a);
-  assert.equal(got.get(names[1]), b, "a string-sliced parse misreads every blob after the first multi-byte one");
-  assert.equal(got.get(names[2]), null, "`missing` is the definite answer: absent from the index");
-  assert.ok(Buffer.byteLength(a) > a.length, "the fixture really is multi-byte");
-});
+// The two pure parseCatFileBatch() cases moved to the unit rung (unit/spec-sync.test.mjs, Gate 2 minor):
+// they are values of a pure function and touch no path.
 
-test("3.2 twin: a malformed or truncated answer THROWS rather than guessing", () => {
-  assert.throws(() => parseCatFileBatch(Buffer.from("garbage header\n"), ["x"]), /unexpected header/);
-  assert.throws(() => parseCatFileBatch(Buffer.from(`${"a".repeat(40)} blob 99\nshort\n`), ["x"]), /truncated/);
-  assert.throws(() => parseCatFileBatch(Buffer.alloc(0), ["x"]), /no answer/);
+test("3.2 twin: indexBlobs keeps its explicit 256 MiB maxBuffer (the default 1 MiB is below the main specs)", async () => {
+  const fs = await import("node:fs");
+  const src = fs.readFileSync(new URL("../../lib/git-gateway.mjs", import.meta.url), "utf8");
+  const body = src.slice(src.indexOf("    indexBlobs: (lines) =>"), src.indexOf("    revListNotReached: ("));
+  assert.match(body, /maxBuffer: 256 \* 1024 \* 1024/, "an overflow must be ENOBUFS at 256 MiB, never at the 1 MiB default");
 });
 
 /** Run indexFileContents() under a hand-built gateway whose `indexBlobs` does `impl`. */

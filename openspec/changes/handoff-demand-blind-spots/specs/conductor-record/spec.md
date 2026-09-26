@@ -26,7 +26,8 @@ construction, and a guard keying on raw checkboxes would refuse every correctly 
 
 The epic's `done` and `total` are the two parts' sums, and so is the count of excluded items (disposed
 stories plus declared-bookkeeping tasks), which the rendered record labels by kind so a disposed story
-is never called lifecycle bookkeeping. Before this requirement, the presence of any inline story made
+is never called lifecycle bookkeeping. Where both parts contribute, the rendered ratio counts `items`
+(`N/M items`), because its total holds stories and tasks together. Before this requirement, the presence of any inline story made
 the checkbox source unread. On a `tasks.md` at 1/3, one `--add-story`, one `--story 1 --done` and an
 archive recorded `delivered` with two tasks open and a rendered `1/1`. A source that stops being read
 because another one appeared is the missing-source defect this capability already prohibits, reached

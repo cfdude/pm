@@ -193,3 +193,24 @@ test("I3 twin: snapshot's brief.txt never carries the block, even when the reade
   const snap = src.slice(src.indexOf("export function snapshot()"), src.indexOf("export function snapshot()") + 2500);
   assert.ok(!/specSync/.test(snap.replace(/\/\/.*$/gm, "")), "snapshot() passes no specSync option");
 });
+
+test("5.2 twin: more than five findings end in an overflow line pointing at `integrity`, never PROJECT.md", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const st = readState(cwd);
+  for (let i = 1; i <= 6; i++) {
+    write(cwd, `openspec/changes/archive/2026-09-0${i}-e${i}/specs/cap/spec.md`, `## ADDED Requirements\n\n${req(`Lost ${i}`)}`);
+    st.epics.push(delivered(`e${i}`));
+  }
+  writeState(cwd, st);
+  const { read } = stubReader({ cap: main("Other") });
+  const state = readState(cwd);
+  const text = await withAssertInvocation(cwd, () => buildBrief(state, { specSync: { readIndex: read } }));
+  const lines = text.split("\n");
+  const from = lines.findIndex(l => l.startsWith(SS_HEADING));
+  assert.notEqual(from, -1, "the block is there");
+  const over = lines.slice(from).find(l => /^\s+\(\+\d+ more/.test(l));
+  assert.ok(over, `an overflow line after the cap:\n${text}`);
+  assert.match(over, /\(\+1 more — see `integrity`\)/);
+  assert.ok(!over.includes("PROJECT.md"));
+});

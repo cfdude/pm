@@ -58,7 +58,7 @@ and is not restated here.
   `tasks.md` holds 3 undeclared tasks with only 1 ticked: `/opsx:archive` moves the change, the heal
   flips the epic, and the agent runs the interactive archive verb with `outcome: delivered`, no
   `--carried-to` and a deferral assertion
-- **THEN** it exits non-zero naming 2 of 1/3 task(s) outstanding, which is the count the record
+- **THEN** it exits non-zero naming `2 task(s) outstanding (1/3 done)`, which is the count the record
   renders for the epic, and `state.json` is byte-identical
 
 #### Scenario: The moved tasks.md, fully ticked, does not refuse

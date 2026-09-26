@@ -9,6 +9,19 @@
 import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 import { compareSpecSync, mainRequirementNames, mayDischarge, parseDelta } from "../../lib/spec-sync.mjs";
+import { parseCatFileBatch } from "../../lib/git.mjs";
+
+/** A `cat-file --batch` answer, framed the way git frames it: `<oid> blob <size>` with `<size>` in
+ *  BYTES, the content, a newline — or `<name> missing`. */
+function batchAnswer(entries) {
+  const parts = [];
+  entries.forEach(([name, text], i) => {
+    if (text === null) { parts.push(Buffer.from(`${name} missing\n`)); return; }
+    const body = Buffer.from(text, "utf8");
+    parts.push(Buffer.from(`${String(i + 1).padStart(40, "a")} blob ${body.length}\n`), body, Buffer.from("\n"));
+  });
+  return Buffer.concat(parts);
+}
 
 const BOM = String.fromCharCode(0xfeff);
 const req = (n) => `### Requirement: ${n}\nThe system SHALL ${n}.\n`;
@@ -184,4 +197,30 @@ unitTest("4.2 the comparison reads only the in-scope pairs it is handed (outcome
   const changes = [{ dir: "2026-09-01-killed", deltas: { c: delta({ ADDED: req("Never shipped") }) } }];
   assert.deepEqual(compareSpecSync({ changes, inScope: [], main: new Map([["c", main("Z")]]) }), []);
   assert.equal(one(compareSpecSync({ changes, inScope: [{ epic: "k", dir: "2026-09-01-killed" }], main: new Map([["c", main("Z")]]) }), "2026-09-01-killed").length, 1);
+});
+
+unitTest("I5 a MODIFIED header missing from the main spec is reported absent", () => {
+  // Gate 2 I5: MODIFIED is one of the three presence obligations, and nothing pinned it — dropping
+  // `...delta.modified` from the comparison passed every other case.
+  const changes = [{ dir: "2026-09-01-m", deltas: { c: delta({ MODIFIED: req("Reworded") }) } }];
+  const f = compareSpecSync({ changes, inScope: [{ epic: "m", dir: "2026-09-01-m" }], main: new Map([["c", main("Other")]]) });
+  assert.deepEqual(f.map(x => [x.direction, x.headers]), [["absent", ["Reworded"]]]);
+});
+
+// ───────────── parseCatFileBatch — moved from assert/spec-sync-index (pure values) ─────────────
+
+unitTest("3.2 the parse frames by BYTE size, so a second blob after a multi-byte one decodes exactly", () => {
+  const a = "## Requirements\n\n### Requirement: Résumé — «é» ✓\n", b = "### Requirement: 日本語\n";
+  const names = [":./openspec/specs/a/spec.md", ":./openspec/specs/b/spec.md", ":./openspec/specs/c/spec.md"];
+  const got = parseCatFileBatch(batchAnswer([[names[0], a], [names[1], b], [names[2], null]]), names);
+  assert.equal(got.get(names[0]), a);
+  assert.equal(got.get(names[1]), b, "a string-sliced parse misreads every blob after the first multi-byte one");
+  assert.equal(got.get(names[2]), null, "`missing` is the definite answer: absent from the index");
+  assert.ok(Buffer.byteLength(a) > a.length, "the fixture really is multi-byte");
+});
+
+unitTest("3.2 a malformed or truncated answer THROWS rather than guessing", () => {
+  assert.throws(() => parseCatFileBatch(Buffer.from("garbage header\n"), ["x"]), /unexpected header/);
+  assert.throws(() => parseCatFileBatch(Buffer.from(`${"a".repeat(40)} blob 99\nshort\n`), ["x"]), /truncated/);
+  assert.throws(() => parseCatFileBatch(Buffer.alloc(0), ["x"]), /no answer/);
 });

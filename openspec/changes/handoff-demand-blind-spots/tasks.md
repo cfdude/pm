@@ -137,7 +137,7 @@ These rules bind every section below.
 - [x] 1.3 **TDD** — the documented sequence refuses a delivered archive with open archived tasks.
       - RED: `red-1.3.txt`, an ASSERT-rung verb test: Gate 2 recorded, the change moved under
         `archive/`, the heal run, then `update-epic <id> --status archived --outcome delivered --no-deferrals`.
-        It asserts exit non-zero, `2 of 1/3 task(s) outstanding` in the refusal, and the store
+        It asserts exit non-zero, `2 task(s) outstanding (1/3 done)` in the refusal, and the store
         unchanged.
       - The paired case (every undeclared task ticked, archive task declared) asserts success.
       - GREEN: 1.2's change. If nothing further is needed, say so in the commit message.

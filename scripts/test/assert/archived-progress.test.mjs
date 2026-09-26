@@ -112,7 +112,7 @@ test("1.3 the documented sequence REFUSES delivered while the archived tasks.md 
   const before = stateBytes(cwd);
   const r = invokeEngine(["update-epic", "seq-change", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   assert.notEqual(r.status, 0, "a delivered archive over open archived tasks is refused");
-  assert.match(r.stderr, /2 of 1\/3 task\(s\) outstanding|2 task\(s\) outstanding \(1\/3 done\)/,
+  assert.match(r.stderr, /2 task\(s\) outstanding \(1\/3 done\)/,
     `the refusal names the count the record renders, got: ${r.stderr}`);
   assert.equal(stateBytes(cwd), before, "and the store is byte-identical");
 });
