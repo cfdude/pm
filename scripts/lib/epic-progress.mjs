@@ -112,22 +112,31 @@ export function archivedChangeDir(epicOrId, dir = archiveDir()) {
  *  archived, and `createdAt` is stamped when the conductor first learned of the epic (pushEpic), so a
  *  change archived BEFORE its epic existed is some other, older change that happened to share the name.
  *
+ *  THE RULE DECIDES ONE THING: whether a LIVE epic gets ENDED by a directory on disk — the heal, the
+ *  active-pointer clear, set-active's refusal. It never takes an ALREADY-archived epic's files away.
+ *  `createdAt` is not proof of order for an ended epic: pm's own 0.40.0 recovery dates an epic from the
+ *  first commit that held it in state.json, which can be days AFTER its change was archived (measured
+ *  in the fleet: `knowledge-store`'s `bidirectional-sync-api` and `schema-source-reconciliation`,
+ *  createdAt 07-09 against archives dated 07-01 and 07-06 — a date rule over ended epics turned their
+ *  26/26 and 14/14 into `—` and dropped them from spec-sync and cross-spec scope).
+ *
  *  - No record (a bare id): nothing to date — the name match stands.
- *  - Registered BY the archive backfill: the epic was built FROM its archive, so its `createdAt`
- *    postdates the archive by construction — exempt.
+ *  - ENDED record (`status: archived`): the name match stands. It locates the epic's files; it ends
+ *    nothing, and the record already says the work ended.
+ *  - Registered BY the archive backfill: the epic was built FROM its archive — exempt.
  *  - Undated directory: no date to compare — the name match stands (the older manual convention).
- *  - Datable record: the directory is set aside when its date is more than ONE DAY before the epic's
- *    `createdAt` day. The slack is because openspec writes a LOCAL date and `createdAt` is UTC, so an
- *    epic registered on a US evening carries the next UTC day.
- *  - UNDATABLE record (`createdAt` absent, null or unparseable): a LIVE epic matches nothing — the
- *    resolver never ends live work on a bare name — while an ENDED one still locates its files. That
- *    failure is visible and reversible (the epic stays open; an openspec one reads "no change on disk";
- *    `recover-created-at` dates it from history, after which the date rule decides), where the other failure is a
- *    silent archive that takes the active pointer with it. */
+ *  - LIVE, datable record: the directory is set aside when its date is more than ONE DAY before the
+ *    epic's `createdAt` day. The slack is because openspec writes a LOCAL date and `createdAt` is UTC,
+ *    so an epic registered on a US evening carries the next UTC day.
+ *  - LIVE, UNDATABLE record (`createdAt` absent, null or unparseable): matches nothing — the resolver
+ *    never ends live work on a bare name. That failure is visible and reversible (the epic stays open;
+ *    an openspec one reads "no change on disk"; `recover-created-at` dates it from history, after which
+ *    the date rule decides), where the other failure is a silent archive that takes the active pointer
+ *    with it. */
 function canBeArchiveOf(record, day) {
-  if (!record || isArchiveBackfilled(record) || !day) return true;
+  if (!record || record.status === "archived" || isArchiveBackfilled(record) || !day) return true;
   const created = typeof record.createdAt === "string" ? Date.parse(record.createdAt) : NaN;
-  if (Number.isNaN(created)) return record.status === "archived";
+  if (Number.isNaN(created)) return false;
   const earliest = new Date(created - 86400000).toISOString().slice(0, 10);
   return day >= earliest;
 }

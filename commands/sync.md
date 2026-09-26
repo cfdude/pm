@@ -98,12 +98,14 @@ checks exclude it for the same reason.
 
 The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a
 **name is not an identity**. An archive directory dated (`YYYY-MM-DD-<id>`) more than a day before
-the epic's `createdAt` is some older, unrelated change that happens to share the name, so it
-**neither ends the epic nor clears its active pointer**. (The day of slack covers openspec's local
-date against `createdAt`'s UTC.) A live epic with no `createdAt` at all is never ended by a bare name
-match. Every surface asks the same resolver — the heal, `set-active`, the briefing, the archived
-task counts, the spec-sync check and the cross-spec review — so none of them can disagree. `sync`
-names each directory it set aside, every run, and counts them in its final line:
+a LIVE epic's `createdAt` is some older, unrelated change that happens to share the name, so it
+**neither ends the epic nor clears its active pointer**, and `set-active` still accepts the epic.
+(The day of slack covers openspec's local date against `createdAt`'s UTC.) A live epic with no
+`createdAt` at all is never ended by a bare name match. The rule decides only whether LIVE work is
+ended: an epic that is already archived finds its archive by name, because `createdAt` is not proof
+of order for it — pm's own date recovery can date an epic after its archive. Every surface asks the
+same resolver, so none of them can disagree. `sync` names each directory it set aside for a live
+epic, every run, and counts them in its final line:
 
 ```
 conductor: sync set aside archive directory '2025-01-01-add-auth' — it predates epic 'add-auth' (registered 2026-09-25), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work

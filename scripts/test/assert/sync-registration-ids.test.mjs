@@ -39,14 +39,8 @@ test("sync registers only ids add-epic accepts, names every skip, and counts the
   assert.match(r.stderr, /conductor: synced \(1 new epic\(s\) added as untriaged; 5 skipped/, `the final line counts the skips:\n${r.stderr}`);
 });
 
-test("pushEpic, the one creation sink, refuses every id add-epic refuses", async () => {
-  const { pushEpic, InvalidEpicIdError } = await import(new URL("../../lib/state.mjs", import.meta.url));
-  for (const id of ["x|y", ".hidden", "MASTER-ok", "has space", ""]) {
-    const state = { epics: [] };
-    assert.throws(() => pushEpic(state, { id, title: "t", lane: "claude-code", links: [] }), InvalidEpicIdError, `refuses ${JSON.stringify(id)}`);
-    assert.equal(state.epics.length, 0);
-  }
-});
+// pushEpic()'s own refusal is a VALUE over an in-memory record: it lives on the unit rung,
+// scripts/test/unit/sync-registration-ids.test.mjs.
 
 test("add-epic, add-many and sync share ONE validator — no creation site tests the format itself", () => {
   const lib = (f) => fs.readFileSync(new URL(`../../lib/${f}`, import.meta.url), "utf8");
@@ -102,8 +96,9 @@ test("the one resolver: the date rule, its one day of slack, the backfill exempt
   assert.equal(archivedChangeDir("x", dir), "2025-01-01-x");
   // A record registered after the archive's date: set aside.
   assert.equal(archivedChangeDir({ id: "x", status: "queued", createdAt: "2026-09-25T10:00:00.000Z" }, dir), null);
-  // Same for an ENDED record — the rule is about identity, not liveness.
-  assert.equal(archivedChangeDir({ id: "x", status: "archived", createdAt: "2026-09-25T10:00:00.000Z" }, dir), null);
+  // An ENDED record keeps its archive by name, whatever its createdAt says: the rule decides only
+  // whether LIVE work is ended, and pm's own createdAt recovery can date an epic after its archive.
+  assert.equal(archivedChangeDir({ id: "x", status: "archived", createdAt: "2026-09-25T10:00:00.000Z" }, dir), "2025-01-01-x");
   // One day of slack: registered 01:00 UTC on the 26th, archived locally on the 25th.
   assert.equal(archivedChangeDir({ id: "y", status: "queued", createdAt: "2026-09-26T01:00:00.000Z" }, dir), "2026-09-25-y");
   assert.equal(archivedChangeDir({ id: "y", status: "queued", createdAt: "2026-09-27T01:00:00.000Z" }, dir), null);
@@ -121,11 +116,56 @@ test("the one resolver: the date rule, its one day of slack, the backfill exempt
 test("every consumer of the resolver passes the RECORD, never the bare id", () => {
   // Derived from `rg` over the resolver's callers (plan, required item 1). A bare-id call skips the
   // date rule, which is exactly how the active pointer was lost.
+  //
+  // DECLARED LIMITS — this is a source scan, so it sees only the shapes it names: a first argument
+  // that ENDS in `.id` or `["id"]` / `['id']` on any receiver, and the literal `id` / `state.active`.
+  // It cannot see an id held in a differently named variable (`isArchived(name)`) or passed through
+  // a wrapper. Verified absent at the time of writing: `rg -n "isArchived\(|archivedChangeDir\(|
+  // archivedTasksPath\(|changeSpecRoot\(" scripts/lib` lists every call, each passing a record.
+  // The behavioural backstop is the add-auth test above, through sync, render and set-active.
   const lib = (f) => fs.readFileSync(new URL(`../../lib/${f}`, import.meta.url), "utf8");
-  const bare = /\b(isArchived|archivedChangeDir|archivedTasksPath|changeSpecRoot)\((e|t|a|epic|snapshot)?\.id\b|\bisArchived\((id|state\.active)\)/;
-  for (const f of ["epic-progress.mjs", "active-pointer.mjs", "update-epic.mjs", "integrity.mjs", "spec-sync.mjs", "cross-spec-review.mjs"]) {
+  const bare = /\b(isArchived|archivedChangeDir|archivedTasksPath|changeSpecRoot)\(\s*(?:[\w$.]*\.id|[\w$.]*\[\s*["']id["']\s*\]|id|state\.active)\s*[,)]/;
+  for (const probe of ["isArchived(t.id)", "isArchived(target.id)", 'isArchived(t["id"])', "archivedChangeDir(e.id, d)", "isArchived(id)", "isArchived(state.active)"]) {
+    assert.match(probe, bare, `the scan catches ${probe}`);
+  }
+  for (const probe of ["isArchived(t)", "isArchived({ ...next, id })", "archivedChangeDir(epicOrId, d)"]) {
+    assert.doesNotMatch(probe, bare, `the scan passes ${probe}`);
+  }
+  for (const f of ["epic-progress.mjs", "active-pointer.mjs", "update-epic.mjs", "integrity.mjs", "spec-sync.mjs", "cross-spec-review.mjs", "subcommands.mjs"]) {
     const lines = lib(f).split("\n").filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l));
     const hits = lines.filter(l => bare.test(l));
     assert.deepEqual(hits, [], `${f} calls the resolver with a bare id`);
   }
+});
+
+// Review [I] of this branch: the date rule stripped ALREADY-archived epics of their own archives. In
+// the fleet, pm's 0.40.0 createdAt recovery dated `bidirectional-sync-api` 07-09 against an archive
+// dated 07-01; its 26/26 rendered `—`, every sync told the operator to rename the directory, and it
+// dropped out of spec-sync and cross-spec scope. An ended epic finds its files by name.
+test("an ALREADY-archived epic dated after its archive keeps its counts, and sync advises nothing", () => {
+  const cwd = initRepo();
+  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-07-01-recovered-late");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [x] b\n- [ ] c\n");
+  run(["add-epic", "--id", "recovered-late", "--lane", "openspec", "--status", "archived"], { cwd });
+  const r = invokeEngine(["sync"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stderr, /set aside archive directory/, `no rename advice for an ended epic:\n${r.stderr}`);
+  run(["render"], { cwd });
+  const row = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8").split("\n").find(l => l.includes("`recovered-late`"));
+  assert.match(row, /2\/3/, `the archived counts still render:\n${row}`);
+});
+
+// Review minor: set-active's own `isArchived(t)` must refuse by itself, with no heal in between —
+// the conductor-03 case passes even without it, because add-epic's render heals first.
+test("set-active refuses an epic whose change is archived on disk before any heal has run", () => {
+  const cwd = initRepo();
+  run(["add-epic", "--id", "done-now", "--lane", "openspec"], { cwd });
+  const d = new Date();
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  mkdirs(cwd, `openspec/changes/archive/${day}-done-now`);
+  assert.notEqual(readState(cwd).epics.find(e => e.id === "done-now").status, "archived", "fixture: no heal has run");
+  const r = invokeEngine(["set-active", "done-now"], { cwd });
+  assert.notEqual(r.status, 0, `set-active must refuse:\n${r.stderr}`);
+  assert.match(r.stderr, /is archived — cannot make it active/);
 });

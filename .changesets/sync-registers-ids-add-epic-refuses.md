@@ -9,8 +9,9 @@
 * **An unrelated old archive directory no longer ends a live epic.** An active epic `add-auth`
   was archived by the drift heal, with outcome `unknown` and its active pointer cleared, because an
   unrelated `openspec/changes/archive/2025-01-01-add-auth` shared its name. An archive directory
-  dated more than a day before the epic was registered (`createdAt`) is now never that epic's
-  archive: it does not end the epic, clear its active pointer, block `set-active`, or supply its
-  task counts or spec deltas. A live epic with no registration date is never ended by a bare name
-  match (`recover-created-at` dates it). Epics the archive backfill registered are unaffected.
-  `sync` names each directory it set aside, every run, and counts them in its final line.
+  dated more than a day before a LIVE epic was registered (`createdAt`) no longer ends it, clears
+  its active pointer or blocks `set-active`. A live epic with no registration date is never ended by
+  a bare name match (`recover-created-at` dates it). An epic that is already archived still finds its
+  archive by name — its task counts, spec-sync and cross-spec scope are unchanged, even where pm's
+  own date recovery dated it after its archive. `sync` names each directory it set aside for a live
+  epic, every run, and counts them in its final line.

@@ -60,6 +60,12 @@ then. One day of slack because openspec writes a LOCAL date and `createdAt` is U
   clears the active pointer.
 - Measured on this repository before committing to the rule: 17 epics match an archive directory
   by name, and the rule changes the answer for 0 of them.
+- **Amended after review (Task 5): the rule binds LIVE epics only.** An already-archived epic finds
+  its archive by name. The measurement above missed the fleet: pm's own 0.40.0 `createdAt` recovery
+  dated `knowledge-store`'s `bidirectional-sync-api` and `schema-source-reconciliation` 07-09 against
+  archives dated 07-01 and 07-06, and the first version of the rule rendered their 26/26 and 14/14
+  as `—`, advised renaming their directories on every sync, and dropped them from spec-sync and
+  cross-spec scope. So `createdAt` is evidence of order only for the decision to END live work.
 
 1. RED: an active claude-code epic `add-auth` created today plus `archive/2025-01-01-add-auth`;
    `sync`, `render` (via `status`) and `set-active add-auth` leave it live and active; sync names
@@ -71,6 +77,20 @@ then. One day of slack because openspec writes a LOCAL date and `createdAt` is U
 3. sync prints, on every run, each archive directory the rule set aside for a held epic.
 
 ## Task 4 — changeset fragment, item 1 / item 7 closeout
+
+## Task 5 — review fixes (both lenses)
+
+1. RED (`…-evidence/red-5.txt`, run against the prior HEAD): an already-archived epic dated after
+   its archive keeps its counts and gets no rename advice; the resolver keeps an ended record's
+   archive; conductor-15 8.3 restored to its fixed `2026-08-05` date as the regression guard.
+2. GREEN: `canBeArchiveOf` returns true for `status: archived`; `deliveredRegression` asks about
+   the record as it will be written. The set-aside line can no longer print for an ended epic.
+3. Hygiene: the pushEpic refusal test moves to the unit rung; set-active's own `isArchived(t)` gets
+   an isolated case (no heal in between); the bare-id scan widens (`["id"]`, any receiver,
+   `subcommands.mjs`) and declares its limits.
+4. Governance: the direct main-spec edit of `output-text-integrity` is reverted and expressed as a
+   MODIFIED delta in `openspec/changes/handoff-demand-blind-spots/`; the date rule joins that
+   change's `conductor-record` delta with scenarios.
 
 ## Required item 1 — call-site sweep
 

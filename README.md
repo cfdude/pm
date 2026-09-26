@@ -683,8 +683,9 @@ registered as an epic already in `archived` status. That backfill is announced o
 directory whose name is not an id `add-epic` would accept (`^[a-z0-9][a-z0-9._-]*$` — so `x|y`,
 `.hidden` or `MASTER-plan.md`) is **skipped and named on stderr on every run**, and the final line
 counts the skips; rename it to register it (an uppercase plan is given a runnable `add-epic --id
-<lowercased> --plan …` instead). An archive directory dated before an epic was registered is
-not that epic's archive: it never ends the epic or clears its active pointer, and `sync` names it. Where a tracker's `direction` includes `inward`
+<lowercased> --plan …` instead). An archive directory dated before a live epic was registered
+never ends that epic or clears its active pointer, and `sync` names it; an already-archived epic
+still finds its archive by name. Where a tracker's `direction` includes `inward`
 **and** it names a scope to read, `/pm:sync` also pulls open items in as untriaged epics,
 deduplicated by `externalUrl` (globally unique) rather than bare `externalId`. The engine
 enforces the same rule on every writer — `add-epic`, `update-epic` (setting `--external-url` or

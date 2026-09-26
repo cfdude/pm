@@ -174,7 +174,7 @@ test("8.3: an epic the conductor MANAGED renders its archived tasks.md too (hand
   // source stays unread). Read from PROJECT.md, the surface a human reads.
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  const dir = path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-managed-change`);
+  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");  // FIXED on purpose: an epic registered already-archived, AFTER its archive (review [I])
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [ ] the archive instruction\n");
   run(["add-epic", "--id", "managed-change", "--lane", "openspec", "--status", "archived"], { cwd });
