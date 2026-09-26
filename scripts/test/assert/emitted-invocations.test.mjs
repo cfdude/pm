@@ -143,18 +143,6 @@ test("6.3 the hand-edit scanner: the emitted text never tells a reader to edit s
 // which cannot be imported here without executing that file. What survives the narrowing is the
 // INVARIANT the extractor exists for, asserted above against the same shipped tree.
 
-// The functional file's PRINTER_FIXTURES gained the one-item-one-epic refusal (tracker-item-dedup-
-// bypassed), whose remedy is a printed `update-epic <holder> --clear external-url`. Its per-commit
-// half: the printed line, run exactly as written, is accepted and frees the item.
-test("the tracker-item refusal's printed remedy runs as written and frees the item", () => {
-  const cwd = tmpRepo();
-  invokeEngine(["init"], { cwd });
-  const ok = (args) => { const r = invokeEngine(args, { cwd }); assert.equal(r.status, 0, r.stderr); return r; };
-  ok(["add-epic", "--id", "th", "--lane", "claude-code", "--external-url", "https://x.test/1"]);
-  const refused = invokeEngine(["add-epic", "--id", "t2", "--lane", "claude-code", "--external-url", "https://x.test/1"], { cwd });
-  assert.notEqual(refused.status, 0);
-  const printed = /`(update-epic [^`]+)`/.exec(refused.stderr);
-  assert.ok(printed, `the refusal prints its remedy:\n${refused.stderr}`);
-  ok(printed[1].split(" "));
-  ok(["add-epic", "--id", "t2", "--lane", "claude-code", "--external-url", "https://x.test/1"]);
-});
+// The printed-remedy check for the one-item-one-epic refusal (tracker-item-dedup-bypassed) lives on
+// the UNIT rung, scripts/test/unit/emitted-invocations.test.mjs: its observables are an exit status and
+// a printed line, which are values, not bytes.
