@@ -52,6 +52,17 @@ rg -n "archivedTasksPath|isArchived\(|isArchiveBackfilled\(|archivedChangeDir\("
   isArchiveBackfilled(): integrity.mjs:70 (inCompletionScope), state.mjs:151 (attribution seeding) —
                                                   UNCHANGED; the backfill's own path is unchanged. Its
                                                   former reader in epicProgress() is gone (D1).
+  WIDENED AFTER GATE 2 (I4): the rg above only finds the NAMED resolvers, so a site that re-derives
+  the match itself was invisible. The widened derivation also enumerates the building blocks:
+    rg -n "archivedChanges\(|strippedChangeId\(" scripts/lib scripts/conductor.mjs
+  Per-ID resolutions found (each must go through archivedChangeDir()):
+    cross-spec-review.mjs changeSpecRoot() — took the FIRST (oldest) stripped match; FIXED to call
+      archivedChangeDir(changeId, <changes>/archive) (Gate 2 I4, tested in assert/cross-spec-review).
+  Set enumerations found (a different question — "does this directory have an epic", "is this one change
+  registered twice", "every archived change" — so no resolver applies):
+    subcommands.mjs backfillArchive() and the duplicate-registration test; integrity.mjs
+    archive-directory-has-no-epic and change-registered-under-two-lanes; spec-sync.mjs's enumeration of
+    every archived change for discharge; epic-progress.mjs archivedChanges()/archivedChangeDir() themselves.
   subcommands.mjs backfillArchive()            → iterates archivedChanges() with strippedChangeId(), the
                                                   resolver's own normalization; it asks "does this
                                                   directory have an epic", a different question, and is

@@ -1,0 +1,33 @@
+✖ I4 changeSpecRoot: a change archived twice resolves to the LATEST dated directory (the one resolver) (2.290333ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.382416
+
+✖ failing tests:
+
+test at scripts/test/assert/cross-spec-review.test.mjs:224:1
+✖ I4 changeSpecRoot: a change archived twice resolves to the LATEST dated directory (the one resolver) (2.290333ms)
+  AssertionError [ERR_ASSERTION]: the latest date wins; undated ranks below dated
+  + actual - expected
+  
+  + '2026-08-01-twice'
+  - '2026-09-01-twice'
+           ^
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/wt-50/handoff/red/scripts/test/assert/cross-spec-review.test.mjs:233:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '2026-08-01-twice',
+    expected: '2026-09-01-twice',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
