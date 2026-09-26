@@ -25,7 +25,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { run, runCombined, tmpRepo, readState, writeState, projectMd, parseBrief, expectFail } from "../fixtures/assert-harness.mjs";
+import { run, runCombined, tmpRepo, readState, writeState, projectMd, parseBrief, expectFail, archiveDay } from "../fixtures/assert-harness.mjs";
 import { releaseSpecFiles, crossSpecStaleness, changeSpecRoot } from "../../lib/cross-spec-review.mjs";
 
 /** Write `openspec/changes/<changeId>/specs/<cap>/spec.md` for each capability. */
@@ -170,7 +170,7 @@ test("the ARCHIVE MOVE does not make a verdict stale", () => {
   const { cwd } = releaseRepo(["alpha", "beta"]);
   run(["record-cross-spec-review", "rel", "--verdict", "pass"], { cwd });
   const from = path.join(cwd, "openspec", "changes", "big-change");
-  const to = path.join(cwd, "openspec", "changes", "archive", "2026-08-26-big-change");
+  const to = path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-big-change`);
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.renameSync(from, to);
   const state = readState(cwd);

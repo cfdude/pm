@@ -75,10 +75,11 @@ The conductor SHALL report, as a standing condition, every epic whose record cla
 change whose spec deltas the main specs do not hold. An epic is IN SCOPE when it meets all three:
 
 - an archived change directory matches its id, found by the one resolver `conductor-record` defines
-  (the match that also decides whether the change is archived). This alone decides "archived" for
-  this check, whatever the stored status says, so the integrity report (which reads stored epics) and
-  the briefing (which reads epics resolved against disk) read the same directory for the same epic
-  and cannot disagree between `/opsx:archive` and the next heal;
+  (the match that also decides whether the change is archived). That resolver takes the epic RECORD
+  and reads its stored status itself — an epic already `archived` matches by name, a live one under
+  the date rule — and both the integrity report (which reads stored epics) and the briefing (which
+  reads epics resolved against disk) pass it the same record, so they read the same directory for the
+  same epic and cannot disagree between `/opsx:archive` and the next heal;
 - its lane is openspec (an absent lane read as openspec);
 - its outcome is `delivered`.
 

@@ -708,7 +708,8 @@ test("5.2a a delivered epic gets the withdrawal command exactly where update-epi
       archivedDelivered({ id: "E2", lane: "openspec", attributedCommits: [c0, c1], gateReview: gate2(root, c1) }) },
     { id: "E4", printed: false, exit: 1, build: (repo, root, c0, c1) => {
       fs.mkdirSync(path.join(repo.cwd, "openspec", "changes", "archive", "2026-09-01-E4"), { recursive: true });
-      return archivedDelivered({ id: "E4", lane: "openspec", status: "queued", attributedCommits: [c1], gateReview: gate2(root, c1) });
+      // Registered before the change was archived (the one resolver's date rule, sync-registers-ids-add-epic-refuses).
+      return archivedDelivered({ id: "E4", lane: "openspec", status: "queued", createdAt: "2025-01-01T00:00:00.000Z", attributedCommits: [c1], gateReview: gate2(root, c1) });
     } },
     // G2-I2: the same commit attributed twice. --withdraw-commit removes ONE occurrence (the last), so
     // the record keeps c1 under its Gate 2 head and the withdrawal is accepted; a hook that simulated

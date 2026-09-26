@@ -1144,19 +1144,29 @@ export const escapeTableCell = (s) => escapeControls(s).replace(/\\/g, "\\\\").r
  *  (emitted-commands-run-as-written; user-text-never-forges-output asserts none remains elsewhere). */
 export const EPIC_ID_FORMAT = /^[a-z0-9][a-z0-9._-]*$/;
 
-/** Can this id be STORED as an epic id at all? Non-empty, and no control character and no whitespace
- *  (user-text-never-forges-output D4). Deliberately NOT EPIC_ID_FORMAT: `sync` has always registered
- *  uppercase plan filenames (the fleet holds `MASTER-platform-stabilization-2026-05-18`), and those
- *  stay accepted. pushEpic() — the one creation sink — refuses a failing id; `sync` and the archive
- *  backfill test it at their final registration step and skip the entry instead. */
+/** THE ONE VALIDATOR for a NEW epic id: `add-epic`, `add-many`, `sync`'s change and plan rungs, the
+ *  archive backfill and pushEpic() — the one creation sink — all ask this, and none tests the format
+ *  itself (sync-registers-ids-add-epic-refuses). It is EPIC_ID_FORMAT exactly.
+ *
+ *  0.45.0 (user-text-never-forges-output D4) gave sync and the backfill a WEAKER rule — only "no
+ *  control character, no whitespace" — so they went on registering what add-epic refuses: a change
+ *  directory `x|y` became an epic whose pipe splits PROJECT.md's Epics table, and `.hidden` one that
+ *  no printed command names unquoted. Uppercase plan filenames were kept registering on purpose then;
+ *  they are now skipped with a runnable `add-epic --id <lowercased>` instead, because two rules for
+ *  one id is the drift this validator exists to end.
+ *
+ *  NEW ids only. A stored record is never re-validated: a legacy `MASTER-…` or `My Plan` epic still
+ *  loads, renders (printedId() quotes it) and updates. */
 export const STORABLE_EPIC_ID = (id) =>
-  typeof id === "string" && id.length > 0 && !CONTROL_CHARACTER.test(id) && !/\s/.test(id);
+  typeof id === "string" && EPIC_ID_FORMAT.test(id);
 
 /** The stderr line `sync` prints, on EVERY run (quiet included), for an entry it skips because its name
- *  cannot be an epic id. */
-export const unstorableSkipLine = (kind, name) =>
-  `conductor: sync skipped ${kind} '${escapeControls(name)}' — its name holds a control character or ` +
-  "whitespace, so it cannot be an epic id; rename it to register it\n";
+ *  cannot be an epic id. `remedy`, when given, is a whole runnable command that registers the entry
+ *  under a valid id — a plan whose lowercased stem passes the rule. */
+export const unstorableSkipLine = (kind, name, remedy) =>
+  `conductor: sync skipped ${kind} '${escapeControls(name)}' — its name is not a valid epic id ` +
+  `(format ${EPIC_ID_FORMAT.source}: lowercase letters, digits, \`.\`, \`_\`, \`-\`); ` +
+  (remedy ? `register it with ${remedy}, or rename it\n` : "rename it to register it\n");
 
 /** POSIX single-quoting: the whole token arrives as ONE shell word, apostrophes included. Moved
  *  here from update-epic.mjs so the regression refusal's echo and printedId() share one quoter. */

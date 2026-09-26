@@ -174,7 +174,7 @@ export function ungatedArchives(epics) {
     // The disk test runs LAST — isArchived() reads a directory per epic.
     if (!isOpenspecLane(e) || !inCompletionScope(e)) continue;
     const withdrawal = withdrawnGate(e, 2);
-    if (!withdrawal || !(e.status === "archived" || isArchived(e.id))) continue;
+    if (!withdrawal || !(e.status === "archived" || isArchived(e))) continue;
     // ANY Gate 2 withdrawal that took back a verdict which had superseded an `ungated` stamp —
     // not only the latest — so a re-record and a second withdrawal can never hide "never reviewed".
     const archivedUngated = (Array.isArray(e.withdrawnGateReviews) ? e.withdrawnGateReviews : [])
@@ -349,8 +349,9 @@ export const CHECKS = [
       return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail: STORABLE_EPIC_ID(c.id)
         ? `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
           "registers it; this check only reports it"
-        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name holds a ` +
-          "control character or whitespace, so it cannot be an epic id — rename the directory to register it" }));
+        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name is not a ` +
+          "valid epic id (lowercase letters, digits, `.`, `_`, `-`), so `/pm:sync` skips it — rename the " +
+          "directory to register it" }));
     },
   },
   {

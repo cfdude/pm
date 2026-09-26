@@ -9,7 +9,7 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
@@ -368,7 +368,7 @@ export function addEpic() {
   try { stories = parseStoryFlags(f["add-story"]); }
   catch (e) { die(`conductor: ${e.message}\n`); }
   const id = str(f.id);
-  if (!id || !EPIC_ID_FORMAT.test(id)) {
+  if (!STORABLE_EPIC_ID(id)) {
     die(`conductor: --id required, format ${EPIC_ID_FORMAT.source}\n`);
   }
   const lane = str(f.lane);

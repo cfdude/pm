@@ -28,7 +28,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { run, readState, tmpRepo } from "../fixtures/assert-harness.mjs";
+import { run, readState, tmpRepo, archiveDay } from "../fixtures/assert-harness.mjs";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -61,8 +61,8 @@ test("Scenario: An already-archived parked epic still records its real dispositi
   const cwd = repo();
   pushed(cwd, "p", "d");
   // Reach the healed state the way the heal does: the change directory appears, render() flips it.
-  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-09-01-p"), { recursive: true });
-  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "2026-09-01-p", "proposal.md"), "# archived\n");
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-p`), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-p`, "proposal.md"), "# archived\n");
   run(["render"], { cwd });
   assert.equal(epicOf(cwd, "p").status, "archived", "fixture: the heal archived a parked epic");
   assert.ok(frameFor(cwd, "p"), "fixture: and the frame survived — the state this change rescues");
@@ -77,8 +77,8 @@ test("Scenario: An already-archived parked epic still records its real dispositi
 test("Scenario: The drift heal still archives a parked epic", () => {
   const cwd = repo();
   pushed(cwd, "p", "d");
-  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-09-01-p"), { recursive: true });
-  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "2026-09-01-p", "proposal.md"), "# archived\n");
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-p`), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-p`, "proposal.md"), "# archived\n");
   run(["render"], { cwd });
   assert.equal(epicOf(cwd, "p").status, "archived",
     "the record must not contradict disk — the heal is deliberately unbound");
@@ -89,8 +89,8 @@ test("Scenario: The drift heal still archives a parked epic", () => {
 test("Scenario: An already-archived epic's frame is droppable", () => {
   const cwd = repo();
   pushed(cwd, "p", "d");
-  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-09-01-p"), { recursive: true });
-  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "2026-09-01-p", "proposal.md"), "# archived\n");
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-p`), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-p`, "proposal.md"), "# archived\n");
   run(["render"], { cwd });
   assert.equal(epicOf(cwd, "p").status, "archived", "fixture: the jammed state, reached by the heal");
 

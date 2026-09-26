@@ -29,7 +29,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, withArchivedChange } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, withArchivedChange, archiveDay } from "../fixtures/assert-harness.mjs";
 
 test("set-active rejects an unknown or archived id and writes nothing", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
@@ -38,7 +38,7 @@ test("set-active rejects an unknown or archived id and writes nothing", () => {
   assert.ok(expectFail(() => run(["set-active", "ghost"], { cwd })), "unknown id rejected");
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
   // archived id
-  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-07-08-done"), { recursive: true });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-done`), { recursive: true });
   run(["add-epic", "--id", "done", "--lane", "openspec"], { cwd });
   assert.ok(expectFail(() => run(["set-active", "done"], { cwd })), "archived id rejected");
 });

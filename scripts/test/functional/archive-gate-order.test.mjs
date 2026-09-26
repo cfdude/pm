@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, gitInitWithCommit, commitFiles } from "../fixtures/functional-harness.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, gitInitWithCommit, commitFiles, archiveDay } from "../fixtures/functional-harness.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -207,7 +207,7 @@ function archivedDeliveredOpenspec(id) {
 }
 
 const archiveOnDisk = (cwd, id) =>
-  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-09-14-${id}`), { recursive: true });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`), { recursive: true });
 
 test("3.11 regression guard: a record that already failed Gate 2 is not locked", () => {
   const { cwd } = archivedDeliveredOpenspec("g11");

@@ -80,7 +80,7 @@ test("5.1 twin: nothing in scope → the index is never read", async () => {
 test("5.1 twin: the stored status does not decide scope — the one resolver's directory does", async () => {
   const cwd = archiveFixture();
   const { read } = stubReader({ "engine-invocation": main("Old"), other: main() });
-  const got = await withAssertInvocation(cwd, () => specSyncFindings([delivered("lost", { status: "active" })], { readIndex: read }));
+  const got = await withAssertInvocation(cwd, () => specSyncFindings([delivered("lost", { status: "active", createdAt: "2026-09-01T00:00:00.000Z" })], { readIndex: read }));
   assert.ok(got.some(f => f.direction === "absent"), "archived on disk is archived here, whatever state.json says");
 });
 

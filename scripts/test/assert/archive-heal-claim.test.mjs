@@ -10,10 +10,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, readState, archiveDay } from "../fixtures/assert-harness.mjs";
 
 function archiveOnDisk(cwd, id) {
-  const dir = path.join(cwd, "openspec", "changes", "archive", `2026-09-01-${id}`);
+  const dir = path.join(cwd, "openspec", "changes", "archive", `${archiveDay()}-${id}`);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "proposal.md"), "# archived\n");
 }

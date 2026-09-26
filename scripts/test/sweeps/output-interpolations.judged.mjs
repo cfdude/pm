@@ -37,6 +37,9 @@ x("render.mjs", "normalizeForDiffSummary", {
 x("render.mjs", "writeRenderStampLocked", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the render stamp's file body — an ISO timestamp, a revision number and an mtime. It was automatically `not-output` while it sat inside the fs.writeFileSync the sweep recognises; task 1.3 moved the write onto the store, so the sink is no longer visible to the scanner and the judgment has to be explicit");
+x("state.mjs", "seedCreationFields", {
+  "EPIC_ID_FORMAT.source": 1,
+}, "engine", "InvalidEpicIdError's message (the scanner attributes the class to the declaration before it): the engine's own id regex source; the id itself is escaped");
 x("state.mjs", "recordEngineSave", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the same render-stamp file body writeRenderStamp writes, with `lastSave: {revision, mtimeMs}` added — numbers and the stamp's own fields, written through the store, never printed");
@@ -337,7 +340,11 @@ x("constants.mjs", "printedId", {
 }, "engine", "kind is the literal epic|release");
 x("constants.mjs", "unstorableSkipLine", {
   "kind": 1,
-}, "engine", "kind is a literal (change|plan|archive directory)");
+  "EPIC_ID_FORMAT.source": 1,
+}, "engine", "kind is a literal (change|plan|archive directory); the id format is the engine's own regex source");
+x("constants.mjs", "unstorableSkipLine", {
+  "remedy": 1,
+}, "passthrough", "sync's plan-rung remedy: an orNoRemedy() result built in sync, whose id goes through printedId and whose path through commandValue");
 x("constants.mjs", "shellQuote", {
   "String(token).replace(/'/g, \"'\\\\''\")": 1,
 }, "justified", "the quoter itself; every printing caller is judged at its own site");
@@ -670,7 +677,15 @@ x("subcommands.mjs", "runNudge", {
 x("subcommands.mjs", "sync", {
   "claim.label": 1,
   "added": 2,
-}, "engine", "a literal artifact label and a count");
+  "skipped": 1,
+  "setAside": 1,
+}, "engine", "a literal artifact label and counts");
+x("subcommands.mjs", "sync", {
+  "day": 1,
+}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day");
+x("subcommands.mjs", "sync", {
+  "skipNote": 2,
+}, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");
 x("subcommands.mjs", "sync", {
   "backfilled.join(\", \")": 2,
 }, "engine", "backfilled ids passed STORABLE_EPIC_ID (no control character) before registration");
