@@ -11,7 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, withAssertInvocation, expectFail, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, readState, writeState, withAssertInvocation, expectFail, invokeEngine, archiveDay } from "../fixtures/assert-harness.mjs";
 import * as progress from "../../lib/epic-progress.mjs";
 
 /** Write `tasks.md` with `ticked` ticked and `open` unticked undeclared tasks (plus, optionally, a
@@ -99,7 +99,10 @@ function documentedSequence(tasks) {
   e.gateReview = { gate2: { verdict: "pass", reviewer: "r", reviewedAt: "2026-09-25T00:00:00.000Z" } };
   delete e.attributedCommits;
   writeState(cwd, st);
-  archivedTasks(cwd, "2026-09-25-seq-change", tasks);   // /opsx:archive moved the change
+  // /opsx:archive moved the change, TODAY: the epic was registered "now", and the one resolver's date
+  // rule refuses an archive dated more than a day before `createdAt`. A fixed date here healed on the
+  // day it was written and stopped healing two days later (the 0.50.0 time bomb, 2026-09-28).
+  archivedTasks(cwd, `${archiveDay()}-seq-change`, tasks);
   run(["sync"], { cwd });                                // the archive-drift heal
   const healed = readState(cwd).epics.find(x => x.id === "seq-change");
   assert.equal(healed.status, "archived", "the heal flipped it");
