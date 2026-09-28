@@ -174,6 +174,44 @@ jobs:
             echo "::error::the assertion half ran zero tests — a run of nothing is never a pass"; exit 1
           fi
 
+      - name: Assertion half, clock +400 days
+        # THE SAME HALF, RUN A YEAR AND A MONTH FROM NOW (2026-09-28). A fixture that hardcodes a date the
+        # engine compares against "now" is green on the day it is written and red on some later day,
+        # on every commit, for everyone: 0.50.0's archive date rule turned `2026-09-25-seq-change` red
+        # two days after release. The per-commit gate runs on the day the fixture was written, so it
+        # cannot see this class; this step can. scripts/test/fixtures/future-clock.mjs shifts
+        # `Date.now()` and `new Date()`; NODE_OPTIONS (never `--import` on the runner) carries it into
+        # every per-file process and every spawned node child, by an ABSOLUTE path because fixtures run
+        # from temp cwds. The SELF-CHECK measures the shift before the suite and refuses on a mismatch,
+        # so a preload that silently loads nothing cannot turn this leg into a green duplicate.
+        # ASSERTION HALF ONLY: the functional half's lock-age tests compare the shifted clock against
+        # real file mtimes and fail at any offset — an artifact of the shift, not a time bomb.
+        # Guarded per commit by scripts/test/assert/ci-workflow.test.mjs (`clockStepRefusals`).
+        env:
+          PM_TEST_CLOCK_OFFSET_DAYS: "400"
+        run: |
+          set -e
+          export NODE_OPTIONS="--import $PWD/scripts/test/fixtures/future-clock.mjs"
+          shifted=$(node -e 'console.log(Math.round((Date.now() - Number(process.argv[1]) * 1000) / 86400000))' "$(date -u +%s)")
+          if [ "$shifted" != "$PM_TEST_CLOCK_OFFSET_DAYS" ]; then echo "::error::the clock preload shifted node by ${shifted} days, not ${PM_TEST_CLOCK_OFFSET_DAYS} — this leg would test nothing"; exit 1; fi
+          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert-clock.out 2>&1 || {
+            cat /tmp/assert-clock.out
+            echo "::error::the assertion half FAILED with the clock moved ${PM_TEST_CLOCK_OFFSET_DAYS} days ahead — a fixture depends on today's date; derive it (archiveDay(), the epic's createdAt) instead of hardcoding it"
+            exit 1
+          }
+          total=$(grep -m1 -E '^ℹ tests ' /tmp/assert-clock.out | awk '{print $3}')
+          declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
+          echo "assertion half, clock +${PM_TEST_CLOCK_OFFSET_DAYS}d: ran ${total}, declared ${declared}"
+          if [ -z "$total" ]; then
+            echo "::error::the shifted-clock assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
+          fi
+          if [ "$total" -lt "$declared" ]; then
+            echo "::error::the shifted-clock assertion half ran ${total} tests but ${declared} are declared in its two rungs"; exit 1
+          fi
+          if [ "$total" -eq 0 ]; then
+            echo "::error::the shifted-clock assertion half ran zero tests — a run of nothing is never a pass"; exit 1
+          fi
+
       - name: Functional half
         # REAL git, through the real gateway — the half the pre-commit hook does not run. No record is
         # present in CI and none can be exchanged for this run.
