@@ -212,6 +212,27 @@ string or regex literals are not sites. Its stated limit: a name built at run ti
 spawned process makes, is not seen. Before this rule (measured 2026-09-25) one assertion-half run left
 436 directories in the OS temp dir and one functional-half run left 1,517.
 
+### Dates — never hardcode one the engine compares against "now"
+
+An archive directory, a `createdAt`, anything the engine weighs against today: derive it —
+`archiveDay()` from the fixtures, or the epic's own `createdAt` — rather than typing it. A typed date
+is green the day you write it and red on some later day, for everyone. (0.50.0's archive date rule
+turned `2026-09-25-seq-change` red on 2026-09-27.) A date that is deliberately OLD, testing old
+data, is fine when the record it is compared with is fixed too.
+
+CI runs the assertion half a second time with the clock moved 400 days ahead. To reproduce it
+locally, set the offset and load the preload through `NODE_OPTIONS` with an ABSOLUTE path, so that
+every per-file process and spawned node child picks it up:
+
+```bash
+PM_TEST_CLOCK_OFFSET_DAYS=400 NODE_OPTIONS="--import $PWD/scripts/test/fixtures/future-clock.mjs" \
+  node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs
+```
+
+Leave the functional half out of this. Its lock-age tests compare the shifted clock against real
+file mtimes, so they fail at any offset. That failure comes from the shift and does not mean a
+fixture is date-dependent.
+
 ## Developing pm with pm (required one-time setup)
 
 **This repository is managed by the plugin it ships.** That is deliberate — pm dogfoods itself —

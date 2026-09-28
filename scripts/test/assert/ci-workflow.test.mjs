@@ -416,3 +416,78 @@ test("4.2 (f)(f2) every bucket step forces one reporter, parses ℹ only, and re
 test("4.2 (g) actions/checkout@v7 and actions/setup-node@v7, and no Node 18 pin", () => {
   assert.deepEqual(actionRefusals(fs.readFileSync(WORKFLOW, "utf8")), []);
 });
+
+// ─────────── THE SHIFTED-CLOCK LEG (2026-09-28, after the 0.50.0 time bomb) ───────────
+// A fixture that hardcodes a date the engine compares against "now" passes on the day it is written
+// and fails on some later day, on every commit, for everyone — 0.50.0's archive date rule turned
+// `2026-09-25-seq-change` red two days after release. The per-commit gate cannot catch that class by
+// construction (it runs on the day the fixture was written), so CI runs the assertion half a SECOND
+// time with the clock moved forward a year (scripts/test/fixtures/future-clock.mjs, loaded through
+// NODE_OPTIONS so every per-file process and every spawned node child inherits it).
+//
+// WHY THE ASSERTION HALF ONLY. Under the preload `Date` moves and the filesystem's mtimes do not, so
+// the functional half's lock-age tests (`Math.abs(now - mtimeMs)`, store.mjs / commit-watch.mjs) read
+// every fresh lock as stale at ANY offset — 8 failures at +1 that are an artifact of the shift, not a
+// time bomb. The assertion half runs clean under it.
+//
+// WHY A SELF-CHECK. A wrong or relative `--import` path, or an offset the preload does not read,
+// makes the preload do nothing — and the leg then becomes a silent duplicate of the one before it,
+// green forever. So the step MEASURES the shift before it runs the suite and refuses on a mismatch.
+
+export const CLOCK_PRELOAD = "scripts/test/fixtures/future-clock.mjs";
+export const CLOCK_MIN_OFFSET_DAYS = 365;
+const CLOCK_SELF_CHECK = /if \[ "\$shifted" != "\$PM_TEST_CLOCK_OFFSET_DAYS" \]; then\s*echo "::error::[^\n]*"; exit 1/;
+
+/** Every reason the workflow does not run the assertion half under a clock shifted at least a year. */
+export function clockStepRefusals(src) {
+  const step = workflowSteps(src).find((s) => /PM_TEST_CLOCK_OFFSET_DAYS/.test(s.text));
+  if (!step) {
+    return ["no CI step runs the assertion half under a shifted clock (PM_TEST_CLOCK_OFFSET_DAYS) — " +
+      "a fixture that only passes on the day it was written reaches main green"];
+  }
+  const found = [];
+  const m = /PM_TEST_CLOCK_OFFSET_DAYS:\s*"?(-?\d+)"?\s*$/m.exec(step.text);
+  if (!m || Number(m[1]) < CLOCK_MIN_OFFSET_DAYS) {
+    found.push(`${step.name}: PM_TEST_CLOCK_OFFSET_DAYS is ${m ? m[1] : "not set in the step's env"} — ` +
+      `it must be at least ${CLOCK_MIN_OFFSET_DAYS}, so a fixture dated any day of the coming year is caught`);
+  }
+  const load = new RegExp(`NODE_OPTIONS="--import \\$(?:PWD|GITHUB_WORKSPACE)/${CLOCK_PRELOAD.replace(/[.]/g, "\\.")}"`);
+  if (!load.test(step.text)) {
+    found.push(`${step.name}: the preload is not loaded as NODE_OPTIONS="--import $PWD/${CLOCK_PRELOAD}" — ` +
+      "an --import on the runner reaches no per-file process, and a relative path resolves against " +
+      "each fixture's temp cwd and loads nothing");
+  }
+  const check = CLOCK_SELF_CHECK.exec(step.text);
+  const runner = runnerLine(step);
+  if (!check) {
+    found.push(`${step.name}: no self-check that the measured shift equals PM_TEST_CLOCK_OFFSET_DAYS — ` +
+      "a preload that silently does nothing turns this leg into a green duplicate");
+  } else if (runner && step.text.indexOf(runner) < check.index) {
+    found.push(`${step.name}: the self-check runs after the suite; it must refuse before it`);
+  }
+  found.push(...bucketRefusals(step.name, step.text, "assert", RUNGS_OF.assert));
+  found.push(...reporterRefusals(step.name, step.text));
+  return found;
+}
+
+test("clock: CI runs the assertion half again under a clock shifted at least a year, and checks the shift took", () => {
+  assert.deepEqual(clockStepRefusals(fs.readFileSync(WORKFLOW, "utf8")), []);
+  const preload = path.join(REPO, CLOCK_PRELOAD);
+  assert.ok(fs.existsSync(preload), `${CLOCK_PRELOAD} exists`);
+  assert.match(fs.readFileSync(preload, "utf8"), /process\.env\.PM_TEST_CLOCK_OFFSET_DAYS/,
+    "the preload reads the variable the step sets");
+});
+
+test("clock: the guard DISCRIMINATES — no offset, a zero offset, a relative preload and no self-check are each refused", () => {
+  const src = fs.readFileSync(WORKFLOW, "utf8");
+  const cases = [
+    ["the offset removed", src.replace(/^\s*PM_TEST_CLOCK_OFFSET_DAYS:.*\n/m, ""), /not set in the step's env|no CI step runs/],
+    ["a zero offset", src.replace(/PM_TEST_CLOCK_OFFSET_DAYS:\s*"?\d+"?/, 'PM_TEST_CLOCK_OFFSET_DAYS: "0"'), /is 0 — it must be at least 365/],
+    ["a relative preload", src.replace(/--import \$(?:PWD|GITHUB_WORKSPACE)\//, "--import ./"), /the preload is not loaded/],
+    ["no self-check", src.replace(CLOCK_SELF_CHECK, ""), /no self-check/],
+  ];
+  for (const [what, mutated, reason] of cases) {
+    assert.notEqual(mutated, src, `${what}: the mutation applied`);
+    assert.match(clockStepRefusals(mutated).join(" | "), reason, `${what} is refused`);
+  }
+});
