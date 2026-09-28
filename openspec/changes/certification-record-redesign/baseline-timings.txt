@@ -1,0 +1,14 @@
+Baseline certify timings, 2026-09-28, scratch clone at c96240ab, node v26.10.0, 16 CPUs, load avg 142 at start (>260 during).
+node v26.10.0  cpus 16  load { 142.86 64.26 65.54 }
+certify sweeps: exit 0, 74s
+certify: sweeps bucket passed (25/25); recorded the 'engine-source' entry over 65 engine-source files
+certify functional: exit 0, 672s
+certify: functional half passed (1227/1227); recorded 8 module entries in /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/propose-cert/pm/.git/pm-suite-certification.json
+checkout-index: .450s, files 968, bytes 17184KB
+functional in snapshot: exit 1, 539s
+ℹ tests 1192
+ℹ pass 1188
+ℹ fail 4
+
+[exited with code 0]
+shared clone + index copy + checkout-index -a -f: 0.755s

@@ -1,0 +1,70 @@
+{
+ "range": "e71c63a3..presquash/pr-234",
+ "nonMergeCommits": 126,
+ "A_certified_today": 15,
+ "sweeps_engineSource_today": 51,
+ "B_importClosure": 59,
+ "B_closurePlusNamed": 60,
+ "B_widenedShippedSurface": 70,
+ "C_anyEngineModule": 51,
+ "C_plusFunctionalAndFixtureFiles": 58,
+ "functionalFileChanged": 21,
+ "engineCommitsMissedToday": 36,
+ "headSizes": {
+  "widened": 176,
+  "wideOnly": 35,
+  "closure": 128,
+  "observed": 141,
+  "engine": 65,
+  "certified": 8
+ },
+ "headNamedByLiteral": [
+  ".githooks/pre-commit",
+  "hooks/README.md",
+  "hooks/hooks.json",
+  "scripts/test/drift.mjs",
+  "scripts/test/fixtures/assert-git-shim.mjs",
+  "scripts/test/fixtures/assert-harness.mjs",
+  "scripts/test/fixtures/git-gateway-capture.json",
+  "scripts/test/fixtures/hermetic-git.mjs",
+  "scripts/test/fixtures/inject-state-conflict.cjs",
+  "scripts/test/fixtures/rules-0.26.0-jira-scoped.txt",
+  "scripts/test/fixtures/state-0.26.0.json",
+  "scripts/test/fixtures/state-legacy-gate-verdict.json",
+  "scripts/test/fixtures/state-pre-disposition-walk.json"
+ ],
+ "b4ffe164": {
+  "c": "b4ffe164",
+  "A_certified": false,
+  "sweeps_engine": true,
+  "B_closure": true,
+  "B_observed": true,
+  "B_widened": true,
+  "C_anyEngine": true,
+  "C_anyEngine_or_functionalFiles": true,
+  "funcFile": false,
+  "sizes": {
+   "widened": 168,
+   "wideOnly": 32,
+   "closure": 123,
+   "observed": 136,
+   "engine": 63,
+   "certified": 8
+  },
+  "named": [
+   ".githooks/pre-commit",
+   "hooks/README.md",
+   "hooks/hooks.json",
+   "scripts/test/drift.mjs",
+   "scripts/test/fixtures/assert-git-shim.mjs",
+   "scripts/test/fixtures/assert-harness.mjs",
+   "scripts/test/fixtures/git-gateway-capture.json",
+   "scripts/test/fixtures/hermetic-git.mjs",
+   "scripts/test/fixtures/inject-state-conflict.cjs",
+   "scripts/test/fixtures/rules-0.26.0-jira-scoped.txt",
+   "scripts/test/fixtures/state-0.26.0.json",
+   "scripts/test/fixtures/state-legacy-gate-verdict.json",
+   "scripts/test/fixtures/state-pre-disposition-walk.json"
+  ]
+ }
+}
