@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "certification-record-redesign",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1885,11 +1885,17 @@
           "type": "depends-on",
           "epic": "rules-block-hardcodes-claude-slash-commands",
           "reason": "the rules block must stop hardcoding Claude Code slash-command syntax before pm can claim Hermes support"
+        },
+        {
+          "type": "supersedes",
+          "epic": "parity-ledger-exemptions",
+          "reason": "by design a task of the first port, designed when Hermes hits an unsupported case"
         }
       ],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
-      "createdAt": "2026-07-28T19:25:39-07:00"
+      "createdAt": "2026-07-28T19:25:39-07:00",
+      "touchedAt": "2026-09-28T22:28:59.239Z"
     },
     {
       "id": "edd-observe-hardcodes-claude-md",
@@ -2512,7 +2518,7 @@
       "priority": "P2",
       "status": "queued",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "stories": [
@@ -2529,7 +2535,15 @@
           "done": false
         }
       ],
-      "createdAt": "2026-08-03T17:46:36-07:00"
+      "createdAt": "2026-08-03T17:46:36-07:00",
+      "notes": [
+        {
+          "at": "2026-09-28T22:29:15.334Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — several mutation-tested scenarios with real design work (triage 2026-09-28)"
+        }
+      ],
+      "touchedAt": "2026-09-28T22:29:15.337Z"
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2604,7 +2618,7 @@
       "id": "parity-ledger-exemptions",
       "title": "Ledger exemptions (capability genuinely unsupportable on a platform), designed against a real case",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2615,7 +2629,19 @@
           "done": false
         }
       ],
-      "createdAt": "2026-08-03T17:46:36-07:00"
+      "createdAt": "2026-08-03T17:46:36-07:00",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:29:00.123Z",
+        "reason": "a task of hermes-platform-support, designed only when the port hits a case it cannot support"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:29:00.122Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:29:00.123Z",
+      "touchedAt": "2026-09-28T22:29:00.126Z"
     },
     {
       "id": "state-lost-update-concurrent-sessions",
@@ -3040,7 +3066,8 @@
           "text": "GROOMING 0.41.0 — absorbed two epics whose completion test is identical to this one's (does the emitted rules block say X, in the same two files). From conductor-skill-orient-reads-spec-inventory: Orient for an openspec-lane epic must read the inventory of ALREADY-ESTABLISHED specs, explicitly NOT the in-flight change list, and the wording must disambiguate the object because OpenSpec's own generated skills surface 'openspec list --json' (changes) 10x and '--specs' 0x, so a vague obligation gets discharged against the wrong data. Verified still unbuilt: rg 'list --specs|spec inventory' across skills/ commands/ scripts/lib/ agents/ returns zero. From autonomy-grant-starts-at-apply-not-propose: state the propose/apply boundary for an autonomy grant — SKILL.md gives a flag-timing rule and rules.mjs scopes actions, and neither says which side of that boundary a grant begins on."
         }
       ],
-      "touchedAt": "2026-09-10T04:37:35.906Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "dehardcode-openspec-change-root-in-instructions",
@@ -5578,7 +5605,9 @@
         }
       ],
       "externalUpdatedAt": "2026-09-03T01:14:23Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "release": "0.51.0",
+      "touchedAt": "2026-09-28T22:29:16.270Z"
     },
     {
       "id": "fleet-upgrade-after-release",
@@ -7078,7 +7107,7 @@
       "id": "gh-cfdude-pm-190",
       "title": "A recorded gate verdict has no link to the commits that answered it, so a stale FAIL is indistinguishable from a live one",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7094,14 +7123,25 @@
       "externalUpdatedAt": "2026-09-11T07:25:51Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:25.921Z",
-      "touchedAt": "2026-09-14T18:18:27.858Z",
+      "touchedAt": "2026-09-28T22:28:56.827Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:27.856Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:28:56.824Z",
+        "reason": "the Gate 2 half shipped (sha-ranged verdicts go stale); the rest is Gate 1 staleness, carried by gh-cfdude-pm-198 with the --answers-verdict idea as scope"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:56.823Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:56.824Z"
     },
     {
       "id": "gh-cfdude-pm-189",
@@ -7286,7 +7326,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:39:53.765Z",
-      "touchedAt": "2026-09-17T01:15:34.001Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
       "notes": [
         {
           "at": "2026-09-14T19:29:54.971Z",
@@ -7303,7 +7343,8 @@
           "actor": "agent",
           "text": "2026-09-16 sibling path, confirmed on 0.44.0 in a scratch repo during the 0.45.0 cross-spec round 4: on an archived delivered epic whose only attributed commit C1 was amended to C2 (C1 still resolvable), record-gate-review --gate 2 --verdict pass --head-sha C2 exits 0, then update-epic --withdraw-commit C1 exits 0, leaving archived+delivered with zero attributed commits (integrity reports delivered-epic-attributed-no-commits). The withdraw regression check compares before/after and the before is already non-covering after the re-record. emitted-commands-run-as-written design now forbids printing that re-record as a standalone step; the engine refusal is not fixed."
         }
-      ]
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "status-write-undone-by-heal-reports-updated",
@@ -7322,7 +7363,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:52:24.263Z",
-      "touchedAt": "2026-09-14T18:52:24.266Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "disposition-invocation-prints-bare-no-deferrals",
@@ -7341,7 +7383,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T19:44:41.018Z",
-      "touchedAt": "2026-09-14T19:44:41.022Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "handoff-refusal-prints-story-titles-raw",
@@ -7530,14 +7573,15 @@
       "externalUpdatedAt": "2026-09-15T01:56:37Z",
       "attributedCommits": [],
       "createdAt": "2026-09-15T04:39:20.782Z",
-      "touchedAt": "2026-09-15T04:39:41.325Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:41.322Z",
           "actor": "agent",
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
-      ]
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-200",
@@ -7553,14 +7597,15 @@
       "externalUpdatedAt": "2026-09-15T01:56:36Z",
       "attributedCommits": [],
       "createdAt": "2026-09-15T04:39:23.081Z",
-      "touchedAt": "2026-09-15T04:39:39.270Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:39.267Z",
           "actor": "agent",
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
-      ]
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-199",
@@ -7603,21 +7648,28 @@
       "status": "untriaged",
       "role": "epic",
       "lane": "superpowers",
-      "links": [],
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-190",
+          "reason": "190's unshipped half is Gate 1 staleness; its --answers-verdict idea rides along"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "198",
       "externalUrl": "https://github.com/cfdude/pm/issues/198",
       "externalUpdatedAt": "2026-09-14T20:57:01Z",
       "attributedCommits": [],
       "createdAt": "2026-09-15T04:39:27.255Z",
-      "touchedAt": "2026-09-15T04:39:35.265Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:35.261Z",
           "actor": "agent",
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
-      ]
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "state-json-unparseable-loads-as-empty",
@@ -9758,7 +9810,8 @@
       "externalUpdatedAt": "2026-09-17T03:19:56Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T03:20:01.306Z",
-      "touchedAt": "2026-09-17T03:20:01.309Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "commit-observation-gate2-minors",
@@ -9881,14 +9934,15 @@
       "externalUpdatedAt": "2026-09-16T23:30:23Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T19:47:13.184Z",
-      "touchedAt": "2026-09-17T19:47:13.647Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
       "notes": [
         {
           "at": "2026-09-17T19:47:13.644Z",
           "actor": "agent",
           "text": "lane: openspec not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
         }
-      ]
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "operations-ship-their-inverses",
@@ -10218,36 +10272,10 @@
       "completedAt": "2026-09-22T06:11:39.187Z"
     },
     {
-      "id": "alpha",
-      "title": "alpha",
-      "priority": "P?",
-      "status": "queued",
-      "role": "epic",
-      "lane": "claude-code",
-      "links": [],
-      "reconcileNeeded": false,
-      "attributedCommits": [],
-      "createdAt": "2026-09-21T06:48:22.397Z",
-      "touchedAt": "2026-09-21T06:48:22.400Z"
-    },
-    {
-      "id": "from-caller",
-      "title": "from-caller",
-      "priority": "P?",
-      "status": "queued",
-      "role": "epic",
-      "lane": "claude-code",
-      "links": [],
-      "reconcileNeeded": false,
-      "attributedCommits": [],
-      "createdAt": "2026-09-21T06:48:23.229Z",
-      "touchedAt": "2026-09-21T06:48:23.230Z"
-    },
-    {
       "id": "suite-twin-and-certification-discipline",
       "title": "The twin-link and certification discipline: a functional test has an assertion twin, and a triggered run is certified by CONTENT",
       "priority": "P2",
-      "status": "later",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10261,7 +10289,18 @@
       "description": "PRACTICE ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. The two disciplines that change earned, with the evidence that made them necessary. (1) TWIN LINK, one direction: every functional id has an assertion file of the same id, enforced by scripts/test/drift.mjs in the pre-commit hook. Evidence: the functional half is the half that can go months unrun, and before 0.47.0 nothing connected the two halves at all -- a change could loosen a functional test and the per-commit gate would never learn it. The 44 twins written by 5.3 are what makes the fast half carry the slow half's behaviour. (2) CERTIFICATION BY CONTENT: a triggered run writes a record under $(git rev-parse --git-common-dir) keyed by contentHash per module, and the hook refuses a certified module's changed content until a fresh run exists. Evidence: docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md -- 0.44.0's one-off sweep checked argv shape once, was archived with its change, and the NEXT release found four remedies the engine printed and then refused. The record is the mechanism that lesson lacked: it is a claim about a pass over NAMED CONTENT, checked on every commit, and it goes stale the moment the content moves rather than the moment the change archives. Cost of the check: the drift script spawns nothing but four git index reads and runs in under a second, so the per-commit gate pays nothing for it. Candidate for promotion into the pm-fleet discipline if a second repo adopts the split.",
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:06:51.158Z",
-      "touchedAt": "2026-09-21T13:06:51.162Z"
+      "touchedAt": "2026-09-28T22:28:33.292Z",
+      "disposition": {
+        "outcome": "declined",
+        "recordedAt": "2026-09-28T22:28:33.290Z",
+        "reason": "its promotion trigger ('a second repo adopts the practice') is hypothetical and nothing will ever prompt it; the mechanism already ships in this repo (drift twin coverage + content-hash freshness, 0.47.0), and its live defects are the 0.51.0 certification redesign (#226/#229/#230/#227). Declined by Rob 2026-09-28."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:33.289Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:33.290Z"
     },
     {
       "id": "guards-that-read-engine-source-drift-silently",
@@ -10269,7 +10308,7 @@
       "priority": "P2",
       "status": "later",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -10281,7 +10320,15 @@
       "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well: this is a product observation about pm's own test suite, not just this repo's history. EVIDENCE, all measured in 5.6 by mutating a copy of the repository. (1) A guard a COMMENT could satisfy: scripts/test/assert/conductor-13.test.mjs asserted /archiveGate\\(/ against the RAW source of lib/update-epic.mjs, and the verb's own prose calls the gate by name -- 'one level down from archiveGate()'s refusal ...' at :561. Aliasing the import and its call site away left the guard GREEN, so the call it claims to watch could be deleted with nothing to say so. Repaired by dropping comment-only lines before matching; the repair is mutation-verified (20/20 unmutated, 19/1 mutated). (2) The repair is not mechanical to make: the FIRST attempt used the same character-level stripper assert-half-has-no-spawn.test.mjs carries, and it DESYNCS on a regex literal holding a quote -- every comment after that point passes through VERBATIM, a false NEGATIVE, which is the opposite of the direction that helper's own docstring claims is the only one it can fail in. (3) 5.6's list is itself evidence of a class: conductor-25's dispatch readers, verb-surface's dispatch-table regex, save-report-surface's call-site scan, conductor-13, emitted-invocations, output-interpolations and conductor-12's cache-busting imports ALL read engine source and ALL had to be re-pointed by hand as 0.47.0 moved the engine's shape (dispatch table indented into main(), frozen constants becoming functions). A product opportunity: a shared, sound source-stripping helper in the test tree, and a lint that flags an assert.match against raw engine source.",
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:07:20.220Z",
-      "touchedAt": "2026-09-21T13:07:20.223Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "notes": [
+        {
+          "at": "2026-09-28T22:29:12.706Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — multi-file with a shared helper/procedure and tests; unresolved routing leans away from claude-code (triage 2026-09-28)"
+        }
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "hook-fixtures-couple-to-every-hook-step",
@@ -10289,7 +10336,7 @@
       "priority": "P3",
       "status": "later",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -10301,7 +10348,15 @@
       "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well. EVIDENCE: runHookAgainstFixture (scripts/test/fixtures/helpers.mjs) builds a scratch git repository, copies the REAL .githooks/pre-commit into it, and runs it -- deliberately, so the hook is exercised rather than a stub. 6.4 added a step to that hook (the drift script), and the three fixtures that run it went red for a reason that had nothing to do with what they test: the fixture held a hook but not the script, and the script but not the minimum tree it reads (scripts/lib/, conductor.mjs, the two bucket directories). The fix was to have the fixture construct that skeleton -- which means every future hook step has to be mirrored into a fixture builder, and nothing enforces the mirror. Measured cost: half an hour of diagnosis for a one-line hook insertion, and the failure mode is the worst kind -- three unrelated tests red, all pointing at the hook rather than at themselves. Candidate fix: derive the fixture tree from the hook's own invocations, or give the hook a single well-known entry point so a fixture can stub it by contract.",
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:07:20.863Z",
-      "touchedAt": "2026-09-21T13:07:20.867Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "notes": [
+        {
+          "at": "2026-09-28T22:29:13.604Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — multi-file with a shared helper/procedure and tests; unresolved routing leans away from claude-code (triage 2026-09-28)"
+        }
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "unit-rung-and-fixture-snapshots",
@@ -10479,19 +10534,30 @@
           "type": "relates-to",
           "epic": "unit-rung-and-fixture-snapshots",
           "reason": "its E1 stop - the only path to sub-15s"
+        },
+        {
+          "type": "depends-on",
+          "epic": "brief-txt-tracked-in-fleet-repos",
+          "reason": "both rewrite init's .gitignore path"
         }
       ],
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-25T21:14:34.667Z",
+      "touchedAt": "2026-09-28T22:29:17.889Z",
       "notes": [
         {
           "at": "2026-09-25T21:14:34.648Z",
           "actor": "agent",
           "text": "Re-justified by measurement 2026-09-25 (profile-50, provisional n<=2 quiet runs at load <16): quiet hook ~15.4 s (the 24 s at 0.49.0 was contention); unit rung 3.4 s; file rung ~14.9 s. 323/546 file-rung tests reach init's CLAUDE.md or .gitignore write (318 CLAUDE.md alone; .gitignore adds 5) and carry 173 of ~180 s summed file-rung test time (96%); 54 files fsync, 23 of them fully reaching. Concurrency is not a lever (4/8 ~2.5x slower; 16 = default). Floor it cannot remove: gh-85 in assert/conductor-25 (~8.3 s, checks bytes/mtimes). Scope widened to .gitignore. Planned as the lead of 0.51.0 (0.50.0 is already 17 epics in flight); first task: decision-grade n=3 quiet measurement with an empty-preload control."
+        },
+        {
+          "at": "2026-09-28T22:29:17.081Z",
+          "actor": "agent",
+          "text": "0.51.0 conditional: include only if an n=3 quiet-machine measurement (no agents running, empty-preload control) still shows the file rung dominated by init's CLAUDE.md/.gitignore writes; otherwise --defer it from 0.51.0 with the numbers"
         }
-      ]
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "node-support-policy",
@@ -10761,7 +10827,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-26T01:35:07.603Z",
-      "touchedAt": "2026-09-26T01:35:07.607Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "brief-txt-tracked-in-fleet-repos",
@@ -10769,12 +10836,20 @@
       "priority": "P3",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-26T01:35:08.414Z",
-      "touchedAt": "2026-09-26T01:35:08.418Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "notes": [
+        {
+          "at": "2026-09-28T22:29:14.458Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — multi-file with a shared helper/procedure and tests; unresolved routing leans away from claude-code (triage 2026-09-28)"
+        }
+      ],
+      "release": "0.51.0"
     },
     {
       "id": "integrity-reports-set-aside-archive-dirs",
@@ -10793,7 +10868,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-26T04:14:54.221Z",
-      "touchedAt": "2026-09-26T04:14:54.226Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "created-at-recovery-dates-too-late",
@@ -10812,7 +10888,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-26T04:36:40.106Z",
-      "touchedAt": "2026-09-26T04:36:40.112Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "lesson-budget-tests-flake-under-load",
@@ -10831,7 +10908,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-26T04:56:10.683Z",
-      "touchedAt": "2026-09-26T04:56:10.689Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-237",
@@ -10847,7 +10925,8 @@
       "externalUpdatedAt": "2026-09-26T14:55:09Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:10:56.004Z",
-      "touchedAt": "2026-09-28T17:10:56.007Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-233",
@@ -10863,7 +10942,8 @@
       "externalUpdatedAt": "2026-09-26T05:19:52Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:10:57.061Z",
-      "touchedAt": "2026-09-28T17:10:57.064Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-232",
@@ -10879,7 +10959,8 @@
       "externalUpdatedAt": "2026-09-26T05:16:24Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:10:58.037Z",
-      "touchedAt": "2026-09-28T17:10:58.041Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-231",
@@ -10895,13 +10976,14 @@
       "externalUpdatedAt": "2026-09-25T23:44:29Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:10:59.107Z",
-      "touchedAt": "2026-09-28T17:10:59.111Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-230",
       "title": "certify.mjs hashes the working tree while the commit (and now the hook) uses the index — a partial stage certifies bytes the commit does not contain",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10917,13 +10999,24 @@
       "externalUpdatedAt": "2026-09-25T22:42:55Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:00.208Z",
-      "touchedAt": "2026-09-28T17:11:36.278Z"
+      "touchedAt": "2026-09-28T22:28:51.803Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:28:51.801Z",
+        "reason": "consolidated into certification-record-redesign (one openspec change for the whole certification record/trigger design, 0.51.0 lead); issue #230 closes when it ships"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:51.800Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:51.801Z"
     },
     {
       "id": "gh-cfdude-pm-229",
       "title": "drift: a change to an uncertified engine module never runs the functional tests that observe it",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10939,7 +11032,18 @@
       "externalUpdatedAt": "2026-09-25T21:30:36Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:01.243Z",
-      "touchedAt": "2026-09-28T17:11:37.135Z"
+      "touchedAt": "2026-09-28T22:28:52.594Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:28:52.591Z",
+        "reason": "consolidated into certification-record-redesign (one openspec change for the whole certification record/trigger design, 0.51.0 lead); issue #229 closes when it ships"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:52.590Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:52.591Z"
     },
     {
       "id": "gh-cfdude-pm-228",
@@ -10961,7 +11065,7 @@
       "id": "gh-cfdude-pm-227",
       "title": "drift check 3 forces a no-op twin edit when a functional file changes for a reason unrelated to its subject",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -10971,13 +11075,24 @@
       "externalUpdatedAt": "2026-09-25T20:20:06Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:03.259Z",
-      "touchedAt": "2026-09-28T17:11:03.263Z"
+      "touchedAt": "2026-09-28T22:28:53.467Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:28:53.464Z",
+        "reason": "consolidated into certification-record-redesign (one openspec change for the whole certification record/trigger design, 0.51.0 lead); issue #227 closes when it ships"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:53.463Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:53.464Z"
     },
     {
       "id": "gh-cfdude-pm-226",
       "title": "Certification record is shared across worktrees with one entry per trigger — parallel worktrees overwrite each other's certification",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -10987,20 +11102,31 @@
       "externalUpdatedAt": "2026-09-26T00:50:28Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:04.276Z",
-      "touchedAt": "2026-09-28T17:11:35.283Z",
+      "touchedAt": "2026-09-28T22:28:51.020Z",
       "notes": [
         {
           "at": "2026-09-28T17:11:35.280Z",
           "actor": "agent",
           "text": "0.51.0 lead: the shared certification record stalled 0.50.0's parallel worktree builds twice (interleaved certify overwrote a peer; an uncommitted covered test id blocked every other worktree 25+ min)"
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:28:51.017Z",
+        "reason": "consolidated into certification-record-redesign (one openspec change for the whole certification record/trigger design, 0.51.0 lead); issue #226 closes when it ships"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:51.016Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:51.017Z"
     },
     {
       "id": "gh-cfdude-pm-223",
       "title": "The commit-watch attribution nudge tells you to attribute a commit made on a throwaway branch",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11010,7 +11136,18 @@
       "externalUpdatedAt": "2026-09-25T03:55:22Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:05.297Z",
-      "touchedAt": "2026-09-28T17:11:05.300Z"
+      "touchedAt": "2026-09-28T22:28:58.462Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-28T22:28:58.459Z",
+        "reason": "folded into gh-cfdude-pm-213: the commit hook reads attribution and branch state before nudging"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-28T22:28:58.458Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-28T22:28:58.459Z"
     },
     {
       "id": "gh-cfdude-pm-216",
@@ -11026,7 +11163,8 @@
       "externalUpdatedAt": "2026-09-22T08:20:55Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:06.318Z",
-      "touchedAt": "2026-09-28T17:11:06.321Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-215",
@@ -11042,7 +11180,8 @@
       "externalUpdatedAt": "2026-09-22T05:39:52Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:07.321Z",
-      "touchedAt": "2026-09-28T17:11:07.324Z"
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     },
     {
       "id": "gh-cfdude-pm-213",
@@ -11051,14 +11190,20 @@
       "status": "untriaged",
       "role": "epic",
       "lane": "superpowers",
-      "links": [],
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-223",
+          "reason": "same attributionNudge — nudges on throwaway-branch commits"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "213",
       "externalUrl": "https://github.com/cfdude/pm/issues/213",
       "externalUpdatedAt": "2026-09-23T19:40:15Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:08.328Z",
-      "touchedAt": "2026-09-28T17:11:08.331Z"
+      "touchedAt": "2026-09-28T22:28:57.641Z"
     },
     {
       "id": "gh-cfdude-pm-211",
@@ -11091,6 +11236,70 @@
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:10.612Z",
       "touchedAt": "2026-09-28T17:11:10.616Z"
+    },
+    {
+      "id": "certification-record-redesign",
+      "title": "Certification you can trust across worktrees: key the record by tree/content, certify the staged bytes, derive what triggers the functional half from what it observes, drop the forced no-op twin edit",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-226",
+          "reason": "record shared across worktrees, one entry per trigger"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-230",
+          "reason": "certify hashes the working tree, the gate judges the index"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-229",
+          "reason": "functional half triggers only for certified modules"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-227",
+          "reason": "drift forces a no-op twin edit"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-28T22:28:50.178Z",
+      "touchedAt": "2026-09-28T22:29:29.415Z",
+      "release": "0.51.0",
+      "startedAt": "2026-09-28T22:29:29.411Z"
+    },
+    {
+      "id": "test-isolation-guard",
+      "title": "No test may write the developer's real .conductor record: pin CLAUDE_PROJECT_DIR in the suite and assert the real record is byte-identical at exit (alpha/from-caller and 554 honcho-memories.log lines leaked on 2026-09-21)",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-28T22:28:54.382Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
+    },
+    {
+      "id": "emitted-invocations-copy-flake",
+      "title": "functional emitted-invocations 'Layer B integrity:archived-with-zero-ticked-tasks' fails intermittently under load with ENOENT copying the template repo's .git/objects (2 of 4 full runs, 2026-09-28)",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-28T22:28:55.196Z",
+      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "release": "0.51.0"
     }
   ],
   "detourStack": [],
@@ -11101,7 +11310,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1574,
+  "revision": 1598,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -11626,6 +11835,11 @@
           "reviewer": "re-review after Gate 2 amended gate-integrity and conductor-record (101ebb7..90d25ebc): refusal wording, N/M items, the spec-sync degrade rule (only spec-sync may be UNAVAILABLE), confirm-128, snapshot exclusion — no BLOCKS; 3 POLISH declined; falsifiability: corrupt index exits 128 like no-repo; an index-read throw takes down brief/render/integrity without the degrade; 2026-09-25. Supersedes the 101ebb7 verdict."
         }
       }
+    },
+    {
+      "id": "0.51.0",
+      "intent": "Tests and records you can trust: the certification redesign that broke parallel work in 0.50.0, a guard that no test can write the real record, the fragile and flaky test surfaces (Theme A); and the gate/record verbs refusing what they should, stale Gate 1 detection, archive and date-rule follow-ups, tracker-duplicate reporting (Theme B). store-owns ships only if a quiet-machine measurement still justifies it.",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
