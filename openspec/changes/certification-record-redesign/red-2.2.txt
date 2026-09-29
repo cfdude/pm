@@ -1,0 +1,51 @@
+# red-2.2 — node --test scripts/test/assert/drift-script.test.mjs, against the pre-GREEN tree (7f3d2d28: certification.mjs has no record directory), 2026-09-29T01:37:17Z
+✖ 2.2 a manifest holding no test file of its bucket is refused, and nothing is written (0.055459ms)
+✖ 2.2 pruning keeps the newest 50 by ranAt, and never the entry just written (0.08425ms)
+✖ 2.2 pruning removes a *.tmp older than 1 hour and a pm-certify-run.* older than 24 hours, and keeps younger ones (0.0715ms)
+✖ 2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry) (0.082125ms)
+✖ 2.2 writeManifestEntry() names the file by the manifest's sha256 and creates it through a unique temp name plus a rename (0.488042ms)
+✔ 5.4/6.1: the id is the file's place on disk, both directions of the walk (0.06575ms)
+✔ 5.4/6.1: the repository's own suite passes all four checks (1.424958ms)
+✔ 6.1: the certified set is DERIVED from the gateway calls, not typed (3.102791ms)
+✔ 6.1/6.4: the drift script starts no engine, no runner and no fixture — it reads the index (0.272083ms)
+✔ 6.2: a certified module's entry records what was certified, over what CONTENT, and when (9.728875ms)
+✔ 6.2: the entry point's entry carries the CONFORMANCE SET's ids, rows included (2.60125ms)
+✔ 6.2: the record is written beside the suite lock, and a fresh clone reads as EMPTY rather than as an error (0.759167ms)
+✔ 6.3: the engine-source trigger is a TRIGGER entry, and its subject is the whole engine source (1.986667ms)
+✔ 7.2: a DELETED functional test refuses every entry that named it (0.067375ms)
+✔ 7.2: a module RENAMED in the certified set leaves the record dangling — refused, not silently not-covering (0.092292ms)
+✔ 7.2: deleting a CONFORMANCE ROW refuses the conductor.mjs entry, not just renaming its file (0.130583ms)
+✔ check 1 — a tracked test file in neither half and in no bucket is REFUSED, by name (0.080709ms)
+✔ check 2 — a functional id with no assertion twin is REFUSED, naming the id (0.089958ms)
+✔ check 3 — a staged change touching one half only is REFUSED, naming the id and the twin's path (0.089958ms)
+✔ check 4 — a certified module whose STAGED content has no matching contentHash is REFUSED, with the run named (0.147458ms)
+✔ check 4 — a covers id from the SWEEP BUCKET resolves (found by running the gate end-to-end) (0.316209ms)
+✔ check 4 — FRESHNESS IS THE CONTENT, not the age and not the commit (1.073167ms)
+✔ check 4 — the engine-source trigger is a SECOND, disjoint demand (D9/6.3) (3.007ms)
+ℹ fail 5
+✖ failing tests:
+✔ G-M1 the refusal says WHICH KIND of thing changed — the trigger is not a module (2.111917ms)
+✔ G-M2 the record writer REFUSES an entry with an empty covers, and writes nothing (20.96625ms)
+ℹ pass 20
+ℹ tests 25
+
+✖ 2.2 writeManifestEntry() names the file by the manifest's sha256 and creates it through a unique temp name plus a rename (0.488042ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no writeManifestEntry(): the manifest record directory has no writeManifestEntry
+  + actual - expected
+  …(all five 2.2 cases fail on the same 'exports no …()' assertion; the 20 pre-existing tests pass)
+exit: 1
+
+# GREEN — same command after certification.mjs gained RECORD_DIR/BUCKETS, writeManifestEntry(),
+# readEntry() and pruneRecord():
+ℹ tests 25
+ℹ pass 25
+ℹ fail 0
+# assertion half over the working tree (both rungs): 1550/1550.
+
+# Certify functional by hand before this commit (Commit mechanics, B9) — staged exactly.
+# First run: 1230/1231, FAILED (326 s, load { 11.95 12.47 14.48 } -> { 16.33 18.57 17.14 }): functional/emitted-invocations
+#   "Layer B integrity:archived-with-zero-ticked-tasks" — ENOENT on its template fixture's .git/objects inside
+#   fs.cpSync (remedyRepo). Nothing this commit touches is on that path (emitted-invocations imports no
+#   scripts/test/certification.mjs); a temp directory removed under a running test. Re-run, unchanged:
+#   node scripts/test/certify.mjs functional   (490 s, load { 13.88 17.92 16.94 } -> { 16.02 32.18 28.28 })
+certify: functional half passed (1231/1231); recorded 8 module entries in <repo>/.git/pm-suite-certification.json

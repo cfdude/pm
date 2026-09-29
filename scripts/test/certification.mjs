@@ -18,6 +18,7 @@
 
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -455,6 +456,95 @@ export function recordFreshness({ bucket, indexManifest, entryFor }) {
   else if (entry.result !== "pass") why = `the recorded result for this content was ${JSON.stringify(entry.result)}`;
   else if (!sameManifest(entry.manifest, indexManifest)) why = "the entry under this content's key holds a different manifest";
   return { fresh: why === null, key, why };
+}
+
+// ───────────────────────────── the record DIRECTORY (certification-record-redesign D1, D5) ─────────────────────────────
+
+/** The record's directory, under `$(git rev-parse --git-common-dir)`: one sub-directory per bucket,
+ *  one file per passing run, `<bucket>/<manifest key>.json`. A NEW path (D5), so the single-file record
+ *  beside it is never read and never removed by anything here. */
+export const RECORD_DIR = "pm-suite-certification.d";
+
+/** The buckets, which are also the record's directory names. */
+export const BUCKETS = Object.freeze(["functional", "sweeps"]);
+
+export const bucketDir = (commonDir, bucket) => path.join(commonDir, RECORD_DIR, bucket);
+
+/** A path that is a test file OF a bucket — what a manifest must hold at least one of, or the pass it
+ *  records rests on no test of its bucket. */
+const isBucketTest = (bucket, rel) => new RegExp(`^scripts/test/${bucket}/[^/]+\\.test\\.mjs$`).test(rel);
+
+/** Write one passing run's entry: `<key>.json`, created through a UNIQUE temp name and a rename.
+ *  No run reads another run's file to write its own, so two runs cannot lose each other's entry
+ *  (#226); two runs over identical content produce the same key, and the second rename replaces the
+ *  file with an equivalent claim. `ranAt` is taken when the entry is WRITTEN, so the pruner never
+ *  ranks a just-finished run as the oldest.
+ *
+ *  REFUSED, writing nothing: an unknown bucket, and a manifest holding no test file of its bucket —
+ *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry }`. */
+export function writeManifestEntry(commonDir, { bucket, manifest, counts = null, engineSha = "unknown", worktree = null },
+  { io = fs, now = () => new Date() } = {}) {
+  if (!BUCKETS.includes(bucket)) {
+    throw new Error(`certification: refusing to record an entry for bucket ${JSON.stringify(bucket)} — the buckets are ${BUCKETS.join(" and ")}`);
+  }
+  if (!Object.keys(manifest || {}).some((p) => isBucketTest(bucket, p))) {
+    throw new Error(`certification: refusing to record a ${bucket} entry whose manifest holds no test file of the ${bucket} bucket ` +
+      `(scripts/test/${bucket}/*.test.mjs) — the entry would claim a pass that no test of the bucket stands behind`);
+  }
+  const key = manifestKey(manifest);
+  const dir = bucketDir(commonDir, bucket);
+  const file = path.join(dir, `${key}.json`);
+  const entry = { version: 2, bucket, manifest, result: "pass", counts, ranAt: now().toISOString(), engineSha, worktree };
+  io.mkdirSync(dir, { recursive: true });
+  const tmp = path.join(dir, `${key}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`);
+  io.writeFileSync(tmp, JSON.stringify(entry, null, 2) + "\n");
+  io.renameSync(tmp, file);
+  return { key, file, entry };
+}
+
+/** The entry of one key, or null. An absent directory or file is NO ENTRY — a fresh clone, a clone
+ *  upgraded mid-flight, or an entry a concurrent pruner removed — which can only turn a pass into a
+ *  demand, the loud direction. */
+export function readEntry(commonDir, bucket, key, io = fs) {
+  try {
+    return JSON.parse(io.readFileSync(path.join(bucketDir(commonDir, bucket), `${key}.json`), "utf8"));
+  } catch (e) {
+    if (e && e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+
+/** THE INVERSE OF WRITING (design D1, "Pruning"; Gate 1 M6). Keeps the bucket's newest `max` entries by
+ *  `ranAt`, and never `keep` — the entry the run just wrote — whatever its `ranAt`. Also removes the
+ *  leftovers of killed runs: a `*.tmp` in the bucket directory older than an hour (a live writer holds
+ *  its temp name for milliseconds), and a `pm-certify-run.*` directory under `tmpDir` older than 24
+ *  hours (a functional run takes minutes). A pruned entry can only cause a demand, never a pass.
+ *  Returns the paths removed. */
+export function pruneRecord(commonDir, bucket, { keep = null, max = 50, tmpDir = os.tmpdir(), io = fs, nowMs = Date.now() } = {}) {
+  const dir = bucketDir(commonDir, bucket);
+  const removed = [];
+  const rm = (p) => { try { io.rmSync(p, { recursive: true, force: true }); removed.push(p); } catch { /* already gone */ } };
+  const olderThan = (p, ms) => { try { return nowMs - io.statSync(p).mtimeMs > ms; } catch { return false; } };
+  let names = [];
+  try { names = io.readdirSync(dir); } catch { names = []; }
+  const entries = [];
+  for (const n of names) {
+    if (n.endsWith(".tmp")) { if (olderThan(path.join(dir, n), 3600 * 1000)) rm(path.join(dir, n)); continue; }
+    if (!n.endsWith(".json")) continue;
+    const key = n.slice(0, -".json".length);
+    let ranAt = 0;
+    try { ranAt = Date.parse(JSON.parse(io.readFileSync(path.join(dir, n), "utf8")).ranAt) || 0; } catch { continue; }
+    entries.push({ key, ranAt });
+  }
+  const others = entries.filter((e) => e.key !== keep).sort((a, b) => b.ranAt - a.ranAt);
+  const room = keep && entries.some((e) => e.key === keep) ? max - 1 : max;
+  for (const e of others.slice(Math.max(0, room))) rm(path.join(dir, `${e.key}.json`));
+  let runs = [];
+  try { runs = io.readdirSync(tmpDir); } catch { runs = []; }
+  for (const n of runs) {
+    if (n.startsWith("pm-certify-run.") && olderThan(path.join(tmpDir, n), 24 * 3600 * 1000)) rm(path.join(tmpDir, n));
+  }
+  return removed;
 }
 
 // ───────────────────────────── the record ─────────────────────────────

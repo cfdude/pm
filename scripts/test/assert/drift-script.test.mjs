@@ -39,6 +39,7 @@ import {
 } from "../certification.mjs";
 import { PERMITTED_SUBCOMMANDS, gitRead } from "../drift.mjs";
 import { KIND_MODULE, KIND_TRIGGER, RECORD_NAME, moduleEntry, triggerEntry } from "../certification.mjs";
+import * as recordDir from "../certification.mjs";  // 2.2: resolved per test, so a missing export fails that test alone
 
 const readFile = (p) => fs.readFileSync(p, "utf8");
 
@@ -467,4 +468,147 @@ test("check 4 — a covers id from the SWEEP BUCKET resolves (found by running t
   });
   assert.equal(dangling.length, 1);
   assert.equal(dangling[0].covers, "no-such-id");
+});
+
+// ───────────────────────────── 2.2 — the record DIRECTORY (certification-record-redesign D1) ─────────────────────────────
+//
+// FILE RUNG: each case writes the record directory under a scratch common dir, because the observable
+// is the bytes and names on disk — an entry named by its manifest's sha256, created through a unique
+// temp name and a rename, never rewritten, and pruned only by age.
+
+
+const RD_MANIFEST = Object.freeze({
+  "scripts/lib/a.mjs": `100644 ${"1".repeat(40)}`,
+  "scripts/test/functional/alpha.test.mjs": `100644 ${"7".repeat(40)}`,
+});
+const scratchCommonDir = () => removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-dir-")));
+function rd() {
+  for (const name of ["writeManifestEntry", "readEntry", "pruneRecord", "manifestKey"]) {
+    assert.equal(typeof recordDir[name], "function", `certification.mjs exports no ${name}(): the manifest record directory has no ${name}`);
+  }
+  return recordDir;
+}
+/** An `io` that is `fs`, recording each write and rename it is asked for. */
+function recordingIo(log, over = {}) {
+  return {
+    ...fs,
+    writeFileSync: (p, ...rest) => { log.push(["write", p]); return fs.writeFileSync(p, ...rest); },
+    renameSync: (a, b) => { log.push(["rename", a, b]); return fs.renameSync(a, b); },
+    ...over,
+  };
+}
+
+test("2.2 writeManifestEntry() names the file by the manifest's sha256 and creates it through a unique temp name plus a rename", () => {
+  const { writeManifestEntry, readEntry, manifestKey } = rd();
+  const common = scratchCommonDir();
+  const log = [];
+  const w = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, counts: { tests: 1, pass: 1, fail: 0 }, engineSha: "S", worktree: "W" }, { io: recordingIo(log) });
+  const key = manifestKey(RD_MANIFEST);
+  assert.equal(w.key, key);
+  const dir = path.join(common, "pm-suite-certification.d", "functional");
+  assert.equal(w.file, path.join(dir, `${key}.json`), "the entry is <common>/pm-suite-certification.d/<bucket>/<key>.json");
+  assert.deepEqual(fs.readdirSync(dir), [`${key}.json`], "one file, and no temp file survives");
+  const [write, rename] = log;
+  assert.equal(write[0], "write");
+  assert.match(path.basename(write[1]), new RegExp(`^${key}\\.${process.pid}\\.[0-9a-f]+\\.tmp$`), "the bytes go to a UNIQUE temp name first");
+  assert.deepEqual(rename, ["rename", write[1], w.file], "and are renamed into place, so no reader sees a half-written entry");
+  const e = readEntry(common, "functional", key);
+  assert.deepEqual(e.manifest, RD_MANIFEST);
+  assert.equal(e.version, 2);
+  assert.equal(e.bucket, "functional");
+  assert.equal(e.result, "pass");
+  assert.equal(e.engineSha, "S");
+  assert.equal(e.worktree, "W");
+  assert.ok(!Number.isNaN(Date.parse(e.ranAt)), "ranAt is set when the entry is written");
+  // A second write of the same content takes a DIFFERENT temp name: two runs over identical content
+  // never share one.
+  writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { io: recordingIo(log) });
+  assert.notEqual(log[2][1], write[1], "each write has its own temp name");
+  assert.equal(readEntry(common, "functional", "0".repeat(64)), null, "an absent entry is no entry");
+  assert.equal(readEntry(scratchCommonDir(), "sweeps", key), null, "an absent directory is no entry");
+});
+
+test("2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry)", () => {
+  const { writeManifestEntry, readEntry, manifestKey } = rd();
+  const common = scratchCommonDir();
+  const other = { ...RD_MANIFEST, "scripts/lib/b.mjs": `100644 ${"2".repeat(40)}` };
+  let interleaved = false;
+  // The first writer is paused between its temp write and its rename, and the second writer runs to
+  // completion in that window — the read-modify-rename record lost one of the two exactly here.
+  const io = recordingIo([], {
+    renameSync: (a, b) => {
+      if (!interleaved) {
+        interleaved = true;
+        writeManifestEntry(common, { bucket: "functional", manifest: other }, { io: fs });
+      }
+      return fs.renameSync(a, b);
+    },
+  });
+  writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { io });
+  assert.equal(interleaved, true, "precondition: the second writer ran inside the first's window");
+  assert.deepEqual(readEntry(common, "functional", manifestKey(RD_MANIFEST)).manifest, RD_MANIFEST, "the first entry is whole");
+  assert.deepEqual(readEntry(common, "functional", manifestKey(other)).manifest, other, "and so is the second");
+  assert.equal(fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional")).length, 2);
+});
+
+test("2.2 pruning keeps the newest 50 by ranAt, and never the entry just written", () => {
+  const { writeManifestEntry, pruneRecord, manifestKey } = rd();
+  const common = scratchCommonDir();
+  const t0 = Date.parse("2026-01-01T00:00:00.000Z");
+  for (let i = 0; i < 55; i++) {
+    const m = { ...RD_MANIFEST, "scripts/lib/n.mjs": `100644 ${String(i).padStart(40, "0")}` };
+    writeManifestEntry(common, { bucket: "functional", manifest: m }, { now: () => new Date(t0 + (i + 1) * 60000) });
+  }
+  // The run that just finished wrote the OLDEST ranAt of all (a clock that went back): it still stays.
+  const mine = { ...RD_MANIFEST, "scripts/lib/n.mjs": `100644 ${"f".repeat(40)}` };
+  const { key } = writeManifestEntry(common, { bucket: "functional", manifest: mine }, { now: () => new Date(t0) });
+  pruneRecord(common, "functional", { keep: key, tmpDir: scratchCommonDir() });
+  const left = fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional")).sort();
+  assert.equal(left.length, 50, `the bucket is pruned to 50 entries: ${left.length}`);
+  assert.ok(left.includes(`${key}.json`), "the entry just written is never pruned");
+  const newest = Array.from({ length: 49 }, (_, j) => 54 - j)
+    .map((i) => `${manifestKey({ ...RD_MANIFEST, "scripts/lib/n.mjs": `100644 ${String(i).padStart(40, "0")}` })}.json`);
+  for (const f of newest) assert.ok(left.includes(f), `a newer entry was pruned: ${f}`);
+});
+
+test("2.2 pruning removes a *.tmp older than 1 hour and a pm-certify-run.* older than 24 hours, and keeps younger ones", () => {
+  const { writeManifestEntry, pruneRecord } = rd();
+  const common = scratchCommonDir();
+  const tmpDir = scratchCommonDir();
+  const { key } = writeManifestEntry(common, { bucket: "sweeps", manifest: { "scripts/test/sweeps/s.test.mjs": `100644 ${"5".repeat(40)}` } });
+  const dir = path.join(common, "pm-suite-certification.d", "sweeps");
+  const age = (p, ms) => { const t = new Date(Date.now() - ms); fs.utimesSync(p, t, t); };
+  const oldTmp = path.join(dir, `${"a".repeat(64)}.1.aa.tmp`);
+  const youngTmp = path.join(dir, `${"b".repeat(64)}.1.bb.tmp`);
+  fs.writeFileSync(oldTmp, "{");
+  fs.writeFileSync(youngTmp, "{");
+  age(oldTmp, 2 * 3600 * 1000);
+  age(youngTmp, 10 * 60 * 1000);
+  const oldRun = path.join(tmpDir, "pm-certify-run.OLD");
+  const youngRun = path.join(tmpDir, "pm-certify-run.YOUNG");
+  const unrelated = path.join(tmpDir, "someone-else.OLD");
+  for (const d of [oldRun, youngRun, unrelated]) fs.mkdirSync(path.join(d, "tree"), { recursive: true });
+  age(oldRun, 25 * 3600 * 1000);
+  age(youngRun, 23 * 3600 * 1000);
+  age(unrelated, 25 * 3600 * 1000);
+  pruneRecord(common, "sweeps", { keep: key, tmpDir });
+  assert.equal(fs.existsSync(oldTmp), false, "an orphan temp file older than an hour is removed");
+  assert.equal(fs.existsSync(youngTmp), true, "a younger temp file may belong to a live writer, and stays");
+  assert.equal(fs.existsSync(oldRun), false, "a run directory older than 24 hours was left by a SIGKILL'd certify, and is removed");
+  assert.equal(fs.existsSync(youngRun), true, "a younger run directory may be a live run, and stays");
+  assert.equal(fs.existsSync(unrelated), true, "nothing that is not a certify run directory is touched");
+  assert.ok(fs.existsSync(path.join(dir, `${key}.json`)));
+});
+
+test("2.2 a manifest holding no test file of its bucket is refused, and nothing is written", () => {
+  const { writeManifestEntry } = rd();
+  const common = scratchCommonDir();
+  const noTest = { "scripts/lib/a.mjs": RD_MANIFEST["scripts/lib/a.mjs"] };
+  assert.throws(() => writeManifestEntry(common, { bucket: "functional", manifest: noTest }), /no test file of the functional bucket/,
+    "a pass with no test of its bucket behind it is not a certification");
+  assert.throws(() => writeManifestEntry(common, { bucket: "sweeps", manifest: RD_MANIFEST }), /no test file of the sweeps bucket/,
+    "a functional test does not make a sweeps entry");
+  assert.throws(() => writeManifestEntry(common, { bucket: "engine-source", manifest: RD_MANIFEST }), /bucket/,
+    "the buckets are `functional` and `sweeps`");
+  assert.equal(fs.existsSync(path.join(common, "pm-suite-certification.d")), false, "a refused entry writes nothing, not even its directory");
 });

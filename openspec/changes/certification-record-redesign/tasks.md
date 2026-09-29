@@ -209,7 +209,7 @@ These rules bind every section below.
 
       RED `red-2.1.txt`. Certify functional by hand before this commit (B9).
       Verify: each scenario is one named test.
-- [ ] 2.2 **TDD, FILE rung** (`assert/drift-script.test.mjs`): the record directory.
+- [x] 2.2 **TDD, FILE rung** (`assert/drift-script.test.mjs`): the record directory.
       - **The RED:**
         - `writeManifestEntry()` names the file by the manifest's sha256 and creates it through a
           unique temp name plus rename;
