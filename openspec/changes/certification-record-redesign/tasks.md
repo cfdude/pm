@@ -785,10 +785,13 @@ These rules bind every section below.
       Done: `commit-verification-5.4.txt`, over the COMMITS (`git show --name-only`): 20 of 20 pass; 3.3's
       `certify.mjs` is absent from 762d564f and justified (2.4 had moved certify onto `indexManifest()`, so
       3.3's `bucketSubject()` edit moved it); `.githooks/commit-msg` is `100755` in 0b2ad82c.
-- [ ] 5.5 **Declare lifecycle bookkeeping** (item 3). Tasks 8.2 and 8.3 carry
+- [x] 5.5 **Declare lifecycle bookkeeping** (item 3). Tasks 8.2 and 8.3 carry
       `<!-- pm:lifecycle -->` on their own lines. They were marked when this source was authored.
       Verify: `rg -n "pm:lifecycle" openspec/changes/certification-record-redesign/tasks.md` lists
       exactly those two task lines.
+      Done: the `rg` hits the 8.2 and 8.3 task lines and one more line, this task's own continuation,
+      which names the marker inside a code span. `countCheckboxes()` (`scripts/lib/epic-progress.mjs`)
+      strips code spans before matching, and it reads only checkbox lines, so exactly two tasks declare.
 - [ ] 5.6 **Attribute every commit** (orchestrator) (item 4). Run
       `update-epic certification-record-redesign --attribute-commit <sha>` for each implementation
       commit, in landing order, at the moment it is made. The archive-move commit is NOT attributed.
