@@ -1,20 +1,25 @@
 # Gate 2 fixes (certification-record-redesign, Gate 2 on f419b44e: 2 Important, 5 minor). finding -> sha -> test
-# Each commit's own sha cannot be written inside it; the shas are filled in by the closing docs(openspec) commit.
-G1 names git would quote: drift trackedTestFiles()/stagedFiles() and the hook's floor read NUL-delimited -> <sha> ->
+# Each commit's own sha cannot be written inside it; they were filled in by the closing docs(openspec) commit.
+G1 names git would quote: drift trackedTestFiles()/stagedFiles() and the hook's floor read NUL-delimited -> 35fb8dee ->
    functional/drift-script "G1 …" (3), functional/conductor-09 "G1 the floor counts…", twins assert/drift-script "G1 every
    name listing…" and assert/conductor-09's floor pins; red-G1.txt, name-read-sweep-G1.txt
 G2 a signal-killed child lost its reads: the observer appends each event (each NEW read included) as one JSON line
    when it happens; parseObservation() drops a torn LAST line only and refuses any other corruption by file and
-   line -> <sha> -> functional/certify-index "G2 a child SIGTERMed…", unit/certify-index "G2 …" (3); red-G2.txt
+   line -> 69c5aa53 -> functional/certify-index "G2 a child SIGTERMed…", unit/certify-index "G2 …" (3); red-G2.txt
 m1 writeManifestEntry() links the temp file into place (EEXIST keeps the existing entry byte for byte), never renames
-   over it -> <sha> -> assert/drift-script "m1 an entry is NEVER rewritten…", 2.2 tests moved to link; red-m1.txt
-m2 certify turns an unreadable observation into a named refusal (file and line, no stack), recording nothing -> <sha> ->
+   over it -> 62899032 -> assert/drift-script "m1 an entry is NEVER rewritten…", 2.2 tests moved to link; red-m1.txt
+m2 certify turns an unreadable observation into a named refusal (file and line, no stack), recording nothing -> eb793815 ->
    functional/certify-index "m2 a corrupt observation file…", unit/certify-index "m2 …"; red-m2.txt
-m3 functionalSubject() rule 4 admits a name that opens with a backtick (a template literal is a string literal) -> <sha> ->
+m3 functionalSubject() rule 4 admits a name that opens with a backtick (a template literal is a string literal) -> 7e8ef48d ->
    unit/certify-index "m3 rule 4 admits a file named in a TEMPLATE literal…"; red-m3.txt (rules 5/6 reported, not changed)
-m4 guard: an untracked failing functional test in the working tree is neither run nor recorded -> <sha> ->
+m4 guard: an untracked failing functional test in the working tree is neither run nor recorded -> 278dc9ec ->
    functional/certify-index "m4 an UNTRACKED failing functional test…" (mutation: run the bucket in the working tree ->
    fails), twin unit/certify-index "m4 the run tree is built from the index copy alone…"; mutation-m4.txt
 m5 docs: certify.mjs's header states the tracked-symlink limit (as .githooks/pre-commit does) and that a SIGKILL
    cannot be cleaned up; CONTRIBUTING's "How certify runs" says INT/TERM/HUP are clean, a SIGKILLed certify can orphan
-   its bucket, and its run directory is pruned after 24 hours -> <sha> -> docs only (no test)
+   its bucket, and its run directory is pruned after 24 hours -> 3ac3ba1f -> docs only (no test)
+
+Found while fixing (not a Gate 2 finding; for the orchestrator): certify imports the WORKING TREE's certification.mjs
+and drift.mjs, so an unstaged edit to either makes certify record a manifest key the commit's drift (the snapshot's
+copy) does not compute. Seen once here (m2: an unstaged m3 edit gave 187 paths against drift's 186); it was caught before
+the commit (whose drift would have refused it as stale — loud, never a false pass) and re-certified from the staged copy.
