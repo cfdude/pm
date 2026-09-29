@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles, fixtureCommits, archiveDay } from "../fixtures/functional-harness.mjs";
 import { AGENT_OUTCOMES } from "../../lib/archive-gate.mjs";
 import { withRoot } from "../fixtures/explicit-root.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -522,10 +523,9 @@ test("no module under scripts/lib/ reads .outcome or .recordedBy off an epic", a
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
     if (name === "disposition.mjs") continue;
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);   // comments blanked: prose is not code
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;  // prose, not code
       // `f` is parseFlags()'s result — the CLI flags an invocation carried, not an epic. A
       // command reading its own `--outcome` flag is not a second reader of the record.
       if (/\bf\.\s*(outcome|recordedBy)\b/.test(line)) return;
@@ -598,12 +598,11 @@ const ARCHIVE_GATE = new URL("../../lib/archive-gate.mjs", import.meta.url).href
 test("update-epic holds no openspec-lane archive condition of its own", () => {
   // The co-occurrence is what matters, not the bare string: a line that tests the openspec
   // lane AND reads a gate verdict is the guard, wherever it is written.
-  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "update-epic.mjs"), "utf8");
+  const src = engineCode("scripts/lib/update-epic.mjs");
   const lines = src.split("\n");
   const offenders = [];
   lines.forEach((line, i) => {
     const t = line.trim();
-    if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
     if (!line.includes('"openspec"')) return;
     const window = lines.slice(Math.max(0, i - 3), i + 4).join("\n");
     if (/gate2|gateReview/.test(window)) offenders.push(`${i + 1}: ${t}`);
@@ -818,9 +817,8 @@ test("no module computes outstanding work for itself", () => {
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
     if (name === "epic-progress.mjs") continue;
-    fs.readFileSync(path.join(libDir, name), "utf8").split("\n").forEach((line, i) => {
+    engineCode(`scripts/lib/${name}`).split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       if (/\btotal\s*-\s*\w*\.?done\b|\.total\s*-\s*/.test(line)) offenders.push(`${name}:${i + 1}: ${t}`);
     });
   }
@@ -928,10 +926,9 @@ test("no module under scripts/lib/ decides openspec-lane membership with a stric
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       if (!/[!=]==\s*"openspec"/.test(line)) return;
       if (line.includes('|| "openspec"')) return;      // normalized inline — acceptable
       offenders.push(`${name}:${i + 1}: ${t}`);
@@ -1018,10 +1015,9 @@ test("no module under scripts/lib/ mines a sha or a range out of a verdict note"
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       // A PROPERTY read — `entry.note`, `gate2.note`. The detour log also carries a local
       // `note` variable it splits and trims (git.mjs, render.mjs's Recent-detours table), and
       // that has nothing to do with a gate verdict; scoping to the property access is what
@@ -1430,10 +1426,9 @@ test("no module under scripts/lib/ reads a change's artifacts to identify deferr
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       if (!/defer/i.test(line)) return;
       if (/readFileSync|readdirSync|proposal|design\.md|tasks\.md/.test(line)) {
         offenders.push(`${name}:${i + 1}: ${t}`);

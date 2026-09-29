@@ -73,6 +73,23 @@ discrimination/non-vacuity assertions must stay green; any that goes red is a fi
   comment text. If one is found, it gets an explicit, reasoned raw read the lint accepts; otherwise
   there is no exemption to revoke, and that is stated.
 
+### 6. Final-review re-sweep (I4) — every inline stripper, named
+Swept with `rg` for `replace\(/\\/\\/`, `replace\(/\\/\\*`, `startsWith\("//"|"/*"|"*"\)`,
+`^\s*\/\/`, `\/\/.*`, `\/\/[^` across `scripts/test/**/*.mjs`. Every hit and its disposition:
+- MIGRATED to `engineCode`/`codeOnly`: `functional/conductor-13` ×6 (the `startsWith` line skips in
+  the outcome/recordedBy, openspec-lane, outstanding-work, lane-literal, verdict-note and deferral
+  scans), `functional/conductor-14` (emitter vendor/direction scan), `functional/output-text-integrity`
+  ×2 (`stdoutJsonBypasses`, `detourReaderFindings`), `functional/conformance` (exit-handler guard),
+  `functional/emitted-invocations` (`printedTemplates`' line skip — not in the review's list, found by
+  the broader sweep), `assert/spec-sync-surfaces` (snapshot() slice), `assert/sync-registration-ids`
+  (bare-id scan — now reads through `engineCode`, so its line filter is gone), `assert/drift-script`
+  (gitRead's GIT_INDEX_FILE scan).
+- DELIBERATE EXCLUSIONS: `assert/save-report-surface.test.mjs` `EXEMPT` matches the
+  `// save-report: exempt — <reason>` marker, a comment it must read by design (against the raw
+  lines); `assert/source-code.test.mjs` asserts the helper's own output has no comment line.
+- Mutation (conformance): an exit handler on a line holding `"https://x"` — the old regex strip deleted
+  from that `//` to end of line and stayed GREEN; with `engineCode` the guard goes RED.
+
 ## Required task items (CLAUDE.md "The gate procedure")
 - **Call-site sweep**: done mechanically above (rg for strippers; the lint prototype for raw reads).
   The lint's STATED LIMITS, each named rather than silently uncovered: (a) a read whose path is a

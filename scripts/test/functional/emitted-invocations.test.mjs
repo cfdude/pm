@@ -688,6 +688,7 @@ test("1.5 Layer A: every rules block (platform × tracker matrix), init's output
 
 import { fixtureCommits, fixtureGit, writeState } from "../fixtures/functional-harness.mjs";
 import { agentDisposition, engineStamp } from "../../lib/disposition.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 /** How many registry entries may declare `unconstructable`. Raising it is a visible change. */
 const UNCONSTRUCTABLE = 0;
@@ -2812,9 +2813,8 @@ export function printedTemplates(verbs = dispatchedVerbs(), dir = path.join(REPO
   // more leading spaces, as the regression refusal and verify-specs print them).
   const opener = new RegExp(`(${BS}${BS}\`|\`|["'\`] {2,})(${verbAlt}) `, "g");
   for (const file of fs.readdirSync(dir).filter(f => f.endsWith(".mjs")).sort()) {
-    const lines = fs.readFileSync(path.join(dir, file), "utf8").split("\n");
+    const lines = codeOnly(fs.readFileSync(path.join(dir, file), "utf8"), file).split("\n");
     lines.forEach((line, i) => {
-      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
       for (const m of line.matchAll(opener)) {
         const quotesBefore = quotesBeforeOf(line, m.index);
         let inTemplate;

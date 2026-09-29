@@ -557,10 +557,7 @@ test("no emitter recomputes direction from system, repo or direction locally", (
   const LIB = new URL("../../lib/", import.meta.url).pathname;
   const EMITTERS = ["rules.mjs", "briefing.mjs", "subcommands.mjs", "render.mjs"];
   for (const name of EMITTERS) {
-    const src = fs.readFileSync(path.join(LIB, name), "utf8");
-    const code = src.split("\n")
-      .filter(l => !l.trim().startsWith("//") && !l.trim().startsWith("*") && !l.trim().startsWith("/*"))
-      .join("\n");
+    const code = engineCode(`scripts/lib/${name}`);
     assert.ok(!code.includes('"github-issues"'),
       `${name} names the github-issues vendor in code — phrasing goes through usesGhIssueList, ` +
       "and section choice through outwardApplies/inwardProcedureEmittable");

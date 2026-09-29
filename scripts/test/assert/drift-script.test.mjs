@@ -44,6 +44,7 @@ import {
 } from "../certification.mjs";
 import { PERMITTED_SUBCOMMANDS, gitRead } from "../drift.mjs";
 import { stripComments } from "../js-lexer.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 import * as recordDir from "../certification.mjs";  // 2.2: resolved per test, so a missing export fails that test alone
 
 const readFile = (p) => fs.readFileSync(p, "utf8");
@@ -286,9 +287,9 @@ test("6.1/6.4: the drift script starts no engine, no runner and no fixture — i
   assert.doesNotMatch(src, /mkdtemp|gitInit/, "and never creates a repository fixture");
   // ONE INDEX OVERRIDE, AND IT IS IN gitRead() (2.4, Gate 1 round 5 X1): every read that is about a
   // particular index passes `indexFile` down to the one spawn, so no read pairs one index's listing
-  // with another's bytes. Comments are stripped first (a line-comment and block-comment filter; 3.1
-  // replaces it with the shared lexer), so documenting the variable is not a violation.
-  const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  // with another's bytes. Comments are stripped first, by the shared lexer, so documenting the
+  // variable is not a violation.
+  const code = codeOnly(src, "scripts/test/drift.mjs");
   const start = code.indexOf("export function gitRead(");
   const end = code.indexOf("\n}\n", start);
   assert.ok(start !== -1 && end !== -1, "drift.mjs defines gitRead()");

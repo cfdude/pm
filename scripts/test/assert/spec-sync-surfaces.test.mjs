@@ -20,6 +20,7 @@ import { specSyncFindings, specSyncDetail } from "../../lib/spec-sync.mjs";
 import { CHECKS } from "../../lib/integrity.mjs";
 import { DELIVERED_OBLIGATIONS } from "../../lib/archive-gate.mjs";
 import { buildBrief } from "../../lib/briefing.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const CHECK = "delivered-epic-spec-deltas-absent";
 const req = (n) => `### Requirement: ${n}\nThe system SHALL ${n}.\n`;
@@ -189,9 +190,9 @@ test("I3 twin: snapshot's brief.txt never carries the block, even when the reade
   assert.ok(withReader.includes(SS_HEADING), "a finding exists");
   run(["snapshot"], { cwd, input: "{}" });
   assert.ok(!fs.readFileSync(path.join(cwd, ".conductor", "brief.txt"), "utf8").includes(SS_HEADING));
-  const src = fs.readFileSync(new URL("../../lib/subcommands.mjs", import.meta.url), "utf8");
+  const src = engineCode("scripts/lib/subcommands.mjs");
   const snap = src.slice(src.indexOf("export function snapshot()"), src.indexOf("export function snapshot()") + 2500);
-  assert.ok(!/specSync/.test(snap.replace(/\/\/.*$/gm, "")), "snapshot() passes no specSync option");
+  assert.ok(!/specSync/.test(snap), "snapshot() passes no specSync option");
 });
 
 test("5.2 twin: more than five findings end in an overflow line pointing at `integrity`, never PROJECT.md", async () => {

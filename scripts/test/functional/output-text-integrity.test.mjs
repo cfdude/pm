@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, fixtureCommits, fixtureGit, observationRepo, tmpRepo, projectMd, readState, writeState } from "../fixtures/functional-harness.mjs";
-import { engineCode } from "../fixtures/source-code.mjs";
+import { codeOnly, engineCode } from "../fixtures/source-code.mjs";
 
 const lib = (name) => new URL(`../../lib/${name}`, import.meta.url).href;
 
@@ -700,7 +700,7 @@ async function stdoutJsonBypasses(read = (rel) => fs.readFileSync(path.join(REPO
   const { sweptFiles, topLevelFunctions } = await import("../sweeps/output-interpolations.mjs");
   const offenders = [];
   for (const rel of sweptFiles()) {
-    const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+    const src = codeOnly(read(rel), rel);
     for (const fn of topLevelFunctions(src)) {
       const body = src.slice(fn.start, fn.end);
       // REPAIRED BY 0.47.0 (task 3.4), and the repair is the difference between a guard and a
@@ -825,7 +825,7 @@ async function detourReaderFindings(read = (rel) => fs.readFileSync(path.join(RE
   const found = [], problems = [];
   const bodies = {};
   for (const rel of sweptFiles().filter(r => r.startsWith("scripts/lib/"))) {
-    const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+    const src = codeOnly(read(rel), rel);
     for (const fn of topLevelFunctions(src)) {
       const body = src.slice(fn.start, fn.end);
       if (fn.name !== "readDetourRows" && /\b(?:readDetourRows|visibleDetourRows)\(/.test(body)) {

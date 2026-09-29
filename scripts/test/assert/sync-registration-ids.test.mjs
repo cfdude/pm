@@ -133,7 +133,7 @@ test("every consumer of the resolver passes the RECORD, never the bare id", () =
     assert.doesNotMatch(probe, bare, `the scan passes ${probe}`);
   }
   for (const f of ["epic-progress.mjs", "active-pointer.mjs", "update-epic.mjs", "integrity.mjs", "spec-sync.mjs", "cross-spec-review.mjs", "subcommands.mjs"]) {
-    const lines = lib(f).split("\n").filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l));
+    const lines = lib(f).split("\n");   // lib() is engineCode: comments are already blanked
     const hits = lines.filter(l => bare.test(l));
     assert.deepEqual(hits, [], `${f} calls the resolver with a bare id`);
   }

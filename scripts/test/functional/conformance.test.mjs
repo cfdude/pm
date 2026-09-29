@@ -32,6 +32,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "../fixtures/functional-harness.mjs";
 import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const { main } = await import("../../conductor.mjs");
@@ -467,9 +468,7 @@ test("conformance: the engine registers no process exit handler", () => {
   // assertion-half test file's, under per-file isolation) every call would register another
   // listener, none would fire until that process exited, and main() would have
   // returned long before the diff it owes. A source guard, so the shape cannot come back silently.
-  const src = fs.readFileSync(path.join(HERE, "..", "..", "conductor.mjs"), "utf8")
-    .replace(/\/\/[^\n]*/g, "")
-    .replace(/\/\*[\s\S]*?\*\//g, "");
+  const src = engineCode("scripts/conductor.mjs");
   assert.doesNotMatch(src, /process\.on\(\s*["'`]exit["'`]/,
     "the engine must not instrument anything through a process exit handler — main() owns the " +
     "invocation's whole lifetime, and an exit handler outlives it");
