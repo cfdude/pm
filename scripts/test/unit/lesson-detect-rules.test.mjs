@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 import {
   ADVISED_TOOLS, DETECT_KEYS, MATCH_TEXT_CAP, REGEX_BUDGET_MS, REGEX_CEILING_MS,
-  checkDetect, frontmatterBlock, matchLessons, nestedUnboundedQuantifier,
+  boundedRegexTest, checkDetect, frontmatterBlock, matchLessons, nestedUnboundedQuantifier,
 } from "../../lib/lessons.mjs";
 
 const rejected = (raw, re) => {
@@ -149,20 +149,25 @@ unitTest("a NotebookEdit path matcher reads notebook_path, the field that tool s
 });
 // ─────────────── the regex phase is bounded (C1) ───────────────
 
-unitTest("a catastrophic regex the static check cannot see is cut off inside the budget", () => {
-  // `^(a|a)*$` nests nothing, so checkDetect accepts it; unguarded it should take on the order of 10 s on this input
-  // (6.7 s was observed at 24 characters, and each character roughly doubles it), so a mutant
-  // without the budget FAILS the time assertion
-  // rather than hanging the run.
-  const good = lessonOf("a-good.md", '{"tool":"Bash","commandMatches":"^a"}');
+// THE REAL vm WATCHDOG, asserted as a VALUE. Load can only DELAY a `null` from a runaway; it cannot
+// turn one into an answer, so nothing here reads the clock. Never assert a benign regex's HIT through
+// the real runner at a small timeout: the watchdog is wall-clock, and a starved machine interrupts
+// `^a` too — that is exactly how the old wall-clock tests flaked.
+
+unitTest("a catastrophic regex the static check cannot see is cut off by the real vm timeout", () => {
+  // `^(a|a)*$` nests nothing, so checkDetect accepts it. Unguarded it takes on the order of 10 s on
+  // this input (6.7 s was observed at 24 characters, each character roughly doubling it) and then
+  // answers `false` — so a mutant without the timeout FAILS on the value rather than hanging the run.
+  assert.equal(boundedRegexTest(/^(a|a)*$/, "a".repeat(25) + "!", 20), null);
+  // The context survives an interrupt: the next call through it still answers.
+  assert.equal(boundedRegexTest(/^a/, "abc", 60_000), true);
+  assert.equal(boundedRegexTest(/^b/, "abc", 60_000), false);
+});
+
+unitTest("through the hook's real defaults, a runaway lesson never fires", () => {
   const bad = lessonOf("z-bad.md", '{"tool":"Bash","commandMatches":"^(a|a)*$"}');
   const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
-  const t0 = performance.now();
-  const hits = matchLessons(event, [good, bad]);
-  const ms = performance.now() - t0;
-  assert.ok(ms < REGEX_BUDGET_MS + 1900, `regex phase took ${ms.toFixed(0)} ms`);
-  assert.deepEqual(hits.map(h => h.file), ["a-good.md"],
-    "the lesson evaluated before the budget ran out still fires; the runaway one does not");
+  assert.deepEqual(matchLessons(event, [bad]), []);
 });
 
 // ─────────────── how the budget is ALLOCATED — a fake clock, not the machine's ───────────────
@@ -186,7 +191,7 @@ function fakeRegexPhase() {
   return { grants, now: () => t, runRegex };
 }
 
-unitTest("budget allocation: a runaway listed first spends ITS budget, and the next regex gets a full one", () => {
+unitTest("a runaway lesson listed FIRST cannot silence a benign lesson after it — each regex has its own budget", () => {
   const f = fakeRegexPhase();
   const bad = lessonOf("a-bad.md", `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`);
   const good = lessonOf("z-good.md", '{"tool":"Bash","commandMatches":"^a"}');
@@ -220,42 +225,20 @@ unitTest("a delimited repetition is accepted as a matcher (review minor 3)", () 
   assert.ok(v.ok, v.reason);
 });
 
-unitTest("a runaway lesson listed FIRST cannot silence a benign lesson after it — each regex has its own budget", () => {
-  const bad = lessonOf("a-bad.md", '{"tool":"Bash","commandMatches":"^(a|a)*$"}');
-  const good = lessonOf("z-good.md", '{"tool":"Bash","commandMatches":"^a"}');
-  const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
-  const t0 = performance.now();
-  const hits = matchLessons(event, [bad, good]);
-  const ms = performance.now() - t0;
-  assert.deepEqual(hits.map(h => h.file), ["z-good.md"]);
-  assert.ok(ms < REGEX_BUDGET_MS + 1900, `regex phase took ${ms.toFixed(0)} ms`);
-});
-
-unitTest("the whole hook call is bounded by REGEX_CEILING_MS however many lessons run away", () => {
-  // Twelve runaways at 300 ms each would be 3.6 s without the ceiling; with a 100 ms ceiling the
-  // whole phase stops at ~100 ms. The 1.5 s bound separates the two with room for a loaded machine.
-  const bads = Array.from({ length: 12 }, (_, i) => lessonOf(`bad-${i}.md`, '{"tool":"Bash","commandMatches":"^(a|a)*$"}'));
-  const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
-  const t0 = performance.now();
-  assert.deepEqual(matchLessons(event, bads, { budgetMs: 300, ceilingMs: 100 }), []);
-  const ms = performance.now() - t0;
-  assert.ok(ms < 1500, `regex phase took ${ms.toFixed(0)} ms`);
-  assert.ok(REGEX_CEILING_MS >= REGEX_BUDGET_MS);
-});
-
 unitTest("only the first MATCH_TEXT_CAP characters of the command line are matched", () => {
+  // The budget is not this test's subject, so it is given one that cannot bind: at the default
+  // 50 ms a starved machine interrupts `x$` and the expected hit reads as a miss.
+  const unbound = { budgetMs: 60_000, ceilingMs: 60_000 };
   const tail = lessonOf("tail.md", '{"tool":"Bash","commandMatches":"x$"}');
   const long = { tool_name: "Bash", tool_input: { command: "a".repeat(MATCH_TEXT_CAP + 1000) + "x" } };
-  assert.deepEqual(matchLessons(long, [tail]), []);
+  assert.deepEqual(matchLessons(long, [tail], unbound), []);
   const short = { tool_name: "Bash", tool_input: { command: "a".repeat(MATCH_TEXT_CAP - 1) + "x" } };
-  assert.deepEqual(matchLessons(short, [tail]).map(h => h.file), ["tail.md"]);
+  assert.deepEqual(matchLessons(short, [tail], unbound).map(h => h.file), ["tail.md"]);
 });
 
-unitTest("a suppression regex that runs out of budget suppresses — it never fires as though it had finished", () => {
+unitTest("a suppression regex that runs out of the real budget suppresses — it never fires as though it had finished", () => {
   const l = lessonOf("lacks.md", '{"tool":"Bash","commandMatches":"^a","commandLacks":"^(a|a)*$"}');
   const event = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
-  const t0 = performance.now();
   assert.deepEqual(matchLessons(event, [l]), []);
-  assert.ok(performance.now() - t0 < REGEX_BUDGET_MS + 1900);
 });
 
