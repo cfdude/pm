@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "certification-record-redesign",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -11241,7 +11241,7 @@
       "id": "certification-record-redesign",
       "title": "Certification you can trust across worktrees: key the record by tree/content, certify the staged bytes, derive what triggers the functional half from what it observes, drop the forced no-op twin edit",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -11268,10 +11268,68 @@
       ],
       "reconcileNeeded": false,
       "attributedCommits": [
-        "59461425e067f257735f729e2cbd3d12a2330353"
+        "59461425e067f257735f729e2cbd3d12a2330353",
+        "48afa418b69465c01de4200789c39adc7aeb3e7d",
+        "96a6fc86fd45497701c1847ac8c3089f0e345fc0",
+        "4c1e7e977a8ce40dc7b23f6bb9c0a21c11d4dfdb",
+        "4c1e7e977a8ce40dc7b23f6bb9c0a21c11d4dfdb",
+        "2f93c776113e485238b75bae7d5bb769073ae31a",
+        "6136a3d90438d72641484455137eb3d217acdab3",
+        "7f3d2d2808745e2b2628419712dc8c234036ceef",
+        "659a2e558177ecf5881c26d93cbd623981ff5db6",
+        "f663cbddf0ae1605e1ad6b13af8f05d64ef958b5",
+        "13a10ee3182ee8bd998c2397e2a1e30340356155",
+        "4cfcd32e4e1564233039b0060c03d3d3061365d4",
+        "be100e04c1caa94ae2d0d4f334393282409963e9",
+        "d1e0eb8f4f0ae7505f459edbaac9a01b32509f5c",
+        "762d564fb2d7ce8a5b63e456624c62bf7cd0b97d",
+        "fe328b52640f8fd0d33d151bd6ab63abca8527f9",
+        "dd91380f37438f3b3c2a43544a244b75247fd6e8",
+        "bb4cd4c29651401c415cb783ebfd73a629afe4e3",
+        "5c1940ae3edac3caa3a82e2cf9cc2cd58bbb3ce9",
+        "0b2ad82c47796694eacc331c961cf5f2ed65dd0b",
+        "780b837802ec2c4ae479a1580a8e271498628349",
+        "fb23ba3c64fce2ece2335efb898df4799a73cbd1",
+        "60488813b8975fdc6e5282c0e3cbbb878c1ba9ce",
+        "dfbf718539eb592d38b533d8d3f3d6d895867a3e",
+        "932f6f31b77222e01e9d7f104e2d04433ea222ba",
+        "9a155f3bb6d6c103eb4c749ab54a99d2d38b64d3",
+        "eb14a5f52527ab5eaa8b2e721c2812cb49da4bde",
+        "55e48689dec22ff1a427c5c83f2d93fc7e469607",
+        "c647fb035279dfaba64b2088c054095f8c44d8fd",
+        "afdb3b645c9de41d469656bce620c7de71e98abf",
+        "ddd1618fac937ce9312fd5ad73f11feca6ca663e",
+        "f4d36eed4dd8bedc63b6b4b8a706f436f57eb36a",
+        "7f78e9c96b4dd5bee48858a442a348842067cc0d",
+        "8394c54b984fe86939044bfda8d904111c87cdaf",
+        "f419b44ed9429589ffff9824a66bf23fdce6415b",
+        "35fb8dee4eaddbc822a3251ba8020446265bc34d",
+        "69c5aa531ce3730df6e03c736e7d1062507784ef",
+        "62899032e91dc5f30977dd08fef45ca57bb33e42",
+        "eb79381583105c662aa7beb73fdda52c544f74d3",
+        "7e8ef48dcd6de80c48cc920a271d4d6b52a385a7",
+        "278dc9ec2d87be37d45880ac0fc299637eec7e65",
+        "3ac3ba1fe7e2046edc101c00bbbea3816ae95f9c",
+        "8b6efbd45a5951389b79e2721d5924081b1e1bf3",
+        "79a16b9ec7a10e614a64bf7b52c24bf8083e0d55",
+        "78994f0bbc80254214c412898c50fef86deab758",
+        "315b6ed4f9a8a2b731baf6690fe46ece210bfd84",
+        "a81d86bc7630a8ee028c00fca325712c3895baa2",
+        "19dac3173050c157c3ea2dee573df5609c8bd9a5",
+        "5d99ddb86bac467c792cca58b45b00d74a27337e",
+        "1670c683b1fbbf73c3affcc8b920b09d641e5c14",
+        "db106af4157539c020b6036650b3778cd139881d",
+        "c325f71e1a4d64adb131146a0d75b31f4b5ad1d6",
+        "a8c8557509f7cd2d4b45d3a3b569adf257b37fc7",
+        "3158b475d57f1daad470ec1af007e18a23c448c0",
+        "3fcd306719492fdbc52f48191eb4e881abd4bd24",
+        "cbcbcb95e385ba5e8456b07463f82bf85de12746",
+        "61a3d8e2563d6ffd16b2a135db54617d558c4be2",
+        "16434d039dba8529b27dbaee9faae7bc336b91c3",
+        "a1aa198453e2327021b8b4b529950f17df0e5313"
       ],
       "createdAt": "2026-09-28T22:28:50.178Z",
-      "touchedAt": "2026-09-29T00:25:45.018Z",
+      "touchedAt": "2026-09-29T18:26:53.672Z",
       "release": "0.51.0",
       "startedAt": "2026-09-28T22:29:29.411Z",
       "gateReview": {
@@ -11285,8 +11343,55 @@
             "openspec/changes/certification-record-redesign/specs/suite-certification/spec.md"
           ],
           "reviewer": "thorough: two fresh-context lenses (correctness/testability, coherence/absent-edits) x5 rounds + 2 confirmation reviews; final 0 Critical/0 Important"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-29T18:26:32.199Z",
+          "baseSha": "c96240abadc1cf4c64497ab3036bf115cbff3c93",
+          "headSha": "a1aa198453e2327021b8b4b529950f17df0e5313",
+          "reviewer": "thorough: two fresh-context lenses (spec/tests, correctness/security) x3 rounds + scoped W1-W3 check; Twin-Unchanged audit: 1 trailer (certify-index @3fcd3067) justified; re-recorded at the head reaching the 5.7/6.4 tick commit",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-29T18:25:43.195Z",
+            "baseSha": "c96240abadc1cf4c64497ab3036bf115cbff3c93",
+            "headSha": "16434d039dba8529b27dbaee9faae7bc336b91c3",
+            "reviewer": "thorough: two fresh-context lenses (spec/tests, correctness/security) x3 rounds + scoped W1-W3 check; Twin-Unchanged audit: 1 trailer (certify-index @3fcd3067) justified"
+          }
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-29T18:26:53.667Z",
+        "reason": "Shipped on dev (c96240ab..a1aa1984): content-keyed append-only certification record (pm-suite-certification.d/, whole-subject mode+blob manifest key) safe for parallel worktrees with no lock (#226); certify runs over the index in a clone --shared snapshot and refuses when its own runner code is unstaged (#230); functional trigger derived from the import closure plus observed reads with a run-time observer that fails closed (#229); coupling moved to a commit-msg hook with a git-parsed Twin-Unchanged exemption audited at Gate 2 (#227). Gate 1 thorough 5 rounds + 2 confirmations; Gate 2 thorough 3 rounds + scoped check."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-29T18:26:53.641Z",
+        "deferrals": [
+          {
+            "epic": "retire-single-file-certification-record",
+            "section": "design D5"
+          }
+        ],
+        "declined": [
+          {
+            "what": "running the functional half per commit",
+            "reason": "it takes minutes; the observed subject decides when it is demanded (design D3)"
+          },
+          {
+            "what": "replacing pm-suite.lock",
+            "reason": "it limits machine load, which certification correctness never depended on (design D6)"
+          },
+          {
+            "what": "an operation-level observation map",
+            "reason": "a hand-kept list, which the trigger requirement forbids (design D3)"
+          },
+          {
+            "what": "a CI step listing Twin-Unchanged trailers",
+            "reason": "optional; Gate 2 on the dev range is the audit of record (design D4)"
+          }
+        ]
+      },
+      "completedAt": "2026-09-29T18:26:53.667Z"
     },
     {
       "id": "test-isolation-guard",
@@ -11313,8 +11418,46 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-28T22:28:55.196Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-09-29T05:56:23.869Z",
+      "release": "0.51.0",
+      "notes": [
+        {
+          "at": "2026-09-29T05:25:12.415Z",
+          "actor": "agent",
+          "text": "certification-record-redesign L1-L4 occurrences (each a full functional certify over a staged commit, re-run with the index unchanged and passing): 2.2 (659a2e55, first run 1230/1231, 326 s, load ~12-18, red-2.2.txt); 2.3 (f663cbdd, first run 1230/1231, 300 s, load ~10-28, red-2.3.txt); 4.1 (bb4cd4c2, first run failed, second passed 1246/1246, commit message). Same test each time: 'Layer B integrity:archived-with-zero-ticked-tasks', ENOENT inside fs.cpSync of the template repo's .git/objects (remedyRepo). None of these commits touched its path."
+        },
+        {
+          "at": "2026-09-29T05:56:23.864Z",
+          "actor": "agent",
+          "text": "certification-record-redesign L5 7.1: a 4th occurrence. The first functional certify of the final tree (7f78e9c9) failed 1257/1258 on the same test, 'Layer B integrity:archived-with-zero-ticked-tasks', with ENOENT on '<tmp>/pm-test-*/.git/objects' inside fs.cpSync (remedyRepo, emitted-invocations.test.mjs:720, reached through the observer's cpSync wrapper). 540 s, load ~143-175. The re-run with the index unchanged passed 1258/1258 (346 s, load ~68-114). The 6.2 certify of the same subject had passed first time (574 s)."
+        }
+      ]
+    },
+    {
+      "id": "retire-single-file-certification-record",
+      "title": "Retire the single-file certification record (pm-suite-certification.json) once no pre-0.51.0 branch is live",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "certification-record-redesign",
+          "reason": "deferred by its Gate 1 B5 — old and new record formats coexist in 0.51.0 so mixed-version worktrees keep working"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-29T18:26:52.090Z",
+      "touchedAt": "2026-09-29T18:26:52.902Z",
+      "notes": [
+        {
+          "at": "2026-09-29T18:26:52.900Z",
+          "actor": "agent",
+          "text": "lane: claude-code not (none routed) — removal of a legacy file and its tolerance path, well under 2h; the design record lives in certification-record-redesign design D5"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -11325,7 +11468,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1600,
+  "revision": 1665,
   "reviewMode": "thorough",
   "releases": [
     {

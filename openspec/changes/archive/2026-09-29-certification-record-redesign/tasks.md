@@ -957,7 +957,7 @@ These rules bind every section below.
       - W3 (final): docs — design D1/D6 and the spec say an entry's content is never rewritten; only `ranAt` is refreshed, atomically (W1 3158b475, W2 3fcd3067).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
-- [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**
+- [x] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.** (2026-09-29: archived delivered with the deferral and four declined deferrals; `retire-single-file-certification-record` registered planned. Closing #226/#230/#229/#227 waits for the 0.51.0 release, since the work is on dev and not yet on main.)
       - **Archive the carrier epic:**
         `update-epic certification-record-redesign --status archived --outcome delivered --reason "<what shipped>"`
         with one `--declined-deferral` per non-goal in `design.md`:
@@ -977,7 +977,7 @@ These rules bind every section below.
         `gh issue close <n> --repo cfdude/pm --comment "Shipped in 0.51.0 by certification-record-redesign: <commit range>."`
 
       Verify: `gh issue view <n> --repo cfdude/pm --json state` reads `CLOSED` for all four.
-- [ ] 8.3 <!-- pm:lifecycle --> **Archive.** Run `/opsx:archive certification-record-redesign`, then
+- [x] 8.3 <!-- pm:lifecycle --> **Archive.** Run `/opsx:archive certification-record-redesign`, then
       stage `openspec/` WHOLE, because the archive rewrites `openspec/specs/suite-certification/spec.md`.
       Verify: `openspec validate --specs --strict` passes, and the main spec holds the ADDED
       requirements.
