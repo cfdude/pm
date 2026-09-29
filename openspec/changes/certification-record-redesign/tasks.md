@@ -798,7 +798,7 @@ These rules bind every section below.
       Done (checked at 7.2 with jq over `.conductor/state.json`): all 33 commits in `59461425^..8394c54b`
       are in `attributedCommits` (34 entries; 4c1e7e97 appears twice, since the array is append-only).
       Each later commit is attributed as it lands.
-- [ ] 5.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it when any 0.51.0
+- [x] 5.7 **Cross-spec review** (2026-09-29: `release show 0.51.0` reports the set below the gate's threshold — one spec file; re-run when a second 0.51.0 spec lands) (orchestrator) (item 5). This is 0.2. Re-run it when any 0.51.0
       change adds or amends a spec file, and record the verdict again.
 - [x] 5.8 **Disposition** (item 6). It is recorded by 8.2, whose flags are specified there. Before
       Gate 2, check that 8.2 names every non-goal in `design.md` as a declined deferral, or justifies
@@ -867,7 +867,7 @@ These rules bind every section below.
       The release checklist has NO changeset lint (`rg -n -i "changeset|lint" .claude/skills/release-checklist/SKILL.md`
       finds none), so it was verified with the reader that exists instead: `conductor.mjs changesets` lists
       `certification-record-redesign` with its body.
-- [ ] 6.4 **Documentation currency** (CLAUDE.md "Commits"). README.md and the Mintlify site
+- [x] 6.4 **Documentation currency** (not user-facing: dev tooling only — no engine verb, command, skill or hook changed; README and pm-plugin.dev need nothing; stated again in the PR description) (CLAUDE.md "Commits"). README.md and the Mintlify site
       document the shipped plugin, and this change touches only dev tooling. Record in the PR
       description that the check was made and why neither changes.
 - [x] 6.5 `.claude/skills/pr-workflow/SKILL.md` step 2 (`:28`, Gate 1 B7). It says the hook refuses
