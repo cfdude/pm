@@ -40,19 +40,19 @@ F1 a failed observation write failed OPEN (emit() swallowed it; the torn tail wa
    holds a sentinel <pid>.<random>.ok from load and removes it on its first failed write, a normal exit is recorded,
    and readObservations() refuses a file without its sentinel (and a sentinel without its file, and a torn tail after
    an exit), accepting a torn last line only from a killed process; a process that cannot open its file while the run
-   directory exists throws at load -> <sha> -> functional/certify-index "F1 a child whose observation WRITE fails…"
+   directory exists throws at load -> 19dac317 -> functional/certify-index "F1 a child whose observation WRITE fails…"
    (a real EFBIG under `ulimit -f 2`), twin unit/certify-index "F1 …" (2); spec "A failed observation write fails the
    certification closed" + fifth limit, design D3 "The observation file, and the torn-tail rule"; red-F1.txt
 F2 writeManifestEntry() on linkSync ENOTSUP/EPERM/EXDEV falls back to an exclusive create ('wx'); EEXIST keeps the
-   first entry, a failed fallback write removes the file it created, any other link error is thrown -> <sha> ->
+   first entry, a failed fallback write removes the file it created, any other link error is thrown -> 5d99ddb8 ->
    assert/drift-script "F2 a filesystem that cannot link…" (injected io); design D1 "Writing"; red-F2.txt
 F3 re-certifying content already recorded refreshes the entry's ranAt (the existing entry with the new ranAt, temp
    name then rename over; every other field kept), so the pruner ranks it as recent; certify prints "already recorded"
-   (passLine()) -> <sha> -> assert/drift-script "m1/F3 an entry's CONTENT is never rewritten…" (m1 test re-pointed) and
+   (passLine()) -> 1670c683 -> assert/drift-script "m1/F3 an entry's CONTENT is never rewritten…" (m1 test re-pointed) and
    "F3 a re-certified entry is RECENT to the pruner…", unit/certify-index "F3 a pass over content already recorded…";
    spec "Writing" + "safe by construction" wording, design D1 ranAt and "Writing"; red-F3.txt
 F4 docs: certify.mjs RUNNER_CODE says why fixtures/temp-dir.mjs is omitted (cleanup only, never touches the key) and
-   why fixtures/observe-reads.mjs is listed (conservative; the run tree's copy is what loads) -> <sha> -> comment only (no test)
+   why fixtures/observe-reads.mjs is listed (conservative; the run tree's copy is what loads) -> db106af4 -> comment only (no test)
 F5 guard: assert/ci-workflow "F5 CI's four floor counts read the tracked names NUL-delimited…" (nulReadRefusals():
-   exactly four declared= lines, each with `git ls-files -z` and `xargs -0`) -> <sha> -> mutation-F5.txt (removing -z
+   exactly four declared= lines, each with `git ls-files -z` and `xargs -0`) -> c325f71e -> mutation-F5.txt (removing -z
    from the functional line fails it; reverted, it passes)

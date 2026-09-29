@@ -944,6 +944,9 @@ These rules bind every section below.
       - m3: rule 4 of the functional subject admits a name in a template literal (`red-m3.txt`).
       - m4: guard — an untracked failing functional test is neither run nor recorded (`mutation-m4.txt`).
       - m5: docs — the symlink limit in `certify.mjs`, and a SIGKILLed certify in `CONTRIBUTING.md`.
+      - G1 sibling (follow-up): CI's four floor counts read `git ls-files -z | xargs -0` (79a16b9e).
+      - S1 (follow-up): rules 5 and 6 of the functional subject admit a name in a template literal (78994f0b, `red-S1.txt`).
+      - S2 (follow-up): certify refuses when its own code differs between the working tree and the index (315b6ed4, `red-S2.txt`).
       - F1 (re-review, Important): a failed observation write removes the process sentinel; a file without it is refused, and a torn last line is accepted only from a killed process (`red-F1.txt`).
       - F2 (re-review): a filesystem that cannot link falls back to an exclusive create; EEXIST keeps the first entry (`red-F2.txt`).
       - F3 (re-review): re-certifying recorded content refreshes only `ranAt`, atomically, and certify prints "already recorded" (`red-F3.txt`).
