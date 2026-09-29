@@ -353,6 +353,8 @@ export function boundedRegexTest(re, text, timeoutMs) {
   regexCtx.re = re;
   regexCtx.s = text;
   try { return vm.runInContext("re.test(s)", regexCtx, { timeout: timeoutMs }) === true; } catch { return null; }
+  // The context outlives the call, so it must not keep the last command line alive with it.
+  finally { delete regexCtx.re; delete regexCtx.s; }
 }
 
 /** The `additionalContext` string for a set of hits. */

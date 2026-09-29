@@ -156,8 +156,8 @@ unitTest("a NotebookEdit path matcher reads notebook_path, the field that tool s
 
 unitTest("a catastrophic regex the static check cannot see is cut off by the real vm timeout", () => {
   // `^(a|a)*$` nests nothing, so checkDetect accepts it. Unguarded it runs for seconds on this input
-  // (2.6 s measured for the no-timeout mutant) and then answers `false` — so that mutant FAILS on the
-  // value rather than hanging the run, however slow the machine.
+  // and then answers `false` — so a no-timeout mutant FAILS on the value rather than hanging the
+  // run, however slow the machine.
   assert.equal(boundedRegexTest(/^(a|a)*$/, "a".repeat(25) + "!", 20), null);
   // The context survives an interrupt: the next call through it still answers.
   assert.equal(boundedRegexTest(/^a/, "abc", 60_000), true);
@@ -227,8 +227,9 @@ unitTest("the DEFAULT clock is a real one: time a runaway spends is taken off wh
   };
   const bads = Array.from({ length: 3 }, (_, i) => lessonOf(`bad-${i}.md`, `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`));
   matchLessons(AAA, bads, { budgetMs: 30, ceilingMs: 50, runRegex: spin });
-  assert.equal(grants[0], 30);
-  assert.ok(grants.length < 3 && (grants.length === 1 || grants[1] < 30),
+  // No exact first grant either: a pause of 20 ms before it (ceiling 50 − budget 30) clips it.
+  assert.ok(grants.every(g => g <= 30), `no grant exceeds the budget; grants were ${JSON.stringify(grants)}`);
+  assert.ok(grants.length < 3 && (grants.length < 2 || grants[1] < 30),
     `the ceiling must bind on the real clock; grants were ${JSON.stringify(grants)}`);
 });
 
@@ -255,6 +256,32 @@ unitTest("budget allocation: a suppression regex that runs out of budget suppres
 unitTest("a delimited repetition is accepted as a matcher (review minor 3)", () => {
   const v = checkDetect('{"tool":"Bash","commandMatches":"^git (\\\\S+\\\\s+)*--no-verify"}');
   assert.ok(v.ok, v.reason);
+});
+
+// 28.1 and 28.2 (moved from assert/conductor-28.test.mjs): matcher SEMANTICS, so the budget is
+// given a value that cannot bind — a benign hit through the real 50 ms watchdog flakes under load.
+const NO_BUDGET = { budgetMs: 60_000, ceilingMs: 60_000 };
+const bash = (command) => ({ tool_name: "Bash", tool_input: { command } });
+
+unitTest("28.1 commandMatches fires on a Bash command, and commandLacks suppresses the safe form", () => {
+  const l = lessonOf("git-commit.md", '{"tool":"Bash","commandMatches":"^git commit","commandLacks":"--\\\\s"}');
+  assert.deepEqual(matchLessons(bash("git commit -m 'x'"), [l], NO_BUDGET).map(h => h.file), ["git-commit.md"]);
+  // commandLacks is the suppression half: the explicit-pathspec form is the safe one.
+  assert.deepEqual(matchLessons(bash("git commit -- a.mjs"), [l], NO_BUDGET), []);
+});
+
+unitTest("28.2 only the command's FIRST LINE is matched — a heredoc body is data, not a command", () => {
+  // UNANCHORED on purpose. An anchored `^git commit` cannot tell the two implementations apart
+  // — without the `m` flag, `^` means start-of-string either way — so the anchored form proves
+  // nothing here, and a repo author writing a plain substring matcher is the realistic case.
+  const l = lessonOf("git-commit.md", '{"tool":"Bash","commandMatches":"git commit"}');
+  // Positive control: the same matcher must still fire on the command actually being run.
+  assert.deepEqual(matchLessons(bash("git commit -m 'x'"), [l], NO_BUDGET).map(h => h.file), ["git-commit.md"]);
+  // Observed live in this repo: writing a lesson whose own text named a git command fired that
+  // lesson's own matcher, twice. The command being RUN is line one; everything after is data.
+  const heredoc = "cat > /tmp/note.md <<'EOF'\ngit commit is the thing this note is about\nEOF";
+  assert.deepEqual(matchLessons(bash(heredoc), [l], NO_BUDGET), [],
+    "a matched phrase inside a heredoc body must not fire the matcher");
 });
 
 unitTest("only the first MATCH_TEXT_CAP characters of the command line are matched", () => {
