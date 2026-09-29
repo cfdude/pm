@@ -926,7 +926,7 @@ These rules bind every section below.
 
 ## 8. Close
 
-- [ ] 8.1 **Gate 2**, mode `thorough`: two fresh-context reviewers over `BASE..HEAD`, where HEAD is
+- [x] 8.1 **Gate 2**, mode `thorough`: two fresh-context reviewers over `BASE..HEAD`, where HEAD is
       the last attributed commit. They check:
       - spec alignment for every MODIFIED and ADDED requirement;
       - that the manifest agreement uses ONE entry;
