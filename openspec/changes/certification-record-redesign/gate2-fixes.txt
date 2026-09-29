@@ -1,0 +1,5 @@
+# Gate 2 fixes (certification-record-redesign, Gate 2 on f419b44e: 2 Important, 5 minor). finding -> sha -> test
+# Each commit's own sha cannot be written inside it; the shas are filled in by the closing docs(openspec) commit.
+G1 names git would quote: drift trackedTestFiles()/stagedFiles() and the hook's floor read NUL-delimited -> <sha> ->
+   functional/drift-script "G1 …" (3), functional/conductor-09 "G1 the floor counts…", twins assert/drift-script "G1 every
+   name listing…" and assert/conductor-09's floor pins; red-G1.txt, name-read-sweep-G1.txt

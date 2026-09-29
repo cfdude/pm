@@ -1,0 +1,83 @@
+# Gate 2 G1 — every git name read in scripts/test and .githooks, and why each is or is not NUL-delimited
+# command (code lines only; comment lines filtered at read time):
+# rg -n 'name-only|name-status|ls-files|ls-tree|diff-tree|diff-index|porcelain|"diff"|git diff' scripts/test .githooks -g '!*.json' -g '!*.md'
+
+.githooks/pre-commit:281:  declared=$(GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files -z 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
+scripts/test/functional/drift-script.test.mjs:276:      const listed = git(main, ["worktree", "list", "--porcelain"]).split("\n").filter((l) => l.startsWith("worktree "));
+scripts/test/functional/drift-script.test.mjs:337:  assert.match(git(cwd, ["ls-files", "scripts/test"]), /"scripts\/test\/functional\/n\\303\\251\.test\.mjs"/,
+scripts/test/functional/drift-script.test.mjs:348:  assert.equal(git(cwd, ["diff", "--cached", "--name-only"]), '"scripts/lib/n\\303\\251.mjs"',
+scripts/test/functional/conductor-27.test.mjs:48:const porcelain = (cwd) => g(cwd, "status", "--porcelain").trim();
+scripts/test/functional/conductor-27.test.mjs:58:  assert.notEqual(porcelain(cwd), "", "precondition: the work commit's re-render must dirty the tree");
+scripts/test/functional/conductor-27.test.mjs:64:  assert.equal(porcelain(cwd), "",
+scripts/test/functional/upgrade-commit-nudge.test.mjs:23:/** A git repo with everything committed — the only state in which `git diff HEAD` can report
+scripts/test/functional/upgrade-commit-nudge.test.mjs:57:  const diff = execFileSync("git", ["diff", "--name-only", "HEAD"], { cwd, encoding: "utf8" });
+scripts/test/functional/certify-index.test.mjs:142:    worktrees: git(cwd, "worktree", "list", "--porcelain"),
+scripts/test/functional/certify-index.test.mjs:304:  const files = git(repo, "ls-files", "-z", "--", "scripts").split("\0").filter((p) => /\.(mjs|cjs|js)$/.test(p));
+scripts/test/functional/certify-index.test.mjs:461:  const indexFiles = git(repo, "ls-files", "-z", "--", "scripts/test").split("\0").filter((p) => SCOPE.test(p));
+scripts/test/functional/certify-index.test.mjs:467:  const oldFiles = git(repo, "ls-tree", "-r", "-z", "--name-only", "c96240ab", "--", "scripts/test").split("\0").filter((p) => SCOPE.test(p));
+scripts/test/functional/conductor-09.test.mjs:711:      assert.match(ixGit(cwd, ["ls-files", "scripts/test/assert"]), /"scripts\/test\/assert\/\.n\\303\\251\.test\.mjs"/,
+scripts/test/functional/conductor-09.test.mjs:751:  assert.equal(ixGit(r.cwd, ["ls-files", "--", probe]).trim(), probe, "fixture: the module must be staged");
+scripts/test/functional/conductor-09.test.mjs:918:  assert.equal(hkGit(cwd, "worktree", "list", "--porcelain").split("\n").filter((l) => l.startsWith("worktree ")).length, 1,
+scripts/test/functional/conductor-09.test.mjs:959:  assert.equal(hkGit(cwd, "diff", "--cached", "--name-only"), "", "fixture: .git/index stages nothing, so a hook reading it would pass");
+scripts/test/functional/conductor-09.test.mjs:1105:  assert.equal(hkGit(untracked, "ls-files", "--", "scripts/test/drift.mjs"), "", "fixture: the index holds no drift.mjs");
+scripts/test/functional/conductor-06.test.mjs:360:  const probe = spawnSync("git", ["worktree", "list", "--porcelain", "-z"],
+scripts/test/functional/tool-currency.test.mjs:189:  assert.doesNotMatch(brief, /`git diff` after/);
+scripts/test/functional/tool-currency.test.mjs:199:  assert.match(brief, /git diff/);
+scripts/test/functional/tool-currency.test.mjs:226:  assert.match(parseBrief(tracked, { env: { PM_OPENSPEC_VERSION: "1.10.0" } }), /git diff/);
+scripts/test/functional/tool-currency.test.mjs:239:  assert.doesNotMatch(brief, /git diff/);
+scripts/test/drift.mjs:65:export const PERMITTED_SUBCOMMANDS = ["ls-files", "diff", "show", "rev-parse", "ls-tree", "interpret-trailers"];
+scripts/test/drift.mjs:107:  return gitRead(root, ["ls-files", "-z", "scripts/test/*.test.mjs", "scripts/test/**/*.test.mjs"])
+scripts/test/drift.mjs:118:  return gitRead(root, ["diff", "--cached", "--name-only", "-z", "--no-renames"]).split("\0").filter(Boolean).sort();
+scripts/test/drift.mjs:140:  const staged = gitRead(root, ["ls-files", "-z"], { indexFile }).split("\0").filter(Boolean);
+scripts/test/drift.mjs:160:  try { listing = gitRead(root, ["ls-tree", "-r", "-z", "HEAD"], { indexFile }); } catch { listing = ""; }
+scripts/test/drift.mjs:183:  const manifest = manifestOf({ subject: derived, indexEntries: parseStagedEntries(gitRead(root, ["ls-files", "-s", "-z"], { indexFile })) });
+scripts/test/certification.mjs:538:/** `git ls-files -s -z` output as the Map `manifestOf()` takes: "<mode> <blob> <stage>\t<path>\0"
+scripts/test/fixtures/git-gateway-repo.mjs:304:  worktreeList: "the porcelain format changes in a git release, OR the fixture gains or loses a worktree — both change the number of entries, which is the field a failure names",
+scripts/test/fixtures/git-gateway-repo.mjs:343:    _normalization: `Each fixture root path is replaced by its token in every case's args and every case's value: ${ROOT_TOKEN} for the attached repository, ${ROOT_DETACHED_TOKEN} for the detached one. It is the ONE substitution either side makes — git worktree list --porcelain prints absolute paths, and headRef is asked about directories that are fresh temporary ones, so neither could be byte-identical without it. Nothing else is normalized.`,
+scripts/test/unit/certify-index.test.mjs:59:  assert.equal(steps.some(isGit("ls-files")), false, "the plan reads no manifest of its own: drift's indexManifest() does");
+scripts/test/assert/conductor-09.test.mjs:136:    "floor's `git ls-files` list names them in — and nothing else may ride along");
+scripts/test/assert/conductor-09.test.mjs:183:  assert.match(hookText, /declared=\$\(GIT_INDEX_FILE="\$INDEX_FILE" git -C "\$ROOT" ls-files -z 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
+scripts/test/assert/conductor-09.test.mjs:195:  assert.doesNotMatch(hookText, /declared=\$\([^\n]*ls-files[^\n]*functional/,
+scripts/test/assert/conductor-09.test.mjs:198:  assert.doesNotMatch(hookText, /declared=\$\([^\n]*ls-files[^\n]*sweeps/,
+scripts/test/assert/ci-workflow.test.mjs:121:    if (!declared.includes("git ls-files")) {
+scripts/test/assert/ci-workflow.test.mjs:122:      found.push(`${stepName}: 'declared' is not enumerated from the index (git ls-files) — a glob ` +
+scripts/test/assert/ci-workflow.test.mjs:161:    "          declared=$(git ls-files 'scripts/test/assert/*.test.mjs' | xargs grep -c '^test(' " +
+scripts/test/assert/ci-workflow.test.mjs:183:    "          declared=$(git ls-files 'scripts/test/assert/*.test.mjs' | xargs grep -c '^test(' " +
+scripts/test/assert/ci-workflow.test.mjs:202:    "declared=$(git ls-files 'scripts/test/assert/*.test.mjs'",
+scripts/test/assert/ci-workflow.test.mjs:203:    "declared=$(git ls-files 'scripts/test/assert/*.test.mjs' 'scripts/test/functional/*.test.mjs'");
+scripts/test/assert/drift-script.test.mjs:276:  assert.deepEqual(PERMITTED_SUBCOMMANDS, ["ls-files", "diff", "show", "rev-parse", "ls-tree", "interpret-trailers"],
+scripts/test/assert/drift-script.test.mjs:277:    "the subcommands it may ask for are reads and nothing else — `ls-tree` since 2.4, to judge a staged " +
+scripts/test/assert/drift-script.test.mjs:300:  assert.throws(() => gitRead(REPO, ["ls-files"], { indexFile: ".git/index" }), /absolute/,
+scripts/test/assert/drift-script.test.mjs:315:  const listings = calls.filter((a) => /"(ls-files|diff|ls-tree)"/.test(a));
+scripts/test/assert/drift-script.test.mjs:316:  assert.ok(listings.length >= 5, `drift.mjs's name listings are found (ls-files x3, diff, ls-tree): ${listings.length}`);
+scripts/test/assert/drift-script.test.mjs:318:  assert.doesNotMatch(code, /--name-only"[^\n]*\.split\("\\n"\)/, "a name listing is split on newlines");
+
+## Verdicts
+
+FIXED (now -z, split on NUL):
+- scripts/test/drift.mjs trackedTestFiles()  `ls-files -z`            — enrolment read quoted names as homeless
+- scripts/test/drift.mjs stagedFiles()       `diff --cached --name-only -z` — a quoted name demanded nothing / escaped coupling
+- .githooks/pre-commit `declared=`           `ls-files -z | (cd "$SNAP" && xargs -0 grep -chE … /dev/null)` — a quoted name was counted as ZERO declared tests
+
+ALREADY -z: drift.mjs indexReaders() `ls-files -z`, indexManifest() `ls-files -s -z`, headReaders() `ls-tree -r -z`;
+functional/certify-index.test.mjs:304,461 `ls-files -z`, :467 `ls-tree -r -z --name-only`; functional/conductor-06:360 `worktree list --porcelain -z`.
+
+NOT -z, JUSTIFIED (each reads no name that can be quoted, or compares against empty):
+- functional/certify-index.test.mjs:142, functional/drift-script.test.mjs:~276, functional/conductor-09.test.mjs:~917
+  `worktree list --porcelain`: the lines read are `worktree <path>` of fixture dirs under the OS temp dir (ASCII
+  mkdtemp names); porcelain does not C-quote them, and the assertion compares to a known path.
+- functional/conductor-09.test.mjs `ls-files -- <probe>` (== an ASCII probe name), `diff --cached --name-only` (== ""),
+  `ls-files -- scripts/test/drift.mjs` (== ""): an equality with an ASCII name or with empty output; a quoted name
+  could only make them fail, never pass wrongly.
+- functional/upgrade-commit-nudge.test.mjs:57 `diff --name-only HEAD`: checks `includes(p)` for the ASCII paths the
+  engine named in a fixture it built; not a certification read.
+- functional/conductor-27.test.mjs:48 `status --porcelain` compared to "": empty-or-not only.
+- assert/ci-workflow.test.mjs, assert/conductor-09.test.mjs, assert/drift-script.test.mjs, unit/certify-index.test.mjs hits:
+  string literals / regexes asserting on other files' text, not git reads.
+- tool-currency, git-gateway-double, gate-guard-write-paths, git-shim, sweeps/output-interpolations.judged hits:
+  the word "diff"/"status --short" in engine prose or fixtures, not a git read by the suite machinery.
+
+OUT OF SCOPE, REPORTED: .github/workflows/ci.yml:165,203,226,249 `git ls-files … | xargs grep -c` has the same defect
+(no -z, and a bare xargs also splits on whitespace). Not in scripts/test or .githooks; left for the orchestrator.
+- functional/drift-script.test.mjs:337,348 and functional/conductor-09.test.mjs:711 (the G1 tests): read WITHOUT -z on
+  purpose — each is the precondition that git quotes the fixture's name when not asked for -z.

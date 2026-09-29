@@ -1,0 +1,173 @@
+# Gate 2 G1 — RED, then the isolating step, then GREEN
+# command: node --test --test-reporter=spec --test-name-pattern '^G1 ' scripts/test/functional/drift-script.test.mjs scripts/test/functional/conductor-09.test.mjs
+
+## 1. RED — against f419b44e's drift.mjs and .githooks/pre-commit (the new tests only)
+✖ G1 the floor counts a test file whose name git would quote — its list is read NUL-delimited (280.642041ms)
+✖ G1 a tracked non-ASCII test file is enrolled by its real name, and the seeded fixture passes the pre-commit phase (243.712666ms)
+✖ G1 a staged edit to a non-ASCII engine module demands the sweeps AND the functional bucket, naming it (268.066666ms)
+✖ G1 a staged non-ASCII functional file without its twin is refused by coupling, naming its id (255.774666ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 909.310958
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:699:1
+✖ G1 the floor counts a test file whose name git would quote — its list is read NUL-delimited (280.642041ms)
+  AssertionError [ERR_ASSERTION]: the non-ASCII file must be counted: drift: ABORT — the suite's two halves have drifted apart
+  
+  these tracked test files are in neither half and in no bucket:
+    "scripts/test/assert/.n\303\251.test.mjs" — a test file with no home is run by nothing and counted by nothing
+  move it under scripts/test/assert/, scripts/test/unit/, scripts/test/functional/ or scripts/test/sweeps/ — or enrol it deliberately.
+  
+  drift: the pre-commit checks are enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.
+  drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+  pre-commit: ABORT -- the drift script refused this commit (see above).
+  pre-commit: it checks enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/conductor-09.test.mjs:717:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'drift: ABORT — the suite\'s two halves have drifted apart\n\nthese tracked test files are in neither half and in no bucket:\n  "scripts/test/assert/.n\\303\\251.test.mjs" — a test file with no home is run by nothing and counted by nothing\nmove it under scripts/test/assert/, scripts/test/unit/, scripts/test/functional/ or scripts/test/sweeps/ — or enrol it deliberately.\n\ndrift: the pre-commit checks are enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.\ndrift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.\npre-commit: ABORT -- the drift script refused this commit (see above).\npre-commit: it checks enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.\n',
+    expected: /pre-commit: ABORT -- the assertion half ran 1 tests but 2 are declared in/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/drift-script.test.mjs:335:1
+✖ G1 a tracked non-ASCII test file is enrolled by its real name, and the seeded fixture passes the pre-commit phase (243.712666ms)
+  AssertionError [ERR_ASSERTION]: a non-ASCII test under scripts/test/functional/ has a home: drift: ABORT — the suite's two halves have drifted apart
+  
+  these tracked test files are in neither half and in no bucket:
+    "scripts/test/assert/n\303\251.test.mjs" — a test file with no home is run by nothing and counted by nothing
+    "scripts/test/functional/n\303\251.test.mjs" — a test file with no home is run by nothing and counted by nothing
+  move it under scripts/test/assert/, scripts/test/unit/, scripts/test/functional/ or scripts/test/sweeps/ — or enrol it deliberately.
+  
+  drift: the pre-commit checks are enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.
+  drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/drift-script.test.mjs:340:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/drift-script.test.mjs:344:1
+✖ G1 a staged edit to a non-ASCII engine module demands the sweeps AND the functional bucket, naming it (268.066666ms)
+  AssertionError [ERR_ASSERTION]: the sweeps demand names the module: drift: ABORT — the suite's two halves have drifted apart
+  
+  these tracked test files are in neither half and in no bucket:
+    "scripts/test/assert/n\303\251.test.mjs" — a test file with no home is run by nothing and counted by nothing
+    "scripts/test/functional/n\303\251.test.mjs" — a test file with no home is run by nothing and counted by nothing
+  move it under scripts/test/assert/, scripts/test/unit/, scripts/test/functional/ or scripts/test/sweeps/ — or enrol it deliberately.
+  
+  drift: the pre-commit checks are enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.
+  drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/drift-script.test.mjs:352:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/drift-script.test.mjs:356:1
+✖ G1 a staged non-ASCII functional file without its twin is refused by coupling, naming its id (255.774666ms)
+  AssertionError [ERR_ASSERTION]: a functional file staged without its twin must be refused: drift: ok — 1 staged paths, 0 Twin-Unchanged declarations
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/drift-script.test.mjs:361:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+## 2. drift.mjs fixed (-z), .githooks/pre-commit NOT yet — the floor case alone stays red: the hook still counts a C-quoted name as zero tests
+✖ G1 the floor counts a test file whose name git would quote — its list is read NUL-delimited (525.920125ms)
+✔ G1 a tracked non-ASCII test file is enrolled by its real name, and the seeded fixture passes the pre-commit phase (283.335583ms)
+✔ G1 a staged edit to a non-ASCII engine module demands the sweeps AND the functional bucket, naming it (353.292375ms)
+✔ G1 a staged non-ASCII functional file without its twin is refused by coupling, naming its id (277.481334ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1064.828709
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:699:1
+✖ G1 the floor counts a test file whose name git would quote — its list is read NUL-delimited (525.920125ms)
+  AssertionError [ERR_ASSERTION]: the index declares a test the runner never reached: drift: ok — 2 tracked test files, 0 functional ids, 2 staged paths
+  pre-commit: 1/1 passing
+  grep: /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T//pm-precommit-index.Mz2ki5/"scripts/test/assert/.n\303\251.test.mjs": No such file or directory
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/conductor-09.test.mjs:716:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+## 3. GREEN — both fixed
+✔ G1 the floor counts a test file whose name git would quote — its list is read NUL-delimited (690.954208ms)
+✔ G1 a tracked non-ASCII test file is enrolled by its real name, and the seeded fixture passes the pre-commit phase (386.9275ms)
+✔ G1 a staged edit to a non-ASCII engine module demands the sweeps AND the functional bucket, naming it (505.173708ms)
+✔ G1 a staged non-ASCII functional file without its twin is refused by coupling, naming its id (264.992667ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1314.732875
+
+## 4. The twin (assert/drift-script 'G1 every name listing…') over the old and new drift.mjs — the scan, run by hand:
+$ node scan.mjs <HEAD:scripts/test/drift.mjs>
+5 ["\"ls-files\", \"scripts/test/*.test.mjs\", \"scripts/test/**/*.test.mjs\"","\"diff\", \"--cached\", \"--name-only\", \"--no-renames\""]
+$ node scan.mjs scripts/test/drift.mjs
+5 []

@@ -273,8 +273,13 @@ if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs s
   # AND BOTH HALVES OF IT READ THE INDEX (0.50.0): the list from the index git handed this hook, and
   # each file's declarations from the SNAPSHOT's copy — never the working tree's, where a partially
   # staged file would be counted by its unstaged half.
-  declared=$(GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
-    | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$SNAP/$f" || true; done | awk '{s+=$1} END {print s+0}')
+  #
+  # THE LIST IS NUL-DELIMITED (Gate 2 G1): without -z git C-quotes a name holding a non-ASCII byte, a
+  # quote, a tab or a newline, the per-file count finds no such file, and the file is declared as ZERO
+  # tests. /bin/sh cannot read a NUL-delimited list, so xargs -0 hands the names to grep: -c counts per
+  # file, -h drops the names, and /dev/null gives GNU and BSD xargs the same output on an empty list.
+  declared=$(GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files -z 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
+    | (cd "$SNAP" && xargs -0 grep -chE '^(test|unitTest)\(' /dev/null) | awk '{s+=$1} END {print s+0}')
   # CHECK 2 -- THE FLOOR, compared BEFORE the empty-rung check (Gate 1 B6). A run that reports fewer
   # tests than are declared -- ZERO INCLUDED -- is a shortfall naming both counts: `total = 0` while the
   # index still declares tests is a COLLAPSED run, and it must never be reported as an empty rung.

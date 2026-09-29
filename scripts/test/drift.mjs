@@ -100,16 +100,22 @@ export function trackedTestFiles(root) {
   // is then correct under either reading rather than correct by an argument. It is also what the
   // drift script's own tests exercise, and an enumeration that is what check 1 refuses over (D5)
   // should not depend on one subtle rule being remembered.
-  return gitRead(root, ["ls-files", "scripts/test/*.test.mjs", "scripts/test/**/*.test.mjs"])
-    .split("\n").filter(Boolean).sort();
+  //
+  // NUL-DELIMITED (Gate 2 G1): without `-z` git C-quotes a name holding a non-ASCII byte, a quote, a
+  // tab or a newline, and a line-split listing then names a path that does not exist — enrolment
+  // refused a correctly homed non-ASCII test as homeless.
+  return gitRead(root, ["ls-files", "-z", "scripts/test/*.test.mjs", "scripts/test/**/*.test.mjs"])
+    .split("\0").filter(Boolean).sort();
 }
 
-/** The staged set. `--no-renames` is REQUIRED, not a preference: with rename detection on, a move
+/** The staged set, NUL-delimited (`-z`, Gate 2 G1): a C-quoted name matched no subject path, so a
+ *  staged non-ASCII engine module demanded nothing and a non-ASCII functional file escaped coupling.
+ *  `--no-renames` is REQUIRED, not a preference: with rename detection on, a move
  *  reports only the NEW path and the pairing check would see one half of a rename and refuse a
  *  legitimate move. With it off, a rename reports as a delete plus an add, so both paths are present
  *  and check 3 passes on it — exactly the behaviour D6 states. */
 export function stagedFiles(root) {
-  return gitRead(root, ["diff", "--cached", "--name-only", "--no-renames"]).split("\n").filter(Boolean).sort();
+  return gitRead(root, ["diff", "--cached", "--name-only", "-z", "--no-renames"]).split("\0").filter(Boolean).sort();
 }
 
 /** THE INDEX AS A FILESYSTEM — `readdir` and `readFile` over what is STAGED, in the shape the

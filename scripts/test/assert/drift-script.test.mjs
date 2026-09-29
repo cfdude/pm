@@ -43,6 +43,7 @@ import {
   writeManifestEntry,
 } from "../certification.mjs";
 import { PERMITTED_SUBCOMMANDS, gitRead } from "../drift.mjs";
+import { stripComments } from "../js-lexer.mjs";
 import * as recordDir from "../certification.mjs";  // 2.2: resolved per test, so a missing export fails that test alone
 
 const readFile = (p) => fs.readFileSync(p, "utf8");
@@ -298,6 +299,23 @@ test("6.1/6.4: the drift script starts no engine, no runner and no fixture — i
   }
   assert.throws(() => gitRead(REPO, ["ls-files"], { indexFile: ".git/index" }), /absolute/,
     "a relative indexFile is refused before git runs: `-C root` would re-anchor it");
+});
+
+test("G1 every name listing drift reads from git is NUL-delimited (-z), so a name git would quote is read as itself", () => {
+  // Gate 2 G1 (its functional twin runs the real listings over non-ASCII names). Without `-z`,
+  // `ls-files`, `diff --name-only` and `ls-tree` C-quote a name holding a non-ASCII byte, a quote, a tab
+  // or a newline, and a line-split listing names a path no subject holds. Every gitRead() in drift.mjs's
+  // CODE whose argv lists names must carry "-z" and be split on NUL; the reads that list no names
+  // (`show`, `rev-parse`, `interpret-trailers`) are exempt by subcommand.
+  const src = readFile(path.join(REPO, "scripts", "test", "drift.mjs"));
+  // The shared lexer strips comments: a regex filter would read the `/*` inside "scripts/test/**/*.test.mjs"
+  // as a comment opener.
+  const code = stripComments(src, "scripts/test/drift.mjs");
+  const calls = [...code.matchAll(/gitRead\(root, \[([^\]]*)\]/g)].map((m) => m[1]);
+  const listings = calls.filter((a) => /"(ls-files|diff|ls-tree)"/.test(a));
+  assert.ok(listings.length >= 5, `drift.mjs's name listings are found (ls-files x3, diff, ls-tree): ${listings.length}`);
+  for (const a of listings) assert.match(a, /"-z"/, `this git name listing is not NUL-delimited: gitRead(root, [${a}])`);
+  assert.doesNotMatch(code, /--name-only"[^\n]*\.split\("\\n"\)/, "a name listing is split on newlines");
 });
 
 // ───────────────────────────── the refusal the gate prints ─────────────────────────────

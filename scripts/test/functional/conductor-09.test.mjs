@@ -696,6 +696,28 @@ test("IX-h the floor's `declared` list is read from the index git HANDS the hook
     `the shortfall must be counted from the commit's index: ${combined}`);
 });
 
+test("G1 the floor counts a test file whose name git would quote — its list is read NUL-delimited", () => {
+  // Gate 2 G1. `declared` is enumerated with `git ls-files`; without `-z` a non-ASCII name comes back
+  // C-quoted (`"scripts/test/assert/.n\303\251.test.mjs"` under core.quotePath, set true here so the case
+  // does not depend on the machine), the per-file count finds no such file, and the file is declared as
+  // ZERO tests. The IX-h shape isolates it: a dotfile the runner's glob cannot reach, declared in the
+  // index, must be counted and refused as a shortfall.
+  const hidden = `scripts/test/assert/.n${String.fromCodePoint(0xe9)}.test.mjs`;
+  const r = runHookAgainstFixture(IX_PASSING, {
+    setup: (cwd) => {
+      ixGit(cwd, ["config", "core.quotePath", "true"]);
+      fs.writeFileSync(path.join(cwd, hidden), IX_HEADER + 'test("G1 declared, unreachable", () => { assert.ok(true); });\n');
+      ixGit(cwd, ["add", "--", hidden]);
+      assert.match(ixGit(cwd, ["ls-files", "scripts/test/assert"]), /"scripts\/test\/assert\/\.n\\303\\251\.test\.mjs"/,
+        "precondition: without -z git prints this name C-quoted");
+    },
+  });
+  const combined = ixOut(r);
+  assert.notEqual(r.status, 0, `the index declares a test the runner never reached: ${combined}`);
+  assert.match(combined, /pre-commit: ABORT -- the assertion half ran 1 tests but 2 are declared in/,
+    `the non-ASCII file must be counted: ${combined}`);
+});
+
 test("IX-i the drift script is handed the index git HANDS the hook — an unpaired functional file staged there refuses", () => {
   // The commit's index adds a functional test with no assertion twin; `.git/index` and the working
   // tree do not hold it at all. Only a drift run that reads THIS commit's index can see it.

@@ -179,7 +179,8 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // RE-POINTED IN 0.50.0: the list is read from the index git HANDED the hook
   // (`GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files …`), because the hook now runs from inside
   // its index snapshot, and `.git/index` is stale under `commit -a` and `commit <path>`.
-  assert.match(hookText, /declared=\$\(GIT_INDEX_FILE="\$INDEX_FILE" git -C "\$ROOT" ls-files 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
+  // NUL-DELIMITED since Gate 2 G1 (`-z`): a C-quoted non-ASCII name was counted as zero tests.
+  assert.match(hookText, /declared=\$\(GIT_INDEX_FILE="\$INDEX_FILE" git -C "\$ROOT" ls-files -z 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
     ".githooks/pre-commit's floor does not enumerate the tracked files of the RUNG SET its runner " +
     "was given — and the set is a LIST now, so a floor still naming one rung would count a subset");
   assert.doesNotMatch(hookText, /declared=\$\(grep /,
@@ -263,8 +264,10 @@ test("IX the hook verifies the INDEX: captured before the scrub, exported with c
   assert.deepEqual(unwrapped, [], "an IX fixture makes a temp dir that is not scheduled with removeAtExit()");
 
   // 4. `declared` COUNTS THE SNAPSHOT'S BYTES, never the working tree's copy of a partially staged file.
-  assert.ok(lines.some((l) => l.includes(`grep -cE '^(test|unitTest)\\(' "$SNAP/$f"`)),
-    "the floor's per-file count must read the snapshot's copy ($SNAP/$f)");
+  // Since Gate 2 G1 the NUL-delimited list reaches grep through `xargs -0`, run INSIDE the snapshot, so
+  // each relative name is the snapshot's file and never the working tree's.
+  assert.ok(lines.some((l) => l.includes(`| (cd "$SNAP" && xargs -0 grep -chE '^(test|unitTest)\\(' /dev/null)`)),
+    "the floor's per-file count must read the snapshot's copy (xargs -0 grep, run in $SNAP)");
 
   // 5. NOTHING THE USER OWNS IS WRITTEN, AND THE CLEANUP REACHES EVERYTHING IT CREATED.
   const text = lines.join("\n");

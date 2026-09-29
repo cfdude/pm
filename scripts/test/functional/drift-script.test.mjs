@@ -278,3 +278,87 @@ for (const order of ["B certifies first", "A certifies first"]) {
     }
   });
 }
+
+// ─────────── Gate 2 G1 — NAMES GIT WOULD QUOTE (non-ASCII, a quote, a tab, a newline) ───────────
+//
+// Without `-z`, `git ls-files` and `git diff --name-only` print such a name C-quoted —
+// `"scripts/lib/n\303\251.mjs"` under `core.quotePath` (git's default) — so a line-split listing names a
+// path no subject holds: a staged non-ASCII engine module demanded nothing, a non-ASCII functional file
+// escaped coupling, and enrolment refused a correctly homed non-ASCII test as homeless. Every name
+// listing drift reads is NUL-delimited since Gate 2 (`trackedTestFiles()`, `stagedFiles()`).
+
+/** `é`, built from its code point: this file spells no escape sequence for it. */
+const E_ACUTE = String.fromCodePoint(0xe9);
+const NA_MODULE = `scripts/lib/n${E_ACUTE}.mjs`;
+const NA_ID = `n${E_ACUTE}`;
+const NA_FUNCTIONAL = `scripts/test/functional/${NA_ID}.test.mjs`;
+
+/** fixtureRepo()'s shape, plus a non-ASCII engine module the functional closure imports (through
+ *  `m.mjs`) and a non-ASCII functional id with its twin — committed, with `core.quotePath` set true
+ *  explicitly so the case does not depend on the machine's git configuration, and both buckets seeded. */
+function quotedNameRepo() {
+  const cwd = tmpRepo();
+  git(cwd, ["init", "-q"]);
+  git(cwd, ["config", "user.email", "test@example.com"]);
+  git(cwd, ["config", "user.name", "Test"]);
+  git(cwd, ["config", "core.quotePath", "true"]);
+  const files = {
+    "scripts/conductor.mjs": "export const main = () => 0;\n",
+    "scripts/lib/m.mjs": `import "./n${E_ACUTE}.mjs";\nexport const touch = () => 0;\n`,
+    [NA_MODULE]: "export const na = 1;\n",
+    "scripts/test/functional/alpha.test.mjs": FN_BODY,
+    "scripts/test/assert/alpha.test.mjs": TEST_BODY,
+    [NA_FUNCTIONAL]: FN_BODY,
+    [`scripts/test/assert/${NA_ID}.test.mjs`]: TEST_BODY,
+    "scripts/test/sweeps/s.test.mjs": 'import { test } from "node:test";\ntest("s", () => {});\n',
+  };
+  for (const [rel, body] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
+    fs.writeFileSync(path.join(cwd, rel), body);
+  }
+  git(cwd, ["add", "--", ...Object.keys(files)]);
+  git(cwd, ["commit", "-q", "-m", "fixture"]);
+  seedAgreeingEntry(cwd, "functional");
+  seedAgreeingEntry(cwd, "sweeps");
+  return cwd;
+}
+
+function runDriftPhase(cwd, phase) {
+  try {
+    const out = execFileSync(process.execPath, [DRIFT, "--root", cwd, "--phase", phase], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+    return { status: 0, out };
+  } catch (e) {
+    return { status: e.status, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
+  }
+}
+
+test("G1 a tracked non-ASCII test file is enrolled by its real name, and the seeded fixture passes the pre-commit phase", () => {
+  const cwd = quotedNameRepo();
+  assert.match(git(cwd, ["ls-files", "scripts/test"]), /"scripts\/test\/functional\/n\\303\\251\.test\.mjs"/,
+    "precondition: without -z git prints this name C-quoted");
+  const r = runDriftPhase(cwd, "pre-commit");
+  assert.equal(r.status, 0, `a non-ASCII test under scripts/test/functional/ has a home: ${r.out}`);
+  assert.doesNotMatch(r.out, /in neither half/);
+});
+
+test("G1 a staged edit to a non-ASCII engine module demands the sweeps AND the functional bucket, naming it", () => {
+  const cwd = quotedNameRepo();
+  fs.appendFileSync(path.join(cwd, NA_MODULE), "export const edited = 2;\n");
+  git(cwd, ["add", "--", NA_MODULE]);
+  assert.equal(git(cwd, ["diff", "--cached", "--name-only"]), '"scripts/lib/n\\303\\251.mjs"',
+    "precondition: without -z the staged name is C-quoted");
+  const r = runDriftPhase(cwd, "pre-commit");
+  assert.notEqual(r.status, 0, `an uncertified change to an engine module must be refused: ${r.out}`);
+  assert.ok(r.out.includes(`the sweeps bucket's subject changed (${NA_MODULE})`), `the sweeps demand names the module: ${r.out}`);
+  assert.ok(r.out.includes(`the functional bucket's subject changed (${NA_MODULE})`), `the functional demand names it too: ${r.out}`);
+});
+
+test("G1 a staged non-ASCII functional file without its twin is refused by coupling, naming its id", () => {
+  const cwd = quotedNameRepo();
+  fs.appendFileSync(path.join(cwd, NA_FUNCTIONAL), "// edited\n");
+  git(cwd, ["add", "--", NA_FUNCTIONAL]);
+  const r = runDriftPhase(cwd, "commit-msg");
+  assert.notEqual(r.status, 0, `a functional file staged without its twin must be refused: ${r.out}`);
+  assert.ok(r.out.includes(`${NA_ID} — ${NA_FUNCTIONAL} is staged, scripts/test/assert/${NA_ID}.test.mjs is not`),
+    `the coupling refusal names the id and both paths: ${r.out}`);
+});
