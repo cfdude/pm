@@ -857,9 +857,13 @@ These rules bind every section below.
       commit-msg phase (coupling, the `Twin-Unchanged` trailer, Gate 2's audit). It says a bare drift runs
       all four checks, that the functional subject is what the half observes, and that certify runs over
       the index. Certified functional over the staged commit first (the commit message has the count).
-- [ ] 6.3 `.changesets/certification-record-redesign.md`: contributor-facing bullets only, in
+- [x] 6.3 `.changesets/certification-record-redesign.md`: contributor-facing bullets only, in
       `CHANGELOG.md`'s style. This change ships nothing to plugin users, so say so in the entry's
       first line. Verify: the release checklist's changeset lint accepts it.
+      Done: five bullets in CHANGELOG's `* **…**` style; the first says it ships nothing to plugin users.
+      The release checklist has NO changeset lint (`rg -n -i "changeset|lint" .claude/skills/release-checklist/SKILL.md`
+      finds none), so it was verified with the reader that exists instead: `conductor.mjs changesets` lists
+      `certification-record-redesign` with its body.
 - [ ] 6.4 **Documentation currency** (CLAUDE.md "Commits"). README.md and the Mintlify site
       document the shipped plugin, and this change touches only dev tooling. Record in the PR
       description that the check was made and why neither changes.
