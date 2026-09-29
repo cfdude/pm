@@ -46,7 +46,11 @@ test("a fixture commit is not signed, whatever the developer's global config say
 test("a fixture commit spawns no automatic maintenance or gc, detached or otherwise", () => {
   const repo = tmp("pm-hermetic-");
   const trace = tmp("pm-hermetic-trace2-");
-  const git = (...args) => execFileSync("git", args, { cwd: repo, encoding: "utf8", env: { ...process.env, GIT_TRACE2_EVENT: trace } });
+  // The global config is NULLED as the functional harness nulls it: a machine whose global config
+  // already says `maintenance.auto=false` (or `gc.autodetach=false`) would otherwise pass this
+  // without the module, and never meet the `--detach` path the harness actually takes.
+  const git = (...args) => execFileSync("git", args, { cwd: repo, encoding: "utf8",
+    env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", GIT_TRACE2_EVENT: trace } });
   git("init", "-q", "-b", "main");
   git("config", "user.email", "t@example.com");
   git("config", "user.name", "t");
