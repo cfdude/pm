@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState } from "../fixtures/functional-harness.mjs";
 import { AGENT_OUTCOMES } from "../../lib/archive-gate.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const REPO = new URL("../../..", import.meta.url).pathname;
 const { runIntegrity } = await import("../../lib/integrity.mjs");
@@ -174,8 +175,9 @@ test("gh-112: triage and integrity read the same superseded-set predicate", asyn
   assert.equal(typeof links.supersededEpics, "function",
     "the predicate is declared once in links.mjs — two copies of `who is superseded` is the " +
     "duplication epicReferences() exists to prevent");
-  const triageSrc = fs.readFileSync(path.join(REPO, "scripts", "lib", "triage.mjs"), "utf8");
-  const integritySrc = fs.readFileSync(path.join(REPO, "scripts", "lib", "integrity.mjs"), "utf8");
+  // Read as CODE (final review I1): a comment naming supersededEpics satisfied the raw read.
+  const triageSrc = engineCode("scripts/lib/triage.mjs");
+  const integritySrc = engineCode("scripts/lib/integrity.mjs");
   for (const [name, src] of [["triage.mjs", triageSrc], ["integrity.mjs", integritySrc]]) {
     assert.match(src, /supersededEpics/, `${name} must consume the shared predicate`);
     assert.doesNotMatch(src, /l\.type === "supersedes"/,
