@@ -640,7 +640,7 @@ These rules bind every section below.
       - An empty reason is kept as empty, so 4.2 can refuse it.
 
       RED `red-4.1.txt`.
-- [ ] 4.2 **TDD, UNIT**: `couplingRefusals()` takes `exemptions`.
+- [x] 4.2 **TDD, UNIT**: `couplingRefusals()` takes `exemptions`.
       - **The RED:**
         - a declared, staged id passes without its twin;
         - a declared id whose functional file is NOT staged is refused, naming it;

@@ -82,3 +82,67 @@ unitTest("4.1 one declaration per trailer, in git's order; nothing parsed is not
     [{ id: "beta", reason: "s" }, { id: "alpha", reason: "r" }]);
   assert.deepEqual(parse(""), [], "git parsed no trailer (a subject-only message, a prose paragraph): no declaration");
 });
+
+// ───────────────────────────── 4.2 couplingRefusals() takes exemptions ─────────────────────────────
+
+const F = (id) => `scripts/test/functional/${id}.test.mjs`;
+const IDS = { functional: ["alpha", "beta"], assertion: ["alpha", "beta"] };
+/** Today's refusal for an undeclared id, in today's shape — the value the check returned before 4.2. */
+const undeclared = (id) => ({ id, functional: F(id), assertion: `scripts/test/assert/${id}.test.mjs` });
+
+unitTest("4.2 a declared, staged id passes without its twin", () => {
+  assert.deepEqual(fn("couplingRefusals")({
+    stagedFiles: [F("alpha")], ...IDS, exemptions: [{ id: "alpha", reason: "a comment-only edit" }],
+  }), [], "a Twin-Unchanged declaration with a reason exempts its staged functional file");
+});
+
+unitTest("4.2 a declared id whose functional file is NOT staged is refused, naming it — it exempts nothing", () => {
+  const refused = fn("couplingRefusals")({
+    stagedFiles: [F("alpha"), "scripts/test/assert/alpha.test.mjs"], ...IDS,
+    exemptions: [{ id: "beta", reason: "r" }],
+  });
+  assert.deepEqual(refused, [{ id: "beta", declaration: "not-staged", functional: F("beta") }],
+    "a stale or mistyped declaration is a refusal naming the id and the file it claims");
+});
+
+unitTest("4.2 a declaration with an EMPTY reason is refused, naming it — Gate 2 has nothing to judge", () => {
+  const refused = fn("couplingRefusals")({
+    stagedFiles: [F("alpha")], ...IDS, exemptions: [{ id: "alpha", reason: "" }],
+  });
+  assert.ok(refused.some((r) => r.id === "alpha" && r.declaration === "no-reason"),
+    `the empty reason must be refused by name: ${JSON.stringify(refused)}`);
+  assert.ok(refused.some((r) => r.id === "alpha" && !r.declaration && r.assertion === "scripts/test/assert/alpha.test.mjs"),
+    `and a declaration with no reason exempts nothing, so the unpaired file is refused too: ${JSON.stringify(refused)}`);
+});
+
+unitTest("4.2 an undeclared id is refused EXACTLY as before exemptions existed", () => {
+  const couplingRefusals = fn("couplingRefusals");
+  const staged = [F("alpha"), F("beta"), "scripts/test/assert/beta.test.mjs"];
+  const expected = [undeclared("alpha")];
+  assert.deepEqual(couplingRefusals({ stagedFiles: staged, ...IDS }), expected, "no exemptions argument: today's refusal");
+  assert.deepEqual(couplingRefusals({ stagedFiles: staged, ...IDS, exemptions: [] }), expected, "an empty list: the same");
+  assert.deepEqual(couplingRefusals({ stagedFiles: staged, ...IDS, exemptions: [{ id: "beta", reason: "r" }] }), expected,
+    "a declaration for ANOTHER staged id exempts only that id");
+});
+
+unitTest("4.2 with isMerge, nothing is refused — a merge is not judged by the coupling check", () => {
+  // git runs commit-msg, not pre-commit, for a merge, and a merge's staged set is everything the other
+  // parent brings in; each of those commits was judged with its own declarations when it was made
+  // (commit-msg-probe.log, merge probe 1). A squash has no MERGE_HEAD and is an ordinary commit.
+  assert.deepEqual(fn("couplingRefusals")({
+    stagedFiles: [F("alpha"), F("beta")], ...IDS, isMerge: true,
+    exemptions: [{ id: "gamma", reason: "" }],
+  }), [], "neither an unpaired file nor a bad declaration is judged on a merge");
+});
+
+unitTest("4.2 the phases: pre-commit runs enrolment, twins and freshness; commit-msg runs coupling; no phase runs all four", () => {
+  const phaseChecks = fn("phaseChecks");
+  assert.deepEqual(phaseChecks("pre-commit"), ["enrolment", "twins", "record"]);
+  assert.deepEqual(phaseChecks("commit-msg"), ["coupling"]);
+  // Gate 1 M5: a bare run — what CLAUDE.md tells a contributor to type — performs every check that can
+  // be judged from a working tree, so it never reports fewer refusals than the two hooks together.
+  assert.deepEqual(phaseChecks(undefined), ["enrolment", "twins", "coupling", "record"]);
+  assert.throws(() => phaseChecks("pre-push"), /pre-commit|commit-msg/, "an unknown phase is refused, naming the known ones");
+  // And coupling with no message uses NO exemptions: exactly the undeclared refusal.
+  assert.deepEqual(fn("couplingRefusals")({ stagedFiles: [F("alpha")], ...IDS, exemptions: undefined }), [undeclared("alpha")]);
+});

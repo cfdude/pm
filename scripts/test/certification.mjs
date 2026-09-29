@@ -134,16 +134,37 @@ export function twinRefusals({ functional, assertion }) {
 export const twinPathsOf = (id) => HOMES.filter((h) => h !== "functional" && h !== "sweeps")
   .map((h) => `scripts/test/${h}/${id}.test.mjs`);
 
-/** Check 3 — DIFF COUPLING (D6). A staged change to a functional file requires its twin in the SAME
- *  staged diff. Keyed on the functional half only, where check 2 is keyed. A rename carries both
- *  paths and passes — which is why the caller must collect the staged set with `--no-renames`. */
-export function couplingRefusals({ stagedFiles, functional, assertion }) {
+/** Check 3 — DIFF COUPLING (D6), with a DECLARED EXEMPTION (certification-record-redesign D4, #227). A
+ *  staged change to a functional file requires its twin in the SAME staged diff, UNLESS the commit
+ *  message declares `Twin-Unchanged: <id> — <reason>` (`parseTwinExemptions()`) — the committer's
+ *  claim that the change leaves what the file tests untouched, which Gate 2 audits. Keyed on the
+ *  functional half only, where check 2 is keyed. A rename carries both paths and passes — which is why
+ *  the caller must collect the staged set with `--no-renames`.
+ *
+ *  THE DECLARATIONS ARE JUDGED TOO. One naming an id whose functional file is not staged exempts
+ *  nothing and is a stale or mistyped claim: refused as `{ id, declaration: "not-staged", functional }`.
+ *  One with an empty reason gives Gate 2 nothing to judge: refused as `{ id, declaration: "no-reason" }`,
+ *  and it exempts nothing, so its unpaired file is refused as well. An undeclared unpaired file is
+ *  refused exactly as it was before declarations existed, `{ id, functional, assertion }`.
+ *
+ *  `isMerge` (MERGE_HEAD present): NOTHING is judged. A merge's staged set is every change the other
+ *  parent brings in, each judged with its own declarations when it was made; a declaration on a
+ *  merged-in commit is not on the merge's message. A squash has no MERGE_HEAD and is judged. */
+export function couplingRefusals({ stagedFiles, functional, assertion, exemptions = [], isMerge = false }) {
+  if (isMerge) return [];
   const staged = new Set(stagedFiles);
   const have = new Set(assertion);
   const out = [];
+  const exempt = new Set();
+  for (const { id, reason } of exemptions || []) {
+    const functionalPath = `scripts/test/functional/${id}.test.mjs`;
+    if (!staged.has(functionalPath)) out.push({ id, declaration: "not-staged", functional: functionalPath });
+    else if (!reason) out.push({ id, declaration: "no-reason" });
+    else exempt.add(id);
+  }
   for (const id of functional) {
     const functionalPath = `scripts/test/functional/${id}.test.mjs`;
-    if (!staged.has(functionalPath)) continue;
+    if (!staged.has(functionalPath) || exempt.has(id)) continue;
     // THE TWIN MAY BE ON EITHER RUNG — `find` reports the first one that is STAGED, so the
     // refusal names the file the author would have had to touch.
     const twinPath = twinPathsOf(id).find((p) => staged.has(p)) || twinPathsOf(id)[0];
@@ -151,6 +172,23 @@ export function couplingRefusals({ stagedFiles, functional, assertion }) {
     out.push({ id, functional: functionalPath, assertion: twinPath });
   }
   return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** WHICH CHECKS A PHASE RUNS (certification-record-redesign D4, Gate 1 M5). The pre-commit hook runs
+ *  enrolment, twin coverage and freshness; the commit-msg hook runs coupling, the one check that must
+ *  read the message — so coupling runs in exactly one hook. With NO phase (a developer's bare
+ *  `node scripts/test/drift.mjs`) every check runs, so a bare run never reports fewer refusals than
+ *  the two hooks together. An unknown phase is refused rather than read as "none". */
+export const PHASES = Object.freeze({
+  "pre-commit": Object.freeze(["enrolment", "twins", "record"]),
+  "commit-msg": Object.freeze(["coupling"]),
+});
+export function phaseChecks(phase) {
+  if (phase === undefined) return ["enrolment", "twins", "coupling", "record"];
+  if (!Object.hasOwn(PHASES, phase)) {
+    throw new Error(`drift: unknown phase ${JSON.stringify(phase)} — the phases are ${Object.keys(PHASES).join(" and ")}`);
+  }
+  return [...PHASES[phase]];
 }
 
 /** THE DECLARATIONS A COMMIT MESSAGE CARRIES (certification-record-redesign D4, Gate 1 B3, round 2 I1/I2).
