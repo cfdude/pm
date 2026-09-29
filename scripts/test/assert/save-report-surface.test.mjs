@@ -73,6 +73,19 @@ function callSites(file, src) {
   return sites;
 }
 
+/** Does `src` hand the capture `captured` to reportSave()? */
+function handsToReportSave(captured, src) {
+  return new RegExp(`reportSave\\(\\s*${captured}\\b`).test(codeOnly(src));
+}
+
+test("the reportSave hand-off is read from CODE — a comment naming it does not count", () => {
+  // Final review I2: this matched raw source, so `// … reportSave(saved) …` satisfied it.
+  const call = "report" + "Save(saved)";
+  assert.equal(handsToReportSave("saved", `const saved = x();\n// then ${call}\n`), false, "a line comment");
+  assert.equal(handsToReportSave("saved", `const saved = x(); /* ${call} */\n`), false, "a block comment");
+  assert.equal(handsToReportSave("saved", `const saved = x();\n${call};\n`), true, "a real call");
+});
+
 function shippedSites() {
   const files = [
     ...fs.readdirSync(LIB).filter(f => f.endsWith(".mjs") && !SKIP.has(f)).map(f => path.join(LIB, f)),
@@ -110,7 +123,7 @@ test("every saveState call site either reports from the save's own answer or dec
       continue;
     }
     if (!s.captured) { offenders.push(`${s.file}:${s.line} discards saveState()'s return — ${s.text}`); continue; }
-    if (!new RegExp(`reportSave\\(\\s*${s.captured}\\b`).test(s.src)) {
+    if (!handsToReportSave(s.captured, s.src)) {
       offenders.push(`${s.file}:${s.line} captures the save as '${s.captured}' and never hands it to reportSave()`);
     }
   }
