@@ -463,6 +463,48 @@ test("F2 a filesystem that cannot link falls back to an EXCLUSIVE create: the en
     "any other link error is still thrown");
 });
 
+test("W1 a WEDGED key — an unparseable <key>.json a killed writer left — is replaced whole, named by the reader, and pruned", () => {
+  // Gate 2 final W1. A SIGKILL during the no-link fallback's exclusive create leaves a half-written
+  // `<key>.json`. It used to wedge the key: certify said "already recorded … left as it is" and passed,
+  // the drift script's readEntry() threw an unnamed SyntaxError on every commit, and the pruner skipped
+  // the file forever. The half-written bytes are placed directly: they are the state a kill leaves.
+  const { writeManifestEntry, readEntry, pruneRecord, manifestKey } = rd();
+  const common = scratchCommonDir();
+  const key = manifestKey(RD_MANIFEST);
+  const dir = path.join(common, "pm-suite-certification.d", "functional");
+  const file = path.join(dir, `${key}.json`);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, '{\n  "version": 2,\n  "bucket": "funct');
+  assert.throws(() => readEntry(common, "functional", key),
+    (e) => e.message.includes(file) && /cannot be parsed[^\n]*`node scripts\/test\/certify\.mjs functional`/.test(e.message),
+    "the reader's error names the unparseable entry's file and the run that replaces it");
+  const log = [];
+  const io = recordingIo(log, { renameSync: (a, b) => { log.push(["rename", a, b]); return fs.renameSync(a, b); } });
+  const w = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "NEW" }, { io });
+  assert.equal(w.created, false, "the key's file existed");
+  assert.equal(w.replaced, true, "and was REPLACED by this run's entry");
+  assert.equal(readEntry(common, "functional", key).engineSha, "NEW", "the key now holds this run's whole entry");
+  const renames = log.filter((l) => l[0] === "rename");
+  assert.equal(renames.length, 1, "through exactly one rename");
+  assert.match(path.basename(renames[0][1]), /\.tmp$/, "from a temp name");
+  assert.equal(renames[0][2], file, "over the key's file");
+  assert.ok(!log.some((l) => l[0] === "write" && l[1] === file), "never written in place");
+  assert.deepEqual(fs.readdirSync(dir), [`${key}.json`], "and no temp file survives");
+  // The pruner removes an unparseable entry older than an hour instead of skipping it forever — never a
+  // younger one (a live writer without links fills its file in place), and never `keep`.
+  const other = { ...RD_MANIFEST, "scripts/lib/b.mjs": `100644 ${"2".repeat(40)}` };
+  const wedged = path.join(dir, `${manifestKey(other)}.json`);
+  fs.writeFileSync(wedged, "{ torn");
+  const mtime = fs.statSync(wedged).mtimeMs;
+  const prune = (ageMs) => pruneRecord(common, "functional", { keep: key, tmpDir: scratchCommonDir(), nowMs: mtime + ageMs });
+  assert.deepEqual(prune(30 * 60 * 1000), [], "an unparseable entry younger than an hour may be a live writer's: kept");
+  assert.deepEqual(prune(2 * 3600 * 1000), [wedged], "the pruner removes the unparseable entry once it is older than an hour");
+  assert.deepEqual(fs.readdirSync(dir), [`${key}.json`]);
+  fs.writeFileSync(file, "{ torn");
+  assert.deepEqual(pruneRecord(common, "functional", { keep: key, tmpDir: scratchCommonDir(), nowMs: Date.now() + 2 * 3600 * 1000 }), [],
+    "but never the entry it was told to keep");
+});
+
 test("2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry)", () => {
   const { writeManifestEntry, readEntry, manifestKey } = rd();
   const common = scratchCommonDir();

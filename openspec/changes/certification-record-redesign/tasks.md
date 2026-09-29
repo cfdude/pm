@@ -952,6 +952,7 @@ These rules bind every section below.
       - F3 (re-review): re-certifying recorded content refreshes only `ranAt`, atomically, and certify prints "already recorded" (`red-F3.txt`).
       - F4 (re-review): docs — why `RUNNER_CODE` omits `fixtures/temp-dir.mjs` and lists `fixtures/observe-reads.mjs`.
       - F5 (re-review): guard — CI's four floor-count lines read `git ls-files -z | xargs -0` (`mutation-F5.txt`).
+      - W1 (final): an unparseable entry a killed writer left is replaced by the next run, refused by name, and pruned (`red-W1.txt`).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**

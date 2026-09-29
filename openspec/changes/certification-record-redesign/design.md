@@ -185,7 +185,9 @@ re-certify took 173 s.
   first entry's CONTENT is kept: every field as the first run wrote it, except `ranAt`, which the second
   run refreshes by writing the existing entry with its own `ranAt` to a temp name and renaming it over
   (Gate 2 re-review F3). The rename is atomic, so a reader sees one whole entry or the other, and two
-  concurrent refreshes differ only in `ranAt`. An existing entry that cannot be parsed is left alone.
+  concurrent refreshes differ only in `ranAt`. A file under the key that cannot be parsed is no entry
+  (a writer killed mid-write through the no-link fallback leaves one; Gate 2 final W1): the run replaces
+  it with its own entry the same atomic way, and certify prints "recorded".
   certify then prints "already recorded", never "recorded".
 - Why refresh rather than keep the first file and rank by something else: the pruner ranks by `ranAt`,
   the one ordering the record carries and its tests inject; a file mtime would rank every entry the
@@ -281,7 +283,10 @@ entries by `ranAt` after it writes its own. It also removes (Gate 1 M6):
 - orphan `*.tmp` files in the bucket directories older than 1 hour, which a writer killed between
   its write and its link leaves behind (a live writer holds its temp name for milliseconds);
 - stale run directories, `pm-certify-run.*` under the temp directory, older than 24 hours, which a
-  SIGKILL'd certify leaves behind (a functional run takes minutes, 672 s at worst in the Baseline).
+  SIGKILL'd certify leaves behind (a functional run takes minutes, 672 s at worst in the Baseline);
+- entries that cannot be parsed, older than 1 hour, which a writer killed mid-write leaves (Gate 2
+  final W1; a live writer without links fills its file in place for milliseconds). The drift script's
+  reader refuses such a file by name, naming the certify that replaces it.
 
 - A pruned entry can only turn a would-be pass into a demand, which is the loud direction.
 - Pruning never removes the entry the run just wrote.

@@ -265,7 +265,9 @@ names the tests the claim rests on by construction.
   another run wrote (its manifest, bucket, result, counts and provenance), so no run can overwrite,
   drop or corrupt another run's entry. A run over content already recorded MAY refresh that entry's
   run time, replacing the entry whole and atomically with every other field unchanged, so that pruning
-  ranks the re-certification as recent.
+  ranks the re-certification as recent. A file under an entry's name that cannot be parsed is no entry:
+  a run over that content SHALL replace it whole and atomically, the gate SHALL refuse it naming the
+  file, and pruning SHALL remove it.
 - **Pruning.** The record MAY prune its oldest entries. A pruned entry can only cause a demand for a
   new run, never a pass.
 

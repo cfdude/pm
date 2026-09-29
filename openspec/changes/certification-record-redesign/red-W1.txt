@@ -1,0 +1,70 @@
+# W1 RED — a8c85575's certification.mjs/certify.mjs (git archive into a scratch tree) with the W1 tests added
+## assert/drift-script
+✖ W1 a WEDGED key — an unparseable <key>.json a killed writer left — is replaced whole, named by the reader, and pruned (1.280916ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 139.312792
+
+✖ failing tests:
+
+test at ../../../../..scripts/test/assert/drift-script.test.mjs:466:1
+✖ W1 a WEDGED key — an unparseable <key>.json a killed writer left — is replaced whole, named by the reader, and pruned (1.280916ms)
+  AssertionError [ERR_ASSERTION]: the reader's error names the unparseable entry's file and the run that replaces it
+      at TestContext.<anonymous> (file://scripts/test/assert/drift-script.test.mjs:478:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: SyntaxError: Unterminated string in JSON at position 36 (line 3 column 19)
+        at JSON.parse (<anonymous>)
+        at readEntry (file://scripts/test/certification.mjs:773:17)
+        at file://scripts/test/assert/drift-script.test.mjs:478:23
+        at getActual (node:assert:580:5)
+        at strict.throws (node:assert:728:24)
+        at TestContext.<anonymous> (file://scripts/test/assert/drift-script.test.mjs:478:10)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17),
+    operator: 'throws',
+    diff: 'simple'
+  }
+## unit/certify-index
+✖ F3 a pass over content already recorded says so: "already recorded", never "recorded" (1.130625ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.309375
+
+✖ failing tests:
+
+test at ../../../../..scripts/test/fixtures/unit-harness.mjs:127:3
+✖ F3 a pass over content already recorded says so: "already recorded", never "recorded" (1.130625ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /; recorded 7 subject paths as k\.json in \/c\/d\/functional \(replacing an entry that could not be parsed\)\n$/. Input:
+  
+  'certify: functional half passed (3/3); already recorded: 7 subject paths as k.json in /c/d/functional (the existing entry could not be read; left as it is)\n'
+  
+      at file://scripts/test/unit/certify-index.test.mjs:506:10
+      at TestContext.<anonymous> (file://scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'certify: functional half passed (3/3); already recorded: 7 subject paths as k.json in /c/d/functional (the existing entry could not be read; left as it is)\n',
+    expected: /; recorded 7 subject paths as k\.json in \/c\/d\/functional \(replacing an entry that could not be parsed\)\n$/,
+    operator: 'match',
+    diff: 'simple'
+  }

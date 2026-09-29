@@ -690,17 +690,20 @@ const isBucketTest = (bucket, rel) => new RegExp(`^scripts/test/${bucket}/[^/]+\
  *  as the first run wrote it, except `ranAt`, which the re-certification REFRESHES (Gate 2 re-review F3:
  *  otherwise the pruner ranks a just re-certified entry by its first run and evicts it). The refresh is
  *  atomic — the existing entry, with the new `ranAt`, written to a temp name and renamed over it — so a
- *  reader sees one whole entry or the other (`refreshed: true`); an existing entry that cannot be parsed
- *  is left alone. The temp name is removed either way. A link, not an exclusive create of `<key>.json` itself, so a reader never
+ *  reader sees one whole entry or the other (`refreshed: true`). A file under the key that cannot be
+ *  parsed is NO ENTRY — a writer killed mid-write left it (Gate 2 final W1) — and is REPLACED by this
+ *  run's entry the same atomic way (`replaced: true`), so a kill cannot wedge the key. The temp name is removed either way. A link, not an exclusive create of `<key>.json` itself, so a reader never
  *  sees a half-written entry — on a filesystem that links. One that cannot (`linkSync` failing with
  *  ENOTSUP, EPERM or EXDEV; Gate 2 re-review F2) falls back to an EXCLUSIVE create of `<key>.json`
  *  (`'wx'`), which keeps the never-rewrite rule (EEXIST keeps the existing entry) but not the whole-file
  *  rule: a reader may see it mid-write, and reads that as corrupt, never as a pass. A failed write through
- *  the fallback removes the file it created, so a key never keeps a half-written entry. `ranAt` is taken when the entry is WRITTEN, so the pruner never ranks a
+ *  the fallback removes the file it created. A writer KILLED mid-write (SIGKILL during the fallback) can
+ *  still leave a half-written entry: the next run over that content replaces it, `readEntry()` refuses it
+ *  naming the file, and `pruneRecord()` removes it. `ranAt` is taken when the entry is WRITTEN, so the pruner never ranks a
  *  just-finished run as the oldest.
  *
  *  REFUSED, writing nothing: an unknown bucket, and a manifest holding no test file of its bucket —
- *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry, created, refreshed }`. */
+ *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry, created, refreshed, replaced }`. */
 export function writeManifestEntry(commonDir, { bucket, manifest, counts = null, engineSha = "unknown", worktree = null },
   { io = fs, now = () => new Date() } = {}) {
   if (!BUCKETS.includes(bucket)) {
@@ -729,20 +732,24 @@ export function writeManifestEntry(commonDir, { bucket, manifest, counts = null,
     } else { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
   }
   io.unlinkSync(tmp);
-  const refreshed = created ? false : refreshRanAt(io, file, entry.ranAt);
-  return { key, file, entry, created, refreshed };
+  const outcome = created ? null : refreshRanAt(io, file, entry);
+  return { key, file, entry, created, refreshed: outcome === "refreshed", replaced: outcome === "replaced" };
 }
 
-/** Re-certification of an existing entry (F3): its `ranAt` becomes `ranAt`, every other field is kept, and the
- *  whole entry is replaced atomically (temp name, then rename over). Returns whether it was refreshed. */
-function refreshRanAt(io, file, ranAt) {
-  let existing;
-  try { existing = JSON.parse(io.readFileSync(file, "utf8")); } catch { return false; }
-  if (!existing || typeof existing !== "object" || Array.isArray(existing)) return false;
+/** Re-certification of an existing entry (F3): its `ranAt` becomes the new entry's, every other field is kept,
+ *  and the whole entry is replaced atomically (temp name, then rename over): "refreshed". A file under the key
+ *  that cannot be PARSED as an entry is no entry (W1: a writer killed mid-write left it) and is replaced by
+ *  `entry` itself, the same way: "replaced". A file that cannot be READ is left as it is: null. */
+function refreshRanAt(io, file, entry) {
+  let text;
+  try { text = io.readFileSync(file, "utf8"); } catch { return null; }
+  let existing = null;
+  try { existing = JSON.parse(text); } catch { /* unparseable: replaced below */ }
+  const whole = existing && typeof existing === "object" && !Array.isArray(existing);
   const tmp = `${file.slice(0, -".json".length)}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
-  io.writeFileSync(tmp, JSON.stringify({ ...existing, ranAt }, null, 2) + "\n");
+  io.writeFileSync(tmp, JSON.stringify(whole ? { ...existing, ranAt: entry.ranAt } : entry, null, 2) + "\n");
   try { io.renameSync(tmp, file); } catch (e) { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
-  return true;
+  return whole ? "refreshed" : "replaced";
 }
 
 /** The link errors of a filesystem that has no hard links (F2): the writer falls back to an exclusive create. */
@@ -767,13 +774,22 @@ function createExclusive(io, file, bytes) {
 
 /** The entry of one key, or null. An absent directory or file is NO ENTRY — a fresh clone, a clone
  *  upgraded mid-flight, or an entry a concurrent pruner removed — which can only turn a pass into a
- *  demand, the loud direction. */
+ *  demand, the loud direction. A file that cannot be parsed (a writer killed mid-write) is REFUSED,
+ *  naming the file and the remedy (Gate 2 final W1). */
 export function readEntry(commonDir, bucket, key, io = fs) {
+  const file = path.join(bucketDir(commonDir, bucket), `${key}.json`);
+  let text;
   try {
-    return JSON.parse(io.readFileSync(path.join(bucketDir(commonDir, bucket), `${key}.json`), "utf8"));
+    text = io.readFileSync(file, "utf8");
   } catch (e) {
     if (e && e.code === "ENOENT") return null;
     throw e;
+  }
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error(`certification: the record entry ${file} cannot be parsed (${e && e.message}) — a certify killed ` +
+      `while writing it leaves one; \`node scripts/test/certify.mjs ${bucket}\` over this content replaces it, or remove the file`);
   }
 }
 
@@ -781,7 +797,8 @@ export function readEntry(commonDir, bucket, key, io = fs) {
  *  `ranAt`, and never `keep` — the entry the run just wrote — whatever its `ranAt`. Also removes the
  *  leftovers of killed runs: a `*.tmp` in the bucket directory older than an hour (a live writer holds
  *  its temp name for milliseconds), and a `pm-certify-run.*` directory under `tmpDir` older than 24
- *  hours (a functional run takes minutes). A pruned entry can only cause a demand, never a pass.
+ *  hours (a functional run takes minutes), and an entry that cannot be parsed older than an hour (W1). A pruned entry can
+ *  only cause a demand, never a pass.
  *  Returns the paths removed. */
 export function pruneRecord(commonDir, bucket, { keep = null, max = 50, tmpDir = os.tmpdir(), io = fs, nowMs = Date.now() } = {}) {
   const dir = bucketDir(commonDir, bucket);
@@ -795,8 +812,15 @@ export function pruneRecord(commonDir, bucket, { keep = null, max = 50, tmpDir =
     if (n.endsWith(".tmp")) { if (olderThan(path.join(dir, n), 3600 * 1000)) rm(path.join(dir, n)); continue; }
     if (!n.endsWith(".json")) continue;
     const key = n.slice(0, -".json".length);
-    let ranAt = 0;
-    try { ranAt = Date.parse(JSON.parse(io.readFileSync(path.join(dir, n), "utf8")).ranAt) || 0; } catch { continue; }
+    let ranAt = 0, text;
+    try { text = io.readFileSync(path.join(dir, n), "utf8"); } catch { continue; }
+    // W1: an entry that cannot be parsed is no entry (a writer killed mid-write) — removed, never skipped forever.
+    // Only once it is older than an hour, as a *.tmp is: a live writer on a filesystem without links fills
+    // <key>.json in place for milliseconds.
+    try { ranAt = Date.parse(JSON.parse(text).ranAt) || 0; } catch {
+      if (key !== keep && olderThan(path.join(dir, n), 3600 * 1000)) rm(path.join(dir, n));
+      continue;
+    }
     entries.push({ key, ranAt });
   }
   const others = entries.filter((e) => e.key !== keep).sort((a, b) => b.ranAt - a.ranAt);

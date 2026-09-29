@@ -56,3 +56,12 @@ F4 docs: certify.mjs RUNNER_CODE says why fixtures/temp-dir.mjs is omitted (clea
 F5 guard: assert/ci-workflow "F5 CI's four floor counts read the tracked names NUL-delimited…" (nulReadRefusals():
    exactly four declared= lines, each with `git ls-files -z` and `xargs -0`) -> c325f71e -> mutation-F5.txt (removing -z
    from the functional line fails it; reverted, it passes)
+
+# Gate 2 final minors (both lenses passed on a8c85575).
+W1 a wedged key: an unparseable <key>.json (a SIGKILL during the no-link 'wx' fallback) made certify print "left as
+   it is" and pass, drift throw an unnamed SyntaxError on every commit, and the pruner skip it forever. The write
+   path REPLACES it with this run's entry (temp name + rename; `replaced: true`, certify prints "recorded … (replacing
+   an entry that could not be parsed)"), readEntry() refuses it naming the file and the certify that replaces it,
+   pruneRecord() removes it once older than an hour (as a *.tmp; never `keep`); the "a key never keeps a half-written entry" docstring claim corrected -> W1SHA ->
+   assert/drift-script "W1 a WEDGED key…" (injected io), unit/certify-index "F3 a pass…" (replaced line); spec
+   "Writing", design D1 "Writing" and "Pruning"; red-W1.txt

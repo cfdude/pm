@@ -291,18 +291,20 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
   let worktree = null;
   try { worktree = git(root, ["rev-parse", "--path-format=absolute", "--git-dir"]); } catch { /* informational only */ }
   const { manifest } = indexManifest(root, bucket, { indexFile: run.indexCopy });
-  const { key, file, created, refreshed } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
+  const { key, file, created, refreshed, replaced } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
   pruneRecord(gitCommonDir, bucket, { keep: key });
   process.stdout.write(passLine({ label, counts: result.counts, paths: Object.keys(manifest).length, file,
-    dir: bucketDir(gitCommonDir, bucket), created, refreshed }));
+    dir: bucketDir(gitCommonDir, bucket), created, refreshed, replaced }));
   return 0;
 }
 
 /** The line a recorded pass prints. A pass over content ALREADY recorded created nothing, and says so
- *  (Gate 2 re-review F3): "already recorded", with whether its `ranAt` was refreshed. Pure; exported for its test. */
-export function passLine({ label, counts, paths, file, dir, created, refreshed }) {
+ *  (Gate 2 re-review F3): "already recorded", with whether its `ranAt` was refreshed. A pass that REPLACED an
+ *  unparseable file under its key recorded its entry (Gate 2 final W1). Pure; exported for its test. */
+export function passLine({ label, counts, paths, file, dir, created, refreshed, replaced = false }) {
   const where = `${paths} subject paths as ${path.relative(dir, file)} in ${dir}`;
   if (created) return `certify: ${label} passed (${counts.pass}/${counts.tests}); recorded ${where}\n`;
+  if (replaced) return `certify: ${label} passed (${counts.pass}/${counts.tests}); recorded ${where} (replacing an entry that could not be parsed)\n`;
   return `certify: ${label} passed (${counts.pass}/${counts.tests}); already recorded: ${where} ` +
     `(${refreshed ? "ranAt refreshed" : "the existing entry could not be read; left as it is"})\n`;
 }

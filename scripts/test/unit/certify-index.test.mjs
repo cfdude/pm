@@ -501,6 +501,10 @@ unitTest("F3 a pass over content already recorded says so: \"already recorded\",
   assert.match(again, /functional half passed \(3\/3\); already recorded: 7 subject paths as k\.json in \/c\/d\/functional \(ranAt refreshed\)/);
   assert.doesNotMatch(again, /; recorded /, "nothing was created, so nothing is said to be recorded");
   assert.match(certify.passLine({ ...base, created: false, refreshed: false }), /already recorded[^\n]*\(the existing entry could not be read; left as it is\)/);
+  // Gate 2 final W1: an unparseable file under the key was REPLACED by this run's entry — that is a recording.
+  const replaced = certify.passLine({ ...base, created: false, refreshed: false, replaced: true });
+  assert.match(replaced, /; recorded 7 subject paths as k\.json in \/c\/d\/functional \(replacing an entry that could not be parsed\)\n$/);
+  assert.doesNotMatch(replaced, /already recorded/, "W1: a replaced entry is a new recording, never \"already recorded\"");
 });
 
 unitTest("m3 rule 4 admits a file named in a TEMPLATE literal — a backtick opens a string literal too", () => {
