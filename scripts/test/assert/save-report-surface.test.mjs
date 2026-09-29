@@ -27,6 +27,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, runCombined } from "../fixtures/assert-harness.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const LIB = new URL("../../lib/", import.meta.url).pathname;
 // `scripts/` itself, for conductor.mjs — ONE LEVEL ABOVE the assertion half's own directory. It was
@@ -39,24 +40,11 @@ const SCRIPTS = new URL("../../", import.meta.url).pathname;
 /** `saveState` is DEFINED here; the rule is about its callers. */
 const SKIP = new Set(["state.mjs", "save-report.mjs"]);
 
-/** Strip block comments and line comments, preserving line count and column positions so a hit's
- *  line number still points at the real source. Deliberately naive about string literals: no
- *  saveState() call site in this engine sits inside one, and the assertion below on the number of
- *  sites found is what stops a stripper that has quietly started eating live code. */
-function stripComments(src) {
-  let out = "";
-  let inBlock = false, inLine = false, i = 0;
-  while (i < src.length) {
-    const c = src[i], d = src[i + 1];
-    if (src[i] === "\n") { inLine = false; out += "\n"; i++; continue; }
-    if (inBlock) { if (c === "*" && d === "/") { inBlock = false; out += "  "; i += 2; } else { out += " "; i++; } continue; }
-    if (inLine) { out += " "; i++; continue; }
-    if (c === "/" && d === "*") { inBlock = true; out += "  "; i += 2; continue; }
-    if (c === "/" && d === "/") { inLine = true; out += "  "; i += 2; continue; }
-    out += c; i++;
-  }
-  return out;
-}
+/** Comments blanked, line count and column positions preserved, so a hit's line number still points
+ *  at the real source — the shared lexer-based stripper (`fixtures/source-code.mjs`), which keeps
+ *  string and regex contents and refuses to answer from a misread. The hand-rolled stripper this
+ *  replaced had no string or regex state (guards-that-read-engine-source-drift-silently). */
+const stripComments = (src) => codeOnly(src);
 
 const EXEMPT = /^\s*\/\/\s*save-report:\s*exempt\s*—\s*(\S.*)$/;
 const CAPTURE = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*saveState\s*\($/;

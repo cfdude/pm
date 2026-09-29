@@ -29,6 +29,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, runCombined, detourLog } from "../fixtures/assert-harness.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -173,10 +174,9 @@ const SPAWN_TARGETS = {
 const SPAWNERS = ["spawnSync", "spawn", "execFileSync", "execFile", "execSync", "exec", "fork"];
 const SHELL_SPAWNERS = new Set(["execSync", "exec"]);
 
-/** Strip // and /* *\/ comments so prose that NAMES a spawner is not a call. Strings survive. */
-function stripComments(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`\\])\/\/.*$/gm, "$1");
-}
+/** Comments stripped so prose that NAMES a spawner is not a call. Strings survive. The shared
+ *  lexer-based stripper; the regex pair it replaced had no string or regex state. */
+const stripComments = (src) => codeOnly(src);
 
 /** Every violation of the three rules in one module's source. Pure, so the mutation cases below
  *  run it against a copy rather than editing a real file. */

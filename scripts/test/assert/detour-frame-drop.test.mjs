@@ -31,6 +31,7 @@ import assert from "node:assert/strict";
 import { run, readState, tmpRepo, archiveDay } from "../fixtures/assert-harness.mjs";
 import fs from "node:fs";
 import path from "node:path";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const epicOf = (cwd, id) => readState(cwd).epics.find(e => e.id === id);
@@ -105,21 +106,9 @@ test("Scenario: An already-archived epic's frame is droppable", () => {
 // ───────── Gate 2 I-M2 — the "ONE saveState" invariant, observable ─────────
 
 
-/** Block and line comments out, line count preserved. The prose in this module says "saveState"
- *  constantly, so counting the raw source would count sentences. */
-function stripComments(src) {
-  let out = "", inBlock = false, inLine = false, i = 0;
-  while (i < src.length) {
-    const c = src[i], d = src[i + 1];
-    if (c === "\n") { inLine = false; out += "\n"; i++; continue; }
-    if (inBlock) { if (c === "*" && d === "/") { inBlock = false; out += "  "; i += 2; } else { out += " "; i++; } continue; }
-    if (inLine) { out += " "; i++; continue; }
-    if (c === "/" && d === "*") { inBlock = true; out += "  "; i += 2; continue; }
-    if (c === "/" && d === "/") { inLine = true; out += "  "; i += 2; continue; }
-    out += c; i++;
-  }
-  return out;
-}
+/** Block and line comments out, line count preserved — the shared lexer-based stripper. The prose in
+ *  this module says "saveState" constantly, so counting the raw source would count sentences. */
+const stripComments = (src) => codeOnly(src);
 
 /** One top-level function's body, by its `export function <name>` header through the closing brace
  *  in column 0 — the shape save-report-surface.test.mjs already reads this engine with. */

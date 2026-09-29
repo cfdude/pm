@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine, readState, writeState } from "../fixtures/assert-harness.mjs";
 import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const main = (await import("../../conductor.mjs")).main;
 
@@ -161,7 +162,7 @@ test("M2 the engine reads process.version at exactly ONE code site — runtimeVe
   ];
   const sites = [];
   for (const [rel, p] of sources) {
-    const code = fs.readFileSync(p, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    const code = codeOnly(fs.readFileSync(p, "utf8"), rel);
     for (const line of code.split("\n")) if (/\bprocess\.version\b/.test(line)) sites.push(`${rel}: ${line.trim()}`);
   }
   assert.deepEqual(sites, ["scripts/lib/invocation.mjs: export const runtimeVersion = (ctx = invocation()) => ctx.nodeVersion ?? process.version;"],
