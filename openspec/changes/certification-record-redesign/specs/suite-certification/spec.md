@@ -475,7 +475,11 @@ held across certification and commit. They are safe by construction:
 - freshness is judged per commit against the entries that agree with that commit's own index.
 
 So one worktree's run SHALL NOT remove, replace or stale another worktree's entry, and an entry
-describing another tree's content SHALL NOT refuse this tree's commit.
+describing another tree's content SHALL NOT refuse this tree's commit. One stated exception: on a
+filesystem without hard links, a writer whose exclusive-create write FAILS removes the file it created
+by path, and if a second worktree has meanwhile replaced that torn file with a whole entry for the
+same key, that entry is removed with it. It needs a failed write plus a concurrent certify of the
+same content; the result is a fresh demand to certify, never a false pass.
 
 A lock that limits MACHINE LOAD, such as the pre-commit gate's suite lock, is outside this
 requirement and MAY remain. It limits how much runs at once, and correctness does not depend on it.

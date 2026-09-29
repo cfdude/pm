@@ -75,3 +75,4 @@ W3 wording: design D1's heading and "Writing" bullet, D6 "Overwrite", and the sp
    W1/W2 shas above) -> docs only (no test)
 DECLINED: ftruncate on a failed fallback write — the case needs a full disk AND an unremovable file; it is the spec's
    stated fifth limit.
+- Gate 2 scoped check (W1–W3) Minors: the no-link exclusive-create race stated as an exception in spec (worktree concurrency), CONTRIBUTING wording (atomic refresh; torn entries replaced or pruned) — docs commit, see git log.
