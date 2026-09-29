@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const readState = (cwd) => JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
 const mkdirs = (cwd, ...rel) => { for (const r of rel) fs.mkdirSync(path.join(cwd, r), { recursive: true }); };
@@ -43,7 +44,7 @@ test("sync registers only ids add-epic accepts, names every skip, and counts the
 // scripts/test/unit/sync-registration-ids.test.mjs.
 
 test("add-epic, add-many and sync share ONE validator — no creation site tests the format itself", () => {
-  const lib = (f) => fs.readFileSync(new URL(`../../lib/${f}`, import.meta.url), "utf8");
+  const lib = (f) => engineCode(`scripts/lib/${f}`);
   for (const f of ["add-epic.mjs", "add-many.mjs", "subcommands.mjs"]) {
     assert.doesNotMatch(lib(f), /EPIC_ID_FORMAT\.test\(/, `${f} must call STORABLE_EPIC_ID, not test the regex itself`);
     assert.match(lib(f), /STORABLE_EPIC_ID\(/, `${f} calls the shared validator`);
@@ -123,7 +124,7 @@ test("every consumer of the resolver passes the RECORD, never the bare id", () =
   // a wrapper. Verified absent at the time of writing: `rg -n "isArchived\(|archivedChangeDir\(|
   // archivedTasksPath\(|changeSpecRoot\(" scripts/lib` lists every call, each passing a record.
   // The behavioural backstop is the add-auth test above, through sync, render and set-active.
-  const lib = (f) => fs.readFileSync(new URL(`../../lib/${f}`, import.meta.url), "utf8");
+  const lib = (f) => engineCode(`scripts/lib/${f}`);
   const bare = /\b(isArchived|archivedChangeDir|archivedTasksPath|changeSpecRoot)\(\s*(?:[\w$.]*\.id|[\w$.]*\[\s*["']id["']\s*\]|id|state\.active)\s*[,)]/;
   for (const probe of ["isArchived(t.id)", "isArchived(target.id)", 'isArchived(t["id"])', "archivedChangeDir(e.id, d)", "isArchived(id)", "isArchived(state.active)"]) {
     assert.match(probe, bare, `the scan catches ${probe}`);

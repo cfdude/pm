@@ -27,6 +27,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { run, tmpRepo, readState, writeBatch, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 
@@ -108,7 +109,7 @@ test("every surface the registry declares reaches `links` through mergeLinks()",
   const { EPIC_FLAGS } = await import(CONSTANTS);
   const row = EPIC_FLAGS.find(f => f.flag === "link");
   for (const command of row.commands) {
-    const src = fs.readFileSync(new URL(`../../lib/${command}.mjs`, import.meta.url).pathname, "utf8");
+    const src = engineCode(`scripts/lib/${command}.mjs`);
     assert.match(src, /mergeLinks\(/,
       `lib/${command}.mjs declares --link and never calls mergeLinks() — the identity rule is a ` +
       "function every surface calls, not a shape three files are trusted to keep");

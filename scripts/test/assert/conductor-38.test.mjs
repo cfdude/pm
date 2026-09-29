@@ -24,6 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const SELF_HOSTING = new URL("../../lib/self-hosting.mjs", import.meta.url).href;
@@ -72,7 +73,7 @@ test("#162: the handoff cannot silently truncate or drop the child's output", ()
   //      exceeded it would be killed and reported rather than quietly cut off;
   //   3. a child that started is never fallen back from, so an over-bound child cannot have the
   //      engine run a second time on top of it.
-  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "self-hosting.mjs"), "utf8");
+  const src = engineCode("scripts/lib/self-hosting.mjs");
   assert.match(src, /stdio:\s*realStdin\s*\?\s*\["inherit",\s*"pipe",\s*"pipe"\]\s*:\s*\["pipe",\s*"pipe",\s*"pipe"\]/,
     "both of the child's output streams are captured — fd 2 as well as fd 1, or a warning goes astray");
   assert.match(src, /if \(r\.stdout\) outStream\(\)\.write\(r\.stdout\);/,

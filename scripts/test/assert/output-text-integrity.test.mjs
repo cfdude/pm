@@ -16,6 +16,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, expectFail } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const FORGED = /^conductor: FORGED$/m;
 
@@ -33,7 +34,7 @@ test("6.4b A tracker system with a newline is refused before the rules file is w
 });
 
 test("1.2 escapeControls is idempotent over its own output", () => {
-  const mod = fs.readFileSync(new URL("../../lib/constants.mjs", import.meta.url), "utf8");
+  const mod = engineCode("scripts/lib/constants.mjs");
   assert.match(mod, /export (function|const) escapeControls/, "the one escaper both halves share");
   assert.match(mod, /export (function|const) escapeTableCell/);
 });

@@ -32,6 +32,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const LIB = path.join(SCRIPTS, "lib");
@@ -146,7 +147,7 @@ test("the guard's scanner does not read comments or strings, and does not match 
 test("the CLI tail reaches the runtime by assigning process.exitCode", () => {
   // The inverse check: the guard must not be satisfiable by deleting the tail's result, which
   // would exit 0 on every refusal.
-  const src = fs.readFileSync(path.join(SCRIPTS, "conductor.mjs"), "utf8");
+  const src = engineCode("scripts/conductor.mjs");
   assert.match(src, /process\.exitCode\s*=/,
     "conductor.mjs must carry the status out through process.exitCode — a bare `return` from the " +
     "module loses the refusal status, and process.exit() would truncate a hook's stdout payload");
