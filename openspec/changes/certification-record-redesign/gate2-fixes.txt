@@ -6,3 +6,5 @@ G1 names git would quote: drift trackedTestFiles()/stagedFiles() and the hook's 
 G2 a signal-killed child lost its reads: the observer appends each event (each NEW read included) as one JSON line
    when it happens; parseObservation() drops a torn LAST line only and refuses any other corruption by file and
    line -> <sha> -> functional/certify-index "G2 a child SIGTERMed…", unit/certify-index "G2 …" (3); red-G2.txt
+m1 writeManifestEntry() links the temp file into place (EEXIST keeps the existing entry byte for byte), never renames
+   over it -> <sha> -> assert/drift-script "m1 an entry is NEVER rewritten…", 2.2 tests moved to link; red-m1.txt

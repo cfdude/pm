@@ -338,7 +338,7 @@ test("G-M1 the refusal says WHICH BUCKET changed, which paths, and which run sat
 //
 // FILE RUNG: each case writes the record directory under a scratch common dir, because the observable
 // is the bytes and names on disk — an entry named by its manifest's sha256, created through a unique
-// temp name and a rename, never rewritten, and pruned only by age.
+// temp name and a link (Gate 2 m1: never a rename over an existing entry), never rewritten, and pruned only by age.
 
 
 const RD_MANIFEST = Object.freeze({
@@ -352,17 +352,17 @@ function rd() {
   }
   return recordDir;
 }
-/** An `io` that is `fs`, recording each write and rename it is asked for. */
+/** An `io` that is `fs`, recording each write and link it is asked for. */
 function recordingIo(log, over = {}) {
   return {
     ...fs,
     writeFileSync: (p, ...rest) => { log.push(["write", p]); return fs.writeFileSync(p, ...rest); },
-    renameSync: (a, b) => { log.push(["rename", a, b]); return fs.renameSync(a, b); },
+    linkSync: (a, b) => { log.push(["link", a, b]); return fs.linkSync(a, b); },
     ...over,
   };
 }
 
-test("2.2 writeManifestEntry() names the file by the manifest's sha256 and creates it through a unique temp name plus a rename", () => {
+test("2.2 writeManifestEntry() names the file by the manifest's sha256 and creates it through a unique temp name plus a link", () => {
   const { writeManifestEntry, readEntry, manifestKey } = rd();
   const common = scratchCommonDir();
   const log = [];
@@ -372,10 +372,10 @@ test("2.2 writeManifestEntry() names the file by the manifest's sha256 and creat
   const dir = path.join(common, "pm-suite-certification.d", "functional");
   assert.equal(w.file, path.join(dir, `${key}.json`), "the entry is <common>/pm-suite-certification.d/<bucket>/<key>.json");
   assert.deepEqual(fs.readdirSync(dir), [`${key}.json`], "one file, and no temp file survives");
-  const [write, rename] = log;
+  const [write, link] = log;
   assert.equal(write[0], "write");
   assert.match(path.basename(write[1]), new RegExp(`^${key}\\.${process.pid}\\.[0-9a-f]+\\.tmp$`), "the bytes go to a UNIQUE temp name first");
-  assert.deepEqual(rename, ["rename", write[1], w.file], "and are renamed into place, so no reader sees a half-written entry");
+  assert.deepEqual(link, ["link", write[1], w.file], "and are linked into place, so no reader sees a half-written entry and no entry is replaced");
   const e = readEntry(common, "functional", key);
   assert.deepEqual(e.manifest, RD_MANIFEST);
   assert.equal(e.version, 2);
@@ -392,20 +392,36 @@ test("2.2 writeManifestEntry() names the file by the manifest's sha256 and creat
   assert.equal(readEntry(scratchCommonDir(), "sweeps", key), null, "an absent directory is no entry");
 });
 
+test("m1 an entry is NEVER rewritten: a second run over identical content leaves the first file's bytes untouched", () => {
+  // Gate 2 m1 (spec: "Writing an entry SHALL create it, never rewrite a file another run wrote"). The two
+  // runs differ in `ranAt`, so a rename over the first file would change its bytes.
+  const { writeManifestEntry } = rd();
+  const common = scratchCommonDir();
+  const t0 = Date.parse("2026-01-01T00:00:00.000Z");
+  const first = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "FIRST" }, { now: () => new Date(t0) });
+  const before = fs.readFileSync(first.file);
+  const second = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "SECOND" }, { now: () => new Date(t0 + 60000) });
+  assert.equal(second.file, first.file, "the same content names the same entry");
+  assert.ok(fs.readFileSync(first.file).equals(before), "the first run's entry is byte-identical after the second run");
+  assert.equal(second.created, false, "the second writer reports that it created nothing");
+  assert.equal(first.created, true);
+  assert.deepEqual(fs.readdirSync(path.dirname(first.file)), [path.basename(first.file)], "and no temp file survives");
+});
+
 test("2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry)", () => {
   const { writeManifestEntry, readEntry, manifestKey } = rd();
   const common = scratchCommonDir();
   const other = { ...RD_MANIFEST, "scripts/lib/b.mjs": `100644 ${"2".repeat(40)}` };
   let interleaved = false;
-  // The first writer is paused between its temp write and its rename, and the second writer runs to
+  // The first writer is paused between its temp write and its link, and the second writer runs to
   // completion in that window — the read-modify-rename record lost one of the two exactly here.
   const io = recordingIo([], {
-    renameSync: (a, b) => {
+    linkSync: (a, b) => {
       if (!interleaved) {
         interleaved = true;
         writeManifestEntry(common, { bucket: "functional", manifest: other }, { io: fs });
       }
-      return fs.renameSync(a, b);
+      return fs.linkSync(a, b);
     },
   });
   writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { io });

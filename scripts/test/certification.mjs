@@ -648,14 +648,17 @@ export const bucketDir = (commonDir, bucket) => path.join(commonDir, RECORD_DIR,
  *  records rests on no test of its bucket. */
 const isBucketTest = (bucket, rel) => new RegExp(`^scripts/test/${bucket}/[^/]+\\.test\\.mjs$`).test(rel);
 
-/** Write one passing run's entry: `<key>.json`, created through a UNIQUE temp name and a rename.
- *  No run reads another run's file to write its own, so two runs cannot lose each other's entry
- *  (#226); two runs over identical content produce the same key, and the second rename replaces the
- *  file with an equivalent claim. `ranAt` is taken when the entry is WRITTEN, so the pruner never
- *  ranks a just-finished run as the oldest.
+/** Write one passing run's entry: `<key>.json`, written whole under a UNIQUE temp name and then
+ *  LINKED into place — never renamed over it (Gate 2 m1; spec: writing an entry "SHALL create it, never
+ *  rewrite a file another run wrote"). No run reads another run's file to write its own, so two runs
+ *  cannot lose each other's entry (#226). Two runs over identical content produce the same key: the
+ *  second link fails with EEXIST and the FIRST file is kept byte for byte (`created: false`). The temp
+ *  name is removed either way. A link, not an exclusive create of `<key>.json` itself, so a reader never
+ *  sees a half-written entry. `ranAt` is taken when the entry is WRITTEN, so the pruner never ranks a
+ *  just-finished run as the oldest.
  *
  *  REFUSED, writing nothing: an unknown bucket, and a manifest holding no test file of its bucket —
- *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry }`. */
+ *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry, created }`. */
 export function writeManifestEntry(commonDir, { bucket, manifest, counts = null, engineSha = "unknown", worktree = null },
   { io = fs, now = () => new Date() } = {}) {
   if (!BUCKETS.includes(bucket)) {
@@ -672,8 +675,15 @@ export function writeManifestEntry(commonDir, { bucket, manifest, counts = null,
   io.mkdirSync(dir, { recursive: true });
   const tmp = path.join(dir, `${key}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`);
   io.writeFileSync(tmp, JSON.stringify(entry, null, 2) + "\n");
-  io.renameSync(tmp, file);
-  return { key, file, entry };
+  let created = true;
+  try {
+    io.linkSync(tmp, file);
+  } catch (e) {
+    if (!e || e.code !== "EEXIST") { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
+    created = false;
+  }
+  io.unlinkSync(tmp);
+  return { key, file, entry, created };
 }
 
 /** The entry of one key, or null. An absent directory or file is NO ENTRY — a fresh clone, a clone

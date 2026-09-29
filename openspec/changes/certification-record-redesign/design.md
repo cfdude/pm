@@ -175,12 +175,13 @@ re-certify took 173 s.
 
 **Writing.**
 
-- The file is written under a unique temp name (`<key>.<pid>.<random>.tmp`) and then renamed to
-  `<key>.json`.
+- The file is written under a unique temp name (`<key>.<pid>.<random>.tmp`) and then LINKED to
+  `<key>.json` (a rename until Gate 2 m1: a rename replaces an existing file, and the spec says an entry
+  is created, never rewritten). The temp name is then removed.
 - No run reads another run's file in order to write its own, so two concurrent runs cannot lose an
   update. This is the defect in today's read-modify-rename (`certification.mjs:361-367`).
-- Two runs over IDENTICAL content produce the same key. The second rename replaces a file with an
-  equivalent claim, so nothing is lost.
+- Two runs over IDENTICAL content produce the same key. The second link fails with `EEXIST` and the
+  first file is kept byte for byte, so nothing is lost and nothing is rewritten.
 
 **Content identity is the mode and git blob id.** Drift reads them with `git ls-files -s`
 (`ls-files` is already permitted), and certify reads them from its copy of the index. Both, and the
@@ -265,7 +266,7 @@ opens one file. It never scans the directory, and no entry can combine with anot
 entries by `ranAt` after it writes its own. It also removes (Gate 1 M6):
 
 - orphan `*.tmp` files in the bucket directories older than 1 hour, which a writer killed between
-  its write and its rename leaves behind (a live writer holds its temp name for milliseconds);
+  its write and its link leaves behind (a live writer holds its temp name for milliseconds);
 - stale run directories, `pm-certify-run.*` under the temp directory, older than 24 hours, which a
   SIGKILL'd certify leaves behind (a functional run takes minutes, 672 s at worst in the Baseline).
 
