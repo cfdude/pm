@@ -720,7 +720,7 @@ These rules bind every section below.
           hook's) are rewritten in the same commit.
 
       RED `red-4.3.txt`. Verify: `git ls-files -s .githooks/commit-msg` shows mode `100755`.
-- [ ] 4.4 **REGRESSION GUARD, FUNCTIONAL**: coupling runs in exactly one place.
+- [x] 4.4 **REGRESSION GUARD, FUNCTIONAL**: coupling runs in exactly one place.
       - **The guard.** With both hooks installed, a violating commit and an agreeing entry seeded
         by `seedAgreeingEntry()` (so pre-commit passes freshness and commit-msg runs), exactly one
         hook's output names the coupling refusal. As in 4.3 (T2), it asserts pre-commit's success

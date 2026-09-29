@@ -1088,6 +1088,24 @@ test("4.3 the working-tree fallback: the snapshot's drift judges when the index 
   hkRefusedByCommitMsg(hookedGit(untracked, ["commit", "-m", "change alpha"]), untracked, head2, hkCoupling("alpha"), "working-tree drift");
 });
 
+test("4.4 coupling is enforced in EXACTLY ONE place: pre-commit passes the unpaired file, and only commit-msg names the refusal", () => {
+  // REGRESSION GUARD (certification-record-redesign 4.4; suite-certification, "Coupling is enforced in
+  // exactly one place"). With both hooks installed and an agreeing entry seeded, a staged functional file
+  // without its twin is refused ONCE, by commit-msg. Re-enabling coupling in the pre-commit phase fails
+  // this on pre-commit's missing success line — git runs no commit-msg after pre-commit exits non-zero,
+  // so the refusal is never reported twice — and disabling it in commit-msg fails it because nothing
+  // refuses and the commit is made (mutation-4.4.txt).
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "one place");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", "-m", "change alpha, no trailer"]);
+  hkRefusedByCommitMsg(r, cwd, head, hkCoupling("alpha"), "one place");
+  assert.equal([...r.out.matchAll(new RegExp(hkCoupling("alpha").source, "gm"))].length, 1,
+    `the coupling refusal must be reported exactly once: ${r.out}`);
+});
+
 // ---------- sync must not register a directory's own index file as a plan (#87) ----------
 
 test("sync ignores README.md/INDEX.md in the plans directory — they are not plans", () => {

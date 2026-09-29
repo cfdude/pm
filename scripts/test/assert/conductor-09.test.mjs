@@ -32,6 +32,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, expectFail, ENGINE } from "../fixtures/assert-harness.mjs";
+import { PHASES, phaseChecks } from "../certification.mjs";
 
 // ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
 
@@ -320,4 +321,18 @@ test("4.3 .githooks/commit-msg runs the COMMIT's drift in the commit-msg phase, 
   const pre = fs.readFileSync(HOOK, "utf8");
   assert.doesNotMatch(pre, /checks enrolment, twin coverage, diff coupling/,
     ".githooks/pre-commit still says it checks diff coupling — that check is the commit-msg hook's now");
+});
+
+test("4.4 the phase table puts diff coupling in exactly one hook's phase, and it is commit-msg's", () => {
+  // THE VALUE HALF of functional/conductor-09's 4.4 guard (certification-record-redesign D4): that one
+  // commits through both real hooks and sees the refusal once, from commit-msg; this pins the table the
+  // drift script's `--phase` reads, so a phase edit that puts coupling back in pre-commit, or takes it
+  // out of commit-msg, fails on the per-commit path first.
+  const owners = Object.entries(PHASES).filter(([, checks]) => checks.includes("coupling")).map(([phase]) => phase);
+  assert.deepEqual(owners, ["commit-msg"], "coupling must run in exactly one hook, the one that can read the message");
+  assert.deepEqual([...PHASES["pre-commit"]].sort(), ["enrolment", "record", "twins"],
+    "the pre-commit phase runs the other three checks, and never coupling");
+  const all = Object.values(PHASES).flat().sort();
+  assert.deepEqual(all, [...new Set(all)].sort(), "no check runs in both hooks");
+  assert.deepEqual(all, [...phaseChecks(undefined)].sort(), "and between them the two hooks run every check a bare run does");
 });
