@@ -1,0 +1,34 @@
+# 5.8 Disposition (required task item 6) — PREPARED, NOT RUN. 8.2 runs it, after Gate 2 (8.1) passes and
+# after the planned epic below is registered. Checked 2026-09-29 against design.md "Goals / Non-Goals",
+# "Open Questions" and "Deferred".
+
+## Every non-goal, and where 8.2 disposes of it
+
+| design.md non-goal / open question / deferral | 8.2's disposition |
+|---|---|
+| Running the functional half per commit | `--declined-deferral` (1st) |
+| Changing CI's buckets | not a deferral — CI is unchanged by design and reads no record (8.2: "CI's buckets and the engine are unchanged by design, so they are not deferrals") |
+| Replacing `pm-suite.lock` | `--declined-deferral` (2nd) |
+| An operation-level map | `--declined-deferral` (3rd) |
+| Any change to the engine or to the shipped surface | not a deferral — nothing under `scripts/lib/`, `scripts/conductor.mjs` or the shipped roots changed behaviour (3.4 rewrote a comment in `store.mjs` only) |
+| Open question: CI listing Twin-Unchanged trailers | `--declined-deferral` (4th) |
+| Deferred: retiring `pm-suite-certification.json` | `--deferral "retire-single-file-certification-record:design D5"`, after `/pm:epic add` registers that planned epic |
+
+Verdict: 8.2 names every non-goal, open question and deferral, or justifies it as not one. The
+`::` separator in each `--declined-deferral` is the engine's (`update-epic --help`:
+`--declined-deferral <what::why not — :: since <what> may hold a colon>`).
+
+## The commands, in order (8.2 fills <range> and runs them; nothing here has been run)
+
+node scripts/conductor.mjs add-epic --id retire-single-file-certification-record --title="Retire the superseded single-file certification record (pm-suite-certification.json)" --lane claude-code --status planned --priority P3 --link "relates-to:certification-record-redesign:design D5 deferred its removal"
+#   (lane: run `suggest-lane` first and record any override with update-epic --notes, per the intake rules)
+
+node scripts/conductor.mjs update-epic certification-record-redesign --status archived --outcome delivered \
+  --reason "Certification is correct per worktree with no lock: a content-keyed manifest directory (D1), certify over a shared clone of an index copy (D2), the functional subject derived from what the half observes with a run-time observer that fails closed (D3), and diff coupling moved to a commit-msg hook with an audited Twin-Unchanged trailer (D4). Supersedes #226, #230, #229, #227." \
+  --declined-deferral "running the functional half per commit::it takes minutes; the observed subject decides when it is demanded (design D3)" \
+  --declined-deferral "replacing pm-suite.lock::it limits machine load, which certification correctness never depended on (design D6)" \
+  --declined-deferral "an operation-level observation map::a hand-kept list, which the trigger requirement forbids (design D3)" \
+  --declined-deferral "a CI step listing Twin-Unchanged trailers::optional; Gate 2 on the dev range is the audit of record (design D4)" \
+  --deferral "retire-single-file-certification-record:design D5"
+
+for n in 226 230 229 227; do gh issue close $n --repo cfdude/pm --comment "Shipped in 0.51.0 by certification-record-redesign: <range>."; done

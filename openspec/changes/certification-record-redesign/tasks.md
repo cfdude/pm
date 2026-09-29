@@ -797,9 +797,11 @@ These rules bind every section below.
       commit, in landing order, at the moment it is made. The archive-move commit is NOT attributed.
 - [ ] 5.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it when any 0.51.0
       change adds or amends a spec file, and record the verdict again.
-- [ ] 5.8 **Disposition** (item 6). It is recorded by 8.2, whose flags are specified there. Before
+- [x] 5.8 **Disposition** (item 6). It is recorded by 8.2, whose flags are specified there. Before
       Gate 2, check that 8.2 names every non-goal in `design.md` as a declined deferral, or justifies
       it as not being one.
+      Done: `disposition-5.8.txt` — all five non-goals, the open question and the deferral are named by
+      8.2 or justified as not deferrals; the commands are prepared there and NOT run (8.2 runs them).
 - [ ] 5.9 **Route what the work taught** (item 7), naming which of the three kinds each item is.
       - **PRACTICE.** The staged-certify-before-commit order this change needs while it rewrites its
         own gate. Register it if it recurs outside this change; otherwise say why not.
