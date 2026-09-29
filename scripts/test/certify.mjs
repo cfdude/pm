@@ -93,6 +93,57 @@ function indexFileOf(root) {
   return git(root, ["rev-parse", "--path-format=absolute", "--git-path", "index"]);
 }
 
+/** THE RUNNER'S OWN CODE (Gate 2 follow-up S2, the one-copy gap). certify computes the manifest key with the
+ *  copies of these files it imported — the WORKING TREE's — while the commit's drift runs the INDEX's copies
+ *  (`.githooks/pre-commit` runs drift from its index snapshot). An unstaged edit to one of them lets certify
+ *  record a key the commit's drift does not compute. So certify FAILS CLOSED: before it builds anything it
+ *  refuses when any of them differs between the working tree and the index it certifies. */
+export const RUNNER_CODE = Object.freeze([
+  "scripts/test/certify.mjs", "scripts/test/certification.mjs", "scripts/test/drift.mjs",
+  "scripts/test/js-lexer.mjs", "scripts/test/fixtures/observe-reads.mjs",
+]);
+
+/** The refusal for `differing` — `[{ path, why }]` — or null when it is empty. Pure; exported for its test. */
+export function runnerCodeRefusal(bucket, differing) {
+  if (!differing.length) return null;
+  return `certify: refusing to run the ${bucket} bucket — the runner's own code differs between the working tree and the index:\n` +
+    differing.map((d) => `  ${d.path} — ${d.why}\n`).join("") +
+    "certify computes the manifest key with the working tree's copy of these files, while the commit's drift runs the index's, " +
+    "so the key it would record is one the commit's drift may not compute.\n" +
+    "Stage the edit (`git add -- <file>`) or stash it (`git stash push -- <file>`), then run certify again. " +
+    "Nothing run, nothing recorded.\n";
+}
+
+/** Which of RUNNER_CODE differ between `root`'s working tree and `indexFile`, as `[{ path, why }]`. The working
+ *  tree's blob is `git hash-object` (clean filters applied, as `git add` would); the index's is its stage-0 entry. */
+function runnerCodeDiffers(root, indexFile) {
+  const env = { ...cleanEnv(), GIT_INDEX_FILE: indexFile };
+  const staged = new Map();
+  const listed = execFileSync("git", ["-C", root, "ls-files", "-s", "-z", "--", ...RUNNER_CODE], { encoding: "utf8", env });
+  for (const rec of listed.split("\0")) {
+    if (!rec) continue;
+    const tab = rec.indexOf("\t");
+    const [, blob, stage] = rec.slice(0, tab).split(" ");
+    const rel = rec.slice(tab + 1);
+    staged.set(rel, stage === "0" && !staged.has(rel) ? blob : null);
+  }
+  const present = RUNNER_CODE.filter((rel) => fs.existsSync(path.join(root, rel)));
+  const hashes = present.length
+    ? execFileSync("git", ["-C", root, "hash-object", "--", ...present], { encoding: "utf8", env }).trim().split("\n")
+    : [];
+  const worktree = new Map(present.map((rel, i) => [rel, hashes[i]]));
+  const out = [];
+  for (const rel of RUNNER_CODE) {
+    const inIndex = staged.has(rel), inTree = worktree.has(rel);
+    if (!inIndex && !inTree) continue;
+    if (!inTree) out.push({ path: rel, why: "in the index but absent from the working tree" });
+    else if (!inIndex) out.push({ path: rel, why: "absent from the index (untracked)" });
+    else if (staged.get(rel) === null) out.push({ path: rel, why: "unmerged in the index" });
+    else if (staged.get(rel) !== worktree.get(rel)) out.push({ path: rel, why: "the working tree differs from the index (an unstaged edit)" });
+  }
+  return out;
+}
+
 /** Execute `indexRunPlan()` in a fresh run directory. Returns the run directory, the clone the bucket
  *  runs in, and the path of the INDEX COPY, which the manifest is read from.
  *  Exported for functional/certify-index's 1.3 guard, which runs files in the directory it builds. */
@@ -329,6 +380,9 @@ export async function main(argv, { root = REPO } = {}) {
     return 1;
   }
   const gitCommonDir = path.resolve(root, git(root, ["rev-parse", "--git-common-dir"]));
+  // FAIL CLOSED on the one-copy gap (S2), before anything is built, run or written.
+  const differs = runnerCodeRefusal(bucket, runnerCodeDiffers(root, indexFileOf(root)));
+  if (differs) { process.stderr.write(differs); return 1; }
   const run = prepareRun(root, gitCommonDir);
   try {
     return await certifyBucket(root, gitCommonDir, run, bucket);

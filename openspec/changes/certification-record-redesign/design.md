@@ -330,6 +330,12 @@ was unchanged afterwards.
   depend on editing an unbounded set of functional tests, and the clone makes the bucket pass as it
   does in a checkout.
 
+**The runner's own code is the index's, or it does not run (Gate 2 follow-up S2).** certify computes the
+manifest key with the copies of `certify.mjs`, `certification.mjs`, `drift.mjs`, `js-lexer.mjs` and
+`fixtures/observe-reads.mjs` it imported, from the working tree, while the commit's drift runs the index's.
+So before step 2 it fails closed: when any of them differs between the working tree and the index, it
+refuses, naming the file, and tells the user to stage or stash the edit. Nothing is built or written.
+
 **The known limit.** The clone's HEAD is the worktree's HEAD. A test that compares HEAD with the
 working content therefore sees staged-but-uncommitted content as uncommitted, just as it does in a
 checkout.

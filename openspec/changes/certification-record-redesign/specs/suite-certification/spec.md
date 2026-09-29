@@ -452,6 +452,14 @@ working tree, and it SHALL record the manifest of that same content.
 - **THEN** the working tree, the index, the stash and the list of worktrees are unchanged, and a
   failed or interrupted run has written no entry
 
+#### Scenario: The runner refuses when its own code differs from the index
+
+- **WHEN** `certify.mjs`, `certification.mjs`, `drift.mjs`, `js-lexer.mjs` or `fixtures/observe-reads.mjs`
+  differs between the working tree and the index being certified, and the runner is run
+- **THEN** it refuses before running the bucket, naming each differing file and telling the user to stage or
+  stash the edit, exits non-zero, and writes nothing: no run directory and no entry
+- **AND** once the edit is staged, so the two copies match, the runner runs and records as usual
+
 ### Requirement: Concurrent worktrees cannot invalidate each other's certification
 
 Several worktrees of one clone SHALL be able to certify and commit at the same time, with no lock

@@ -491,6 +491,25 @@ unitTest("S1 rules 5 and 6 admit a shipped root and a root file named in a TEMPL
   assert.equal(notFile.has("CLAUDE.md"), false, "a longer name ending in the root file's name is still not its name");
 });
 
+unitTest("S2 the runner refuses when its own code differs from the index: the files, the refusal, and silence when they match", () => {
+  // Gate 2 follow-up S2's assertion half. The runner's code that decides the manifest key — certify,
+  // certification, drift, the lexer and the observer — must be the index's copy the commit's drift runs.
+  assert.deepEqual([...certify.RUNNER_CODE], [
+    "scripts/test/certify.mjs", "scripts/test/certification.mjs", "scripts/test/drift.mjs",
+    "scripts/test/js-lexer.mjs", "scripts/test/fixtures/observe-reads.mjs",
+  ]);
+  assert.equal(certify.runnerCodeRefusal("functional", []), null, "nothing differs: no refusal");
+  const text = certify.runnerCodeRefusal("sweeps", [
+    { path: "scripts/test/certification.mjs", why: "the working tree differs from the index" },
+    { path: "scripts/test/js-lexer.mjs", why: "absent from the index" },
+  ]);
+  assert.match(text, /scripts\/test\/certification\.mjs — the working tree differs from the index/);
+  assert.match(text, /scripts\/test\/js-lexer\.mjs — absent from the index/);
+  assert.match(text, /git add/, "it names staging");
+  assert.match(text, /git stash/, "and stashing");
+  assert.match(text, /[Nn]othing run, nothing recorded/);
+});
+
 unitTest("m4 the run tree is built from the index copy alone: nothing is copied or exported from the working tree", () => {
   // Gate 2 m4's assertion half: an untracked working-tree file can reach the run only if a step reads the
   // working tree. Every copy is of the index or of its copy, the export is `checkout-index` inside the

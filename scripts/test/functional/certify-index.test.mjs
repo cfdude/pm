@@ -175,6 +175,28 @@ test("1.2 a partial stage is certified as its STAGED half, and a commit of exact
   assert.match(stale.stderr, /scripts\/lib\/m\.mjs/);
 });
 
+test("S2 an UNSTAGED edit to the runner's own code is refused, naming the file, with nothing run or written; staged, it runs", () => {
+  // Gate 2 follow-up S2 (the one-copy gap). certify computes the manifest key with the WORKING TREE's
+  // certification.mjs, while the commit's drift runs the INDEX's copy, so an unstaged edit to it made certify
+  // record a key the commit's drift did not compute. It now fails closed before the bucket runs.
+  const cwd = fixture();
+  const RUNNER = "scripts/test/certification.mjs";
+  fs.appendFileSync(path.join(cwd, RUNNER), "// an unstaged edit to the runner's own code\n");
+  const tmp = tmpRepo();
+  const refused = certify(cwd, "functional", { TMPDIR: tmp });
+  assert.notEqual(refused.status, 0, `certify ran with its own code differing from the index:\n${refused.out}`);
+  assert.match(refused.out, /scripts\/test\/certification\.mjs/, `the refusal names the file:\n${refused.out}`);
+  assert.match(refused.out, /stage[\s\S]*stash|stash[\s\S]*stage/, `the refusal says to stage or stash the edit:\n${refused.out}`);
+  assert.doesNotMatch(refused.out, /^\s+at /m, `a refusal, not a stack trace:\n${refused.out}`);
+  assert.equal(fs.existsSync(recordPath(cwd)), false, "nothing is written to the record");
+  assert.deepEqual(runDirsIn(tmp), [], "no run directory is built: the bucket never ran");
+
+  git(cwd, "add", "--", RUNNER);
+  const ran = certify(cwd, "functional");
+  assert.equal(ran.status, 0, `staged, the runner's code matches the index and certify runs:\n${ran.out}`);
+  assert.equal(entriesOf(cwd, "functional").length, 1, "and records its entry");
+});
+
 test("1.2 an edit, and a `git add` of it, made while the bucket runs are absent from the record", () => {
   const cwd = fixture();
   const before = git(cwd, "show", `:${MODULE}`);

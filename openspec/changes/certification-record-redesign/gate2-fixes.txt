@@ -30,3 +30,7 @@ G1 sibling (item 1 call-site completeness): ci.yml's four floor counts read `git
    1588/1160/19, new 1589/1162/20 = node ground truth) -> CI1 -> no test (CI YAML; verified by the local clone run)
 S1 functionalSubject() rules 5 (shipped roots) and 6 (root files) admit a backtick exactly as rule 4 does -> S1 ->
    unit/certify-index "S1 rules 5 and 6 admit…"; red-S1.txt; index subject 187 -> 187
+S2 the one-copy gap, fail closed: before building anything certify refuses (named, exit 1, nothing written) when
+   certify/certification/drift/js-lexer/fixtures/observe-reads differs between the working tree and the index ->
+   S2 -> functional/certify-index "S2 an UNSTAGED edit…", twin unit/certify-index "S2 the runner refuses…";
+   spec scenario "The runner refuses when its own code differs from the index", design D2; red-S2.txt

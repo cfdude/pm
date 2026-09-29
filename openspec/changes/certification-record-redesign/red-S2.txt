@@ -1,0 +1,40 @@
+# Gate 2 follow-up S2 — certify fails closed when its own code differs between the working tree and the index
+# node --test --test-reporter=spec --test-name-pattern '^S2 ' scripts/test/{unit,functional}/certify-index.test.mjs
+
+## RED (78994f0b) — unit
+✖ S2 the runner refuses when its own code differs from the index: the files, the refusal, and silence when they match (0.804875ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 141.676
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ S2 the runner refuses when its own code differs from the index: the files, the refusal, and silence when they match (0.804875ms)
+  TypeError [Error]: certify.RUNNER_CODE is not iterable
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:497:32
+
+## RED (78994f0b) — functional
+✖ S2 an UNSTAGED edit to the runner's own code is refused, naming the file, with nothing run or written; staged, it runs (441.155042ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 564.749583
+
+✖ failing tests:
+
+test at scripts/test/functional/certify-index.test.mjs:178:1
+✖ S2 an UNSTAGED edit to the runner's own code is refused, naming the file, with nothing run or written; staged, it runs (441.155042ms)
+  AssertionError [ERR_ASSERTION]: certify ran with its own code differing from the index:
+  certify: the observer saw 1 Node processes; every tracked file they read is in the functional subject (3 paths).
+
+## GREEN: both ✔ (unstaged edit refused naming scripts/test/certification.mjs, no record dir, no run dir; staged -> exit 0, one entry)
