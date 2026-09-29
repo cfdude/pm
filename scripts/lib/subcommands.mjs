@@ -107,6 +107,49 @@ export function ensureGitignore() {
   fs.appendFileSync(giPath, `${prefix}${missing.join("\n")}\n`);
 }
 
+/** Does this ENGINE_IGNORED entry cover this root-relative path? An entry is exact, a `*` glob
+ *  (a prefix: every glob in the list ends in its one star) or a `/` directory. */
+const coversPath = (entry, file) =>
+  entry.endsWith("/") || entry.endsWith("*") ? file.startsWith(entry.replace(/\*$/, "")) : file === entry;
+
+/** The ENGINE_IGNORED entries the index STILL TRACKS — the fleet state the ignore line cannot fix.
+ *
+ *  An ignore rule only hides UNTRACKED files. A repository that committed `.conductor/brief.txt`
+ *  before pm ignored it (14 of 24 on the maintainer's machine) keeps recording every rewrite of it
+ *  however many times `ensureGitignore()` runs. Only `git rm --cached` ends that, and pm is an
+ *  instruction layer: it names the command, it never runs it.
+ *
+ *  ONE `ls-files` over the entries themselves, through the gateway operation tool-currency already
+ *  uses, and cwd-relative for the same reason (its note): a project nested in a larger repository
+ *  asks about its own files only. Answers ENTRIES, never ls-files' lines — the printed command
+ *  therefore holds nothing but this module's constants, `activity/` stays one pathspec rather
+ *  than one per segment, and git's quoting of an unusual name never reaches a shell line.
+ *  `[]` whenever git cannot answer (no repository, a throw): not being able to tell is silence. */
+export function trackedEngineIgnored() {
+  let out;
+  try { out = gitOps().lsFiles([...ENGINE_IGNORED]); } catch { return []; }
+  const files = String(out ?? "").split("\n").map(l => l.trim()).filter(Boolean);
+  return ENGINE_IGNORED.filter(entry => files.some(f => coversPath(entry, f)));
+}
+
+/** The copy-pasteable untrack instruction as lines, or `[]` when nothing needs it. Shared by BOTH
+ *  callers of ensureGitignore() — init and upgrade — so the two can never word it differently.
+ *  Each pathspec is single-quoted so the SHELL leaves a glob alone and git expands it against the
+ *  index; `-r` covers the directory entry. Its own commit line: correct whether or not the upgrade's
+ *  COMMIT block also fires, since a staged removal simply rides whichever commit comes first. */
+export function untrackInstruction() {
+  const tracked = trackedEngineIgnored();
+  if (!tracked.length) return [];
+  const specs = tracked.map(e => `'${e.replace(/\/$/, "")}'`).join(" ");
+  return [
+    `conductor: ⚠ UNTRACK PM'S SESSION FILES — .gitignore lists ${tracked.length} path` +
+      `${tracked.length === 1 ? "" : "s"} git still tracks, so every hook rewrite of them is a change to commit.`,
+    `   git rm -r --cached --quiet -- ${specs}`,
+    `   git commit -m "chore(pm): stop tracking the conductor's session files"`,
+    "   --cached removes them from git only; the files stay on disk. pm never runs this itself.",
+  ];
+}
+
 export function init() {
   // FIRST, before saveState(defaultState()): `init --platform bogus` used to create state.json and
   // THEN refuse, which ended pm's dormancy in a repo whose init had failed.
@@ -127,6 +170,7 @@ export function init() {
     errStream().write("conductor: created .conductor/state.json\n");
   }
   ensureGitignore();
+  for (const l of untrackInstruction()) errStream().write(l + "\n");
   sync(true);                 // pull in existing openspec changes + plans
   // save-report: exempt — a version stamp inside init(), which prints its own outcome line once
   // at the end; this write has no outcome line of its own to make true or false.

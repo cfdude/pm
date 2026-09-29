@@ -13,7 +13,7 @@ import { render } from "./render.mjs";
 import { normalizeLink, stampReconcileKeys } from "./links.mjs";
 import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
-import { ensureGitignore } from "./subcommands.mjs";
+import { ensureGitignore, untrackInstruction } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
@@ -280,6 +280,11 @@ export function upgrade() {
   // prints nothing, and a path this repo git-ignores never appears, so a repo that ignores the
   // file is never told to commit something git would refuse. Nothing here is a second list of
   // what the verb writes — it IS the verb's own writes, named at the point they happen.
+  // UNTRACK FIRST: a file .gitignore now lists but the index still holds (brief.txt in 14 of 24
+  // fleet repos) is recorded again on every hook rewrite however often ensureGitignore() runs. It
+  // fires on every upgrade until fixed — not a no-op message, a standing defect — and is silent
+  // wherever git cannot answer, like the COMMIT block below.
+  for (const u of untrackInstruction()) errStream().write(u + "\n");
   const rewritten = differsFromHead(
     [".conductor/state.json", rulesFile, "PROJECT.md", ".conductor/render-stamp.json", ".gitignore"]);
   if (rewritten.length) {

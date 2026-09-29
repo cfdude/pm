@@ -599,6 +599,16 @@ x("migrations.mjs", "upgrade", {
 x("migrations.mjs", "upgrade", {
   "l": 1,
 }, "escaped", "openspecCurrencyLines() returns its lines escaped (Gate 2 T-S2)");
+x("migrations.mjs", "upgrade", {
+  "u": 1,
+}, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
+x("subcommands.mjs", "init", {
+  "l": 1,
+}, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
+x("subcommands.mjs", "untrackInstruction", {
+  "e.replace(/\\/$/, \"\")": 1,
+  "specs": 1,
+}, "engine", "ENGINE_IGNORED entries (module constants) the index was found to track — trackedEngineIgnored() returns entries, never git's lines");
 x("rank.mjs", "reorder", {
   "msg": 1,
 }, "passthrough", "fail(): every caller escapes the values it quotes");

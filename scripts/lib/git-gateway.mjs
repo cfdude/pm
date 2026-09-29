@@ -189,7 +189,8 @@ export function realGit(context) {
       execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: root(), stdio: "ignore" }),
 
     // ── lib/tool-currency.mjs, 1 site ──────────────────────────────────────────────────────────
-    // tool-currency.mjs:149 — the tracked files under a pathspec, relative to this directory.
+    // tool-currency.mjs:149 — the tracked files under a pathspec, relative to this directory. Also
+    // subcommands.mjs trackedEngineIgnored(), which asks the same question about ENGINE_IGNORED.
     lsFiles: (paths) =>
       execFileSync("git", ["ls-files", "--", ...paths],
         { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }),
