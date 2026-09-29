@@ -406,7 +406,7 @@ These rules bind every section below.
 
 ## 3. L3: the observed functional subject (design D3; MODIFIED "The suite has two halves…"; ADDED "The functional subject's derivation…")
 
-- [ ] 3.1 **TDD, UNIT**: `functionalSubject({ readdir, readFile })`, over an injected index reader.
+- [x] 3.1 **TDD, UNIT**: `functionalSubject({ readdir, readFile })`, over an injected index reader.
       This commit stages `certification.mjs`, which the interim subject holds from 2.4, so the gate
       itself demands a functional certify (B9); run it first.
       - **The RED:**

@@ -22,6 +22,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { stripComments } from "./js-lexer.mjs";
 
 /** The repository this module's defaults read. `scripts/test/certification.mjs` → two levels up. */
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -180,6 +181,90 @@ export function certifiedModules(root = REPO, readFile = readDefault, readdir = 
 export function engineSourceFiles(root = REPO, readdir = readdirDefault) {
   const libDir = path.join(root, "scripts", "lib");
   return [ENGINE_ENTRY, ...readdir(libDir).filter((f) => f.endsWith(".mjs")).sort().map((f) => `scripts/lib/${f}`)];
+}
+
+/** THE FUNCTIONAL SUBJECT, DERIVED FROM WHAT THE HALF OBSERVES (certification-record-redesign D3, #229;
+ *  task 3.1). Over ONE index, read through `readFile`/`readdir` (absolute paths under `root`) plus that
+ *  index's path list `paths` — drift's `indexReaders()`, or any reader of the same shape. The union of:
+ *
+ *    1. the IMPORT CLOSURE of every `scripts/test/functional/*.test.mjs` and of the engine entry point:
+ *       static `from`, `export … from`, a bare side-effect `import "…"`, and a literal dynamic
+ *       `import("…")`, RELATIVE specifiers only (a package or `node:` specifier is no repository path);
+ *    2. the functional test files themselves (they are closure roots);
+ *    3. every assertion-half test file the half EXECUTES: one whose path — `assert/<name>.test.mjs` or
+ *       `unit/<name>.test.mjs`, optionally prefixed `scripts/test/` — a closure file under
+ *       `scripts/test/` spells in its CODE as a single- or double-quoted string. Comments are stripped
+ *       first by the shared regex-aware lexer (`js-lexer.mjs`), so a twin named in a comment is not
+ *       matched however it is quoted; a misparse THROWS, naming the file and line (fail closed). Such a
+ *       file is a closure ROOT, so its own imports are in too;
+ *    4. every tracked file under `scripts/`, `.githooks/` or `hooks/` — never `scripts/test/{assert,unit}/`,
+ *       which only rule 3 admits — whose file name a closure file under `scripts/test/` spells as a
+ *       string literal, or as the last `/`-separated segment of one (the `coversFor()` basename
+ *       precedent, moved to where it is sound);
+ *    5. every tracked file under a shipped-surface root (`commands/`, `skills/`, `agents/`, `hooks/`,
+ *       `.claude-plugin/`) when a closure file under `scripts/test/` spells that root as a path segment;
+ *    6. `README.md`, `CLAUDE.md` and `docs/parity-ledger.json` when one spells the name.
+ *
+ *  THE RECORD IS NEVER IN IT — `openspec/`, `.conductor/`, `CHANGELOG.md` and the rest of `docs/` — by
+ *  construction: no rule above reaches them. Rules 1, 4, 5 and 6 read the RAW text, as the measurement
+ *  the design's numbers come from does (`measure.mjs`, which 7.2 re-runs with this function); only rule
+ *  3 strips comments, because only rule 3 turns a mention into an EXECUTION. Membership is decided by
+ *  `paths`, never by whether `readFile` returned bytes: a tracked file can be empty. Sorted. */
+export function functionalSubject({ root = REPO, readFile = readDefault, readdir = readdirDefault, paths = null } = {}) {
+  const listing = paths || walkPaths(root, readdir);
+  const tracked = new Set(listing);
+  const src = (rel) => (tracked.has(rel) ? readFile(path.join(root, rel)) : "");
+  const IMPORT_SPEC = /(?:from\s*|import\s*\(\s*|\bimport\s*|export\s+\*\s+from\s*)["'](\.{1,2}\/[^"']+)["']/g;
+  const EXECUTED = /["'](?:scripts\/test\/)?((?:assert|unit)\/[^"'/]+\.test\.mjs)["']/g;
+  const closure = new Set();
+  const stack = [...listing.filter((p) => /^scripts\/test\/functional\/[^/]+\.test\.mjs$/.test(p)), ENGINE_ENTRY];
+  while (stack.length) {
+    const f = stack.pop();
+    if (closure.has(f) || !tracked.has(f)) continue;
+    closure.add(f);
+    const text = src(f);
+    for (const m of text.matchAll(IMPORT_SPEC)) {
+      const t = path.posix.normalize(path.posix.join(path.posix.dirname(f), m[1]));
+      if (tracked.has(t) && !closure.has(t)) stack.push(t);
+    }
+    if (f.startsWith("scripts/test/")) {
+      for (const m of stripComments(text, f).matchAll(EXECUTED)) {
+        const t = `scripts/test/${m[1]}`;
+        if (tracked.has(t) && !closure.has(t)) stack.push(t);
+      }
+    }
+  }
+  const spelled = [...closure].filter((f) => f.startsWith("scripts/test/")).map(src).join("\n");
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const out = new Set(closure);
+  for (const f of listing) {
+    if (out.has(f) || !/^(scripts\/|\.githooks\/|hooks\/)/.test(f) || /^scripts\/test\/(assert|unit)\//.test(f)) continue;
+    if (new RegExp(`["'/]${esc(path.posix.basename(f))}["'\`]`).test(spelled)) out.add(f);
+  }
+  for (const r of SHIPPED_ROOTS) {
+    if (new RegExp(`["'/]${esc(r)}["'/]`).test(spelled)) for (const f of listing) if (f.startsWith(`${r}/`)) out.add(f);
+  }
+  for (const f of SUBJECT_ROOT_FILES) {
+    if (tracked.has(f) && new RegExp(`["'/]${esc(path.posix.basename(f))}["']`).test(spelled)) out.add(f);
+  }
+  return [...out].sort();
+}
+
+/** The shipped-surface roots rule 5 of `functionalSubject()` takes whole (design D3; `PARITY_ROOTS`). */
+export const SHIPPED_ROOTS = Object.freeze(["commands", "skills", "agents", "hooks", ".claude-plugin"]);
+
+/** Every file path under `root`, from a `readdir` over an index: a name the index holds nothing under
+ *  is a FILE (an index has no empty directories). Used only when a reader supplies no `paths`. */
+function walkPaths(root, readdir) {
+  const out = [];
+  const walk = (rel) => {
+    let names = [];
+    try { names = readdir(path.join(root, rel)); } catch { names = []; }
+    if (!names.length && rel) { out.push(rel); return; }
+    for (const n of names) walk(rel ? `${rel}/${n}` : n);
+  };
+  walk("");
+  return out.sort();
 }
 
 /** The certification machinery's own files (design D7, B9): a change to any of them can change what

@@ -76,7 +76,7 @@ function fixture() {
     fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
     fs.writeFileSync(path.join(cwd, rel), body);
   }
-  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "fixtures/temp-dir.mjs"]) {
+  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs"]) {
     fs.mkdirSync(path.dirname(path.join(cwd, "scripts/test", rel)), { recursive: true });
     fs.copyFileSync(path.join(TEST_ROOT, rel), path.join(cwd, "scripts/test", rel));
   }
@@ -282,4 +282,29 @@ test("1.3 the four files a bare export breaks pass in the run directory the runn
   } finally {
     removeTempDir(run.dir);
   }
+});
+
+// ─────────────── 3.1 — THE SHARED LEXER OVER THE WHOLE TRACKED TREE (functional twin case) ───────────────
+//
+// The functional subject's comment stripper and the static NODE_OPTIONS guard both FAIL CLOSED on a
+// misparse (design D3 (b)): `lex()` records a quoted string or a regex literal meeting an unescaped
+// newline, an unterminated block comment, and input ending inside a string, template, `${…}` or regex, and
+// its callers throw on any. So a misparse anywhere in the files they read would stop every functional
+// certification. This case reads EVERY tracked `.mjs`/`.cjs`/`.js` file under `scripts/` — the engine,
+// `scripts/lib/`, and every file under `scripts/test/`, both halves and the fixtures — from this
+// repository's INDEX (`git show :<path>`, the bytes a commit holds) and requires zero misparses. The unit
+// rung reads no path, so this case lives here. A zero does NOT cover the statement-position regex
+// misread (design D3 (b), the spec's fourth stated limit), which records no misparse.
+
+test("3.1 the shared lexer reads every tracked script under scripts/ with zero misparses", async () => {
+  const { lex } = await import("../js-lexer.mjs");
+  const repo = path.join(TEST_ROOT, "..", "..");
+  const files = git(repo, "ls-files", "-z", "--", "scripts").split("\0").filter((p) => /\.(mjs|cjs|js)$/.test(p));
+  assert.ok(files.length > 100, `expected the whole scripts/ tree, found ${files.length} files`);
+  const bad = [];
+  for (const rel of files) {
+    const src = execFileSync("git", ["-C", repo, "show", `:${rel}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    for (const m of lex(src).misparse) bad.push(`${rel}:${m.line}: ${m.what}`);
+  }
+  assert.deepEqual(bad, [], `the shared lexer misparsed ${bad.length} place(s) in ${files.length} tracked files`);
 });

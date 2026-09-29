@@ -226,6 +226,10 @@ unitTest("a bare invocation with no subcommand prints usage and exits 0", () => 
 //    All three run the real hook, so they stay functional. The decision they exercise has its
 //    value-level half elsewhere: the freshness rule on the unit rung (`unit/drift-freshness`) and the
 //    interim subjects' path classes on the file rung (`assert/drift-script`, check 4).
+// 6. THE SHARED LEXER (certification-record-redesign 3.1). certification.mjs imports
+//    `scripts/test/js-lexer.mjs`, so every hook fixture copies it beside drift and certification
+//    (`runHookAgainstFixture`), and IX-k — which TRACKS the machinery — tracks it too, or the snapshot's
+//    drift fails at import and the commit is refused for the wrong reason.
 
 // ──────────────── the pre-commit hook's SHAPE ────────────────
 //

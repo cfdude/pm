@@ -750,6 +750,9 @@ test("IX-k the drift script that judges a commit is the COMMIT's copy — an uns
     extraFiles: {
       "scripts/test/drift.mjs": real("scripts/test/drift.mjs"),
       "scripts/test/certification.mjs": real("scripts/test/certification.mjs"),
+      // certification.mjs imports the shared lexer (certification-record-redesign 3.1): without it the
+      // snapshot's drift fails at import, and the commit would be refused for the wrong reason.
+      "scripts/test/js-lexer.mjs": real("scripts/test/js-lexer.mjs"),
       "scripts/test/functional/ix-lone.test.mjs": IX_HEADER + 'test("lone", () => { assert.ok(true); });\n',
     },
     setup: (cwd) => fs.writeFileSync(path.join(cwd, "scripts", "test", "drift.mjs"), "process.exit(0);\n"),

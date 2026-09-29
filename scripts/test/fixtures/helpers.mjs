@@ -355,7 +355,9 @@ export function runHookAgainstFixture(testFileBody, {
   // ids — so all four checks pass on the fixture by construction, which is what lets the floor and
   // the quiet/failure behaviour below be observed through the real hook.
   const repoRoot = path.join(path.dirname(ENGINE), "..");
-  for (const rel of ["scripts/test/drift.mjs", "scripts/test/certification.mjs"]) {
+  // `js-lexer.mjs` since certification-record-redesign 3.1: certification.mjs imports it (the comment
+  // stripper of the functional subject's derivation), so a fixture without it cannot load drift at all.
+  for (const rel of ["scripts/test/drift.mjs", "scripts/test/certification.mjs", "scripts/test/js-lexer.mjs"]) {
     fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
   }
   fs.writeFileSync(path.join(cwd, "scripts", "conductor.mjs"), "");

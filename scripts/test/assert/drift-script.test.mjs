@@ -24,6 +24,9 @@
 // worktree instead of the index would leave all of these green. `scripts/test/functional/
 // drift-script.test.mjs` builds that state in a real repository and requires the refusal, and it holds
 // the two cases that need real git: a staged deletion judged through HEAD, and X1's two indexes.
+// Its fixture repositories copy the machinery in — certify, certification, drift and, since
+// certification-record-redesign 3.1, `js-lexer.mjs`, which certification.mjs imports for the functional
+// subject's comment stripper — so the runner and the drift script under test load as they do here.
 
 import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";

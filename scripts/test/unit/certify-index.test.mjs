@@ -135,3 +135,177 @@ unitTest("1.3 the export lands inside the clone, never in a bare --prefix direct
   assert.equal(exp.args[1], p.tree, "the export runs in the clone");
   assert.equal(p.steps.find(isGit("clone")).args.at(-1), p.tree, "and the clone is the directory the bucket runs in");
 });
+
+// ─────────────── 3.1 — THE OBSERVED FUNCTIONAL SUBJECT, over an injected index reader ───────────────
+//
+// certification-record-redesign D3 (#229): the functional subject is what the half OBSERVES — the
+// import closure of every functional test file and of the engine entry point, the functional files,
+// every assertion-half file the half EXECUTES (a quoted `assert/<name>.test.mjs` in a closure file's
+// CODE), every tracked file under `scripts/`, `.githooks/` or `hooks/` whose NAME a closure file under
+// `scripts/test/` spells, the shipped-surface roots a closure file spells, and README.md / CLAUDE.md /
+// docs/parity-ledger.json by name. The record (`openspec/`, `.conductor/`, `CHANGELOG.md`, the rest of
+// `docs/`) is never in it. Every case below is a VALUE `functionalSubject()` returned over an index the
+// test hands it as text — no path is read.
+
+const ROOT = "/r";
+/** An index as a filesystem, in the shape drift's `indexReaders()` returns: `paths` is the listing,
+ *  `readdir`/`readFile` take absolute paths under ROOT; an absent file reads as "". */
+function memIndex(files) {
+  const paths = Object.keys(files).sort();
+  const rel = (abs) => path.posix.relative(ROOT, abs);
+  return {
+    root: ROOT,
+    paths,
+    readFile: (abs) => files[rel(abs)] ?? "",
+    readdir: (abs) => {
+      const prefix = rel(abs) ? `${rel(abs)}/` : "";
+      return [...new Set(paths.filter((p) => p.startsWith(prefix)).map((p) => p.slice(prefix.length).split("/")[0]))].sort();
+    },
+  };
+}
+function subjectOf(files) {
+  assert.equal(typeof certification.functionalSubject, "function",
+    "certification.mjs exports no functionalSubject(): the functional subject is still how a module reaches git (#229), not what the half observes");
+  return new Set(certification.functionalSubject(memIndex(files)));
+}
+const FN = "scripts/test/functional/f.test.mjs";
+
+unitTest("3.1 an engine module the half imports is IN though it makes no gateway call (the b4ffe164 shape)", () => {
+  const s = subjectOf({
+    "scripts/conductor.mjs": 'import { gate } from "./lib/archive-gate.mjs";\n',
+    "scripts/lib/archive-gate.mjs": 'export const gate = () => "refused: the archive gate";\n',
+    "scripts/lib/unused.mjs": "export const nobody = 1;\n",
+    [FN]: 'import { test } from "node:test";\n',
+  });
+  assert.ok(s.has("scripts/lib/archive-gate.mjs"), `archive-gate.mjs is imported by the engine entry point: ${[...s]}`);
+  assert.ok(s.has("scripts/conductor.mjs") && s.has(FN), "the entry point and the functional file are closure roots");
+  assert.equal(s.has("scripts/lib/unused.mjs"), false, "a module nothing imports or names is not observed");
+});
+
+unitTest("3.1 .githooks/pre-commit and hooks/hooks.json are IN when a closure test spells their names", () => {
+  const files = {
+    ".githooks/pre-commit": "#!/bin/sh\n",
+    "hooks/hooks.json": "{}\n",
+    [FN]: 'const hook = path.join(REPO, ".githooks", "pre-commit");\nconst cfg = "hooks/hooks.json";\n',
+  };
+  const s = subjectOf(files);
+  assert.ok(s.has(".githooks/pre-commit"), "the hook is named as a literal segment");
+  assert.ok(s.has("hooks/hooks.json"), "the hook configuration is named as the last segment of a literal");
+  const t = subjectOf({ ...files, [FN]: "// no names here\n" });
+  assert.equal(t.has(".githooks/pre-commit") || t.has("hooks/hooks.json"), false, "unnamed, neither is observed");
+});
+
+unitTest("3.1 scripts/test/{assert,unit}/* are OUT unless executed, even when named", () => {
+  const s = subjectOf({
+    "scripts/test/assert/x.test.mjs": "",
+    "scripts/test/unit/y.test.mjs": "",
+    [FN]: 'const names = ["x.test.mjs", "y.test.mjs"];\n',
+  });
+  assert.equal(s.has("scripts/test/assert/x.test.mjs"), false, "a named assertion file is not executed by being named");
+  assert.equal(s.has("scripts/test/unit/y.test.mjs"), false, "nor a named unit file");
+});
+
+unitTest("3.1 the shipped roots are wholly IN when a closure file spells the root, the three root files by name", () => {
+  const files = {
+    "commands/a.md": "", "commands/b.md": "", "skills/s/SKILL.md": "", "agents/r.md": "", "hooks/h.mjs": "",
+    ".claude-plugin/plugin.json": "{}", "README.md": "", "CLAUDE.md": "", "docs/parity-ledger.json": "{}",
+    "scripts/test/fixtures/roots.mjs": 'export const ROOTS = ["commands", "skills", "agents", "hooks", ".claude-plugin"];\n' +
+      'export const DOCS = ["README.md", "CLAUDE.md", "docs/parity-ledger.json"];\n',
+    [FN]: 'import { ROOTS } from "../fixtures/roots.mjs";\n',
+  };
+  const s = subjectOf(files);
+  for (const p of Object.keys(files)) assert.ok(s.has(p), `${p} is observed: ${[...s].join(", ")}`);
+  const t = subjectOf({ ...files, "scripts/test/fixtures/roots.mjs": "export const ROOTS = [];\n" });
+  for (const p of ["commands/a.md", "skills/s/SKILL.md", "README.md", "CLAUDE.md", "docs/parity-ledger.json"]) {
+    assert.equal(t.has(p), false, `${p} is not observed when nothing spells it`);
+  }
+});
+
+unitTest("3.1 the record — openspec/, .conductor/, CHANGELOG.md and the rest of docs/ — is OUT even when named", () => {
+  const s = subjectOf({
+    "openspec/changes/c/tasks.md": "", ".conductor/state.json": "{}", "CHANGELOG.md": "", "docs/lessons/l.md": "",
+    [FN]: 'const r = ["openspec", "tasks.md", ".conductor", "state.json", "CHANGELOG.md", "docs", "l.md"];\n',
+  });
+  for (const p of ["openspec/changes/c/tasks.md", ".conductor/state.json", "CHANGELOG.md", "docs/lessons/l.md"]) {
+    assert.equal(s.has(p), false, `${p} is the repository's record, excluded by rule`);
+  }
+});
+
+unitTest("3.1 a literal dynamic import and a bare side-effect import are followed; a non-relative specifier is not", () => {
+  const s = subjectOf({
+    "scripts/test/fixtures/hermetic-git.mjs": "export {};\n",
+    "scripts/test/fixtures/late.mjs": "export const late = 1;\n",
+    "scripts/test/fixtures/pkg/index.mjs": "export {};\n",
+    [FN]: 'import "../fixtures/hermetic-git.mjs";\nimport path from "node:path";\nimport helper from "pkg";\n' +
+      'const { late } = await import("../fixtures/late.mjs");\n',
+  });
+  assert.ok(s.has("scripts/test/fixtures/hermetic-git.mjs"), "a bare side-effect import is followed (Gate 1 M1)");
+  assert.ok(s.has("scripts/test/fixtures/late.mjs"), "a literal dynamic import is followed");
+  assert.equal(s.has("scripts/test/fixtures/pkg/index.mjs"), false, "a non-relative specifier is not a repository path");
+});
+
+unitTest("3.1 an EXECUTED assertion file is IN, with its imports (round 2 C1)", () => {
+  const s = subjectOf({
+    "scripts/test/assert/parity.test.mjs": 'import { walk } from "../fixtures/parity-helpers.mjs";\n',
+    "scripts/test/fixtures/parity-helpers.mjs": "export const walk = () => [];\n",
+    "scripts/test/assert/other.test.mjs": "",
+    [FN]: 'const SITE_RUNS = [{ file: "assert/parity.test.mjs" }];\n',
+  });
+  assert.ok(s.has("scripts/test/assert/parity.test.mjs"), "the file the half runs as a nested test run is observed");
+  assert.ok(s.has("scripts/test/fixtures/parity-helpers.mjs"), "and so is what it imports: it is a closure root");
+  assert.equal(s.has("scripts/test/assert/other.test.mjs"), false);
+});
+
+unitTest("3.1 a twin named only in a comment stays OUT, quoted or not; the same quoted path in CODE is IN (R4)", () => {
+  const twin = "scripts/test/assert/parity.test.mjs";
+  const out = (body) => assert.equal(subjectOf({ [twin]: "", [FN]: body }).has(twin), false, `a comment executes nothing:\n${body}`);
+  const inn = (body) => assert.ok(subjectOf({ [twin]: "", [FN]: body }).has(twin), `code that names the file runs it:\n${body}`);
+  out("// Its assertion twin is `assert/parity.test.mjs`\n");
+  out('// runs "assert/parity.test.mjs"\n');
+  out('/* runs "assert/parity.test.mjs" */\n');
+  out('/*\n * runs \'scripts/test/assert/parity.test.mjs\'\n */\n');
+  inn('run("assert/parity.test.mjs");\n');
+  inn('run("scripts/test/assert/parity.test.mjs");\n');
+  // A string holding `//` is a string, not the start of a comment: the call after it is still code.
+  inn('const u = "http://x"; run("assert/parity.test.mjs");\n');
+});
+
+// THE LEXER (Gate 1 round 4, T1): the comment stripper is the sweep's regex-aware `lex()`, moved to
+// `scripts/test/js-lexer.mjs`. A tokenizer with no regex-literal state misread both lines below — it
+// opened a string (or a template) inside the regex, kept the comment after it as string text, and so
+// matched the quoted path in the comment. Each line is the real text of the file it is named after.
+
+unitTest("3.1 a regex holding a quote does not open a string: the comment after it executes nothing (conformance.test.mjs:470)", () => {
+  const body = "  assert.doesNotMatch(src, /process\\.on\\(\\s*[\"'`]exit[\"'`]/,\n" +
+    '    "the engine must not instrument anything through a process exit handler");\n' +
+    '// runs "assert/parity.test.mjs"\n';
+  assert.equal(subjectOf({ "scripts/test/assert/parity.test.mjs": "", [FN]: body }).has("scripts/test/assert/parity.test.mjs"), false,
+    "the regex's quote opened a string and the comment was read as code");
+});
+
+unitTest("3.1 a regex holding a backtick does not open a template (output-text-integrity.test.mjs:185)", () => {
+  const body = "  const pushes = [...src.matchAll(/md\\.push\\(\\s*([\"'`])\\|/g)];\n" +
+    '// runs "assert/parity.test.mjs"\n';
+  assert.equal(subjectOf({ "scripts/test/assert/parity.test.mjs": "", [FN]: body }).has("scripts/test/assert/parity.test.mjs"), false,
+    "the regex's backtick opened a template and the comment was read as code");
+});
+
+unitTest("3.1 a string that meets an unescaped newline is REFUSED as a misparse, naming the file and line 1", () => {
+  const body = 'const a = "abc\nrun("assert/parity.test.mjs");\n';
+  assert.throws(() => subjectOf({ "scripts/test/assert/parity.test.mjs": "", [FN]: body }),
+    (e) => e instanceof Error && e.message.includes(FN) && /:1\b/.test(e.message),
+    "a misread must fail closed, naming the file and the line — never answer from it");
+});
+
+unitTest("3.1 lex() reports the comment ranges it skipped and each misparse, additively", async () => {
+  const { lex } = await import("../js-lexer.mjs");
+  const src = 'a(); // one\n/* two */ b("x");\n';
+  const r = lex(src);
+  assert.deepEqual(r.comments.map(([s, e]) => src.slice(s, e)), ["// one", "/* two */"], "the skipped comment ranges");
+  assert.deepEqual(r.misparse, [], "a well-formed source records no misparse");
+  for (const [bad, what] of [['x = "a\nb";\n', "a string meeting a newline"], ["x = /a\nb/;\n", "a regex meeting a newline"],
+    ["/* open\n", "an unterminated comment"], ["x = `a ${b\n", "input ending inside a template's ${…}"], ["x = 'a", "input ending inside a string"]]) {
+    assert.ok(lex(bad).misparse.length > 0, `${what} is a misparse`);
+  }
+  assert.ok(Array.isArray(r.contexts) && Array.isArray(r.interps) && Array.isArray(r.templates), "the sweep's results are unchanged");
+});
