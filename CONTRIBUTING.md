@@ -50,7 +50,12 @@ prose reminder alone wasn't enough). One-time setup per clone:
 git config core.hooksPath .githooks
 ```
 
-After that, `git commit` runs two hooks. `.githooks/pre-commit` runs the DRIFT SCRIPT's pre-commit
+`core.hooksPath` means git no longer runs `.git/hooks`, where a `git secrets --install` or a
+`~/.git-templates` puts the secret scanner, so `.githooks/pre-commit`, `.githooks/prepare-commit-msg`
+and `.githooks/commit-msg` each open by running `git secrets`' matching hook — when `git-secrets` is
+on PATH; a machine without it commits unscanned.
+
+After that, `git commit` runs two test hooks. `.githooks/pre-commit` runs the DRIFT SCRIPT's pre-commit
 phase (`node scripts/test/drift.mjs --phase pre-commit`: enrolment, twin coverage and record
 freshness, over the index) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
 invocation:

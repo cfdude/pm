@@ -1188,3 +1188,77 @@ test("a bare invocation with no subcommand prints usage and exits 0", () => {
   run(["init"], { cwd });
   assert.match(run([], { cwd }), /usage: conductor\.mjs/);
 });
+
+// ---------- git-secrets on the commit MESSAGE: commit-msg and prepare-commit-msg (minimal detour, 0.51.0 L5 5.9) ----------
+//
+// `core.hooksPath .githooks` sends git to THIS repository's hooks instead of `.git/hooks`, where
+// `~/.git-templates` installs `git secrets --commit_msg_hook` and `--prepare_commit_msg_hook`. So each
+// message hook here carries the same guarded first block `.githooks/pre-commit` carries for its own
+// case, or commit-message secret scanning is off in every clone that follows CONTRIBUTING.
+//
+// A `git-secrets` SHIM put in front of PATH stands in for the scanner: git resolves `git secrets` to
+// the first `git-secrets` on PATH, so the shim is what each hook's block runs. It refuses ONLY the mode
+// under test and passes every other, so a refusal proves THAT hook's block ran. The absent case builds
+// a PATH that resolves no `git-secrets` at all — every directory holding one is replaced by a mirror of
+// its other entries — so the `command -v` guard is exercised, not assumed.
+
+/** A directory holding a `git-secrets` shim that exits 1 for `mode` alone, printing a marker. */
+function gsShim(mode) {
+  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-gs-shim-")));
+  const shim = path.join(dir, "git-secrets");
+  fs.writeFileSync(shim, `#!/bin/sh\nif [ "$1" = "${mode}" ]; then echo "gs-shim: refused ${mode}"; exit 1; fi\nexit 0\n`);
+  fs.chmodSync(shim, 0o755);
+  return dir;
+}
+/** PATH with every directory that holds a `git-secrets` replaced by a mirror of its other entries. */
+function gsPathWithout() {
+  const mirror = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-gs-absent-")));
+  return (process.env.PATH || "").split(path.delimiter).map((dir, i) => {
+    if (!dir || !fs.existsSync(path.join(dir, "git-secrets"))) return dir;
+    const sub = path.join(mirror, String(i));
+    fs.mkdirSync(sub);
+    for (const name of fs.readdirSync(dir)) {
+      if (name !== "git-secrets") fs.symlinkSync(path.join(dir, name), path.join(sub, name));
+    }
+    return sub;
+  }).join(path.delimiter);
+}
+const gsPath = (dir) => `${dir}${path.delimiter}${process.env.PATH || ""}`;
+/** A plain, uncoupled commit's content: a file in no bucket's subject and no rung. */
+function gsStage(cwd, marker) {
+  fs.writeFileSync(path.join(cwd, "notes.txt"), `${marker}\n`);
+  hkGit(cwd, "add", "--", "notes.txt");
+}
+
+test("L5 5.9 commit-msg runs git-secrets' commit_msg_hook first: a scanner that refuses the message refuses the commit", () => {
+  const cwd = hookedRepo();
+  gsStage(cwd, "commit-msg");
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", "-m", "a message the scanner refuses"], { env: { PATH: gsPath(gsShim("--commit_msg_hook")) } });
+  assert.notEqual(r.status, 0, `the commit must be refused: ${r.out}`);
+  assert.equal(hkHead(cwd), head, "a refused commit must not move HEAD");
+  assert.match(r.out, /^gs-shim: refused --commit_msg_hook$/m, `commit-msg's git-secrets block must have run: ${r.out}`);
+  assert.doesNotMatch(r.out, /^commit-msg: ABORT/m, `the refusal is the scanner's, not drift's: ${r.out}`);
+});
+
+test("L5 5.9 prepare-commit-msg runs git-secrets' prepare_commit_msg_hook: a scanner that refuses it refuses the commit", () => {
+  const cwd = hookedRepo();
+  gsStage(cwd, "prepare-commit-msg");
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", "-m", "prepared"], { env: { PATH: gsPath(gsShim("--prepare_commit_msg_hook")) } });
+  assert.notEqual(r.status, 0, `the commit must be refused: ${r.out}`);
+  assert.equal(hkHead(cwd), head, "a refused commit must not move HEAD");
+  assert.match(r.out, /^gs-shim: refused --prepare_commit_msg_hook$/m, `prepare-commit-msg's git-secrets block must have run: ${r.out}`);
+});
+
+test("L5 5.9 a machine with no git-secrets still commits through all three hooks", () => {
+  const cwd = hookedRepo();
+  gsStage(cwd, "absent");
+  const PATH = gsPathWithout();
+  assert.equal(spawnSync("sh", ["-c", "command -v git-secrets"], { env: { ...process.env, PATH } }).status, 1,
+    "fixture: the built PATH must resolve no git-secrets");
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", "-m", "no scanner installed"], { env: { PATH } });
+  assert.equal(r.status, 0, `the commit must be accepted: ${r.out}`);
+  assert.notEqual(hkHead(cwd), head, "an accepted commit moves HEAD");
+});

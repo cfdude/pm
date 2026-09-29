@@ -339,3 +339,23 @@ test("4.4 the phase table puts diff coupling in exactly one hook's phase, and it
   assert.deepEqual(all, [...new Set(all)].sort(), "no check runs in both hooks");
   assert.deepEqual(all, [...phaseChecks(undefined)].sort(), "and between them the two hooks run every check a bare run does");
 });
+
+test("L5 5.9 each message hook opens with the guarded git-secrets block, as pre-commit does for its own case", () => {
+  // THE SHAPE HALF of functional/conductor-09's L5 5.9 cases: those commit through the real hooks with
+  // a `git-secrets` shim on PATH (and with none); this pins the block itself — first command of the
+  // hook, guarded by `command -v`, refusing the commit on the scanner's refusal — so an edit that drops
+  // or reorders it fails on the per-commit path first. `core.hooksPath` bypasses `.git/hooks`, so
+  // without these blocks commit-message secret scanning is off.
+  for (const [hook, mode] of [["pre-commit", "--pre_commit_hook"], ["commit-msg", "--commit_msg_hook"],
+    ["prepare-commit-msg", "--prepare_commit_msg_hook"]]) {
+    const file = path.join(path.dirname(HOOK), hook);
+    assert.ok(fs.existsSync(file), `.githooks/${hook} is missing`);
+    assert.ok(fs.statSync(file).mode & 0o111, `.githooks/${hook} is not executable`);
+    const commands = fs.readFileSync(file, "utf8").split("\n").filter((l) => l.trim() && !/^\s*#/.test(l));
+    assert.deepEqual(commands.slice(0, 3), [
+      "if command -v git-secrets >/dev/null 2>&1; then",
+      `  git secrets ${mode} -- "$@" || exit 1`,
+      "fi",
+    ], `.githooks/${hook} must open with the guarded git-secrets ${mode} block`);
+  }
+});

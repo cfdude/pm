@@ -1,5 +1,14 @@
 #!/bin/sh
-# THE COMMIT-MSG HOOK: DIFF COUPLING, AND ONLY IT (certification-record-redesign D4, #227).
+
+# --- secret scanning ---
+# core.hooksPath sends git here instead of .git/hooks, bypassing the
+# `git secrets --commit_msg_hook` that ~/.git-templates installs at clone time.
+# Without this call no commit message is scanned. Keep it first.
+if command -v git-secrets >/dev/null 2>&1; then
+  git secrets --commit_msg_hook -- "$@" || exit 1
+fi
+# --- end secret scanning ---
+# THE COMMIT-MSG HOOK: DIFF COUPLING, AND ONLY IT, after the secret scan above (certification-record-redesign D4, #227).
 #
 # A staged change to a functional file must carry its assertion twin in the same commit, UNLESS the
 # commit message declares, as a git trailer, that the change leaves what the file tests untouched:

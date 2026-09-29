@@ -423,7 +423,8 @@ export function seedAgreeingEntry(cwd, bucket, { indexFile } = {}) {
  *  `scripts/test/{drift,certification,js-lexer}.mjs`, so both hooks run the SNAPSHOT's drift and a
  *  linked worktree's checkout holds it too. With `trackMachinery: false` they are copied in UNTRACKED,
  *  the `runHookAgainstFixture` shape, and each hook falls back to the working tree's drift.mjs.
- *  The hooks are this repository's `.githooks/pre-commit` and `.githooks/commit-msg`, copied in
+ *  The hooks are this repository's `.githooks/pre-commit`, `.githooks/prepare-commit-msg` and
+ *  `.githooks/commit-msg`, copied in
  *  untracked, and installed by an ABSOLUTE `core.hooksPath` — as this repository's own is — so a linked
  *  worktree runs them too. The baseline is committed BEFORE `core.hooksPath` is set: no hook is
  *  installed yet, so none runs and none is bypassed. */
@@ -445,9 +446,9 @@ export function hookedRepo({ trackMachinery = true } = {}) {
   write("scripts/test/assert/alpha.test.mjs", `${header}test("alpha, its twin", () => { assert.ok(true); });\n`);
   const machinery = ["scripts/test/drift.mjs", "scripts/test/certification.mjs", "scripts/test/js-lexer.mjs"];
   for (const rel of machinery) fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
-  for (const hook of ["pre-commit", "commit-msg"]) {
+  for (const hook of ["pre-commit", "prepare-commit-msg", "commit-msg"]) {
     const src = path.join(repoRoot, ".githooks", hook);
-    assert.ok(fs.existsSync(src), `.githooks/${hook} does not exist in this repository — a hooked fixture needs both hooks (design D4)`);
+    assert.ok(fs.existsSync(src), `.githooks/${hook} does not exist in this repository — a hooked fixture needs every hook git runs on a commit (design D4)`);
     write(`.githooks/${hook}`, fs.readFileSync(src, "utf8"));
     fs.chmodSync(path.join(cwd, ".githooks", hook), 0o755);
   }
