@@ -612,3 +612,64 @@ test("2.2 a manifest holding no test file of its bucket is refused, and nothing 
     "the buckets are `functional` and `sweeps`");
   assert.equal(fs.existsSync(path.join(common, "pm-suite-certification.d")), false, "a refused entry writes nothing, not even its directory");
 });
+
+// ───────────────────────────── 2.3 — migration: the two formats coexist (design D5, Gate 1 B5) ─────────────────────────────
+//
+// The single-file record is never parsed by the new gate and never removed by the new runner: a
+// rollback to the old drift finds its record where it was left. A clone with no record directory
+// behaves as a record with no entries.
+
+const LEGACY = JSON.stringify({ version: 1, entries: {
+  "scripts/lib/a.mjs": { kind: "module", files: ["scripts/lib/a.mjs"], contentHash: "H", covers: ["alpha"], result: "pass" },
+  "engine-source": { kind: "trigger", files: ["scripts/conductor.mjs"], contentHash: "H", covers: ["output-interpolations"], result: "pass" },
+} }, null, 2) + "\n";
+
+function freshnessOf(common, { staged, subject = ["scripts/lib/a.mjs", "scripts/test/functional/alpha.test.mjs"] } = {}) {
+  assert.equal(typeof recordDir.freshnessRefusal, "function",
+    "certification.mjs exports no freshnessRefusal(): the record directory is never consulted as a whole — demand, manifest and one keyed entry");
+  const calls = { index: 0, head: 0, manifest: 0 };
+  const refusal = recordDir.freshnessRefusal({
+    commonDir: common, bucket: "functional", stagedPaths: staged, indexPaths: new Set(Object.keys(RD_MANIFEST)),
+    subjectIndex: () => { calls.index += 1; return subject; },
+    subjectHead: () => { calls.head += 1; return subject; },
+    manifest: () => { calls.manifest += 1; return RD_MANIFEST; },
+  });
+  return { refusal, calls };
+}
+
+test("2.3 a common dir holding only pm-suite-certification.json yields ZERO entries", () => {
+  const common = scratchCommonDir();
+  fs.writeFileSync(path.join(common, "pm-suite-certification.json"), LEGACY);
+  for (const bucket of ["functional", "sweeps"]) {
+    assert.equal(rd().readEntry(common, bucket, rd().manifestKey(RD_MANIFEST)), null, `the legacy file certifies nothing for ${bucket}`);
+  }
+  const { refusal } = freshnessOf(common, { staged: ["scripts/lib/a.mjs"] });
+  assert.ok(refusal, "a staged subject path with only the legacy record present is a DEMAND, not a pass read from the old file");
+  assert.equal(refusal.bucket, "functional");
+  assert.equal(fs.readFileSync(path.join(common, "pm-suite-certification.json"), "utf8"), LEGACY, "and reading left the legacy file alone");
+});
+
+test("2.3 writeManifestEntry() leaves the legacy file byte-identical", () => {
+  const common = scratchCommonDir();
+  const legacy = path.join(common, "pm-suite-certification.json");
+  fs.writeFileSync(legacy, LEGACY);
+  rd().writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST });
+  rd().pruneRecord(common, "functional", { keep: rd().manifestKey(RD_MANIFEST), tmpDir: scratchCommonDir() });
+  assert.equal(fs.readFileSync(legacy, "utf8"), LEGACY,
+    "the new runner neither rewrites nor removes the superseded record — a rollback finds it where it was left (D5)");
+});
+
+test("2.3 a fresh clone (no record directory) demands a run only when a subject path is staged", () => {
+  const common = scratchCommonDir();
+  const quiet = freshnessOf(common, { staged: ["openspec/changes/x/tasks.md", "docs/lessons/x.md"] });
+  assert.equal(quiet.refusal, null, "a commit staging nothing in any subject is not refused");
+  assert.deepEqual(quiet.calls, { index: 0, head: 0, manifest: 0 }, "and pays for no derivation and no manifest");
+  const loud = freshnessOf(common, { staged: ["scripts/lib/a.mjs", "openspec/changes/x/tasks.md"] });
+  assert.ok(loud.refusal, "a staged subject path with no record is refused");
+  assert.deepEqual(loud.refusal.changed, ["scripts/lib/a.mjs"], "naming the staged subject paths");
+  assert.equal(loud.refusal.run, "node scripts/test/certify.mjs functional", "and the run that satisfies it");
+  assert.equal(loud.calls.manifest, 1);
+  // ...and once that run's entry exists, the same commit is fresh.
+  rd().writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST });
+  assert.equal(freshnessOf(common, { staged: ["scripts/lib/a.mjs"] }).refusal, null, "the agreeing entry satisfies the demand");
+});

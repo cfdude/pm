@@ -225,7 +225,7 @@ These rules bind every section below.
         - `readRecord`/`writeEntry` for the single file are deleted in 2.4, not here.
 
       RED `red-2.2.txt`. Certify functional by hand before this commit (B9).
-- [ ] 2.3 **TDD, FILE rung**: migration (D5, Gate 1 B5: the formats coexist).
+- [x] 2.3 **TDD, FILE rung**: migration (D5, Gate 1 B5: the formats coexist).
       - **The RED:**
         - a common dir holding only `pm-suite-certification.json` yields ZERO entries;
         - `writeManifestEntry()` leaves that file byte-identical;

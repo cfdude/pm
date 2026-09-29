@@ -458,6 +458,24 @@ export function recordFreshness({ bucket, indexManifest, entryFor }) {
   return { fresh: why === null, key, why };
 }
 
+/** The run that satisfies a bucket's demand. The refusal NAMES it, because a refusal a developer
+ *  cannot satisfy is a refusal that gets bypassed. */
+export const runForBucket = (bucket) => `node scripts/test/certify.mjs ${bucket}`;
+
+/** CHECK 4 FOR ONE BUCKET, over the record directory (design D1 steps 1-4): the demand, then — only
+ *  when demanded — the index's manifest (a thunk, so a commit that demands nothing reads none) and
+ *  the ONE entry its key names. Returns null when the bucket is not demanded or is fresh, else the
+ *  refusal `{ kind: "stale-record", bucket, changed, run, key, why }`, where `changed` is the staged
+ *  subject paths. A record directory that does not exist — a fresh clone, or one that holds only the
+ *  superseded single-file record — has no entries, so a demand in it is always a refusal (D5). */
+export function freshnessRefusal({ commonDir, bucket, stagedPaths, indexPaths, subjectIndex, subjectHead, manifest, io = fs }) {
+  const changed = demandedPaths({ stagedPaths, indexPaths, subjectIndex, subjectHead });
+  if (!changed.length) return null;
+  const f = recordFreshness({ bucket, indexManifest: manifest(), entryFor: (key) => readEntry(commonDir, bucket, key, io) });
+  if (f.fresh) return null;
+  return { kind: "stale-record", bucket, changed, run: runForBucket(bucket), key: f.key, why: f.why };
+}
+
 // ───────────────────────────── the record DIRECTORY (certification-record-redesign D1, D5) ─────────────────────────────
 
 /** The record's directory, under `$(git rev-parse --git-common-dir)`: one sub-directory per bucket,
