@@ -295,7 +295,13 @@ snapshot, loads `scripts/test/fixtures/record-isolation.mjs`. The fixture does t
   inode — never read, because certify's observer refuses a read outside the functional subject. It
   covers this repository, of `PM_TEST_PROTECTED_ROOT`, and of any
   `CLAUDE_PROJECT_DIR` you inherited. The hook and certify set `PM_TEST_PROTECTED_ROOT` to the real
-  checkout, because they run the suite over a copy. `.DS_Store` and `*.lock` files are skipped.
+  checkout, because they run the suite over a copy. `.DS_Store` and `*.lock` files are skipped, and
+  so is a live session's bookkeeping (`SESSION_BOOKKEEPING` in the fixture): `commit-observe.json*`,
+  `commit-watch.json`, `session-claim.json*`, `brief.txt`, `activity/` and `agent-logs/` under
+  `.conductor/`. Each is git-ignored by the engine and rewritten by a live session's hooks or agents
+  on every tool call; watched, they failed every file of the pre-commit run whenever any session was
+  active in the checkout. `state.json`, `render-stamp.json`, the logs, `feedback/` and the root files
+  stay watched, so a live session's write to one of those still fails a file.
 - It pins `CLAUDE_PROJECT_DIR` to an empty scratch directory.
 - At exit it fails the file when any protected file changed, naming each path with its mtime
   against the process's start.
@@ -309,7 +315,8 @@ path derived from `import.meta.url`, a child given `CLAUDE_PROJECT_DIR=<repo>`, 
 `withRoot(REPO, …)`, and git run with the repository as its cwd. It also covers a child whose env was
 built by hand without `CLAUDE_PROJECT_DIR` (or had it deleted) and whose cwd is your checkout: its
 engine falls back to that cwd. NOT SEEN: a file outside the
-hashed set, and a detached child that writes after the test process exits.
+hashed set (the session bookkeeping above included), and a detached child that writes after the
+test process exits.
 
 **A test that reads this repository through a direct lib call names it.** Outside `main()`, the
 engine's root is the pin. So wrap the call in `withRoot(REPO, () => …)` from

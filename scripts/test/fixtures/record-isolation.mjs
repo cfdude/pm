@@ -23,6 +23,32 @@
 //      files the engine writes (`PROJECT.md`, `CLAUDE.md`, `.gitignore` — `lib/verb-effects.mjs`,
 //      `init`/`render`). `.DS_Store` and `*.lock` are skipped:
 //      the first is the OS's, the second a transient the commit-nudge hook makes and removes.
+//      So is SESSION BOOKKEEPING (`SESSION_BOOKKEEPING`): the files a LIVE Claude Code session's hooks
+//      and agents rewrite as they work, which are never the record of work. Watching them made the
+//      guard unusable: every Bash call of every live session in the checkout rewrites
+//      commit-observe.json, so on 2026-09-29 every file of the pre-commit assertion half failed
+//      (~40 files, all on that one path) while a second session worked in another worktree. Each
+//      entry is git-ignored by the engine itself (`ensureGitignore`, lib/subcommands.mjs) as
+//      per-checkout transient state, and each has a named live writer:
+//        commit-observe.json*  — the PostToolUse/PostToolUseFailure `commit-nudge` hook, every tool
+//                                call (lib/commit-watch.mjs): the record, its O_EXCL lock and the
+//                                `.tmp-<pid>` of its rename, which a killed hook leaves behind.
+//        commit-watch.json     — the same hook's 0.44.0 watermark, still rewritten by an unreloaded
+//                                0.44.0 session sharing the checkout.
+//        session-claim.json*   — #84's per-session quiescence marker and its rename temp
+//                                (lib/claims.mjs): "THIS session is mid-operation here".
+//        brief.txt             — rewritten by the SessionStart `brief` and PreCompact `snapshot` hooks
+//                                (lib/verb-effects.mjs); derived from state.json, which stays watched.
+//        activity/             — #111's activity segments (lib/activity-log.mjs), appended by every
+//                                engine run, hooks included, when the log is on.
+//        agent-logs/           — scripts/agent-log.sh, which every worktree agent appends to in the
+//                                MAIN checkout.
+//      The DURABLE record stays watched: state.json, render-stamp.json, detours.log,
+//      honcho-memories.log, feedback/, write-conflicts.*, and the root files. Matching is on the
+//      root-relative path, never the basename, so `.conductor/feedback/brief.txt` is still watched.
+//      RESIDUAL FALSE POSITIVE, deliberately kept: commit-nudge can also self-heal state.json and
+//      append detours.log, and a live orchestrator writes state.json; those are the record, so a
+//      concurrent write to one still fails the file and the mtime in the message says whose it was.
 //   2. PINS `CLAUDE_PROJECT_DIR` to a fresh EMPTY scratch directory, removed at exit.
 //   3. AT EXIT, hashes again. Any file added, changed or removed is written to stderr by path, with
 //      its mtime against this process's start, and the process exits 1 — which the runner reports as
@@ -41,7 +67,7 @@
 //     wrote state.json and the exit check caught it) — a lib call inside `withRoot(REPO, …)`
 //     (`explicit-root.mjs`), and a git command run with the repository as its cwd.
 //   NOT SEEN — a write under a protected root outside the hashed set (any other path in the working
-//     tree); and a DETACHED child that outlives this process and writes after its exit listener ran.
+//     tree, and the SESSION_BOOKKEEPING paths above); and a DETACHED child that outlives this process and writes after its exit listener ran.
 //
 // IT NEVER RESTORES the record. A restore could clobber a LEGITIMATE concurrent write and would erase
 // the evidence of the leak. That concurrent write is this guard's false positive: the exit check cannot
@@ -81,6 +107,23 @@ export function protectedRoots(env, suiteRepo) {
  *  transient by construction (the commit-nudge hook makes one under `.conductor/` and removes it). */
 export const skipped = (name) => name === ".DS_Store" || name.endsWith(".lock");
 
+/** The root-relative paths a live session's hooks and agents rewrite as bookkeeping — see the header
+ *  for each one's writer. A trailing `*` is a prefix (the file and its lock/temp siblings, the shape
+ *  of the engine's own .gitignore glob); a trailing `/` is a directory, pruned whole. */
+export const SESSION_BOOKKEEPING = [
+  ".conductor/commit-observe.json*", ".conductor/commit-watch.json", ".conductor/session-claim.json*",
+  ".conductor/brief.txt", ".conductor/activity/", ".conductor/agent-logs/",
+];
+
+/** Is the root-relative `rel` (a file, or a directory without its trailing slash) session bookkeeping? */
+export function sessionBookkeeping(rel) {
+  return SESSION_BOOKKEEPING.some((p) => {
+    if (p.endsWith("*")) return rel.startsWith(p.slice(0, -1));
+    if (p.endsWith("/")) return rel === p.slice(0, -1) || rel.startsWith(p);
+    return rel === p;
+  });
+}
+
 const digest = (abs) => crypto.createHash("sha256").update(fs.readFileSync(abs)).digest("hex");
 
 /** `{ "<root-relative path>": sha256 }` for every regular file under `<root>/.conductor/` and each of
@@ -100,6 +143,7 @@ export function snapshotRecord(root) {
     for (const e of entries) {
       if (skipped(e.name)) continue;
       const a = path.join(abs, e.name), r = `${rel}/${e.name}`;
+      if (sessionBookkeeping(r)) continue;
       if (e.isDirectory()) walk(a, r);
       else record(a, r, e);
     }

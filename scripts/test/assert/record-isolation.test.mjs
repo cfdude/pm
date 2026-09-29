@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { removeAtExit } from "../fixtures/assert-git-shim.mjs";
 import {
   snapshotRecord, diffRecords, protectedRoots, PINNED_ROOT, PROTECTED, describeLeaks, ROOT_FILES, skipped,
-  mtimeNote,
+  mtimeNote, SESSION_BOOKKEEPING, sessionBookkeeping,
 } from "../fixtures/record-isolation.mjs";
 import { lex } from "../js-lexer.mjs";
 
@@ -203,6 +203,57 @@ test("snapshot: .DS_Store and every *.lock are skipped — the OS's file and the
   fs.writeFileSync(path.join(root, ".conductor", ".DS_Store"), "x");
   fs.writeFileSync(path.join(root, ".conductor", "feedback", ".DS_Store"), "x");
   assert.deepEqual(diffRecords(before, snapshotRecord(root)), []);
+});
+
+test("snapshot: a live session's hook bookkeeping is left out of the walk; the durable record is not", () => {
+  // The files a LIVE Claude Code session's hooks rewrite on every tool call, never the record of work:
+  // before this exclusion every file of the pre-commit assertion half failed on commit-observe.json
+  // whenever any session was active in the checkout.
+  assert.deepEqual(SESSION_BOOKKEEPING, [
+    ".conductor/commit-observe.json*", ".conductor/commit-watch.json", ".conductor/session-claim.json*",
+    ".conductor/brief.txt", ".conductor/activity/", ".conductor/agent-logs/",
+  ]);
+  for (const rel of [".conductor/commit-observe.json", ".conductor/commit-observe.json.tmp-42",
+    ".conductor/commit-watch.json", ".conductor/session-claim.json", ".conductor/session-claim.json.tmp-1",
+    ".conductor/brief.txt", ".conductor/activity", ".conductor/activity/2026-09-29.jsonl",
+    ".conductor/agent-logs", ".conductor/agent-logs/a.jsonl"]) {
+    assert.equal(sessionBookkeeping(rel), true, rel);
+  }
+  for (const rel of [".conductor/state.json", ".conductor/render-stamp.json", ".conductor/detours.log",
+    ".conductor/honcho-memories.log", ".conductor/feedback/a.md", ".conductor/feedback/brief.txt",
+    ".conductor/feedback/activity/x", ".conductor/brief.txt.bak", ".conductor/commit-watch.json.old",
+    ".conductor/activity-other", "PROJECT.md"]) {
+    assert.equal(sessionBookkeeping(rel), false, rel);
+  }
+  const root = scratch("pm-record-isolation-session-");
+  const rec = path.join(root, ".conductor");
+  fs.mkdirSync(path.join(rec, "feedback"), { recursive: true });
+  for (const f of ["state.json", "render-stamp.json", "detours.log", "honcho-memories.log", "commit-observe.json", "brief.txt"]) {
+    fs.writeFileSync(path.join(rec, f), "before\n");
+  }
+  const before = snapshotRecord(root);
+  fs.writeFileSync(path.join(rec, "commit-observe.json"), "after\n");
+  fs.writeFileSync(path.join(rec, "commit-observe.json.tmp-99"), "x");
+  fs.writeFileSync(path.join(rec, "commit-watch.json"), "{}");
+  fs.writeFileSync(path.join(rec, "session-claim.json"), "{}");
+  fs.writeFileSync(path.join(rec, "brief.txt"), "after\n");
+  fs.mkdirSync(path.join(rec, "activity"));
+  fs.writeFileSync(path.join(rec, "activity", "seg.jsonl"), "{}\n");
+  fs.mkdirSync(path.join(rec, "agent-logs"));
+  fs.writeFileSync(path.join(rec, "agent-logs", "a.jsonl"), "{}\n");
+  assert.deepEqual(diffRecords(before, snapshotRecord(root)), [], "session bookkeeping alone is not a leak");
+
+  for (const f of ["state.json", "render-stamp.json", "detours.log", "honcho-memories.log"]) {
+    fs.writeFileSync(path.join(rec, f), "after\n");
+  }
+  fs.writeFileSync(path.join(rec, "feedback", "brief.txt"), "a nested name is not the session's brief");
+  assert.deepEqual(diffRecords(before, snapshotRecord(root)), [
+    { path: ".conductor/detours.log", change: "changed" },
+    { path: ".conductor/feedback/brief.txt", change: "added" },
+    { path: ".conductor/honcho-memories.log", change: "changed" },
+    { path: ".conductor/render-stamp.json", change: "changed" },
+    { path: ".conductor/state.json", change: "changed" },
+  ]);
 });
 
 test("snapshot + diff: a record that did not exist and now does is a leak; one that stays absent is not", () => {

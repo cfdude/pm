@@ -86,6 +86,37 @@ test("a root file the engine writes (CLAUDE.md) is protected as well as the .con
   assert.ok(r.out.includes(`${path.join(real, "CLAUDE.md")} (changed; `), r.out);
 });
 
+/** A body that starts a SEPARATE node process standing in for a live Claude Code session's
+ *  PostToolUse commit-nudge: it rewrites the observation record and leaves a rename temp behind,
+ *  exactly what `commit-watch.mjs` does on every Bash call of every live session in the checkout. */
+const concurrentHook = (real) => {
+  const obs = path.join(real, ".conductor", "commit-observe.json");
+  const script = `const fs = require("fs");` +
+    `fs.writeFileSync(${JSON.stringify(obs)}, ${JSON.stringify('{"anchor":"b","reported":[]}\n')});` +
+    `fs.writeFileSync(${JSON.stringify(`${obs}.tmp-999`)}, "x");`;
+  return `const w = spawnSync(process.execPath, ["-e", ${JSON.stringify(script)}], { encoding: "utf8" });\n` +
+    "assert.equal(w.status, 0, w.stderr);";
+};
+
+test("a live session's hook rewriting commit-observe.json mid-file does NOT fail the file — session bookkeeping is not the record", () => {
+  const real = realRepo();
+  fs.writeFileSync(path.join(real, ".conductor", "commit-observe.json"), "{\"anchor\":\"a\",\"reported\":[]}\n");
+  const r = runGuarded(concurrentHook(real), { PM_TEST_PROTECTED_ROOT: real, CLAUDE_PROJECT_DIR: undefined });
+  assert.equal(r.status, 0, r.out);
+  assert.doesNotMatch(r.out, /record-isolation:/);
+});
+
+test("the same concurrent hook write alongside a state.json write still fails the file, naming state.json alone", () => {
+  const real = realRepo();
+  fs.writeFileSync(path.join(real, ".conductor", "commit-observe.json"), "{\"anchor\":\"a\",\"reported\":[]}\n");
+  const r = runGuarded(
+    `${concurrentHook(real)}\nfs.writeFileSync(${JSON.stringify(path.join(real, ".conductor", "state.json"))}, '{"epics":[{"id":"alpha"}]}');`,
+    { PM_TEST_PROTECTED_ROOT: real, CLAUDE_PROJECT_DIR: undefined });
+  assert.equal(r.status, 1, r.out);
+  assert.ok(r.out.includes(`${path.join(real, ".conductor", "state.json")} (changed; `), r.out);
+  assert.doesNotMatch(r.out, /commit-observe/, "the bookkeeping file is never named");
+});
+
 test("the pin PREVENTS the 2026-09-21 shape: an engine spawned with ...process.env from inside the real repo writes nothing there", () => {
   // The developer's checkout: an initialized conductor, exported as CLAUDE_PROJECT_DIR AND the test's
   // cwd — the worst case, where an unset variable would fall back to the real repository as well.
