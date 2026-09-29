@@ -212,7 +212,7 @@ function certifiableRepo() {
     fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
     fs.writeFileSync(path.join(cwd, rel), body);
   }
-  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs"]) {
+  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs", "fixtures/observe-reads.mjs"]) {
     fs.mkdirSync(path.dirname(path.join(cwd, "scripts/test", rel)), { recursive: true });
     fs.copyFileSync(path.join(TEST_ROOT, rel), path.join(cwd, "scripts/test", rel));
   }

@@ -207,7 +207,10 @@ const ROWS = [
     setup: initRepo,
     args: ["add-epic", "--id", "e1", "--lane", "claude-code"],
     env: (cwd) => ({
-      NODE_OPTIONS: `--require ${path.join(HERE, "..", "fixtures", "inject-state-conflict.cjs")}`,
+      // APPENDED to the inherited value, never replacing it (certification-record-redesign D3, Gate 1 B4):
+      // under `certify.mjs functional` the inherited value carries the run-time observer, and a child
+      // that dropped it would read the repository unobserved.
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --require ${path.join(HERE, "..", "fixtures", "inject-state-conflict.cjs")}`,
       PM_INJECT_CONFLICT_DIR: path.join(cwd, ".conductor"),
       PM_INJECT_CONFLICT_MARKER: path.join(cwd, "conflict-fired.marker"),
     }),

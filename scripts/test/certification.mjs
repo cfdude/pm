@@ -22,7 +22,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { stripComments } from "./js-lexer.mjs";
+import { lex, stripComments } from "./js-lexer.mjs";
 
 /** The repository this module's defaults read. `scripts/test/certification.mjs` → two levels up. */
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -248,6 +248,111 @@ export function functionalSubject({ root = REPO, readFile = readDefault, readdir
     if (tracked.has(f) && new RegExp(`["'/]${esc(path.posix.basename(f))}["']`).test(spelled)) out.add(f);
   }
   return [...out].sort();
+}
+
+/** THE REPOSITORY'S RECORD (design D3, "Why the repository's record is out"): `openspec/`, `.conductor/`,
+ *  `CHANGELOG.md` and `docs/` other than the parity ledger. The functional half does read some of it
+ *  (the archive walk, the live `state.json`, CHANGELOG as shipped markdown and through the engine), and
+ *  the exclusion is a deliberate trade of demand frequency — so an observed read of it is not a refusal. */
+export const isRecordPath = (rel) => /^(openspec|\.conductor)\//.test(rel) || rel === "CHANGELOG.md" ||
+  (rel.startsWith("docs/") && rel !== "docs/parity-ledger.json");
+
+/** The observer's own module, which its load reports as nothing (m9). */
+export const OBSERVER = "scripts/test/fixtures/observe-reads.mjs";
+
+/** WHAT A FUNCTIONAL RUN OBSERVED, JUDGED AGAINST THE DERIVED SUBJECT (design D3, "The check"; task 3.2).
+ *  `observations` are the per-process files the observer wrote (`reads`, `expected`, `arrived`,
+ *  `cancelled`); `subject` is `functionalSubject()` over the run's index copy; `tracked` is that copy's
+ *  path list. Returns:
+ *    missed    — every observed TRACKED path outside the subject that is not the record, sorted. A read
+ *                recorded as a directory (the source of a `cp`) stands for every tracked file under it;
+ *    unarrived — every EXPECTED Node child whose token neither arrived nor was cancelled: a direct child
+ *                that loaded code without the observer, so what it read was never seen;
+ *    excluded  — the observed record paths, reported as "excluded by rule", never refused.
+ *  Pure: the certify runner reads the files and prints the refusal. */
+export function observationRefusals({ observations, subject, tracked }) {
+  const inSubject = new Set(subject);
+  const trackedList = [...tracked];
+  const trackedSet = new Set(trackedList);
+  const seen = new Set();
+  const arrived = new Set(), cancelled = new Set();
+  const expected = [];
+  for (const o of observations) {
+    for (const r of o.reads || []) {
+      if (trackedSet.has(r)) { seen.add(r); continue; }
+      const prefix = r.endsWith("/") ? r : `${r}/`;
+      for (const t of trackedList) if (t.startsWith(prefix)) seen.add(t);
+    }
+    for (const t of o.arrived || []) arrived.add(t);
+    for (const t of o.cancelled || []) cancelled.add(t);
+    for (const e of o.expected || []) expected.push(e);
+  }
+  seen.delete(OBSERVER);
+  const missed = [], excluded = [];
+  for (const p of [...seen].sort()) {
+    if (inSubject.has(p)) continue;
+    (isRecordPath(p) ? excluded : missed).push(p);
+  }
+  const unarrived = expected.filter((e) => !arrived.has(e.token) && !cancelled.has(e.token));
+  return { missed, unarrived, excluded };
+}
+
+/** THE STATIC NODE_OPTIONS GUARD (design D3, "A static guard, for INDIRECT Node children"; task 3.2). A
+ *  Node process that git or a shell starts cannot be matched to a run-time token, so before the bucket
+ *  runs, every file under `scripts/test/{functional,fixtures}/` is refused whose CODE assigns
+ *  `NODE_OPTIONS` a value that does not carry `process.env.NODE_OPTIONS` — a value that REPLACES the
+ *  inherited options drops the observer from every Node process under it.
+ *
+ *  `files` is `[{ path, text }]`; other paths are ignored. Two syntactic shapes, and nothing else:
+ *    an OBJECT KEY, bare or quoted (`NODE_OPTIONS:`, `"NODE_OPTIONS":`, `'NODE_OPTIONS':` — a key
+ *      overriding `...process.env` is this shape);
+ *    a PROPERTY ASSIGNMENT, dotted with the bare name (`env.NODE_OPTIONS =`) or subscripted with a quoted
+ *      one (`env["NODE_OPTIONS"] =`, `env['NODE_OPTIONS'] =`), never `==` or `===`.
+ *  A string in key or subscript position is CODE; every other string's text, and every comment, is not.
+ *  The value is the text up to the end of that property or statement (the next `,` `;` `)` `]` or `}` at
+ *  its own depth). The shared lexer tokenizes, and a misparse THROWS naming the file and line.
+ *  Its limit (the spec's fourth): a statement-position regex misread that closes on its own line records
+ *  no misparse, and an assignment inside it is not refused.
+ *  Returns `[{ file, line, value }]`, sorted by file then line. */
+export function nodeOptionsRefusals(files) {
+  const out = [];
+  const CARRIES = /process\.env\.NODE_OPTIONS\b|process\.env\[\s*["'`]NODE_OPTIONS["'`]\s*\]/;
+  for (const { path: file, text } of files) {
+    if (!/^scripts\/test\/(functional|fixtures)\//.test(file)) continue;
+    const { contexts, misparse } = lex(text);
+    if (misparse.length) {
+      throw new Error(`certification: ${file}:${misparse[0].line}: ${misparse[0].what} — the NODE_OPTIONS guard refuses to answer from a misread`);
+    }
+    for (const ctx of contexts) {
+      const toks = ctx.tokens;
+      const strText = (t) => text.slice(t.start + 1, t.end - 1);
+      const isPunct = (t, p) => t && t.kind === "punct" && t.text === p;
+      for (let k = 0; k < toks.length; k++) {
+        const t = toks[k];
+        const bare = t.kind === "ident" && t.text === "NODE_OPTIONS";
+        const quoted = t.kind === "string" && strText(t) === "NODE_OPTIONS";
+        if (!bare && !quoted) continue;
+        let valueAt = -1;
+        if (isPunct(toks[k + 1], ":")) valueAt = k + 2;                                            // an object key
+        else if (bare && isPunct(toks[k - 1], ".") && isPunct(toks[k + 1], "=")) valueAt = k + 2;  // env.NODE_OPTIONS =
+        else if (quoted && isPunct(toks[k - 1], "[") && isPunct(toks[k + 1], "]") && isPunct(toks[k + 2], "=")) valueAt = k + 3;
+        if (valueAt < 0) continue;
+        let depth = 0, end = text.length;
+        for (let j = valueAt; j < toks.length; j++) {
+          const v = toks[j];
+          if (v.kind === "punct" && ["(", "[", "{"].includes(v.text)) depth++;
+          else if (v.kind === "punct" && [")", "]", "}"].includes(v.text)) { if (depth === 0) { end = v.start; break; } depth--; }
+          else if (v.kind === "punct" && (v.text === "," || v.text === ";") && depth === 0) { end = v.start; break; }
+          if (j === toks.length - 1) end = v.end;
+        }
+        const start = toks[valueAt] ? toks[valueAt].start : end;
+        const value = text.slice(start, Math.max(start, end)).trim();
+        if (CARRIES.test(value)) continue;
+        out.push({ file, line: text.slice(0, t.start).split("\n").length, value });
+      }
+    }
+  }
+  return out.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
 }
 
 /** The shipped-surface roots rule 5 of `functionalSubject()` takes whole (design D3; `PARITY_ROOTS`). */

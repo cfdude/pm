@@ -27,6 +27,8 @@
 // Its fixture repositories copy the machinery in — certify, certification, drift and, since
 // certification-record-redesign 3.1, `js-lexer.mjs`, which certification.mjs imports for the functional
 // subject's comment stripper — so the runner and the drift script under test load as they do here.
+// Since 3.2 they copy `fixtures/observe-reads.mjs` too: a functional certify runs the half under the
+// run-time observer and refuses to record an unobserved run when the index holds none.
 
 import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";

@@ -76,7 +76,7 @@ function fixture() {
     fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
     fs.writeFileSync(path.join(cwd, rel), body);
   }
-  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs"]) {
+  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs", "fixtures/observe-reads.mjs"]) {
     fs.mkdirSync(path.dirname(path.join(cwd, "scripts/test", rel)), { recursive: true });
     fs.copyFileSync(path.join(TEST_ROOT, rel), path.join(cwd, "scripts/test", rel));
   }
@@ -307,4 +307,162 @@ test("3.1 the shared lexer reads every tracked script under scripts/ with zero m
     for (const m of lex(src).misparse) bad.push(`${rel}:${m.line}: ${m.what}`);
   }
   assert.deepEqual(bad, [], `the shared lexer misparsed ${bad.length} place(s) in ${files.length} tracked files`);
+});
+
+// ─────────────── 3.2 — THE RUN-TIME OBSERVER (design D3; suite-certification, "The functional subject's
+// derivation is checked against what a run observes") ───────────────
+//
+// `certify.mjs functional` runs the half with `NODE_OPTIONS=--import <run>/tree/scripts/test/fixtures/
+// observe-reads.mjs?…`, so every Node process the half starts records which tracked files it resolved,
+// read or ran; certify then refuses an observed path outside `functionalSubject()` (the record excluded
+// by rule), and a direct Node child that loaded code but never reported. Before the bucket runs, a static
+// guard refuses a functional test or fixture whose code REPLACES NODE_OPTIONS. Each case below is a
+// fixture repository whose functional bucket is one test file, certified by the real runner.
+
+/** A fixture repository like `fixture()`, whose functional test is `body` and which also tracks `extra`. */
+function observedFixture(body, extra = {}) {
+  const cwd = fixture();
+  fs.writeFileSync(path.join(cwd, "scripts/test/functional/stub.test.mjs"), body);
+  for (const [rel, text] of Object.entries(extra)) {
+    fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
+    fs.writeFileSync(path.join(cwd, rel), text);
+  }
+  git(cwd, "add", "-A");
+  git(cwd, "commit", "-q", "-m", "observed fixture");
+  return cwd;
+}
+const HEAD_LINES = 'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
+  'import fs from "node:fs";\nimport path from "node:path";\nimport { spawn, spawnSync } from "node:child_process";\n';
+const HIDDEN = { "scripts/lib/hidden.mjs": "export const hidden = 1;\n" };
+/** The fixture tests' one wait on a child, BOUNDED (#220): a hung child is killed and the wait resolves. */
+const WAIT = 'const waitFor = (c) => new Promise((res) => { const t = setTimeout(() => { c.kill("SIGKILL"); res(null); }, 30000); ' +
+  'c.on("close", (s) => { clearTimeout(t); res(s); }); });\n';
+
+test("3.2 a tracked scripts/ file read through a path assembled at run time is refused, naming it, and no entry is written", () => {
+  const cwd = observedFixture(HEAD_LINES +
+    'test("reads a module by a built name", () => {\n' +
+    '  const name = ["hid", "den"].join("") + ".mjs";\n' +
+    '  assert.ok(fs.readFileSync(path.join(process.cwd(), "scripts", "lib", name), "utf8").length > 0);\n' +
+    "});\n", HIDDEN);
+  const r = certify(cwd, "functional");
+  assert.notEqual(r.status, 0, `a read the derivation missed must fail the certification:\n${r.out}`);
+  assert.match(r.out, /scripts\/lib\/hidden\.mjs[^\n]*the subject derivation missed it/, `the refusal names the file and says the derivation missed it:\n${r.out}`);
+  assert.deepEqual(entriesOf(cwd, "functional"), [], "a refused run records no entry");
+});
+
+test("3.2 with the derivation complete — the same read, its name spelled — certify writes its entry", () => {
+  const cwd = observedFixture(HEAD_LINES +
+    'test("reads a module it names", () => {\n' +
+    '  assert.ok(fs.readFileSync(path.join(process.cwd(), "scripts", "lib", "hidden.mjs"), "utf8").length > 0);\n' +
+    "});\n", HIDDEN);
+  const r = certify(cwd, "functional");
+  assert.equal(r.status, 0, `a complete derivation certifies:\n${r.out}`);
+  assert.ok(onlyEntry(cwd, "functional").manifest["scripts/test/functional/stub.test.mjs"], "the entry is written");
+  assert.doesNotMatch(r.out, /observe-reads\.mjs/, "the observer's own load is never reported (m9)");
+});
+
+test("3.2 a read of the record (openspec/changes/archive/) is excluded by rule and does not refuse", () => {
+  const cwd = observedFixture(HEAD_LINES +
+    'test("walks the archive", () => {\n' +
+    '  const dir = path.join(process.cwd(), "openspec", "changes", "archive");\n' +
+    '  for (const d of fs.readdirSync(dir)) assert.ok(fs.readFileSync(path.join(dir, d, "tasks.md"), "utf8"));\n' +
+    "});\n", { "openspec/changes/archive/2026-01-01-x/tasks.md": "- [x] 1.1 done\n" });
+  const r = certify(cwd, "functional");
+  assert.equal(r.status, 0, `a record read is not a refusal:\n${r.out}`);
+  assert.equal(entriesOf(cwd, "functional").length, 1);
+});
+
+test("3.2 the static guard: a test whose CODE replaces NODE_OPTIONS is refused before the bucket runs, naming the file and line", () => {
+  const ran = path.join(tmpRepo(), "ran");
+  const cwd = observedFixture(HEAD_LINES +
+    'test("replaces the options for a child", () => {\n' +
+    '  fs.writeFileSync(process.env.PM_STUB_RAN, "1");\n' +
+    '  const r = spawnSync(process.execPath, ["-e", "1"], { env: { ...process.env, NODE_OPTIONS: "--no-warnings" } });\n' +
+    "  assert.equal(r.status, 0);\n" +
+    "});\n");
+  const r = certify(cwd, "functional", { PM_STUB_RAN: ran });
+  assert.notEqual(r.status, 0, `the replacement must be refused:\n${r.out}`);
+  assert.match(r.out, /scripts\/test\/functional\/stub\.test\.mjs:8\b[^\n]*NODE_OPTIONS/, `the refusal names the file and line:\n${r.out}`);
+  assert.equal(fs.existsSync(ran), false, "the guard runs BEFORE the bucket");
+  assert.deepEqual(entriesOf(cwd, "functional"), []);
+});
+
+test("3.2 the observer bypass: a direct Node child whose options are replaced at run time fails closed, naming the test file and argv", () => {
+  const cwd = observedFixture(HEAD_LINES +
+    'test("drops the observer from a child by a key the static guard cannot read", () => {\n' +
+    "  const env = { ...process.env };\n" +
+    '  env[["NODE", "OPTIONS"].join("_")] = "--no-warnings";\n' +
+    '  const r = spawnSync(process.execPath, ["-e", "require(\\"node:fs\\")"], { env });\n' +
+    "  assert.equal(r.status, 0);\n" +
+    "});\n");
+  const r = certify(cwd, "functional");
+  assert.notEqual(r.status, 0, `an unobserved Node child must fail the certification closed:\n${r.out}`);
+  assert.match(r.out, /never loaded the observer[^\n]*scripts\/test\/functional\/stub\.test\.mjs[^\n]*"-e"/, `the refusal names the test file and argv:\n${r.out}`);
+  assert.deepEqual(entriesOf(cwd, "functional"), []);
+});
+
+test("3.2 `node --version` expects no report; `node -e \"\"`, a child that exits at once, and two concurrent children all report", () => {
+  const cwd = observedFixture(HEAD_LINES + WAIT +
+    'test("children that must not refuse", async () => {\n' +
+    '  assert.equal(spawnSync(process.execPath, ["--version"]).status, 0);\n' +
+    '  assert.equal(spawnSync(process.execPath, ["-e", ""]).status, 0);\n' +
+    '  assert.equal(spawnSync(process.execPath, ["-e", "process.exit(0)"]).status, 0);\n' +
+    '  const one = () => waitFor(spawn(process.execPath, ["-e", "setTimeout(() => {}, 300)"]));\n' +
+    "  assert.deepEqual(await Promise.all([one(), one()]), [0, 0]);\n" +
+    '  const url = globalThis[Symbol.for("pm.observe-reads")].url;\n' +
+    '  assert.ok(fs.realpathSync(new URL(url).pathname).startsWith(fs.realpathSync(process.cwd()) + path.sep),\n' +
+    '    "the observer that loaded is the RUN DIRECTORY\'s copy: " + url);\n' +
+    "});\n");
+  const r = certify(cwd, "functional");
+  assert.equal(r.status, 0, `none of these children is unobserved:\n${r.out}`);
+  assert.equal(entriesOf(cwd, "functional").length, 1);
+});
+
+test("3.2 two Node children observed at once each leave their own observation, and both are read", () => {
+  const cwd = observedFixture(HEAD_LINES + WAIT +
+    'test("two children read two files by built names, concurrently", async () => {\n' +
+    '  const reader = (a, b) => "require(\\"node:fs\\").readFileSync(require(\\"node:path\\").join(process.cwd(), \\"scripts\\", \\"lib\\", " +\n' +
+    '    JSON.stringify(a) + " + " + JSON.stringify(b) + "))";\n' +
+    '  const run = (code) => waitFor(spawn(process.execPath, ["-e", code]));\n' +
+    '  assert.deepEqual(await Promise.all([run(reader("hid", "den.mjs")), run(reader("sec", "ret.mjs"))]), [0, 0]);\n' +
+    "});\n", { ...HIDDEN, "scripts/lib/secret.mjs": "export const secret = 1;\n" });
+  const r = certify(cwd, "functional");
+  assert.notEqual(r.status, 0, r.out);
+  assert.match(r.out, /scripts\/lib\/hidden\.mjs/, `the first child's read is reported:\n${r.out}`);
+  assert.match(r.out, /scripts\/lib\/secret\.mjs/, `and the second's — neither overwrote the other:\n${r.out}`);
+});
+
+test("3.2 the token rule: a Node spawn that fails to start cancels its expectation and is not refused", () => {
+  const cwd = observedFixture(HEAD_LINES +
+    'test("spawns that never start", async () => {\n' +
+    '  const missing = path.join(process.cwd(), "no-such-dir");\n' +
+    '  assert.ok(spawnSync(process.execPath, ["-e", "1"], { cwd: missing }).error, "spawnSync reports the failure");\n' +
+    '  await new Promise((res) => spawn(process.execPath, ["-e", "1"], { cwd: missing }).on("error", res));\n' +
+    "});\n");
+  const r = certify(cwd, "functional");
+  assert.equal(r.status, 0, `a child that never started cannot report, and is not refused:\n${r.out}`);
+});
+
+// ─────────────── 3.2 — THE STATIC GUARD OVER THE WHOLE TRACKED TREE (functional twin case) ───────────────
+//
+// The unit rung pins the guard's shapes over texts handed to it; it reads no path. This case runs it over
+// every tracked script under `scripts/test/{functional,fixtures}/`, read through git, at two points: at
+// c96240ab — the commit the design measured, before task 3.2's fix — where it flags EXACTLY
+// `functional/conformance.test.mjs:210`, the one child whose NODE_OPTIONS replaced the inherited value;
+// and over this repository's INDEX, where it flags nothing.
+
+test("3.2 the static guard flags exactly conformance.test.mjs:210 at c96240ab, and nothing over the index", async (t) => {
+  const { nodeOptionsRefusals } = await import("../certification.mjs");
+  const repo = path.join(TEST_ROOT, "..", "..");
+  const SCOPE = /^scripts\/test\/(functional|fixtures)\/.+\.(mjs|cjs|js)$/;
+  const read = (spec) => execFileSync("git", ["-C", repo, "show", spec], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const indexFiles = git(repo, "ls-files", "-z", "--", "scripts/test").split("\0").filter((p) => SCOPE.test(p));
+  assert.deepEqual(nodeOptionsRefusals(indexFiles.map((p) => ({ path: p, text: read(`:${p}`) }))), [],
+    "a functional test or fixture over the index replaces NODE_OPTIONS");
+  let base = true;
+  try { git(repo, "cat-file", "-e", "c96240ab^{commit}"); } catch { base = false; }
+  if (!base) { t.skip("c96240ab is not in this clone"); return; }
+  const oldFiles = git(repo, "ls-tree", "-r", "-z", "--name-only", "c96240ab", "--", "scripts/test").split("\0").filter((p) => SCOPE.test(p));
+  assert.deepEqual(nodeOptionsRefusals(oldFiles.map((p) => ({ path: p, text: read(`c96240ab:${p}`) }))).map((r) => `${r.file}:${r.line}`),
+    ["scripts/test/functional/conformance.test.mjs:210"], "at c96240ab the guard flags exactly the one replacement the design found");
 });

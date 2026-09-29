@@ -48,9 +48,12 @@ import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { REPO, bucketDir, indexRunPlan, pruneRecord, writeManifestEntry } from "./certification.mjs";
-import { indexManifest } from "./drift.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  OBSERVER, REPO, bucketDir, functionalSubject, indexRunPlan, nodeOptionsRefusals, observationRefusals, pruneRecord,
+  writeManifestEntry,
+} from "./certification.mjs";
+import { indexManifest, indexReaders } from "./drift.mjs";
 import { removeAtExit, removeTempDir } from "./fixtures/temp-dir.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -92,7 +95,7 @@ export function prepareRun(root, gitCommonDir) {
     if (step.op === "copy") { fs.copyFileSync(step.from, step.to); continue; }
     execFileSync("git", step.args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...cleanEnv(), ...(step.env || {}) } });
   }
-  return { dir, tree: plan.tree, indexCopy: plan.copy };
+  return { dir, tree: plan.tree, indexCopy: plan.copy, root };
 }
 
 /** The bucket's files, expanded here rather than left to a shell: the runner is invoked from a
@@ -133,9 +136,9 @@ const BUCKET_BOUND_MS = 60 * 60 * 1000;
 /** Run a bucket IN THE RUN DIRECTORY's clone (`tree`), asynchronously so a signal reaches its handler
  *  while the bucket runs. The runner is started in its OWN process group (`detached`), so a signal
  *  handler kills the runner and every test process under it at once (`killActiveRun`). */
-function runBucket(tree, bucket) {
+function runBucket(tree, bucket, extraEnv = {}) {
   const files = bucketFiles(tree, bucket);
-  const { args, env } = runnerInvocation(files, cleanEnv());
+  const { args, env } = runnerInvocation(files, { ...cleanEnv(), ...extraEnv });
   return new Promise((resolve) => {
     let stdout = "", stderr = "";
     const child = spawn(process.execPath, args, { cwd: tree, env, detached: true, stdio: ["ignore", "pipe", "pipe"] });
@@ -201,7 +204,15 @@ function provenance(root) {
  *  commit with) — then prunes the bucket's directory, never removing the entry it just wrote. */
 async function certifyBucket(root, gitCommonDir, run, bucket) {
   const label = bucket === "functional" ? "functional half" : "sweeps bucket";
-  const result = await runBucket(run.tree, bucket);
+  let observed = null;
+  if (bucket === "functional") {
+    // THE STATIC GUARD, BEFORE THE BUCKET RUNS, over the exported index copy (design D3, Gate 1 B4).
+    const guard = staticGuardRefusal(run);
+    if (guard) { process.stderr.write(guard); return 1; }
+    observed = observerEnv(run);
+    if (typeof observed === "string") { process.stderr.write(observed); return 1; }
+  }
+  const result = await runBucket(run.tree, bucket, observed ? observed.env : {});
   if (!result.ok) {
     process.stderr.write(result.output);
     process.stderr.write(`\ncertify: the ${label} FAILED (status ${result.status}). Nothing recorded — a record is a claim about a pass.\n`);
@@ -209,6 +220,10 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
   }
   const refused = countRefusal(label, result.counts);
   if (refused) { process.stderr.write(result.output + "\n" + refused); return 1; }
+  if (observed) {
+    const seen = observationRefusal(root, run, observed.dir, label, result.counts);
+    if (seen) { process.stderr.write(seen); return 1; }
+  }
   const { engineSha } = provenance(root);
   let worktree = null;
   try { worktree = git(root, ["rev-parse", "--path-format=absolute", "--git-dir"]); } catch { /* informational only */ }
@@ -220,6 +235,66 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
     `subject paths as ${path.relative(bucketDir(gitCommonDir, bucket), file)} in ${bucketDir(gitCommonDir, bucket)}\n`,
   );
   return 0;
+}
+
+// ───────────────────────── the run-time observer (certification-record-redesign D3, task 3.2) ─────────────────────────
+
+/** The static NODE_OPTIONS guard over the RUN's tree — the exported index copy, so the guard reads the
+ *  bytes that run. Every tracked script under `scripts/test/{functional,fixtures}/` is judged by
+ *  `nodeOptionsRefusals()`; a misparse throws and fails the certification closed. Returns the refusal
+ *  text, or null. */
+function staticGuardRefusal(run) {
+  const readers = indexReaders(REPO_OF(run), { indexFile: run.indexCopy });
+  const files = readers.paths.filter((p) => /^scripts\/test\/(functional|fixtures)\/.+\.(mjs|cjs|js)$/.test(p))
+    .map((p) => ({ path: p, text: fs.readFileSync(path.join(run.tree, p), "utf8") }));
+  const found = nodeOptionsRefusals(files);
+  if (!found.length) return null;
+  return "certify: the static NODE_OPTIONS guard refuses — each line below assigns NODE_OPTIONS a value that does not carry " +
+    "process.env.NODE_OPTIONS, so a Node child under it drops the run-time observer (design D3). Append to the inherited " +
+    "value instead: `${process.env.NODE_OPTIONS ?? \"\"} --require …`.\n" +
+    found.map((r) => `  ${r.file}:${r.line} — NODE_OPTIONS = ${r.value}\n`).join("") +
+    "certify: nothing run, nothing recorded.\n";
+}
+
+/** The repository whose object store the run's index copy points into — the root certify was run for.
+ *  Kept on the run by prepareRun(). */
+const REPO_OF = (run) => run.root;
+
+/** The observer's environment: `NODE_OPTIONS` APPENDED with `--import` of the RUN TREE's observer (the
+ *  staged copy, m9), configured through its own URL — its observation directory and the run tree — so an
+ *  observer stacked on another keeps its own run (a certify inside a certified functional test). Returns
+ *  `{ env, dir }`, or the refusal text when the index holds no observer. */
+function observerEnv(run) {
+  const file = path.join(run.tree, OBSERVER);
+  if (!fs.existsSync(file)) {
+    return `certify: the index holds no ${OBSERVER}, so the functional half cannot be observed — refusing to record an unobserved run.\n`;
+  }
+  const dir = path.join(run.dir, "observe");
+  fs.mkdirSync(dir, { recursive: true });
+  const url = pathToFileURL(file);
+  url.searchParams.set("dir", dir);
+  url.searchParams.set("root", run.tree);
+  const inherited = cleanEnv().NODE_OPTIONS;
+  return { dir, env: { NODE_OPTIONS: `${inherited ? `${inherited} ` : ""}--import=${url.href}` } };
+}
+
+/** After a PASS: every observation file the run's processes wrote, judged by `observationRefusals()`
+ *  against `functionalSubject()` over the run's index copy. Returns the refusal text, or null. */
+function observationRefusal(root, run, dir, label, counts) {
+  const observations = fs.readdirSync(dir).filter((n) => n.endsWith(".json"))
+    .map((n) => JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")));
+  const readers = indexReaders(root, { indexFile: run.indexCopy });
+  const subject = functionalSubject({ root, ...readers });
+  const { missed, unarrived, excluded } = observationRefusals({ observations, subject, tracked: readers.paths });
+  if (!missed.length && !unarrived.length) {
+    process.stdout.write(`certify: the observer saw ${observations.length} Node processes; every tracked file they read is in the ` +
+      `functional subject (${subject.length} paths)${excluded.length ? `, or the record (${excluded.length}, excluded by rule)` : ""}.\n`);
+    return null;
+  }
+  return `certify: the ${label} passed (${counts.pass}/${counts.tests}), but the run-time observer refuses it (design D3):\n` +
+    missed.map((p) => `  ${p} — the half read this tracked file and the subject derivation missed it; spell its name in the test that reads it\n`).join("") +
+    unarrived.map((e) => `  a Node child that never loaded the observer: ${e.test} ran ${JSON.stringify(e.argv)} — append to NODE_OPTIONS, never replace it\n`).join("") +
+    "certify: nothing recorded.\n";
 }
 
 /** Resolves to the exit status. The run directory is removed before it resolves, and by the exit

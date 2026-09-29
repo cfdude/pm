@@ -225,8 +225,18 @@ const FIXTURES = new URL("../fixtures/", import.meta.url).pathname;
  *  refresh-gate/gate-procedure/intake replaces are no-ops here (0.26.0 emitted none of them);
  *  the operating-rules one is what actually bites, and gh-151 is why it has to — see
  *  stripAlwaysOn below. */
-const baseline = (name) =>
-  stripAlwaysOn(fs.readFileSync(path.join(FIXTURES, `rules-0.26.0-${name}.txt`), "utf8"));
+/** The three checked-in 0.26.0 outputs, their file names SPELLED as literals (certification-record-redesign
+ *  D3, R1): the functional subject admits a file the half reads by a name a closure file spells, and a
+ *  name built at run time (`rules-0.26.0-${name}.txt`) is one no derivation can see. */
+const BASELINES = Object.freeze({
+  "github-scoped": "rules-0.26.0-github-scoped.txt",
+  "github-scopeless": "rules-0.26.0-github-scopeless.txt",
+  "jira-scoped": "rules-0.26.0-jira-scoped.txt",
+});
+const baseline = (name) => {
+  if (!Object.hasOwn(BASELINES, name)) throw new Error(`conductor-14: no checked-in 0.26.0 baseline named ${JSON.stringify(name)}`);
+  return stripAlwaysOn(fs.readFileSync(path.join(FIXTURES, BASELINES[name]), "utf8"));
+};
 
 const OUTWARD_HEADING = "## External tracker sync";
 

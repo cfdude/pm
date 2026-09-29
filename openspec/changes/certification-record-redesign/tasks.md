@@ -477,7 +477,7 @@ These rules bind every section below.
           records no misparse.
 
       RED `red-3.1.txt`.
-- [ ] 3.2 **TDD, FUNCTIONAL** (`functional/certify-index`, twin edited): the run-time observer.
+- [x] 3.2 **TDD, FUNCTIONAL** (`functional/certify-index`, twin edited): the run-time observer.
       The interim subject holds the fixtures and `certify.mjs`, so the gate demands a functional
       certify for this commit (B9); run it first.
       - **The RED.**

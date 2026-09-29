@@ -3,6 +3,9 @@
 // the unit rung with every assertion unchanged.
 //
 // 5.3's ASSERTION TWIN of scripts/test/functional/conformance.test.mjs — same id, same subject.
+// (certification-record-redesign 3.2: the functional file's write-conflict row now APPENDS its
+// `--require` to the inherited NODE_OPTIONS instead of replacing it, so the certification's run-time
+// observer survives into that child. The in-process route below sets no NODE_OPTIONS, so nothing here moves.)
 //
 // THE SUBJECT is D10's conformance set: each class of invocation run BOTH ways — as a spawned CLI
 // reading the real process status, and in-process through the entry point reading the RETURNED

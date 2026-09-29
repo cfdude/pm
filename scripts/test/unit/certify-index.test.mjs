@@ -309,3 +309,91 @@ unitTest("3.1 lex() reports the comment ranges it skipped and each misparse, add
   }
   assert.ok(Array.isArray(r.contexts) && Array.isArray(r.interps) && Array.isArray(r.templates), "the sweep's results are unchanged");
 });
+
+// ─────────────── 3.2 — THE STATIC NODE_OPTIONS GUARD (round 2 I3; round 3 shapes) ───────────────
+//
+// A Node process that git or a shell starts cannot be matched to a run-time token, so certify refuses,
+// before the bucket runs, any functional test or fixture whose CODE assigns NODE_OPTIONS a value that does
+// not carry `process.env.NODE_OPTIONS` (design D3). Two syntactic shapes — an object key, a property
+// assignment — and nothing else; a comment or a string that is not the key or subscript is not code.
+
+function guard(text, file = "scripts/test/functional/g.test.mjs") {
+  assert.equal(typeof certification.nodeOptionsRefusals, "function",
+    "certification.mjs exports no nodeOptionsRefusals(): a test that REPLACES NODE_OPTIONS drops the observer from every Node process under it, and nothing refuses it");
+  return certification.nodeOptionsRefusals([{ path: file, text }]);
+}
+const refused = (text) => assert.equal(guard(text).length, 1, `this assignment replaces the inherited options and must be refused:\n${text}`);
+const allowed = (text) => assert.deepEqual(guard(text), [], `this is not an assignment that replaces the options:\n${text}`);
+
+unitTest("3.2 RED input: today's conformance.test.mjs:210 is refused, naming the file and line", () => {
+  const line210 = "    env: (cwd) => ({\n      NODE_OPTIONS: `--require ${path.join(HERE, \"..\", \"fixtures\", \"inject-state-conflict.cjs\")}`,\n" +
+    "      PM_INJECT_CONFLICT_DIR: path.join(cwd, \".conductor\"),\n    }),\n";
+  assert.deepEqual(guard(line210, "scripts/test/functional/conformance.test.mjs").map((r) => [r.file, r.line]),
+    [["scripts/test/functional/conformance.test.mjs", 2]]);
+  allowed(line210.replace("`--require ${", "`${process.env.NODE_OPTIONS ?? \"\"} --require ${"));
+});
+
+unitTest("3.2 negatives: a comment showing the variable (future-clock.mjs:6), prose in a string, and comparisons", () => {
+  // The real header of scripts/test/fixtures/future-clock.mjs, whose line 6 shows a command line.
+  allowed("// scripts/test/fixtures/future-clock.mjs\n// THE CLOCK-SHIFT PRELOAD.\n//\n//\n//\n" +
+    '//   PM_TEST_CLOCK_OFFSET_DAYS=400 NODE_OPTIONS="--import $PWD/scripts/test/fixtures/future-clock.mjs" \\\n' +
+    "//     node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs\nconst OFFSET = Number(process.env.PM_TEST_CLOCK_OFFSET_DAYS || 0);\n");
+  allowed('const doc = "NODE_OPTIONS: --require x";\n');
+  allowed('if (x == "NODE_OPTIONS") y();\n');
+  allowed("if (env.NODE_OPTIONS === y) z();\n");
+});
+
+unitTest("3.2 the object-key shape — bare, double-quoted, single-quoted, and a key overriding the spread — is refused unless it carries the inherited value", () => {
+  for (const key of ["NODE_OPTIONS", '"NODE_OPTIONS"', "'NODE_OPTIONS'"]) {
+    refused(`launch("node", ["x.mjs"], { env: { ${key}: "--require ./x.cjs" } });\n`);
+    refused(`launch("node", ["x.mjs"], { env: { ...process.env, ${key}: "--require ./x.cjs" } });\n`);
+    allowed(`launch("node", ["x.mjs"], { env: { ...process.env, ${key}: \`\${process.env.NODE_OPTIONS ?? ""} --require ./x.cjs\` } });\n`);
+  }
+});
+
+unitTest("3.2 the property-assignment shape — dotted, and subscripted with either quote — is refused unless it carries the inherited value", () => {
+  for (const target of ["env.NODE_OPTIONS", 'env["NODE_OPTIONS"]', "env['NODE_OPTIONS']"]) {
+    refused(`${target} = "--require ./x.cjs";\n`);
+    allowed(`${target} = \`\${process.env.NODE_OPTIONS ?? ""} --require ./x.cjs\`;\n`);
+  }
+});
+
+unitTest("3.2 the tokenizer's order: a `//` inside a string does not hide the key after it; a block comment does", () => {
+  refused('"a // b"; NODE_OPTIONS: "x"\n');
+  allowed('/* NODE_OPTIONS: "x" */\n');
+});
+
+unitTest("3.2 only files under scripts/test/{functional,fixtures}/ are judged, and a misparse throws naming the file and line", () => {
+  assert.deepEqual(guard('env.NODE_OPTIONS = "x";\n', "scripts/test/assert/a.test.mjs"), [], "the assertion half starts no process");
+  assert.equal(guard('env.NODE_OPTIONS = "x";\n', "scripts/test/fixtures/f.mjs").length, 1);
+  assert.throws(() => guard('const a = "abc\nenv.NODE_OPTIONS = "x";\n'),
+    (e) => /scripts\/test\/functional\/g\.test\.mjs:1\b/.test(e.message), "a misread fails closed");
+});
+
+// ─────────────── 3.2 — WHAT A RUN OBSERVED, JUDGED (design D3, "The check") ───────────────
+
+unitTest("3.2 an observed tracked path outside the subject is MISSED; the record is excluded by rule; the observer is never reported", () => {
+  assert.equal(typeof certification.observationRefusals, "function", "certification.mjs exports no observationRefusals()");
+  const tracked = ["scripts/lib/a.mjs", "scripts/lib/hidden.mjs", "openspec/changes/archive/x/tasks.md", ".conductor/state.json",
+    "CHANGELOG.md", "docs/parity-ledger.json", "scripts/test/fixtures/observe-reads.mjs", "scripts/test/fixtures/dir/one.txt"];
+  const r = certification.observationRefusals({
+    tracked,
+    subject: ["scripts/lib/a.mjs"],
+    observations: [
+      { reads: ["scripts/lib/a.mjs", "scripts/lib/hidden.mjs", "openspec/changes/archive/x/tasks.md", "scripts/test/fixtures/observe-reads.mjs", "untracked.txt"] },
+      { reads: [".conductor/state.json", "CHANGELOG.md", "docs/parity-ledger.json", "scripts/test/fixtures/dir"] },
+    ],
+  });
+  assert.deepEqual(r.missed, ["docs/parity-ledger.json", "scripts/lib/hidden.mjs", "scripts/test/fixtures/dir/one.txt"],
+    "a derivation gap is named; the ledger is NOT the record; a copied directory stands for the tracked files under it");
+  assert.deepEqual(r.excluded, [".conductor/state.json", "CHANGELOG.md", "openspec/changes/archive/x/tasks.md"]);
+});
+
+unitTest("3.2 an expected Node child that neither arrived nor was cancelled is UNARRIVED; one that did either is not", () => {
+  const e = (token) => ({ token, test: "scripts/test/functional/t.test.mjs", argv: ["node", "x.mjs"] });
+  const r = certification.observationRefusals({
+    tracked: [], subject: [],
+    observations: [{ expected: [e("a"), e("b"), e("c")], cancelled: ["c"] }, { arrived: ["a"] }],
+  });
+  assert.deepEqual(r.unarrived.map((x) => x.token), ["b"]);
+});
