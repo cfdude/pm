@@ -155,9 +155,9 @@ unitTest("a NotebookEdit path matcher reads notebook_path, the field that tool s
 // `^a` too — that is exactly how the old wall-clock tests flaked.
 
 unitTest("a catastrophic regex the static check cannot see is cut off by the real vm timeout", () => {
-  // `^(a|a)*$` nests nothing, so checkDetect accepts it. Unguarded it takes on the order of 10 s on
-  // this input (6.7 s was observed at 24 characters, each character roughly doubling it) and then
-  // answers `false` — so a mutant without the timeout FAILS on the value rather than hanging the run.
+  // `^(a|a)*$` nests nothing, so checkDetect accepts it. Unguarded it runs for seconds on this input
+  // (2.6 s measured for the no-timeout mutant) and then answers `false` — so that mutant FAILS on the
+  // value rather than hanging the run, however slow the machine.
   assert.equal(boundedRegexTest(/^(a|a)*$/, "a".repeat(25) + "!", 20), null);
   // The context survives an interrupt: the next call through it still answers.
   assert.equal(boundedRegexTest(/^a/, "abc", 60_000), true);
@@ -198,6 +198,38 @@ unitTest("a runaway lesson listed FIRST cannot silence a benign lesson after it 
   const hits = matchLessons(AAA, [bad, good], { budgetMs: 50, ceilingMs: 1000, now: f.now, runRegex: f.runRegex });
   assert.deepEqual(f.grants, [50, 50], "each regex is granted its own per-regex budget");
   assert.deepEqual(hits.map(h => h.file), ["z-good.md"]);
+});
+
+unitTest("budget allocation at the hook's DEFAULTS: REGEX_BUDGET_MS per regex, under REGEX_CEILING_MS", () => {
+  // No budgetMs/ceilingMs passed — this is the wiring the hook runs with.
+  const f = fakeRegexPhase();
+  const bad = lessonOf("a-bad.md", `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`);
+  const good = lessonOf("z-good.md", '{"tool":"Bash","commandMatches":"^a"}');
+  const hits = matchLessons(AAA, [bad, good], { now: f.now, runRegex: f.runRegex });
+  assert.deepEqual(f.grants, [REGEX_BUDGET_MS, REGEX_BUDGET_MS]);
+  assert.deepEqual(hits.map(h => h.file), ["z-good.md"]);
+  const g = fakeRegexPhase();
+  const many = Array.from({ length: 30 }, (_, i) => lessonOf(`bad-${i}.md`, `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`));
+  matchLessons(AAA, many, { now: g.now, runRegex: g.runRegex });
+  assert.equal(g.grants.reduce((a, b) => a + b, 0), REGEX_CEILING_MS, "the default ceiling bounds the phase");
+});
+
+unitTest("the DEFAULT clock is a real one: time a runaway spends is taken off what the next may use", () => {
+  // The real clock under load can only make a later grant SMALLER or stop the phase early, so this
+  // asserts in that direction alone — never an exact grant, never an elapsed time. A frozen default
+  // clock grants the same budget forever and fails.
+  const grants = [];
+  const spin = (re, text, timeoutMs) => {
+    grants.push(timeoutMs);
+    const until = performance.now() + timeoutMs;
+    while (performance.now() < until) { /* spend the grant on the real clock */ }
+    return null;
+  };
+  const bads = Array.from({ length: 3 }, (_, i) => lessonOf(`bad-${i}.md`, `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`));
+  matchLessons(AAA, bads, { budgetMs: 30, ceilingMs: 50, runRegex: spin });
+  assert.equal(grants[0], 30);
+  assert.ok(grants.length < 3 && (grants.length === 1 || grants[1] < 30),
+    `the ceiling must bind on the real clock; grants were ${JSON.stringify(grants)}`);
 });
 
 unitTest("budget allocation: the per-call ceiling clips the last grant and stops the phase", () => {
