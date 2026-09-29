@@ -541,8 +541,11 @@ These rules bind every section below.
         `observer-report-3.2.txt` in this directory, with the command that produced it.
         Expected (round 3): NOT none. The record reads the rule excludes, each marked "excluded by
         rule": at least `openspec/changes/archive/` (`conductor-15:1335-1436`), `.conductor/state.json`
-        (the live-record reads `conductor-15:806` and `conductor-18:21`, Gate 1 round 4) and
-        `CHANGELOG.md` (`conductor-37:256`, and the engine through `plugin-meta.mjs:33`). Any other path under a
+        (the live-record reads `conductor-15:806` and `conductor-18:21`, Gate 1 round 4),
+        `CHANGELOG.md` (`conductor-37:256`, and the engine through `plugin-meta.mjs:33`), and the seven
+        `docs/superpowers/plans/*.md` plan documents the live-record tests reach through the engine's
+        `plansDir()` (`scripts/lib/constants.mjs`), which are record by the spec's `docs/` rule
+        (adjudicated after L3: excluded by rule, not a derivation gap; `observer-report-3.2.txt`). Any other path under a
         subject root is a derivation gap, fixed in `functionalSubject()` (with a 3.1 RED for it)
         before the GREEN lands, and the file says so. A path outside every subject root and the
         record (`.claude/`, `.github/`, `PROJECT.md`, …; none expected by the static search) cannot
@@ -624,7 +627,7 @@ These rules bind every section below.
 
 ## 4. L4: coupling in the commit-msg hook, with a declared exemption (design D4; MODIFIED "Every functional test has an assertion twin…", "The pre-commit gate checks the record…")
 
-- [ ] 4.1 **TDD, UNIT**: `parseTwinExemptions(parsedTrailers)`, over the OUTPUT of
+- [x] 4.1 **TDD, UNIT**: `parseTwinExemptions(parsedTrailers)`, over the OUTPUT of
       `git interpret-trailers --parse --no-divider` (design D4, Gate 1 B3, round 2 I2). git decides
       what is a trailer; this function only reads the `Twin-Unchanged` lines git returned.
       - Only `Twin-Unchanged` keys are read; other trailers are ignored.

@@ -153,6 +153,32 @@ export function couplingRefusals({ stagedFiles, functional, assertion }) {
   return out.sort((a, b) => a.id.localeCompare(b.id));
 }
 
+/** THE DECLARATIONS A COMMIT MESSAGE CARRIES (certification-record-redesign D4, Gate 1 B3, round 2 I1/I2).
+ *  `parsedTrailers` is the OUTPUT of `git interpret-trailers --parse --no-divider <message>` — git has
+ *  already decided which lines are trailers (the last paragraph only, above any `commit -v` scissors
+ *  line, a `---` line not ending the message), so this function applies none of that rule and cannot
+ *  disagree with Gate 2's `%(trailers:key=Twin-Unchanged)` about it. It reads only the `Twin-Unchanged`
+ *  lines, the key matched without regard to case as `%(trailers:key=)` matches it.
+ *
+ *  THE SPLIT. The id is the value's FIRST whitespace-delimited token, and only a SPACED separator after
+ *  it — ` — `, ` -- ` or ` - ` — begins the reason, which is everything after that separator. Splitting
+ *  at the first `-` anywhere would cut `conductor-09` in two, and a reason may itself hold ` - `. A value
+ *  with no spaced separator after its first token has an EMPTY reason, kept as empty so that the
+ *  coupling check refuses it by name rather than dropping it. Returns `[{ id, reason }]` in git's order. */
+export function parseTwinExemptions(parsedTrailers) {
+  const out = [];
+  for (const line of String(parsedTrailers).split("\n")) {
+    const colon = line.indexOf(":");
+    if (colon === -1 || line.slice(0, colon).trim().toLowerCase() !== "twin-unchanged") continue;
+    const value = line.slice(colon + 1).trim();
+    if (!value) continue;
+    const id = value.split(/\s/)[0];
+    const sep = /^\s+(?:—|--|-)(?:\s+([\s\S]*))?$/.exec(value.slice(id.length));
+    out.push({ id, reason: sep && sep[1] ? sep[1].trim() : "" });
+  }
+  return out;
+}
+
 // ───────────────────────────── the subjects (derived, never typed) ─────────────────────────────
 
 /** The engine source (D9): the entry point plus every library module, because the output sweep reads
