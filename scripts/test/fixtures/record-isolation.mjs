@@ -28,8 +28,10 @@
 //      guard unusable: every Bash call of every live session in the checkout rewrites
 //      commit-observe.json, so on 2026-09-29 every file of the pre-commit assertion half failed
 //      (~40 files, all on that one path) while a second session worked in another worktree. Each
-//      entry is git-ignored by the engine itself (`ensureGitignore`, lib/subcommands.mjs) as
-//      per-checkout transient state, and each has a named live writer:
+//      entry but agent-logs/ is git-ignored by the engine itself (`ENGINE_IGNORED`,
+//      lib/subcommands.mjs) as per-checkout transient state — agent-logs/ is this repository's own
+//      tooling, which no user repo runs, so it is ignored only by this repo's .gitignore — and each
+//      has a named live writer:
 //        commit-observe.json*  — the PostToolUse/PostToolUseFailure `commit-nudge` hook, every tool
 //                                call (lib/commit-watch.mjs): the record, its O_EXCL lock and the
 //                                `.tmp-<pid>` of its rename, which a killed hook leaves behind.

@@ -41,47 +41,62 @@ import { die } from "./command-exit.mjs";
  *  to see it is configured not to.
  *
  *  state.json, render-stamp.json and PROJECT.md stay TRACKED: they are the state of record and
- *  the generated index, and both belong in git. */
+ *  the generated index, and both belong in git.
+ *
+ *  EXPORTED so the untrack instruction reads the SAME list the ignore file is written from: a
+ *  second copy would drift the first time an entry is added to one of them. */
+export const ENGINE_IGNORED = Object.freeze([
+  ".conductor/detours.log",
+  ".conductor/write-conflicts.log",
+  // Its ROTATION (store.rotate(), rotateWriteConflictsLog). No `*.log` rule matches `.log.prev`,
+  // so without this line it was an untracked file on every machine, the maintainer's included.
+  ".conductor/write-conflicts.log.prev",
+  // The brief the SessionStart `brief` and PreCompact `snapshot` hooks rewrite (briefPath). It was
+  // never here, so 14 of 24 pm-managed repos had COMMITTED it and every snapshot churned a tracked
+  // file (0.50.0 Gate 2). Derived from state.json, which stays tracked, so nothing is lost. A repo
+  // that already tracks it is told how to untrack it (untrackInstruction below) — an ignore line
+  // alone does nothing for a file already in the index.
+  ".conductor/brief.txt",
+  // The contention latch is engine-written too (write-conflicts.mjs). Left out, every
+  // pm-managed repo grows a permanently untracked file the moment writes contend — #106
+  // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
+  // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
+  ".conductor/write-conflicts.latch",
+  // The commit-nudge HEAD watermark (commit-watch.mjs). Engine-written on every Bash tool
+  // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
+  // a merge conflict per commit as well as #106's untracked-file complaint.
+  ".conductor/commit-watch.json",
+  // commit-nudge-reads-the-whole-move: the observation record that replaces the watermark above
+  // (commit-watch.mjs). A GLOB: its O_EXCL lock and the temp file of its rename start with its
+  // name, and a hook killed mid-write leaves either behind. The exact commit-watch.json line
+  // stays — 0.44.0 engines still write that file, and this function never removes a line.
+  ".conductor/commit-observe.json*",
+  // #84's repo-level quiescence marker (claims.mjs). Per-checkout and per-session by nature —
+  // it says "THIS session is mid-operation in THIS working tree" — so committing it would
+  // publish one machine's transient state to everybody, on top of #106's untracked-file
+  // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
+  // marker existed pick it up without a MIGRATIONS entry.
+  //
+  // A GLOB since state-file-refuses-to-guess: the marker is now written by temp file plus rename
+  // in the same directory (claims.mjs), and the temp name starts with the marker's own name.
+  // An existing exact `.conductor/session-claim.json` line is left in place — it is harmless, and
+  // this function never removes a line it manages.
+  ".conductor/session-claim.json*",
+  // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
+  // for the duration of one save, so a stray one must never show up as an untracked file.
+  ".conductor/state.json.lock*",
+  // The save's temp file (state.mjs). Removed on every failure the process survives; a save
+  // killed by a signal between its write and its rename still leaves one behind.
+  ".conductor/state.json.tmp*",
+  // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
+  // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
+  // engine-written, per-checkout, and useless to anyone but this working tree.
+  ".conductor/activity/",
+]);
+
+/** Append every ENGINE_IGNORED entry the repository's .gitignore lacks. Never removes a line. */
 export function ensureGitignore() {
-  const wanted = [
-    ".conductor/detours.log",
-    ".conductor/write-conflicts.log",
-    // The contention latch is engine-written too (write-conflicts.mjs). Left out, every
-    // pm-managed repo grows a permanently untracked file the moment writes contend — #106
-    // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
-    // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
-    ".conductor/write-conflicts.latch",
-    // The commit-nudge HEAD watermark (commit-watch.mjs). Engine-written on every Bash tool
-    // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
-    // a merge conflict per commit as well as #106's untracked-file complaint.
-    ".conductor/commit-watch.json",
-    // commit-nudge-reads-the-whole-move: the observation record that replaces the watermark above
-    // (commit-watch.mjs). A GLOB: its O_EXCL lock and the temp file of its rename start with its
-    // name, and a hook killed mid-write leaves either behind. The exact commit-watch.json line
-    // stays — 0.44.0 engines still write that file, and this function never removes a line.
-    ".conductor/commit-observe.json*",
-    // #84's repo-level quiescence marker (claims.mjs). Per-checkout and per-session by nature —
-    // it says "THIS session is mid-operation in THIS working tree" — so committing it would
-    // publish one machine's transient state to everybody, on top of #106's untracked-file
-    // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
-    // marker existed pick it up without a MIGRATIONS entry.
-    //
-    // A GLOB since state-file-refuses-to-guess: the marker is now written by temp file plus rename
-    // in the same directory (claims.mjs), and the temp name starts with the marker's own name.
-    // An existing exact `.conductor/session-claim.json` line is left in place — it is harmless, and
-    // this function never removes a line it manages.
-    ".conductor/session-claim.json*",
-    // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
-    // for the duration of one save, so a stray one must never show up as an untracked file.
-    ".conductor/state.json.lock*",
-    // The save's temp file (state.mjs). Removed on every failure the process survives; a save
-    // killed by a signal between its write and its rename still leaves one behind.
-    ".conductor/state.json.tmp*",
-    // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
-    // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
-    // engine-written, per-checkout, and useless to anyone but this working tree.
-    ".conductor/activity/",
-  ];
+  const wanted = ENGINE_IGNORED;
   const giPath = path.join(engineRoot(), ".gitignore");
   let existing = "";
   try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
