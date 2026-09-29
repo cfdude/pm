@@ -131,7 +131,7 @@ test("drop-detour writes the whole transition in exactly ONE saveState", () => {
   const body = functionSource("detour-stack.mjs", "dropDetour");
   // Non-vacuity: a slice that grabbed the wrong function, or a stripper that ate the code, would
   // otherwise pass with a count of one or zero.
-  assert.match(body, /verb: "drop-detour"/, "the slice is dropDetour()'s own body");
+  assert.match(stripComments(body), /verb: "drop-detour"/, "the slice is dropDetour()'s own body, in CODE");
   assert.ok(body.length > 800, `the slice is the whole body, not a fragment (${body.length} chars)`);
   const code = stripComments(body);
   assert.doesNotMatch(code, /the frame goes/i, "the stripper really strips — this module's prose is gone");

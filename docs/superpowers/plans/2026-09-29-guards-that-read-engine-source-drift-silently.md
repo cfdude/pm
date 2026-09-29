@@ -90,6 +90,29 @@ Swept with `rg` for `replace\(/\\/\\/`, `replace\(/\\/\\*`, `startsWith\("//"|"/
 - Mutation (conformance): an exit handler on a line holding `"https://x"` — the old regex strip deleted
   from that `//` to end of line and stayed GREEN; with `engineCode` the guard goes RED.
 
+### 7. Final re-review — the CLASS of helpers that return engine source
+Derived mechanically: every `readFileSync`/`readFile` in `scripts/test/**/*.mjs` that sits inside a
+named function or arrow helper and whose argument names the engine or a caller-supplied path (a
+scan over `codeOnly()` text, two passes: helper bodies, then each read's nearest enclosing header).
+Every hit, and the disposition of the call sites that feed a POSITIVE assertion:
+
+| Helper (file:line) | Reads | Disposition |
+|---|---|---|
+| `functional/git-gateway-guard:58 sourceOf(rel)` | engine | ROUTED — `engineCode(rel)`; `:136`'s `assert.match(sourceOf(rel), /gitOps\(\)/)` was GREEN with commit-watch.mjs:72 replaced by a comment, RED now |
+| `assert/git-gateway-guard:36 read(p)` | engine | ROUTED — `codeOnly`; the twin now carries the same `gitOps()` check plus a comment discrimination |
+| `assert/detour-frame-drop:115 functionSource(file, name)` | engine slice | ROUTED — `:134`'s `assert.match(body, /verb: "drop-detour"/)` now matches `codeOnly(body)`; the slice itself is limit (b) |
+| `assert/store-ownership:73 mutationSites(read)` | engine | ROUTED — default reader is `engineCode`; feeds the `inStore.length >= 10` / `files.size >= 4` floors |
+| `assert/conductor-29:72 linkTypeLiterals()` | engine | ROUTED — literals read from `codeOnly` lines (the opt-out marker, a comment, from the raw line); feeds `literals.length > 0`. Also `:106`, an inline `assert.match(fs.readFileSync(abs), …)` through a variable path (lint limit (a)), now `engineCode` |
+| `assert/no-inline-exit:120 engineSources()` + `:42 codeMask(src)` | engine | EXCLUDED — feeds only the NEGATIVE `findings == []`; `codeMask` is a regex-aware tokenizer that masks strings as well as comments, which `codeOnly` does not. Its own discrimination test pins both |
+| `assert/conductor-25:231`, `assert/conductor-35:41`, `functional/conductor-31:45`, `functional/emitted-invocations:29`, `functional/verb-surface:65` `dispatchedVerbs()`; `assert/verb-surface:31 dispatchKeys()`; `assert/conductor-09:58/65` and `functional/conductor-09:87/257` `dispatchKeys(fs.readFileSync(ENGINE))` | engine | LIMIT (b) — extraction anchored on the `// ---------- dispatch ----------` marker COMMENT and the dispatch object; the positive checks run over the extracted set. Owned by `engine-source-extraction-vacuity` |
+| `functional/conductor-13:255 flagsInUsageLine()`, `:1948 gateReviewUsageFlags()` | engine usage STRING | LIMIT (b) — extraction from a string literal, owned by `engine-source-extraction-vacuity` |
+| `functional/output-text-integrity:722 mutate(rel, …)` | engine | EXCLUDED — builds mutant sources handed to `stdoutJsonBypasses`/`detourReaderFindings`, which apply `codeOnly` themselves |
+| `sweeps/output-interpolations.test:13 source(rel)`, `sweeps/output-interpolations.mjs:479` | engine | EXCLUDED — consumed by `lex()` itself, which skips comments |
+| `functional/conductor-09:771 real(rel)` | engine | EXCLUDED — copies files into a hook fixture; asserts nothing about their text |
+| `assert/drift-script:50 readFile(p)`, `certification.mjs:43/259`, `certify.mjs:318` | any tracked file | EXCLUDED — the functional-subject derivation, which strips comments with `js-lexer` itself |
+| `assert/autonomy-revocation:45`, `assert/conductor-16:59`, `assert/conductor-28:21`, `assert/conductor-34:15` `shipped*(rel)`; `functional/emitted-invocations:2665 readDoc`, `:52 shippedDocs` | docs only | NOT ENGINE — every call site passes a `.md`/`.json` path |
+| the remaining hits (state.json, logs, PROJECT.md, fixtures, tmp repos) | not engine | NOT ENGINE |
+
 ## Required task items (CLAUDE.md "The gate procedure")
 - **Call-site sweep**: done mechanically above (rg for strippers; the lint prototype for raw reads).
   The lint's STATED LIMITS, each named rather than silently uncovered: (a) a read whose path is a

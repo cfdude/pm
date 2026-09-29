@@ -24,6 +24,7 @@ import {
   isKnownLinkType,
 } from "../../lib/links.mjs";
 import { KNOWN_LINK_TYPES as KNOWN_FROM_CONSTANTS } from "../../lib/constants.mjs";
+import { codeOnly, engineCode } from "../fixtures/source-code.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -73,10 +74,14 @@ function linkTypeLiterals() {
   const found = [];
   for (const file of engineSources()) {
     const rel = path.relative(REPO, file);
-    fs.readFileSync(file, "utf8").split("\n").forEach((raw, i) => {
-      if (raw.includes("pm:not-a-link-type")) return;
-      if (!/epic|link/i.test(raw)) return;
-      const line = raw.replace(/typeof\s+[\w.]+\s*[!=]==\s*"[^"]*"/g, "");
+    // The opt-out marker is a COMMENT, so it is read from the raw line; the literals are read from
+    // CODE, so a comment naming a link type is neither a literal nor evidence the extractor sees the
+    // source (final re-review: the class of helpers returning engine source).
+    const rawLines = fs.readFileSync(file, "utf8").split("\n");
+    codeOnly(rawLines.join("\n"), rel).split("\n").forEach((code, i) => {
+      if (rawLines[i].includes("pm:not-a-link-type")) return;
+      if (!/epic|link/i.test(code)) return;
+      const line = code.replace(/typeof\s+[\w.]+\s*[!=]==\s*"[^"]*"/g, "");
       for (const re of [/\.type\s*[!=]==\s*"([^"]+)"/g, /\btype:\s*"([^"]+)"/g]) {
         for (const m of line.matchAll(re)) found.push({ type: m[1], where: `${rel}:${i + 1}` });
       }
@@ -104,7 +109,7 @@ test("drift guard: every declared READ/WRITTEN type is still named by the file t
     for (const f of files) {
       const abs = path.join(REPO, "scripts", "lib", f);
       assert.ok(fs.existsSync(abs), `${entry.type} claims ${f}, which does not exist`);
-      assert.match(fs.readFileSync(abs, "utf8"), new RegExp(`"${entry.type}"`),
+      assert.match(engineCode(`scripts/lib/${f}`), new RegExp(`"${entry.type}"`),
         `${f} no longer names "${entry.type}" — the declaration is orphaned`);
     }
   }

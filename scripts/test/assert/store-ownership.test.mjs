@@ -26,6 +26,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -70,7 +71,7 @@ function engineFiles() {
 /** Every `fs.<mutation>(` in the engine, as `{ file, line }`. The call must be a MEMBER call on an
  *  identifier named `fs` — the shape every module in this engine uses — so a mention inside prose
  *  does not count and a local helper named like one of these would not be mistaken for one. */
-export function mutationSites(read = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8")) {
+export function mutationSites(read = (rel) => engineCode(rel)) {   // CODE: a comment's `fs.x(` is no site
   const found = [];
   const re = new RegExp(`\\bfs\\.(${MUTATIONS.join("|")})\\s*\\(`, "g");
   for (const rel of engineFiles()) {
