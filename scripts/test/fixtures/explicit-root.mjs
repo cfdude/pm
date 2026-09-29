@@ -11,6 +11,14 @@
 //
 // A write made inside `withRoot(REPO, …)` lands in the real repository, and the exit check reports it —
 // naming a root explicitly is a statement of intent, not a licence.
+//
+// SAFE ONLY FOR A SYNCHRONOUS `fn`. The swap relies on the sequential contract in
+// `scripts/lib/invocation.mjs` (the header's "called once per invocation and never concurrently"): one
+// invocation is installed at a time. A synchronous `fn` holds it for exactly its own call. An async
+// `fn` keeps it installed across `await`s, where another test's code or an in-process `main()` in the
+// same process may run and see REPO as its root (or install its own and restore the wrong one on
+// return). The promise branch below restores on settle, but it cannot make that window safe; do not
+// pass an async `fn`.
 
 import path from "node:path";
 import { installedInvocation, setInvocation } from "../../lib/invocation.mjs";

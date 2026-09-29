@@ -30,13 +30,16 @@
 //      Node 22, 24 and 26).
 //
 // WHAT IS PREVENTED, AND WHAT IS ONLY DETECTED.
-//   PREVENTED — an engine call that names no root. Spawned with `...process.env` or called in process
-//     outside `main()`, the engine resolves `CLAUDE_PROJECT_DIR || cwd` to the pinned scratch
-//     directory, whatever the test's cwd is — the 2026-09-21 shape, cwd or no cwd.
-//   DETECTED ONLY (the exit check, after the fact) — a write that names the real repository itself: a
+//   PREVENTED — an engine call that names no root AND inherits this process's environment: spawned
+//     with an env built from `...process.env` (the variable carried through), or called in process
+//     outside `main()`. It resolves `CLAUDE_PROJECT_DIR || cwd` to the pinned scratch directory,
+//     whatever the test's cwd is — the 2026-09-21 shape.
+//   DETECTED ONLY (the exit check, after the fact) — every other route to the real repository: a
 //     literal path, one derived from `import.meta.url`, a child given `CLAUDE_PROJECT_DIR=<repo>`, a
-//     lib call inside `withRoot(REPO, …)` (`explicit-root.mjs`), a git command run with the repository
-//     as its cwd.
+//     child whose env was built by hand WITHOUT `CLAUDE_PROJECT_DIR` (or had it deleted) and whose cwd
+//     is the protected repository — its engine falls back to that cwd (reproduced at re-review: it
+//     wrote state.json and the exit check caught it) — a lib call inside `withRoot(REPO, …)`
+//     (`explicit-root.mjs`), and a git command run with the repository as its cwd.
 //   NOT SEEN — a write under a protected root outside the hashed set (any other path in the working
 //     tree); and a DETACHED child that outlives this process and writes after its exit listener ran.
 //

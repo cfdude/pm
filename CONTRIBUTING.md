@@ -300,12 +300,15 @@ snapshot, loads `scripts/test/fixtures/record-isolation.mjs`. The fixture does t
 - At exit it fails the file when any protected file changed, naming each path with its mtime
   against the process's start.
 
-**What is prevented, and what is only detected.** PREVENTED: an engine call that names no root. It
-resolves `CLAUDE_PROJECT_DIR || cwd` to the empty pin, even when the test's cwd is your checkout, so
-the engine refuses there ("run /pm:init first") instead of writing your record. DETECTED ONLY, after
-the fact, by the exit check: a write that names the real repository itself. That covers a literal
-path, a path derived from `import.meta.url`, a child given `CLAUDE_PROJECT_DIR=<repo>`, a lib call
-inside `withRoot(REPO, …)`, and git run with the repository as its cwd. NOT SEEN: a file outside the
+**What is prevented, and what is only detected.** PREVENTED: an engine call that names no root and
+inherits the test process's environment, either through `...process.env` or in process outside
+`main()`. It resolves `CLAUDE_PROJECT_DIR || cwd` to the empty pin, even when the test's cwd is your
+checkout, so the engine refuses there ("run /pm:init first") instead of writing your record.
+DETECTED ONLY, after the fact, by the exit check: every other route. That covers a literal path, a
+path derived from `import.meta.url`, a child given `CLAUDE_PROJECT_DIR=<repo>`, a lib call inside
+`withRoot(REPO, …)`, and git run with the repository as its cwd. It also covers a child whose env was
+built by hand without `CLAUDE_PROJECT_DIR` (or had it deleted) and whose cwd is your checkout: its
+engine falls back to that cwd. NOT SEEN: a file outside the
 hashed set, and a detached child that writes after the test process exits.
 
 **A test that reads this repository through a direct lib call names it.** Outside `main()`, the

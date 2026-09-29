@@ -111,8 +111,11 @@ whose root and cwd are `root` for the duration of `fn` (no process env is touche
 runs `git rev-parse` with `cwd: REPO` and `gateStaleness` inside `withRoot(REPO)`; conductor-15's
 `findingsFor`, `isAncestorHere`, `commitDateHere`, 9.14's `runIntegrity` and 9.5's root assertion run
 inside `withRoot(REPO)`; gate-artifact-evidence derives `REPO` from `import.meta.url` for its git
-calls and runs `runIntegrity` inside `withRoot(REPO)`. PREVENTED: an engine call naming no root.
-DETECTED ONLY: a write naming the real repository itself. Proven by functional/record-isolation's
+calls and runs `runIntegrity` inside `withRoot(REPO)`. PREVENTED: an engine call naming no root that
+INHERITS this process's env (`...process.env`, or in process outside `main()`). DETECTED ONLY: every
+other route — a write naming the real repository itself, and a child whose env was built by hand
+without `CLAUDE_PROJECT_DIR` (or had it deleted) with cwd = the protected repo, whose engine falls back
+to that cwd (reproduced at re-review: probe C wrote state.json and the exit check caught it). Proven by functional/record-isolation's
 "PREVENTS" case (an engine spawned with `...process.env` and cwd = an initialized checkout exported as
 CLAUDE_PROJECT_DIR writes nothing there; mutating the pin to `delete` makes that case fail).
 
@@ -127,6 +130,8 @@ every hit, its EFFECTIVE engine root, and whether its cwd can sit inside a prote
 | helpers.mjs:390/472 (hook fixtures), certify-index:93 (`certifyEnv`), drift-script:37/229, git-shim:39, temp-dir-cleanup:83, record-isolation (functional):49 | inherits the PIN (scratch); nested test processes re-pin (`PM_TEST_PINNED_ROOT`) | fixture repos, except temp-dir-cleanup:83 whose cwd IS the repository — the pin keeps the engine off it; any literal write is DETECTED |
 | per-call-roots:91, conductor-06:361, conductor-09:580/856/1258, conductor-39:193, git-gateway-repo.mjs:85, drift.mjs:79 | no engine: git / `sh` only | fixture repos (drift.mjs reads the repository it is pointed at, read-only) |
 | certify-index:421/434 (inside a fixture test file's source) | the fixture's own nested process | fixture repo |
+| DIRECT `process.env.CLAUDE_PROJECT_DIR =` assignments (`rg -n 'process.env.CLAUDE_PROJECT_DIR ='`): conductor-12:16/153/229/266/532 (`freshState`/`freshConflicts`/`freshSubcommands`/test bodies), state-write-verification:26 (module scope), state-file-refuses-to-guess:126/355 (`inRepo`, restored after) | the process's own root re-pointed from the pin to a tmp repo (`tmpRepo()`, `threeEpicRepo()`, or a `mkdtemp` scratch dir) | No — each points at a tmp repo; conductor-12's and state-write-verification's are not restored, so the rest of that process runs against a tmp repo, still not a protected root |
+| state-file-refuses-to-guess:839 (inside a generated child script) | the child sets it to its own `target` fixture | fixture repo |
 
 Minors: (a) PROJECT.md, CLAUDE.md, .gitignore fingerprinted by lstat (size, mtime, inode) beside the
 `.conductor/` hashes — reading their bytes made certify's observer refuse the run, since PROJECT.md and
