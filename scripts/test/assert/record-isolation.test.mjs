@@ -25,23 +25,47 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { removeAtExit } from "../fixtures/assert-git-shim.mjs";
 import {
-  snapshotRecord, diffRecords, protectedRoots, INHERITED_PROJECT_DIR, PROTECTED, describeLeaks,
+  snapshotRecord, diffRecords, protectedRoots, PINNED_ROOT, PROTECTED, describeLeaks, ROOT_FILES, skipped,
+  mtimeNote,
 } from "../fixtures/record-isolation.mjs";
-import { stripComments } from "../js-lexer.mjs";
+import { lex } from "../js-lexer.mjs";
 
 const TEST_DIR = path.dirname(path.dirname(fileURLToPath(import.meta.url)));   // scripts/test
 const REPO = path.resolve(TEST_DIR, "..", "..");
 const MODULE = path.join(TEST_DIR, "fixtures", "record-isolation.mjs");
 const BUCKETS = ["unit", "assert", "functional", "sweeps"];
 
-/** Relative specifiers of every STATIC import and re-export in `src` (comments stripped first, so a
- *  specifier named in a comment is not an edge). Dynamic `import()` is deliberately not an edge: a
- *  guard reached only through one could load after a test body had already run. */
+/** Relative specifiers of every STATIC import and re-export in `src`, read from the shared lexer's
+ *  TOKENS rather than from text: a comment is not a token, and a string or template is ONE token whose
+ *  contents are never scanned — so `const s = 'import "./guard.mjs"'` is a decoy, not an edge (a test
+ *  file holding the import text only inside a string passed a text match and leaked). An edge is an
+ *  `import`/`export` keyword at the top level (not `import(` and not `import.meta`) whose specifier
+ *  string follows `from`, or follows `import` directly (a bare side-effect import). Dynamic `import()`
+ *  is deliberately not an edge: a guard reached only through one could load after a test body had
+ *  already run. Fails closed on a lexer misparse, like every other reader of the lexer. */
 function staticImports(src, name) {
-  const code = stripComments(src, name);
+  const { contexts, misparse } = lex(src);
+  if (misparse.length) throw new Error(`js-lexer: ${name}:${misparse[0].line}: ${misparse[0].what}`);
+  const toks = contexts[0].tokens;
+  const text = (t) => (t && (t.kind === "ident" || t.kind === "punct") ? t.text : undefined);
   const out = [];
-  const re = /(?:^|[;\n}])\s*(?:import|export)\s+(?:[^'"`;]*?\bfrom\s*)?(["'])(\.{1,2}\/[^"']+)\1/g;
-  for (const m of code.matchAll(re)) out.push(m[2]);
+  for (let i = 0; i < toks.length; i++) {
+    const kw = text(toks[i]);
+    if (kw !== "import" && kw !== "export") continue;
+    if (text(toks[i - 1]) === ".") continue;                              // x.import
+    if (kw === "import" && ["(", "."].includes(text(toks[i + 1]))) continue;   // import(…), import.meta
+    for (let j = i + 1; j < toks.length; j++) {
+      if (text(toks[j]) === ";" || text(toks[j]) === "import" || text(toks[j]) === "export") break;
+      if (toks[j].kind === "template") break;
+      if (toks[j].kind !== "string") continue;
+      const prev = text(toks[j - 1]);
+      if (prev === "from" || (kw === "import" && j === i + 1)) {
+        const spec = src.slice(toks[j].start + 1, toks[j].end - 1);
+        if (/^\.{1,2}\//.test(spec)) out.push(spec);
+      }
+      break;
+    }
+  }
   return out;
 }
 
@@ -96,15 +120,32 @@ test("the closure walk is not vacuous: an unrelated file does not reach the guar
   assert.equal(reaches(path.join(dir, "c.test.mjs"), MODULE), true, "a re-export chain is an edge");
 });
 
-test("this process is pinned: CLAUDE_PROJECT_DIR is unset, and whatever it held is protected", () => {
-  assert.equal(process.env.CLAUDE_PROJECT_DIR, undefined, "the engine's root must fall back to the cwd the caller hands it");
-  assert.ok(PROTECTED.includes(REPO), "the repository this suite belongs to is protected");
-  if (INHERITED_PROJECT_DIR) assert.ok(PROTECTED.includes(path.resolve(INHERITED_PROJECT_DIR)));
+test("the closure walk is not vacuous: an import written only inside a string or a template is a decoy, not an edge", () => {
+  const dir = scratch("pm-record-isolation-decoy-");
+  const rel = JSON.stringify(path.relative(dir, MODULE));
+  fs.writeFileSync(path.join(dir, "s.test.mjs"), `const decoy = 'import ${rel.replace(/'/g, "")};';\nexport const n = 1;\n`);
+  fs.writeFileSync(path.join(dir, "t.test.mjs"), `const decoy = \`\nimport ${rel};\n\`;\nexport const n = 1;\n`);
+  fs.writeFileSync(path.join(dir, "u.test.mjs"), `const m = await import(${rel});\nexport const n = 1;\n`);
+  fs.writeFileSync(path.join(dir, "v.test.mjs"), `import ${rel};\n`);
+  assert.equal(reaches(path.join(dir, "s.test.mjs"), MODULE), false, "a quoted-string decoy");
+  assert.equal(reaches(path.join(dir, "t.test.mjs"), MODULE), false, "a template decoy spanning lines");
+  assert.equal(reaches(path.join(dir, "u.test.mjs"), MODULE), false, "a dynamic import() is not a static edge");
+  assert.equal(reaches(path.join(dir, "v.test.mjs"), MODULE), true, "and the real side-effect import still is");
 });
 
-test("protectedRoots: this repo, PM_TEST_PROTECTED_ROOT, and an inherited CLAUDE_PROJECT_DIR", () => {
+test("this process is pinned: CLAUDE_PROJECT_DIR is an empty scratch directory, never a protected root", () => {
+  assert.equal(process.env.CLAUDE_PROJECT_DIR, PINNED_ROOT);
+  assert.equal(process.env.PM_TEST_PINNED_ROOT, PINNED_ROOT);
+  assert.deepEqual(fs.readdirSync(PINNED_ROOT), [], "the pin is empty — not a conductor");
+  assert.ok(PROTECTED.includes(REPO), "the repository this suite belongs to is protected");
+  assert.ok(!PROTECTED.includes(PINNED_ROOT));
+});
+
+test("protectedRoots: this repo, PM_TEST_PROTECTED_ROOT, and an inherited CLAUDE_PROJECT_DIR — never a parent's pin", () => {
   assert.deepEqual(protectedRoots({ CLAUDE_PROJECT_DIR: "/real/checkout" }, "/suite"), ["/suite", "/real/checkout"]);
   assert.deepEqual(protectedRoots({ PM_TEST_PROTECTED_ROOT: "/real/top" }, "/snapshot"), ["/snapshot", "/real/top"]);
+  assert.deepEqual(protectedRoots({ CLAUDE_PROJECT_DIR: "/tmp/pin", PM_TEST_PINNED_ROOT: "/tmp/pin" }, "/suite"), ["/suite"],
+    "a nested test process inherits its parent's pin, which is scratch, not a record anybody owns");
   assert.deepEqual(protectedRoots({ CLAUDE_PROJECT_DIR: "/suite/", PM_TEST_PROTECTED_ROOT: "/suite" }, "/suite"), ["/suite"]);
   assert.deepEqual(protectedRoots({}, "/suite"), ["/suite"]);
 });
@@ -127,6 +168,41 @@ test("snapshot + diff: an untouched record compares equal; an added, changed or 
     { path: ".conductor/honcho-memories.log", change: "added" },
     { path: ".conductor/state.json", change: "changed" },
   ]);
+});
+
+test("snapshot + diff: the root files the engine writes are fingerprinted too — PROJECT.md, CLAUDE.md, .gitignore", () => {
+  // Fingerprinted by lstat, never read: see snapshotRecord — certify's observer refuses a functional
+  // run that reads a tracked file outside its subject, and PROJECT.md and .gitignore are outside it.
+  assert.deepEqual(ROOT_FILES, ["PROJECT.md", "CLAUDE.md", ".gitignore"]);
+  const root = scratch("pm-record-isolation-rootfiles-");
+  fs.writeFileSync(path.join(root, "CLAUDE.md"), "# rules\n");
+  fs.writeFileSync(path.join(root, ".gitignore"), "node_modules\n");
+  fs.writeFileSync(path.join(root, "README.md"), "not the engine's\n");
+  const before = snapshotRecord(root);
+  fs.appendFileSync(path.join(root, "CLAUDE.md"), "<!-- pm:rules -->\n");
+  fs.writeFileSync(path.join(root, "PROJECT.md"), "# Project\n");
+  fs.rmSync(path.join(root, ".gitignore"));
+  fs.appendFileSync(path.join(root, "README.md"), "outside the hashed set\n");
+  assert.deepEqual(diffRecords(before, snapshotRecord(root)), [
+    { path: ".gitignore", change: "removed" },
+    { path: "CLAUDE.md", change: "changed" },
+    { path: "PROJECT.md", change: "added" },
+  ]);
+});
+
+test("snapshot: .DS_Store and every *.lock are skipped — the OS's file and the commit-nudge transient", () => {
+  assert.equal(skipped(".DS_Store"), true);
+  assert.equal(skipped("commit-observe.json.lock"), true);
+  assert.equal(skipped("state.json"), false);
+  assert.equal(skipped("locks.json"), false);
+  const root = scratch("pm-record-isolation-skip-");
+  fs.mkdirSync(path.join(root, ".conductor", "feedback"), { recursive: true });
+  fs.writeFileSync(path.join(root, ".conductor", "state.json"), "{}");
+  const before = snapshotRecord(root);
+  fs.writeFileSync(path.join(root, ".conductor", "commit-observe.json.lock"), "123");
+  fs.writeFileSync(path.join(root, ".conductor", ".DS_Store"), "x");
+  fs.writeFileSync(path.join(root, ".conductor", "feedback", ".DS_Store"), "x");
+  assert.deepEqual(diffRecords(before, snapshotRecord(root)), []);
 });
 
 test("snapshot + diff: a record that did not exist and now does is a leak; one that stays absent is not", () => {
@@ -163,9 +239,27 @@ test("certify hands every bucket run the real top level, and the observer's vari
 });
 
 test("describeLeaks names the root and every path, and says what a false positive looks like", () => {
-  const text = describeLeaks([{ root: "/real", leaks: [{ path: ".conductor/state.json", change: "changed" }] }]);
-  assert.match(text, /\/real\/\.conductor\/state\.json \(changed\)/);
-  assert.match(text, /CLAUDE_PROJECT_DIR/);
-  assert.match(text, /another session/i);
+  const root = scratch("pm-record-isolation-describe-");
+  fs.mkdirSync(path.join(root, ".conductor"));
+  fs.writeFileSync(path.join(root, ".conductor", "state.json"), "{}");
+  const text = describeLeaks([{ root, leaks: [
+    { path: ".conductor/state.json", change: "changed" },
+    { path: ".conductor/gone.log", change: "removed" },
+  ] }], Date.now() - 60_000);
+  assert.ok(text.includes(`${path.join(root, ".conductor", "state.json")} (changed; mtime `), text);
+  assert.match(text, /s after this process started\)/, "the mtime is read against the process's start");
+  assert.ok(text.includes(`${path.join(root, ".conductor", "gone.log")} (removed; no mtime`), text);
+  assert.match(text, /CLAUDE_PROJECT_DIR is pinned/);
+  assert.match(text, /this file or one running alongside it, or another pm process/);
   assert.equal(describeLeaks([]), "");
+});
+
+test("mtimeNote: before or after the process's start, and absent for a removed path", () => {
+  const root = scratch("pm-record-isolation-mtime-");
+  const f = path.join(root, "x");
+  fs.writeFileSync(f, "x");
+  const now = fs.statSync(f).mtimeMs;
+  assert.match(mtimeNote(f, now - 5000), /5\.0s after this process started$/);
+  assert.match(mtimeNote(f, now + 5000), /5\.0s before this process started$/);
+  assert.match(mtimeNote(path.join(root, "nope"), now), /^no mtime/);
 });

@@ -221,7 +221,7 @@ rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 # today; a tracked symlink added later is where this gate stops meaning "the index".
 #
 # NO TEST MAY WRITE THE DEVELOPER'S REAL RECORD (test-isolation-guard). Every test process loads
-# `scripts/test/fixtures/record-isolation.mjs`, which unsets CLAUDE_PROJECT_DIR and fails the
+# `scripts/test/fixtures/record-isolation.mjs`, which pins CLAUDE_PROJECT_DIR to scratch and fails the
 # file when a protected `.conductor/` changed. Its module-relative root HERE is the snapshot, a copy;
 # this names the real checkout, so the run over the copy still guards the record the developer owns.
 export PM_TEST_PROTECTED_ROOT="$ROOT"

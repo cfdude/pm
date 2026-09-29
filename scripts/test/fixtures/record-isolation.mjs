@@ -3,8 +3,8 @@
 //
 // A SIDE-EFFECT MODULE, like `hermetic-git.mjs`, loaded by every process the suite starts: every unit-
 // and file-rung file through `assert-git-shim.mjs`, the functional half through `helpers.mjs`, the
-// sweep bucket directly. `assert/record-isolation.test.mjs` refuses, by name, a test file of any bucket
-// whose static imports never reach it.
+// sweep bucket and a few functional files directly. `assert/record-isolation.test.mjs` refuses, by
+// name, a test file of any bucket whose static imports never reach it.
 //
 // WHY. The engine resolves its root as `CLAUDE_PROJECT_DIR || cwd` (`scripts/lib/invocation.mjs`), and a
 // Claude Code session exports `CLAUDE_PROJECT_DIR` at the developer's checkout. So any test that spawns
@@ -14,39 +14,57 @@
 // nothing noticed until a person read the record.
 //
 // WHAT IT DOES, per process:
-//   1. PROTECTS, at import, the `.conductor/` of: the repository this module belongs to; the root in
-//      `PM_TEST_PROTECTED_ROOT` (the pre-commit hook and certify run the suite over a COPY — the index
-//      snapshot, the run tree — so the module-relative root there is the copy, and they name the real
-//      top level through this variable); and an inherited `CLAUDE_PROJECT_DIR`.
-//      Each is snapshotted as relative path → sha256 of every regular file (absent is a state too).
-//   2. PINS `CLAUDE_PROJECT_DIR` UNSET — the environment CI runs in. With it unset the engine's root is
-//      the cwd the caller hands it, so a test that forgets to name a root acts on its own cwd, never on
-//      the checkout a Claude Code session exported. WHY UNSET AND NOT A SCRATCH DIRECTORY (measured on
-//      the functional half, test-isolation-guard task 3): a scratch pin broke nine tests and one whole
-//      file — conductor-13 16.3, conductor-15 9.2–9.5 and gate-artifact-evidence call lib functions
-//      directly and rely on `CLAUDE_PROJECT_DIR || cwd` resolving to the repository they run in. Unset,
-//      the functional half fails exactly as it does without the guard.
-//      A test whose cwd IS a protected repository can still write it through the fallback; step 3 is
-//      what catches that.
-//   3. AT EXIT, snapshots again. Any file added, changed or removed under a protected record is
-//      written to stderr by path and the process exits 1 — which the runner reports as
+//   1. PROTECTS, at import, three roots: the repository this module belongs to; `PM_TEST_PROTECTED_ROOT`
+//      (the pre-commit hook and certify run the suite over a COPY — the index snapshot, the run tree —
+//      so the module-relative root there is the copy, and they name the real top level through this
+//      variable); and an inherited `CLAUDE_PROJECT_DIR`, unless it is the pin a parent test process made
+//      (`PM_TEST_PINNED_ROOT`), which is scratch nobody owns. For each it hashes every file under
+//      `.conductor/` and fingerprints (lstat: size, mtime, inode — see `snapshotRecord`) the three root
+//      files the engine writes (`PROJECT.md`, `CLAUDE.md`, `.gitignore` — `lib/verb-effects.mjs`,
+//      `init`/`render`). `.DS_Store` and `*.lock` are skipped:
+//      the first is the OS's, the second a transient the commit-nudge hook makes and removes.
+//   2. PINS `CLAUDE_PROJECT_DIR` to a fresh EMPTY scratch directory, removed at exit.
+//   3. AT EXIT, hashes again. Any file added, changed or removed is written to stderr by path, with
+//      its mtime against this process's start, and the process exits 1 — which the runner reports as
 //      `✖ <file> … 'test failed'` and a failed run (the mechanism `assert-git-shim.mjs` measured on
 //      Node 22, 24 and 26).
 //
-// IT NEVER RESTORES the record. A restore could clobber a LEGITIMATE concurrent write — the same
-// developer's session recording work while the suite runs — and would erase the evidence of the leak.
-// That concurrent write is also this guard's one false positive; the message says so.
+// WHAT IS PREVENTED, AND WHAT IS ONLY DETECTED.
+//   PREVENTED — an engine call that names no root. Spawned with `...process.env` or called in process
+//     outside `main()`, the engine resolves `CLAUDE_PROJECT_DIR || cwd` to the pinned scratch
+//     directory, whatever the test's cwd is — the 2026-09-21 shape, cwd or no cwd.
+//   DETECTED ONLY (the exit check, after the fact) — a write that names the real repository itself: a
+//     literal path, one derived from `import.meta.url`, a child given `CLAUDE_PROJECT_DIR=<repo>`, a
+//     lib call inside `withRoot(REPO, …)` (`explicit-root.mjs`), a git command run with the repository
+//     as its cwd.
+//   NOT SEEN — a write under a protected root outside the hashed set (any other path in the working
+//     tree); and a DETACHED child that outlives this process and writes after its exit listener ran.
+//
+// IT NEVER RESTORES the record. A restore could clobber a LEGITIMATE concurrent write and would erase
+// the evidence of the leak. That concurrent write is this guard's false positive: the exit check cannot
+// tell which process wrote a file, so the message names the other writers it could be and prints each
+// path's mtime against this process's start.
 
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeAtExit } from "./temp-dir.mjs";
 
 const SUITE_REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const STARTED_MS = Date.now();
 
-/** The roots whose `.conductor/` this process must leave byte-identical, de-duplicated, suite first. */
+/** The root files outside `.conductor/` that the engine writes (`init`, `render`). */
+export const ROOT_FILES = ["PROJECT.md", "CLAUDE.md", ".gitignore"];
+
+/** The roots whose records this process must leave byte-identical, de-duplicated, suite first. */
 export function protectedRoots(env, suiteRepo) {
-  const roots = [suiteRepo, env.PM_TEST_PROTECTED_ROOT, env.CLAUDE_PROJECT_DIR];
+  const roots = [suiteRepo, env.PM_TEST_PROTECTED_ROOT];
+  const inherited = env.CLAUDE_PROJECT_DIR;
+  if (inherited && !(env.PM_TEST_PINNED_ROOT && path.resolve(inherited) === path.resolve(env.PM_TEST_PINNED_ROOT))) {
+    roots.push(inherited);
+  }
   const out = [];
   for (const r of roots) {
     if (!r) continue;
@@ -56,23 +74,43 @@ export function protectedRoots(env, suiteRepo) {
   return out;
 }
 
-/** `{ "<.conductor/rel>": sha256 }` for every regular file under `<root>/.conductor/`; an absent
- *  record is the empty object. Symlinks are recorded by their target text, never followed. */
+/** Is `name` a file the walk leaves out? The OS's `.DS_Store`, and every `*.lock` — a lock is a
+ *  transient by construction (the commit-nudge hook makes one under `.conductor/` and removes it). */
+export const skipped = (name) => name === ".DS_Store" || name.endsWith(".lock");
+
+const digest = (abs) => crypto.createHash("sha256").update(fs.readFileSync(abs)).digest("hex");
+
+/** `{ "<root-relative path>": sha256 }` for every regular file under `<root>/.conductor/` and each of
+ *  `ROOT_FILES` that exists; an absent file has no key. Symlinks are recorded by their target text,
+ *  never followed. */
 export function snapshotRecord(root) {
   const out = {};
+  const record = (abs, rel, dirent) => {
+    try {
+      if (dirent.isSymbolicLink()) out[rel] = `symlink:${fs.readlinkSync(abs)}`;
+      else if (dirent.isFile()) out[rel] = digest(abs);
+    } catch { out[rel] = "unreadable"; }
+  };
   const walk = (abs, rel) => {
     let entries;
     try { entries = fs.readdirSync(abs, { withFileTypes: true }); } catch { return; }
     for (const e of entries) {
+      if (skipped(e.name)) continue;
       const a = path.join(abs, e.name), r = `${rel}/${e.name}`;
-      try {
-        if (e.isDirectory()) walk(a, r);
-        else if (e.isSymbolicLink()) out[r] = `symlink:${fs.readlinkSync(a)}`;
-        else if (e.isFile()) out[r] = crypto.createHash("sha256").update(fs.readFileSync(a)).digest("hex");
-      } catch { out[r] = "unreadable"; }
+      if (e.isDirectory()) walk(a, r);
+      else record(a, r, e);
     }
   };
   walk(path.join(root, ".conductor"), ".conductor");
+  // The root files are FINGERPRINTED, not read: size, mtime and inode from `lstat`. Reading their bytes
+  // would make every functional process READ `PROJECT.md` and `.gitignore`, which the certification
+  // subject excludes, and certify's run-time observer refuses a run that reads a tracked file outside
+  // its subject. Any write moves the mtime, so a write is still seen; a stat is not a read.
+  for (const name of ROOT_FILES) {
+    let st;
+    try { st = fs.lstatSync(path.join(root, name)); } catch { continue; }
+    out[name] = `stat:${st.size}:${st.mtimeMs}:${st.ino}`;
+  }
   return out;
 }
 
@@ -88,25 +126,43 @@ export function diffRecords(before, after) {
   return out;
 }
 
+/** When `abs` was last modified, against `startedMs`: `mtime <iso>, <n>s after this process started`
+ *  (or `before`); `no mtime` for a removed file. */
+export function mtimeNote(abs, startedMs) {
+  let ms;
+  try { ms = fs.lstatSync(abs).mtimeMs; } catch { return "no mtime: the path no longer exists"; }
+  const d = (Math.abs(ms - startedMs) / 1000).toFixed(1);
+  return `mtime ${new Date(ms).toISOString()}, ${d}s ${ms >= startedMs ? "after" : "before"} this process started`;
+}
+
 /** The exit message for `[{ root, leaks }]`; empty when nothing leaked. */
-export function describeLeaks(found) {
+export function describeLeaks(found, startedMs = STARTED_MS) {
   const hit = found.filter((f) => f.leaks.length);
   if (!hit.length) return "";
-  return "\nrecord-isolation: a test WROTE THE DEVELOPER'S REAL RECORD — no test may (test-isolation-guard):\n" +
-    hit.flatMap(({ root, leaks }) => leaks.slice(0, 20).map((l) => `  ${path.join(root, l.path)} (${l.change})\n`)).join("") +
-    "Every test process runs with CLAUDE_PROJECT_DIR unset, so a write here came through a literal path, a " +
-    "path derived from import.meta.url, or an engine call whose cwd is the repository. Give the engine a " +
-    "fixture root (tmpRepo(), and CLAUDE_PROJECT_DIR set to it). The record was NOT restored: inspect it " +
-    "(git diff .conductor) and remove what the test added. If another session wrote this record while the " +
-    "suite ran, this is that write and not a leak — re-run the file.\n";
+  return "\nrecord-isolation: a protected record CHANGED while this test file ran — no test may write the " +
+    "developer's real record (test-isolation-guard):\n" +
+    hit.flatMap(({ root, leaks }) => leaks.slice(0, 20).map((l) => {
+      const abs = path.join(root, l.path);
+      return `  ${abs} (${l.change}; ${mtimeNote(abs, startedMs)})\n`;
+    })).join("") +
+    "CLAUDE_PROJECT_DIR is pinned to an empty scratch directory in every test process, so an engine call that " +
+    "names no root cannot have done this. The write named the repository itself: a literal path, a path " +
+    "derived from import.meta.url, a child given CLAUDE_PROJECT_DIR=<repo>, withRoot(<repo>, …), or git run " +
+    "with the repository as its cwd. Give the engine a fixture root (tmpRepo()). The record was NOT " +
+    "restored: inspect it (git diff) and remove what the test wrote.\n" +
+    "The writer may not be this file: it may be this file or one running alongside it, or another pm " +
+    "process (a Claude Code session, a hook, another worktree's orchestrator) writing the same record. " +
+    "An mtime before this process started, or one matching another process's work, points there — " +
+    "re-run the file alone to tell.\n";
 }
 
 export const PROTECTED = protectedRoots(process.env, SUITE_REPO);
 const BEFORE = PROTECTED.map((root) => ({ root, snap: snapshotRecord(root) }));
 
-/** What `CLAUDE_PROJECT_DIR` held when this process started — protected above, then unset. */
-export const INHERITED_PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR;
-delete process.env.CLAUDE_PROJECT_DIR;
+/** The empty scratch directory `CLAUDE_PROJECT_DIR` is pinned to in this process. */
+export const PINNED_ROOT = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-test-project-dir-")));
+process.env.CLAUDE_PROJECT_DIR = PINNED_ROOT;
+process.env.PM_TEST_PINNED_ROOT = PINNED_ROOT;
 
 /** The exit listener: compare every protected record with its import-time snapshot and fail the file
  *  on any difference. Exported so a test can call it on purpose. */

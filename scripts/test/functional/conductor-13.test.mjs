@@ -5,6 +5,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles, fixtureCommits, archiveDay } from "../fixtures/functional-harness.mjs";
 import { AGENT_OUTCOMES } from "../../lib/archive-gate.mjs";
+import { withRoot } from "../fixtures/explicit-root.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -2037,13 +2038,16 @@ test("record-gate-review's allowlist is the shared registry's projection, not a 
 // exact defect class this release exists to end.
 test("16.3: a headSha naming the last attributed commit at another length reads FRESH", async () => {
   const { gateStaleness } = await import(ARCHIVE_GATE);
-  const short = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
-  const long = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  // THIS repository's HEAD, named explicitly: the test process's CLAUDE_PROJECT_DIR is pinned to empty
+  // scratch (test-isolation-guard), so neither the git call nor the gate's own ancestry check may lean
+  // on an ambient root.
+  const short = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim();
+  const long = execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim();
   assert.notEqual(short, long, "the fixture needs two spellings of ONE commit");
 
-  const state = gateStaleness(
+  const state = withRoot(REPO, () => gateStaleness(
     { id: "e", lane: "openspec", attributedCommits: [short] },
-    { verdict: "pass", baseSha: short, headSha: long, reviewedAt: "2026-08-25T00:00:00.000Z" });
+    { verdict: "pass", baseSha: short, headSha: long, reviewedAt: "2026-08-25T00:00:00.000Z" }));
 
   assert.equal(state.state, "fresh",
     `one commit spelled two ways must read fresh, not ${state.state} — a gate that refuses an ` +

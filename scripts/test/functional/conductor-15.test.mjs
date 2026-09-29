@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { withRoot } from "../fixtures/explicit-root.mjs";
+import { engineRoot as engineRootHere } from "../../lib/invocation.mjs";
 import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, archiveDay, REFRESH_GATE_HEADING, fixtureCommits } from "../fixtures/functional-harness.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
@@ -776,12 +778,14 @@ test("9.1: every check is reported with its count, including the ones that found
 
 // ───── 9.5: the zero-ticked check — its day-one evidence, frozen, and its live behaviour ─────
 //
-// This file's own process has ROOT pointed at this repository (helpers.mjs sets
-// CLAUDE_PROJECT_DIR only in the CHILD env, and nothing here mutates the parent), so importing
-// the module directly evaluates its checks against this repository's real disk and real git.
-// Do not set process.env.CLAUDE_PROJECT_DIR anywhere in this file.
+// These checks evaluate against THIS repository's real disk and real git, and they SAY so: every
+// direct lib call below runs inside `withRoot(REPO, …)`. The process's own CLAUDE_PROJECT_DIR is
+// pinned to empty scratch by record-isolation.mjs (test-isolation-guard), so an ambient root would
+// measure a temp directory. Do not set process.env.CLAUDE_PROJECT_DIR anywhere in this file.
 const { runIntegrity, CHECKS } = await import("../../lib/integrity.mjs");
-const { isAncestor: isAncestorHere, commitDate: commitDateHere } = await import("../../lib/git.mjs");
+const gitLib = await import("../../lib/git.mjs");
+const isAncestorHere = (...a) => withRoot(REPO, () => gitLib.isAncestor(...a));
+const commitDateHere = (...a) => withRoot(REPO, () => gitLib.commitDate(...a));
 
 // Several checks below are evaluated against THIS repository's REAL git history, so that
 // `git merge-base --is-ancestor` actually answers rather than returning the three-valued `null`
@@ -805,7 +809,7 @@ const requireHistory = () => {
 const [H_NEWEST, , H_DESC, , H_HEAD, , H_INSIDE, , H_BASE] = HIST;
 const liveState = () => JSON.parse(fs.readFileSync(path.join(REPO, ".conductor", "state.json"), "utf8"));
 const findingsFor = (id, state) => {
-  const c = runIntegrity(state).find(x => x.id === id);
+  const c = withRoot(REPO, () => runIntegrity(state)).find(x => x.id === id);
   assert.ok(c, `no check registered as ${id}`);
   // A check that could not run has no findings to compare; an empty list must never pass for one.
   assert.ok(!c.unavailable, `${id} could not run: ${c.unavailable}`);
@@ -828,7 +832,7 @@ const EXPLAINED = new Set(["killed", "superseded", "abandoned", "declined", "unr
 // measurement was taken from. On the LIVE record all five have since been dispositioned and the
 // check correctly reports none of them — which the sibling test below is what asserts.
 test("9.5: on the frozen pre-walk record the zero-ticked check reports exactly the five identified epics", () => {
-  assert.equal(process.env.CLAUDE_PROJECT_DIR || process.cwd(), REPO.replace(/\/$/, ""),
+  assert.equal(withRoot(REPO, () => engineRootHere()), REPO.replace(/\/$/, ""),
     "these checks must resolve task sources against THIS repository, or they measure a temp directory");
   const state = preWalkState();
   const reported = findingsFor("archived-with-zero-ticked-tasks", state).map(f => f.epic).sort();
@@ -1437,7 +1441,7 @@ test("9.14: the recorded day-one set names every check and explains every live f
       : []].find(fs.existsSync);
   assert.ok(dayOne, "the day-one record must be findable in flight OR archived — never neither");
   const doc = fs.readFileSync(dayOne, "utf8");
-  const report = runIntegrity(liveState());
+  const report = withRoot(REPO, () => runIntegrity(liveState()));
   for (const { id, findings } of report) {
     assert.ok(doc.includes(id),
       `${id}: a check missing from the day-one record is a check whose result nobody wrote down`);

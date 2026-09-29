@@ -101,3 +101,37 @@ neither is found by the closure guard, not guessed.
    could clobber a legitimate concurrent write — declined, justified.
 3. **Verify against the commit**: `git show --stat <sha>` after every task commit.
 4. Lifecycle / attribution: the orchestrator attributes commits after merge (brief).
+
+## Amendment — final review (I1, I2, minors a–e)
+
+**I1, the pin is RESTORED to an empty scratch directory** (the unset pin in task 3 only detected a
+leak, it did not prevent one: a test run from the checkout had cwd = the real repo). The nine tests it
+broke now NAME their root: `fixtures/explicit-root.mjs` `withRoot(root, fn)` installs an invocation
+whose root and cwd are `root` for the duration of `fn` (no process env is touched). conductor-13 16.3
+runs `git rev-parse` with `cwd: REPO` and `gateStaleness` inside `withRoot(REPO)`; conductor-15's
+`findingsFor`, `isAncestorHere`, `commitDateHere`, 9.14's `runIntegrity` and 9.5's root assertion run
+inside `withRoot(REPO)`; gate-artifact-evidence derives `REPO` from `import.meta.url` for its git
+calls and runs `runIntegrity` inside `withRoot(REPO)`. PREVENTED: an engine call naming no root.
+DETECTED ONLY: a write naming the real repository itself. Proven by functional/record-isolation's
+"PREVENTS" case (an engine spawned with `...process.env` and cwd = an initialized checkout exported as
+CLAUDE_PROJECT_DIR writes nothing there; mutating the pin to `delete` makes that case fail).
+
+**I2, the call-site sweep for the design that ships** — `rg -n '\.\.\.process\.env' scripts/test`,
+every hit, its EFFECTIVE engine root, and whether its cwd can sit inside a protected repository:
+
+| Site(s) | Effective root | cwd inside a protected repo? |
+| --- | --- | --- |
+| harness.mjs:70, helpers.mjs:629/674, assert-harness.mjs:51, conformance:146, per-call-roots:33, archive-gate-order:24/270, state-file-refuses-to-guess:26/304/713/982, output-text-integrity:97/937, runtime-support:27, delivered-obligations:23, self-hosting:61, conductor-13:662/788, verb-surface:23/603, verb-surface-answers-back:29, hook-verbs-e2e:74, gate-verdict-withdrawal:23/276, head-attachment:37/93/123, conductor-14:783, emitted-invocations:567/2262, conductor-06:368, commit-resolution:23, commit-observation:413, git-gateway-double:221, conductor-27:294 | `CLAUDE_PROJECT_DIR` overridden to the fixture (`cwd`/`dir`/`target`) | No — every value is a `tmpRepo()`/scratch dir |
+| spec-sync-index (functional:22, assert:42), assert/gate-artifact-evidence:33, assert/delivered-obligations:32, assert/store-seam:149, explicit-root.mjs:26 | an in-process invocation with `root` given explicitly (the ctx's `root`, not the env) | No for the fixture sites; `withRoot(REPO)` deliberately yes — DETECTED only |
+| conductor-27:192 (`runSplit`), state-file-refuses-to-guess:843, assert/conductor-38:46 | variable DELETED → the cwd | No — cwd is a `tmpRepo()` (conductor-38 never spawns; its `root` falls back to REPO as a VALUE compared, nothing is written) |
+| helpers.mjs:390/472 (hook fixtures), certify-index:93 (`certifyEnv`), drift-script:37/229, git-shim:39, temp-dir-cleanup:83, record-isolation (functional):49 | inherits the PIN (scratch); nested test processes re-pin (`PM_TEST_PINNED_ROOT`) | fixture repos, except temp-dir-cleanup:83 whose cwd IS the repository — the pin keeps the engine off it; any literal write is DETECTED |
+| per-call-roots:91, conductor-06:361, conductor-09:580/856/1258, conductor-39:193, git-gateway-repo.mjs:85, drift.mjs:79 | no engine: git / `sh` only | fixture repos (drift.mjs reads the repository it is pointed at, read-only) |
+| certify-index:421/434 (inside a fixture test file's source) | the fixture's own nested process | fixture repo |
+
+Minors: (a) PROJECT.md, CLAUDE.md, .gitignore fingerprinted by lstat (size, mtime, inode) beside the
+`.conductor/` hashes — reading their bytes made certify's observer refuse the run, since PROJECT.md and
+.gitignore are outside the functional subject; (b) the closure walk reads
+the shared lexer's TOKENS, so a string/template decoy is not an edge (old text match: the template
+decoy case fails); (c) the header states a detached child writing after exit is not seen; (d) the
+message names "this file or one running alongside it, or another pm process" and prints each path's
+mtime against the process start; (e) `.DS_Store` and `*.lock` are skipped.
