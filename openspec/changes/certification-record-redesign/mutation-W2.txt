@@ -1,0 +1,25 @@
+# W2 mutations — each guard in a scratch copy (git archive a8c85575 + the W1 tree + the W2 tests), never the tree
+## W2a: drop the exit emit (observe-reads.mjs)
+mutated
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the LAST event is the exit:
+reverted:
+ℹ pass 1
+ℹ fail 0
+## W2b: if (false) in place of the run-directory check (observe-reads.mjs)
+mutated
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the child must not run unobserved:
+reverted:
+ℹ pass 1
+ℹ fail 0
+## W2c: the ranAt refresh writes straight to <key>.json (certification.mjs refreshRanAt)
+mutated
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: one temp write and one rename after the link: [["write","/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-cert-dir-emQhhg/pm-suite-certification.d/functional/564d160776f6cbd86e4d5fedf13f1cffc28edfa47766f3ec6ada6b8a2e917c6c.json"]]
+reverted:
+ℹ pass 1
+ℹ fail 0

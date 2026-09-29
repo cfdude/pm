@@ -513,6 +513,47 @@ test("F1 a child whose observation WRITE fails is refused, naming its process fi
   assert.deepEqual(entriesOf(cwd, "functional"), [], "no entry is written");
 });
 
+// ─────────────── Gate 2 final W2 — the observer's own spec clauses, seen from a real Node child ───────────────
+//
+// The observer is loaded exactly as certify loads it (`--import <observer>?dir=…&root=…`), into a child
+// that does nothing, so what is asserted is the OBSERVER's behaviour and nothing a certify run adds.
+
+const OBSERVER_URL = new URL("../fixtures/observe-reads.mjs", import.meta.url).href;
+/** Run `node --import <observer> -e <code>` reporting to `dir`, with `root` as the tree. */
+const observedChild = (dir, root, code = "0") =>
+  spawnSync(process.execPath, ["--import", `${OBSERVER_URL}?dir=${encodeURIComponent(dir)}&root=${encodeURIComponent(root)}`, "-e", code],
+    { encoding: "utf8" });
+
+test("W2a a normally exiting observed child's file ENDS in an exit event, and its sentinel stays", async () => {
+  // Spec: a normally ending process appends an `exit` event — what lets the reader tell a kill (torn tail
+  // accepted) from a failed write after an exit (refused). Dropping the exit emit must fail this.
+  const { parseObservation } = await import("../certification.mjs");
+  const dir = path.join(tmpRepo(), "observe"), root = tmpRepo();
+  fs.mkdirSync(dir);
+  const r = observedChild(dir, root);
+  assert.equal(r.status, 0, r.stderr);
+  const names = fs.readdirSync(dir).sort();
+  assert.equal(names.length, 2, `one observation file and its sentinel: ${names}`);
+  const [jsonl, ok] = names.filter((n) => n.endsWith(".jsonl")).concat(names.filter((n) => n.endsWith(".ok")));
+  assert.equal(ok, jsonl.replace(/\.jsonl$/, ".ok"), "the sentinel is the file's own");
+  const text = fs.readFileSync(path.join(dir, jsonl), "utf8");
+  const lines = text.split("\n").filter(Boolean);
+  assert.deepEqual(JSON.parse(lines[lines.length - 1]), { kind: "exit" }, `the LAST event is the exit:\n${text}`);
+  assert.equal(parseObservation(text, jsonl).exited, true);
+});
+
+test("W2b an observer that cannot open its file while the run directory EXISTS throws at load — never runs unobserved", () => {
+  // Spec (F1): failing to open the observation file while the run directory exists is fatal at load, as a
+  // missing registerHooks is. The run "directory" is a regular FILE: it exists, and opening a file under it
+  // fails with ENOTDIR for every user (a read-only directory would not stop root).
+  const dir = path.join(tmpRepo(), "observe"), root = tmpRepo();
+  fs.writeFileSync(dir, "");
+  const r = observedChild(dir, root, "process.stdout.write('ran')");
+  assert.notEqual(r.status, 0, `the child must not run unobserved:\n${r.stdout}${r.stderr}`);
+  assert.match(r.stderr, /observe-reads: cannot open the observation file [^\n]*observe[^\n]*\(ENOTDIR\)[^\n]*refusing to run unobserved/, r.stderr);
+  assert.equal(r.stdout, "", "no test code ran");
+});
+
 test("m2 a corrupt observation file is a NAMED refusal — the file's path, no stack trace — and no entry is written", () => {
   // Gate 2 m2. A damaged observation used to escape as an exception, printed as a stack trace by the
   // runner's last-resort handler. The fixture test writes a corrupt observation file into its own run's

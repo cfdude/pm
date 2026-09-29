@@ -953,6 +953,7 @@ These rules bind every section below.
       - F4 (re-review): docs — why `RUNNER_CODE` omits `fixtures/temp-dir.mjs` and lists `fixtures/observe-reads.mjs`.
       - F5 (re-review): guard — CI's four floor-count lines read `git ls-files -z | xargs -0` (`mutation-F5.txt`).
       - W1 (final): an unparseable entry a killed writer left is replaced by the next run, refused by name, and pruned (`red-W1.txt`).
+      - W2 (final): guards — an observed child's file ends in `exit`; an observer that cannot open its file throws at load; the ranAt refresh is a temp write plus rename (`mutation-W2.txt`).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**

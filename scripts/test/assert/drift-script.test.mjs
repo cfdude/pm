@@ -505,6 +505,25 @@ test("W1 a WEDGED key — an unparseable <key>.json a killed writer left — is 
     "but never the entry it was told to keep");
 });
 
+test("W2c the ranAt refresh goes through a temp name and renameSync — the entry is never written in place", () => {
+  // Gate 2 final W2 (spec "Writing": the refresh replaces the entry whole and atomically). Observed through an
+  // injected io: writing straight to <key>.json must fail this.
+  const { writeManifestEntry } = rd();
+  const common = scratchCommonDir();
+  const first = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { now: () => new Date(0) });
+  const log = [];
+  const io = recordingIo(log, { renameSync: (a, b) => { log.push(["rename", a, b]); return fs.renameSync(a, b); } });
+  const again = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { io, now: () => new Date(60000) });
+  assert.equal(again.refreshed, true, "precondition: the second run refreshed the entry");
+  const refresh = log.slice(log.findIndex((l) => l[0] === "link") + 1);
+  assert.equal(refresh.length, 2, `one temp write and one rename after the link: ${JSON.stringify(refresh)}`);
+  assert.equal(refresh[0][0], "write");
+  assert.match(path.basename(refresh[0][1]), /\.tmp$/, "the refreshed entry is written to a temp name");
+  assert.deepEqual(refresh[1], ["rename", refresh[0][1], first.file], "and renamed over the entry");
+  assert.ok(!log.some((l) => l[0] === "write" && l[1] === first.file), "the entry's own file is never written in place");
+  assert.equal(JSON.parse(fs.readFileSync(first.file, "utf8")).ranAt, new Date(60000).toISOString());
+});
+
 test("2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry)", () => {
   const { writeManifestEntry, readEntry, manifestKey } = rd();
   const common = scratchCommonDir();
