@@ -50,7 +50,7 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (orchestrator), review mode `thorough`: two fresh-context lenses over these
+- [x] 0.1 **Gate 1** (orchestrator), review mode `thorough`: two fresh-context lenses over these
       artifacts BY PATH.
       - **Lens A: reachability and testability.** Is every WHEN/THEN in
         `specs/suite-certification/spec.md` reachable on the rung this file assigns it? In
@@ -83,7 +83,8 @@ These rules bind every section below.
 
       all under `openspec/changes/certification-record-redesign/`.
       Verify: the verdict appears in `node scripts/conductor.mjs status`.
-- [ ] 0.2 **Cross-spec review** (orchestrator) (required task item 5).
+      Done: Gate 1 passed, recorded against commit 48afa418 (`gateReview.gate1`, verdict pass).
+- [x] 0.2 **Cross-spec review** (orchestrator) (required task item 5). Not applicable at L1: release 0.51.0 holds one spec file; re-run at 5.7 when a second lands (`cross-spec-0.2.txt`).
       - **Today.** Release 0.51.0 holds this change's ONE spec file today, so the item's threshold (2
         or more spec files, counted flat across the release) is not met yet. Record that, with the
         count, in `cross-spec-0.2.txt`.
@@ -97,7 +98,7 @@ These rules bind every section below.
         `record-cross-spec-review 0.51.0 --verdict pass|fail --reviewer "<identity>"`.
       Verify: `node scripts/conductor.mjs status` shows no `⚠ no cross-spec review` for 0.51.0, or
       shows the release holding one spec file.
-- [ ] 0.3 **BASELINE, re-measured on the day** into `baseline-before.md`. Never copy it from
+- [x] 0.3 **BASELINE, re-measured on the day** into `baseline-before.md`. Never copy it from
       `design.md`.
       - (a) **Trigger frequency.** Run `node openspec/changes/certification-record-redesign/measure.mjs
         . e71c63a3 presquash/pr-234` and paste the JSON. Expect `A_certified_today` 15,
@@ -114,7 +115,7 @@ These rules bind every section below.
         export and list the failing files. This is the evidence for D2's shared clone.
         `functional-in-snapshot.out` is the 2026-09-28 copy.
       Verify: `baseline-before.md` holds all four, each with the command that produced it.
-- [ ] 0.4 **Re-read the four tracker items** (#226, #230, #229, #227), with their comments, for the
+- [x] 0.4 **Re-read the four tracker items** (#226, #230, #229, #227), with their comments, for the
       superseded epics `gh-cfdude-pm-226`, `-230`, `-229` and `-227`.
       This epic has no `externalId`, so nothing is recorded with `record-tracker-refresh`. Note any
       comment newer than 2026-09-28 in `baseline-before.md`.
