@@ -90,28 +90,115 @@ Swept with `rg` for `replace\(/\\/\\/`, `replace\(/\\/\\*`, `startsWith\("//"|"/
 - Mutation (conformance): an exit handler on a line holding `"https://x"` — the old regex strip deleted
   from that `//` to end of line and stayed GREEN; with `engineCode` the guard goes RED.
 
-### 7. Final re-review — the CLASS of helpers that return engine source
-Derived mechanically: every `readFileSync`/`readFile` in `scripts/test/**/*.mjs` that sits inside a
-named function or arrow helper and whose argument names the engine or a caller-supplied path (a
-scan over `codeOnly()` text, two passes: helper bodies, then each read's nearest enclosing header).
-Every hit, and the disposition of the call sites that feed a POSITIVE assertion:
+### 7. EVERY engine-source read in `scripts/test` — the conclusive table
 
-| Helper (file:line) | Reads | Disposition |
+**How it was enumerated.** `rg -n 'readFileSync\(|readFile\(|fs\.promises|promises\.readFile|createReadStream\('
+scripts/test` (489 lines; there is no `fs.promises`/`createReadStream` read of engine source anywhere), each
+hit classified by its argument; every hit whose path is a VARIABLE was resolved by reading its loop or
+caller. Then `rg -n 'engineCode\(|codeOnly\(' scripts/test` for the reads already routed. Reads of docs,
+state.json, logs, PROJECT.md, fixtures, temp repos and test files are not engine source and are not
+rows. Line numbers are at this commit. **Dispositions:** ROUTED (reads CODE: `engineCode`/`codeOnly`);
+ROUTED AT CONSUMER (the raw string is handed to a function that strips it before matching); (b) =
+extraction, owned by follow-up epic `engine-source-extraction-vacuity`; LEFT (reason given).
+
+**A. Raw reads that remain (41)**
+
+| # | Read (file:line) | Disposition |
 |---|---|---|
-| `functional/git-gateway-guard:58 sourceOf(rel)` | engine | ROUTED — `engineCode(rel)`; `:136`'s `assert.match(sourceOf(rel), /gitOps\(\)/)` was GREEN with commit-watch.mjs:72 replaced by a comment, RED now |
-| `assert/git-gateway-guard:36 read(p)` | engine | ROUTED — `codeOnly`; the twin now carries the same `gitOps()` check plus a comment discrimination |
-| `assert/detour-frame-drop:115 functionSource(file, name)` | engine slice | ROUTED — `:134`'s `assert.match(body, /verb: "drop-detour"/)` now matches `codeOnly(body)`; the slice itself is limit (b) |
-| `assert/store-ownership:73 mutationSites(read)` | engine | ROUTED — default reader is `engineCode`; feeds the `inStore.length >= 10` / `files.size >= 4` floors |
-| `assert/conductor-29:72 linkTypeLiterals()` | engine | ROUTED — literals read from `codeOnly` lines (the opt-out marker, a comment, from the raw line); feeds `literals.length > 0`. Also `:106`, an inline `assert.match(fs.readFileSync(abs), …)` through a variable path (lint limit (a)), now `engineCode` |
-| `assert/no-inline-exit:120 engineSources()` + `:42 codeMask(src)` | engine | EXCLUDED — feeds only the NEGATIVE `findings == []`; `codeMask` is a regex-aware tokenizer that masks strings as well as comments, which `codeOnly` does not. Its own discrimination test pins both |
-| `assert/conductor-25:231`, `assert/conductor-35:41`, `functional/conductor-31:45`, `functional/emitted-invocations:29`, `functional/verb-surface:65` `dispatchedVerbs()`; `assert/verb-surface:31 dispatchKeys()`; `assert/conductor-09:58/65` and `functional/conductor-09:87/257` `dispatchKeys(fs.readFileSync(ENGINE))` | engine | LIMIT (b) — extraction anchored on the `// ---------- dispatch ----------` marker COMMENT and the dispatch object; the positive checks run over the extracted set. Owned by `engine-source-extraction-vacuity` |
-| `functional/conductor-13:255 flagsInUsageLine()`, `:1948 gateReviewUsageFlags()` | engine usage STRING | LIMIT (b) — extraction from a string literal, owned by `engine-source-extraction-vacuity` |
-| `functional/output-text-integrity:722 mutate(rel, …)` | engine | EXCLUDED — builds mutant sources handed to `stdoutJsonBypasses`/`detourReaderFindings`, which apply `codeOnly` themselves |
-| `sweeps/output-interpolations.test:13 source(rel)`, `sweeps/output-interpolations.mjs:479` | engine | EXCLUDED — consumed by `lex()` itself, which skips comments |
-| `functional/conductor-09:771 real(rel)` | engine | EXCLUDED — copies files into a hook fixture; asserts nothing about their text |
-| `assert/drift-script:50 readFile(p)`, `certification.mjs:43/259`, `certify.mjs:318` | any tracked file | EXCLUDED — the functional-subject derivation, which strips comments with `js-lexer` itself |
-| `assert/autonomy-revocation:45`, `assert/conductor-16:59`, `assert/conductor-28:21`, `assert/conductor-34:15` `shipped*(rel)`; `functional/emitted-invocations:2665 readDoc`, `:52 shippedDocs` | docs only | NOT ENGINE — every call site passes a `.md`/`.json` path |
-| the remaining hits (state.json, logs, PROJECT.md, fixtures, tmp repos) | not engine | NOT ENGINE |
+| A1 | `functional/output-text-integrity:705` `stdoutJsonBypasses` default `read` | ROUTED AT CONSUMER — `codeOnly(read(rel))` at :709 |
+| A2 | `functional/output-text-integrity:729` `mutate()` base text | LEFT — mutant source handed to A1/A4's consumers, which strip it |
+| A3 | `functional/output-text-integrity:731` `mutate()` fall-through reader | LEFT — as A2 |
+| A4 | `functional/output-text-integrity:829` `detourReaderFindings` default `read` | ROUTED AT CONSUMER — `codeOnly` at :834 |
+| A5 | `functional/output-text-integrity:885` subcommands.mjs mutant base | LEFT — as A2 |
+| A6 | `functional/output-text-integrity:894` mutant fall-through reader | LEFT — as A2 |
+| A7 | `functional/conductor-31:47` `dispatchedVerbs()` | (b) — anchored on the `// ---------- dispatch ----------` marker COMMENT |
+| A8 | `functional/verb-surface:67` `dispatchedVerbs()` | (b) — as A7 |
+| A9 | `functional/emitted-invocations:30` `dispatchedVerbs()` | (b) — as A7 |
+| A10 | `functional/conductor-09:87` dispatch-table extraction | (b) |
+| A11 | `functional/conductor-09:257` dispatch-table extraction | (b) |
+| A12 | `functional/conductor-13:256` `flagsInUsageLine()` | (b) — extraction from the usage STRING |
+| A13 | `functional/conductor-13:1949` `gateReviewUsageFlags()` | (b) — as A12 |
+| A14 | `functional/conductor-15:648` | LEFT — NEGATIVE only (`assert.ok(!/key:\s*"recordedBy"/.test(src))`), the stricter form raw |
+| A15 | `functional/conductor-15:712` | LEFT — NEGATIVE only (`!src.includes("archiveBackfilledAt")`) |
+| A16 | `functional/conductor-39:374` | LEFT — `doesNotMatch` only |
+| A17 | `functional/conductor-09:771` `real(rel)` | LEFT — copies engine files into a hook fixture; asserts nothing about their text |
+| A18 | `assert/save-report-surface:96` `shippedSites()` | ROUTED AT CONSUMER — call sites found in `stripComments` = `codeOnly` (:47, :55), hand-off matched in `codeOnly` (:78); the raw text only supplies the `// save-report: exempt` marker, a comment by design, and the reported line text |
+| A19 | `assert/save-report-surface:108` | LEFT — the deliberate exception: counts `saveState(` in constants.mjs PROSE to prove the stripper strips (named in the lint header) |
+| A20 | `assert/conductor-35:42` `dispatchedVerbs()` | (b) — as A7 |
+| A21 | `assert/conductor-35:213` | ROUTED AT CONSUMER — `spawnViolations()` strips with `codeOnly` (:179) |
+| A22 | `assert/conductor-35:218` | ROUTED AT CONSUMER — `stripComments(...)` = `codeOnly` |
+| A23 | `assert/conductor-35:262` USAGE extraction | (b) |
+| A24 | `assert/verb-surface:32` `dispatchKeys()` | (b) |
+| A25 | `assert/detour-frame-drop:116` `functionSource()` slice | ROUTED AT CONSUMER — every positive check runs on `stripComments(body)` (:134, :136); the slice itself is (b) |
+| A26 | `assert/conductor-09:62` `dispatchKeys(…ENGINE)` | (b) |
+| A27 | `assert/conductor-09:69` `dispatchKeys(…ENGINE)` | (b) |
+| A28 | `assert/emitted-invocations:30` `ENGINE_SRC` for `dispatchedVerbs()` | (b) |
+| A29 | `assert/drift-script:256` archive-gate.mjs | LEFT — NEGATIVE precondition (`!/gitOps\(/`) |
+| A30 | `assert/conductor-38:110` USAGE extraction | (b) |
+| A31 | `assert/conductor-25:232` `dispatchedVerbs()` | (b) — as A7 |
+| A32 | `assert/engine-regex-blind-spot:52` | LEFT — the lexer blind-spot sweep; it reads raw source by definition and lexes it itself |
+| A33 | `assert/no-inline-exit:123` `engineSources()` | LEFT — NEGATIVE only (`findings == []`), scanned by its own regex-aware `codeMask`, which also masks strings (`codeOnly` does not); its discrimination test pins both |
+| A34 | `assert/conductor-29:80` raw lines | ROUTED — literals read from `codeOnly` lines (:81); the raw line supplies only the `pm:not-a-link-type` opt-out, a comment by design |
+| A35 | `assert/store-ownership:121` mutation-test fake reader | LEFT — builds a mutant for the discrimination test; the real walk reads `engineCode` (:74) |
+| A36 | `assert/conformance:165` | ROUTED — `codeOnly(fs.readFileSync(p), rel)` |
+| A37 | `assert/git-gateway-guard:38` `read(p)` | ROUTED — `codeOnly(fs.readFileSync(p), p)` |
+| A38 | `assert/support-floor:132` (`scripts/conductor.mjs` among the floor copies) | LEFT — deliberately reads the "Node 22+" support-floor copy, which in conductor.mjs is a header COMMENT (:77); its subject is prose |
+| A39 | `sweeps/output-interpolations.test:13` and `sweeps/output-interpolations.mjs:479` | LEFT — consumed by `lex()`, which skips comments |
+| A40 | `certification.mjs:43` / `:259` (and `assert/drift-script:50`, which feeds it) | LEFT — the functional-subject derivation; strips with `js-lexer.stripComments` and fails closed |
+| A41 | `fixtures/source-code.mjs:51` | the reader itself — `engineCode()` |
+
+**B. Reads routed through `engineCode`/`codeOnly` (53)**
+
+| # | Read (file:line) |
+|---|---|
+| B1–B4 | `functional/output-text-integrity:185, 641, 668, 801` |
+| B5 | `functional/conformance:471` |
+| B6 | `functional/tool-currency:309` |
+| B7–B10 | `functional/commit-resolution:380, 381, 411, 414` |
+| B11 | `functional/git-gateway-guard:62` (`sourceOf`, every call site) |
+| B12 | `functional/emitted-invocations:2816` |
+| B13–B14 | `functional/conductor-14:560, 568` |
+| B15 | `functional/git-gateway-double:242` |
+| B16 | `functional/conductor-31:213` |
+| B17 | `functional/verb-surface:274` |
+| B18–B24 | `functional/conductor-13:525, 600, 819, 928, 1017, 1428, 1878` |
+| B25 | `functional/conductor-27:281` |
+| B26–B27 | `functional/conductor-18:179, 180` |
+| B28 | `assert/no-inline-exit:150` |
+| B29–B30 | `assert/conductor-35:122, 123` |
+| B31 | `assert/spec-sync-surfaces:193` |
+| B32–B33 | `assert/sync-registration-ids:47, 127` |
+| B34 | `assert/output-text-integrity:37` |
+| B35 | `assert/conductor-13:62` |
+| B36 | `assert/spec-sync-index:34` |
+| B37–B38 | `assert/tool-currency:52, 71` |
+| B39–B40 | `assert/conductor-38:76, 140` |
+| B41 | `assert/gate-guard-write-paths:52` |
+| B42 | `assert/nullable-clearing:112` |
+| B43 | `assert/conductor-06:123` |
+| B44 | `assert/commit-resolution:60` |
+| B45 | `assert/render-byte-parity:59` |
+| B46 | `assert/store-ownership:74` |
+| B47 | `assert/conductor-25:133` |
+| B48 | `assert/conductor-23:242` |
+| B49–B51 | `assert/conductor-29:37, 81, 112` |
+| B52 | `assert/detour-frame-drop:111` (`stripComments` = `codeOnly`) |
+| B53 | `assert/save-report-surface:47, 78` |
+
+**Not engine source, and therefore not rows** (hits the classifier might mistake for one):
+`functional/certify-index:386, 397` (text inside a sample test file's source string), `functional/drift-script:96`
+(a temp repo's copy), `functional/conductor-14:1113` and `assert/conductor-09:63, 70` (docs reached through
+`path.dirname(ENGINE)`), `assert/git-gateway-double:82` (a test file), `assert/drift-script:274, 311` and
+`:292` (drift.mjs, test machinery).
+
+**Mutation proofs for this round** (each replaces real engine code with a comment naming it; GREEN
+before, RED after; restored): commit-resolution g2-M17 functional and assertion twin (git-gateway.mjs:101
+env → comment), spec-sync-index maxBuffer (:115), conductor-06 `LC_ALL: "C"` (:184), commit-resolution
+g2-3 ordering (git.mjs:228 guard → comment), output-text-integrity 5.3f builders floor (archive-gate.mjs:228
+`orNoRemedy(` → comment). Reading the builders scan as code also exposed a REAL comment dependency: the
+derived population reached `obligationRemedy` only through the JSDoc after it naming `archiveGate()`; the
+derivation now follows a declaration that reads a builder TABLE (ALL_CAPS) by name, which is the path
+the code actually takes.
 
 ## Required task items (CLAUDE.md "The gate procedure")
 - **Call-site sweep**: done mechanically above (rg for strippers; the lint prototype for raw reads).
