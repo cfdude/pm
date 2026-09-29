@@ -180,3 +180,98 @@ test("2.4 X1: indexManifest() reads ONE index — its listing, the bytes its sub
   assert.throws(() => indexManifest(cwd, "functional", { indexFile: ".git/second-index" }), /absolute/,
     "a relative indexFile is refused: `-C root` would re-anchor it");
 });
+
+// ─────────────── 2.5 — REGRESSION GUARD: #226's two failure modes, across two real worktrees ───────────────
+//
+// 0.50.0 certified in up to seven parallel worktrees of one clone, and the single-file record failed
+// there twice over: a certify in worktree B OVERWROTE the entry worktree A had just written, and — not
+// a race at all — B's entry named a functional test only B's branch had, so drift in EVERY other
+// worktree refused it as `dangling-covers`. Here two linked worktrees of one fixture repository each
+// run the REAL certify runner (copied in, as functional/certify-index does) over their own index, B's
+// content holding a functional test only B has, in both orders; A's drift must accept A's commit
+// every time. It passes the moment it exists; it is verified by restoring "resolve the covers of
+// every entry" in a scratch copy, which must refuse A (mutation-2.5.txt).
+
+const TEST_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+/** A fixture repository holding copies of the runner and its machinery, a gateway-calling module, one
+ *  functional test with its twin, and one sweep test — committed, so both worktrees start from it. */
+function certifiableRepo() {
+  const cwd = tmpRepo();
+  git(cwd, ["init", "-q", "-b", "main"]);
+  git(cwd, ["config", "user.email", "test@example.com"]);
+  git(cwd, ["config", "user.name", "Test"]);
+  const files = {
+    "scripts/conductor.mjs": "export const main = () => 0;\n",
+    "scripts/lib/m.mjs": "export const touch = () => gitOps();\n",
+    "scripts/test/functional/alpha.test.mjs": TEST_BODY,
+    "scripts/test/assert/alpha.test.mjs": TEST_BODY,
+    "scripts/test/sweeps/s.test.mjs": 'import { test } from "node:test";\ntest("s", () => {});\n',
+  };
+  for (const [rel, body] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
+    fs.writeFileSync(path.join(cwd, rel), body);
+  }
+  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "fixtures/temp-dir.mjs"]) {
+    fs.mkdirSync(path.dirname(path.join(cwd, "scripts/test", rel)), { recursive: true });
+    fs.copyFileSync(path.join(TEST_ROOT, rel), path.join(cwd, "scripts/test", rel));
+  }
+  git(cwd, ["add", "-A"]);
+  git(cwd, ["commit", "-q", "-m", "fixture"]);
+  return fs.realpathSync(cwd);
+}
+
+/** The worktree's OWN copy of the runner, run over the worktree's own index. */
+function certifyIn(wt, bucket) {
+  const env = { ...process.env, TMPDIR: tmpRepo() };
+  delete env.NODE_TEST_CONTEXT;
+  delete env.NODE_TEST_WORKER_ID;
+  try {
+    execFileSync(process.execPath, [path.join(wt, "scripts/test/certify.mjs"), bucket], { cwd: wt, env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (e) {
+    assert.fail(`certify ${bucket} failed in ${wt}:\n${e.stdout}${e.stderr}`);
+  }
+}
+
+/** Worktree A stages an edit to its module; worktree B stages a functional test only B has. */
+const stageA = (a) => { fs.appendFileSync(path.join(a, "scripts/lib/m.mjs"), "export const A = 1;\n"); git(a, ["add", "--", "scripts/lib/m.mjs"]); };
+const stageB = (b) => {
+  for (const half of ["functional", "assert"]) fs.writeFileSync(path.join(b, `scripts/test/${half}/only-on-b.test.mjs`), TEST_BODY);
+  git(b, ["add", "--", "scripts/test/functional/only-on-b.test.mjs", "scripts/test/assert/only-on-b.test.mjs"]);
+};
+
+for (const order of ["B certifies first", "A certifies first"]) {
+  test(`2.5 two worktrees certify different content and A's drift accepts A's commit (${order})`, () => {
+    const main = certifiableRepo();
+    const holder = tmpRepo();
+    const a = path.join(holder, "wt-a");
+    const b = path.join(holder, "wt-b");
+    try {
+      git(main, ["worktree", "add", "-q", "-b", "a", a]);
+      git(main, ["worktree", "add", "-q", "-b", "b", b]);
+      stageA(a);
+      stageB(b);
+      const certifyA = () => { certifyIn(a, "functional"); certifyIn(a, "sweeps"); };
+      const certifyB = () => certifyIn(b, "functional");
+      if (order === "B certifies first") { certifyB(); certifyA(); } else { certifyA(); certifyB(); }
+
+      const entries = fs.readdirSync(path.join(main, ".git", "pm-suite-certification.d", "functional"));
+      assert.equal(entries.length, 2, `each worktree's run left its own entry, neither replaced: ${entries}`);
+      const bEntry = entries.map((n) => JSON.parse(fs.readFileSync(path.join(main, ".git", "pm-suite-certification.d", "functional", n), "utf8")))
+        .find((e) => e.manifest["scripts/test/functional/only-on-b.test.mjs"]);
+      assert.ok(bEntry, "precondition: B's entry names a functional test A's tree does not have");
+
+      const r = runDrift(a);
+      assert.equal(r.status, 0, `A's commit is judged by A's entry alone; B's entry must not refuse it (#226): ${r.out}`);
+      assert.match(r.out, /drift: ok/);
+      git(a, ["commit", "-q", "-m", "A's change"]);
+      const rb = runDrift(b);
+      assert.equal(rb.status, 0, `and B's commit is fresh on B's own entry, A's commit notwithstanding: ${rb.out}`);
+    } finally {
+      for (const wt of [a, b]) { try { git(main, ["worktree", "remove", "--force", wt]); } catch { /* not created */ } }
+      git(main, ["worktree", "prune"]);
+      const listed = git(main, ["worktree", "list", "--porcelain"]).split("\n").filter((l) => l.startsWith("worktree "));
+      assert.deepEqual(listed, [`worktree ${main}`], "the fixture's worktrees are removed and pruned: only the main tree is left");
+    }
+  });
+}

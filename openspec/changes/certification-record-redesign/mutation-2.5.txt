@@ -1,0 +1,37 @@
+# mutation-2.5 — the guard '2.5 two worktrees certify different content and A's drift accepts A's commit' (both orders)
+# Scratch copy: git clone --shared of the repo at 13a10ee3 + 2.5's functional/drift-script.test.mjs, in <scratch>/mut25.
+# The tree is never mutated. Mutation: restore 'resolve the covers of every entry' — freshnessRefusal() in
+# certification.mjs first walks EVERY entry of the bucket and refuses one whose manifest names a functional test
+# this index does not hold (the single-file record's dangling-covers check, #226's second failure mode):
+#   +  // MUTATION (2.5): resolve the covers of EVERY entry against this tree, as the single-file record did.
+#   +  const inIdx = indexPaths instanceof Set ? indexPaths : new Set(indexPaths);
+#   +  let names = []; try { names = io.readdirSync(bucketDir(commonDir, bucket)); } catch { names = []; }
+#   +  for (const n of names.filter((x) => x.endsWith(".json"))) {
+#   +    const e = JSON.parse(io.readFileSync(path.join(bucketDir(commonDir, bucket), n), "utf8"));
+#   +    for (const p of Object.keys(e.manifest)) {
+#   +      if (/^scripts\/test\/functional\/[^/]+\.test\.mjs$/.test(p) && !inIdx.has(p)) {
+#   +        return { kind: "stale-record", bucket, changed: [p], run: runForBucket(bucket), key: n, why: "dangling-covers: an entry names a test that does not exist in this tree" };
+#   +      }
+#   +    }
+#   +  }
+
+## MUTANT — node --test --test-name-pattern "^2\.5" scripts/test/functional/drift-script.test.mjs  (2026-09-29T02:20:25Z)
+✖ 2.5 two worktrees certify different content and A's drift accepts A's commit (A certifies first)
+✖ 2.5 two worktrees certify different content and A's drift accepts A's commit (B certifies first)
+  AssertionError [ERR_ASSERTION]: A's commit is judged by A's entry alone; B's entry must not refuse it (#226): drift: ABORT — the suite's two halves have drifted apart
+  the functional bucket's subject changed (scripts/test/functional/only-on-b.test.mjs), and dangling-covers: an entry names a test that does not exist in this tree. Run `node scripts/test/certify.mjs functional` over the staged commit to certify the new content.
+ℹ tests 2 / pass 0 / fail 2
+
+## REVERTED (git checkout -- scripts/test/certification.mjs in the scratch copy) — same command:
+✔ 2.5 two worktrees certify different content and A's drift accepts A's commit (A certifies first)
+✔ 2.5 two worktrees certify different content and A's drift accepts A's commit (B certifies first)
+ℹ tests 2 / pass 2 / fail 0
+
+# Both cases run the REAL certify.mjs (copied into the fixture) in two linked worktrees over each one's own
+# index, and in a finally remove both worktrees, run git worktree prune, and assert git worktree list holds
+# only the main tree. Twin: assert/drift-script gains the FILE-rung counterpart (both write orders, one common dir).
+
+# The gate demands a functional run for this commit (it stages functional/drift-script); run over the staged commit:
+#   node scripts/test/certify.mjs functional   # functional exit 0 206s load {8.97 12.36 16.97} -> {11.75 13.43 16.55}
+certify: functional half passed (1235/1235); recorded 89 subject paths as fe7f35d1b7ce5aa0bf183e4d701a63b377c7a079e7019567b81b993f2520f5ad.json in <repo>/.git/pm-suite-certification.d/functional
+# 1235 = 2.4's 1233 + this guard's 2 cases.

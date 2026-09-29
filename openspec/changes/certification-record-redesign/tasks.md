@@ -392,7 +392,7 @@ These rules bind every section below.
       Verify: the commit passes its own hook. `ls "$(git rev-parse --git-common-dir)"` shows
       `pm-suite-certification.d/` AND the untouched `pm-suite-certification.json`. Paste both into
       `evidence-2.4.txt`.
-- [ ] 2.5 **REGRESSION GUARD, FUNCTIONAL** (`functional/drift-script`, twin edited): the second
+- [x] 2.5 **REGRESSION GUARD, FUNCTIONAL** (`functional/drift-script`, twin edited): the second
       failure mode of #226, reproduced.
       - **The setup.** Two linked worktrees of one fixture repository. Worktree B certifies content
         that includes a functional test file only B has. Worktree A certifies its own content and

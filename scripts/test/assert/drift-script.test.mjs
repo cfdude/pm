@@ -501,3 +501,25 @@ test("2.3 a fresh clone (no record directory) demands a run only when a subject 
   rd().writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST });
   assert.equal(freshnessOf(common, { staged: ["scripts/lib/a.mjs"] }).refusal, null, "the agreeing entry satisfies the demand");
 });
+
+// ───────────────────────────── 2.5 — two worktrees' entries, in either order (#226) ─────────────────────────────
+//
+// The FILE-rung half of functional/drift-script's 2.5 guard, which runs the real runner in two real
+// worktrees: here the two entries are written directly, in both orders, to one common dir.
+
+test("2.5 two worktrees' entries coexist in either write order, and each certifies only its own content", () => {
+  const onlyOnB = "scripts/test/functional/only-on-b.test.mjs";
+  const mA = { ...RD_MANIFEST, "scripts/lib/a.mjs": `100644 ${"a".repeat(40)}` };
+  const mB = { ...RD_MANIFEST, [onlyOnB]: `100644 ${"b".repeat(40)}` };
+  const judge = (common, manifest, staged) => freshnessRefusal({
+    commonDir: common, bucket: "functional", stagedPaths: staged, indexPaths: new Set(Object.keys(manifest)),
+    subjectIndex: () => Object.keys(manifest), subjectHead: () => [], manifest: () => manifest,
+  });
+  for (const order of [[mB, mA], [mA, mB]]) {
+    const common = scratchCommonDir();
+    for (const m of order) writeManifestEntry(common, { bucket: "functional", manifest: m });
+    assert.equal(judge(common, mA, ["scripts/lib/a.mjs"]), null, "A's commit is fresh on A's entry; B's entry, naming a test A lacks, does not refuse it");
+    assert.equal(judge(common, mB, [onlyOnB]), null, "and B's commit is fresh on B's, whichever run wrote last");
+    assert.equal(fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional")).length, 2, "neither write replaced the other");
+  }
+});
