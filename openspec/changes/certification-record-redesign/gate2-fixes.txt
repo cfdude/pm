@@ -10,3 +10,5 @@ m1 writeManifestEntry() links the temp file into place (EEXIST keeps the existin
    over it -> <sha> -> assert/drift-script "m1 an entry is NEVER rewritten…", 2.2 tests moved to link; red-m1.txt
 m2 certify turns an unreadable observation into a named refusal (file and line, no stack), recording nothing -> <sha> ->
    functional/certify-index "m2 a corrupt observation file…", unit/certify-index "m2 …"; red-m2.txt
+m3 functionalSubject() rule 4 admits a name that opens with a backtick (a template literal is a string literal) -> <sha> ->
+   unit/certify-index "m3 rule 4 admits a file named in a TEMPLATE literal…"; red-m3.txt (rules 5/6 reported, not changed)

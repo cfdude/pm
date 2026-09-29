@@ -242,7 +242,7 @@ export function engineSourceFiles(root = REPO, readdir = readdirDefault) {
  *       file is a closure ROOT, so its own imports are in too;
  *    4. every tracked file under `scripts/`, `.githooks/` or `hooks/` — never `scripts/test/{assert,unit}/`,
  *       which only rule 3 admits — whose file name a closure file under `scripts/test/` spells as a
- *       string literal, or as the last `/`-separated segment of one (the `coversFor()` basename
+ *       string literal (quoted, or a template — Gate 2 m3), or as the last `/`-separated segment of one (the `coversFor()` basename
  *       precedent, moved to where it is sound);
  *    5. every tracked file under a shipped-surface root (`commands/`, `skills/`, `agents/`, `hooks/`,
  *       `.claude-plugin/`) when a closure file under `scripts/test/` spells that root as a path segment;
@@ -282,7 +282,8 @@ export function functionalSubject({ root = REPO, readFile = readDefault, readdir
   const out = new Set(closure);
   for (const f of listing) {
     if (out.has(f) || !/^(scripts\/|\.githooks\/|hooks\/)/.test(f) || /^scripts\/test\/(assert|unit)\//.test(f)) continue;
-    if (new RegExp(`["'/]${esc(path.posix.basename(f))}["'\`]`).test(spelled)) out.add(f);
+    // A backtick OPENS a string literal as well as closing one (Gate 2 m3): a template literal is a string literal.
+    if (new RegExp(`["'\`/]${esc(path.posix.basename(f))}["'\`]`).test(spelled)) out.add(f);
   }
   for (const r of SHIPPED_ROOTS) {
     if (new RegExp(`["'/]${esc(r)}["'/]`).test(spelled)) for (const f of listing) if (f.startsWith(`${r}/`)) out.add(f);

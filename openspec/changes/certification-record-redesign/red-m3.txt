@@ -1,0 +1,83 @@
+# Gate 2 m3 — rule 4 admits a name spelled in a template literal
+# node --test --test-reporter=spec --test-name-pattern '^m3 ' scripts/test/unit/certify-index.test.mjs
+
+## RED — the opening quote class ["'/] (eb793815)
+✖ m3 rule 4 admits a file named in a TEMPLATE literal — a backtick opens a string literal too (2.054125ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1858.546541
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ m3 rule 4 admits a file named in a TEMPLATE literal — a backtick opens a string literal too (2.054125ms)
+  AssertionError [ERR_ASSERTION]: a whole template literal naming the file admits it
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:469:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+## GREEN — ["'`/]; the whole unit file
+✔ 1.1 the plan copies the index, clones shared, sets HEAD and exports, in that order (1.12425ms)
+✔ 1.1 the export reads the COPY, and the live index is read exactly once (0.249958ms)
+✔ 1.1 the plan never names a worktree, the stash, GIT_DIR or GIT_WORK_TREE (0.95475ms)
+✔ 1.1 an unborn HEAD sets no HEAD in the clone, and the plan is a pure function of its input (0.119375ms)
+✔ 1.2 the run's environment drops every variable git sets for a hook, and keeps the rest (0.142834ms)
+✔ 1.3 the export lands inside the clone, never in a bare --prefix directory (0.102792ms)
+✔ 3.1 an engine module the half imports is IN though it makes no gateway call (the b4ffe164 shape) (0.686625ms)
+✔ 3.1 .githooks/pre-commit and hooks/hooks.json are IN when a closure test spells their names (0.224667ms)
+✔ 3.1 scripts/test/{assert,unit}/* are OUT unless executed, even when named (0.100958ms)
+✔ 3.1 the shipped roots are wholly IN when a closure file spells the root, the three root files by name (0.289833ms)
+✔ 3.1 the record — openspec/, .conductor/, CHANGELOG.md and the rest of docs/ — is OUT even when named (0.083292ms)
+✔ 3.1 a literal dynamic import and a bare side-effect import are followed; a non-relative specifier is not (0.117541ms)
+✔ 3.1 an EXECUTED assertion file is IN, with its imports (round 2 C1) (0.089959ms)
+✔ 3.1 a twin named only in a comment stays OUT, quoted or not; the same quoted path in CODE is IN (R4) (0.172042ms)
+✔ 3.1 a regex holding a quote does not open a string: the comment after it executes nothing (conformance.test.mjs:470) (0.089291ms)
+✔ 3.1 a regex holding a backtick does not open a template (output-text-integrity.test.mjs:185) (0.054792ms)
+✔ 3.1 a string that meets an unescaped newline is REFUSED as a misparse, naming the file and line 1 (0.187583ms)
+✔ 3.1 lex() reports the comment ranges it skipped and each misparse, additively (0.345542ms)
+✔ 3.2 RED input: today's conformance.test.mjs:210 is refused, naming the file and line (0.299958ms)
+✔ 3.2 negatives: a comment showing the variable (future-clock.mjs:6), prose in a string, and comparisons (0.061167ms)
+✔ 3.2 the object-key shape — bare, double-quoted, single-quoted, and a key overriding the spread — is refused unless it carries the inherited value (0.13775ms)
+✔ 3.2 the property-assignment shape — dotted, and subscripted with either quote — is refused unless it carries the inherited value (0.079792ms)
+✔ 3.2 the tokenizer's order: a `//` inside a string does not hide the key after it; a block comment does (0.029875ms)
+✔ 3.2 only files under scripts/test/{functional,fixtures}/ are judged, and a misparse throws naming the file and line (0.066375ms)
+✔ 3.2 an observed tracked path outside the subject is MISSED; the record is excluded by rule; the observer is never reported (0.106625ms)
+✔ 3.2 an expected Node child that neither arrived nor was cancelled is UNARRIVED; one that did either is not (0.04775ms)
+✔ G2 parseObservation() reads every event line into the shape observationRefusals() judges (0.122958ms)
+✔ G2 a torn LAST line — a process killed mid-write — is dropped, and every complete line is kept (0.051834ms)
+✔ G2 any corruption other than a torn last line is REFUSED, naming the file and the line (0.115209ms)
+✔ m2 an observation that cannot be read is a NAMED refusal: the error's message (the file and line), and no stack (0.0895ms)
+✔ m3 rule 4 admits a file named in a TEMPLATE literal — a backtick opens a string literal too (0.103167ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2137.509833
+
+## Effect on this repository's subject
+The functional subject grows from 186 to 187 paths: scripts/test/fixtures/unit-harness.mjs, which
+scripts/test/fixtures/assert-git-shim.mjs (a closure file) spells only as `unit-harness.mjs`.
+
+## Not changed, reported: rules 5 and 6 have the same opening class
+Rule 5 (a shipped root spelled as a path segment, `["'/]root["'/]`) and rule 6 (README.md, CLAUDE.md,
+docs/parity-ledger.json, `["'/]name["']`) also do not open on a backtick; rule 6 does not close on one
+either. The finding named rule 4 only; widening 5 and 6 changes which shipped roots and root files the
+subject takes whole, which is a design call for the orchestrator.

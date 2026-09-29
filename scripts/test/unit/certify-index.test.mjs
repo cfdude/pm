@@ -459,3 +459,16 @@ unitTest("m2 an observation that cannot be read is a NAMED refusal: the error's 
   assert.match(text, /nothing recorded/);
   assert.doesNotMatch(text, /^\s+at /m, "no stack frame");
 });
+
+unitTest("m3 rule 4 admits a file named in a TEMPLATE literal — a backtick opens a string literal too", () => {
+  // Gate 2 m3. The spec's rule 4 is "a string literal"; the opening quote class held only `"`, `'` and `/`,
+  // so a file spelled only as `` `hidden.mjs` `` — or as the last segment of `` `scripts/lib/hidden.mjs` `` — was not admitted.
+  const hidden = "scripts/lib/hidden.mjs";
+  const base = { [hidden]: "export const hidden = 1;\n" };
+  const whole = subjectOf({ ...base, [FN]: "const f = path.join(root, `hidden.mjs`);\n" });
+  assert.ok(whole.has(hidden), "a whole template literal naming the file admits it");
+  const segment = subjectOf({ ...base, [FN]: "const f = `scripts/lib/hidden.mjs`;\n" });
+  assert.ok(segment.has(hidden), "and so does its last segment inside one");
+  const prefix = subjectOf({ ...base, [FN]: "const f = `not-hidden.mjs`;\n" });
+  assert.equal(prefix.has(hidden), false, "a longer name ending in the file's name is still not its name");
+});
