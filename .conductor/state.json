@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "test-isolation-guard",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -11397,15 +11397,16 @@
       "id": "test-isolation-guard",
       "title": "No test may write the developer's real .conductor record: pin CLAUDE_PROJECT_DIR in the suite and assert the real record is byte-identical at exit (alpha/from-caller and 554 honcho-memories.log lines leaked on 2026-09-21)",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-28T22:28:54.382Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-09-29T19:03:13.297Z",
+      "release": "0.51.0",
+      "startedAt": "2026-09-29T19:03:13.291Z"
     },
     {
       "id": "emitted-invocations-copy-flake",
@@ -11468,7 +11469,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1665,
+  "revision": 1666,
   "reviewMode": "thorough",
   "releases": [
     {
