@@ -6,7 +6,7 @@ These rules bind every section below.
 
 - **This change rewrites the gate that judges it.**
   - **Which drift judges a commit.** The pre-commit hook runs the drift script from the index snapshot
-    (`.githooks/pre-commit:146-159`), so every commit is judged by the `drift.mjs` it contains.
+    (`.githooks/pre-commit:146-159` at c96240ab, `:152-165` after L4), so every commit is judged by the `drift.mjs` it contains.
   - **The landing order.** Sections 1–4 land in design D7's order (L1 → L2 → L3 → L4), each section's
     code as the commits named there. No commit may leave the drift script unable to read the record
     that commit's own certify wrote.
@@ -262,7 +262,7 @@ These rules bind every section below.
           `{ indexFile }` for its `ls-tree -r -z HEAD` / `show HEAD:<path>` reads, which read no
           index but take it anyway so no read is on the inherited index by omission.
         - Drift's own freshness caller passes nothing (the hook hands it `GIT_INDEX_FILE` already,
-          `pre-commit:155`); `stagedFiles()` (`drift.mjs:90-92`) and `trackedTestFiles()`
+          `pre-commit:155`, `:161` after L4); `stagedFiles()` (`drift.mjs:90-92`) and `trackedTestFiles()`
           (`:81-84`) stay on the inherited index, which is the index drift judges. Certify passes
           its index copy, and `seedAgreeingEntry()` the index its commit is made from (4.3).
         - The pin at `assert/drift-script.test.mjs:305-321` moves: `PERMITTED_SUBCOMMANDS` gains
@@ -693,7 +693,7 @@ These rules bind every section below.
           `%(trailers:key=Twin-Unchanged)` on the same message committed with `git commit -F` in a
           second fixture repository that has no hooks installed (`trailer-divider-probe.log`).
         - **The working-tree fallback (Gate 1 round 4).** commit-msg keeps pre-commit's fallback
-          (`pre-commit:150-154`): it runs the snapshot's `drift.mjs`, and the working tree's only when
+          (`pre-commit:150-154` at c96240ab, `:156-160` after L4): it runs the snapshot's `drift.mjs`, and the working tree's only when
           the index holds none. RED: in a fixture whose index holds `drift.mjs` and whose working-tree
           `drift.mjs` is replaced, unstaged, by `process.exit(0)` (the IX-k shape), a staged
           functional file without its twin is still refused by commit-msg (the fixture also tracks
@@ -706,7 +706,7 @@ These rules bind every section below.
           hook does, makes `$1` absolute against the directory git ran it in (as `pre-commit:33-34`
           does for the index), and runs the snapshot's drift with
           `--phase commit-msg --message "<absolute path>"`, falling back to the working tree's
-          `drift.mjs` only when the index holds none, exactly as `pre-commit:150-154` does;
+          `drift.mjs` only when the index holds none, exactly as `pre-commit:150-154` (`:156-160` after L4) does;
         - `drift.mjs` gains `--phase`, runs `git interpret-trailers --parse --no-divider <message>`, and finds
           `MERGE_HEAD` with `rev-parse --git-path`. `PERMITTED_SUBCOMMANDS` gains
           `interpret-trailers`, and the pin at `assert/drift-script.test.mjs:312` moves with it;
@@ -714,7 +714,7 @@ These rules bind every section below.
           `:126-127` (the check list) and `:157` (the abort line); its list of drift's git
           subcommands, `:136-137` ("the whole of its access", which 2.4 already grew by `ls-tree`),
           gains `interpret-trailers`;
-        - `drift.mjs:20` (check 3's description), `drift.mjs:231` (the pre-commit ABORT line, "the
+        - `drift.mjs:20` (check 3's description), `drift.mjs:231` (`:308` after L4; the pre-commit ABORT line, "the
           checks are enrolment, twin coverage, diff coupling and record freshness"; round 2 m6) and
           `assert/conductor-09.test.mjs:205` (the assertion message naming "the diff coupling" as the
           hook's) are rewritten in the same commit.
@@ -737,7 +737,7 @@ These rules bind every section below.
 
 ## 5. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 5.1 **Call-site completeness sweep** (item 1), recorded in `call-site-sweep-5.1.txt`, every
+- [x] 5.1 **Call-site completeness sweep** (item 1), recorded in `call-site-sweep-5.1.txt`, every
       list derived with `rg`, never typed.
       - **The callers.**
         `rg -n "certifiedModules\(|certifiedSet\(|recordRefusals\(|couplingRefusals\(|writeEntry\(|readRecord\(|RECORD_NAME|coversFor\(|conformanceRows\(|moduleEntry\(|triggerEntry\(|contentHash\(|stagedHash\(" scripts .githooks .github`
@@ -748,6 +748,10 @@ These rules bind every section below.
       - **The rules.** State where the new freshness rule, the subject derivation and the exemption
         hold, and justify each place they do not. CI is expected to be justified: it runs every
         bucket and reads no record.
+      Done: `call-site-sweep-5.1.txt`. No retired name keeps a caller; each rule holds in one function
+      with its callers listed; the gaps (commit-msg runs no freshness, pre-commit no exemption, CI no
+      record) are justified there. Found: CONTRIBUTING's stale wording (6.1) and commit-msg's missing
+      `git secrets` chain (5.9 b).
 - [ ] 5.2 **Data references** (item 1).
       - **Retired.** The OLD record's ids that point at other records (`covers`, `conformanceRows`,
         entry ids keyed on module paths) are retired. Say where each was written (`writeEntry`),
