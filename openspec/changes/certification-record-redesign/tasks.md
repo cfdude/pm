@@ -605,7 +605,7 @@ These rules bind every section below.
       over the staged commit first.
       Verify: the commit passes its own hook. Then run `measure.mjs` again over `HEAD~1..HEAD` and
       paste it: the commit demanded the functional half.
-- [ ] 3.4 **The stale comment**, `scripts/lib/store.mjs:624-631`. It exists only because the
+- [x] 3.4 **The stale comment**, `scripts/lib/store.mjs:624-631`. It exists only because the
       `gitOps(` scan counted comments. Rewrite it to say the scan is retired, in the same commit as
       3.3 or the next one. `store.mjs` is in the functional subject, so certify first.
       Verify: `rg -n "certifiedModules" scripts` returns nothing.

@@ -41,3 +41,51 @@ $ node --test scripts/test/functional/drift-script.test.mjs
 $ node scripts/test/certify.mjs functional   # exit 0, 875s, load {94.49 109.80 96.89} -> {51.42 89.42 99.78}
 certify: the observer saw 2347 Node processes; every tracked file they read is in the functional subject (185 paths), or the record (80, excluded by rule).
 certify: functional half passed (1245/1245); recorded 185 subject paths as 92c565e2e1ab9e6f0e8fafc3e6a80890511430087543324ae7a2d93b8e1e159b.json in <repo>/.git/pm-suite-certification.d/functional
+
+# After the commit (762d564f): measure.mjs over HEAD~1..HEAD — the commit demanded the functional half
+$ node openspec/changes/certification-record-redesign/measure.mjs . HEAD~1 HEAD
+{
+ "range": "HEAD~1..HEAD",
+ "nonMergeCommits": 1,
+ "A_certified_today": 0,
+ "sweeps_engineSource_today": 0,
+ "B_importClosure": 1,
+ "B_closurePlusNamed": 1,
+ "B_widenedShippedSurface": 1,
+ "B_widenedPlusHeadDeletions": 1,
+ "commitsDeletingOrLeavingSubjectPath": 0,
+ "C_anyEngineModule": 0,
+ "C_plusFunctionalAndFixtureFiles": 1,
+ "functionalFileChanged": 1,
+ "engineCommitsMissedToday": 0,
+ "headSizes": {
+  "executedAssertion": 2,
+  "widened": 185,
+  "wideOnly": 37,
+  "closure": 136,
+  "observed": 150,
+  "engine": 65,
+  "certified": 8
+ },
+ "headNamedByLiteral": [
+  ".githooks/pre-commit",
+  "hooks/README.md",
+  "hooks/hooks.json",
+  "scripts/test/fixtures/assert-harness.mjs",
+  "scripts/test/fixtures/git-gateway-capture.json",
+  "scripts/test/fixtures/inject-state-conflict.cjs",
+  "scripts/test/fixtures/observe-reads.mjs",
+  "scripts/test/fixtures/rules-0.26.0-github-scoped.txt",
+  "scripts/test/fixtures/rules-0.26.0-github-scopeless.txt",
+  "scripts/test/fixtures/rules-0.26.0-jira-scoped.txt",
+  "scripts/test/fixtures/state-0.26.0.json",
+  "scripts/test/fixtures/state-legacy-gate-verdict.json",
+  "scripts/test/fixtures/state-pre-disposition-walk.json",
+  "scripts/test/sweeps/output-interpolations.test.mjs"
+ ],
+ "headExecutedAssertion": [
+  "scripts/test/assert/engine-resolution.test.mjs",
+  "scripts/test/assert/parity.test.mjs"
+ ]
+}
+# B_widenedShippedSurface 1 of 1: the switch commit is in the observed subject. A_certified_today 0: the retired gitOps( scan would NOT have demanded it.

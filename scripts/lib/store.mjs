@@ -621,14 +621,12 @@ function releaseStateLock(lock, root) {
 /** The store the COMMAND LINE builds. Every artifact it touches is a real path under the
  *  invocation's root, and every byte it writes is the byte the engine wrote before the seam.
  *
- *  THE PARAGRAPH ABOVE DELIBERATELY DOES NOT SPELL THE GIT GATEWAY ACCESSOR'S CALL. `certifiedModules()`
- *  in certification.mjs derives the certified set from a source scan for that call, comments
- *  included, so a COMMENT naming it enrolls this module in a set it has no business being in — the
- *  module reaches no gateway and a functional run certifying it would certify nothing. This is a
- *  false POSITIVE in the derivation rather than a hole in it, and the fix is the comment, not the
- *  scan: the scan's whole value is that it cannot be fooled by a module that reaches git by another
- *  name. If you are tempted to restore the token here, run
- *  `node --test scripts/test/assert/drift-script.test.mjs` first and read 6.1.
+ *  THE SOURCE SCAN THAT ONCE MADE THIS PARAGRAPH AVOID A TOKEN IS RETIRED. Until
+ *  certification-record-redesign (3.3), the functional certification's subject was derived by scanning
+ *  every library module for the gateway accessor's call, comments included, so a comment naming it here
+ *  enrolled this module in a set it had no business being in. The subject is now what the functional half
+ *  OBSERVES — its import closure, what it executes and what it names (`functionalSubject()` in
+ *  scripts/test/certification.mjs) — and no comment moves a module in or out of it.
  *
  *  `ctx` is held rather than a root value, so the paths stay a function of the LIVE invocation —
  *  the same reason `constants.mjs`'s path functions are functions, and the same reason the gateway
