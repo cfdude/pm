@@ -148,6 +148,8 @@ unitTest("1.3 the export lands inside the clone, never in a bare --prefix direct
 // test hands it as text — no path is read.
 // From 3.3 it IS the functional bucket's subject (drift's and certify's, through `bucketSubject()`), so the
 // functional twin's fixture stub IMPORTS its one library module — a comment naming it no longer puts it in.
+// Its #229 guard (3.5) derives the subject over this repository's REAL index with git, which this rung
+// cannot: the b4ffe164 shape is pinned here as a value (the first 3.1 case) and there over the real tree.
 
 const ROOT = "/r";
 /** An index as a filesystem, in the shape drift's `indexReaders()` returns: `paths` is the listing,

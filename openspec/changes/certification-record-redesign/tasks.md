@@ -609,7 +609,7 @@ These rules bind every section below.
       `gitOps(` scan counted comments. Rewrite it to say the scan is retired, in the same commit as
       3.3 or the next one. `store.mjs` is in the functional subject, so certify first.
       Verify: `rg -n "certifiedModules" scripts` returns nothing.
-- [ ] 3.5 **REGRESSION GUARD, FUNCTIONAL** (`functional/certify-index`, twin edited): the #229
+- [x] 3.5 **REGRESSION GUARD, FUNCTIONAL** (`functional/certify-index`, twin edited): the #229
       reproduction, over the REAL tree (Gate 1 M4).
       - **The guard.** `functionalSubject()` is derived over this repository's own index
         (`git ls-files -s` and `git show :<path>` in `REPO`), never an injected reader. With

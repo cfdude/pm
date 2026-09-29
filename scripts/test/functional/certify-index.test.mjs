@@ -468,3 +468,37 @@ test("3.2 the static guard flags exactly conformance.test.mjs:210 at c96240ab, a
   assert.deepEqual(nodeOptionsRefusals(oldFiles.map((p) => ({ path: p, text: read(`c96240ab:${p}`) }))).map((r) => `${r.file}:${r.line}`),
     ["scripts/test/functional/conformance.test.mjs:210"], "at c96240ab the guard flags exactly the one replacement the design found");
 });
+
+// ─────────────── 3.5 — REGRESSION GUARD: the #229 reproduction, over the REAL index (Gate 1 M4) ───────────────
+//
+// b4ffe164 changed `scripts/lib/archive-gate.mjs` — a module the functional half imports, and which
+// never reaches git — together with `scripts/lib/store.mjs`, and no functional run was demanded: the
+// subject was then the modules that call the gateway, and archive-gate calls none (#229). Here the
+// functional subject is derived over THIS repository's own index (`git ls-files` and `git show :<path>`
+// in the repository, never an injected reader), and b4ffe164's two paths are taken as staged against a
+// record with no agreeing entry: the result must be a functional DEMAND naming archive-gate.mjs.
+// Why the index and not `git ls-tree b4ffe164`: that commit is reachable only from the tag
+// `presquash/pr-234`, so a clone without the tag cannot read it. It passes the moment it exists; it is
+// verified by restoring the `gitOps(` derivation in a scratch copy, which must turn it red (mutation-3.5.txt).
+
+test("3.5 b4ffe164's change to an imported, gateway-free module demands the functional half over the real index", async () => {
+  const { indexReaders, headSubject, indexManifest } = await import("../drift.mjs");
+  const { bucketSubject, freshnessRefusal } = await import("../certification.mjs");
+  const repo = path.join(TEST_ROOT, "..", "..");
+  const readers = indexReaders(repo);
+  const staged = ["scripts/lib/archive-gate.mjs", "scripts/lib/store.mjs"];
+  for (const p of staged) assert.ok(readers.paths.includes(p), `precondition: the index holds ${p}`);
+  const emptyRecord = tmpRepo();
+  const refusal = freshnessRefusal({
+    commonDir: emptyRecord,
+    bucket: "functional",
+    stagedPaths: staged,
+    indexPaths: new Set(readers.paths),
+    subjectIndex: () => bucketSubject("functional", { root: repo, ...readers }),
+    subjectHead: () => headSubject(repo, "functional"),
+    manifest: () => indexManifest(repo, "functional").manifest,
+  });
+  assert.ok(refusal, "b4ffe164's change demanded nothing: the functional subject misses a module the half imports (#229)");
+  assert.ok(refusal.changed.includes("scripts/lib/archive-gate.mjs"),
+    `the demand must name archive-gate.mjs, the module the retired gitOps( scan left out: ${JSON.stringify(refusal.changed)}`);
+});
