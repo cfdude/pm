@@ -11267,11 +11267,26 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "59461425e067f257735f729e2cbd3d12a2330353"
+      ],
       "createdAt": "2026-09-28T22:28:50.178Z",
-      "touchedAt": "2026-09-28T22:29:29.415Z",
+      "touchedAt": "2026-09-29T00:25:45.018Z",
       "release": "0.51.0",
-      "startedAt": "2026-09-28T22:29:29.411Z"
+      "startedAt": "2026-09-28T22:29:29.411Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-29T00:25:45.014Z",
+          "artifacts": [
+            "openspec/changes/certification-record-redesign/proposal.md",
+            "openspec/changes/certification-record-redesign/design.md",
+            "openspec/changes/certification-record-redesign/tasks.md",
+            "openspec/changes/certification-record-redesign/specs/suite-certification/spec.md"
+          ],
+          "reviewer": "thorough: two fresh-context lenses (correctness/testability, coherence/absent-edits) x5 rounds + 2 confirmation reviews; final 0 Critical/0 Important"
+        }
+      }
     },
     {
       "id": "test-isolation-guard",
@@ -11310,7 +11325,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1598,
+  "revision": 1600,
   "reviewMode": "thorough",
   "releases": [
     {

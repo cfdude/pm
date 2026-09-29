@@ -6,15 +6,18 @@
  "B_importClosure": 59,
  "B_closurePlusNamed": 60,
  "B_widenedShippedSurface": 70,
+ "B_widenedPlusHeadDeletions": 70,
+ "commitsDeletingOrLeavingSubjectPath": 0,
  "C_anyEngineModule": 51,
  "C_plusFunctionalAndFixtureFiles": 58,
  "functionalFileChanged": 21,
  "engineCommitsMissedToday": 36,
  "headSizes": {
-  "widened": 176,
-  "wideOnly": 35,
-  "closure": 128,
-  "observed": 141,
+  "executedAssertion": 2,
+  "widened": 178,
+  "wideOnly": 37,
+  "closure": 132,
+  "observed": 143,
   "engine": 65,
   "certified": 8
  },
@@ -23,15 +26,17 @@
   "hooks/README.md",
   "hooks/hooks.json",
   "scripts/test/drift.mjs",
-  "scripts/test/fixtures/assert-git-shim.mjs",
   "scripts/test/fixtures/assert-harness.mjs",
   "scripts/test/fixtures/git-gateway-capture.json",
-  "scripts/test/fixtures/hermetic-git.mjs",
   "scripts/test/fixtures/inject-state-conflict.cjs",
   "scripts/test/fixtures/rules-0.26.0-jira-scoped.txt",
   "scripts/test/fixtures/state-0.26.0.json",
   "scripts/test/fixtures/state-legacy-gate-verdict.json",
   "scripts/test/fixtures/state-pre-disposition-walk.json"
+ ],
+ "headExecutedAssertion": [
+  "scripts/test/assert/engine-resolution.test.mjs",
+  "scripts/test/assert/parity.test.mjs"
  ],
  "b4ffe164": {
   "c": "b4ffe164",
@@ -40,13 +45,16 @@
   "B_closure": true,
   "B_observed": true,
   "B_widened": true,
+  "B_widenedWithHead": true,
+  "deletesSubjectPath": false,
   "C_anyEngine": true,
   "C_anyEngine_or_functionalFiles": true,
   "funcFile": false,
   "sizes": {
+   "executedAssertion": 0,
    "widened": 168,
-   "wideOnly": 32,
-   "closure": 123,
+   "wideOnly": 34,
+   "closure": 124,
    "observed": 136,
    "engine": 63,
    "certified": 8
@@ -59,12 +67,12 @@
    "scripts/test/fixtures/assert-git-shim.mjs",
    "scripts/test/fixtures/assert-harness.mjs",
    "scripts/test/fixtures/git-gateway-capture.json",
-   "scripts/test/fixtures/hermetic-git.mjs",
    "scripts/test/fixtures/inject-state-conflict.cjs",
    "scripts/test/fixtures/rules-0.26.0-jira-scoped.txt",
    "scripts/test/fixtures/state-0.26.0.json",
    "scripts/test/fixtures/state-legacy-gate-verdict.json",
    "scripts/test/fixtures/state-pre-disposition-walk.json"
-  ]
+  ],
+  "executed": []
  }
 }

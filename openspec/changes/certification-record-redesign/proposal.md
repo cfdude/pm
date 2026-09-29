@@ -49,34 +49,44 @@ there in four ways, each filed separately:
 
 - **The record becomes content-keyed and append-only.** Each passing run writes ONE new file, named
   by the content it certifies, under a record DIRECTORY in the git common dir. No run ever rewrites
-  another run's file. A run's entry is a MANIFEST: the git blob id of every file in its bucket's
-  subject, as that run's index held it. The subject includes the test files that ran.
-  - A commit is fresh for a bucket when one passing entry agrees with the commit's index on every
-    staged path in that bucket's subject.
+  another run's file. A run's entry is a MANIFEST: the mode and git blob id of every file in its
+  bucket's subject, as that run's index held it. The subject includes the test files that ran.
+  - A bucket is demanded when a staged path (added, modified, mode-changed or DELETED) is in its
+    subject, judged against the index and, for a deletion, against HEAD.
+  - A demanded commit is fresh when one passing entry's manifest EQUALS the manifest of the bucket's
+    WHOLE subject in the commit's index: the same paths, and the same mode and blob per path.
   - An entry that does not agree is not about this tree, so it does not apply. It is never a
-    refusal.
+    refusal. Two different subject contents cannot both agree with one index.
   - The dangling-entry and dangling-covers refusals of 7.2 retire. A deleted or renamed test, a
     renamed module or a removed conformance row is now a staged change to the subject, and it
     demands a fresh run.
-  - **BREAKING (dev-only):** the old `pm-suite-certification.json` is not read and is removed on the
-    first new-format write.
+  - **The old `pm-suite-certification.json` is not read by the new gate and is left in place.** The
+    two formats coexist, so a rollback finds its own record. Retiring the old file is DEFERRED to a
+    later release (design, "Deferred").
 - **Certify runs over the index.** It copies the index, exports it with `git checkout-index`, runs the
   bucket over those bytes, and records the manifest read from that same index copy. A partial stage
   certifies exactly its staged half.
 - **The functional trigger is derived from what the functional half observes.** The subject is the
-  static import closure of `scripts/test/functional/*.test.mjs` and of the entry point, plus every
+  import closure (static, bare side-effect and literal dynamic) of `scripts/test/functional/*.test.mjs`
+  and of the entry point (and of any assertion-half file the functional half executes as a nested
+  test run), plus every
   tracked file under `scripts/`, `.githooks/` or `hooks/` whose name a closure test file spells as a
-  literal, plus the shipped-surface roots (`commands/`, `skills/`, `agents/`, `.claude-plugin/`) and
-  `README.md`/`CLAUDE.md`/`docs/parity-ledger.json` that the half reads. The assertion half and the
+  literal, plus the shipped-surface roots (`commands/`, `skills/`, `agents/`, `hooks/`, `.claude-plugin/`) and
+  `README.md`/`CLAUDE.md`/`docs/parity-ledger.json` that the half reads. The rest of the assertion half and the
   repository's own record (`openspec/`, `.conductor/`, `CHANGELOG.md`, the rest of `docs/`) are
-  excluded. A guard keeps the derivation honest. This replaces the
-  `gitOps(` scan.
+  excluded; the half does read `CHANGELOG.md` and the archive, and that exclusion is a stated
+  frequency trade (design D3). A run-time observer keeps the derivation honest; it survives into every Node child the
+  half starts, and certify fails closed when a direct Node child never reported to it. This replaces
+  the `gitOps(` scan.
 - **The coupling check takes a declared, audited exemption.** Check 3 moves from the pre-commit
   drift run to a new `.githooks/commit-msg` run of the same script, because only that hook can read
   the message.
-  - A `Twin-Unchanged: <id> — <reason>` trailer exempts the named id.
+  - A `Twin-Unchanged: <id> — <reason>` trailer exempts the named id. git's own parser
+    (`git interpret-trailers --parse --no-divider`) decides what is a trailer, so drift and Gate 2's
+    audit agree.
   - The drift script refuses a trailer that names an id not staged, or that has no reason.
-  - Gate 2 audits every such trailer in the reviewed range.
+  - Gate 2 audits every such trailer in the reviewed range, as a numbered step of the pr-workflow
+    skill. Gate 2 runs on `dev` before any squash, so a squash that drops trailers is harmless.
 - **The certify lock becomes unnecessary for correctness.** CONTRIBUTING documents parallel-worktree
   use. The hook's `pm-suite.lock`, which limits machine load, stays.
 
@@ -106,19 +116,27 @@ None.
   - `.githooks/pre-commit`
   - a new `.githooks/commit-msg`
 - **Tests:**
-  - `assert/drift-script.test.mjs` (20 tests on the old record shape)
+  - `assert/drift-script.test.mjs` (20 tests on the old record shape; `:312` pins the permitted
+    subcommands, which grow by `ls-tree` and `interpret-trailers`)
+  - `functional/conformance.test.mjs:210`, which replaces `NODE_OPTIONS` and must append instead
   - `functional/drift-script.test.mjs`, which writes `RECORD_NAME` (`:78`)
-  - `assert/certify-count.test.mjs`
+  - `assert/certify-count.test.mjs`, which imports `certify.mjs` into the assertion half, so
+    `certify.mjs` must stay import-safe (no clone or git at import; task 1.2)
   - the pre-commit hook tests in `functional/conductor-09.test.mjs`
 - **Comments:** `scripts/lib/store.mjs:624-631` exists only because of the `gitOps(` scan, and goes
-  stale when the scan is retired.
+  stale when the scan is retired. `.githooks/pre-commit:126-137,157` describe the four checks and the
+  permitted subcommands; `fixtures/helpers.mjs:347`, `drift.mjs:16-24` and `certify.mjs:13-26,155`
+  speak of "certified modules" and "diff coupling".
 - **Docs:**
   - `CONTRIBUTING.md`: the pre-commit section, the triggered buckets, and a new parallel-worktree
     section;
   - `CLAUDE.md`'s "Tests:" bullet;
   - the lesson `an-uncertified-module-change-skips-the-functional-half` (its `enforced_in` moves
-    from habit to mechanism);
+    from habit to mechanism), the lesson `a-one-off-sweep-certifies-only-the-day-it-ran` (`:7`,
+    `:35`) and `docs/lessons/README.md` (`:39`, `:102`);
+  - `.claude/skills/pr-workflow/SKILL.md` (`:28`, and a new numbered Gate 2 trailer-audit step);
   - `.changesets/`.
+- **Deferred:** retiring the old `pm-suite-certification.json`, to a later release.
 - **Engine and shipped surface:** unchanged. No runtime dependency. No `state.json` migration: the
   record is machine state in the git common dir, never committed.
 - **Cost:** 70 of the same 126 commits would have demanded the functional half, against 15 today.
