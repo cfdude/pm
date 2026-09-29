@@ -331,15 +331,17 @@ test("G-I1 the floor FIRES when the runner's glob cannot reach a file the half s
 
 test("G-I3 the hook does NOT run the functional half — a marker file there is never picked up", () => {
   // "THE HOOK DOES NOT RUN THE FUNCTIONAL HALF" IS A REQUIREMENT, NOT A STYLE (design D8, and the
-  // spec's "A commit that touches nothing certified runs the assertion half only" scenario): the
-  // functional half is the triggered half, and running it on every commit is exactly the cost the
-  // split exists to remove. It was held by nothing — adding the functional glob to the hook's runner
+  // spec's "A commit that touches a certified module requires a fresh functional result" scenario —
+  // "It does not start that run itself" — and "The gate stays fast"): the functional half is the
+  // triggered half, and running it on every commit is exactly the cost the split exists to remove. It was held by nothing — adding the functional glob to the hook's runner
   // left the whole assertion half green AND the hook's own functional tests green (Gate 2, G-I3).
   //
   // So the functional half of the FIXTURE holds a marker test that fails the moment it runs, and the
   // assertion is that the run never reaches it. Its assertion twin is written too — the drift script
   // refuses a functional id with no twin, and a fixture that tripped the drift check would be
-  // testing the wrong refusal.
+  // testing the wrong refusal. For the same reason the fixture SEEDS an agreeing functional entry
+  // (certification-record-redesign 2.4): the staged marker is in the functional subject, so without
+  // one drift would refuse for freshness before the suite step this test observes.
   const r = runHookAgainstFixture(
     `test("the one the runner reaches", () => { assert.ok(true); });`,
     {
@@ -352,6 +354,7 @@ test("G-I3 the hook does NOT run the functional half — a marker file there is 
           'import { test } from "node:test";\nimport assert from "node:assert/strict";\n' +
           'test("the marker\'s assertion twin", () => { assert.ok(true); });\n',
       },
+      seed: ["functional"],
     },
   );
   const combined = (r.stdout || "") + (r.stderr || "");
@@ -495,8 +498,10 @@ test("1.3 both rungs empty is REFUSED naming both rungs, and default discovery i
   // discovery walks the tree and would reach the triggered buckets. The marker sits in the sweep
   // bucket (a functional-half marker would need an assertion twin, and that twin would be a rung file,
   // which is the one thing this fixture must not hold); default discovery would run it, and its title
-  // must never appear.
+  // must never appear. The marker is in the sweeps subject, so the fixture SEEDS an agreeing sweeps
+  // entry (certification-record-redesign 2.4): a drift ABORT would pre-empt the suite step's refusal.
   const r = runHookAgainstFixture("", {
+    seed: ["sweeps"],
     withFixture: false,
     extraFiles: {
       "scripts/test/unit/.keep": "",
@@ -710,7 +715,7 @@ test("IX-i the drift script is handed the index git HANDS the hook — an unpair
   assert.match(combined, /no assertion twin[\s\S]*ix-lone/, `the refusal must name the id: ${combined}`);
 });
 
-test("IX-j drift judges the STAGED engine: an uncertified module staged and deleted from disk still refuses", () => {
+test("IX-j drift judges the STAGED engine: a module staged and deleted from disk still demands its buckets", () => {
   // Found at branch review: drift took its certified set, its engine-source set and its test ids from
   // `fs` reads, so a module staged into scripts/lib/ that CALLS the gateway, then removed from disk,
   // was invisible to it — drift exited 0 and an uncertified engine module could be committed. Every
@@ -726,6 +731,13 @@ test("IX-j drift judges the STAGED engine: an uncertified module staged and dele
   assert.notEqual(r.status, 0, `a staged, uncertified engine module must refuse the commit: ${combined}`);
   assert.match(combined, /drift: ABORT/, `the refusal must be the drift script's: ${combined}`);
   assert.match(combined, /zz-probe\.mjs/, `the refusal must name the module: ${combined}`);
+  // WHICH BUCKETS REFUSE (certification-record-redesign 2.4, design D7): the probe calls `gitOps(`, so
+  // at L2 it is in the interim functional subject (through `certifiedModules()`) AND in the sweeps
+  // subject (`engineSourceFiles()`) — both buckets demand, and each refusal names the module.
+  assert.match(combined, /the functional bucket's subject changed \([^)]*zz-probe\.mjs[^)]*\)/,
+    `a FUNCTIONAL freshness demand naming the module: ${combined}`);
+  assert.match(combined, /the sweeps bucket's subject changed \([^)]*zz-probe\.mjs[^)]*\)/,
+    `and a SWEEPS freshness demand naming it: ${combined}`);
 });
 
 test("IX-k the drift script that judges a commit is the COMMIT's copy — an unstaged edit to drift.mjs cannot pass it", () => {

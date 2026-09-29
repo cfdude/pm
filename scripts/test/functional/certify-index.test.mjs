@@ -13,6 +13,10 @@
 //     the worktree list byte-identical, remove their run directory, and a failed or interrupted run
 //     records nothing.
 //
+// Since certification-record-redesign 2.4 the record is the manifest DIRECTORY
+// (`<common>/pm-suite-certification.d/<bucket>/<key>.json`), so each case reads the entry the run wrote
+// and asserts on the module's BLOB ID in its manifest — the identity `git ls-files -s` reports.
+//
 // Each case builds a fixture repository holding COPIES of this repository's certify.mjs,
 // certification.mjs, drift.mjs and fixtures/temp-dir.mjs, so the runner under test is the real one,
 // run as its own process, with the fixture as its repository. The fixture's functional bucket is one
@@ -26,7 +30,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo } from "../fixtures/functional-harness.mjs";
-import { RECORD_NAME, contentHash } from "../certification.mjs";
+import { RECORD_DIR } from "../certification.mjs";
 import { removeTempDir } from "../fixtures/temp-dir.mjs";
 
 const TEST_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -35,7 +39,7 @@ const BASE = "export const touch = () => gitOps();\n";
 
 const git = (cwd, ...args) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 
-/** The fixture's one functional test. It names `m.mjs`, so the module's entry has a non-empty covers.
+/** The fixture's one functional test — the test of its bucket the functional manifest must hold.
  *  PM_STUB_MODE picks what it does: pass, fail, `edit` (append to the module in the USER's working
  *  tree and stage it, mid-run), or `hang` (report ready with its pid, then wait to be killed). */
 const STUB = `import { test } from "node:test";
@@ -96,9 +100,22 @@ function certify(cwd, bucket, extra) {
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
 }
 
-const recordPath = (cwd) => path.join(cwd, ".git", RECORD_NAME);
-const readRecord = (cwd) => JSON.parse(fs.readFileSync(recordPath(cwd), "utf8"));
-const hashOf = (bytes) => contentHash([MODULE], () => bytes);
+const recordPath = (cwd) => path.join(cwd, ".git", RECORD_DIR);
+/** Every entry the record holds for a bucket, parsed. */
+const entriesOf = (cwd, bucket) => {
+  const dir = path.join(recordPath(cwd), bucket);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((n) => n.endsWith(".json")).map((n) => JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")));
+};
+/** The one entry a single run wrote for a bucket. */
+const onlyEntry = (cwd, bucket) => {
+  const all = entriesOf(cwd, bucket);
+  assert.equal(all.length, 1, `expected ONE ${bucket} entry, found ${all.length}`);
+  return all[0];
+};
+/** The git blob id of some bytes — what a manifest records for a path holding them. */
+const blobOf = (cwd, bytes) => execFileSync("git", ["-C", cwd, "hash-object", "--stdin"], { input: bytes, encoding: "utf8" }).trim();
+const blobIn = (entry) => (entry.manifest[MODULE] || "").split(" ")[1];
 /** The run directories left in `tmp`. Each run below is handed its OWN temp directory (TMPDIR), so a
  *  certify running concurrently in another worktree of this machine cannot enter the count. */
 const runDirsIn = (tmp) => fs.readdirSync(tmp).filter((n) => n.startsWith("pm-certify-run."));
@@ -138,13 +155,13 @@ test("1.2 a partial stage is certified as its STAGED half, and a commit of exact
   const s = certify(cwd, "sweeps");
   assert.equal(s.status, 0, `certify sweeps failed on a passing bucket:\n${s.out}`);
 
-  const entries = readRecord(cwd).entries;
-  assert.ok(entries[MODULE], `no entry for ${MODULE}: ${JSON.stringify(Object.keys(entries))}`);
-  assert.notEqual(entries[MODULE].contentHash, hashOf(UNSTAGED),
-    "certify hashed the WORKING TREE: the record describes bytes the commit does not contain (#230)");
-  assert.equal(entries[MODULE].contentHash, hashOf(STAGED),
-    "the module's entry must be the hash of its STAGED bytes");
-  assert.deepEqual(entries[MODULE].covers, ["stub"], "the stub, which names the module, is its covers");
+  const entry = onlyEntry(cwd, "functional");
+  assert.ok(entry.manifest[MODULE], `the functional manifest holds no ${MODULE}: ${JSON.stringify(Object.keys(entry.manifest))}`);
+  assert.notEqual(blobIn(entry), blobOf(cwd, UNSTAGED),
+    "certify recorded the WORKING TREE: the record describes bytes the commit does not contain (#230)");
+  assert.equal(blobIn(entry), blobOf(cwd, STAGED), "the module's manifest line must be its STAGED blob");
+  assert.ok(entry.manifest["scripts/test/functional/stub.test.mjs"], "the manifest names the test the pass rests on");
+  assert.equal(blobIn(onlyEntry(cwd, "sweeps")), blobOf(cwd, STAGED), "and the sweeps entry records the same staged blob");
 
   // The gate agrees: the drift script, which reads the index, finds the commit fresh...
   const drift = spawnSync(process.execPath, [path.join(TEST_ROOT, "drift.mjs"), "--root", cwd], { encoding: "utf8" });
@@ -164,10 +181,10 @@ test("1.2 an edit, and a `git add` of it, made while the bucket runs are absent 
   assert.equal(r.status, 0, `certify functional failed:\n${r.out}`);
   const after = git(cwd, "show", `:${MODULE}`);
   assert.notEqual(after, before, "precondition: the stub edited and staged the module mid-run");
-  const entry = readRecord(cwd).entries[MODULE];
-  assert.equal(entry.contentHash, hashOf(before),
+  const entry = onlyEntry(cwd, "functional");
+  assert.equal(blobIn(entry), blobOf(cwd, before),
     "the record must describe the index copy taken at the START of the run, not an edit made during it");
-  assert.notEqual(entry.contentHash, hashOf(after));
+  assert.notEqual(blobIn(entry), blobOf(cwd, after));
 });
 
 test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they found it, and remove their run directory", async () => {
@@ -179,7 +196,7 @@ test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they 
     const r = certify(cwd, "functional", { TMPDIR: tmp });
     assert.equal(r.status, 0, r.out);
     assert.deepEqual(snapshot(cwd), was, "a passing run changed the working tree, the index, the stash or the worktrees");
-    assert.ok(fs.existsSync(recordPath(cwd)), "a passing run records its entry");
+    assert.equal(entriesOf(cwd, "functional").length, 1, "a passing run records its entry");
     assert.deepEqual(runDirsIn(tmp), [], "a passing run left its run directory behind");
   }
   // FAIL: nothing recorded, nothing moved, nothing left.
@@ -190,7 +207,7 @@ test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they 
     const r = certify(cwd, "functional", { PM_STUB_MODE: "fail", TMPDIR: tmp });
     assert.notEqual(r.status, 0, "a failing bucket must fail the certification");
     assert.deepEqual(snapshot(cwd), was, "a failing run changed the working tree, the index, the stash or the worktrees");
-    assert.equal(fs.existsSync(recordPath(cwd)), false, "a failing run recorded an entry");
+    assert.deepEqual(entriesOf(cwd, "functional"), [], "a failing run recorded an entry");
     assert.deepEqual(runDirsIn(tmp), [], "a failing run left its run directory behind");
   }
   // SIGTERM mid-run: the bucket is killed with the runner, nothing recorded, nothing moved, nothing left.
@@ -221,7 +238,7 @@ test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they 
     }
     assert.equal(alive, false, `the bucket's test process ${stubPid} outlived the SIGTERM'd runner`);
     assert.deepEqual(snapshot(cwd), was, "an interrupted run changed the working tree, the index, the stash or the worktrees");
-    assert.equal(fs.existsSync(recordPath(cwd)), false, "an interrupted run recorded an entry");
+    assert.deepEqual(entriesOf(cwd, "functional"), [], "an interrupted run recorded an entry");
     assert.deepEqual(runDirsIn(tmp), [], "an interrupted run left its run directory behind");
   }
 });

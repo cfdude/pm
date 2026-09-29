@@ -232,7 +232,7 @@ These rules bind every section below.
         - a fresh clone (no directory) demands a run only when a subject path is staged.
 
       RED `red-2.3.txt`. Certify functional by hand before this commit (B9).
-- [ ] 2.4 **The switch, ONE commit** (L2).
+- [x] 2.4 **The switch, ONE commit** (L2).
       - **Drift.** `drift.mjs` reads modes and blob ids with `ls-files -s`, derives the subject from
         the index AND from HEAD (`ls-tree -r -z HEAD`, `show HEAD:<path>`), and judges freshness
         with 2.1. `PERMITTED_SUBCOMMANDS` gains `ls-tree`, and the pin at

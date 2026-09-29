@@ -42,21 +42,21 @@ function stepAt(steps, what, pred) {
 
 const isGit = (sub) => (s) => s.op === "git" && s.args.includes(sub);
 
-unitTest("1.1 the plan copies the index, reads its manifest, clones shared, sets HEAD and exports, in that order", () => {
+unitTest("1.1 the plan copies the index, clones shared, sets HEAD and exports, in that order", () => {
   const p = plan();
   const { steps } = p;
   const copy = stepAt(steps, "index copy", (s) => s.op === "copy" && s.from === INPUT.indexFile);
-  const manifest = stepAt(steps, "ls-files -s", isGit("ls-files"));
   const clone = stepAt(steps, "clone", isGit("clone"));
   const head = stepAt(steps, "update-ref", isGit("update-ref"));
   const copyIn = stepAt(steps, "copy into the clone", (s) => s.op === "copy" && s.from === p.copy);
   const exportAt = stepAt(steps, "checkout-index", isGit("checkout-index"));
-  assert.deepEqual([copy, manifest, clone, head, copyIn, exportAt], [...[copy, manifest, clone, head, copyIn, exportAt]].sort((a, b) => a - b),
+  assert.deepEqual([copy, clone, head, copyIn, exportAt], [...[copy, clone, head, copyIn, exportAt]].sort((a, b) => a - b),
     "the steps are out of order: the index is copied FIRST, and the export runs LAST, over the copy");
-  assert.equal(steps.length, 6, `the plan has steps nobody asked for: ${JSON.stringify(steps)}`);
-
-  assert.deepEqual(steps[manifest].args.slice(steps[manifest].args.indexOf("ls-files")), ["ls-files", "-s", "-z"],
-    "the manifest is `ls-files -s` (mode, blob id, stage, path), NUL-separated so no path is quoted");
+  assert.equal(steps.length, 5, `the plan has steps nobody asked for: ${JSON.stringify(steps)}`);
+  // THE MANIFEST LEFT THE PLAN AT 2.4 (Gate 1 round 4, T2): it is read through drift's ONE entry point,
+  // `indexManifest(root, bucket, { indexFile: <the copy> })`, so no second parser of `ls-files -s`
+  // exists here. `p.copy` is what the runner hands it.
+  assert.equal(steps.some(isGit("ls-files")), false, "the plan reads no manifest of its own: drift's indexManifest() does");
   assert.deepEqual(steps[clone].args, ["clone", "--shared", "--no-checkout", "-q", INPUT.commonDir, p.tree],
     "the run directory is a SHARED clone of the common dir, with nothing checked out by clone itself");
   assert.deepEqual(steps[head].args, ["-C", p.tree, "update-ref", "--no-deref", "HEAD", INPUT.headSha],
@@ -65,15 +65,11 @@ unitTest("1.1 the plan copies the index, reads its manifest, clones shared, sets
     "the export is every index entry, forced, inside the clone");
 });
 
-unitTest("1.1 the manifest and the export both read the COPY, and the live index is read exactly once", () => {
+unitTest("1.1 the export reads the COPY, and the live index is read exactly once", () => {
   const p = plan();
   const { steps } = p;
   assert.ok(p.copy.startsWith(`${INPUT.tmp}${path.sep}`), `the index copy ${p.copy} is not under the run directory`);
   assert.ok(p.tree.startsWith(`${INPUT.tmp}${path.sep}`), `the clone ${p.tree} is not under the run directory`);
-
-  const ls = steps.find(isGit("ls-files"));
-  assert.deepEqual(ls.env, { GIT_INDEX_FILE: p.copy },
-    "the manifest must be read from the index COPY, never the live index a concurrent `git add` can change");
 
   const copyIn = steps.find((s) => s.op === "copy" && s.from === p.copy);
   assert.equal(copyIn.to, path.join(p.tree, ".git", "index"),

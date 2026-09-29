@@ -22,6 +22,10 @@ export { EMPTY_CACHE };
 // exits — 0.49.0's one mechanism (`temp-dir.mjs`), not a second one. Unscheduled, `tmpRepo()` alone
 // left ~1,850 directories in the OS temp dir per full run (both halves).
 import { removeAtExit } from "./temp-dir.mjs";
+// certification-record-redesign 2.4 (design D7, "Hook-fixture tests under the new gate"): the seed's
+// manifest comes from drift's OWN entry point, so a seeded entry's key is drift's key by construction.
+import { indexManifest } from "../drift.mjs";
+import { writeManifestEntry } from "../certification.mjs";
 // The half's `run`, registered by whichever harness module the importing test used. Helpers that
 // drive the engine themselves (parseBrief, setupHierarchy, nudgeAndReadLog) go through it, so they
 // are in-process with the same gateway the calling test got and not a second, spawned route.
@@ -310,9 +314,12 @@ export function nudgeAndReadLog(cwd, command) {
  *    * `withFixture: false` — omit the default `scripts/test/assert/fixture.test.mjs`, so the rungs
  *      hold only what `extraFiles` puts there (1.3: both rungs hold only `.keep`);
  *    * `setup(cwd)` — runs after `git init` and before the hook (1.5: a stale `pm-isolation-flag`).
+ *    * `seed: ["functional"|"sweeps", …]` — after `setup`, writes an entry agreeing with the index the
+ *      hook will judge for each bucket named (`seedAgreeingEntry()`), so a fixture that stages a path in
+ *      a bucket's subject is not refused for freshness (certification-record-redesign 2.4, R2).
  *  The result carries `cwd`, so a caller can inspect the fixture after the hook ran. */
 export function runHookAgainstFixture(testFileBody, {
-  extraFiles = {}, env: envOverlay = {}, pathPrepend = null, withFixture = true, setup = null,
+  extraFiles = {}, env: envOverlay = {}, pathPrepend = null, withFixture = true, setup = null, seed = [],
 } = {}) {
   const cwd = tmpRepo();
   execFileSync("git", ["init", "-q"], { cwd });
@@ -380,8 +387,26 @@ export function runHookAgainstFixture(testFileBody, {
   delete env.NODE_TEST_WORKER_ID;
   if (pathPrepend) env.PATH = `${pathPrepend}${path.delimiter}${env.PATH || ""}`;
   if (setup) setup(cwd);
+  // THE SEED IS TAKEN OVER THE INDEX THE HOOK IS HANDED: the overlay's GIT_INDEX_FILE when a case sets
+  // one (absolute against the fixture, as the hook makes it), else `.git/index`.
+  const seedIndex = envOverlay.GIT_INDEX_FILE ? path.resolve(cwd, envOverlay.GIT_INDEX_FILE) : undefined;
+  for (const bucket of seed) seedAgreeingEntry(cwd, bucket, { indexFile: seedIndex });
   const r = spawnSync("sh", [hookDestPath], { cwd, encoding: "utf8", env });
   return Object.assign(r, { cwd });
+}
+
+/** AN ENTRY THAT AGREES WITH AN INDEX, for a hook fixture whose commit stages a bucket's subject
+ *  (certification-record-redesign 2.4; design D7, "Hook-fixture tests under the new gate"). It calls
+ *  drift's `indexManifest(cwd, bucket, { indexFile })` — the SAME function drift's freshness check and
+ *  certify call — and writes the manifest it returns with `writeManifestEntry()`. It parses no
+ *  `ls-files -s` output and derives no subject of its own, so the seeded key is the key drift computes
+ *  for that index, for the same drift.mjs bytes. What that does NOT cover is a DIFFERENT drift: the hook
+ *  runs the fixture's copy, which is this repository's bytes except where a test replaces it on
+ *  purpose. `indexFile` is absolute; omitted, the fixture's own `.git/index`. Returns the key. */
+export function seedAgreeingEntry(cwd, bucket, { indexFile } = {}) {
+  const commonDir = path.resolve(cwd, execFileSync("git", ["rev-parse", "--git-common-dir"], { cwd, encoding: "utf8" }).trim());
+  const { manifest } = indexManifest(cwd, bucket, indexFile ? { indexFile } : {});
+  return writeManifestEntry(commonDir, { bucket, manifest, counts: { tests: 1, pass: 1, fail: 0 }, engineSha: "seeded", worktree: "seeded" }).key;
 }
 
 // ────────────── multi-tracker-primary-secondary-support: secondaryTrackers[] ──────────────

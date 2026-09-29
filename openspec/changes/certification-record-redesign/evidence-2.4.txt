@@ -1,0 +1,78 @@
+# evidence-2.4 — hook fixtures that stage a subject path (Gate 1 round 3, R2), 2026-09-29T02:12:51Z
+
+$ rg -n "runHookAgainstFixture" scripts/test
+scripts/test/functional/conductor-09.test.mjs:7:import { tmpRepo, run, readState, writeState, expectFail, runHookAgainstFixture, ENGINE, fixtureCommits } from "../fixtures/functional-harness.mjs";
+scripts/test/functional/conductor-09.test.mjs:313:  const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:345:  const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:376:  const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:394:  const r = runHookAgainstFixture(passingTests);
+scripts/test/functional/conductor-09.test.mjs:408:  const r = runHookAgainstFixture(failingTests);
+scripts/test/functional/conductor-09.test.mjs:435:  const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:457:  const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:477:    const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:503:  const r = runHookAgainstFixture("", {
+scripts/test/functional/conductor-09.test.mjs:531:  const r = runHookAgainstFixture("", {
+scripts/test/functional/conductor-09.test.mjs:553:  const r = runHookAgainstFixture(
+scripts/test/functional/conductor-09.test.mjs:593:  // is what `runHookAgainstFixture` stages; `setup` then overwrites the working tree with a passing
+scripts/test/functional/conductor-09.test.mjs:595:  const r = runHookAgainstFixture(IX_FAILING, {
+scripts/test/functional/conductor-09.test.mjs:611:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:626:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:644:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:665:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:684:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:704:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:724:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:749:  const r = runHookAgainstFixture(IX_PASSING, {
+scripts/test/functional/conductor-09.test.mjs:766:      const r = runHookAgainstFixture(body, { env: { TMPDIR: tmp } });
+scripts/test/functional/conductor-09.test.mjs:788:    const r = runHookAgainstFixture(IX_FAILING, {
+scripts/test/unit/conductor-09.test.mjs:209://    shell (`runHookAgainstFixture`), which 5.2's guard refuses in this half by construction. The
+scripts/test/assert/verb-surface.test.mjs:131:// 3. `runHookAgainstFixture`-style tests are refused outright here by 5.2's guard.
+scripts/test/fixtures/helpers.mjs:321:export function runHookAgainstFixture(testFileBody, {
+
+# (Line numbers are the post-edit ones in functional/conductor-09.test.mjs.)
+# Only conductor-09 (functional) calls it; unit/conductor-09 and assert/verb-surface only mention it in
+# comments; fixtures/helpers.mjs defines it. Every call's staged paths — the default
+# `scripts/test/assert/fixture.test.mjs` (withFixture), each `extraFiles` key, and each `setup` add —
+# checked against BOTH interim subjects (functional: certifiedModules() + tracked scripts/test/functional/**
+# + scripts/test/fixtures/** + scripts/test/{certify,certification,drift,js-lexer}.mjs; sweeps:
+# engineSourceFiles() + tracked scripts/test/sweeps/*.mjs + scripts/test/js-lexer.mjs). The fixture's own
+# drift.mjs/certification.mjs are copied in UNTRACKED (helpers.mjs), so they are in neither index subject.
+#
+#  :302 G-I1        assert/fixture + assert/.collapsed.test.mjs          → no subject path — unchanged
+#  :332 G-I3        assert/fixture + functional/marker + assert/marker   → FUNCTIONAL — SEEDED (seed: ["functional"])
+#  :372 floor       assert/fixture + scripts/test/orphan.mjs             → no subject path — unchanged
+#  :387 quiet       assert/fixture                                       → none — unchanged
+#  :401 failing     assert/fixture                                       → none — unchanged
+#  :415 unmatched   assert/fixture + unit/.keep                          → none — unchanged
+#  :449 1.1         assert/fixture                                       → none — unchanged
+#  :468 1.2         assert/fixture                                       → none — unchanged
+#  :493 1.3         unit/.keep + assert/.keep + sweeps/marker.test.mjs   → SWEEPS — SEEDED (seed: ["sweeps"])
+#  :525 1.4         unit/.keep + assert/.collapsed.test.mjs              → none — unchanged
+#  :548 1.5         assert/fixture (setup writes only .git/)             → none — unchanged
+#  :591 IX-a        assert/fixture (setup rewrites it unstaged)          → none — unchanged
+#  :608 IX-b        assert/fixture                                       → none — unchanged
+#  :621 IX-c        assert/fixture (+ an UNTRACKED assert file)          → none — unchanged
+#  :636 IX-d        assert/fixture into .git/alt-index                   → none — unchanged
+#  :660 IX-g        assert/fixture                                       → none — unchanged
+#  :675 IX-h        assert/.ix-h-hidden.test.mjs into .git/alt-index     → none — unchanged
+#  :699 IX-i        functional/ix-lone into .git/alt-index               → FUNCTIONAL; expects a refusal — RE-RUN, not changed:
+#                   still refused, twin refusal naming ix-lone printed first, freshness refusal beside it
+#  :718 IX-j        scripts/lib/zz-probe.mjs (gitOps(), deleted from disk) → FUNCTIONAL AND SWEEPS; expects a refusal —
+#                   RE-RUN and re-asserted: title drops "uncertified module"; asserts a functional AND a sweeps
+#                   freshness demand, each naming zz-probe.mjs
+#  :743 IX-k        TRACKED drift.mjs + certification.mjs + functional/ix-lone → FUNCTIONAL; expects a refusal —
+#                   RE-RUN, not changed: the snapshot's drift refuses (twin + freshness); no seed, by design D7
+#  :762 IX-e        assert/fixture (×2 bodies)                           → none — unchanged
+#  :779 IX-f        assert/fixture                                       → none — unchanged
+#
+# Result, the working tree over functional/drift-script + functional/conductor-09:
+ℹ tests 48
+ℹ pass 48
+ℹ fail 0
+
+# Task 2.4's own Verify, over the staged 2.4 tree after both certify runs (verify-2.4.txt carries the full output):
+$ ls "$(git rev-parse --git-common-dir)"          (pm-suite-* entries)
+pm-suite-certification.d
+pm-suite-certification.json
+# the manifest directory beside the untouched single-file record (D5). The commit passing its own hook is
+# recorded in the commit's output and the report.

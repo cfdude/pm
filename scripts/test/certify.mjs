@@ -7,23 +7,25 @@
 // months without running, and "I ran it, it passed" is a memory. This runner is what replaces the
 // memory: it runs a bucket, and on a PASS writes a machine-readable entry that says what passed, over
 // WHICH CONTENT, and when. The gate then decides freshness from the recorded content rather than from
-// the age of the record or from a commit identity — a module whose content is unchanged needs no new
+// the age of the record or from a commit identity — a subject whose content is unchanged needs no new
 // run however old the record, and one whose content changed needs a run however recent the record.
 //
-//   node scripts/test/certify.mjs functional   → the functional half; on pass, records every certified
-//                                                module (the gateway's callers plus conductor.mjs)
-//   node scripts/test/certify.mjs sweeps       → scripts/test/sweeps/; on pass, records the
-//                                                `engine-source` trigger (conductor.mjs + lib/**)
+//   node scripts/test/certify.mjs functional   → the functional half; on pass, records ONE entry: the
+//                                                manifest of the functional subject in the run's index
+//   node scripts/test/certify.mjs sweeps       → scripts/test/sweeps/; on pass, records ONE entry: the
+//                                                manifest of the sweeps subject in the run's index
 //
 // IT IS THE ONLY RECORD WRITER THERE IS, so "who produces this entry" has one answer rather than one
 // per bucket. The two commands are the two a drift-script refusal NAMES, and neither substitutes for
-// the other: an edit to `scripts/conductor.mjs` changes both hashes, so it demands a conformance run
-// AND a sweep run (D9).
+// the other: an edit to `scripts/conductor.mjs` is in both subjects, so it demands both runs (D9).
 //
-// THE RECORD LIVES UNDER `$(git rev-parse --git-common-dir)`, beside the `pm-suite.lock` the hook
-// already keeps there — machine state, shared by every worktree of this clone, never committed. A
-// fresh clone having no record is correct behaviour: the first commit touching a certified module
-// demands a run.
+// THE RECORD IS A DIRECTORY UNDER `$(git rev-parse --git-common-dir)` (certification-record-redesign
+// D1): `pm-suite-certification.d/<bucket>/<manifest key>.json`, one file per passing run, created and
+// never rewritten, so parallel worktrees certify with no lock. Machine state, shared by every worktree
+// of this clone, never committed. The manifest is read through drift's `indexManifest()` over the
+// run's index COPY — the same function drift judges a commit with. A fresh clone having no record is
+// correct behaviour: the first commit that stages a subject path demands a run. The superseded
+// single-file record `pm-suite-certification.json` is neither written nor removed (D5).
 //
 // A FAILED RUN WRITES NOTHING. A record is a claim about a PASS; recording a failure would let the
 // next commit read it as a result. The exit status is the runner's own, so a caller can gate on it.
@@ -32,8 +34,8 @@
 // and the pre-commit hook, judge the INDEX; a runner that ran and hashed the working tree certified
 // bytes a partial stage does not commit. So the runner copies the index ONCE, builds a run directory
 // from that copy (`indexRunPlan()` in certification.mjs: a `clone --shared` whose own index is the
-// copy, exported with `checkout-index`), runs the bucket there, and hashes the entries it records
-// from the copy's blobs. An edit or a `git add` during a run of several minutes changes neither what
+// copy, exported with `checkout-index`), runs the bucket there, and records the manifest of the
+// copy. An edit or a `git add` during a run of several minutes changes neither what
 // ran nor what is recorded. The run directory is `pm-certify-run.*` under the OS temp directory; it is
 // removed when the runner exits, and on INT/TERM/HUP, which also kill the bucket. The runner never
 // writes the working tree, the index, the stash or a worktree registration.
@@ -47,10 +49,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  CONFORMANCE_ID, ENGINE_SOURCE, REPO, certifiedModules, functionalIds, indexRunPlan, moduleEntry,
-  triggerEntry, writeEntry,
-} from "./certification.mjs";
+import { REPO, bucketDir, indexRunPlan, pruneRecord, writeManifestEntry } from "./certification.mjs";
+import { indexManifest } from "./drift.mjs";
 import { removeAtExit, removeTempDir } from "./fixtures/temp-dir.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -81,49 +81,18 @@ function indexFileOf(root) {
 }
 
 /** Execute `indexRunPlan()` in a fresh run directory. Returns the run directory, the clone the bucket
- *  runs in, and readers over the INDEX COPY in the shape the certification functions take — `readdir`
- *  over the copy's paths, `readFile` returning a path's blob as the copy holds it (or "" for a path
- *  the copy does not hold, exactly as drift's `indexReaders()` reads the commit's index).
+ *  runs in, and the path of the INDEX COPY, which the manifest is read from.
  *  Exported for functional/certify-index's 1.3 guard, which runs files in the directory it builds. */
 export function prepareRun(root, gitCommonDir) {
   const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-certify-run.")));
   let headSha = null;
   try { headSha = git(root, ["rev-parse", "--verify", "-q", "HEAD"]) || null; } catch { headSha = null; }
   const plan = indexRunPlan({ indexFile: indexFileOf(root), commonDir: gitCommonDir, headSha, tmp: dir });
-  let lsFiles = null;
   for (const step of plan.steps) {
     if (step.op === "copy") { fs.copyFileSync(step.from, step.to); continue; }
-    const out = execFileSync("git", step.args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...cleanEnv(), ...(step.env || {}) } });
-    if (step.args.includes("ls-files")) lsFiles = out;
+    execFileSync("git", step.args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...cleanEnv(), ...(step.env || {}) } });
   }
-  // `ls-files -s -z`: "<mode> <blob> <stage>\t<path>\0" per entry.
-  const blobs = new Map();
-  for (const rec of (lsFiles || "").split("\0").filter(Boolean)) {
-    const tab = rec.indexOf("\t");
-    blobs.set(rec.slice(tab + 1), rec.slice(0, tab).split(" ")[1]);
-  }
-  const paths = [...blobs.keys()];
-  const tree = plan.tree;
-  const rel = (abs) => path.relative(tree, abs).split(path.sep).join("/");
-  const readdir = (abs) => {
-    const prefix = rel(abs) ? `${rel(abs)}/` : "";
-    const names = new Set();
-    for (const f of paths) if (f.startsWith(prefix)) names.add(f.slice(prefix.length).split("/")[0]);
-    return [...names].sort();
-  };
-  const cache = new Map();
-  const readFile = (abs) => {
-    const blob = blobs.get(rel(abs));
-    if (!blob) return "";
-    // UNTRIMMED, unlike git(): these are the bytes the hash is taken over, and drift reads the same
-    // blob untrimmed (`show :<path>`), so the two hashes agree byte for byte.
-    if (!cache.has(blob)) {
-      cache.set(blob, execFileSync("git", ["-C", tree, "cat-file", "blob", blob],
-        { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: cleanEnv() }));
-    }
-    return cache.get(blob);
-  };
-  return { dir, tree, readdir, readFile };
+  return { dir, tree: plan.tree, indexCopy: plan.copy };
 }
 
 /** The bucket's files, expanded here rather than left to a shell: the runner is invoked from a
@@ -131,7 +100,7 @@ export function prepareRun(root, gitCommonDir) {
  *  quietly stopped matching is the failure this whole change is about. An empty list is an error
  *  rather than a zero-test pass. */
 function bucketFiles(root, bucket) {
-  const dir = path.join(root, "scripts", "test", bucket === ENGINE_SOURCE ? "sweeps" : bucket);
+  const dir = path.join(root, "scripts", "test", bucket);
   const files = fs.readdirSync(dir).filter((f) => f.endsWith(".test.mjs")).sort().map((f) => path.join(dir, f));
   if (!files.length) throw new Error(`certify: no test files under ${path.relative(root, dir)} — refusing to record a run of nothing`);
   return files;
@@ -218,58 +187,37 @@ export function countRefusal(label, counts) {
   return null;
 }
 
-/** The provenance and the timing every entry carries. `engineSha` is INFORMATIONAL (D7): nothing
- *  gates on it — the freshness test is the content hash, because a sha record has to be checked for
- *  ancestry and goes stale on a rebase that changed nothing. It says how the certification was
- *  produced, and that is all it is for. */
+/** The provenance every entry carries. `engineSha` is INFORMATIONAL (D7): nothing gates on it — the
+ *  freshness test is the manifest, because a sha record has to be checked for ancestry and goes stale
+ *  on a rebase that changed nothing. `ranAt` is stamped by the writer when the entry is WRITTEN. */
 function provenance(root) {
   let engineSha = "unknown";
   try { engineSha = git(root, ["rev-parse", "HEAD"]); } catch { /* not a commit yet — a bare `git init` */ }
-  return { ranAt: new Date().toISOString(), engineSha };
+  return { engineSha };
 }
 
-/** The functional half, over the run's index copy. The entries are the OLD single-file format (L1 of
- *  the redesign keeps the reader it has): one per certified module, hashed from the COPY's blobs, so
- *  the hash is the one drift takes over the commit's staged bytes. */
-async function certifyFunctional(root, gitCommonDir, run) {
-  const result = await runBucket(run.tree, "functional");
+/** One bucket, over the run's index copy. On a pass it records ONE entry — the manifest of the
+ *  bucket's subject in the COPY, read through drift's `indexManifest()` (the function drift judges a
+ *  commit with) — then prunes the bucket's directory, never removing the entry it just wrote. */
+async function certifyBucket(root, gitCommonDir, run, bucket) {
+  const label = bucket === "functional" ? "functional half" : "sweeps bucket";
+  const result = await runBucket(run.tree, bucket);
   if (!result.ok) {
     process.stderr.write(result.output);
-    process.stderr.write(`\ncertify: the functional half FAILED (status ${result.status}). Nothing recorded — a record is a claim about a pass.\n`);
+    process.stderr.write(`\ncertify: the ${label} FAILED (status ${result.status}). Nothing recorded — a record is a claim about a pass.\n`);
     return 1;
   }
-  const refusedF = countRefusal("functional half", result.counts);
-  if (refusedF) { process.stderr.write(result.output + "\n" + refusedF); return 1; }
-  const { ranAt, engineSha } = provenance(root);
-  const { tree, readFile, readdir } = run;
-  const functional = functionalIds(tree, readdir);
-  const mods = certifiedModules(tree, readFile, readdir);
-  for (const id of mods) {
-    writeEntry(gitCommonDir, id, moduleEntry(id, { root: tree, functional, counts: result.counts, ranAt, engineSha, readFile }));
-  }
+  const refused = countRefusal(label, result.counts);
+  if (refused) { process.stderr.write(result.output + "\n" + refused); return 1; }
+  const { engineSha } = provenance(root);
+  let worktree = null;
+  try { worktree = git(root, ["rev-parse", "--path-format=absolute", "--git-dir"]); } catch { /* informational only */ }
+  const { manifest } = indexManifest(root, bucket, { indexFile: run.indexCopy });
+  const { key, file } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
+  pruneRecord(gitCommonDir, bucket, { keep: key });
   process.stdout.write(
-    `certify: functional half passed (${result.counts.pass}/${result.counts.tests}); recorded ${mods.length} module ` +
-    `entries in ${path.join(gitCommonDir, "pm-suite-certification.json")}\n`,
-  );
-  return 0;
-}
-
-/** The sweep bucket, over the run's index copy; its `engine-source` entry is hashed from the copy. */
-async function certifySweeps(root, gitCommonDir, run) {
-  const result = await runBucket(run.tree, ENGINE_SOURCE);
-  if (!result.ok) {
-    process.stderr.write(result.output);
-    process.stderr.write(`\ncertify: the sweeps bucket FAILED (status ${result.status}). Nothing recorded.\n`);
-    return 1;
-  }
-  const refusedS = countRefusal("sweeps bucket", result.counts);
-  if (refusedS) { process.stderr.write(result.output + "\n" + refusedS); return 1; }
-  const { ranAt, engineSha } = provenance(root);
-  const entry = triggerEntry({ root: run.tree, counts: result.counts, ranAt, engineSha, readFile: run.readFile, readdir: run.readdir });
-  writeEntry(gitCommonDir, ENGINE_SOURCE, entry);
-  process.stdout.write(
-    `certify: sweeps bucket passed (${result.counts.pass}/${result.counts.tests}); recorded the '${ENGINE_SOURCE}' ` +
-    `entry over ${entry.files.length} engine-source files\n`,
+    `certify: ${label} passed (${result.counts.pass}/${result.counts.tests}); recorded ${Object.keys(manifest).length} ` +
+    `subject paths as ${path.relative(bucketDir(gitCommonDir, bucket), file)} in ${bucketDir(gitCommonDir, bucket)}\n`,
   );
   return 0;
 }
@@ -281,15 +229,15 @@ export async function main(argv, { root = REPO } = {}) {
   if (bucket !== "functional" && bucket !== "sweeps") {
     process.stderr.write(
       "certify: usage: node scripts/test/certify.mjs <functional|sweeps>\n" +
-      "  functional — run scripts/test/functional/ over the index and record every certified module on a pass\n" +
-      "  sweeps     — run scripts/test/sweeps/ over the index and record the engine-source trigger on a pass\n",
+      "  functional — run scripts/test/functional/ over the index and record the functional subject's manifest on a pass\n" +
+      "  sweeps     — run scripts/test/sweeps/ over the index and record the sweeps subject's manifest on a pass\n",
     );
     return 1;
   }
   const gitCommonDir = path.resolve(root, git(root, ["rev-parse", "--git-common-dir"]));
   const run = prepareRun(root, gitCommonDir);
   try {
-    return bucket === "sweeps" ? await certifySweeps(root, gitCommonDir, run) : await certifyFunctional(root, gitCommonDir, run);
+    return await certifyBucket(root, gitCommonDir, run, bucket);
   } finally {
     removeTempDir(run.dir);
   }
@@ -315,4 +263,4 @@ if (invokedDirectly) {
   );
 }
 
-export { CONFORMANCE_ID, HERE };
+export { HERE };

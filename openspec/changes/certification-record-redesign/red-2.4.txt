@@ -1,0 +1,47 @@
+# red-2.4 — the deletion case (Gate 1 B2) against the PRE-SWITCH drift, and X1's mutation, 2026-09-29T02:12:28Z
+#
+# The new functional/drift-script case cannot fail against the pre-switch tree for the stated reason when run
+# as a test (its seed goes through indexManifest(), which that tree lacks). So the RED is taken by a probe
+# (<scratch>/red24.mjs) that builds the SAME shape — a fixture whose record holds a passing entry for its
+# current subject, in BOTH formats — then `git rm`s a functional test (and its twin, so check 3 is not what
+# refuses) and runs f663cbdd's drift.mjs + certification.mjs (git show f663cbdd:…) and the switched drift:
+
+# old record entries: scripts/lib/m.mjs, engine-source; m.mjs covers ["beta"]
+## before the deletion — PRE-SWITCH drift (f663cbdd): exit 0
+drift: ok — 5 tracked test files, 2 functional ids, 0 staged paths
+
+## before the deletion — SWITCHED drift: exit 0
+drift: ok — 5 tracked test files, 2 functional ids, 0 staged paths
+
+# staged: scripts/test/assert/alpha.test.mjs, scripts/test/functional/alpha.test.mjs
+## after `git rm` of functional/alpha (+ twin) — PRE-SWITCH drift (f663cbdd): exit 0
+drift: ok — 3 tracked test files, 1 functional ids, 2 staged paths
+
+## after `git rm` of functional/alpha (+ twin) — SWITCHED drift: exit 1
+drift: ABORT — the suite's two halves have drifted apart
+
+the functional bucket's subject changed (scripts/test/functional/alpha.test.mjs), and no passing run over this content is recorded. Run `node scripts/test/certify.mjs functional` over the staged commit to certify the new content.
+
+drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+
+# RED: the pre-switch drift ACCEPTS the deletion (exit 0) — no entry's covers named 'alpha', and 'alpha' is in no
+# certified set. GREEN: the switched drift refuses with a functional demand naming the deleted path.
+# The test itself, over the switched tree: node --test scripts/test/functional/drift-script.test.mjs
+✔ 2.4 a staged DELETION of a functional test demands the functional bucket (Gate 1 B2)
+✔ 2.4 X1: indexManifest() reads ONE index — its listing, the bytes its subject is judged by, and its modes and blobs
+✔ G-I2 control: the same fixture with the worktree MATCHING the index is accepted
+✔ G-I2 the record's freshness is taken over the STAGED bytes, not the worktree's
+ℹ tests 4 / pass 4 / fail 0
+
+# X1 (Gate 1 round 5) — its discriminating evidence is the MUTATION, in a scratch copy (git clone --shared at
+# f663cbdd + this commit's working files, <scratch>/mutX1; the tree is never mutated). indexManifest():
+#   -  const readers = indexReaders(root, { indexFile });
+#   +  const readers = indexReaders(root);  // MUTATION (X1): the subject reads the INHERITED index
+## MUTANT — node --test --test-name-pattern X1 scripts/test/functional/drift-script.test.mjs
+✖ 2.4 X1: indexManifest() reads ONE index — its listing, the bytes its subject is judged by, and its modes and blobs
+  AssertionError [ERR_ASSERTION]: the second index's a.mjs calls gitOps( — its subject must hold it: []
+ℹ tests 1 / pass 0 / fail 1
+## REVERTED — same command: tests 1 / pass 1 / fail 0
+# (the subject loses a.mjs — and the functional file — while ls-files -s still follows the second index,
+#  so manifestOf() intersects to nothing)

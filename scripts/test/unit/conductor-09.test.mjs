@@ -219,6 +219,13 @@ unitTest("a bare invocation with no subcommand prints usage and exits 0", () => 
 //    floor's derivation asserted NOT to enumerate the functional half or the sweep bucket. Between
 //    them, the source-level shape and the running hook are pinned from both sides, which is the
 //    division D5's placement rule produces rather than a gap in it.
+// 5. THE SEEDED HOOK RUNS (certification-record-redesign 2.4). From that commit a fixture's own hook
+//    runs the manifest-record drift, so G-I3 and 1.3 — which stage a functional and a sweeps marker —
+//    seed an agreeing entry (`seed:` → `seedAgreeingEntry()`, which calls drift's `indexManifest()`),
+//    and IX-j asserts WHICH buckets refuse its staged `zz-probe.mjs` (functional AND sweeps at L2).
+//    All three run the real hook, so they stay functional. The decision they exercise has its
+//    value-level half elsewhere: the freshness rule on the unit rung (`unit/drift-freshness`) and the
+//    interim subjects' path classes on the file rung (`assert/drift-script`, check 4).
 
 // ──────────────── the pre-commit hook's SHAPE ────────────────
 //

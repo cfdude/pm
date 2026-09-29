@@ -18,10 +18,11 @@
 //   1. enrolment      — every tracked test file has exactly one home (D5)
 //   2. twin coverage  — every functional id has an assertion file of the same id (D6, ONE direction)
 //   3. diff coupling  — a staged change to a functional file carries its twin in the same diff (D6)
-//   4. freshness      — a certified module whose STAGED content differs from the record's
-//                       `contentHash` is refused, and the refusal names the run that satisfies it
-//                       (D7); plus 7.2's dangling ids, so a renamed module or a deleted functional
-//                       test cannot leave a record pointing at something that no longer exists
+//   4. freshness      — a staged change to a bucket's subject (an addition, an edit, a mode change or
+//                       a deletion) demands that bucket, and the commit is fresh only when ONE passing
+//                       entry's manifest equals the manifest of the bucket's WHOLE subject in this
+//                       index (certification-record-redesign D1); the refusal names the bucket, the
+//                       staged subject paths and the run that satisfies it
 //
 // THERE IS NO CONVERSE OF CHECK 2, deliberately (D6): an assertion-half file with no functional twin
 // is the normal shape for a test whose subject is not git's behaviour.
@@ -31,32 +32,40 @@
 // there. This script supplies check 1, which the hook carried inline from 5.3 until 6.4.
 
 import { execFileSync } from "node:child_process";
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  REPO, ENGINE_SOURCE, certifiedSet, conformanceRows, couplingRefusals, describeRefusal,
-  enrolmentRefusals, functionalIds, assertionIds, homeOf, homesInProse, readRecord, recordRefusals, sweepIds, twinRefusals, twinPathsOf,
+  BUCKETS, REPO, bucketSubject, couplingRefusals, describeRefusal, enrolmentRefusals, freshnessRefusal,
+  functionalIds, assertionIds, homeOf, homesInProse, manifestKey, manifestOf, parseStagedEntries, twinRefusals, twinPathsOf,
 } from "./certification.mjs";
 
 // ───────────────────────────── the index reads ─────────────────────────────
 
 /** THE ONLY SPawn IN THIS FILE, and the only subcommands it may ask for. Every git call the drift
- *  script makes is an INDEX READ: what is tracked, what is staged, what the staged bytes are, and
+ *  script makes is a READ: what is tracked, what is staged, the staged bytes and their modes and blob
+ *  ids, HEAD's tree (`ls-tree`, to judge a staged deletion — certification-record-redesign D1), and
  *  where the common directory is. There is no `git commit`, no `git init`, no fixture, no engine
  *  process and no test runner anywhere in the script — the check runs BEFORE the suite in the hook,
  *  so it may not be able to start the thing whose result it is checking (D8). A subcommand outside
  *  this set throws rather than running, so the property is enforced where the call is made and not
  *  only asserted about the source. */
-export const PERMITTED_SUBCOMMANDS = ["ls-files", "diff", "show", "rev-parse"];
+export const PERMITTED_SUBCOMMANDS = ["ls-files", "diff", "show", "rev-parse", "ls-tree"];
 
-export function gitRead(root, args) {
+/** One git read. `indexFile`, when given, is the index this read is about: it is handed to git as
+ *  `GIT_INDEX_FILE`, which is the ONE place this file names that variable (Gate 1 round 5, X1). It
+ *  must be ABSOLUTE — `-C root` re-anchors a relative one — and a relative one is refused. Without
+ *  it the read inherits the process's index, which is the index the pre-commit hook hands drift. */
+export function gitRead(root, args, { indexFile } = {}) {
   const sub = args.find((a) => !a.startsWith("-"));
   if (!PERMITTED_SUBCOMMANDS.includes(sub)) {
     throw new Error(`drift: '${sub}' is not an index read — this script checks files, it does not drive git`);
   }
-  return execFileSync("git", ["-C", root, ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  if (indexFile !== undefined && !path.isAbsolute(indexFile)) {
+    throw new Error(`drift: indexFile must be an absolute path (got ${JSON.stringify(indexFile)}) — \`-C ${root}\` would re-anchor a relative one`);
+  }
+  const env = indexFile === undefined ? process.env : { ...process.env, GIT_INDEX_FILE: indexFile };
+  return execFileSync("git", ["-C", root, ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env });
 }
 
 export function trackedTestFiles(root) {
@@ -91,19 +100,6 @@ export function stagedFiles(root) {
   return gitRead(root, ["diff", "--cached", "--name-only", "--no-renames"]).split("\n").filter(Boolean).sort();
 }
 
-/** The STAGED bytes of a path (`git show :<path>`), or null when the index does not hold it — a
- *  deletion, or a path the caller asked about that was never staged. A null is a refusal, not a
- *  pass: the content cannot be shown to be the content the record describes. */
-function stagedReader(root) {
-  return (rel) => {
-    try {
-      return gitRead(root, ["show", `:${rel}`]);
-    } catch {
-      return null;
-    }
-  };
-}
-
 /** THE INDEX AS A FILESYSTEM — `readdir` and `readFile` over what is STAGED, in the shape the
  *  certification functions already accept (0.50.0, found at branch review). Until then every SET drift
  *  judges — the certified engine modules, the engine-source files, the functional/assertion/sweep ids,
@@ -115,10 +111,14 @@ function stagedReader(root) {
  *  under reads as EMPTY (the fs default would throw ENOENT for a missing one, and `testIdsIn` already
  *  treats that as empty; `certifiedModules` needs `scripts/lib/` to read as empty in a tree that
  *  stages none). A file the index does not hold reads as "" — it is not in the commit, so it calls no
- *  gateway and carries no ROWS table, which is exactly how an absent file must be judged.
- *  One `ls-files` for the listing; one `show :<path>` per file actually read. */
-export function indexReaders(root) {
-  const staged = gitRead(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
+ *  gateway, which is exactly how an absent file must be judged.
+ *  One `ls-files` for the listing; one `show :<path>` per file actually read. `paths` is the listing.
+ *
+ *  `indexFile` (certification-record-redesign 2.4, X1) reaches BOTH reads — the listing AND every
+ *  `show :<path>` — so the subject a caller derives from these readers is one index's, never one
+ *  index's listing judged by another index's bytes. */
+export function indexReaders(root, { indexFile } = {}) {
+  const staged = gitRead(root, ["ls-files", "-z"], { indexFile }).split("\0").filter(Boolean);
   const inIndex = new Set(staged);
   const rel = (abs) => path.relative(root, abs).split(path.sep).join("/");
   const readdir = (abs) => {
@@ -127,53 +127,82 @@ export function indexReaders(root) {
     for (const f of staged) if (f.startsWith(prefix)) names.add(f.slice(prefix.length).split("/")[0]);
     return [...names].sort();
   };
-  const readFile = (abs) => (inIndex.has(rel(abs)) ? gitRead(root, ["show", `:${rel(abs)}`]) : "");
-  return { readdir, readFile };
+  const readFile = (abs) => (inIndex.has(rel(abs)) ? gitRead(root, ["show", `:${rel(abs)}`], { indexFile }) : "");
+  return { readdir, readFile, paths: staged };
+}
+
+/** HEAD AS A FILESYSTEM, in the same shape — for subject(HEAD), which is what judges a staged
+ *  DELETION (design D1 step 2): the index no longer holds the path, so subject(index) cannot name it.
+ *  `ls-tree -r -z HEAD` for the listing, `show HEAD:<path>` for bytes. No HEAD (an unborn branch)
+ *  reads as an EMPTY tree. These read no index, and take `indexFile` anyway, so no read in this file is
+ *  on the inherited index by omission. */
+export function headReaders(root, { indexFile } = {}) {
+  let listing = "";
+  try { listing = gitRead(root, ["ls-tree", "-r", "-z", "HEAD"], { indexFile }); } catch { listing = ""; }
+  const paths = listing.split("\0").filter(Boolean).map((rec) => rec.slice(rec.indexOf("\t") + 1));
+  const inHead = new Set(paths);
+  const rel = (abs) => path.relative(root, abs).split(path.sep).join("/");
+  const readdir = (abs) => {
+    const prefix = rel(abs) ? `${rel(abs)}/` : "";
+    const names = new Set();
+    for (const f of paths) if (f.startsWith(prefix)) names.add(f.slice(prefix.length).split("/")[0]);
+    return [...names].sort();
+  };
+  const readFile = (abs) => (inHead.has(rel(abs)) ? gitRead(root, ["show", `HEAD:${rel(abs)}`], { indexFile }) : "");
+  return { readdir, readFile, paths };
+}
+
+/** THE ONE MANIFEST ENTRY POINT (Gate 1 round 4, T2; design D1, "Content identity"). The bucket's
+ *  subject derived over the index at `indexFile` (the inherited index when omitted), intersected with
+ *  that index's paths, with modes and blob ids from `ls-files -s` under the SAME index. Its callers are
+ *  drift's freshness check, certify (with its index copy) and the fixture helper `seedAgreeingEntry()`,
+ *  so the key a run records and the key drift looks up are one computation, not two kept equal.
+ *  Returns `{ subject, manifest, key }`; `subject` is the intersection, i.e. the manifest's paths. */
+export function indexManifest(root, bucket, { indexFile } = {}) {
+  const readers = indexReaders(root, { indexFile });
+  const derived = bucketSubject(bucket, { root, ...readers });
+  const manifest = manifestOf({ subject: derived, indexEntries: parseStagedEntries(gitRead(root, ["ls-files", "-s", "-z"], { indexFile })) });
+  return { subject: Object.keys(manifest), manifest, key: manifestKey(manifest) };
+}
+
+/** subject(HEAD) for a bucket — the lazy half of the demand (design D1 step 2). */
+export function headSubject(root, bucket, { indexFile } = {}) {
+  return bucketSubject(bucket, { root, ...headReaders(root, { indexFile }) });
 }
 
 // ───────────────────────────── the checks ─────────────────────────────
 
-/** All four, as data. `set`/`record`/`conformanceRowsNow` are gathered here and checked in
- *  certification.mjs, so the checks themselves are pure and can be exercised by the assertion half. */
+/** All four, as data. The lists are gathered here and checked in certification.mjs, so the checks
+ *  themselves are pure and can be exercised by the assertion half. */
 export function checkAll(root = REPO) {
   const tracked = trackedTestFiles(root);
   const staged = stagedFiles(root);
   // EVERY SET BELOW IS READ FROM THE INDEX (0.50.0) — see indexReaders(). The record is the one
-  // thing still read from disk: it lives in the git common dir and is not part of any commit.
-  const { readdir, readFile } = indexReaders(root);
+  // thing still read from disk: it lives in the git common dir and is not part of any commit. Every
+  // read here is on the INHERITED index — the one the pre-commit hook hands drift — so no indexFile.
+  const readers = indexReaders(root);
+  const { readdir } = readers;
   const functional = functionalIds(root, readdir);
   const assertion = assertionIds(root, readdir);
-  const set = certifiedSet(root, readFile, readdir);
   const gitCommonDir = path.resolve(root, gitRead(root, ["rev-parse", "--git-common-dir"]).trim());
-  const record = readRecord(gitCommonDir, (p) => fs.readFileSync(p, "utf8"));
-  const readStaged = stagedReader(root);
+  const indexPaths = new Set(readers.paths);
 
   const result = {
     enrolment: enrolmentRefusals(tracked),
     twins: twinRefusals({ functional, assertion }),
     coupling: couplingRefusals({ stagedFiles: staged, functional, assertion }),
-    record: recordRefusals({
-      stagedFiles: staged,
-      record,
-      set,
-      hashStaged: (files) => {
-        // The staged bytes of every file in the set, hashed the way `certification.contentHash` does.
-        // A null anywhere means the content cannot be shown fresh, which is a refusal rather than a
-        // pass — the loud direction.
-        const h = crypto.createHash("sha256");
-        for (const f of [...files].sort()) {
-          const bytes = readStaged(f);
-          if (bytes === null) return null;
-          h.update(f).update("\0").update(bytes).update("\0");
-        }
-        return h.digest("hex");
-      },
-      // Every id a covers entry may legitimately name: the functional half AND the sweep bucket.
-      liveIds: [...functional, ...sweepIds(root, readdir)],
-      conformanceRowsNow: (() => {
-        try { return conformanceRows(root, readFile); } catch { return null; }
-      })(),
-    }),
+    // CHECK 4, one bucket at a time: the demand, then — only when demanded — this index's manifest
+    // and the ONE entry its key names (certification-record-redesign D1). Nothing is resolved against
+    // an entry about some other tree, and the superseded single-file record is never read (D5).
+    record: BUCKETS.map((bucket) => freshnessRefusal({
+      commonDir: gitCommonDir,
+      bucket,
+      stagedPaths: staged,
+      indexPaths,
+      subjectIndex: () => bucketSubject(bucket, { root, ...readers }),
+      subjectHead: () => headSubject(root, bucket),
+      manifest: () => indexManifest(root, bucket).manifest,
+    })).filter(Boolean),
   };
   return { result, tracked, staged, functional, assertion };
 }

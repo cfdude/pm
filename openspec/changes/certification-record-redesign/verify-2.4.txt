@@ -1,0 +1,52 @@
+# verify-2.4 — task 2.4's Verify lines, run over the STAGED 2.4 tree before committing, 2026-09-29T02:17:53Z
+
+$ rg -n "KIND_MODULE|KIND_TRIGGER|CONFORMANCE_ID|ENGINE_SOURCE|certifiedSet|contentHash|stagedHash" scripts
+(rg exit 1 — nothing found)
+
+$ rg -n '"-s"' scripts/test --glob '!*.test.mjs'
+scripts/test/drift.mjs:164:  const manifest = manifestOf({ subject: derived, indexEntries: parseStagedEntries(gitRead(root, ["ls-files", "-s", "-z"], { indexFile })) });
+# one hit, inside indexManifest() (drift.mjs) — the ls-files -s step left indexRunPlan()
+
+# drift.mjs stays import-safe: importing it (and certify.mjs, which imports it) spawns nothing —
+$ node --test scripts/test/assert/certify-count.test.mjs   # imports certify.mjs into the assertion half, under the git counter
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+
+# The certify runs, the NEW runner, staged exactly (git diff --name-only for scripts/ and .githooks/ empty):
+$ node scripts/test/certify.mjs sweeps       # sweeps exit 0 24s load {8.75 12.38 19.28} -> {8.96 12.19 19.05}
+certify: sweeps bucket passed (25/25); recorded 68 subject paths as 2538715e50bb4abac0fba11ec7e668f8322bd0102b07c3b969a693fbbb59d254.json in <repo>/.git/pm-suite-certification.d/sweeps
+$ node scripts/test/certify.mjs functional   # functional exit 0 224s load {9.69 12.25 18.99} -> {17.80 16.38 19.30}
+certify: functional half passed (1233/1233); recorded 89 subject paths as 662c0119a2ea056db69fbe0bef2bc26aebb55ba4c5daec57c8cdac4908582c13.json in <repo>/.git/pm-suite-certification.d/functional
+# 1233 = 1231 + this commit's 2 new functional tests (the deletion case, X1).
+
+# The commit's own new drift reading the entries those runs wrote (bare run, the staged index):
+$ node scripts/test/drift.mjs
+drift: ok — 216 tracked test files, 52 functional ids, 11 staged paths
+(exit 0)
+
+$ ls "$(git rev-parse --git-common-dir)"
+pm-suite-certification.d
+pm-suite-certification.json
+$ ls .git/pm-suite-certification.d/*
+/Users/robsherman/Documents/Repos/pm/.git/pm-suite-certification.d/functional:
+662c0119a2ea056db69fbe0bef2bc26aebb55ba4c5daec57c8cdac4908582c13.json
+
+/Users/robsherman/Documents/Repos/pm/.git/pm-suite-certification.d/sweeps:
+2538715e50bb4abac0fba11ec7e668f8322bd0102b07c3b969a693fbbb59d254.json
+
+# Cited call sites that moved since c96240ab (found by rg at f663cbdd, before the edit):
+#   certify.mjs ENGINE_SOURCE: task :51/:132/:142/:144 → :51 (import), :134 (bucketFiles), :259/:269/:271
+#     (certifySweeps, which L1's 1.2 had restructured); CONFORMANCE_ID re-import/re-export :36/:173 → :51/:318.
+#   certify.mjs stale wording: task :13-16,:25,:155 → :13-21, :25, and :232 (the L1 certifyFunctional doc) and
+#     :284 (the usage text) — all rewritten.
+#   certification.mjs: contentHash :222 / stagedHash :232 / certifiedSet :211-216 / KIND_* :35-36 /
+#     CONFORMANCE_ID :47 / describeRefusal :489-493 → +1 to +10 lines after 2.1-2.3's additions; deleted by name.
+#   drift.mjs and assert/drift-script.test.mjs: every cited line matched as of f663cbdd.
+# NOT LISTED IN 2.4, moved anyway (the task's own Verify rg forces it): functional/certify-index.test.mjs,
+#   created by L1 after the task's call-site lists were written — it imported RECORD_NAME and contentHash
+#   (:29) and asserted on the single-file record (:99-101, :141-147, :167-170, :182, :193, :224). Its 1.2
+#   cases now read the manifest directory; its twin unit/certify-index moved with it (the ls-files step).
+# ALSO RETIRED, not named by the task: sweepIds() (certification.mjs), whose only callers were check 4's
+#   covers resolution and the deleted tests; and recordRefusals() WHOLE (its stale-record half is
+#   freshnessRefusal() now; its old signature took hashStaged, which retired).

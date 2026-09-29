@@ -12,17 +12,18 @@
 // certification.mjs from data its caller gathered. So the violations below need no repository, no
 // spawn and no fixture.
 //
-// 7.2'S DATA-REFERENCE OBLIGATION IS TESTED HERE TOO, in the same table, because it is check 4's
-// other half: the record holds module ids and functional ids, and every one of them is a pointer that
-// can be left dangling by a rename or a deletion.
+// THE RECORD IS A DIRECTORY OF MANIFESTS since certification-record-redesign 2.4 (design D1): one
+// entry per passing run, named by the sha256 of its manifest (mode and blob id per subject path), and
+// check 4 is a keyed LOOKUP of the one entry whose manifest equals the commit's whole subject. The
+// covers/dangling-id half of the old check 4 retired with it: a deleted test or a removed conformance
+// row is now a staged change to the subject, demanding a run. The pure decision is pinned on the unit
+// rung (`unit/drift-freshness`); this file pins the record's BYTES and the derivations.
 //
-// WHAT THIS FILE CANNOT REACH, AND ITS FUNCTIONAL TWIN DOES (G-I2). Every check-4 case below injects
-// `hashStaged` as a STUB, so the decision is tested and the READER is not: swapping the staged read
-// (`git show :<path>`) for a worktree `readFileSync` left all of these green, and the bypass that buys
-// is a commit whose index holds unverified content while the worktree holds the certified bytes.
-// `scripts/test/functional/drift-script.test.mjs` builds that exact state in a real repository and
-// requires the refusal — the half that may spawn is the half that can observe where the bytes came
-// from, which is D5's placement rule producing a pairing rather than a gap.
+// WHAT THIS FILE CANNOT REACH, AND ITS FUNCTIONAL TWIN DOES (G-I2). Every check-4 case below hands the
+// manifest in as a value, so the decision is tested and the READER is not: a manifest read from the
+// worktree instead of the index would leave all of these green. `scripts/test/functional/
+// drift-script.test.mjs` builds that state in a real repository and requires the refusal, and it holds
+// the two cases that need real git: a staged deletion judged through HEAD, and X1's two indexes.
 
 import "../fixtures/assert-git-shim.mjs";  // the run-time git counter, installed in THIS process (0.49.0, D3 row 1)
 import { test } from "node:test";
@@ -30,15 +31,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import {
-  ENGINE_ENTRY, ENGINE_SOURCE, REPO, assertionIds, certifiedModules, certifiedSet, contentHash,
-  conformanceRows, couplingRefusals, coversFor, describeRefusal, engineSourceFiles, enrolmentRefusals,
-  functionalIds, homeOf, readRecord, recordRefusals, sweepIds, twinRefusals, writeEntry,
+  ENGINE_ENTRY, REPO, assertionIds, bucketSubject, certifiedModules, couplingRefusals, describeRefusal,
+  engineSourceFiles, enrolmentRefusals, freshnessRefusal, functionalIds, homeOf, twinRefusals,
+  writeManifestEntry,
 } from "../certification.mjs";
 import { PERMITTED_SUBCOMMANDS, gitRead } from "../drift.mjs";
-import { KIND_MODULE, KIND_TRIGGER, RECORD_NAME, moduleEntry, triggerEntry } from "../certification.mjs";
 import * as recordDir from "../certification.mjs";  // 2.2: resolved per test, so a missing export fails that test alone
 
 const readFile = (p) => fs.readFileSync(p, "utf8");
@@ -131,149 +130,93 @@ test("check 3 — a staged change touching one half only is REFUSED, naming the 
   }), [], "the coupling is one-directional, like the twin rule it keys on");
 });
 
-test("check 4 — a certified module whose STAGED content has no matching contentHash is REFUSED, with the run named", () => {
-  const set = new Map([["scripts/lib/git.mjs", ["scripts/lib/git.mjs"]]]);
-  const record = {
-    entries: {
-      "scripts/lib/git.mjs": {
-        kind: "module", files: ["scripts/lib/git.mjs"], contentHash: "hash-of-the-OLD-content",
-        covers: [], result: "pass", ranAt: "2020-01-01T00:00:00.000Z", engineSha: "deadbeef",
-      },
-    },
-  };
-  const refused = recordRefusals({
-    stagedFiles: ["scripts/lib/git.mjs"],
-    record, set,
-    hashStaged: () => "hash-of-the-NEW-content",
-    liveIds: [], conformanceRowsNow: [],
+test("check 4 — a staged subject change with no agreeing entry is REFUSED, naming the bucket, the paths and the run", () => {
+  const common = scratchCommonDir();
+  const refusal = freshnessRefusal({
+    commonDir: common, bucket: "functional", stagedPaths: ["scripts/lib/git.mjs"],
+    indexPaths: new Set(["scripts/lib/git.mjs", "scripts/test/functional/alpha.test.mjs"]),
+    subjectIndex: () => ["scripts/lib/git.mjs", "scripts/test/functional/alpha.test.mjs"], subjectHead: () => [],
+    manifest: () => RD_MANIFEST,
   });
-  assert.equal(refused.length, 1);
-  assert.equal(refused[0].kind, "stale-record");
-  assert.equal(refused[0].entryId, "scripts/lib/git.mjs", "the refusal names the module");
-  assert.equal(refused[0].run, "node scripts/test/certify.mjs functional",
+  assert.equal(refusal.kind, "stale-record");
+  assert.equal(refusal.bucket, "functional", "the refusal names the bucket");
+  assert.deepEqual(refusal.changed, ["scripts/lib/git.mjs"], "and the staged subject paths");
+  assert.equal(refusal.run, "node scripts/test/certify.mjs functional",
     "and the command that would satisfy it — a refusal a developer cannot satisfy is a refusal that gets bypassed");
-  assert.match(describeRefusal(refused[0]), /node scripts\/test\/certify\.mjs functional/);
+  assert.match(describeRefusal(refusal), /node scripts\/test\/certify\.mjs functional/);
 });
 
 test("check 4 — FRESHNESS IS THE CONTENT, not the age and not the commit", () => {
-  const set = new Map([["scripts/lib/git.mjs", ["scripts/lib/git.mjs"]]]);
-  const unchanged = { entries: { "scripts/lib/git.mjs": { result: "pass", contentHash: "H", covers: [] } } };
-  // Old record, identical content → NO run demanded. "An unchanged module needs no new run" is a
-  // scenario in the spec, not an incidental optimisation: a gate that went stale on age would demand
-  // a functional run for a commit that touched nothing certified.
-  assert.deepEqual(recordRefusals({
-    stagedFiles: ["scripts/lib/git.mjs"], record: unchanged, set,
-    hashStaged: () => "H", liveIds: [], conformanceRowsNow: [],
-  }), [], "an unchanged module needs no new run, however old the record is");
-
-  // Fresh record, changed content → a run demanded. "A changed module needs a new run however recent
-  // the record" is the other scenario, and this is the half that makes the record a gate.
-  const fresh = { entries: { "scripts/lib/git.mjs": { result: "pass", contentHash: "H", covers: [], ranAt: new Date().toISOString() } } };
-  assert.equal(recordRefusals({
-    stagedFiles: ["scripts/lib/git.mjs"], record: fresh, set,
-    hashStaged: () => "NOT-H", liveIds: [], conformanceRowsNow: [],
-  }).length, 1, "a changed module needs a new run however recent the record");
-
-  // A commit that touches nothing certified is not refused at all.
-  assert.deepEqual(recordRefusals({
-    stagedFiles: ["README.md"], record: { entries: {} }, set,
-    hashStaged: () => "H", liveIds: [], conformanceRowsNow: [],
-  }), [], "an unrelated commit is not refused — that is the whole point of a trigger");
+  const common = scratchCommonDir();
+  const args = (manifest, staged = ["scripts/lib/a.mjs"]) => ({
+    commonDir: common, bucket: "functional", stagedPaths: staged, indexPaths: new Set(Object.keys(manifest)),
+    subjectIndex: () => Object.keys(manifest), subjectHead: () => [], manifest: () => manifest,
+  });
+  // An OLD entry over identical content → NO run demanded. "An unchanged module needs no new run" is
+  // a scenario in the spec, not an incidental optimisation.
+  writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { now: () => new Date("2020-01-01T00:00:00.000Z") });
+  assert.equal(freshnessRefusal(args(RD_MANIFEST)), null, "an unchanged subject needs no new run, however old the entry is");
+  // A RECENT entry, changed content → a run demanded.
+  const changed = { ...RD_MANIFEST, "scripts/lib/a.mjs": `100644 ${"9".repeat(40)}` };
+  assert.ok(freshnessRefusal(args(changed)), "a changed subject needs a new run however recent the record");
+  // A commit that stages nothing in the subject is not refused at all.
+  assert.equal(freshnessRefusal(args(changed, ["README.x"])), null, "an unrelated commit is not refused — that is the whole point of a trigger");
 });
 
-test("check 4 — the engine-source trigger is a SECOND, disjoint demand (D9/6.3)", () => {
-  // An edit to scripts/lib/rank.mjs is engine source and NOT a certified module: the sweep bucket's
-  // subject changed, the gateway sweep's did not. The refusal must name the SWEEP run.
-  const set = certifiedSet(REPO);
-  assert.ok(set.has(ENGINE_SOURCE), "the engine-source trigger is in the certified set");
-  assert.ok(!set.has("scripts/lib/rank.mjs"), "a library module that does not call the gateway is not a certified module");
-  const refused = recordRefusals({
-    stagedFiles: ["scripts/lib/rank.mjs"], record: { entries: {} }, set,
-    hashStaged: () => "H", liveIds: functionalIds(REPO), conformanceRowsNow: conformanceRows(REPO),
-  });
-  assert.deepEqual(refused.map((r) => r.entryId), [ENGINE_SOURCE]);
-  assert.equal(refused[0].run, "node scripts/test/certify.mjs sweeps",
-    "the frozen engine-source edit is refused with the command that produces its record");
-
-  // And an edit to conductor.mjs demands BOTH: the module entry (the conformance set certifies it)
-  // and the engine-source trigger. Neither substitutes for the other.
-  const both = recordRefusals({
-    stagedFiles: [ENGINE_ENTRY], record: { entries: {} }, set,
-    hashStaged: () => "H", liveIds: functionalIds(REPO), conformanceRowsNow: conformanceRows(REPO),
-  });
-  assert.deepEqual(both.map((r) => r.entryId).sort(), [ENGINE_ENTRY, ENGINE_SOURCE].sort(),
-    "conductor.mjs is demanded by both entries at once, and each names its own run");
-});
-
-// ───────────────────────────── 7.2 — the ids are DATA references ─────────────────────────────
-
-test("7.2: a module RENAMED in the certified set leaves the record dangling — refused, not silently not-covering", () => {
-  // The record is keyed on a module id. Rename the module and the key points at nothing: the entry
-  // would read as a live certification of a module that no longer exists. The refusal names the id.
-  const set = new Map([["scripts/lib/git-renamed.mjs", ["scripts/lib/git-renamed.mjs"]]]);
-  const record = { entries: { "scripts/lib/git.mjs": { kind: "module", files: ["scripts/lib/git.mjs"], contentHash: "H", covers: [] } } };
-  const refused = recordRefusals({
-    stagedFiles: [], record, set, hashStaged: () => "H", liveIds: [], conformanceRowsNow: [],
-  });
-  assert.equal(refused.length, 1);
-  assert.equal(refused[0].kind, "dangling-entry");
-  assert.equal(refused[0].entryId, "scripts/lib/git.mjs");
-
-  // ...and it is caught even when NOTHING was staged, which is the point: the dangling reference is
-  // invisible to a diff-scoped check that only looks at what moved.
-  const refusedUnstaged = recordRefusals({
-    stagedFiles: ["README.md"], record, set, hashStaged: () => "H", liveIds: [], conformanceRowsNow: [],
-  });
-  assert.equal(refusedUnstaged.length, 1, "the dangling key is refused on an unrelated commit too");
-});
-
-test("7.2: deleting a CONFORMANCE ROW refuses the conductor.mjs entry, not just renaming its file", () => {
-  const entry = {
-    kind: "module", files: [ENGINE_ENTRY], contentHash: "H",
-    covers: ["conformance"], conformanceRows: ["row one", "row two"],
+test("check 4 — the sweeps bucket is a SECOND, disjoint demand, and each subject is the interim path classes (2.4)", () => {
+  // A synthetic INDEX, read the way drift reads one: `paths` is its listing, `readFile` its bytes.
+  const files = {
+    "scripts/conductor.mjs": "export const main = () => gitOps();\n",
+    "scripts/lib/git.mjs": "export const a = () => gitOps();\n",
+    "scripts/lib/rank.mjs": "export const rank = () => 0;\n",
+    "scripts/test/functional/alpha.test.mjs": "",
+    "scripts/test/fixtures/helper.mjs": "",
+    "scripts/test/assert/alpha.test.mjs": "",
+    "scripts/test/sweeps/output-interpolations.mjs": "",
+    "scripts/test/sweeps/output-interpolations.test.mjs": "",
+    "scripts/test/certify.mjs": "", "scripts/test/certification.mjs": "", "scripts/test/drift.mjs": "",
   };
-  const set = new Map([[ENGINE_ENTRY, [ENGINE_ENTRY]]]);
-  const record = { entries: { [ENGINE_ENTRY]: entry } };
+  const paths = Object.keys(files);
+  const rel = (abs) => path.relative(REPO, abs).split(path.sep).join("/");
+  const readFile = (abs) => files[rel(abs)] ?? "";
+  const readdir = (abs) => [...new Set(paths.filter((p) => p.startsWith(`${rel(abs)}/`)).map((p) => p.slice(rel(abs).length + 1).split("/")[0]))];
+  const subject = (bucket) => new Set(bucketSubject(bucket, { root: REPO, readFile, readdir, paths }));
+  const functional = subject("functional");
+  const sweeps = subject("sweeps");
+  const demands = (p) => ["functional", "sweeps"].filter((b) => (b === "functional" ? functional : sweeps).has(p));
 
-  // The row is gone from the conformance file. `covers` still resolves (the FILE is there), so a
-  // file-granularity check alone would pass — and the module would read as certified by an
-  // observation that no longer exists.
-  const refused = recordRefusals({
-    stagedFiles: [], record, set, hashStaged: () => "H",
-    liveIds: ["conformance"], conformanceRowsNow: ["row one"],
-  });
-  assert.equal(refused.length, 1);
-  assert.equal(refused[0].kind, "dangling-covers");
-  assert.match(refused[0].covers, /"row two"/, "the refusal names the ROW that vanished");
-
-  // The file renamed out from under it is the coarser failure and is caught by the covers half.
-  const gone = recordRefusals({
-    stagedFiles: [], record, set, hashStaged: () => "H",
-    liveIds: [], conformanceRowsNow: ["row one", "row two"],
-  });
-  assert.equal(gone.length, 1);
-  assert.equal(gone[0].covers, "conformance");
-
-  // A healthy record over the same set is not refused.
-  assert.deepEqual(recordRefusals({
-    stagedFiles: [], record, set, hashStaged: () => "H",
-    liveIds: ["conformance"], conformanceRowsNow: ["row one", "row two"],
-  }), []);
+  assert.deepEqual(demands("scripts/lib/rank.mjs"), ["sweeps"], "a library module that makes no gateway call demands the SWEEPS only (L2; L3 widens this)");
+  assert.deepEqual(demands("scripts/lib/git.mjs"), ["functional", "sweeps"], "a gateway caller demands BOTH, and neither substitutes");
+  assert.deepEqual(demands(ENGINE_ENTRY), ["functional", "sweeps"], "the entry point, which calls the gateway, demands both");
+  assert.deepEqual(demands("scripts/test/sweeps/output-interpolations.mjs"), ["sweeps"],
+    "the sweep's own METHOD is in its subject: staging only it demands a sweeps run (the #229 shape, one bucket over)");
+  assert.deepEqual(demands("scripts/test/sweeps/output-interpolations.test.mjs"), ["sweeps"]);
+  assert.deepEqual(demands("scripts/test/functional/alpha.test.mjs"), ["functional"], "every functional test file is in the functional subject");
+  assert.deepEqual(demands("scripts/test/fixtures/helper.mjs"), ["functional"], "so is every fixture");
+  for (const m of ["scripts/test/certify.mjs", "scripts/test/certification.mjs", "scripts/test/drift.mjs"]) {
+    assert.deepEqual(demands(m), ["functional"], `the certification machinery (${m}) is in the functional subject (B9)`);
+  }
+  assert.deepEqual(demands("scripts/test/assert/alpha.test.mjs"), [], "an assertion-half file is in no subject: the per-commit gate runs it");
+  assert.ok(functional.has("scripts/test/js-lexer.mjs") && sweeps.has("scripts/test/js-lexer.mjs"),
+    "js-lexer.mjs is named by both (from 3.1); the subject ∩ index rule drops it while the index holds none");
 });
 
-test("7.2: a DELETED functional test refuses every entry that named it", () => {
-  const record = {
-    entries: {
-      "scripts/lib/git.mjs": { kind: "module", files: ["scripts/lib/git.mjs"], contentHash: "H", covers: ["git-gateway-double", "commit-observation"] },
-    },
+test("check 4 — an entry from another tree neither passes nor refuses", () => {
+  // Worktree B certified content holding a functional test only B has. A's commit is judged by A's
+  // own manifest alone: B's entry is never consulted, so it can neither certify A nor refuse it.
+  const common = scratchCommonDir();
+  const foreign = { ...RD_MANIFEST, "scripts/test/functional/only-on-b.test.mjs": `100644 ${"b".repeat(40)}` };
+  writeManifestEntry(common, { bucket: "functional", manifest: foreign });
+  const args = {
+    commonDir: common, bucket: "functional", stagedPaths: ["scripts/lib/a.mjs"], indexPaths: new Set(Object.keys(RD_MANIFEST)),
+    subjectIndex: () => Object.keys(RD_MANIFEST), subjectHead: () => [], manifest: () => RD_MANIFEST,
   };
-  const set = new Map([["scripts/lib/git.mjs", ["scripts/lib/git.mjs"]]]);
-  const refused = recordRefusals({
-    stagedFiles: [], record, set, hashStaged: () => "H",
-    liveIds: ["git-gateway-double"], conformanceRowsNow: [],
-  });
-  assert.deepEqual(refused.map((r) => r.covers), ["commit-observation"],
-    "the entry that named the deleted id is refused, and the one that did not is not");
+  const alone = freshnessRefusal(args);
+  assert.ok(alone, "the foreign entry is no pass");
+  assert.doesNotMatch(describeRefusal(alone), /only-on-b/, "and the refusal says nothing about it — it is not a dangling pointer");
+  writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST });
+  assert.equal(freshnessRefusal(args), null, "A's own agreeing entry certifies A, beside B's");
+  assert.equal(fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional")).length, 2, "and both entries remain");
 });
 
 // ───────────────────────────── the derivation, and what the script may do ─────────────────────────────
@@ -305,13 +248,14 @@ test("6.1: the certified set is DERIVED from the gateway calls, not typed", () =
 
 test("6.1/6.4: the drift script starts no engine, no runner and no fixture — it reads the index", () => {
   // The capability: the checks "SHALL NOT run the functional half, drive git against a repository, or
-  // spawn the engine". This pins it as source: every spawn in the script is a `git` plumbing READ,
-  // and there is no engine path, no test runner and no fixture anywhere in it.
+  // spawn the engine". This pins it as source: every spawn in the script is a git READ, and there is
+  // no engine path, no test runner and no fixture anywhere in it.
   const src = readFile(path.join(REPO, "scripts", "test", "drift.mjs"));
   const spawns = [...src.matchAll(/execFileSync\(/g)].length;
-  assert.equal(spawns, 1, "the whole script has exactly ONE spawn, and it is the git index read");
-  assert.deepEqual(PERMITTED_SUBCOMMANDS, ["ls-files", "diff", "show", "rev-parse"],
-    "the subcommands it may ask for are the index reads and nothing else — the guard throws on any other");
+  assert.equal(spawns, 1, "the whole script has exactly ONE spawn, and it is the git read");
+  assert.deepEqual(PERMITTED_SUBCOMMANDS, ["ls-files", "diff", "show", "rev-parse", "ls-tree"],
+    "the subcommands it may ask for are reads and nothing else — `ls-tree` since 2.4, to judge a staged " +
+    "deletion against HEAD's tree — and the guard throws on any other");
   // The permitted set is enforced AT THE CALL, not only asserted here: `gitRead` throws on a
   // subcommand outside it, so a later `git commit` added to this file fails when it runs.
   assert.throws(() => gitRead(REPO, ["commit", "-m", "x"]), /not an index read/,
@@ -319,155 +263,37 @@ test("6.1/6.4: the drift script starts no engine, no runner and no fixture — i
   assert.doesNotMatch(src, /--test/, "the drift script never starts a test runner");
   assert.doesNotMatch(src, /spawnSync|"conductor\.mjs"/, "and never starts the engine");
   assert.doesNotMatch(src, /mkdtemp|gitInit/, "and never creates a repository fixture");
-});
-
-// ───────────────────────────── 6.2/6.3 — the record the RUNNER writes ─────────────────────────────
-
-test("6.2: a certified module's entry records what was certified, over what CONTENT, and when", () => {
-  // D7's shape: per module — the files, a content hash over their bytes, the functional ids that
-  // cover it, the result, the timestamp, and the engine sha as INFORMATIONAL provenance. The shape
-  // is asserted rather than the values, because it is what check 4 reads back.
-  const functional = functionalIds(REPO);
-  const e = moduleEntry("scripts/lib/git.mjs", { root: REPO, functional, counts: { tests: 5, pass: 5, fail: 0 }, ranAt: "T", engineSha: "S" });
-  assert.equal(e.kind, KIND_MODULE);
-  assert.deepEqual(e.files, ["scripts/lib/git.mjs"], "the files the hash is taken over, named");
-  assert.match(e.contentHash, /^[0-9a-f]{64}$/, "a sha256 over those files' bytes");
-  assert.equal(e.result, "pass");
-  assert.equal(e.ranAt, "T");
-  assert.equal(e.engineSha, "S", "provenance only — nothing gates on it (D7)");
-  assert.deepEqual(e.counts, { tests: 5, pass: 5, fail: 0 });
-  assert.ok(Array.isArray(e.covers) && e.covers.every((id) => functional.includes(id)),
-    `every covers id resolves to a live functional id: ${JSON.stringify(e.covers)}`);
-  assert.equal(e.run, "node scripts/test/certify.mjs functional", "and the entry names the run that wrote it");
-});
-
-test("6.2: the entry point's entry carries the CONFORMANCE SET's ids, rows included", () => {
-  // conductor.mjs is in the certified set by name rather than by derivation (D7), and its covers is
-  // the conformance set — the in-process/CLI status equivalence is not derivable from the gateway
-  // sweep. The ROWS are recorded beside the file id so a deleted row refuses (7.2).
-  const e = moduleEntry(ENGINE_ENTRY, { root: REPO, functional: functionalIds(REPO), counts: {}, ranAt: "T", engineSha: "S" });
-  assert.deepEqual(e.covers, ["conformance"], "the conformance FILE id");
-  assert.deepEqual(e.conformanceRows, conformanceRows(REPO), "and every row it was written over");
-  assert.ok(e.conformanceRows.length >= 10, `the conformance set holds ${e.conformanceRows.length} rows`);
-  // Every OTHER module carries no row list: the field exists because the conformance set does.
-  const other = moduleEntry("scripts/lib/git.mjs", { root: REPO, functional: functionalIds(REPO), counts: {}, ranAt: "T", engineSha: "S" });
-  assert.equal(other.conformanceRows, undefined);
-});
-
-test("6.3: the engine-source trigger is a TRIGGER entry, and its subject is the whole engine source", () => {
-  const e = triggerEntry({ root: REPO, counts: {}, ranAt: "T", engineSha: "S" });
-  assert.equal(e.kind, KIND_TRIGGER);
-  assert.equal(e.run, "node scripts/test/certify.mjs sweeps", "the refusal for it names the SWEEP run");
-  assert.deepEqual(e.covers, ["output-interpolations"], "the sweep bucket's member");
-  assert.ok(e.files.includes(ENGINE_ENTRY) && e.files.includes("scripts/lib/git-gateway.mjs"),
-    "conductor.mjs plus every library module — the output sweep reads their SOURCE");
-  assert.match(e.contentHash, /^[0-9a-f]{64}$/);
-});
-
-test("6.2: the record is written beside the suite lock, and a fresh clone reads as EMPTY rather than as an error", () => {
-  // A fresh clone having no record is CORRECT (6.2's verify): the first commit touching a certified
-  // module demands a run. It must not read as a crash, and it must not read as a pass.
-  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-record-")));
-  const record = readRecord(dir);
-  assert.deepEqual(record, { version: 1, entries: {} }, "no record is an empty record, not a failure");
-  assert.deepEqual(Object.keys(readRecord(dir).entries), [], "and it certifies nothing");
-
-  // `writeEntry` is ATOMIC and MERGING: a killed run must not leave a half-written record, and
-  // recording one bucket must not drop the other's claim (an edit to conductor.mjs demands both).
-  // `covers` is non-empty because the writer REFUSES an empty one (G-M2) — these entries exist to
-  // prove the write is atomic and merging, and an empty covers would now fail before reaching that.
-  writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H1", covers: ["conformance"] });
-  writeEntry(dir, "engine-source", { kind: KIND_TRIGGER, result: "pass", contentHash: "H2", covers: ["output-interpolations"] });
-  const after = readRecord(dir);
-  assert.deepEqual(Object.keys(after.entries).sort(), ["engine-source", "scripts/lib/git.mjs"],
-    "the second write kept the first");
-  assert.equal(after.entries["scripts/lib/git.mjs"].contentHash, "H1");
-  assert.deepEqual(fs.readdirSync(dir).filter((f) => f !== RECORD_NAME), [], "no half-written temp file survives");
-  assert.match(RECORD_NAME, /\.json$/, "and the record is machine-readable by name");
-  fs.rmSync(dir, { recursive: true, force: true });
-});
-
-test("G-M1 the refusal says WHICH KIND of thing changed — the trigger is not a module", () => {
-  // The refusal read `set.get(entryId).kind`, and `certifiedSet()` maps an id to its FILES, so the
-  // noun was always `undefined`, the trigger branch in describeRefusal never fired, and a refusal
-  // about the engine-source trigger printed "the certified module 'engine-source' changed".
-  const set = certifiedSet(REPO);
-  const record = { entries: {
-    [ENGINE_SOURCE]: { kind: KIND_TRIGGER, result: "pass", contentHash: "OLD", covers: ["output-interpolations"] },
-    "scripts/lib/git.mjs": { kind: KIND_MODULE, result: "pass", contentHash: "OLD", covers: ["tool-currency"] },
-  } };
-  const refused = recordRefusals({
-    stagedFiles: ["scripts/lib/rank.mjs", "scripts/lib/git.mjs"],
-    record, set, hashStaged: () => "NEW",
-    liveIds: [...functionalIds(REPO), ...sweepIds(REPO)], conformanceRowsNow: conformanceRows(REPO),
-  });
-  const trigger = refused.find((r) => r.entryId === ENGINE_SOURCE);
-  const module = refused.find((r) => r.entryId === "scripts/lib/git.mjs");
-  assert.ok(trigger && module, "both demands are refused by the same edit set");
-  assert.equal(trigger.noun, KIND_TRIGGER, "the engine-source entry is a TRIGGER, not a module");
-  assert.equal(module.noun, KIND_MODULE);
-  assert.match(describeRefusal(trigger), /change-triggered bucket 'engine-source'/,
-    "so the developer is told which bucket moved, and which command re-certifies it");
-  assert.match(describeRefusal(module), /the certified module 'scripts\/lib\/git\.mjs'/);
-
-  // AND THE DERIVATION CARRIES IT when the record has no entry at all — the case that made the
-  // fallback necessary, since `entry` is then undefined.
-  const noEntry = recordRefusals({
-    stagedFiles: ["scripts/lib/rank.mjs"], record: { entries: {} }, set, hashStaged: () => "NEW",
-    liveIds: [...functionalIds(REPO), ...sweepIds(REPO)], conformanceRowsNow: conformanceRows(REPO),
-  }).find((r) => r.entryId === ENGINE_SOURCE);
-  assert.equal(noEntry.noun, KIND_TRIGGER, "a missing entry still names the trigger as a trigger");
-});
-
-test("G-M2 the record writer REFUSES an entry with an empty covers, and writes nothing", () => {
-  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-cert-covers-")));
-  const written = [];
-  const fakeIo = {
-    readFileSync: () => { const e = new Error("ENOENT"); e.code = "ENOENT"; throw e; },
-    writeFileSync: (p) => written.push(p),
-    renameSync: (a, b) => written.push(`${a}->${b}`),
-  };
-  assert.throws(
-    () => writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H", covers: [] }, fakeIo),
-    /EMPTY covers/, "an empty covers must be refused by name");
-  assert.throws(
-    () => writeEntry(dir, "scripts/lib/git.mjs", { kind: KIND_MODULE, result: "pass", contentHash: "H" }, fakeIo),
-    /EMPTY covers/, "and so must a missing one, which is the same thing with a different spelling");
-  assert.deepEqual(written, [], "a refused entry must not reach the record — not even a temp file");
-  fs.rmSync(dir, { recursive: true, force: true });
-
-  // AND THE DERIVATION ACTUALLY SATISFIES IT for every certified module in this repository: the
-  // refusal is only usable if nothing legitimate is empty, or the runner would be unable to write a
-  // record at all. `commit-watch.mjs` resolved to [] before coversFor learned the import form.
-  for (const id of certifiedModules(REPO)) {
-    assert.ok(coversFor(id).length > 0,
-      `'${id}' is in the certified set and resolves to no covering id — the record for it could not be written`);
+  // ONE INDEX OVERRIDE, AND IT IS IN gitRead() (2.4, Gate 1 round 5 X1): every read that is about a
+  // particular index passes `indexFile` down to the one spawn, so no read pairs one index's listing
+  // with another's bytes. Comments are stripped first (a line-comment and block-comment filter; 3.1
+  // replaces it with the shared lexer), so documenting the variable is not a violation.
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const start = code.indexOf("export function gitRead(");
+  const end = code.indexOf("\n}\n", start);
+  assert.ok(start !== -1 && end !== -1, "drift.mjs defines gitRead()");
+  const uses = [...code.matchAll(/GIT_INDEX_FILE/g)].map((m) => m.index);
+  assert.ok(uses.length >= 1, "gitRead() hands an indexFile to git as GIT_INDEX_FILE");
+  for (const at of uses) {
+    assert.ok(at > start && at < end, `GIT_INDEX_FILE appears in drift.mjs's code outside gitRead(): …${code.slice(at - 60, at + 20)}…`);
   }
+  assert.throws(() => gitRead(REPO, ["ls-files"], { indexFile: ".git/index" }), /absolute/,
+    "a relative indexFile is refused before git runs: `-C root` would re-anchor it");
 });
 
-test("check 4 — a covers id from the SWEEP BUCKET resolves (found by running the gate end-to-end)", () => {
-  // THE BUG THIS PINS, found by running the drift script against a record `certify sweeps` had just
-  // written — not by reading it. Check 4 resolved `covers` against the FUNCTIONAL half alone, and the
-  // engine-source trigger's own member (`output-interpolations`) lives in the SWEEP bucket, so every
-  // record the sweep runner produced was refused as dangling and the refusal named the very command
-  // that had just satisfied it. That is the worst shape a refusal can have: unsatisfiable.
-  const set = new Map([[ENGINE_SOURCE, engineSourceFiles(REPO)]]);
-  const record = { entries: { [ENGINE_SOURCE]: { kind: KIND_TRIGGER, result: "pass", contentHash: "H", covers: ["output-interpolations"] } } };
-  const resolved = recordRefusals({
-    stagedFiles: [], record, set, hashStaged: () => "H",
-    liveIds: [...functionalIds(REPO), ...sweepIds(REPO)], conformanceRowsNow: conformanceRows(REPO),
-  });
-  assert.deepEqual(resolved, [], "a sweeps id in covers is a live id, and the record is accepted");
-  assert.ok(sweepIds(REPO).includes("output-interpolations"), "the sweep bucket's ids are enumerable off disk");
+// ───────────────────────────── the refusal the gate prints ─────────────────────────────
 
-  // ...and the denial is not a weakening: an id in NEITHER half NOR the bucket is still refused.
-  const dangling = recordRefusals({
-    stagedFiles: [], record: { entries: { [ENGINE_SOURCE]: { kind: KIND_TRIGGER, result: "pass", contentHash: "H", covers: ["no-such-id"] } } },
-    set, hashStaged: () => "H",
-    liveIds: [...functionalIds(REPO), ...sweepIds(REPO)], conformanceRowsNow: conformanceRows(REPO),
-  });
-  assert.equal(dangling.length, 1);
-  assert.equal(dangling[0].covers, "no-such-id");
+test("G-M1 the refusal says WHICH BUCKET changed, which paths, and which run satisfies it", () => {
+  // Rewritten at 2.4: the refusal used to name "the certified module '<id>'" (and, by a bug G-M1 fixed,
+  // called the engine-source trigger a module too). There are now two buckets and no module ids, so
+  // the sentence names the bucket, the staged subject paths and the run.
+  const sweeps = { kind: "stale-record", bucket: "sweeps", changed: ["scripts/lib/rank.mjs"],
+    run: "node scripts/test/certify.mjs sweeps", why: "no passing run over this content is recorded" };
+  assert.match(describeRefusal(sweeps), /^the sweeps bucket's subject changed \(scripts\/lib\/rank\.mjs\), and no passing run over this content is recorded\. Run `node scripts\/test\/certify\.mjs sweeps`/,
+    "so the developer is told which bucket moved, over which paths, and which command re-certifies it");
+  const functional = { ...sweeps, bucket: "functional", changed: ["scripts/lib/git.mjs", "scripts/test/functional/x.test.mjs"],
+    run: "node scripts/test/certify.mjs functional" };
+  assert.match(describeRefusal(functional), /the functional bucket's subject changed \(scripts\/lib\/git\.mjs, scripts\/test\/functional\/x\.test\.mjs\)/);
+  assert.doesNotMatch(describeRefusal(functional), /certified module|change-triggered/, "the retired vocabulary is gone");
 });
 
 // ───────────────────────────── 2.2 — the record DIRECTORY (certification-record-redesign D1) ─────────────────────────────
@@ -619,9 +445,11 @@ test("2.2 a manifest holding no test file of its bucket is refused, and nothing 
 // rollback to the old drift finds its record where it was left. A clone with no record directory
 // behaves as a record with no entries.
 
+// The superseded single-file shape: one entry per certified id with its files and covers (its
+// per-entry byte hash is left out — only the file's presence and bytes matter to these cases).
 const LEGACY = JSON.stringify({ version: 1, entries: {
-  "scripts/lib/a.mjs": { kind: "module", files: ["scripts/lib/a.mjs"], contentHash: "H", covers: ["alpha"], result: "pass" },
-  "engine-source": { kind: "trigger", files: ["scripts/conductor.mjs"], contentHash: "H", covers: ["output-interpolations"], result: "pass" },
+  "scripts/lib/a.mjs": { kind: "module", files: ["scripts/lib/a.mjs"], covers: ["alpha"], result: "pass" },
+  "engine-source": { kind: "trigger", files: ["scripts/conductor.mjs"], covers: ["output-interpolations"], result: "pass" },
 } }, null, 2) + "\n";
 
 function freshnessOf(common, { staged, subject = ["scripts/lib/a.mjs", "scripts/test/functional/alpha.test.mjs"] } = {}) {
