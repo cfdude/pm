@@ -38,6 +38,29 @@ test("a fixture commit is not signed, whatever the developer's global config say
   assert.equal(value, "false");
 });
 
+// emitted-invocations-copy-flake. A porcelain `git commit` runs `git maintenance run --auto`, and with
+// the developer's global config nulled (GIT_CONFIG_GLOBAL=/dev/null, from the functional harness) that
+// run DETACHES: a daemon then takes and drops `objects/maintenance.lock` after the commit returned, and
+// a fixture copied or removed in that window fails with ENOENT. Observed through git's own trace2
+// event stream, so the assertion is deterministic — it does not wait for the race.
+test("a fixture commit spawns no automatic maintenance or gc, detached or otherwise", () => {
+  const repo = tmp("pm-hermetic-");
+  const trace = tmp("pm-hermetic-trace2-");
+  const git = (...args) => execFileSync("git", args, { cwd: repo, encoding: "utf8", env: { ...process.env, GIT_TRACE2_EVENT: trace } });
+  git("init", "-q", "-b", "main");
+  git("config", "user.email", "t@example.com");
+  git("config", "user.name", "t");
+  fs.writeFileSync(path.join(repo, "a.txt"), "a\n");
+  git("add", "a.txt");
+  git("commit", "-q", "-m", "baseline");
+  const argvs = fs.readdirSync(trace).flatMap((f) => fs.readFileSync(path.join(trace, f), "utf8").split("\n"))
+    .filter(Boolean).map((l) => JSON.parse(l))
+    .filter((e) => e.event === "start" || e.event === "child_start").map((e) => e.argv || []);
+  assert.ok(argvs.some((a) => a.includes("commit")), "the trace recorded no commit — a vacuous check");
+  const spawned = argvs.filter((a) => a.includes("maintenance") || a.includes("gc"));
+  assert.deepEqual(spawned, [], `a fixture commit started automatic maintenance: ${JSON.stringify(spawned)}`);
+});
+
 test("every FUNCTIONAL test file that mentions git imports the hermetic module, directly or through its harness", () => {
   // NARROWED BY 5.7, AND HERE IS THE NARROWING. The predicate used to walk every file in
   // scripts/test/ and refuse one that contained the string "git" without importing the hermetic
