@@ -165,6 +165,56 @@ unitTest("a catastrophic regex the static check cannot see is cut off inside the
     "the lesson evaluated before the budget ran out still fires; the runaway one does not");
 });
 
+// ─────────────── how the budget is ALLOCATED — a fake clock, not the machine's ───────────────
+// These assert the GRANTS each regex receives, never elapsed time: the wall-clock versions failed
+// under machine load (lesson-budget-tests-flake-under-load — reproduced 1/10 at load ~150, the
+// benign lesson's own 50 ms vm watchdog firing while the test was descheduled).
+
+const RUNAWAY = "^(a|a)*$";
+const AAA = { tool_name: "Bash", tool_input: { command: "a".repeat(25) + "!" } };
+
+/** A clock that moves only when the fake runner says so, and a runner that records each grant: a
+ *  runaway spends its whole grant and returns null (out of time); anything else answers at once. */
+function fakeRegexPhase() {
+  let t = 0;
+  const grants = [];
+  const runRegex = (re, text, timeoutMs) => {
+    grants.push(timeoutMs);
+    if (re.source === RUNAWAY) { t += timeoutMs; return null; }
+    return re.test(text);
+  };
+  return { grants, now: () => t, runRegex };
+}
+
+unitTest("budget allocation: a runaway listed first spends ITS budget, and the next regex gets a full one", () => {
+  const f = fakeRegexPhase();
+  const bad = lessonOf("a-bad.md", `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`);
+  const good = lessonOf("z-good.md", '{"tool":"Bash","commandMatches":"^a"}');
+  const hits = matchLessons(AAA, [bad, good], { budgetMs: 50, ceilingMs: 1000, now: f.now, runRegex: f.runRegex });
+  assert.deepEqual(f.grants, [50, 50], "each regex is granted its own per-regex budget");
+  assert.deepEqual(hits.map(h => h.file), ["z-good.md"]);
+});
+
+unitTest("budget allocation: the per-call ceiling clips the last grant and stops the phase", () => {
+  const f = fakeRegexPhase();
+  const bads = Array.from({ length: 3 }, (_, i) => lessonOf(`bad-${i}.md`, `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`));
+  assert.deepEqual(matchLessons(AAA, bads, { budgetMs: 50, ceilingMs: 120, now: f.now, runRegex: f.runRegex }), []);
+  assert.deepEqual(f.grants, [50, 50, 20]);
+
+  const g = fakeRegexPhase();
+  const twelve = Array.from({ length: 12 }, (_, i) => lessonOf(`bad-${i}.md`, `{"tool":"Bash","commandMatches":"${RUNAWAY}"}`));
+  assert.deepEqual(matchLessons(AAA, twelve, { budgetMs: 300, ceilingMs: 100, now: g.now, runRegex: g.runRegex }), []);
+  assert.deepEqual(g.grants, [100], "once the ceiling is spent no further regex is run at all");
+  assert.ok(REGEX_CEILING_MS >= REGEX_BUDGET_MS);
+});
+
+unitTest("budget allocation: a suppression regex that runs out of budget suppresses", () => {
+  const f = fakeRegexPhase();
+  const l = lessonOf("lacks.md", `{"tool":"Bash","commandMatches":"^a","commandLacks":"${RUNAWAY}"}`);
+  assert.deepEqual(matchLessons(AAA, [l], { budgetMs: 50, ceilingMs: 1000, now: f.now, runRegex: f.runRegex }), []);
+  assert.deepEqual(f.grants, [50, 50], "the suppression regex WAS run, and ran out");
+});
+
 unitTest("a delimited repetition is accepted as a matcher (review minor 3)", () => {
   const v = checkDetect('{"tool":"Bash","commandMatches":"^git (\\\\S+\\\\s+)*--no-verify"}');
   assert.ok(v.ok, v.reason);

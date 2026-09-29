@@ -277,13 +277,20 @@ export function matchableLessons(dir = lessonsDir()) {
  *  chained commands is the deliberate trade — see the precision note at the top of this file.
  *
  *  THE PATH is `file_path`, or `notebook_path` for NotebookEdit — the field that tool actually
- *  sends; reading only `file_path` left every NotebookEdit path matcher inert. */
-export function matchLessons(event, lessons, { budgetMs = REGEX_BUDGET_MS, ceilingMs = REGEX_CEILING_MS } = {}) {
+ *  sends; reading only `file_path` left every NotebookEdit path matcher inert.
+ *
+ *  `now` and `runRegex` are the regex phase's clock and its bounded runner. The hook passes
+ *  neither; a test passes both so the budget's ALLOCATION is asserted as grants over a clock that
+ *  moves only when told to — the wall-clock versions of those tests failed under machine load. */
+export function matchLessons(event, lessons, {
+  budgetMs = REGEX_BUDGET_MS, ceilingMs = REGEX_CEILING_MS, now = () => performance.now(),
+  runRegex = boundedRegexTest,
+} = {}) {
   const tool = event.tool_name || "";
   const ti = event.tool_input || {};
   const cmdLine = String(ti.command || "").split("\n")[0].slice(0, MATCH_TEXT_CAP);
   const filePath = String(ti.file_path || ti.notebook_path || "");
-  const test = boundedTester(budgetMs, ceilingMs);
+  const test = boundedTester(budgetMs, ceilingMs, now, runRegex);
   return lessons.filter(l => {
     const d = l.detect;
     if (d.tool && d.tool !== tool) return false;
@@ -321,22 +328,31 @@ export const REGEX_CEILING_MS = 1000;
  *  ordinary `.*.*` on a pasted 100 kB one-liner; the catastrophic cases are the budget's job. */
 export const MATCH_TEXT_CAP = 4096;
 
-/** `(re, text) => true | false | null` — `re.test(text)` run inside a `node:vm` context whose
- *  timeout interrupts even a backtracking regex (the only built-in way to stop one). Each call
- *  gets `budgetMs`, clipped to what is left of the call's `ceilingMs`. `null` means the regex ran
- *  out of time before an answer. The context is created lazily, so a tool call no regex lesson
- *  reaches pays nothing for it. */
-function boundedTester(budgetMs, ceilingMs) {
-  const deadline = performance.now() + ceilingMs;
-  let ctx = null;
+/** `(re, text) => true | false | null` for ONE hook call. Each regex is granted `budgetMs`, clipped
+ *  to what is left of the call's `ceilingMs` as `now` reads it. `null` means the regex ran out of
+ *  time before an answer; once the ceiling is spent, no further regex is run at all. */
+function boundedTester(budgetMs, ceilingMs, now, runRegex) {
+  const deadline = now() + ceilingMs;
   return (re, text) => {
-    const left = Math.floor(Math.min(budgetMs, deadline - performance.now()));
+    const left = Math.floor(Math.min(budgetMs, deadline - now()));
     if (left < 1) return null;
-    ctx ??= vm.createContext({});
-    ctx.re = re;
-    ctx.s = text;
-    try { return vm.runInContext("re.test(s)", ctx, { timeout: left }) === true; } catch { return null; }
+    return runRegex(re, text, left);
   };
+}
+
+/** The context `boundedRegexTest` runs in — created on first use, so a tool call no regex lesson
+ *  reaches pays nothing for it. */
+let regexCtx = null;
+
+/** `re.test(text)` run inside a `node:vm` context whose `timeoutMs` interrupts even a backtracking
+ *  regex (the only built-in way to stop one): `true | false`, or `null` when it ran out of time.
+ *  The watchdog is WALL-CLOCK, so on a starved machine even a benign regex can come back `null`:
+ *  an exhausted budget costs advice, never time, and that includes a budget load exhausted. */
+export function boundedRegexTest(re, text, timeoutMs) {
+  regexCtx ??= vm.createContext({});
+  regexCtx.re = re;
+  regexCtx.s = text;
+  try { return vm.runInContext("re.test(s)", regexCtx, { timeout: timeoutMs }) === true; } catch { return null; }
 }
 
 /** The `additionalContext` string for a set of hits. */
