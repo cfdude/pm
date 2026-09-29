@@ -226,6 +226,17 @@ export function engineSourceFiles(root = REPO, readdir = readdirDefault) {
   return [ENGINE_ENTRY, ...readdir(libDir).filter((f) => f.endsWith(".mjs")).sort().map((f) => `scripts/lib/${f}`)];
 }
 
+const IMPORT_SPEC = /(?:from\s*|import\s*\(\s*|\bimport\s*|export\s+\*\s+from\s*)["'](\.{1,2}\/[^"']+)["']/g;
+
+/** THE ONE IMPORT WALKER'S STEP: the repository paths `text` (the source of `fromRel`) reaches by a
+ *  RELATIVE specifier — static `from`, `export … from`, a bare side-effect `import "…"`, and a literal
+ *  dynamic `import("…")` — resolved against `fromRel`'s directory. A package or `node:` specifier is no
+ *  repository path. Raw text, as rule 1 below reads it. Exported so the hook fixtures derive what a hook
+ *  reaches with the SAME walker (`fixtures/hook-machinery.mjs`) instead of a second copy of this regex. */
+export function relativeImports(text, fromRel) {
+  return [...text.matchAll(IMPORT_SPEC)].map((m) => path.posix.normalize(path.posix.join(path.posix.dirname(fromRel), m[1])));
+}
+
 /** THE FUNCTIONAL SUBJECT, DERIVED FROM WHAT THE HALF OBSERVES (certification-record-redesign D3, #229;
  *  task 3.1). Over ONE index, read through `readFile`/`readdir` (absolute paths under `root`) plus that
  *  index's path list `paths` — drift's `indexReaders()`, or any reader of the same shape. The union of:
@@ -257,7 +268,6 @@ export function functionalSubject({ root = REPO, readFile = readDefault, readdir
   const listing = paths || walkPaths(root, readdir);
   const tracked = new Set(listing);
   const src = (rel) => (tracked.has(rel) ? readFile(path.join(root, rel)) : "");
-  const IMPORT_SPEC = /(?:from\s*|import\s*\(\s*|\bimport\s*|export\s+\*\s+from\s*)["'](\.{1,2}\/[^"']+)["']/g;
   const EXECUTED = /["'](?:scripts\/test\/)?((?:assert|unit)\/[^"'/]+\.test\.mjs)["']/g;
   const closure = new Set();
   const stack = [...listing.filter((p) => /^scripts\/test\/functional\/[^/]+\.test\.mjs$/.test(p)), ENGINE_ENTRY];
@@ -266,8 +276,7 @@ export function functionalSubject({ root = REPO, readFile = readDefault, readdir
     if (closure.has(f) || !tracked.has(f)) continue;
     closure.add(f);
     const text = src(f);
-    for (const m of text.matchAll(IMPORT_SPEC)) {
-      const t = path.posix.normalize(path.posix.join(path.posix.dirname(f), m[1]));
+    for (const t of relativeImports(text, f)) {
       if (tracked.has(t) && !closure.has(t)) stack.push(t);
     }
     if (f.startsWith("scripts/test/")) {
