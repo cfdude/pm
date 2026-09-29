@@ -877,7 +877,7 @@ These rules bind every section below.
       `rg -n "Twin-Unchanged" .claude/skills/pr-workflow/SKILL.md` hits.
       Done: step 2 now names the observed subject, stage-certify-plain-commit, and the commit-msg phase with
       the trailer's form and Gate 2's audit; "certified module" 0 hits, "Twin-Unchanged" hits.
-- [ ] 6.6 **A NUMBERED Gate 2 step that binds every later epic** (Gate 1 B8), in
+- [x] 6.6 **A NUMBERED Gate 2 step that binds every later epic** (Gate 1 B8), in
       `.claude/skills/pr-workflow/SKILL.md`, beside step 6 ("Record Gate 2 BEFORE the
       squash-merge"): before recording Gate 2, list every `Twin-Unchanged` trailer in `BASE..HEAD`
       with `git log --format='%H %(trailers:key=Twin-Unchanged)' BASE..HEAD`, and judge for each
@@ -889,6 +889,10 @@ These rules bind every section below.
       is overwritten by `/pm:upgrade`, and a `rules.mjs` edit would ship this repository's rule to
       every plugin user (design D4).
       Verify: the step is numbered, and `rg -n "trailers:key=Twin-Unchanged" .claude/skills/pr-workflow/SKILL.md` hits.
+      Done: new step 6, placed before "Record Gate 2" (now 7); steps 7-10 renumbered. The references follow:
+      release-checklist's "`pr-workflow` step 6" becomes step 7, after step 6's audit, and
+      squash-merge-orphans-the-evidence (its lesson and README row) says "step 10" for "step 9". The `rg` hits
+      line 88.
 
 ## 7. Integration
 

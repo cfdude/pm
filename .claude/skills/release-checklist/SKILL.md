@@ -130,7 +130,7 @@ skip straight to the branch dance at the bottom.
    into `main`, wait for CI green, squash-merge, sync both branches. Never commit a version
    bump directly to `main` — this bit a session once already.
    **Gate 2 for every change in the release is recorded before that squash-merge, from the
-   authoring clone** (`pr-workflow` step 6). `record-gate-review --base-sha/--head-sha` resolves
+   authoring clone** (`pr-workflow` step 7, after step 6's audit of every `Twin-Unchanged` trailer). `record-gate-review --base-sha/--head-sha` resolves
    both bounds in the clone it runs in and refuses a commit that clone does not hold, so a range
    recorded after the squash from a clone without the `presquash/*` tags is refused, not stored. If the authoring
    clone is gone, `git fetch origin 'refs/tags/presquash/*:refs/tags/presquash/*'` first.
