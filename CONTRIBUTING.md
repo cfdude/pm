@@ -50,9 +50,9 @@ prose reminder alone wasn't enough). One-time setup per clone:
 git config core.hooksPath .githooks
 ```
 
-After that, `git commit` runs `.githooks/pre-commit` automatically, which runs the DRIFT SCRIPT
-(`node scripts/test/drift.mjs`, four checks over the index — enrolment, twin coverage, diff
-coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
+After that, `git commit` runs two hooks. `.githooks/pre-commit` runs the DRIFT SCRIPT's pre-commit
+phase (`node scripts/test/drift.mjs --phase pre-commit`: enrolment, twin coverage and record
+freshness, over the index) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
 invocation:
 `FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
 — and blocks the commit on any failure. **It tests the INDEX, not your working tree** (0.50.0): the
@@ -62,20 +62,48 @@ fixed copy you left unstaged, an untracked test file neither runs nor counts, an
 staged file is tested as its staged half. It honours the index git hands it, so `git commit -a`
 and `git commit <path>` are tested as what they commit. It never writes your working tree or your
 index, so an interrupted hook cannot lose work; the snapshot is removed on exit, Ctrl-C included.
-The drift script that runs first is the snapshot's own copy, and every set it judges (certified
-modules, test ids, conformance rows) is read from that index too. One known limit: a tracked
+The drift script that runs first is the snapshot's own copy, and every set it judges (the buckets'
+subjects, the test ids) is read from that index too. One known limit: a tracked
 symlink is exported as a symlink, so an absolute one still reads outside the index — this repository
 tracks none.
 To run the suite over your working tree instead, run the command above yourself. The reporter is forced and colour is off so the summary is
 the same bytes on every supported Node, and a count the hook cannot read, or a run of zero tests, is
-a refusal rather than a pass. The drift script refuses, naming the file: a tracked
+a refusal rather than a pass. The pre-commit phase refuses, naming the file: a tracked
 test file in NEITHER half
-(no test runs it — enrol it), a functional test with no assertion twin of the same id, a
-functional test or its twin changed without a fresh certification record, or a certified
-module whose staged content no longer matches the record. The functional half and the sweep
-bucket are triggered, not per-commit: CI runs them, and
-`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when
-you ran one locally. To satisfy a refusal, run the command it names.
+(no test runs it — enrol it), a functional test with no assertion twin of the same id, or a
+staged change to a triggered bucket's SUBJECT with no passing record entry whose manifest (mode
+and blob id of every subject path) equals that subject in the index — it names the bucket, the
+staged subject paths and the run that satisfies it. The functional half and the sweep bucket are
+triggered, not per-commit: CI runs them, and `node scripts/test/certify.mjs functional` / `… sweeps`
+is what records a passing run when you ran one locally. To satisfy a refusal, run the command it
+names — over what you staged (see "The order" below).
+
+**The commit-msg hook: diff coupling, and its one exemption.** `.githooks/commit-msg` runs the drift
+script's fourth check (`--phase commit-msg`), the only one that needs the message: a staged change to
+`scripts/test/functional/<id>.test.mjs` must carry its assertion twin (`scripts/test/assert/<id>.test.mjs`
+or `scripts/test/unit/<id>.test.mjs`) in the same commit. A change that leaves what the file tests
+untouched — a comment, a rename of a local, a moved helper — may say so instead, as a git trailer in the
+message's final paragraph:
+
+```text
+Twin-Unchanged: <id> — <reason>
+```
+
+The committer may declare it, with no pre-authorisation: it is audited instead, and the reason is
+what makes it reviewable. git decides what is a trailer (`git
+interpret-trailers`), so a `Twin-Unchanged:` line inside prose, below a `commit -v` scissors line, or
+followed by a `---` line and more text declares nothing. A declared id whose functional file is not
+staged, or a declaration with no reason, is refused. The accepting run prints every declaration, and
+Gate 2 audits every trailer in the reviewed range (`.claude/skills/pr-workflow/SKILL.md`): a trailer
+judged false is an Important finding. A merge commit is not judged; each merged-in commit was, with its
+own trailers. A bare `node scripts/test/drift.mjs` (no `--phase`) runs all four checks, with no
+exemptions unless you pass `--message <file>`.
+
+**The order.** Stage the commit exactly, run the certify the refusal names, then a PLAIN `git commit`.
+Certify copies the index and certifies that copy, so a certify run before your last `git add`, or over
+an unstaged edit, certifies content the commit does not hold. `git commit <path>` and `git commit -a`
+build their own temporary index, which certify never copied: after a partial stage such a commit is
+never fresh.
 
 ## The dev inner loop
 
@@ -189,6 +217,37 @@ scan of the test file can see.
 are the two TRIGGERED buckets. They do not run per commit: CI runs them, and
 `node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when you ran
 one locally. A drift-script refusal names the command to run.
+
+**What demands them.** Each bucket has a SUBJECT, derived from the index, never listed by hand. The
+sweeps subject is the engine source (`scripts/conductor.mjs`, `scripts/lib/`), the sweep files and the
+shared `scripts/test/js-lexer.mjs`. The functional subject is what the functional half OBSERVES: its
+import closure and the engine entry point's (static, dynamic and bare side-effect imports), the
+assertion files it executes, the
+files under `scripts/`, `.githooks/` or `hooks/` a closure file names as a literal, the shipped roots
+(`commands/`, `skills/`, `agents/`, `hooks/`, `.claude-plugin/`) a closure file spells, and `README.md`,
+`CLAUDE.md` and `docs/parity-ledger.json` when one names them. The repository's record — `openspec/`,
+`.conductor/`, `CHANGELOG.md`, the rest of `docs/` — is outside it by rule. A staged path in a subject,
+an addition, edit, mode change or deletion, demands that bucket.
+
+**How certify runs.** `certify.mjs` copies the index once, builds a `git clone --shared` of this
+repository whose own index is that copy, checks it out, and runs the bucket there — so an edit or a
+`git add` during a run of several minutes changes neither what ran nor what is recorded, and your
+working tree, index, stash and worktree list are never written. On a pass it writes ONE entry, the
+manifest of the bucket's subject in the copy, to
+`$(git rev-parse --git-common-dir)/pm-suite-certification.d/<bucket>/<key>.json`; a failed run writes
+nothing. The functional run also loads a run-time observer into every Node process it starts: a tracked
+file the half reads that the derivation missed fails the certification, naming the file (spell its name
+in the test that reads it), and so does a Node child started with a `NODE_OPTIONS` that drops the
+observer. The superseded single-file record `pm-suite-certification.json` is neither read nor removed.
+
+### Parallel worktrees
+
+Certify and commit in each worktree on its own, with no lock. Every entry is its own file, named by
+the content it certifies, created and never rewritten, so two worktrees certifying at once cannot lose
+each other's entry, and an entry about another worktree's content neither passes nor refuses your
+commit. Parallel certifies are correct; they only cost CPU. `pm-suite.lock` (the pre-commit hook's
+lock around the assertion half) stays, to limit machine load, not for correctness. A hand-rolled
+`pm-certify.lock` around certify-and-commit is obsolete — delete it and any script that takes it.
 
 ### Temp directories — every fixture directory is removed, and a per-commit test holds it
 

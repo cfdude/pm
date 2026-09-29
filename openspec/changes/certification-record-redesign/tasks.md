@@ -828,7 +828,7 @@ These rules bind every section below.
 
 ## 6. Docs
 
-- [ ] 6.1 `CONTRIBUTING.md`.
+- [x] 6.1 `CONTRIBUTING.md`.
       - **"Pre-commit hook".** The pre-commit run performs enrolment, twin coverage and freshness.
         The new commit-msg run performs coupling, with the `Twin-Unchanged` trailer, who may use it,
         and that Gate 2 audits it.
@@ -842,6 +842,10 @@ These rules bind every section below.
         copied, so after a partial stage it is never fresh.
 
       Verify: `rg -n "pm-certify.lock|Twin-Unchanged|Parallel worktrees" CONTRIBUTING.md` hits each.
+      Done: CONTRIBUTING has no "The triggered buckets" heading, so that half went into the triggered-bucket
+      paragraph closing "What the unit rung's guard refuses" ("What demands them", "How certify runs").
+      "Pre-commit hook" now splits the two hooks and states the trailer rules and "The order". A new
+      "### Parallel worktrees" section follows. The Verify `rg` hits all three.
 - [ ] 6.2 `CLAUDE.md` "Tests:" bullet. It names the drift script's checks and when the triggered
       buckets run. Update it for the commit-msg phase and the observed subject. `CLAUDE.md:31` tells
       a contributor to run a bare `node scripts/test/drift.mjs`, which 4.2 keeps meaning "every
