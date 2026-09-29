@@ -257,6 +257,23 @@ test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they 
 // verified by building the run directory as a bare export in a scratch copy of certify.mjs, which
 // must turn it red naming `not a git repository` (mutation-1.3.txt).
 
+test("m4 an UNTRACKED failing functional test in the working tree is neither run nor recorded", () => {
+  // Gate 2 m4 (spec: "An untracked file SHALL be neither run nor recorded"). The run directory is exported
+  // from the index copy, so a test file the index does not hold is not there to run: the certification
+  // passes over the tracked stub alone, and the manifest never names the untracked path.
+  const cwd = fixture();
+  const untracked = "scripts/test/functional/untracked.test.mjs";
+  fs.writeFileSync(path.join(cwd, untracked),
+    'import { test } from "node:test";\ntest("untracked, failing", () => { throw new Error("the untracked test ran"); });\n');
+  assert.equal(git(cwd, "ls-files", "--", untracked), "", "precondition: the failing test is untracked");
+  const r = certify(cwd, "functional");
+  assert.equal(r.status, 0, `an untracked test must not run, so its failure cannot fail the run:\n${r.out}`);
+  assert.doesNotMatch(r.out, /the untracked test ran|untracked, failing/, "the untracked test did not run");
+  const entry = onlyEntry(cwd, "functional");
+  assert.equal(entry.manifest[untracked], undefined, "the manifest does not record the untracked path");
+  assert.equal(entry.counts.tests, 1, "the run counted the tracked stub's one test only");
+});
+
 const BARE_EXPORT_CASUALTIES = [
   "scripts/test/functional/conductor-13.test.mjs",
   "scripts/test/functional/conductor-15.test.mjs",

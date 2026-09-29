@@ -472,3 +472,22 @@ unitTest("m3 rule 4 admits a file named in a TEMPLATE literal — a backtick ope
   const prefix = subjectOf({ ...base, [FN]: "const f = `not-hidden.mjs`;\n" });
   assert.equal(prefix.has(hidden), false, "a longer name ending in the file's name is still not its name");
 });
+
+unitTest("m4 the run tree is built from the index copy alone: nothing is copied or exported from the working tree", () => {
+  // Gate 2 m4's assertion half: an untracked working-tree file can reach the run only if a step reads the
+  // working tree. Every copy is of the index or of its copy, the export is `checkout-index` inside the
+  // clone (which writes what its index holds), and no step names the repository's working directory.
+  const p = plan();
+  const copies = p.steps.filter((s) => s.op === "copy");
+  assert.deepEqual(copies.map((s) => s.from), [INPUT.indexFile, p.copy], "the only files copied are the live index, once, and its copy");
+  const exported = p.steps.filter((s) => s.op === "git" && s.args.includes("checkout-index"));
+  assert.equal(exported.length, 1);
+  assert.deepEqual(exported[0].args.slice(0, 2), ["-C", p.tree], "the export writes inside the clone, from the clone's index");
+  for (const s of p.steps) {
+    if (s.op !== "git") continue;
+    for (const a of s.args) {
+      assert.ok(a === INPUT.commonDir || !String(a).startsWith(path.dirname(INPUT.commonDir) + path.sep) || String(a).startsWith(INPUT.tmp),
+        `a step names a path in the repository's working directory: ${s.args.join(" ")}`);
+    }
+  }
+});

@@ -942,6 +942,7 @@ These rules bind every section below.
       - m1: an entry is linked into place, never renamed over an existing one (`red-m1.txt`).
       - m2: an unreadable observation is a named refusal, never a stack trace (`red-m2.txt`).
       - m3: rule 4 of the functional subject admits a name in a template literal (`red-m3.txt`).
+      - m4: guard — an untracked failing functional test is neither run nor recorded (`mutation-m4.txt`).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**

@@ -12,3 +12,6 @@ m2 certify turns an unreadable observation into a named refusal (file and line, 
    functional/certify-index "m2 a corrupt observation file…", unit/certify-index "m2 …"; red-m2.txt
 m3 functionalSubject() rule 4 admits a name that opens with a backtick (a template literal is a string literal) -> <sha> ->
    unit/certify-index "m3 rule 4 admits a file named in a TEMPLATE literal…"; red-m3.txt (rules 5/6 reported, not changed)
+m4 guard: an untracked failing functional test in the working tree is neither run nor recorded -> <sha> ->
+   functional/certify-index "m4 an UNTRACKED failing functional test…" (mutation: run the bucket in the working tree ->
+   fails), twin unit/certify-index "m4 the run tree is built from the index copy alone…"; mutation-m4.txt
