@@ -307,8 +307,8 @@ export function moduleEntry(id, { root = REPO, functional, counts, ranAt, engine
 
 /** The entry the `engine-source` TRIGGER gets — a second, DISJOINT demand over the whole engine
  *  source, which is the sweep bucket's subject (D9/6.3). */
-export function triggerEntry({ root = REPO, counts, ranAt, engineSha, readFile = (p) => fs.readFileSync(p, "utf8") }) {
-  const files = engineSourceFiles(root);
+export function triggerEntry({ root = REPO, counts, ranAt, engineSha, readFile = (p) => fs.readFileSync(p, "utf8"), readdir = readdirDefault }) {
+  const files = engineSourceFiles(root, readdir);
   return {
     kind: KIND_TRIGGER,
     files,

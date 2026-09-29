@@ -138,7 +138,7 @@ These rules bind every section below.
 
       RED `red-1.1.txt`. Certify functional by hand before this commit (Commit mechanics, B9).
       Verify: the new unit file passes and the unit rung's fs guard stays green.
-- [ ] 1.2 **TDD, FUNCTIONAL** (new id `certify-index`, with its twin `unit/certify-index`): certify
+- [x] 1.2 **TDD, FUNCTIONAL** (new id `certify-index`, with its twin `unit/certify-index`): certify
       over a real fixture repository.
       - **The RED.** Build a fixture repository with a partially staged file; certify records the
         STAGED blob. A second test proves an edit made to the working tree mid-run is absent from the

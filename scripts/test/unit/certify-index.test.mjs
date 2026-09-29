@@ -16,6 +16,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import * as certification from "../certification.mjs";
+import * as certify from "../certify.mjs";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 
 const INPUT = Object.freeze({
@@ -101,4 +102,25 @@ unitTest("1.1 an unborn HEAD sets no HEAD in the clone, and the plan is a pure f
     "with no HEAD there is no commit to point the clone at; the export still runs over the copy");
   assert.ok(unborn.steps.some(isGit("checkout-index")));
   assert.deepEqual(plan(), plan(), "two calls over the same input returned different plans");
+});
+
+// ─────────────── 1.2 — the run's environment (certify.mjs) ───────────────
+//
+// The runner executes the plan and the bucket with the caller's environment MINUS the variables git
+// sets for a hook process. An inherited GIT_DIR, GIT_WORK_TREE or GIT_INDEX_FILE would point the
+// run's git (the clone, the export, every test's child git) at the user's repository or index
+// instead of the run directory's — the leak `.githooks/pre-commit` scrubs for the same reason. The
+// functional twin runs the runner; this pins the scrub as a value.
+
+unitTest("1.2 the run's environment drops every variable git sets for a hook, and keeps the rest", () => {
+  assert.equal(typeof certify.cleanEnv, "function", "certify.mjs exports no cleanEnv(): the run's environment cannot be asserted");
+  const hookEnv = Object.fromEntries(certify.HOOK_GIT_VARS.map((k) => [k, `/somewhere/${k}`]));
+  const out = certify.cleanEnv({ ...hookEnv, PATH: "/bin", PM_KEEP: "yes" });
+  for (const k of ["GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_PREFIX"]) {
+    assert.equal(k in out, false, `${k} reached the run: its git would read the user's repository, not the run directory`);
+  }
+  assert.deepEqual(out, { PATH: "/bin", PM_KEEP: "yes" }, "everything else in the environment is passed through");
+  const input = { GIT_DIR: "/x", KEEP: "1" };
+  certify.cleanEnv(input);
+  assert.deepEqual(input, { GIT_DIR: "/x", KEEP: "1" }, "the scrub returns a copy; the caller's object is not modified");
 });
