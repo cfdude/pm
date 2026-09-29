@@ -775,13 +775,16 @@ These rules bind every section below.
         is DEFERRED to a later release, registered by 8.2.
       Done: `inverses-5.3.txt` — eleven operations, each with its inverse shipped, existing, deliberately
       absent (the derived subject) or deferred (the old record file, 8.2).
-- [ ] 5.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
+- [x] 5.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
       check that every file the task claims is in THAT commit. Record the results in
       `commit-verification-5.4.txt`. Pay particular attention to:
       - 2.4's and 3.3's switch commits, which each claim drift, certify, certification and two test
         files;
       - 4.3's new `.githooks/commit-msg`, and its mode;
       - every functional test's twin.
+      Done: `commit-verification-5.4.txt`, over the COMMITS (`git show --name-only`): 20 of 20 pass; 3.3's
+      `certify.mjs` is absent from 762d564f and justified (2.4 had moved certify onto `indexManifest()`, so
+      3.3's `bucketSubject()` edit moved it); `.githooks/commit-msg` is `100755` in 0b2ad82c.
 - [ ] 5.5 **Declare lifecycle bookkeeping** (item 3). Tasks 8.2 and 8.3 carry
       `<!-- pm:lifecycle -->` on their own lines. They were marked when this source was authored.
       Verify: `rg -n "pm:lifecycle" openspec/changes/certification-record-redesign/tasks.md` lists
