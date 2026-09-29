@@ -846,13 +846,17 @@ These rules bind every section below.
       paragraph closing "What the unit rung's guard refuses" ("What demands them", "How certify runs").
       "Pre-commit hook" now splits the two hooks and states the trailer rules and "The order". A new
       "### Parallel worktrees" section follows. The Verify `rg` hits all three.
-- [ ] 6.2 `CLAUDE.md` "Tests:" bullet. It names the drift script's checks and when the triggered
+- [x] 6.2 `CLAUDE.md` "Tests:" bullet. It names the drift script's checks and when the triggered
       buckets run. Update it for the commit-msg phase and the observed subject. `CLAUDE.md:31` tells
       a contributor to run a bare `node scripts/test/drift.mjs`, which 4.2 keeps meaning "every
       check". If a re-read shows nothing in it is now false, record that it was checked, with the
       reason, in the commit message of 6.3.
       `CLAUDE.md` IS in the functional subject (design D7 L5, Gate 1 B9), so this commit demands a
       functional certify: run it over the staged commit first.
+      Done: the bullet now splits the pre-commit phase (enrolment, twin coverage, freshness) from the
+      commit-msg phase (coupling, the `Twin-Unchanged` trailer, Gate 2's audit). It says a bare drift runs
+      all four checks, that the functional subject is what the half observes, and that certify runs over
+      the index. Certified functional over the staged commit first (the commit message has the count).
 - [ ] 6.3 `.changesets/certification-record-redesign.md`: contributor-facing bullets only, in
       `CHANGELOG.md`'s style. This change ships nothing to plugin users, so say so in the entry's
       first line. Verify: the release checklist's changeset lint accepts it.

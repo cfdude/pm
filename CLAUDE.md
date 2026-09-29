@@ -27,16 +27,23 @@
   the distinction is WHO pays: a user installing the plugin pays nothing; a contributor runs `npm i`.
   Anything added here must earn its place against a measured problem, not preference.
 - **Tests:** three buckets, each on its own trigger, and FOUR homes — the assertion half's two
-  rungs, then the two triggered buckets. Every commit: the drift script
-  (`node scripts/test/drift.mjs`) then the assertion half — BOTH its rungs in ONE runner invocation,
+  rungs, then the two triggered buckets. Every commit: the pre-commit hook runs the drift script's
+  pre-commit phase (enrolment, twin coverage, record freshness) then the assertion half — BOTH its
+  rungs in ONE runner invocation,
   `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs` (the hook adds
   `FORCE_COLOR=0 … --test-reporter=spec` so it can read the count) — whose TESTS spawn nothing and
   run no git (the runner itself starts one process per file); it is driven by the git double in
   `scripts/test/fixtures/`. A test's rung follows what it OBSERVES, never how fast it is: a VALUE
   the engine produced (a verb's result, a refusal, anything `state.json` holds) is the UNIT rung,
-  over an in-memory store, and only BYTES on disk are the FILE rung. On a trigger (CI, and
-  `node scripts/test/certify.mjs functional|sweeps`): the functional half, which runs the real git
-  through the real gateway, and the sweep bucket. All tests pass before any commit — no exceptions,
+  over an in-memory store, and only BYTES on disk are the FILE rung. The commit-msg hook runs the
+  drift script's fourth check, diff coupling: a staged functional file needs its twin in the same
+  commit unless a `Twin-Unchanged: <id> — <reason>` git trailer declares the change subject-free,
+  which Gate 2 audits. A bare `node scripts/test/drift.mjs` runs all four checks. On a trigger (CI,
+  and `node scripts/test/certify.mjs functional|sweeps`): the functional half, which runs the real
+  git through the real gateway, and the sweep bucket. The pre-commit hook demands a certify when a
+  staged path is in that bucket's subject — for the functional half, what the half OBSERVES (its
+  import closure, what it executes, what it names) — and certify runs over a copy of the INDEX, so
+  stage exactly, certify, then commit plainly. All tests pass before any commit — no exceptions,
   no `--no-verify`. The dev inner loop (`node --test --watch`, which rung a new test belongs in,
   and what the unit rung's guard refuses) is in `CONTRIBUTING.md`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
