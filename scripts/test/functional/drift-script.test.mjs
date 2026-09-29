@@ -29,6 +29,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, seedAgreeingEntry } from "../fixtures/functional-harness.mjs";
+import { certifyMachinery, copyInto } from "../fixtures/hook-machinery.mjs";
 import { indexManifest } from "../drift.mjs";
 
 const DRIFT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "drift.mjs");
@@ -215,10 +216,8 @@ function certifiableRepo() {
     fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
     fs.writeFileSync(path.join(cwd, rel), body);
   }
-  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs", "fixtures/observe-reads.mjs"]) {
-    fs.mkdirSync(path.dirname(path.join(cwd, "scripts/test", rel)), { recursive: true });
-    fs.copyFileSync(path.join(TEST_ROOT, rel), path.join(cwd, "scripts/test", rel));
-  }
+  // certify and everything it reaches — DERIVED, never typed (hook-fixtures-couple-to-every-hook-step).
+  copyInto(cwd, certifyMachinery());
   git(cwd, ["add", "-A"]);
   git(cwd, ["commit", "-q", "-m", "fixture"]);
   return fs.realpathSync(cwd);

@@ -32,6 +32,7 @@ import { fileURLToPath } from "node:url";
 import { tmpRepo } from "../fixtures/functional-harness.mjs";
 import { RECORD_DIR } from "../certification.mjs";
 import { removeTempDir } from "../fixtures/temp-dir.mjs";
+import { certifyMachinery, copyInto } from "../fixtures/hook-machinery.mjs";
 
 const TEST_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MODULE = "scripts/lib/m.mjs";
@@ -78,10 +79,8 @@ function fixture() {
     fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
     fs.writeFileSync(path.join(cwd, rel), body);
   }
-  for (const rel of ["certify.mjs", "certification.mjs", "drift.mjs", "js-lexer.mjs", "fixtures/temp-dir.mjs", "fixtures/observe-reads.mjs"]) {
-    fs.mkdirSync(path.dirname(path.join(cwd, "scripts/test", rel)), { recursive: true });
-    fs.copyFileSync(path.join(TEST_ROOT, rel), path.join(cwd, "scripts/test", rel));
-  }
+  // certify and everything it reaches — DERIVED, never typed (hook-fixtures-couple-to-every-hook-step).
+  copyInto(cwd, certifyMachinery());
   git(cwd, "add", "-A");
   git(cwd, "commit", "-q", "-m", "fixture");
   return cwd;

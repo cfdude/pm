@@ -27,6 +27,7 @@ import { removeAtExit } from "./temp-dir.mjs";
 // manifest comes from drift's OWN entry point, so a seeded entry's key is drift's key by construction.
 import { indexManifest } from "../drift.mjs";
 import { writeManifestEntry } from "../certification.mjs";
+import { HOOKS_DIR, copyInto, hookMachinery, hookNames } from "./hook-machinery.mjs";
 // The half's `run`, registered by whichever harness module the importing test used. Helpers that
 // drive the engine themselves (parseBrief, setupHierarchy, nudgeAndReadLog) go through it, so they
 // are in-process with the same gateway the calling test got and not a second, spawned route.
@@ -346,27 +347,20 @@ export function runHookAgainstFixture(testFileBody, {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, content);
   }
-  fs.mkdirSync(path.join(cwd, ".githooks"), { recursive: true });
-  // THE DRIFT STEP (6.4) runs the REAL script, not a stub. The hook invokes
-  // `node scripts/test/drift.mjs` before the suite, so a fixture holding a hook but not the script
-  // would abort for a reason that has nothing to do with what these fixtures test — and stubbing it
-  // would mean the hook's own wiring is never exercised. The script and its shared machinery are
-  // copied in, and the minimal tree it reads is created: an EMPTY `scripts/lib/` and an untracked,
-  // empty `conductor.mjs` put nothing in the engine source, the two empty buckets derive no functional
-  // ids, and with no functional test and no tracked entry point the observed functional subject
-  // (`functionalSubject()`) has no closure to hold anything — so every check the pre-commit phase runs passes on the fixture by
-  // construction, which is what lets the floor and
-  // the quiet/failure behaviour below be observed through the real hook.
-  const repoRoot = path.join(path.dirname(ENGINE), "..");
-  // `js-lexer.mjs` since certification-record-redesign 3.1: certification.mjs imports it (the comment
-  // stripper of the functional subject's derivation), so a fixture without it cannot load drift at all.
-  for (const rel of ["scripts/test/drift.mjs", "scripts/test/certification.mjs", "scripts/test/js-lexer.mjs"]) {
-    fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
-  }
-  fs.writeFileSync(path.join(cwd, "scripts", "conductor.mjs"), "");
-  for (const d of ["scripts/lib", "scripts/test/functional", "scripts/test/sweeps"]) {
-    fs.mkdirSync(path.join(cwd, d), { recursive: true });
-  }
+  // EVERY STEP THE HOOK RUNS runs the REAL script, not a stub — the drift script since 6.4 — so a fixture
+  // holding a hook but not its scripts would abort for a reason that has nothing to do with what these
+  // fixtures test. WHICH scripts is DERIVED, never typed (hook-fixtures-couple-to-every-hook-step):
+  // `hookMachinery()` reads them from the hooks' own code and walks their imports, so a new hook step
+  // or a new import inside drift is copied here with no edit. They are copied UNTRACKED: the hooks read
+  // the INDEX, where an untracked file does not exist, so drift sees no engine source, no functional
+  // id and no functional subject, and every check its pre-commit phase runs passes on the fixture by
+  // construction — which is what lets the floor and the quiet/failure behaviour below be observed
+  // through the real hook. (No empty `scripts/lib/` or untracked `conductor.mjs`: since drift reads the
+  // index, an untracked empty one is the same as none, and the hook never needed them.)
+  copyInto(cwd, hookMachinery());
+  // The two bucket directories are the fixture's LAYOUT, not the hook's need: callers write a
+  // functional file into `scripts/test/functional/` from `setup` (IX-i) and expect it to exist.
+  for (const d of ["scripts/test/functional", "scripts/test/sweeps"]) fs.mkdirSync(path.join(cwd, d), { recursive: true });
   // THE FIXTURE MUST BE TRACKED, and this is new with the re-pointed floor. `declared` is now
   // enumerated with `git ls-files`, which answers for the INDEX — a file written but never added is
   // invisible to it, the floor would compare a real count against 0, and every assertion written
@@ -379,9 +373,8 @@ export function runHookAgainstFixture(testFileBody, {
   // A fixture could not express that while only one path was addable.
   const tracked = [...(withFixture ? ["scripts/test/assert/fixture.test.mjs"] : []), ...Object.keys(extraFiles)];
   if (tracked.length) execFileSync("git", ["add", "--", ...tracked], { cwd });
-  const realHookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
-  const hookDestPath = path.join(cwd, ".githooks", "pre-commit");
-  fs.copyFileSync(realHookPath, hookDestPath);
+  const hookDestPath = path.join(cwd, HOOKS_DIR, "pre-commit");
+  copyInto(cwd, [`${HOOKS_DIR}/pre-commit`]);
   fs.chmodSync(hookDestPath, 0o755);
   // Strip NODE_TEST_CONTEXT/NODE_TEST_WORKER_ID: node --test sets these on itself, and if
   // inherited by the hook's own nested `node --test` invocation, node treats it as an
@@ -420,13 +413,12 @@ export function seedAgreeingEntry(cwd, bucket, { indexFile } = {}) {
  *  `git commit`, with the index and the message file it hands them.
  *
  *  The baseline commit holds a passing assertion-half file, one functional id (`alpha`) with its twin,
- *  and — with `trackMachinery` (the default, as in this repository) — this repository's
- *  `scripts/test/{drift,certification,js-lexer}.mjs`, so both hooks run the SNAPSHOT's drift and a
- *  linked worktree's checkout holds it too. With `trackMachinery: false` they are copied in UNTRACKED,
- *  the `runHookAgainstFixture` shape, and each hook falls back to the working tree's drift.mjs.
- *  The hooks are this repository's `.githooks/pre-commit`, `.githooks/prepare-commit-msg` and
- *  `.githooks/commit-msg`, copied in
- *  untracked, and installed by an ABSOLUTE `core.hooksPath` — as this repository's own is — so a linked
+ *  and — with `trackMachinery` (the default, as in this repository) — every script the hooks run and
+ *  what it reaches (`hookMachinery()`: drift, certification, js-lexer, …), so both hooks run the
+ *  SNAPSHOT's drift and a linked worktree's checkout holds it too. With `trackMachinery: false` they are
+ *  copied in UNTRACKED, the `runHookAgainstFixture` shape, and each hook falls back to the working tree's
+ *  drift.mjs. The hooks are every executable file in this repository's `.githooks/` (`hookNames()`),
+ *  copied in untracked, and installed by an ABSOLUTE `core.hooksPath` — as this repository's own is — so a linked
  *  worktree runs them too. The baseline is committed BEFORE `core.hooksPath` is set: no hook is
  *  installed yet, so none runs and none is bypassed. */
 export function hookedRepo({ trackMachinery = true } = {}) {
@@ -436,7 +428,6 @@ export function hookedRepo({ trackMachinery = true } = {}) {
   git("config", "user.email", "test@example.com");
   git("config", "user.name", "Test");
   git("config", "commit.gpgsign", "false");
-  const repoRoot = path.join(path.dirname(ENGINE), "..");
   const write = (rel, text) => {
     fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
     fs.writeFileSync(path.join(cwd, rel), text);
@@ -445,16 +436,14 @@ export function hookedRepo({ trackMachinery = true } = {}) {
   write("scripts/test/assert/fixture.test.mjs", `${header}test("hooked fixture", () => { assert.ok(true); });\n`);
   write("scripts/test/functional/alpha.test.mjs", `${header}test("alpha, functional", () => { assert.ok(true); });\n`);
   write("scripts/test/assert/alpha.test.mjs", `${header}test("alpha, its twin", () => { assert.ok(true); });\n`);
-  const machinery = ["scripts/test/drift.mjs", "scripts/test/certification.mjs", "scripts/test/js-lexer.mjs"];
-  for (const rel of machinery) fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
-  for (const hook of ["pre-commit", "prepare-commit-msg", "commit-msg"]) {
-    const src = path.join(repoRoot, ".githooks", hook);
-    assert.ok(fs.existsSync(src), `.githooks/${hook} does not exist in this repository — a hooked fixture needs every hook git runs on a commit (design D4)`);
-    write(`.githooks/${hook}`, fs.readFileSync(src, "utf8"));
-    fs.chmodSync(path.join(cwd, ".githooks", hook), 0o755);
+  // DERIVED, NEVER TYPED (hook-fixtures-couple-to-every-hook-step): every executable hook in this
+  // repository's `.githooks/` (`hookNames()`), and every script those hooks run with what it reaches
+  // (`hookMachinery()`) — so a new hook file or hook step is carried here with no edit.
+  const machinery = copyInto(cwd, hookMachinery());
+  for (const hook of hookNames()) {
+    copyInto(cwd, [`${HOOKS_DIR}/${hook}`]);
+    fs.chmodSync(path.join(cwd, HOOKS_DIR, hook), 0o755);
   }
-  write("scripts/conductor.mjs", "");
-  fs.mkdirSync(path.join(cwd, "scripts", "lib"), { recursive: true });
   git("add", "--", "scripts/test/assert/fixture.test.mjs", "scripts/test/functional/alpha.test.mjs",
     "scripts/test/assert/alpha.test.mjs", ...(trackMachinery ? machinery : []));
   git("commit", "-q", "-m", "baseline");

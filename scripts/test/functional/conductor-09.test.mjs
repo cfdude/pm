@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, expectFail, runHookAgainstFixture, ENGINE, fixtureCommits, hookedRepo, hookedGit, seedAgreeingEntry } from "../fixtures/functional-harness.mjs";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";
+import { hookMachinery } from "../fixtures/hook-machinery.mjs";
 
 // ──────────────── reconciler structured writeback: record-reconcile ────────────────
 
@@ -767,15 +768,13 @@ test("IX-k the drift script that judges a commit is the COMMIT's copy — an uns
   // The script and its machinery are TRACKED here (as in this repository), and the commit stages an
   // unpaired functional file that drift must refuse. The working tree's drift.mjs is then replaced,
   // unstaged, by a script that exits 0 — a drift run from the working tree would wave the commit through.
+  // WHICH scripts are tracked is DERIVED (`hookMachinery()`, hook-fixtures-couple-to-every-hook-step): a
+  // missing one would fail the snapshot's drift at import, refusing the commit for the wrong reason.
   const repoRoot = path.join(path.dirname(ENGINE), "..");
   const real = (rel) => fs.readFileSync(path.join(repoRoot, rel), "utf8");
   const r = runHookAgainstFixture(IX_PASSING, {
     extraFiles: {
-      "scripts/test/drift.mjs": real("scripts/test/drift.mjs"),
-      "scripts/test/certification.mjs": real("scripts/test/certification.mjs"),
-      // certification.mjs imports the shared lexer (certification-record-redesign 3.1): without it the
-      // snapshot's drift fails at import, and the commit would be refused for the wrong reason.
-      "scripts/test/js-lexer.mjs": real("scripts/test/js-lexer.mjs"),
+      ...Object.fromEntries(hookMachinery().map((rel) => [rel, real(rel)])),
       "scripts/test/functional/ix-lone.test.mjs": IX_HEADER + 'test("lone", () => { assert.ok(true); });\n',
     },
     setup: (cwd) => fs.writeFileSync(path.join(cwd, "scripts", "test", "drift.mjs"), "process.exit(0);\n"),
