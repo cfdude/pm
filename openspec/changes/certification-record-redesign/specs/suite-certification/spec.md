@@ -519,7 +519,19 @@ property assignment (dotted with a bare name, or subscripted with a quoted name)
 string that is not itself the key or the subscript of such an assignment, is not an assignment and
 SHALL NOT be refused.
 
-It has four stated limits:
+**A failed observation write SHALL fail the certification closed.** Each Node process SHALL write its
+observations to its own file, one event per line, each event written when it happens and before the
+operation it observes, and a process that ends normally SHALL record that it exited. A process killed
+mid-write can tear only its LAST line. A failed write (a full disk, a file-size limit) tears the last
+line too and loses every event after it, so each process SHALL hold a sentinel beside its file from
+load, and SHALL remove it on its first failed write. The runner SHALL refuse, naming the process's
+file and recording no entry: a file whose sentinel is absent, torn or not; a sentinel without its file;
+a torn last line from a process that recorded its own exit; and any corrupt line other than the last.
+A torn last line SHALL be dropped, and the rest of the file read, ONLY from a process that holds its
+sentinel and recorded no exit, which is a process killed by a signal. A process that cannot open its
+file while the run's observation directory exists SHALL fail rather than run unobserved.
+
+It has five stated limits:
 
 - A file read only by a process that is not a Node process started by the half (a shell script
   reading a file on its own) is not observed. Nor is a Node process started indirectly whose options
@@ -538,12 +550,28 @@ It has four stated limits:
   line comment, or a matched pair of quotes, or backticks that pair up across two such regexes)
   records nothing, and an assignment of the Node options variable inside the misread span is not
   refused.
+- A failed observation write whose sentinel removal ALSO fails (the observation directory itself
+  unwritable at that instant) is indistinguishable from a kill: its torn last line is dropped and the
+  events after the failure are lost.
 
 #### Scenario: A missed observation fails the certification
 
 - **WHEN** a functional test reads a tracked file under `scripts/` whose name appears nowhere in the
   closure's source, and the certification runs
 - **THEN** the certification fails naming that file, and no entry is written
+
+#### Scenario: A failed observation write fails the certification closed
+
+- **WHEN** a Node child the half starts reads a tracked file outside the subject after a write to its
+  observation file has failed (the child's file-size limit is reached), and the half passes
+- **THEN** the certification fails naming that child's observation file and the failed write, and no
+  entry is written
+
+#### Scenario: A child killed after a read still reports the read
+
+- **WHEN** a Node child reads a tracked file outside the subject and is then killed by a signal
+- **THEN** its observation holds the read (a torn last line, if any, is dropped), and the
+  certification fails naming the file
 
 #### Scenario: A Node child that drops the observer fails the certification closed
 

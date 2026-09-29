@@ -39,7 +39,17 @@
 // original; a resolve records before the module is loaded; a spawn records before it starts the child),
 // so a process killed at any instant has lost at most a line for an operation it had not yet performed —
 // and that is the only line that can be torn, the LAST one. The reader (`parseObservation()` in
-// certification.mjs) drops a torn last line and refuses, naming the file, on any other corruption. The configuration comes from THIS module's own URL,
+// certification.mjs) drops a torn last line and refuses, naming the file, on any other corruption.
+//
+// A FAILED WRITE FAILS THE RUN CLOSED (Gate 2 re-review F1). A write that fails — a full disk, a file-size
+// limit — also leaves a torn last line, and every event after it is lost. So the process creates a
+// SENTINEL, `<pid>.<random>.ok`, beside its file at load (after opening the file), and REMOVES it on its
+// first failed write, after which it writes nothing more; a normally ending process appends an `exit`
+// event. `readObservations()` refuses a file without its sentinel, and accepts a torn last line only
+// from a process that holds its sentinel and recorded no exit — a KILL. Opening the file at load while
+// the run directory exists is required: failing it throws, as a missing `registerHooks` does, instead of
+// leaving the process silently unobserved. A run directory that is already gone means the certification
+// is over, and the process reports nothing. The configuration comes from THIS module's own URL,
 // never from fixed environment variable names, so an observer stacked on another — a certify run inside
 // a functional test that is itself being certified — keeps its own directory, root and token variable,
 // and each instance reports only to its own run.
@@ -68,25 +78,46 @@ function install() {
     writeSync: fs.writeSync.bind(fs),
     realpathSync: fs.realpathSync.bind(fs),
     statSync: fs.statSync.bind(fs),
+    closeSync: fs.closeSync.bind(fs),
+    unlinkSync: fs.unlinkSync.bind(fs),
+    existsSync: fs.existsSync.bind(fs),
   };
   const roots = [...new Set([path.resolve(ROOT), safeRealpath(ROOT)])].map((r) => r.endsWith(path.sep) ? r : r + path.sep);
   function safeRealpath(p) { try { return orig.realpathSync(p); } catch { return path.resolve(p); } }
   const TOKEN_VAR = `PM_OBSERVE_TOKEN_${crypto.createHash("sha256").update(DIR).digest("hex").slice(0, 12)}`;
-  const ownFile = path.join(DIR, `${process.pid}.${crypto.randomBytes(6).toString("hex")}.jsonl`);
+  const base = path.join(DIR, `${process.pid}.${crypto.randomBytes(6).toString("hex")}`);
+  const ownFile = `${base}.jsonl`, sentinel = `${base}.ok`;
   const state = { test: relUnder(process.argv[1]) || process.argv[1] || null, reads: new Set() };
   let fd = null;
-  try { fd = orig.openSync(ownFile, "a"); } catch { fd = null; /* no run directory: nothing to report to */ }
-  /** One event, one line, one synchronous append (Gate 2 G2). A short write is continued, never dropped. */
+  try {
+    fd = orig.openSync(ownFile, "a");
+  } catch (e) {
+    // F1: a run directory that EXISTS but cannot take this process's file would leave it unobserved.
+    if (orig.existsSync(DIR)) {
+      throw new Error(`observe-reads: cannot open the observation file ${ownFile} (${e && e.code}) — refusing to run unobserved`);
+    }
+    fd = null; /* no run directory: the certification is over, nothing to report to */
+  }
+  // The sentinel is created AFTER the file, so a failure here leaves a file without one: refused by the reader.
+  if (fd !== null) { try { orig.closeSync(orig.openSync(sentinel, "w")); } catch { /* the reader refuses the file */ } }
+  /** One event, one line, one synchronous append (Gate 2 G2). A short write is continued, never dropped. A
+   *  FAILED write removes the sentinel and ends the reporting (F1): the reader then refuses the file. */
   const emit = (event) => {
     if (fd === null) return;
     try {
       const buf = Buffer.from(JSON.stringify(event) + "\n");
       for (let off = 0; off < buf.length;) off += orig.writeSync(fd, buf, off, buf.length - off);
-    } catch { /* the run directory is gone: the certification is over */ }
+    } catch {
+      fd = null;
+      try { orig.unlinkSync(sentinel); } catch { /* the run directory is gone: the certification is over */ }
+    }
   };
   emit({ kind: "process", pid: process.pid, argv: process.argv.slice(1), test: state.test });
   // THE ARRIVAL IS WRITTEN NOW, synchronously, before any test code runs (m1).
   if (process.env[TOKEN_VAR]) emit({ kind: "arrived", token: process.env[TOKEN_VAR] });
+  // A process that ends NORMALLY says so; one killed by a signal cannot, which is what lets the reader
+  // accept its torn tail (F1).
+  process.on("exit", () => emit({ kind: "exit" }));
   globalThis[Symbol.for("pm.observe-reads")] = { url: import.meta.url, dir: DIR, root: ROOT, tokenVar: TOKEN_VAR };
   // STACKED OBSERVERS: every instance loaded in this process, in load order. NODE_OPTIONS is appended, so
   // an inner run's observer loads after the outer one's. Only the INNERMOST raises expectations: a child

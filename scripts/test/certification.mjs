@@ -306,17 +306,20 @@ export const isRecordPath = (rel) => /^(openspec|\.conductor)\//.test(rel) || re
 export const OBSERVER = "scripts/test/fixtures/observe-reads.mjs";
 
 /** ONE PROCESS'S OBSERVATION FILE, PARSED (Gate 2 G2). The observer appends one JSON line per event —
- *  `process` (pid, argv, test), `arrived`, `expected`, `cancelled` and `read` — each with one synchronous
- *  write made BEFORE the operation it observes, so a process killed mid-write can tear only its LAST line,
- *  and that line is an operation it never performed. So: the bytes after the last newline are dropped
- *  (`torn: true`), and ANY other corruption — a complete line that is not a JSON object of a known kind —
- *  THROWS, naming the file and the line. Returns the shape `observationRefusals()` reads. Pure. */
-export const OBSERVATION_KINDS = Object.freeze(["process", "arrived", "expected", "cancelled", "read"]);
+ *  `process` (pid, argv, test), `arrived`, `expected`, `cancelled`, `read` and, from a process that ends
+ *  normally, `exit` — each with one synchronous write made BEFORE the operation it observes, so a process
+ *  killed mid-write can tear only its LAST line, and that line is an operation it never performed. So: the
+ *  bytes after the last newline are dropped (`torn: true`), and ANY other corruption — a complete line that
+ *  is not a JSON object of a known kind — THROWS, naming the file and the line. Whether a torn tail is
+ *  ACCEPTABLE is not this function's call: a failed write tears the tail too, and only the sentinel says
+ *  which it was (`readObservations()`, Gate 2 re-review F1). Returns the shape `observationRefusals()`
+ *  reads, plus `torn` and `exited`. Pure. */
+export const OBSERVATION_KINDS = Object.freeze(["process", "arrived", "expected", "cancelled", "read", "exit"]);
 export function parseObservation(text, name = "<observation>") {
   const src = String(text);
   const cut = src.lastIndexOf("\n");
   const complete = cut === -1 ? "" : src.slice(0, cut);
-  const out = { file: name, pid: null, argv: [], test: null, arrived: [], expected: [], cancelled: [], reads: [], torn: cut !== src.length - 1 && src.length > 0 };
+  const out = { file: name, pid: null, argv: [], test: null, arrived: [], expected: [], cancelled: [], reads: [], exited: false, torn: cut !== src.length - 1 && src.length > 0 };
   if (!complete && cut === -1) return out;
   complete.split("\n").forEach((line, i) => {
     let e;
@@ -329,16 +332,45 @@ export function parseObservation(text, name = "<observation>") {
     else if (e.kind === "arrived") out.arrived.push(e.token);
     else if (e.kind === "expected") out.expected.push({ token: e.token, test: e.test, argv: e.argv });
     else if (e.kind === "cancelled") out.cancelled.push(e.token);
+    else if (e.kind === "exit") out.exited = true;
     else out.reads.push(e.path);
   });
   return out;
 }
 
 /** Every observation file a run's processes wrote under `dir` (`*.jsonl`), parsed, sorted by name. A
- *  corrupt file throws, naming it (`parseObservation()`). */
+ *  corrupt file throws, naming it (`parseObservation()`).
+ *
+ *  THE SENTINEL (Gate 2 re-review F1). A write can FAIL — a full disk, a file-size limit — and it leaves
+ *  exactly what a kill leaves, a torn last line, while every event after it is lost. So each process
+ *  creates `<name>.ok` beside its `<name>.jsonl` at load, after opening the file, and REMOVES it on its
+ *  first failed write (a removal needs no free space; a failure marker would). The torn-tail rule, exactly:
+ *    a `.jsonl` without its `.ok` is REFUSED, torn or not — a write failed, or the process never vouched;
+ *    a `.ok` without its `.jsonl` is REFUSED — the observation it vouched for is gone;
+ *    a torn last line is ACCEPTED only when the `.ok` is present AND the file holds no `exit` event —
+ *      the process ended without running its exit listener, which is a KILL; a torn tail after its own
+ *      `exit` is REFUSED.
+ *  Its limit: a failed write whose sentinel removal ALSO fails reads as a kill (the spec's limits list). */
 export function readObservations(dir, io = fs) {
-  return io.readdirSync(dir).filter((n) => n.endsWith(".jsonl")).sort()
-    .map((n) => parseObservation(io.readFileSync(path.join(dir, n), "utf8"), path.join(dir, n)));
+  const names = io.readdirSync(dir);
+  const has = new Set(names);
+  const refuse = (what) => {
+    throw new Error(`certification: ${what} — refusing to judge a run from an incomplete observation`);
+  };
+  for (const n of names.filter((x) => x.endsWith(".ok")).sort()) {
+    if (!has.has(`${n.slice(0, -".ok".length)}.jsonl`)) refuse(`the observation sentinel ${path.join(dir, n)} has no observation file beside it`);
+  }
+  return names.filter((n) => n.endsWith(".jsonl")).sort().map((n) => {
+    const file = path.join(dir, n);
+    const o = parseObservation(io.readFileSync(file, "utf8"), file);
+    const ok = `${n.slice(0, -".jsonl".length)}.ok`;
+    if (!has.has(ok)) {
+      refuse(`the observation file ${file} has lost its sentinel ${ok}: a write to it failed (a full disk, a file-size limit), ` +
+        "so every event after the failure is lost");
+    }
+    if (o.torn && o.exited) refuse(`the observation file ${file} has a torn last line after its own exit event, which no kill explains`);
+    return o;
+  });
 }
 
 /** WHAT A FUNCTIONAL RUN OBSERVED, JUDGED AGAINST THE DERIVED SUBJECT (design D3, "The check"; task 3.2).

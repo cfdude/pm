@@ -539,7 +539,7 @@ observes").**
         hides the string with misparse 0, and two `if (a) /`/.test(s)` lines hide a `NODE_OPTIONS`
         object key between them with misparse 0. For the subject derivation the run-time observer
         (3.2) is the backstop for a path hidden this way; for the static guard there is none, so it
-        is the guard's fourth stated limit (spec, "It has four stated limits"). None of the 0-of-138
+        is the guard's fourth stated limit (spec, "It has five stated limits"). None of the 0-of-138
         measurement below contradicts it: that measures misparses, and this misread records none.
       - **Measured under this design** (a scratch copy of `lex()` with (b) added, run over the
         tracked `.mjs`/`.cjs`/`.js` files at c96240ab): 0 misparsed of 70 files under
@@ -574,6 +574,23 @@ observes").**
     brings the trailer, so it carries its twin edit.
 - **The check.** Certify then refuses if any observed path that is tracked in the index copy lies
   outside the derived subject. It names the path, and writes no entry.
+- **The observation file, and the torn-tail rule (Gate 2 G2 and its re-review F1).** Each process
+  appends one JSON line per event to `<pid>.<random>.jsonl` (its header, arrival, expectations,
+  cancellations, each NEW read, and `exit` from its exit listener), each written synchronously
+  BEFORE the operation it observes, so a kill tears at most the last line. A failed write (ENOSPC,
+  EFBIG) tears it too and loses everything after it, and swallowing it failed open (reproduced: 305
+  reads, 129 recorded, nothing refused). So at load, after opening its file, the process creates a
+  sentinel `<pid>.<random>.ok`, and on its FIRST failed write it removes the sentinel and writes
+  nothing more (a removal needs no free space; a failure marker would). `readObservations()` then
+  refuses, naming the file: a `.jsonl` without its `.ok`; a `.ok` without its `.jsonl`; a torn
+  last line after an `exit` event; any other corrupt line. It drops a torn last line ONLY when the
+  `.ok` is present and there is no `exit` event, the process having ended without its exit
+  listener, which is a kill. Why the missing `exit` and not the parent: only a DIRECT Node child has
+  a parent-side token, while a test file or a process git or a shell starts has none, so a missing
+  `exit` is the one kill signal every process carries. A process that cannot open its file while the
+  observation directory exists throws at load, as a missing `registerHooks` does; a directory
+  already gone means the run is over, and it reports nothing. The residual limit, stated in the
+  spec: a failed write whose sentinel removal also fails reads as a kill.
 - **Armed only after a report-only pass over the real tree (C1).** Before the refusal is armed (task
   3.2's GREEN), the observer is run REPORT-ONLY over this repository's own functional half, and the
   out-of-subject paths it records are written to `observer-report-3.2.txt`. It runs AFTER task

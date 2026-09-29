@@ -1,0 +1,56 @@
+# F1 RED — against a81d86bc's observer and reader, with the new tests added (Gate 2 re-review F1)
+## functional/certify-index F1 (certify PASSED a run whose child's observation write failed)
+✖ F1 a child whose observation WRITE fails is refused, naming its process file — a failed write never passes as a torn tail (540.031208ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 665.909
+
+✖ failing tests:
+
+test at scripts/test/functional/certify-index.test.mjs:496:1
+✖ F1 a child whose observation WRITE fails is refused, naming its process file — a failed write never passes as a torn tail (540.031208ms)
+  AssertionError [ERR_ASSERTION]: a run whose observation write failed must not be recorded:
+  certify: the observer saw 2 Node processes; every tracked file they read is in the functional subject (2 paths).
+  certify: functional half passed (1/1); recorded 2 subject paths as 3b85d6f51d8de0191c75b4bc5b9fa43926f4ef6ee4d32582cb0755b22bcdd250.json in /private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SdJVd9/.git/pm-suite-certification.d/functional
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+## unit/certify-index F1
+✖ F1 a process file WITHOUT its sentinel is refused, naming it: a write to it failed, so events after it are lost (1.083083ms)
+✖ F1 a torn last line is accepted ONLY from a process that was killed: sentinel intact and no exit event (0.146833ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120.168166
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ F1 a process file WITHOUT its sentinel is refused, naming it: a write to it failed, so events after it are lost (1.083083ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception: a torn tail whose sentinel was removed is a FAILED WRITE, not a kill
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /\/run\/observe\/7\.aa\.jsonl[^\n]*sentinel[^\n]*7\.aa\.ok[^\n]*a write to it failed/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ F1 a torn last line is accepted ONLY from a process that was killed: sentinel intact and no exit event (0.146833ms)
+  Error: certification: the observation file e is corrupt at line 7 ("{\"kind\":\"exit\"}") — only its last line may be torn, by a process killed mid-write; refusing to judge a run from a damaged observation

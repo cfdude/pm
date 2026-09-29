@@ -566,7 +566,7 @@ These rules bind every section below.
           `certify.mjs functional` applies it to the exported run directory before the bucket runs,
           and fails closed on a refusal, so the guard reads the real index copy. It tokenizes with
           the shared `lex()` of `scripts/test/js-lexer.mjs` (3.1), and throws on any `misparse`.
-        - **Its stated limits** (spec, "It has four stated limits"): an indirect Node child whose
+        - **Its stated limits** (spec, "It has five stated limits"): an indirect Node child whose
           `NODE_OPTIONS` is assembled at run time, or whose environment OMITS the variable (an
           `env` that does not spread `process.env`, or a `delete`), is not observed and not
           refused; and an assignment inside a statement-position regex misread (a regex after `)`
@@ -944,6 +944,7 @@ These rules bind every section below.
       - m3: rule 4 of the functional subject admits a name in a template literal (`red-m3.txt`).
       - m4: guard — an untracked failing functional test is neither run nor recorded (`mutation-m4.txt`).
       - m5: docs — the symlink limit in `certify.mjs`, and a SIGKILLed certify in `CONTRIBUTING.md`.
+      - F1 (re-review, Important): a failed observation write removes the process sentinel; a file without it is refused, and a torn last line is accepted only from a killed process (`red-F1.txt`).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**

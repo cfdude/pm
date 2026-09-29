@@ -34,3 +34,12 @@ S2 the one-copy gap, fail closed: before building anything certify refuses (name
    certify/certification/drift/js-lexer/fixtures/observe-reads differs between the working tree and the index ->
    315b6ed4 -> functional/certify-index "S2 an UNSTAGED edit…", twin unit/certify-index "S2 the runner refuses…";
    spec scenario "The runner refuses when its own code differs from the index", design D2; red-S2.txt
+
+# Gate 2 re-review (on a81d86bc: 1 Important, 5 minor).
+F1 a failed observation write failed OPEN (emit() swallowed it; the torn tail was dropped as a kill): the observer
+   holds a sentinel <pid>.<random>.ok from load and removes it on its first failed write, a normal exit is recorded,
+   and readObservations() refuses a file without its sentinel (and a sentinel without its file, and a torn tail after
+   an exit), accepting a torn last line only from a killed process; a process that cannot open its file while the run
+   directory exists throws at load -> <sha> -> functional/certify-index "F1 a child whose observation WRITE fails…"
+   (a real EFBIG under `ulimit -f 2`), twin unit/certify-index "F1 …" (2); spec "A failed observation write fails the
+   certification closed" + fifth limit, design D3 "The observation file, and the torn-tail rule"; red-F1.txt

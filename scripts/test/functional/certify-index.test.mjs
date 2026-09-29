@@ -493,6 +493,26 @@ test("G2 a child SIGTERMed after a read still reports the read: each new read re
   assert.deepEqual(entriesOf(cwd, "functional"), [], "a refused run records no entry");
 });
 
+test("F1 a child whose observation WRITE fails is refused, naming its process file — a failed write never passes as a torn tail", () => {
+  // Gate 2 re-review F1. emit() swallowed a failed write, and a full disk leaves a partial last line that
+  // parseObservation() dropped as a harmless torn tail: every read after the failure was lost and certify
+  // passed. The failure is REAL, not a hook in the observer: `ulimit -f 2` caps the size of any file the
+  // child writes (Node ignores SIGXFSZ, so a write past it throws EFBIG). The child pads its observation
+  // with reads of absent paths (each is recorded), then reads a tracked file by a built name.
+  const cwd = observedFixture(HEAD_LINES +
+    'test("a child whose observation file fills up", () => {\n' +
+    '  const code = "const fs = require(\\"node:fs\\"), p = require(\\"node:path\\"); " +\n' +
+    '    "for (let i = 0; i < 80; i++) { try { fs.readFileSync(p.join(process.cwd(), \\"absent-padding-file-\\" + i)); } catch {} } " +\n' +
+    '    "fs.readFileSync(p.join(process.cwd(), \\"scripts\\", \\"lib\\", \\"hid\\" + \\"den.mjs\\"));";\n' +
+    '  const r = spawnSync("sh", ["-c", "ulimit -f 2; exec \\"$0\\" -e \\"$1\\"", process.execPath, code], { encoding: "utf8" });\n' +
+    '  assert.equal(r.status, 0, "the child itself runs to completion: " + r.stderr);\n' +
+    "});\n", HIDDEN);
+  const r = certify(cwd, "functional");
+  assert.notEqual(r.status, 0, `a run whose observation write failed must not be recorded:\n${r.out}`);
+  assert.match(r.out, /observe\/[^\n]*\.jsonl[^\n]*write[^\n]*failed/i, `the refusal names the process file and the failed write:\n${r.out}`);
+  assert.deepEqual(entriesOf(cwd, "functional"), [], "no entry is written");
+});
+
 test("m2 a corrupt observation file is a NAMED refusal — the file's path, no stack trace — and no entry is written", () => {
   // Gate 2 m2. A damaged observation used to escape as an exception, printed as a stack trace by the
   // runner's last-resort handler. The fixture test writes a corrupt observation file into its own run's

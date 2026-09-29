@@ -448,6 +448,38 @@ unitTest("G2 any corruption other than a torn last line is REFUSED, naming the f
   assert.throws(() => certification.parseObservation(OBS + "\n", name), /corrupt at line 7/, "an empty complete line is corruption");
 });
 
+// ─────────────── Gate 2 re-review F1 — a failed observation write fails the run closed ───────────────
+
+/** An in-memory observation directory: `{ name: text }`, read through the two calls readObservations() makes. */
+const obsDir = (files) => ({
+  readdirSync: () => Object.keys(files),
+  readFileSync: (p) => { const n = p.split("/").pop(); if (!(n in files)) throw Object.assign(new Error(`ENOENT ${p}`), { code: "ENOENT" }); return files[n]; },
+});
+const TORN = '{"kind":"read","path":"scripts/lib/sec';
+
+unitTest("F1 a process file WITHOUT its sentinel is refused, naming it: a write to it failed, so events after it are lost", () => {
+  assert.throws(() => certification.readObservations("/run/observe", obsDir({ "7.aa.jsonl": OBS + TORN })),
+    /\/run\/observe\/7\.aa\.jsonl[^\n]*sentinel[^\n]*7\.aa\.ok[^\n]*a write to it failed/,
+    "a torn tail whose sentinel was removed is a FAILED WRITE, not a kill");
+  assert.throws(() => certification.readObservations("/run/observe", obsDir({ "7.aa.jsonl": OBS })),
+    /7\.aa\.jsonl[^\n]*sentinel/, "a whole file without its sentinel is refused too: the process never vouched for it");
+  assert.throws(() => certification.readObservations("/run/observe", obsDir({ "7.aa.jsonl": OBS, "7.aa.ok": "", "8.bb.ok": "" })),
+    /8\.bb\.ok[^\n]*no observation file/, "a sentinel whose observation file is gone is refused");
+});
+
+unitTest("F1 a torn last line is accepted ONLY from a process that was killed: sentinel intact and no exit event", () => {
+  const killed = certification.readObservations("/run/observe", obsDir({ "7.aa.jsonl": OBS + TORN, "7.aa.ok": "" }));
+  assert.equal(killed.length, 1);
+  assert.equal(killed[0].torn, true);
+  assert.deepEqual(killed[0].reads, ["scripts/lib/a.mjs", "scripts/lib/hidden.mjs"]);
+  const exited = OBS + obsLine({ kind: "exit" });
+  assert.equal(certification.parseObservation(exited, "e").exited, true, "parseObservation() reports the exit event");
+  assert.equal(certification.readObservations("/run/observe", obsDir({ "7.aa.jsonl": exited, "7.aa.ok": "" }))[0].exited, true,
+    "a process that exited normally, sentinel intact, is read");
+  assert.throws(() => certification.readObservations("/run/observe", obsDir({ "7.aa.jsonl": exited + TORN, "7.aa.ok": "" })),
+    /7\.aa\.jsonl[^\n]*torn[^\n]*exit/, "a torn tail after the process recorded its own exit was no kill");
+});
+
 unitTest("m2 an observation that cannot be read is a NAMED refusal: the error's message (the file and line), and no stack", () => {
   assert.equal(typeof certify.observationReadRefusal, "function", "certify.mjs exports no observationReadRefusal()");
   let err;
