@@ -170,7 +170,7 @@ These rules bind every section below.
 
 ## 2. L2: the content-keyed manifest record (design D1, D5; MODIFIED "A functional result is recorded…")
 
-- [ ] 2.1 **TDD, UNIT**: freshness as equality with ONE entry's WHOLE manifest (design D1, B1/B2).
+- [x] 2.1 **TDD, UNIT**: freshness as equality with ONE entry's WHOLE manifest (design D1, B1/B2).
       - **The pure functions.**
         - `bucketDemanded({ stagedPaths, indexPaths, subjectIndex, subjectHead })`: true when a staged
           path is in `subjectIndex`, or, for a staged path `indexPaths` no longer holds, in

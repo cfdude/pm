@@ -359,6 +359,104 @@ export function indexRunPlan({ indexFile, commonDir, headSha, tmp }) {
   };
 }
 
+// ───────────────────────────── freshness as a manifest (certification-record-redesign D1) ─────────────────────────────
+
+/** The subject ROOTS (design D2, "The skip"). Every rule that admits a path into a bucket's subject
+ *  admits only paths under one of these, so a staged set holding none of them demands nothing, and
+ *  neither subject derivation has to be paid for to know it. ONE constant, which the derivation also
+ *  filters on, so the skip and the derivation cannot disagree. */
+export const SUBJECT_ROOTS = Object.freeze(["scripts/", ".githooks/", "hooks/", "commands/", "skills/", "agents/", ".claude-plugin/"]);
+export const SUBJECT_ROOT_FILES = Object.freeze(["README.md", "CLAUDE.md", "docs/parity-ledger.json"]);
+export const underSubjectRoot = (rel) => SUBJECT_ROOTS.some((r) => rel.startsWith(r)) || SUBJECT_ROOT_FILES.includes(rel);
+
+/** The staged paths that demand a bucket (design D1 step 2; suite-certification, "A staged change").
+ *  A staged path demands it when it is in the subject derived from the index, or — for a path the
+ *  index no longer holds, which is what a staged DELETION is — in the subject derived from HEAD. A
+ *  path the index still holds is judged by subject(index) alone (m2).
+ *
+ *  The two derivations are THUNKS, each called at most once and only when needed: neither when no
+ *  staged path lies under a subject root (m3), and subject(HEAD) only when a staged path under one
+ *  is absent from the index. An ordinary commit pays for one derivation, a docs-only commit for none. */
+export function demandedPaths({ stagedPaths, indexPaths, subjectIndex, subjectHead }) {
+  const candidates = [...stagedPaths].filter(underSubjectRoot);
+  if (!candidates.length) return [];
+  const inIndex = indexPaths instanceof Set ? indexPaths : new Set(indexPaths);
+  const sIndex = new Set(subjectIndex());
+  let sHead = null;
+  const out = [];
+  for (const p of candidates) {
+    if (sIndex.has(p)) { out.push(p); continue; }
+    if (inIndex.has(p)) continue;
+    if (sHead === null) sHead = new Set(subjectHead());
+    if (sHead.has(p)) out.push(p);
+  }
+  return out.sort();
+}
+
+/** Whether a staged set demands a bucket at all — `demandedPaths()` is non-empty. */
+export function bucketDemanded(args) {
+  return demandedPaths(args).length > 0;
+}
+
+/** The manifest of a subject over an index: every subject path the index HOLDS, mapped to its
+ *  `"<mode> <blob id>"` (Gate 1 round 4, design D1 step 3). A path the derivation names but the index
+ *  does not hold — `engineSourceFiles()` always names `scripts/conductor.mjs`, which a hook fixture
+ *  writes and never tracks — has no mode and no blob, so it cannot be in a manifest. The rule lives
+ *  here, in the one function every caller shares, rather than in any one caller.
+ *  `indexEntries` is a Map (or plain object) of path → "<mode> <blob id>". */
+export function manifestOf({ subject, indexEntries }) {
+  const get = indexEntries instanceof Map ? (p) => indexEntries.get(p) : (p) => indexEntries[p];
+  const out = {};
+  for (const p of [...new Set(subject)].sort()) {
+    const v = get(p);
+    if (v !== undefined) out[p] = v;
+  }
+  return out;
+}
+
+/** `git ls-files -s -z` output as the Map `manifestOf()` takes: "<mode> <blob> <stage>\t<path>\0"
+ *  per entry → path → "<mode> <blob>". The ONLY parser of that output (design D1, "Content identity");
+ *  its one caller is drift's `indexManifest()`. */
+export function parseStagedEntries(text) {
+  const out = new Map();
+  for (const rec of String(text).split("\0").filter(Boolean)) {
+    const tab = rec.indexOf("\t");
+    const [mode, blob] = rec.slice(0, tab).split(" ");
+    out.set(rec.slice(tab + 1), `${mode} ${blob}`);
+  }
+  return out;
+}
+
+/** An entry's NAME: the sha256 of its manifest, serialized as `path NUL mode SP blob NUL` over the
+ *  sorted paths. The mode is in it, so a chmod-only change is a different manifest. */
+export function manifestKey(manifest) {
+  const h = crypto.createHash("sha256");
+  for (const p of Object.keys(manifest).sort()) h.update(p).update("\0").update(manifest[p]).update("\0");
+  return h.digest("hex");
+}
+
+/** Two manifests are EQUAL: the same path set, and the same mode and blob per path. */
+export function sameManifest(a, b) {
+  const ka = Object.keys(a || {}), kb = Object.keys(b || {});
+  return ka.length === kb.length && ka.every((p) => Object.prototype.hasOwnProperty.call(b, p) && a[p] === b[p]);
+}
+
+/** FRESHNESS (design D1 step 3, Gate 1 B1): a demanded bucket is fresh only when ONE entry — the one
+ *  named by the index manifest's key, which `entryFor(key)` returns or null — passed, is this bucket's,
+ *  and holds EXACTLY the index manifest. A lookup, never a scan: no entry can combine with another, and
+ *  an entry about some other tree's content is simply never consulted (it neither passes nor refuses).
+ *  Returns `{ fresh, key, why }`; `why` is null when fresh. */
+export function recordFreshness({ bucket, indexManifest, entryFor }) {
+  const key = manifestKey(indexManifest);
+  const entry = entryFor(key);
+  let why = null;
+  if (!entry) why = "no passing run over this content is recorded";
+  else if (entry.bucket !== bucket) why = `the entry under this content's key is the ${JSON.stringify(entry.bucket)} bucket's`;
+  else if (entry.result !== "pass") why = `the recorded result for this content was ${JSON.stringify(entry.result)}`;
+  else if (!sameManifest(entry.manifest, indexManifest)) why = "the entry under this content's key holds a different manifest";
+  return { fresh: why === null, key, why };
+}
+
 // ───────────────────────────── the record ─────────────────────────────
 
 /** Read the record, or an empty one. A fresh clone has NO record, and that is correct behaviour
