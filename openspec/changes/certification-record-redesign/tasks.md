@@ -792,9 +792,12 @@ These rules bind every section below.
       Done: the `rg` hits the 8.2 and 8.3 task lines and one more line, this task's own continuation,
       which names the marker inside a code span. `countCheckboxes()` (`scripts/lib/epic-progress.mjs`)
       strips code spans before matching, and it reads only checkbox lines, so exactly two tasks declare.
-- [ ] 5.6 **Attribute every commit** (orchestrator) (item 4). Run
+- [x] 5.6 **Attribute every commit** (orchestrator) (item 4). Run
       `update-epic certification-record-redesign --attribute-commit <sha>` for each implementation
       commit, in landing order, at the moment it is made. The archive-move commit is NOT attributed.
+      Done (checked at 7.2 with jq over `.conductor/state.json`): all 33 commits in `59461425^..8394c54b`
+      are in `attributedCommits` (34 entries; 4c1e7e97 appears twice, since the array is append-only).
+      Each later commit is attributed as it lands.
 - [ ] 5.7 **Cross-spec review** (orchestrator) (item 5). This is 0.2. Re-run it when any 0.51.0
       change adds or amends a spec file, and record the verdict again.
 - [x] 5.8 **Disposition** (item 6). It is recorded by 8.2, whose flags are specified there. Before
@@ -908,13 +911,18 @@ These rules bind every section below.
       recorded). The first functional run hit the known ENOENT flake and was logged, then re-run. CI's
       four steps are NOT yet run: they run on the PR, which this step did not open. `commit-verification-5.4.txt`
       has the L5 commits appended: 9 of 9 pass.
-- [ ] 7.2 **The after-measure.**
+- [x] 7.2 **The after-measure.**
       - Re-run `measure.mjs` over the 0.50.0 range with the SHIPPED `functionalSubject()`, and over
         this change's own range. Report both against 0.3(a).
       - Run two worktrees of this repository that each certify and commit concurrently, with no
         lock, and paste the transcript.
 
       Verify: both commits land, and neither worktree re-certifies.
+      Done: `after-measure-7.2.md`. On 0.50.0, `measure.mjs` reproduces 0.3(a) exactly, and the SHIPPED
+      derivation (`measure-shipped.mjs`) gives functional 70/126 and subject 178, both equal to 0.3's; sweeps
+      gives 52, the +1 being 3f68971d, which staged the sweep's own method. On this change's range the
+      functional half is demanded by 18 of 32 commits (0 under the old rule). `worktrees-7.2.txt` has
+      two concurrent certifies and two concurrent plain commits; both land, and neither re-certifies.
 
 ## 8. Close
 

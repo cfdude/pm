@@ -1,0 +1,43 @@
+# 7.2 two worktrees of one clone (<scratch>/wt72/main @ 7f78e9c9), each certifying and committing concurrently, no lock.
+# node v26.10.0, load at start { 33.78 71.73 112.91 }
+## worktree A staged:
+   scripts/test/functional/drift-script.test.mjs | 1 +
+   1 file changed, 1 insertion(+)
+## worktree B staged:
+   scripts/test/functional/certify-index.test.mjs | 1 +
+   1 file changed, 1 insertion(+)
+## 05:56:29 both certifies start
+## worktree A certify:
+  certify: the observer saw 2427 Node processes; every tracked file they read is in the functional subject (186 paths), or the record (80, excluded by rule).
+  certify: functional half passed (1258/1258); recorded 186 subject paths as 06aab369ca1fc62341bd047547243ca660a3eb7eafb1a46830af07527b8d59f6.json in <scratch>/wt72/main/.git/pm-suite-certification.d/functional
+  A certify exit 0 751s at 06:09:00
+## worktree B certify:
+  certify: the observer saw 2427 Node processes; every tracked file they read is in the functional subject (186 paths), or the record (80, excluded by rule).
+  certify: functional half passed (1258/1258); recorded 186 subject paths as 1a19be895837a34c0217c7ff4a3efb49cc8bdc0e981eb4ae86b79dd4c8efbcd4.json in <scratch>/wt72/main/.git/pm-suite-certification.d/functional
+  B certify exit 0 750s at 06:08:59
+## the record now (one file per run, shared common dir):
+  06aab369ca1fc62341bd047547243ca660a3eb7eafb1a46830af07527b8d59f6.json
+  1a19be895837a34c0217c7ff4a3efb49cc8bdc0e981eb4ae86b79dd4c8efbcd4.json
+## 06:09:00 both commits start (plain git commit, concurrently)
+## worktree A commit output:
+  drift: ok — 217 tracked test files, 52 functional ids, 1 staged paths
+  pre-commit: 1582/1582 passing
+  drift: coupling exemption drift-script — a comment line only; nothing the file asserts, runs or imports changed
+  drift: ok — 1 staged paths, 1 Twin-Unchanged declarations
+  [wt-a 106a46a] 7.2 probe A: comment-only change
+   1 file changed, 1 insertion(+)
+  A commit exit 0 at 06:09:38
+## worktree B commit output:
+  pre-commit: another worktree is running the suite — waiting
+  pre-commit: acquired the suite lock after 36s
+  drift: ok — 217 tracked test files, 52 functional ids, 1 staged paths
+  pre-commit: 1582/1582 passing
+  drift: coupling exemption certify-index — a comment line only; nothing the file asserts, runs or imports changed
+  drift: ok — 1 staged paths, 1 Twin-Unchanged declarations
+  [wt-b 8501155] 7.2 probe B: comment-only change
+   1 file changed, 1 insertion(+)
+  B commit exit 0 at 06:10:11
+## result
+  wt-a: 106a46a3 7.2 probe A: comment-only change | trailer: drift-script — a comment line only; nothing the file asserts, runs or imports changed
+  wt-b: 8501155f 7.2 probe B: comment-only change | trailer: certify-index — a comment line only; nothing the file asserts, runs or imports changed
+  record entries after both commits (no new certify ran): 2
