@@ -39,6 +39,9 @@
 // breaking for an unrelated reason. That is deliberate — a shim that broke tests would be removed the
 // first time it fired, which is how a guard like this gets deleted rather than obeyed.
 
+// NO TEST MAY WRITE THE DEVELOPER'S REAL RECORD (test-isolation-guard): every unit- and file-rung
+// process loads this shim, so it loads the guard that pins CLAUDE_PROJECT_DIR and checks the record.
+import "./record-isolation.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

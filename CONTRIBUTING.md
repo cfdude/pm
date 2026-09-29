@@ -285,6 +285,28 @@ string or regex literals are not sites. Its stated limit: a name built at run ti
 spawned process makes, is not seen. Before this rule (measured 2026-09-25) one assertion-half run left
 436 directories in the OS temp dir and one functional-half run left 1,517.
 
+### The real record — no test may write it
+
+Every process the suite starts, in all four homes and in the pre-commit hook's run over the index
+snapshot, loads `scripts/test/fixtures/record-isolation.mjs`. The fixture does three things:
+
+- It snapshots the `.conductor/` of this repository, of `PM_TEST_PROTECTED_ROOT`, and of any
+  `CLAUDE_PROJECT_DIR` you inherited. The hook and certify set `PM_TEST_PROTECTED_ROOT` to the real
+  checkout, because they run the suite over a copy.
+- It unsets `CLAUDE_PROJECT_DIR`, which is how CI runs. A test that falls back to the engine's
+  `CLAUDE_PROJECT_DIR || cwd` then acts on its own cwd, not on the checkout your session exported.
+  A scratch directory would be stricter, but it breaks the tests that read this repository's live
+  record through that fallback.
+- At exit it fails the file when any protected record changed, naming each path.
+
+The record is reported but NOT restored: run `git diff .conductor` and remove what the test wrote.
+There is one false positive. If another session writes that record while a file runs, the guard
+reports that write too, and re-running the file clears it.
+`assert/record-isolation.test.mjs` refuses a test file whose static imports never reach the fixture.
+It is loaded through `assert-git-shim.mjs` and `helpers.mjs`; any other file imports it directly. The
+guard exists because on 2026-09-21 a functional run leaked two epics and 554 `honcho-memories.log`
+lines into this repository's record, and nothing noticed.
+
 ### Dates — never hardcode one the engine compares against "now"
 
 An archive directory, a `createdAt`, anything the engine weighs against today: derive it —

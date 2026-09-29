@@ -3,6 +3,7 @@
 // no signing config, so a test that only checked "no hooks appeared" would pass there vacuously.
 
 import "../fixtures/hermetic-git.mjs";
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";

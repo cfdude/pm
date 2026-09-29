@@ -190,6 +190,14 @@ export function runnerInvocation(files, env = process.env) {
   return { args: ["--test", "--test-reporter=spec", ...files], env: { ...env, FORCE_COLOR: "0" } };
 }
 
+/** The environment a bucket run adds to the caller's: the REAL top level as `PM_TEST_PROTECTED_ROOT`
+ *  (test-isolation-guard), then the observer's variables. The bucket runs in a clone of the index copy,
+ *  so `fixtures/record-isolation.mjs`'s module-relative root is that clone; this names the checkout
+ *  certify was run for, whose `.conductor/` every test process must leave byte-identical. */
+export function bucketEnv(root, observedEnv = {}) {
+  return { PM_TEST_PROTECTED_ROOT: root, ...observedEnv };
+}
+
 /** The bucket's runner, while one is running — what a signal handler must kill before it exits. */
 let activeRun = null;
 
@@ -275,7 +283,7 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
     observed = observerEnv(run);
     if (typeof observed === "string") { process.stderr.write(observed); return 1; }
   }
-  const result = await runBucket(run.tree, bucket, observed ? observed.env : {});
+  const result = await runBucket(run.tree, bucket, bucketEnv(root, observed ? observed.env : {}));
   if (!result.ok) {
     process.stderr.write(result.output);
     process.stderr.write(`\ncertify: the ${label} FAILED (status ${result.status}). Nothing recorded — a record is a claim about a pass.\n`);

@@ -71,6 +71,12 @@ neither is found by the closure guard, not guessed.
 - Functional half with the pin vs. the unset baseline: same failure set → keep pin-to-scratch; new
   breakage → pin by deleting the variable instead (CI's environment) and keep the exit check.
 
+- RESULT (measured): pinned to scratch, the certify run failed 9 tests and one file that the unset
+  baseline passes: conductor-13 16.3, conductor-15 9.2–9.5, and gate-artifact-evidence. Each calls lib
+  functions directly and relies on `CLAUDE_PROJECT_DIR || cwd` resolving to the repository. So the
+  pin is UNSET (CI's environment), and the exit check catches a write through a cwd inside a
+  protected repository.
+
 ### 4. Hook and certify pass the real top level (`PM_TEST_PROTECTED_ROOT`)
 - `.githooks/pre-commit` runner line and `certify.mjs` `runBucket` env; `rg` the hook-fixture tests
   that assert on the hook's steps first.

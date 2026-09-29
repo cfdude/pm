@@ -12,6 +12,7 @@
 // The failure is injected by neutering `fs.renameSync`, which is the real shape: every step
 // reports success and the file on disk is not what this process wrote.
 
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

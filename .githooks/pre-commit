@@ -219,6 +219,12 @@ rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 # the working tree (or anywhere) and a test reading through it reads those bytes, not the index's.
 # This repository tracks no symlinks (`git ls-files -s | rg '^120000'` is empty), so nothing is lost
 # today; a tracked symlink added later is where this gate stops meaning "the index".
+#
+# NO TEST MAY WRITE THE DEVELOPER'S REAL RECORD (test-isolation-guard). Every test process loads
+# `scripts/test/fixtures/record-isolation.mjs`, which unsets CLAUDE_PROJECT_DIR and fails the
+# file when a protected `.conductor/` changed. Its module-relative root HERE is the snapshot, a copy;
+# this names the real checkout, so the run over the copy still guards the record the developer owns.
+export PM_TEST_PROTECTED_ROOT="$ROOT"
 cd "$SNAP"
 if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
   total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')

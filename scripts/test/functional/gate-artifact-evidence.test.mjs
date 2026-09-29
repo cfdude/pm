@@ -21,6 +21,7 @@
 // asks a different question: "does this verdict carry evidence of a real review AT ALL".
 
 import "../fixtures/hermetic-git.mjs";
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";

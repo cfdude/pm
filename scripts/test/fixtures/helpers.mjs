@@ -1,6 +1,7 @@
 // Shared scaffolding for the split conductor test suite. Extracted verbatim from the former
 // single-file scripts/conductor.test.mjs -- see docs/superpowers/plans for why it was split.
 import "./hermetic-git.mjs";   // FIRST: every fixture git call must ignore the developer's global config
+import "./record-isolation.mjs";   // and no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";

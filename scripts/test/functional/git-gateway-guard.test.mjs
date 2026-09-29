@@ -37,6 +37,7 @@
 // after the paren. Both are deliberate, neither is behind the GIT gateway, and both are asserted by
 // identity below so the exclusion cannot grow one call at a time.
 
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
