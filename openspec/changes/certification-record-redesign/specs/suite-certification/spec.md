@@ -470,8 +470,8 @@ working tree, and it SHALL record the manifest of that same content.
 Several worktrees of one clone SHALL be able to certify and commit at the same time, with no lock
 held across certification and commit. They are safe by construction:
 
-- entries are named by content and created, and their content is never rewritten (a re-certification
-  refreshes only the run time);
+- entries are named by content and created, and an entry's content is never rewritten; only its run
+  time (`ranAt`) is refreshed, atomically;
 - freshness is judged per commit against the entries that agree with that commit's own index.
 
 So one worktree's run SHALL NOT remove, replace or stale another worktree's entry, and an entry

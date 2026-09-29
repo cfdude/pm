@@ -153,7 +153,7 @@ re-certify took 173 s.
 
 ## Decisions
 
-### D1. The record is a directory of content-named manifests, created and never rewritten (design question 1)
+### D1. The record is a directory of content-named manifests, created, whose content is never rewritten (design question 1)
 
 **Layout.**
 
@@ -178,7 +178,8 @@ re-certify took 173 s.
 
 - The file is written under a unique temp name (`<key>.<pid>.<random>.tmp`) and then LINKED to
   `<key>.json` (a rename until Gate 2 m1: a rename replaces an existing file, and the spec says an entry
-  is created, never rewritten). The temp name is then removed.
+  is created, and an entry's content is never rewritten; only `ranAt` is refreshed, atomically). The temp
+  name is then removed.
 - No run reads another run's file in order to write its own, so two concurrent runs cannot lose an
   update. This is the defect in today's read-modify-rename (`certification.mjs:361-367`).
 - Two runs over IDENTICAL content produce the same key. The second link fails with `EEXIST` and the
@@ -751,7 +752,8 @@ coupling keeps its own purpose.
 
 **`pm-certify.lock` becomes unnecessary.**
 
-- **Overwrite.** D1 removes it: entries are named by content and never rewritten.
+- **Overwrite.** D1 removes it: entries are named by content, and an entry's content is never rewritten;
+  only `ranAt` is refreshed, atomically.
 - **Foreign-covers blocking.** D1 removes it too: entries that do not agree with this index do not
   apply.
 - **Certify-versus-commit windows.** D2 removes them: the manifest is the index copy's, not the

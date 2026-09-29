@@ -62,11 +62,16 @@ W1 a wedged key: an unparseable <key>.json (a SIGKILL during the no-link 'wx' fa
    it is" and pass, drift throw an unnamed SyntaxError on every commit, and the pruner skip it forever. The write
    path REPLACES it with this run's entry (temp name + rename; `replaced: true`, certify prints "recorded … (replacing
    an entry that could not be parsed)"), readEntry() refuses it naming the file and the certify that replaces it,
-   pruneRecord() removes it once older than an hour (as a *.tmp; never `keep`); the "a key never keeps a half-written entry" docstring claim corrected -> W1SHA ->
+   pruneRecord() removes it once older than an hour (as a *.tmp; never `keep`); the "a key never keeps a half-written entry" docstring claim corrected -> 3158b475 ->
    assert/drift-script "W1 a WEDGED key…" (injected io), unit/certify-index "F3 a pass…" (replaced line); spec
    "Writing", design D1 "Writing" and "Pruning"; red-W1.txt
-W2 guards for spec clauses no test reached -> W2SHA -> (a) functional/certify-index "W2a a normally exiting observed
+W2 guards for spec clauses no test reached -> 3fcd3067 -> (a) functional/certify-index "W2a a normally exiting observed
    child's file ENDS in an exit event…", (b) functional/certify-index "W2b an observer that cannot open its file…"
    (the run "directory" is a regular file: ENOTDIR for every user, root included), (c) assert/drift-script "W2c the
    ranAt refresh goes through a temp name and renameSync…" (injected io); mutation-W2.txt (drop the exit emit, `if
    (false)` for the run-directory check, write straight to <key>.json: each fails its guard; reverted, each passes)
+W3 wording: design D1's heading and "Writing" bullet, D6 "Overwrite", and the spec's concurrent-worktrees bullet say
+   "an entry's content is never rewritten; only ranAt is refreshed, atomically" -> this commit (it also fills in the
+   W1/W2 shas above) -> docs only (no test)
+DECLINED: ftruncate on a failed fallback write — the case needs a full disk AND an unremovable file; it is the spec's
+   stated fifth limit.
