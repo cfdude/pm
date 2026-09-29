@@ -9,6 +9,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run, writeState, detourLog } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 // ─────────────────────────── shared fixture plumbing ───────────────────────────
 
@@ -277,7 +278,7 @@ test("gh#82: the read/write split is READ from verb-effects.mjs, not a second li
   // already asserts set-equality between VERB_EFFECTS and the dispatch object, so consulting
   // that table is what makes this gate un-staleable. Pin the dependency so a future refactor
   // back to a literal list is caught here.
-  const src = fs.readFileSync(ENGINE, "utf8");
+  const src = engineCode("scripts/conductor.mjs");
   assert.match(src, /VERB_EFFECTS\[cmd\]\?\.effect !== "read-only"/,
     "the divergence warning must be gated on verb-effects.mjs, not on an inline list of verb names");
   assert.match(src, /from "\.\/lib\/verb-effects\.mjs"/);

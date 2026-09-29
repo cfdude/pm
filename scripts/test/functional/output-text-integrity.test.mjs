@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, fixtureCommits, fixtureGit, observationRepo, tmpRepo, projectMd, readState, writeState } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const lib = (name) => new URL(`../../lib/${name}`, import.meta.url).href;
 
@@ -181,7 +182,7 @@ test("2.3a A backslash before a pipe does not open a delimiter", () => {
 });
 
 test("2.4 source guard: every PROJECT.md data row goes through tableRow()", () => {
-  const src = fs.readFileSync(new URL("../../lib/render.mjs", import.meta.url), "utf8");
+  const src = engineCode("scripts/lib/render.mjs");
   const pushes = [...src.matchAll(/md\.push\(\s*(["'`])\|/g)];
   assert.ok(pushes.length > 0, "render.mjs still pushes its literal header and separator rows");
   for (const m of pushes) {

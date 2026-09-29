@@ -26,6 +26,7 @@ import {
   CAPTURE_PATH, ROOT_TOKEN, NO_REPO_TOKEN,
 } from "../fixtures/git-gateway-repo.mjs";
 import { fakeGit, loadCapture } from "../fixtures/fake-git.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 // ─────────────────────────── 4.4 — the byte check ───────────────────────────
 
@@ -238,7 +239,7 @@ test("4.3 nothing else in the engine reaches git past the injected gateway", () 
   // The counterpart of 4.1's derivation, from the other side: the gateway the engine is HANDED is the
   // one it uses. `gitOps()` returns `ctx.git` whenever the invocation carries one, so a module that
   // held its own reference could still bypass it — this asserts the accessor is the only route.
-  const src = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "lib", "invocation.mjs"), "utf8");
+  const src = engineCode("scripts/lib/invocation.mjs");
   assert.match(src, /export function gitOps\(ctx = invocation\(\)\) \{[\s\S]{0,400}if \(ctx\.git\) return ctx\.git;/,
     "the invocation's gateway wins over any default — that is what makes `io.git` an injection");
 });

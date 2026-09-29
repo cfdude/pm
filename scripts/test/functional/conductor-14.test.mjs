@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, projectMd, parseBrief, tmpRepo, expectFail, claudeMd, stripAlwaysOn, REFRESH_GATE_HEADING, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 // ─────────────────────── group 12: epic annotation ───────────────────────
 //
@@ -567,7 +568,7 @@ test("no emitter recomputes direction from system, repo or direction locally", (
       `${name} reads a tracker's .direction itself — direction resolves in constants.mjs only`);
   }
   // Non-vacuity: the predicates the emitters must be using really are exported from there.
-  const constants = fs.readFileSync(path.join(LIB, "constants.mjs"), "utf8");
+  const constants = engineCode("scripts/lib/constants.mjs");
   for (const fn of ["outwardApplies", "inwardProcedureEmittable", "anyInwardProcedureEmittable", "usesGhIssueList"]) {
     assert.ok(constants.includes(`export const ${fn}`) || constants.includes(`export function ${fn}`),
       `constants.mjs must export ${fn}`);
