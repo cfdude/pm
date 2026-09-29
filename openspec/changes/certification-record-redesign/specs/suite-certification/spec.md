@@ -261,8 +261,11 @@ names the tests the claim rests on by construction.
 **The record SHALL be keyed by content and SHALL be append-only.**
 
 - **Naming.** An entry's name SHALL be derived from the content its manifest describes.
-- **Writing.** Writing an entry SHALL create it, never rewrite a file another run wrote, so no run
-  can overwrite, drop or corrupt another run's entry.
+- **Writing.** Writing an entry SHALL create it, and SHALL never rewrite the CONTENT of an entry
+  another run wrote (its manifest, bucket, result, counts and provenance), so no run can overwrite,
+  drop or corrupt another run's entry. A run over content already recorded MAY refresh that entry's
+  run time, replacing the entry whole and atomically with every other field unchanged, so that pruning
+  ranks the re-certification as recent.
 - **Pruning.** The record MAY prune its oldest entries. A pruned entry can only cause a demand for a
   new run, never a pass.
 
@@ -465,7 +468,8 @@ working tree, and it SHALL record the manifest of that same content.
 Several worktrees of one clone SHALL be able to certify and commit at the same time, with no lock
 held across certification and commit. They are safe by construction:
 
-- entries are named by content and created, never rewritten;
+- entries are named by content and created, and their content is never rewritten (a re-certification
+  refreshes only the run time);
 - freshness is judged per commit against the entries that agree with that commit's own index.
 
 So one worktree's run SHALL NOT remove, replace or stale another worktree's entry, and an entry

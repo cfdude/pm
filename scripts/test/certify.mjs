@@ -20,8 +20,8 @@
 // the other: an edit to `scripts/conductor.mjs` is in both subjects, so it demands both runs (D9).
 //
 // THE RECORD IS A DIRECTORY UNDER `$(git rev-parse --git-common-dir)` (certification-record-redesign
-// D1): `pm-suite-certification.d/<bucket>/<manifest key>.json`, one file per passing run, created and
-// never rewritten, so parallel worktrees certify with no lock. Machine state, shared by every worktree
+// D1): `pm-suite-certification.d/<bucket>/<manifest key>.json`, one file per passing run, created and its
+// content never rewritten (a re-certification refreshes only `ranAt`), so parallel worktrees certify with no lock. Machine state, shared by every worktree
 // of this clone, never committed. The manifest is read through drift's `indexManifest()` over the
 // run's index COPY — the same function drift judges a commit with. A fresh clone having no record is
 // correct behaviour: the first commit that stages a subject path demands a run. The superseded
@@ -289,13 +289,20 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
   let worktree = null;
   try { worktree = git(root, ["rev-parse", "--path-format=absolute", "--git-dir"]); } catch { /* informational only */ }
   const { manifest } = indexManifest(root, bucket, { indexFile: run.indexCopy });
-  const { key, file } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
+  const { key, file, created, refreshed } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
   pruneRecord(gitCommonDir, bucket, { keep: key });
-  process.stdout.write(
-    `certify: ${label} passed (${result.counts.pass}/${result.counts.tests}); recorded ${Object.keys(manifest).length} ` +
-    `subject paths as ${path.relative(bucketDir(gitCommonDir, bucket), file)} in ${bucketDir(gitCommonDir, bucket)}\n`,
-  );
+  process.stdout.write(passLine({ label, counts: result.counts, paths: Object.keys(manifest).length, file,
+    dir: bucketDir(gitCommonDir, bucket), created, refreshed }));
   return 0;
+}
+
+/** The line a recorded pass prints. A pass over content ALREADY recorded created nothing, and says so
+ *  (Gate 2 re-review F3): "already recorded", with whether its `ranAt` was refreshed. Pure; exported for its test. */
+export function passLine({ label, counts, paths, file, dir, created, refreshed }) {
+  const where = `${paths} subject paths as ${path.relative(dir, file)} in ${dir}`;
+  if (created) return `certify: ${label} passed (${counts.pass}/${counts.tests}); recorded ${where}\n`;
+  return `certify: ${label} passed (${counts.pass}/${counts.tests}); already recorded: ${where} ` +
+    `(${refreshed ? "ranAt refreshed" : "the existing entry could not be read; left as it is"})\n`;
 }
 
 // ───────────────────────── the run-time observer (certification-record-redesign D3, task 3.2) ─────────────────────────

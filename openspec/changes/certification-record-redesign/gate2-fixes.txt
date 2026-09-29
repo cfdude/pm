@@ -46,3 +46,8 @@ F1 a failed observation write failed OPEN (emit() swallowed it; the torn tail wa
 F2 writeManifestEntry() on linkSync ENOTSUP/EPERM/EXDEV falls back to an exclusive create ('wx'); EEXIST keeps the
    first entry, a failed fallback write removes the file it created, any other link error is thrown -> <sha> ->
    assert/drift-script "F2 a filesystem that cannot link…" (injected io); design D1 "Writing"; red-F2.txt
+F3 re-certifying content already recorded refreshes the entry's ranAt (the existing entry with the new ranAt, temp
+   name then rename over; every other field kept), so the pruner ranks it as recent; certify prints "already recorded"
+   (passLine()) -> <sha> -> assert/drift-script "m1/F3 an entry's CONTENT is never rewritten…" (m1 test re-pointed) and
+   "F3 a re-certified entry is RECENT to the pruner…", unit/certify-index "F3 a pass over content already recorded…";
+   spec "Writing" + "safe by construction" wording, design D1 ranAt and "Writing"; red-F3.txt

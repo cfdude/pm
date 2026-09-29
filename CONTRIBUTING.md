@@ -249,7 +249,8 @@ tracks none.
 ### Parallel worktrees
 
 Certify and commit in each worktree on its own, with no lock. Every entry is its own file, named by
-the content it certifies, created and never rewritten, so two worktrees certifying at once cannot lose
+the content it certifies, created and its content never rewritten (certifying content already recorded
+prints "already recorded" and refreshes only the entry's `ranAt`), so two worktrees certifying at once cannot lose
 each other's entry, and an entry about another worktree's content neither passes nor refuses your
 commit. Parallel certifies are correct; they only cost CPU. `pm-suite.lock` (the pre-commit hook's
 lock around the assertion half) stays, to limit machine load, not for correctness. A hand-rolled

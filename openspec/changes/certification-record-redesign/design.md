@@ -170,8 +170,9 @@ re-certify took 173 s.
   sorted paths. Mode and blob id are what `git ls-files -s` reports, so a chmod-only change is a
   different manifest.
 - `worktree` is informational, like `engineSha`. Nothing gates on it.
-- `ranAt` is set when the entry is WRITTEN, not when the run started, so the pruner (below) never
-  ranks a just-finished run as the oldest.
+- `ranAt` is set when the entry is WRITTEN, not when the run started, and is REFRESHED when a later run
+  certifies the same content (Gate 2 re-review F3), so the pruner (below) never ranks a just-finished
+  run as the oldest, whether it created its entry or found it already recorded.
 
 **Writing.**
 
@@ -181,7 +182,15 @@ re-certify took 173 s.
 - No run reads another run's file in order to write its own, so two concurrent runs cannot lose an
   update. This is the defect in today's read-modify-rename (`certification.mjs:361-367`).
 - Two runs over IDENTICAL content produce the same key. The second link fails with `EEXIST` and the
-  first file is kept byte for byte, so nothing is lost and nothing is rewritten.
+  first entry's CONTENT is kept: every field as the first run wrote it, except `ranAt`, which the second
+  run refreshes by writing the existing entry with its own `ranAt` to a temp name and renaming it over
+  (Gate 2 re-review F3). The rename is atomic, so a reader sees one whole entry or the other, and two
+  concurrent refreshes differ only in `ranAt`. An existing entry that cannot be parsed is left alone.
+  certify then prints "already recorded", never "recorded".
+- Why refresh rather than keep the first file and rank by something else: the pruner ranks by `ranAt`,
+  the one ordering the record carries and its tests inject; a file mtime would rank every entry the
+  tests write in one instant as equal. Keeping the first bytes whole would evict an entry just
+  re-certified as the oldest, which then demands a re-run it already had.
 - A filesystem without hard links (`linkSync` failing with ENOTSUP, EPERM or EXDEV; Gate 2 re-review F2)
   falls back to an EXCLUSIVE create of `<key>.json` (`open(file, 'wx')`). EEXIST still keeps the first
   entry. What the fallback gives up is the whole-file view: a reader can see the entry mid-write, and

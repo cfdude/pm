@@ -492,6 +492,17 @@ unitTest("m2 an observation that cannot be read is a NAMED refusal: the error's 
   assert.doesNotMatch(text, /^\s+at /m, "no stack frame");
 });
 
+unitTest("F3 a pass over content already recorded says so: \"already recorded\", never \"recorded\"", () => {
+  assert.equal(typeof certify.passLine, "function", "certify.mjs exports no passLine()");
+  const base = { label: "functional half", counts: { pass: 3, tests: 3 }, paths: 7, file: "/c/d/functional/k.json", dir: "/c/d/functional" };
+  const fresh = certify.passLine({ ...base, created: true, refreshed: false });
+  assert.match(fresh, /^certify: functional half passed \(3\/3\); recorded 7 subject paths as k\.json in \/c\/d\/functional\n$/);
+  const again = certify.passLine({ ...base, created: false, refreshed: true });
+  assert.match(again, /functional half passed \(3\/3\); already recorded: 7 subject paths as k\.json in \/c\/d\/functional \(ranAt refreshed\)/);
+  assert.doesNotMatch(again, /; recorded /, "nothing was created, so nothing is said to be recorded");
+  assert.match(certify.passLine({ ...base, created: false, refreshed: false }), /already recorded[^\n]*\(the existing entry could not be read; left as it is\)/);
+});
+
 unitTest("m3 rule 4 admits a file named in a TEMPLATE literal — a backtick opens a string literal too", () => {
   // Gate 2 m3. The spec's rule 4 is "a string literal"; the opening quote class held only `"`, `'` and `/`,
   // so a file spelled only as `` `hidden.mjs` `` — or as the last segment of `` `scripts/lib/hidden.mjs` `` — was not admitted.

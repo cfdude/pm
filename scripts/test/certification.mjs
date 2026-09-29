@@ -686,8 +686,12 @@ const isBucketTest = (bucket, rel) => new RegExp(`^scripts/test/${bucket}/[^/]+\
  *  LINKED into place — never renamed over it (Gate 2 m1; spec: writing an entry "SHALL create it, never
  *  rewrite a file another run wrote"). No run reads another run's file to write its own, so two runs
  *  cannot lose each other's entry (#226). Two runs over identical content produce the same key: the
- *  second link fails with EEXIST and the FIRST file is kept byte for byte (`created: false`). The temp
- *  name is removed either way. A link, not an exclusive create of `<key>.json` itself, so a reader never
+ *  second link fails with EEXIST and the FIRST entry's CONTENT is kept (`created: false`) — every field
+ *  as the first run wrote it, except `ranAt`, which the re-certification REFRESHES (Gate 2 re-review F3:
+ *  otherwise the pruner ranks a just re-certified entry by its first run and evicts it). The refresh is
+ *  atomic — the existing entry, with the new `ranAt`, written to a temp name and renamed over it — so a
+ *  reader sees one whole entry or the other (`refreshed: true`); an existing entry that cannot be parsed
+ *  is left alone. The temp name is removed either way. A link, not an exclusive create of `<key>.json` itself, so a reader never
  *  sees a half-written entry — on a filesystem that links. One that cannot (`linkSync` failing with
  *  ENOTSUP, EPERM or EXDEV; Gate 2 re-review F2) falls back to an EXCLUSIVE create of `<key>.json`
  *  (`'wx'`), which keeps the never-rewrite rule (EEXIST keeps the existing entry) but not the whole-file
@@ -696,7 +700,7 @@ const isBucketTest = (bucket, rel) => new RegExp(`^scripts/test/${bucket}/[^/]+\
  *  just-finished run as the oldest.
  *
  *  REFUSED, writing nothing: an unknown bucket, and a manifest holding no test file of its bucket —
- *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry, created }`. */
+ *  the successor of the empty-covers refusal (design D1, "What retires"). Returns `{ key, file, entry, created, refreshed }`. */
 export function writeManifestEntry(commonDir, { bucket, manifest, counts = null, engineSha = "unknown", worktree = null },
   { io = fs, now = () => new Date() } = {}) {
   if (!BUCKETS.includes(bucket)) {
@@ -725,7 +729,20 @@ export function writeManifestEntry(commonDir, { bucket, manifest, counts = null,
     } else { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
   }
   io.unlinkSync(tmp);
-  return { key, file, entry, created };
+  const refreshed = created ? false : refreshRanAt(io, file, entry.ranAt);
+  return { key, file, entry, created, refreshed };
+}
+
+/** Re-certification of an existing entry (F3): its `ranAt` becomes `ranAt`, every other field is kept, and the
+ *  whole entry is replaced atomically (temp name, then rename over). Returns whether it was refreshed. */
+function refreshRanAt(io, file, ranAt) {
+  let existing;
+  try { existing = JSON.parse(io.readFileSync(file, "utf8")); } catch { return false; }
+  if (!existing || typeof existing !== "object" || Array.isArray(existing)) return false;
+  const tmp = `${file.slice(0, -".json".length)}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+  io.writeFileSync(tmp, JSON.stringify({ ...existing, ranAt }, null, 2) + "\n");
+  try { io.renameSync(tmp, file); } catch (e) { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
+  return true;
 }
 
 /** The link errors of a filesystem that has no hard links (F2): the writer falls back to an exclusive create. */

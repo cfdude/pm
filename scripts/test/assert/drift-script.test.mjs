@@ -392,20 +392,41 @@ test("2.2 writeManifestEntry() names the file by the manifest's sha256 and creat
   assert.equal(readEntry(scratchCommonDir(), "sweeps", key), null, "an absent directory is no entry");
 });
 
-test("m1 an entry is NEVER rewritten: a second run over identical content leaves the first file's bytes untouched", () => {
-  // Gate 2 m1 (spec: "Writing an entry SHALL create it, never rewrite a file another run wrote"). The two
-  // runs differ in `ranAt`, so a rename over the first file would change its bytes.
+test("m1/F3 an entry's CONTENT is never rewritten: a second run over identical content refreshes only ranAt, atomically", () => {
+  // Gate 2 m1 (spec: an entry's content is never rewritten by another run) and its re-review F3: re-certifying
+  // content already recorded refreshes `ranAt` — so the pruner ranks the re-certification as recent — through a
+  // temp file renamed over the entry, and leaves every other field as the FIRST run wrote it.
   const { writeManifestEntry } = rd();
   const common = scratchCommonDir();
   const t0 = Date.parse("2026-01-01T00:00:00.000Z");
-  const first = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "FIRST" }, { now: () => new Date(t0) });
-  const before = fs.readFileSync(first.file);
-  const second = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "SECOND" }, { now: () => new Date(t0 + 60000) });
+  const first = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "FIRST", worktree: "W1" }, { now: () => new Date(t0) });
+  const before = JSON.parse(fs.readFileSync(first.file, "utf8"));
+  const second = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "SECOND", worktree: "W2" }, { now: () => new Date(t0 + 60000) });
   assert.equal(second.file, first.file, "the same content names the same entry");
-  assert.ok(fs.readFileSync(first.file).equals(before), "the first run's entry is byte-identical after the second run");
-  assert.equal(second.created, false, "the second writer reports that it created nothing");
   assert.equal(first.created, true);
+  assert.equal(second.created, false, "the second writer reports that it created nothing");
+  assert.equal(second.refreshed, true, "and that it refreshed the entry's ranAt");
+  const after = JSON.parse(fs.readFileSync(first.file, "utf8"));
+  assert.equal(after.ranAt, new Date(t0 + 60000).toISOString(), "ranAt is the re-certification's");
+  assert.deepEqual({ ...after, ranAt: null }, { ...before, ranAt: null }, "every other field is the first run's (engineSha FIRST, worktree W1)");
   assert.deepEqual(fs.readdirSync(path.dirname(first.file)), [path.basename(first.file)], "and no temp file survives");
+});
+
+test("F3 a re-certified entry is RECENT to the pruner: it survives a later run's prune that its first ranAt would not", () => {
+  const { writeManifestEntry, pruneRecord, manifestKey } = rd();
+  const common = scratchCommonDir();
+  const t0 = Date.parse("2026-01-01T00:00:00.000Z");
+  const at = (min) => ({ now: () => new Date(t0 + min * 60000) });
+  const n = (i) => ({ ...RD_MANIFEST, "scripts/lib/n.mjs": `100644 ${String(i).padStart(40, "0")}` });
+  writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, at(0));
+  for (let i = 1; i <= 50; i++) writeManifestEntry(common, { bucket: "functional", manifest: n(i) }, at(i));
+  writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, at(100));   // re-certified
+  const { key } = writeManifestEntry(common, { bucket: "functional", manifest: n(999) }, at(101));
+  pruneRecord(common, "functional", { keep: key, tmpDir: scratchCommonDir() });
+  const left = fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional"));
+  assert.equal(left.length, 50);
+  assert.ok(left.includes(`${manifestKey(RD_MANIFEST)}.json`), "the re-certified entry is among the newest");
+  assert.ok(!left.includes(`${manifestKey(n(1))}.json`) && !left.includes(`${manifestKey(n(2))}.json`), "the two oldest others are pruned");
 });
 
 test("F2 a filesystem that cannot link falls back to an EXCLUSIVE create: the entry is written whole, and an existing one is kept", () => {
