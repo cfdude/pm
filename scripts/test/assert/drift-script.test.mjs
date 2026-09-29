@@ -408,6 +408,40 @@ test("m1 an entry is NEVER rewritten: a second run over identical content leaves
   assert.deepEqual(fs.readdirSync(path.dirname(first.file)), [path.basename(first.file)], "and no temp file survives");
 });
 
+test("F2 a filesystem that cannot link falls back to an EXCLUSIVE create: the entry is written whole, and an existing one is kept", () => {
+  // Gate 2 re-review F2. linkSync fails with ENOTSUP, EPERM or EXDEV on a filesystem without hard links;
+  // the writer then creates `<key>.json` with an exclusive open ('wx') instead. EEXIST still keeps the
+  // first entry, and a failed write through the fallback removes the file it created.
+  const { writeManifestEntry, readEntry, manifestKey } = rd();
+  const key = manifestKey(RD_MANIFEST);
+  for (const code of ["ENOTSUP", "EPERM", "EXDEV"]) {
+    const common = scratchCommonDir();
+    const noLink = recordingIo([], { linkSync: () => { throw Object.assign(new Error(`${code}: link`), { code }); } });
+    const w = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "FIRST" }, { io: noLink });
+    assert.equal(w.created, true, `${code}: the fallback creates the entry`);
+    assert.equal(readEntry(common, "functional", key).engineSha, "FIRST", `${code}: the entry is whole`);
+    assert.deepEqual(fs.readdirSync(path.dirname(w.file)), [`${key}.json`], `${code}: no temp file survives`);
+    const before = fs.readFileSync(w.file);
+    const again = writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST, engineSha: "SECOND" }, { io: noLink });
+    assert.equal(again.created, false, `${code}: EEXIST through the fallback creates nothing`);
+    assert.equal(JSON.parse(fs.readFileSync(w.file, "utf8")).engineSha, "FIRST", `${code}: the first entry is kept`);
+    assert.ok(before.length > 0);
+    assert.deepEqual(fs.readdirSync(path.dirname(w.file)), [`${key}.json`], `${code}: and no temp file survives`);
+  }
+  const common = scratchCommonDir();
+  const broken = recordingIo([], {
+    linkSync: () => { throw Object.assign(new Error("ENOTSUP: link"), { code: "ENOTSUP" }); },
+    writeSync: () => { throw Object.assign(new Error("ENOSPC: write"), { code: "ENOSPC" }); },
+  });
+  assert.throws(() => writeManifestEntry(common, { bucket: "functional", manifest: RD_MANIFEST }, { io: broken }), /ENOSPC/);
+  assert.deepEqual(fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional")), [],
+    "a failed fallback write leaves no half-written entry under the key, and no temp file");
+  const other = scratchCommonDir();
+  const refused = recordingIo([], { linkSync: () => { throw Object.assign(new Error("EIO: link"), { code: "EIO" }); } });
+  assert.throws(() => writeManifestEntry(other, { bucket: "functional", manifest: RD_MANIFEST }, { io: refused }), /EIO/,
+    "any other link error is still thrown");
+});
+
 test("2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry)", () => {
   const { writeManifestEntry, readEntry, manifestKey } = rd();
   const common = scratchCommonDir();

@@ -688,7 +688,11 @@ const isBucketTest = (bucket, rel) => new RegExp(`^scripts/test/${bucket}/[^/]+\
  *  cannot lose each other's entry (#226). Two runs over identical content produce the same key: the
  *  second link fails with EEXIST and the FIRST file is kept byte for byte (`created: false`). The temp
  *  name is removed either way. A link, not an exclusive create of `<key>.json` itself, so a reader never
- *  sees a half-written entry. `ranAt` is taken when the entry is WRITTEN, so the pruner never ranks a
+ *  sees a half-written entry — on a filesystem that links. One that cannot (`linkSync` failing with
+ *  ENOTSUP, EPERM or EXDEV; Gate 2 re-review F2) falls back to an EXCLUSIVE create of `<key>.json`
+ *  (`'wx'`), which keeps the never-rewrite rule (EEXIST keeps the existing entry) but not the whole-file
+ *  rule: a reader may see it mid-write, and reads that as corrupt, never as a pass. A failed write through
+ *  the fallback removes the file it created, so a key never keeps a half-written entry. `ranAt` is taken when the entry is WRITTEN, so the pruner never ranks a
  *  just-finished run as the oldest.
  *
  *  REFUSED, writing nothing: an unknown bucket, and a manifest holding no test file of its bucket —
@@ -706,18 +710,42 @@ export function writeManifestEntry(commonDir, { bucket, manifest, counts = null,
   const dir = bucketDir(commonDir, bucket);
   const file = path.join(dir, `${key}.json`);
   const entry = { version: 2, bucket, manifest, result: "pass", counts, ranAt: now().toISOString(), engineSha, worktree };
+  const bytes = JSON.stringify(entry, null, 2) + "\n";
   io.mkdirSync(dir, { recursive: true });
   const tmp = path.join(dir, `${key}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`);
-  io.writeFileSync(tmp, JSON.stringify(entry, null, 2) + "\n");
+  io.writeFileSync(tmp, bytes);
   let created = true;
   try {
     io.linkSync(tmp, file);
   } catch (e) {
-    if (!e || e.code !== "EEXIST") { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
-    created = false;
+    const code = e && e.code;
+    if (code === "EEXIST") created = false;
+    else if (NO_LINK.includes(code)) {
+      try { created = createExclusive(io, file, bytes); } catch (w) { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw w; }
+    } else { try { io.unlinkSync(tmp); } catch { /* already gone */ } throw e; }
   }
   io.unlinkSync(tmp);
   return { key, file, entry, created };
+}
+
+/** The link errors of a filesystem that has no hard links (F2): the writer falls back to an exclusive create. */
+const NO_LINK = Object.freeze(["ENOTSUP", "EPERM", "EXDEV"]);
+
+/** Create `file` with `bytes` through an exclusive open. Returns false when it already exists (the existing
+ *  entry is kept); on a failed write it removes the file it created, then throws. */
+function createExclusive(io, file, bytes) {
+  let fd;
+  try { fd = io.openSync(file, "wx"); } catch (e) { if (e && e.code === "EEXIST") return false; throw e; }
+  try {
+    const buf = Buffer.from(bytes);
+    for (let off = 0; off < buf.length;) off += io.writeSync(fd, buf, off, buf.length - off);
+  } catch (e) {
+    try { io.closeSync(fd); } catch { /* closing a failed fd */ }
+    try { io.unlinkSync(file); } catch { /* already gone */ }
+    throw e;
+  }
+  io.closeSync(fd);
+  return true;
 }
 
 /** The entry of one key, or null. An absent directory or file is NO ENTRY — a fresh clone, a clone

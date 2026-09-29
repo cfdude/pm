@@ -945,6 +945,7 @@ These rules bind every section below.
       - m4: guard — an untracked failing functional test is neither run nor recorded (`mutation-m4.txt`).
       - m5: docs — the symlink limit in `certify.mjs`, and a SIGKILLed certify in `CONTRIBUTING.md`.
       - F1 (re-review, Important): a failed observation write removes the process sentinel; a file without it is refused, and a torn last line is accepted only from a killed process (`red-F1.txt`).
+      - F2 (re-review): a filesystem that cannot link falls back to an exclusive create; EEXIST keeps the first entry (`red-F2.txt`).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**

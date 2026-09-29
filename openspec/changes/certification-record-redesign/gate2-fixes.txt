@@ -43,3 +43,6 @@ F1 a failed observation write failed OPEN (emit() swallowed it; the torn tail wa
    directory exists throws at load -> <sha> -> functional/certify-index "F1 a child whose observation WRITE fails…"
    (a real EFBIG under `ulimit -f 2`), twin unit/certify-index "F1 …" (2); spec "A failed observation write fails the
    certification closed" + fifth limit, design D3 "The observation file, and the torn-tail rule"; red-F1.txt
+F2 writeManifestEntry() on linkSync ENOTSUP/EPERM/EXDEV falls back to an exclusive create ('wx'); EEXIST keeps the
+   first entry, a failed fallback write removes the file it created, any other link error is thrown -> <sha> ->
+   assert/drift-script "F2 a filesystem that cannot link…" (injected io); design D1 "Writing"; red-F2.txt

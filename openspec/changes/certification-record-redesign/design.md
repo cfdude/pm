@@ -182,6 +182,10 @@ re-certify took 173 s.
   update. This is the defect in today's read-modify-rename (`certification.mjs:361-367`).
 - Two runs over IDENTICAL content produce the same key. The second link fails with `EEXIST` and the
   first file is kept byte for byte, so nothing is lost and nothing is rewritten.
+- A filesystem without hard links (`linkSync` failing with ENOTSUP, EPERM or EXDEV; Gate 2 re-review F2)
+  falls back to an EXCLUSIVE create of `<key>.json` (`open(file, 'wx')`). EEXIST still keeps the first
+  entry. What the fallback gives up is the whole-file view: a reader can see the entry mid-write, and
+  reads it as corrupt, never as a pass. A failed write through it removes the file it created.
 
 **Content identity is the mode and git blob id.** Drift reads them with `git ls-files -s`
 (`ls-files` is already permitted), and certify reads them from its copy of the index. Both, and the
