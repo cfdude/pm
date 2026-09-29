@@ -22,7 +22,7 @@
 //     fixture has to put it on disk, which is the rule as written;
 //   * `add-many rejects an unpersisted batch key` — a batch FILE;
 //   * `update-epic holds no openspec-lane archive condition of its own` — reads `lib/update-epic.mjs`
-//     and asserts its call site with comment-only lines stripped. It is one of the source-shape guards
+//     and asserts its call site in CODE (every comment stripped by the shared lexer). It is one of the source-shape guards
 //     4.1 names by hand, and it stays where its subject is.
 //
 // No assertion changed in either direction.
@@ -32,22 +32,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState, expectFail, projectMd } from "../fixtures/assert-harness.mjs";
+import { codeOnly, engineCode } from "../fixtures/source-code.mjs";
 
 const repo = () => { const cwd = tmpRepo(); run(["init"], { cwd }); return cwd; };
-
-/** The source with COMMENT-ONLY lines removed: a line whose first non-space characters open a line
- *  comment, a block comment or a continuation of one.
- *
- *  IT IS LINE-ORIENTED ON PURPOSE, AND THAT IS THE REPAIR. A character-level stripper (the shape
- *  `assert-half-has-no-spawn.test.mjs` carries, whose docstring claims it can only produce a FALSE
- *  POSITIVE) was tried here first and IS NOT SOUND in that direction: measured on
- *  `lib/update-epic.mjs`, a regex literal holding a quote earlier in the file leaves it in
- *  string-mode, and every comment after that point passes through VERBATIM — a false NEGATIVE, which
- *  is the direction a guard cannot have. This cannot desync, because it never tracks state across
- *  lines: it either drops a whole line or keeps it whole. */
-function codeLines(src) {
-  return src.split("\n").filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join("\n");
-}
 
 test("add-many rejects an unpersisted batch key by name and creates ZERO epics", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
@@ -67,8 +54,26 @@ test("update-epic holds no openspec-lane archive condition of its own", () => {
   // call site away and the guard stayed GREEN, because the comment still matched. A source-reading
   // guard a comment can satisfy checks the wrong half of what it claims
   // (`docs/lessons/a-guard-can-check-the-wrong-half.md`), so the read drops comment-only lines.
-  const src = codeLines(fs.readFileSync(new URL("../../lib/update-epic.mjs", import.meta.url), "utf8"));
-  assert.match(src, /archiveGate\(/, "the verb calls the gate");
+  //
+  // THAT REPAIR WAS ITSELF HALF A REPAIR (guards-that-read-engine-source-drift-silently): dropping
+  // comment-only LINES keeps a trailing comment, so `x(); // … archiveGate()'s refusal` still
+  // satisfied it. The read is now `engineCode()` — every comment stripped by the shared regex-aware
+  // lexer, which refuses to answer from a misread. The test below pins every comment shape.
+  const src = engineCode("scripts/lib/update-epic.mjs");
+  assert.ok(callsArchiveGate(src), "the verb calls the gate");
+});
+
+/** Does this CODE call the archive gate? Pure, so the discrimination test below can feed it text. */
+function callsArchiveGate(code) { return /archiveGate\(/.test(code); }
+
+test("the gate-call check reads CODE — no comment shape satisfies it", () => {
+  // guards-that-read-engine-source-drift-silently: `codeLines()` dropped comment-only lines and KEPT
+  // a trailing one, so `x(); // … archiveGate()'s refusal` still satisfied the guard.
+  const gate = "archive" + "Gate(";
+  for (const src of [`x();\n// ${gate}\n`, `x(); // one level down from ${gate})'s refusal\n`, `/* ${gate} */ x();\n`]) {
+    assert.equal(callsArchiveGate(codeOnly(src)), false, JSON.stringify(src));
+  }
+  assert.equal(callsArchiveGate(codeOnly(`const r = ${gate}epic);\n`)), true, "a real call does satisfy it");
 });
 
 // ─────────────────── the lifecycle task count ───────────────────
