@@ -1,0 +1,22 @@
+✖ failing tests:
+
+test at scripts/test/functional/emitted-invocations.test.mjs:849:7
+✖ Layer B integrity:archived-with-zero-ticked-tasks — reproduces its condition and prints no engine invocation (1642.92225ms)
+  Error: ENOENT, No such file or directory '<tmp>/pm-test-Bwc2NU/.git/objects'
+      at copyDir (node:internal/fs/cp/cp-sync:154:22)
+      at onDir (node:internal/fs/cp/cp-sync:146:10)
+      at getStats (node:internal/fs/cp/cp-sync:68:12)
+      at cpSyncFn (node:internal/fs/cp/cp-sync:58:10)
+      at Object.cpSync (node:fs:3846:3)
+      at Object.observed [as cpSync] (file://<tmp>/pm-certify-run.7oYl2U/tree/scripts/test/fixtures/observe-reads.mjs?dir=%2Fvar%2Ffolders%2Fng%2F9xps42_d057g6wm_glhntjhw0000gn%2FT%2Fpm-certify-run.7oYl2U%2Fobserve&root=%2Fvar%2Ffolders%2Fng%2F9xps42_d057g6wm_glhntjhw0000gn%2FT%2Fpm-certify-run.7oYl2U%2Ftree:141:16)
+      at remedyRepo (file://<tmp>/pm-certify-run.7oYl2U/tree/scripts/test/functional/emitted-invocations.test.mjs:720:6)
+      at Object.setup (file://<tmp>/pm-certify-run.7oYl2U/tree/scripts/test/functional/emitted-invocations.test.mjs:901:20)
+      at TestContext.<anonymous> (file://<tmp>/pm-certify-run.7oYl2U/tree/scripts/test/functional/emitted-invocations.test.mjs:850:22)
+      at Test.runInAsyncScope (node:async_hooks:226:14) {
+    errno: 2,
+    code: 'ENOENT',
+    path: '<tmp>/pm-test-Bwc2NU/.git/objects',
+    syscall: 'cp'
+  }
+
+certify: the functional half FAILED (status 1). Nothing recorded — a record is a claim about a pass.

@@ -341,3 +341,97 @@ $ git show --stat --format= dfbf7185
 $ git ls-tree 0b2ad82c .githooks/commit-msg ; git ls-files -s .githooks/commit-msg
   100755 blob 5f86012e53510e3e3b4a01a064d2d708202fce01	.githooks/commit-msg
   100755 5f86012e53510e3e3b4a01a064d2d708202fce01 0	.githooks/commit-msg
+
+# ── L5 commits, appended in 7.1's commit (same method) ──
+
+## 5.4  932f6f31 docs(openspec): every task commit verified against the commit, not the tree (5.4)
+$ git show --stat --format= 932f6f31
+   openspec/changes/certification-record-redesign/commit-verification-5.4.txt | 343 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                    |   5 +-
+   2 files changed, 347 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/commit-verification-5.4.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.5  9a155f3b docs(openspec): lifecycle bookkeeping is declared on exactly 8.2 and 8.3 (5.5)
+$ git show --stat --format= 9a155f3b
+   openspec/changes/certification-record-redesign/tasks.md | 5 ++++-
+   1 file changed, 4 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.8  eb14a5f5 docs(openspec): 8.2 names every non-goal; its disposition prepared, not run (5.8)
+$ git show --stat --format= eb14a5f5
+   openspec/changes/certification-record-redesign/disposition-5.8.txt | 34 ++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md            |  4 +++-
+   2 files changed, 37 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/disposition-5.8.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.9  55e48689 docs(lessons): route what the redesign taught; its two lessons now name the mechanism (5.9)
+$ git show --stat --format= 55e48689
+   docs/lessons/README.md                                                 |  4 ++--
+   docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md          | 18 ++++++++++--------
+   docs/lessons/an-uncertified-module-change-skips-the-functional-half.md | 15 ++++++++++++---
+   openspec/changes/certification-record-redesign/routing-5.9.txt         | 67 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                |  7 ++++++-
+   5 files changed, 97 insertions(+), 14 deletions(-)
+  claim ok   openspec/changes/certification-record-redesign/routing-5.9.txt
+  claim ok   docs/lessons/an-uncertified-module-change-skips-the-functional-half.md
+  claim ok   docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md
+  claim ok   docs/lessons/README.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.1  c647fb03 docs(contributing): two hooks, the observed subject, certify over the index, parallel worktrees (6.1)
+$ git show --stat --format= c647fb03
+   CONTRIBUTING.md                                         | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++------------
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   2 files changed, 76 insertions(+), 13 deletions(-)
+  claim ok   CONTRIBUTING.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.2  afdb3b64 docs(claude-md): the Tests bullet names both hook phases and the observed subject (6.2)
+$ git show --stat --format= afdb3b64
+   CLAUDE.md                                               | 17 ++++++++++++-----
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   2 files changed, 17 insertions(+), 6 deletions(-)
+  claim ok   CLAUDE.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.3  ddd1618f docs(changesets): certification-record-redesign — contributor tooling only (6.3)
+$ git show --stat --format= ddd1618f
+   .changesets/certification-record-redesign.md            | 32 ++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   2 files changed, 37 insertions(+), 1 deletion(-)
+  claim ok   .changesets/certification-record-redesign.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.5  f4d36eed docs(skills): pr-workflow step 2 — the observed subject and the commit-msg phase (6.5)
+$ git show --stat --format= f4d36eed
+   .claude/skills/pr-workflow/SKILL.md                     | 14 +++++++++++---
+   openspec/changes/certification-record-redesign/tasks.md |  4 +++-
+   2 files changed, 14 insertions(+), 4 deletions(-)
+  claim ok   .claude/skills/pr-workflow/SKILL.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.6  7f78e9c9 docs(skills): pr-workflow step 6 — Gate 2 audits every Twin-Unchanged trailer (6.6)
+$ git show --stat --format= 7f78e9c9
+   .claude/skills/pr-workflow/SKILL.md                     | 25 +++++++++++++++++++++----
+   .claude/skills/release-checklist/SKILL.md               |  2 +-
+   docs/lessons/README.md                                  |  2 +-
+   docs/lessons/squash-merge-orphans-the-evidence.md       |  2 +-
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   5 files changed, 29 insertions(+), 8 deletions(-)
+  claim ok   .claude/skills/pr-workflow/SKILL.md
+  claim ok   .claude/skills/release-checklist/SKILL.md
+  claim ok   docs/lessons/squash-merge-orphans-the-evidence.md
+  claim ok   docs/lessons/README.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+

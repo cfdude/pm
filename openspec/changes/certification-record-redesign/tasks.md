@@ -896,13 +896,18 @@ These rules bind every section below.
 
 ## 7. Integration
 
-- [ ] 7.1 **Every test is green on the final tree:**
+- [x] 7.1 **Every test is green on the final tree:**
       - the drift script, both phases;
       - the assertion half, both rungs;
       - `certify.mjs functional` and `certify.mjs sweeps`, each passing and writing a manifest;
       - CI's four steps on the PR.
 
       Record the counts in `baseline-after.md`, beside 0.3's.
+      Done: `baseline-after.md` records the drift script (both phases and none: ok), the assertion half
+      (1582/1582), sweeps (25/25, 69 paths) and functional (1258/1258, 186 paths, the same key 6.2
+      recorded). The first functional run hit the known ENOENT flake and was logged, then re-run. CI's
+      four steps are NOT yet run: they run on the PR, which this step did not open. `commit-verification-5.4.txt`
+      has the L5 commits appended: 9 of 9 pass.
 - [ ] 7.2 **The after-measure.**
       - Re-run `measure.mjs` over the 0.50.0 range with the SHIPPED `functionalSubject()`, and over
         this change's own range. Report both against 0.3(a).
