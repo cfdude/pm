@@ -230,6 +230,9 @@ unitTest("a bare invocation with no subcommand prints usage and exits 0", () => 
 //    `scripts/test/js-lexer.mjs`, so every hook fixture copies it beside drift and certification
 //    (`runHookAgainstFixture`), and IX-k — which TRACKS the machinery — tracks it too, or the snapshot's
 //    drift fails at import and the commit is refused for the wrong reason.
+// 7. THE OBSERVED SUBJECT (certification-record-redesign 3.3). IX-j's `zz-probe.mjs` is imported,
+//    executed and named by nothing, so from L3 it is outside the functional subject: IX-j asserts a
+//    SWEEPS demand naming it and NO functional demand.
 
 // ──────────────── the pre-commit hook's SHAPE ────────────────
 //

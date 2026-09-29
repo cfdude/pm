@@ -38,8 +38,8 @@ import os from "node:os";
 import path from "node:path";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import {
-  ENGINE_ENTRY, REPO, assertionIds, bucketSubject, certifiedModules, couplingRefusals, describeRefusal,
-  engineSourceFiles, enrolmentRefusals, freshnessRefusal, functionalIds, homeOf, twinRefusals,
+  ENGINE_ENTRY, REPO, assertionIds, bucketSubject, couplingRefusals, describeRefusal,
+  engineSourceFiles, enrolmentRefusals, freshnessRefusal, functionalIds, functionalSubject, homeOf, twinRefusals,
   writeManifestEntry,
 } from "../certification.mjs";
 import { PERMITTED_SUBCOMMANDS, gitRead } from "../drift.mjs";
@@ -168,18 +168,21 @@ test("check 4 — FRESHNESS IS THE CONTENT, not the age and not the commit", () 
   assert.equal(freshnessRefusal(args(changed, ["README.x"])), null, "an unrelated commit is not refused — that is the whole point of a trigger");
 });
 
-test("check 4 — the sweeps bucket is a SECOND, disjoint demand, and each subject is the interim path classes (2.4)", () => {
+test("check 4 — the sweeps bucket is a SECOND, disjoint demand, and the functional subject is what the half OBSERVES (3.3)", () => {
   // A synthetic INDEX, read the way drift reads one: `paths` is its listing, `readFile` its bytes.
   const files = {
-    "scripts/conductor.mjs": "export const main = () => gitOps();\n",
+    "scripts/conductor.mjs": 'import { rank } from "./lib/rank.mjs";\nexport const main = () => gitOps();\n',
     "scripts/lib/git.mjs": "export const a = () => gitOps();\n",
     "scripts/lib/rank.mjs": "export const rank = () => 0;\n",
-    "scripts/test/functional/alpha.test.mjs": "",
-    "scripts/test/fixtures/helper.mjs": "",
+    "scripts/lib/orphan.mjs": "export const orphan = () => gitOps();\n",
+    "scripts/test/functional/alpha.test.mjs": 'import { a } from "../../lib/git.mjs";\nimport "../fixtures/helper.mjs";\nimport "../drift.mjs";\n',
+    "scripts/test/fixtures/helper.mjs": 'export const RUNNER = "certify.mjs";\n',
+    "scripts/test/fixtures/unused.mjs": "",
     "scripts/test/assert/alpha.test.mjs": "",
     "scripts/test/sweeps/output-interpolations.mjs": "",
     "scripts/test/sweeps/output-interpolations.test.mjs": "",
-    "scripts/test/certify.mjs": "", "scripts/test/certification.mjs": "", "scripts/test/drift.mjs": "",
+    "scripts/test/certify.mjs": "", "scripts/test/drift.mjs": 'import "./certification.mjs";\n',
+    "scripts/test/certification.mjs": 'import { lex } from "./js-lexer.mjs";\n', "scripts/test/js-lexer.mjs": "",
   };
   const paths = Object.keys(files);
   const rel = (abs) => path.relative(REPO, abs).split(path.sep).join("/");
@@ -190,20 +193,26 @@ test("check 4 — the sweeps bucket is a SECOND, disjoint demand, and each subje
   const sweeps = subject("sweeps");
   const demands = (p) => ["functional", "sweeps"].filter((b) => (b === "functional" ? functional : sweeps).has(p));
 
-  assert.deepEqual(demands("scripts/lib/rank.mjs"), ["sweeps"], "a library module that makes no gateway call demands the SWEEPS only (L2; L3 widens this)");
-  assert.deepEqual(demands("scripts/lib/git.mjs"), ["functional", "sweeps"], "a gateway caller demands BOTH, and neither substitutes");
-  assert.deepEqual(demands(ENGINE_ENTRY), ["functional", "sweeps"], "the entry point, which calls the gateway, demands both");
+  assert.deepEqual([...functional], functionalSubject({ root: REPO, readFile, readdir, paths }),
+    "the functional bucket's subject IS functionalSubject() — the gitOps( scan is retired (3.3)");
+  assert.deepEqual(demands("scripts/lib/rank.mjs"), ["functional", "sweeps"],
+    "a module the engine imports that makes NO gateway call demands BOTH (the b4ffe164 shape, #229)");
+  assert.deepEqual(demands("scripts/lib/orphan.mjs"), ["sweeps"],
+    "a gateway caller nothing imports, executes or names demands the SWEEPS only (IX-j's shape)");
+  assert.deepEqual(demands("scripts/lib/git.mjs"), ["functional", "sweeps"], "an imported module demands both, and neither substitutes");
+  assert.deepEqual(demands(ENGINE_ENTRY), ["functional", "sweeps"], "the entry point is a closure root and engine source");
   assert.deepEqual(demands("scripts/test/sweeps/output-interpolations.mjs"), ["sweeps"],
     "the sweep's own METHOD is in its subject: staging only it demands a sweeps run (the #229 shape, one bucket over)");
   assert.deepEqual(demands("scripts/test/sweeps/output-interpolations.test.mjs"), ["sweeps"]);
   assert.deepEqual(demands("scripts/test/functional/alpha.test.mjs"), ["functional"], "every functional test file is in the functional subject");
-  assert.deepEqual(demands("scripts/test/fixtures/helper.mjs"), ["functional"], "so is every fixture");
+  assert.deepEqual(demands("scripts/test/fixtures/helper.mjs"), ["functional"], "a fixture the half imports is in it");
+  assert.deepEqual(demands("scripts/test/fixtures/unused.mjs"), [], "a fixture nothing imports or names is not");
   for (const m of ["scripts/test/certify.mjs", "scripts/test/certification.mjs", "scripts/test/drift.mjs"]) {
-    assert.deepEqual(demands(m), ["functional"], `the certification machinery (${m}) is in the functional subject (B9)`);
+    assert.deepEqual(demands(m), ["functional"], `the certification machinery (${m}) is in the functional subject because the half reaches it`);
   }
   assert.deepEqual(demands("scripts/test/assert/alpha.test.mjs"), [], "an assertion-half file is in no subject: the per-commit gate runs it");
   assert.ok(functional.has("scripts/test/js-lexer.mjs") && sweeps.has("scripts/test/js-lexer.mjs"),
-    "js-lexer.mjs is named by both (from 3.1); the subject ∩ index rule drops it while the index holds none");
+    "js-lexer.mjs is in both: certification.mjs imports it, and the sweep does");
 });
 
 test("check 4 — an entry from another tree neither passes nor refuses", () => {
@@ -226,29 +235,34 @@ test("check 4 — an entry from another tree neither passes nor refuses", () => 
 
 // ───────────────────────────── the derivation, and what the script may do ─────────────────────────────
 
-test("6.1: the certified set is DERIVED from the gateway calls, not typed", () => {
-  const mods = certifiedModules(REPO, readFile, fs.readdirSync);
-  // The seven the design names, plus the entry point — and the agreement is the ASSERTION, not the
-  // source of the list: the set comes from scanning for `gitOps(` calls, so a module that starts
-  // calling the gateway enters it without anyone remembering to add it.
-  assert.deepEqual(mods, [
-    "scripts/conductor.mjs",
-    "scripts/lib/commit-watch.mjs",
-    "scripts/lib/constants.mjs",
-    "scripts/lib/created-at.mjs",
-    "scripts/lib/git.mjs",
-    "scripts/lib/subcommands.mjs",
-    "scripts/lib/tool-currency.mjs",
-    "scripts/lib/worktree-hygiene.mjs",
-  ], "the gateway's callers, derived by scanning for gitOps() calls");
-  // The two machinery files are excluded by name, and each exclusion is stated: one IS the gateway,
-  // the other BUILDS it — neither can be handed a double in the sense the certified set is about.
-  assert.ok(!mods.includes("scripts/lib/git-gateway.mjs"));
-  assert.ok(!mods.includes("scripts/lib/invocation.mjs"));
+test("3.3: the functional subject over this repository is DERIVED from what the half observes, not typed", () => {
+  // The working tree's files under the subject roots, read as an index would be (the file rung reads
+  // bytes; the functional twin, 3.5, derives it over the real INDEX with git).
+  const roots = ["scripts", ".githooks", "hooks", "commands", "skills", "agents", ".claude-plugin"];
+  const paths = [];
+  const walk = (rel) => {
+    for (const e of fs.readdirSync(path.join(REPO, rel), { withFileTypes: true })) {
+      const r = `${rel}/${e.name}`;
+      if (e.isDirectory()) walk(r); else paths.push(r);
+    }
+  };
+  for (const r of roots) if (fs.existsSync(path.join(REPO, r))) walk(r);
+  for (const f of ["README.md", "CLAUDE.md", "docs/parity-ledger.json", "CHANGELOG.md"]) if (fs.existsSync(path.join(REPO, f))) paths.push(f);
+  const s = new Set(functionalSubject({ root: REPO, readFile, readdir: fs.readdirSync, paths }));
+  // The b4ffe164 module (#229): imported by the half, no gateway call — IN.
+  assert.ok(s.has("scripts/lib/archive-gate.mjs"), "archive-gate.mjs is imported by the half though it never reaches git");
+  assert.ok(!/\bgitOps\s*\(/.test(readFile(path.join(REPO, "scripts/lib/archive-gate.mjs"))),
+    "precondition: archive-gate.mjs makes no gateway call, so the retired scan would have left it out");
+  for (const p of [ENGINE_ENTRY, ".githooks/pre-commit", "hooks/hooks.json", "scripts/test/drift.mjs",
+    "scripts/test/assert/parity.test.mjs", "scripts/test/assert/engine-resolution.test.mjs", "README.md", "CLAUDE.md", "docs/parity-ledger.json"]) {
+    assert.ok(s.has(p), `${p} is observed by the functional half`);
+  }
+  assert.ok(!s.has("scripts/test/assert/drift-script.test.mjs"), "an assertion file the half does not execute is OUT, though a comment names it");
+  assert.ok(!s.has("CHANGELOG.md"), "the record is OUT by rule");
   assert.deepEqual(engineSourceFiles(REPO, fs.readdirSync).slice(0, 1), [ENGINE_ENTRY],
     "the engine-source trigger's subject starts with the entry point");
   assert.ok(engineSourceFiles(REPO, fs.readdirSync).includes("scripts/lib/git-gateway.mjs"),
-    "and covers EVERY library module, the gateway included — it hashes source, not behaviour");
+    "and covers EVERY library module, the gateway included — it judges source, not behaviour");
 });
 
 test("6.1/6.4: the drift script starts no engine, no runner and no fixture — it reads the index", () => {

@@ -350,9 +350,11 @@ export function runHookAgainstFixture(testFileBody, {
   // `node scripts/test/drift.mjs` before the suite, so a fixture holding a hook but not the script
   // would abort for a reason that has nothing to do with what these fixtures test — and stubbing it
   // would mean the hook's own wiring is never exercised. The script and its shared machinery are
-  // copied in, and the minimal tree it reads is created: an EMPTY `scripts/lib/` and an empty
-  // `conductor.mjs` derive an empty certified set, and the two empty buckets derive no functional
-  // ids — so all four checks pass on the fixture by construction, which is what lets the floor and
+  // copied in, and the minimal tree it reads is created: an EMPTY `scripts/lib/` and an untracked,
+  // empty `conductor.mjs` put nothing in the engine source, the two empty buckets derive no functional
+  // ids, and with no functional test and no tracked entry point the observed functional subject
+  // (`functionalSubject()`) has no closure to hold anything — so all four checks pass on the fixture by
+  // construction, which is what lets the floor and
   // the quiet/failure behaviour below be observed through the real hook.
   const repoRoot = path.join(path.dirname(ENGINE), "..");
   // `js-lexer.mjs` since certification-record-redesign 3.1: certification.mjs imports it (the comment

@@ -109,9 +109,10 @@ export function stagedFiles(root) {
  *
  *  Both take ABSOLUTE paths under `root`, as the fs defaults do. A directory the index holds nothing
  *  under reads as EMPTY (the fs default would throw ENOENT for a missing one, and `testIdsIn` already
- *  treats that as empty; `certifiedModules` needs `scripts/lib/` to read as empty in a tree that
- *  stages none). A file the index does not hold reads as "" — it is not in the commit, so it calls no
- *  gateway, which is exactly how an absent file must be judged.
+ *  treats that as empty; `engineSourceFiles` needs `scripts/lib/` to read as empty in a tree that
+ *  stages none). A file the index does not hold reads as "" — it is not in the commit, so it imports,
+ *  executes and names nothing, which is exactly how the observed subject (`functionalSubject()`) must
+ *  judge an absent file.
  *  One `ls-files` for the listing; one `show :<path>` per file actually read. `paths` is the listing.
  *
  *  `indexFile` (certification-record-redesign 2.4, X1) reaches BOTH reads — the listing AND every

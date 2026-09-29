@@ -37,10 +37,13 @@ const git = (cwd, args, env) => execFileSync("git", args,
   { cwd, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"], ...(env ? { env: { ...process.env, ...env } } : {}) }).trim();
 
 const TEST_BODY = 'import { test } from "node:test";\ntest("alpha", () => {});\n';
+/** The fixtures' functional test IMPORTS their one library module, so the module is in the observed
+ *  functional subject (certification-record-redesign 3.3) as well as in the sweeps subject. */
+const FN_BODY = 'import { test } from "node:test";\nimport { touch } from "../../lib/m.mjs";\ntest("alpha", () => { void touch; });\n';
 
 /** A fixture repository shaped the way the drift script's derivations read: an engine entry point,
- *  one library module that CALLS the gateway (so it is in the interim functional subject, through
- *  `certifiedModules()`, and in the sweeps subject), one functional test with its assertion twin, and
+ *  one library module the functional test IMPORTS (so it is in the observed functional subject, and in
+ *  the sweeps subject as engine source), one functional test with its assertion twin, and
  *  one sweep test.
  *
  *  The record holds an agreeing entry for BOTH buckets over the committed content — seeded through
@@ -54,7 +57,7 @@ function fixtureRepo() {
   const files = {
     "scripts/conductor.mjs": "export const main = () => 0;\n",
     "scripts/lib/m.mjs": CERTIFIED,
-    "scripts/test/functional/alpha.test.mjs": TEST_BODY,
+    "scripts/test/functional/alpha.test.mjs": FN_BODY,
     "scripts/test/assert/alpha.test.mjs": TEST_BODY,
     "scripts/test/sweeps/s.test.mjs": 'import { test } from "node:test";\ntest("s", () => {});\n',
   };
@@ -204,7 +207,7 @@ function certifiableRepo() {
   const files = {
     "scripts/conductor.mjs": "export const main = () => 0;\n",
     "scripts/lib/m.mjs": "export const touch = () => gitOps();\n",
-    "scripts/test/functional/alpha.test.mjs": TEST_BODY,
+    "scripts/test/functional/alpha.test.mjs": FN_BODY,
     "scripts/test/assert/alpha.test.mjs": TEST_BODY,
     "scripts/test/sweeps/s.test.mjs": 'import { test } from "node:test";\ntest("s", () => {});\n',
   };

@@ -146,6 +146,8 @@ unitTest("1.3 the export lands inside the clone, never in a bare --prefix direct
 // docs/parity-ledger.json by name. The record (`openspec/`, `.conductor/`, `CHANGELOG.md`, the rest of
 // `docs/`) is never in it. Every case below is a VALUE `functionalSubject()` returned over an index the
 // test hands it as text — no path is read.
+// From 3.3 it IS the functional bucket's subject (drift's and certify's, through `bucketSubject()`), so the
+// functional twin's fixture stub IMPORTS its one library module — a comment naming it no longer puts it in.
 
 const ROOT = "/r";
 /** An index as a filesystem, in the shape drift's `indexReaders()` returns: `paths` is the listing,

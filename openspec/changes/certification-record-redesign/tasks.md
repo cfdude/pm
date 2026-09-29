@@ -571,7 +571,7 @@ These rules bind every section below.
           records no misparse for it. No test asserts otherwise.
 
       RED `red-3.2.txt`.
-- [ ] 3.3 **The switch, ONE commit** (L3).
+- [x] 3.3 **The switch, ONE commit** (L3).
       - **Drift.** `drift.mjs` and `certify.mjs` use `functionalSubject()`.
       - **Retired.** `certifiedModules()` (`certification.mjs:191-201`) and `ENGINE_ENTRY`'s
         special case (`:199`) retire. (`certifiedSet()` already retired in 2.4, Gate 1 round 3

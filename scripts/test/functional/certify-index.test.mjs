@@ -45,7 +45,9 @@ const git = (cwd, ...args) => execFileSync("git", ["-C", cwd, ...args], { encodi
 const STUB = `import { test } from "node:test";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-// drives m.mjs, the fixture's one certified module
+// IMPORTS m.mjs, the fixture's one module, so it is in the observed functional subject (3.3)
+import { touch } from "../../lib/m.mjs";
+void touch;
 test("stub", async () => {
   const mode = process.env.PM_STUB_MODE || "pass";
   if (mode === "edit") {

@@ -153,28 +153,7 @@ export function couplingRefusals({ stagedFiles, functional, assertion }) {
   return out.sort((a, b) => a.id.localeCompare(b.id));
 }
 
-// ───────────────────────────── the certified set (derived, never typed) ─────────────────────────────
-
-/** The modules a functional run certifies: every module that CALLS the gateway, plus the entry point
- *  whose return-status mapping the conformance set pins (D7's "and `conductor.mjs`", which is NOT
- *  derivable from the gateway sweep and is named for the opposite reason).
- *
- *  THE DERIVATION IS THE CALL, NOT THE NAME. A module is in the set when its source contains a
- *  `gitOps(` call. `invocation.mjs` DEFINES that function and `git-gateway.mjs` IS the gateway, so
- *  neither can be "handed a double" in the sense that matters — they are excluded by name, and a
- *  module ADDED later that starts calling the gateway enters the set without anyone remembering to
- *  add it, which is the whole point of deriving rather than listing. */
-export function certifiedModules(root = REPO, readFile = readDefault, readdir = readdirDefault) {
-  const CALLS_GATEWAY = /\bgitOps\s*\(/;
-  const machinery = new Set(["git-gateway.mjs", "invocation.mjs"]);
-  const libDir = path.join(root, "scripts", "lib");
-  const mods = readdir(libDir)
-    .filter((f) => f.endsWith(".mjs") && !machinery.has(f))
-    .filter((f) => CALLS_GATEWAY.test(readFile(path.join(libDir, f))))
-    .map((f) => `scripts/lib/${f}`);
-  if (CALLS_GATEWAY.test(readFile(path.join(root, ENGINE_ENTRY)))) mods.push(ENGINE_ENTRY);
-  return mods.sort();
-}
+// ───────────────────────────── the subjects (derived, never typed) ─────────────────────────────
 
 /** The engine source (D9): the entry point plus every library module, because the output sweep reads
  *  their SOURCE and a change to any of them can invalidate it. The sweeps subject is built on it. */
@@ -372,32 +351,25 @@ function walkPaths(root, readdir) {
   return out.sort();
 }
 
-/** The certification machinery's own files (design D7, B9): a change to any of them can change what
- *  a run certifies, so each is in the functional subject. `js-lexer.mjs` is named ahead of 3.1, which
- *  creates it; until then the index holds no such path and the subject ∩ index rule drops it. */
-export const MACHINERY = Object.freeze(["scripts/test/certify.mjs", "scripts/test/certification.mjs", "scripts/test/drift.mjs", "scripts/test/js-lexer.mjs"]);
-
-/** A BUCKET'S SUBJECT — the INTERIM derivation of landing step L2 (design D7 L2 row; tasks 2.4), over
- *  one index read through `readFile`/`readdir` plus that index's path list `paths`. Path classes, never
- *  "the files a run happened to open", which drift cannot derive:
- *    functional — `certifiedModules()`, every tracked file under `scripts/test/functional/` and
- *                 `scripts/test/fixtures/`, and MACHINERY;
+/** A BUCKET'S SUBJECT (design D3, landing step L3), over one index read through `readFile`/`readdir`
+ *  plus that index's path list `paths`:
+ *    functional — `functionalSubject()`: what the functional half OBSERVES (its import closure, what it
+ *                 executes, what it names, the shipped roots it walks). The `gitOps(` scan that decided
+ *                 it until L3 is retired: it asked how a module reaches git, and a
+ *                 module the half imports that never reaches git (b4ffe164's archive-gate.mjs, #229) fell
+ *                 outside it;
  *    sweeps     — `engineSourceFiles()`, every tracked `scripts/test/sweeps/*.mjs` (the sweep's tests AND
- *                 the method they run), and `scripts/test/js-lexer.mjs`.
+ *                 the method they run), and `scripts/test/js-lexer.mjs`, which the sweep imports.
  *  The result may name a path the index does not hold (`engineSourceFiles()` always names the entry
  *  point); `manifestOf()` drops it. Sorted, de-duplicated. */
-export function bucketSubject(bucket, { root = REPO, readFile = readDefault, readdir = readdirDefault, paths = [] } = {}) {
+export function bucketSubject(bucket, { root = REPO, readFile = readDefault, readdir = readdirDefault, paths = null } = {}) {
   let out;
   if (bucket === "functional") {
-    out = [
-      ...certifiedModules(root, readFile, readdir),
-      ...paths.filter((p) => p.startsWith("scripts/test/functional/") || p.startsWith("scripts/test/fixtures/")),
-      ...MACHINERY,
-    ];
+    out = functionalSubject({ root, readFile, readdir, paths });
   } else if (bucket === "sweeps") {
     out = [
       ...engineSourceFiles(root, readdir),
-      ...paths.filter((p) => /^scripts\/test\/sweeps\/[^/]+\.mjs$/.test(p)),
+      ...(paths || walkPaths(root, readdir)).filter((p) => /^scripts\/test\/sweeps\/[^/]+\.mjs$/.test(p)),
       "scripts/test/js-lexer.mjs",
     ];
   } else {

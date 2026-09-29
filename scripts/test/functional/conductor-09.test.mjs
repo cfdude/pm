@@ -731,13 +731,14 @@ test("IX-j drift judges the STAGED engine: a module staged and deleted from disk
   assert.notEqual(r.status, 0, `a staged, uncertified engine module must refuse the commit: ${combined}`);
   assert.match(combined, /drift: ABORT/, `the refusal must be the drift script's: ${combined}`);
   assert.match(combined, /zz-probe\.mjs/, `the refusal must name the module: ${combined}`);
-  // WHICH BUCKETS REFUSE (certification-record-redesign 2.4, design D7): the probe calls `gitOps(`, so
-  // at L2 it is in the interim functional subject (through `certifiedModules()`) AND in the sweeps
-  // subject (`engineSourceFiles()`) — both buckets demand, and each refusal names the module.
-  assert.match(combined, /the functional bucket's subject changed \([^)]*zz-probe\.mjs[^)]*\)/,
-    `a FUNCTIONAL freshness demand naming the module: ${combined}`);
+  // WHICH BUCKETS REFUSE (certification-record-redesign 3.3, design D7): from L3 the functional
+  // subject is what the half OBSERVES, and nothing in this fixture imports, executes or names the probe
+  // — so only the SWEEPS bucket demands (`engineSourceFiles()`), naming the module, and the FUNCTIONAL
+  // bucket demands nothing. At L2 its `gitOps(` call put it in both.
   assert.match(combined, /the sweeps bucket's subject changed \([^)]*zz-probe\.mjs[^)]*\)/,
-    `and a SWEEPS freshness demand naming it: ${combined}`);
+    `a SWEEPS freshness demand naming the module: ${combined}`);
+  assert.doesNotMatch(combined, /the functional bucket's subject changed/,
+    `and NO functional demand — nothing the functional half observes changed: ${combined}`);
 });
 
 test("IX-k the drift script that judges a commit is the COMMIT's copy — an unstaged edit to drift.mjs cannot pass it", () => {
