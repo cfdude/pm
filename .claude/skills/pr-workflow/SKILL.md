@@ -24,9 +24,17 @@ existed and had to be untangled after the fact.
 2. **Tests green before committing.** `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
    — both rungs of the assertion half, one runner invocation. The `.githooks/pre-commit` hook re-runs the drift script and this half on every commit and
    blocks on failure, but don't rely on the hook alone catching a break you already know about.
-   If the change touched anything the functional half certifies, run
-   `node scripts/test/certify.mjs functional` — the hook REFUSES a certified module's changed
-   content until that run exists, and it will not start it for you.
+   If the change stages a path in a triggered bucket's subject — for the functional half, anything
+   it OBSERVES: its import closure, the assertion files it executes, the files it names — stage the
+   commit exactly and run `node scripts/test/certify.mjs functional` (and/or `… sweeps`, as the
+   refusal names) before a plain `git commit`. The pre-commit hook REFUSES the commit until a passing
+   entry's manifest equals that subject in the index, and it will not start the run for you;
+   certify runs over a copy of the index, so certifying before the last `git add` certifies the
+   wrong content. The commit-msg hook then checks diff coupling: a staged
+   `scripts/test/functional/<id>.test.mjs` without its twin (`assert/` or `unit/<id>.test.mjs`) is
+   refused unless a `Twin-Unchanged: <id> — <reason>` trailer declares the change subject-free. The
+   trailer must be a git trailer — its own final paragraph of the message, above any `commit -v`
+   scissors line — and Gate 2 audits it (step 6).
 
 3. **Commit on `dev`, push, open the PR:**
    ```bash

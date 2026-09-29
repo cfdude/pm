@@ -867,7 +867,7 @@ These rules bind every section below.
 - [ ] 6.4 **Documentation currency** (CLAUDE.md "Commits"). README.md and the Mintlify site
       document the shipped plugin, and this change touches only dev tooling. Record in the PR
       description that the check was made and why neither changes.
-- [ ] 6.5 `.claude/skills/pr-workflow/SKILL.md` step 2 (`:28`, Gate 1 B7). It says the hook refuses
+- [x] 6.5 `.claude/skills/pr-workflow/SKILL.md` step 2 (`:28`, Gate 1 B7). It says the hook refuses
       "a certified module's changed content". Rewrite it for the observed subject, and add the
       commit-msg phase: a functional file staged without its twin is refused there unless a
       `Twin-Unchanged: <id> — <reason>` trailer declares the change subject-free; the trailer must be
@@ -875,6 +875,8 @@ These rules bind every section below.
       audits it.
       Verify: `rg -n "certified module" .claude/skills/pr-workflow/SKILL.md` returns nothing, and
       `rg -n "Twin-Unchanged" .claude/skills/pr-workflow/SKILL.md` hits.
+      Done: step 2 now names the observed subject, stage-certify-plain-commit, and the commit-msg phase with
+      the trailer's form and Gate 2's audit; "certified module" 0 hits, "Twin-Unchanged" hits.
 - [ ] 6.6 **A NUMBERED Gate 2 step that binds every later epic** (Gate 1 B8), in
       `.claude/skills/pr-workflow/SKILL.md`, beside step 6 ("Record Gate 2 BEFORE the
       squash-merge"): before recording Gate 2, list every `Twin-Unchanged` trailer in `BASE..HEAD`
