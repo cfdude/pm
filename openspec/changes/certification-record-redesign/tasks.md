@@ -763,7 +763,7 @@ These rules bind every section below.
       Done: `data-references-5.2.txt` — every retired reference's writer, reader and (absent) remover at
       c96240ab; the manifest's fields, of which none points at another record (`engineSha`, `worktree`
       are written and never read); the trailer's writer, readers and lifetime.
-- [ ] 5.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
+- [x] 5.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
       - writing an entry: pruning (shipped, D1);
       - the shared-clone build: its removal on exit and on signal (shipped, D2; guarded by 1.2's
         third test);
@@ -773,6 +773,8 @@ These rules bind every section below.
         the commit, Gate 2's audit;
       - the old record file: this change neither writes nor removes it (D5, Gate 1 B5). Its removal
         is DEFERRED to a later release, registered by 8.2.
+      Done: `inverses-5.3.txt` — eleven operations, each with its inverse shipped, existing, deliberately
+      absent (the derived subject) or deferred (the old record file, 8.2).
 - [ ] 5.4 **Verify against the commit** (item 2). For every task, run `git show --stat <sha>` and
       check that every file the task claims is in THAT commit. Record the results in
       `commit-verification-5.4.txt`. Pay particular attention to:

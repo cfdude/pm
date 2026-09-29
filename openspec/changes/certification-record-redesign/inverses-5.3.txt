@@ -1,0 +1,18 @@
+# 5.3 Every operation has an inverse (required task item 1). Each operation this change adds or modifies,
+# with its inverse, shipped or not. Taken 2026-09-29 at 60488813.
+
+| operation | inverse | status | where / why |
+|---|---|---|---|
+| write a manifest entry (`writeManifestEntry()`, certification.mjs:623) | prune (`pruneRecord()`, :661) | SHIPPED (D1) | certify.mjs:232 prunes after every write, keeping the newest 50 and the just-written key; FILE-rung tests in assert/drift-script (2.2) |
+| create an entry's temp file (`<key>.<pid>.<rand>.tmp`) | rename into place; a leftover older than 1 h is pruned | SHIPPED (D1, Gate 1 M6) | pruneRecord() `.tmp` branch; 2.2's test keeps a younger one |
+| build the run directory (`prepareRun()`, certify.mjs:89: index copy, `clone --shared`, `checkout-index`) | remove it on exit and on INT/TERM/HUP (`removeAtExit()`, certify.mjs:90, :329); orphans of a SIGKILL removed by `pruneRecord()` after 24 h (:683) | SHIPPED (D2) | guarded by functional/certify-index "1.2 a passing, a failing and a SIGTERM'd run leave the repository as they found it, and remove their run directory"; SIGKILL cannot run a handler, hence the 24 h prune |
+| the observer's observation files (one per Node process, under the run directory) | removed with the run directory | SHIPPED (D3) | they live under `pm-certify-run.*`, never under the repository |
+| arm `PM_OBSERVE_TOKEN` expectations for a spawned Node child | cancelled when the spawn fails to start (`r.error` / `error` event) | SHIPPED (3.2, round 2 m1) | functional/certify-index "3.2 the token rule: a Node spawn that fails to start cancels its expectation and is not refused" |
+| widen the functional subject (a closure file names a path, imports a module, executes an assertion file) | NONE as an operation | DELIBERATE — the subject is DERIVED from the tests' own text (`functionalSubject()`), so narrowing it is an edit to those tests; a stored list with a remove verb is the hand-kept map D3 rejects |
+| declare an exemption (`Twin-Unchanged: <id> — <reason>` trailer) | before the commit: omit it / `commit --amend` the message; after: Gate 2's audit judges it, and a false one is an Important finding fixed by a follow-up commit that edits the twin | SHIPPED as procedure — the audit is pr-workflow's numbered step (6.6) and 8.1's review item. No revoke verb: the trailer is not stored state (data-references-5.2.txt), so there is nothing to un-write |
+| install the commit-msg hook (`core.hooksPath .githooks` now also runs `.githooks/commit-msg`) | `git config --unset core.hooksPath` | EXISTING — the same one-time setup and inverse as pre-commit (CONTRIBUTING "Pre-commit hook"); nothing new to ship |
+| a phase split of drift (`--phase pre-commit` / `commit-msg`) | no phase = every check (`phaseChecks()` with no phase) | SHIPPED (D4, Gate 1 M5) — a bare `node scripts/test/drift.mjs` never reports fewer refusals than the two hooks together |
+| seed an agreeing entry in a hook fixture (`seedAgreeingEntry()`) | the fixture repository (and its common dir) is removed with the fixture | SHIPPED — it writes only under a fixture's `.git`, created by `tmpRepo`/`runHookAgainstFixture` and scheduled for removal |
+| the old record file `pm-suite-certification.json` | neither written nor removed by this change | DEFERRED (D5, Gate 1 B5) — the two formats coexist so a clone upgraded mid-flight loses nothing; its removal is the planned epic `retire-single-file-certification-record` that 8.2 registers and passes as `--deferral "retire-single-file-certification-record:design D5"` |
+
+No operation is shipped without its inverse unjustified.
