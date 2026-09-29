@@ -137,7 +137,7 @@ test("and no NON-help path writes large stdout then exits — the sibling the lo
       .filter(f => f.endsWith(".mjs")).map(f => path.join(REPO, "scripts", "lib", f))];
   const risky = [];
   for (const file of files) {
-    const lines = fs.readFileSync(file, "utf8").split("\n");
+    const lines = engineCode(path.relative(REPO, file)).split("\n");   // CODE: prose naming process.exit( is no site
     lines.forEach((line, i) => {
       if (!/process\.exit\(/.test(line)) return;
       // A write within the preceding 3 lines is the truncation shape. Small literal writes are

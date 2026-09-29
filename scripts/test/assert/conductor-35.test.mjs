@@ -29,7 +29,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, runCombined, detourLog } from "../fixtures/assert-harness.mjs";
-import { codeOnly } from "../fixtures/source-code.mjs";
+import { codeOnly, engineCode } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -119,8 +119,8 @@ test("every dispatched verb renders help, exits 0, and names itself", () => {
 test("the engine still opens no network connection — the pointer is an INSTRUCTION", () => {
   const engineSrc = fs.readdirSync(path.join(REPO, "scripts", "lib"))
     .filter(f => f.endsWith(".mjs"))
-    .map(f => fs.readFileSync(path.join(REPO, "scripts", "lib", f), "utf8")).join("\n")
-    + fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
+    .map(f => engineCode(`scripts/lib/${f}`)).join("\n")
+    + engineCode("scripts/conductor.mjs");
   // WIDENED IN 0.49.0 (task 3.3): the set named only `fetch(` and the HTTP modules, and a raw socket
   // (`node:net`), a TLS socket (`node:tls`), a datagram (`node:dgram`) or HTTP/2 (`node:http2`) opens
   // a connection just as surely. It was widened in the change that added `runtime-support.mjs`, a

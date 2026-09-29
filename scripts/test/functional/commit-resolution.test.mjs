@@ -11,6 +11,7 @@ import path from "node:path";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: scratch dirs are removed at exit
 import { execFileSync, spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, parseBrief, fixtureCommits, fixtureCommit } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -376,8 +377,8 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
   // asserted WHERE IT NOW LIVES, in the operations that inherited the two calls. A guard left
   // reading the old file would have gone quietly green on a `gitOps()` call that no longer spawns
   // anything at all.
-  const src = fs.readFileSync(new URL("../../lib/git.mjs", import.meta.url), "utf8");
-  const gw = fs.readFileSync(new URL("../../lib/git-gateway.mjs", import.meta.url), "utf8");
+  const src = engineCode("scripts/lib/git.mjs");
+  const gw = engineCode("scripts/lib/git-gateway.mjs");
   const GIT_NO_LAZY_FETCH = /env: \{ \.\.\.env\(\), GIT_NO_LAZY_FETCH: "1" \}/;
   for (const [fn, op] of [["resolveCommits", "batchCheckCommits"], ["commitsNotReachedBy", "revListNotReached"]]) {
     // 0.47.0 (task 3.3) moved the child environment from `process.env` to the invocation's; 4.2 moved
@@ -407,10 +408,10 @@ test("g2-3 git calls whose input is already filtered to commit-name hex pass no 
   // ONLY place in the engine that spawns git, so it is the file where the flag could actually appear,
   // and a list that named only the old files would be checking two files that no longer can.
   for (const rel of ["../../lib/git.mjs", "../../lib/worktree-hygiene.mjs", "../../lib/git-gateway.mjs"]) {
-    const src = fs.readFileSync(new URL(rel, import.meta.url), "utf8");
+    const src = engineCode(`scripts/lib/${rel.slice("../../lib/".length)}`);
     assert.equal(src.includes('"--end-of-options"'), false, `${rel} still passes --end-of-options to git`);
   }
-  const git = fs.readFileSync(new URL("../../lib/git.mjs", import.meta.url), "utf8");
+  const git = engineCode("scripts/lib/git.mjs");
   for (const [fn, guard] of [["isAncestor", "isCommitNameShaped"], ["commitDate", "isCommitNameShaped"],
     ["objectExists", "isCommitNameShaped"], ["reachableFromAnyRef", "isCommitNameShaped"], ["commitsNotReachedBy", "FULL_COMMIT_NAME"]]) {
     // The SPAWN anchor moved with the call (4.2). The ordering property — the value is shape-gated

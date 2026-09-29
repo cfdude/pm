@@ -34,7 +34,7 @@ test("gh#100's own reproduction — `rg 'KNOWN_[A-Z_]+ =' constants.mjs` — now
   // The issue was filed after running exactly this and getting every enumerated set EXCEPT link
   // types. The assertion is the grep, not the export: a re-export or a pointer comment would
   // satisfy an import while leaving the issue's own reproduction still failing.
-  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "constants.mjs"), "utf8");
+  const src = engineCode("scripts/lib/constants.mjs");
   const declared = [...src.matchAll(/^export const (KNOWN_[A-Z_]+) =/gm)].map(m => m[1]);
   assert.ok(declared.includes("KNOWN_LINK_TYPES"),
     `constants.mjs declares ${declared.join(", ")} — the set gh#100 went looking for is not among them`);

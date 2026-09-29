@@ -29,6 +29,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -209,7 +210,7 @@ test("gh-152: every FLAG the engine reads off a parsed-flags object is declared 
   const undeclared = [];
   let regions = 0;
   for (const rel of files) {
-    const lines = fs.readFileSync(path.join(REPO, rel), "utf8").split("\n");
+    const lines = engineCode(rel).split("\n");   // CODE: a commented-out parseFlags() is no region
     for (let start = 0; start < lines.length; start++) {
       const m = /^(\s*)const (\w+) = parseFlags\(/.exec(lines[start]);
       if (!m) continue;

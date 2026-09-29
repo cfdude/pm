@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, writeState } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const LIB = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "lib");
 
@@ -56,7 +57,7 @@ test("g2-1 a stored value shaped like a git option creates no file through integ
 test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH", () => {
   // The env override is the gateway's, and it is declared at the two operations whose arguments are
   // record-derived values: `batchCheckCommits` and `revListNotReached`.
-  const gw = fs.readFileSync(path.join(LIB, "git-gateway.mjs"), "utf8");
+  const gw = engineCode("scripts/lib/git-gateway.mjs");   // CODE: a comment naming the override is not it
   const withFlag = gw.split("\n").filter(l => l.includes("GIT_NO_LAZY_FETCH"));
   assert.ok(withFlag.length >= 2, "both record-walking operations must set it");
   // handoff-demand-blind-spots added `indexBlobs` (cat-file --batch over the index) to the set, and

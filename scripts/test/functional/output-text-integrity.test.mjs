@@ -638,19 +638,25 @@ test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable build
   const builders = new Set();
   const decls = [];
   for (const f of files) {
-    const src = fs.readFileSync(new URL(f, libDir), "utf8");
+    const src = engineCode(`scripts/lib/${f}`);   // CODE: a comment naming a builder call is not one
     const heads = [...src.matchAll(/^(?:export\s+)?(?:async\s+)?(?:function\s+([\w$]+)|(?:const|let)\s+([\w$]+)\s*=)/gm)];
     heads.forEach((m, i) => decls.push({ name: m[1] || m[2], body: src.slice(m.index, i + 1 < heads.length ? heads[i + 1].index : src.length) }));
     for (const m of src.matchAll(/\bconst\s+([\w$]+)\s*=\s*\([^)]*\)\s*=>\s*orNoRemedy\(/g)) builders.add(m[1]);
   }
   const OWN = new Set(["orNoRemedy", "noRemedyMessage", "asCode", "NoRemedy", "NO_REMEDY_TEXTS"]);
   // A declaration is a builder if it produces the message itself, or calls a builder (to a fixpoint) —
-  // obligationRemedy() reaches it only through DELIVERED_OBLIGATIONS' remedy lambdas.
+  // obligationRemedy() reaches it only through DELIVERED_OBLIGATIONS' remedy lambdas — `entry.remedy(epic)`
+  // on an entry it FINDS in that table — so a declaration that reads a builder TABLE (an ALL_CAPS
+  // builder, called through its entries rather than by name) is one too. Until the source was read as
+  // CODE this was satisfied by a COMMENT: the JSDoc after obligationRemedy() names `archiveGate()`, and
+  // that prose was inside its declaration's slice (guards-that-read-engine-source-drift-silently).
+  const isTable = (b) => /^[A-Z][A-Z0-9_]*$/.test(b);
   for (let grew = true; grew;) {
     grew = false;
     for (const d of decls) {
       if (OWN.has(d.name) || builders.has(d.name)) continue;
-      if (/\borNoRemedy\(|\bnoRemedyMessage\(/.test(d.body) || [...builders].some(b => new RegExp(`\\b${b}\\(`).test(d.body))) {
+      if (/\borNoRemedy\(|\bnoRemedyMessage\(/.test(d.body) ||
+        [...builders].some(b => new RegExp(isTable(b) ? `\\b${b}\\b` : `\\b${b}\\(`).test(d.body))) {
         builders.add(d.name); grew = true;
       }
     }
@@ -659,7 +665,7 @@ test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable build
     `the derived population holds the known builders: ${[...builders].join(", ")}`);
   const offenders = [];
   for (const f of files) {
-    const lines = fs.readFileSync(new URL(f, libDir), "utf8").split("\n");
+    const lines = engineCode(`scripts/lib/${f}`).split("\n");
     lines.forEach((line, i) => {
       for (const b of builders) {
         const call = BS + BT + "$" + "{" + b + "(";
@@ -792,7 +798,7 @@ test("5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own byte
   const libDir = new URL("../../lib/", import.meta.url);
   const callers = [];
   for (const f of ["../../conductor.mjs", ...fs.readdirSync(libDir).filter(n => n.endsWith(".mjs")).map(n => `../../lib/${n}`)]) {
-    const src = fs.readFileSync(new URL(f, import.meta.url), "utf8");
+    const src = engineCode(`scripts/${f.slice("../../".length)}`);   // CODE: a prose jsonText() is no caller
     for (const m of src.matchAll(/\bjsonText\(/g)) {
       let d = 0, top = [], i = m.index + m[0].length - 1, q = null;
       for (; i < src.length; i++) {

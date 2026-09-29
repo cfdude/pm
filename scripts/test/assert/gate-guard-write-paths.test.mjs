@@ -27,6 +27,7 @@ import { fileURLToPath } from "node:url";
 import { tmpRepo, run, invokeEngine } from "../fixtures/assert-harness.mjs";
 import { fixtureOnce } from "../fixtures/fixture-snapshot.mjs";
 import { WRITE_SHAPE_LABELS } from "../../lib/gate-guard.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 // ─────────────── 1.3 — the list is defined once ───────────────
 
@@ -48,7 +49,7 @@ test("1.3 REGRESSION GUARD: the closed shape list has exactly one definition sit
     "\\.conductor(\\*|\\/(state\\.json\\*?|\\*))?",
   ];
   for (const row of rows) {
-    const holders = sweptSources().filter(rel => fs.readFileSync(path.join(REPO, rel), "utf8").includes(row));
+    const holders = sweptSources().filter(rel => engineCode(rel).includes(row));   // CODE: a comment holding the row is not a holder
     assert.deepEqual(holders, ["scripts/lib/gate-guard.mjs"],
       `the closed list's row ${JSON.stringify(row)} must appear in gate-guard.mjs and in no other ` +
       "engine source — not defined a second time, and not QUOTED VERBATIM either, because a copy " +

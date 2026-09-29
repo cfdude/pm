@@ -1876,7 +1876,7 @@ test("no module creates an epic except through pushEpic() — the sink the rule 
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(n => n.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     const lines = src.split("\n");
     // state.mjs is the helper's HOME, not an exemption — a sixth creation path added there is
     // the likeliest place to put one, so the push is allowed on exactly the line inside

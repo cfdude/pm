@@ -11,6 +11,7 @@ import path from "node:path";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -270,7 +271,7 @@ test("argv-surface.mjs imports constants.mjs, invocation.mjs and verb-effects.mj
   // invocation.mjs, which is a leaf — Node built-ins only, and it imports no other lib module — so
   // it is allowed here by the same test the guard already applied to the other two. The list is
   // still an exact set rather than a prefix match, so a fourth import is still a failure.
-  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "argv-surface.mjs"), "utf8");
+  const src = engineCode("scripts/lib/argv-surface.mjs");
   const imports = [...src.matchAll(/^import\s[^;]*?from\s+"([^"]+)"/gm)].map(m => m[1]).sort();
   assert.deepEqual(imports, ["./constants.mjs", "./invocation.mjs", "./verb-effects.mjs"],
     "the pre-dispatch path must pull in no verb module");
