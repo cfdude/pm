@@ -303,6 +303,42 @@ export const isRecordPath = (rel) => /^(openspec|\.conductor)\//.test(rel) || re
 /** The observer's own module, which its load reports as nothing (m9). */
 export const OBSERVER = "scripts/test/fixtures/observe-reads.mjs";
 
+/** ONE PROCESS'S OBSERVATION FILE, PARSED (Gate 2 G2). The observer appends one JSON line per event —
+ *  `process` (pid, argv, test), `arrived`, `expected`, `cancelled` and `read` — each with one synchronous
+ *  write made BEFORE the operation it observes, so a process killed mid-write can tear only its LAST line,
+ *  and that line is an operation it never performed. So: the bytes after the last newline are dropped
+ *  (`torn: true`), and ANY other corruption — a complete line that is not a JSON object of a known kind —
+ *  THROWS, naming the file and the line. Returns the shape `observationRefusals()` reads. Pure. */
+export const OBSERVATION_KINDS = Object.freeze(["process", "arrived", "expected", "cancelled", "read"]);
+export function parseObservation(text, name = "<observation>") {
+  const src = String(text);
+  const cut = src.lastIndexOf("\n");
+  const complete = cut === -1 ? "" : src.slice(0, cut);
+  const out = { file: name, pid: null, argv: [], test: null, arrived: [], expected: [], cancelled: [], reads: [], torn: cut !== src.length - 1 && src.length > 0 };
+  if (!complete && cut === -1) return out;
+  complete.split("\n").forEach((line, i) => {
+    let e;
+    try { e = JSON.parse(line); } catch { e = null; }
+    if (!e || typeof e !== "object" || Array.isArray(e) || !OBSERVATION_KINDS.includes(e.kind)) {
+      throw new Error(`certification: the observation file ${name} is corrupt at line ${i + 1} (${JSON.stringify(line.slice(0, 80))}) — ` +
+        "only its last line may be torn, by a process killed mid-write; refusing to judge a run from a damaged observation");
+    }
+    if (e.kind === "process") Object.assign(out, { pid: e.pid ?? null, argv: e.argv || [], test: e.test ?? null });
+    else if (e.kind === "arrived") out.arrived.push(e.token);
+    else if (e.kind === "expected") out.expected.push({ token: e.token, test: e.test, argv: e.argv });
+    else if (e.kind === "cancelled") out.cancelled.push(e.token);
+    else out.reads.push(e.path);
+  });
+  return out;
+}
+
+/** Every observation file a run's processes wrote under `dir` (`*.jsonl`), parsed, sorted by name. A
+ *  corrupt file throws, naming it (`parseObservation()`). */
+export function readObservations(dir, io = fs) {
+  return io.readdirSync(dir).filter((n) => n.endsWith(".jsonl")).sort()
+    .map((n) => parseObservation(io.readFileSync(path.join(dir, n), "utf8"), path.join(dir, n)));
+}
+
 /** WHAT A FUNCTIONAL RUN OBSERVED, JUDGED AGAINST THE DERIVED SUBJECT (design D3, "The check"; task 3.2).
  *  `observations` are the per-process files the observer wrote (`reads`, `expected`, `arrived`,
  *  `cancelled`); `subject` is `functionalSubject()` over the run's index copy; `tracked` is that copy's

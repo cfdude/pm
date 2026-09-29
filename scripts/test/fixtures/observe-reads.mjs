@@ -27,8 +27,19 @@
 // the child's `error` event, seen by wrapping `emit` so a test's own error handling is unchanged). An
 // argv of only --version / -v / --help / -h / --v8-options loads no code, and expects nothing.
 //
-// EACH PROCESS WRITES ITS OWN FILE, `<dir>/<pid>.<random>.json`, never a shared one, so the observer does
-// not rebuild #226's shared-file race inside the run. The configuration comes from THIS module's own URL,
+// EACH PROCESS WRITES ITS OWN FILE, `<dir>/<pid>.<random>.jsonl`, never a shared one, so the observer does
+// not rebuild #226's shared-file race inside the run.
+//
+// EVERY EVENT REACHES DISK WHEN IT HAPPENS (Gate 2 G2). The file is APPEND-ONLY, one JSON line per event
+// — the process header, its arrival, each expectation and cancellation, and each NEW read — written with
+// one synchronous write through the ORIGINAL fs functions captured at load. It used to be one JSON
+// document rewritten at load, at an expected spawn and on exit, and a signal-killed child runs no exit
+// listener: its reads were lost and certify passed a run whose derivation had missed a file. Every
+// recording site records BEFORE the operation it observes runs (an fs wrapper records, then calls the
+// original; a resolve records before the module is loaded; a spawn records before it starts the child),
+// so a process killed at any instant has lost at most a line for an operation it had not yet performed —
+// and that is the only line that can be torn, the LAST one. The reader (`parseObservation()` in
+// certification.mjs) drops a torn last line and refuses, naming the file, on any other corruption. The configuration comes from THIS module's own URL,
 // never from fixed environment variable names, so an observer stacked on another — a certify run inside
 // a functional test that is itself being certified — keeps its own directory, root and token variable,
 // and each instance reports only to its own run.
@@ -53,31 +64,29 @@ if (DIR && ROOT) install();
 
 function install() {
   const orig = {
-    writeFileSync: fs.writeFileSync.bind(fs),
+    openSync: fs.openSync.bind(fs),
+    writeSync: fs.writeSync.bind(fs),
     realpathSync: fs.realpathSync.bind(fs),
     statSync: fs.statSync.bind(fs),
   };
   const roots = [...new Set([path.resolve(ROOT), safeRealpath(ROOT)])].map((r) => r.endsWith(path.sep) ? r : r + path.sep);
   function safeRealpath(p) { try { return orig.realpathSync(p); } catch { return path.resolve(p); } }
   const TOKEN_VAR = `PM_OBSERVE_TOKEN_${crypto.createHash("sha256").update(DIR).digest("hex").slice(0, 12)}`;
-  const ownFile = path.join(DIR, `${process.pid}.${crypto.randomBytes(6).toString("hex")}.json`);
-  const state = {
-    pid: process.pid,
-    argv: process.argv.slice(1),
-    test: relUnder(process.argv[1]) || process.argv[1] || null,
-    arrived: process.env[TOKEN_VAR] ? [process.env[TOKEN_VAR]] : [],
-    expected: [],
-    cancelled: [],
-    reads: new Set(),
-  };
-  const persist = () => {
+  const ownFile = path.join(DIR, `${process.pid}.${crypto.randomBytes(6).toString("hex")}.jsonl`);
+  const state = { test: relUnder(process.argv[1]) || process.argv[1] || null, reads: new Set() };
+  let fd = null;
+  try { fd = orig.openSync(ownFile, "a"); } catch { fd = null; /* no run directory: nothing to report to */ }
+  /** One event, one line, one synchronous append (Gate 2 G2). A short write is continued, never dropped. */
+  const emit = (event) => {
+    if (fd === null) return;
     try {
-      orig.writeFileSync(ownFile, JSON.stringify({ ...state, reads: [...state.reads].sort() }) + "\n");
+      const buf = Buffer.from(JSON.stringify(event) + "\n");
+      for (let off = 0; off < buf.length;) off += orig.writeSync(fd, buf, off, buf.length - off);
     } catch { /* the run directory is gone: the certification is over */ }
   };
+  emit({ kind: "process", pid: process.pid, argv: process.argv.slice(1), test: state.test });
   // THE ARRIVAL IS WRITTEN NOW, synchronously, before any test code runs (m1).
-  persist();
-  process.on("exit", persist);
+  if (process.env[TOKEN_VAR]) emit({ kind: "arrived", token: process.env[TOKEN_VAR] });
   globalThis[Symbol.for("pm.observe-reads")] = { url: import.meta.url, dir: DIR, root: ROOT, tokenVar: TOKEN_VAR };
   // STACKED OBSERVERS: every instance loaded in this process, in load order. NODE_OPTIONS is appended, so
   // an inner run's observer loads after the outer one's. Only the INNERMOST raises expectations: a child
@@ -106,7 +115,7 @@ function install() {
     const fsPath = toPath(p);
     if (!fsPath || path.resolve(fsPath) === SELF || safeRealpathQuiet(fsPath) === SELF) return;
     const rel = relUnder(fsPath, cwd);
-    if (rel) state.reads.add(rel);
+    if (rel && !state.reads.has(rel)) { state.reads.add(rel); emit({ kind: "read", path: rel }); }
   }
   function safeRealpathQuiet(p) { try { return orig.realpathSync(p); } catch { return null; } }
 
@@ -178,14 +187,12 @@ function install() {
     if (args.length && args.every((x) => NO_CODE.has(x))) return { opts, token: null };
     const token = crypto.randomBytes(9).toString("hex");
     const env = { ...((opts && opts.env) || process.env), [TOKEN_VAR]: token };
-    state.expected.push({ token, test: state.test, argv: [cmd, ...args] });
-    persist();
+    emit({ kind: "expected", token, test: state.test, argv: [cmd, ...args] });
     return { opts: { ...(opts || {}), env }, token };
   }
   function cancel(token) {
     if (!token) return;
-    state.cancelled.push(token);
-    persist();
+    emit({ kind: "cancelled", token });
   }
   const isSpawnError = (e) => e && typeof e.syscall === "string" && e.syscall.startsWith("spawn");
   function watchChild(child, token) {

@@ -434,6 +434,26 @@ test("3.2 two Node children observed at once each leave their own observation, a
   assert.match(r.out, /scripts\/lib\/secret\.mjs/, `and the second's — neither overwrote the other:\n${r.out}`);
 });
 
+test("G2 a child SIGTERMed after a read still reports the read: each new read reaches disk when it is seen", () => {
+  // Gate 2 G2. The observer used to write a process's reads only at load, at an expected spawn and on
+  // exit, and a signal-killed child runs no exit listener, so its reads were lost and certify passed a
+  // run whose derivation had missed a file. The child reads a tracked file by a built name, says so, and
+  // is SIGTERMed by the test, which then passes: the read must still be reported.
+  const cwd = observedFixture(HEAD_LINES + WAIT +
+    'test("a child reads, then is killed", async () => {\n' +
+    '  const code = "require(\\"node:fs\\").readFileSync(require(\\"node:path\\").join(process.cwd(), \\"scripts\\", \\"lib\\", \\"hid\\" + \\"den.mjs\\")); " +\n' +
+    '    "process.stdout.write(\\"read\\\\n\\"); setInterval(() => {}, 1000);";\n' +
+    '  const c = spawn(process.execPath, ["-e", code]);\n' +
+    '  await new Promise((res) => c.stdout.on("data", (d) => { if (String(d).includes("read")) res(); }));\n' +
+    '  c.kill("SIGTERM");\n' +
+    '  assert.equal(await waitFor(c), null, "the child was killed by the signal, so no exit listener ran");\n' +
+    "});\n", HIDDEN);
+  const r = certify(cwd, "functional");
+  assert.notEqual(r.status, 0, `the killed child's read must fail the certification:\n${r.out}`);
+  assert.match(r.out, /scripts\/lib\/hidden\.mjs[^\n]*the subject derivation missed it/, `the refusal names the file:\n${r.out}`);
+  assert.deepEqual(entriesOf(cwd, "functional"), [], "a refused run records no entry");
+});
+
 test("3.2 the token rule: a Node spawn that fails to start cancels its expectation and is not refused", () => {
   const cwd = observedFixture(HEAD_LINES +
     'test("spawns that never start", async () => {\n' +

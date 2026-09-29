@@ -50,7 +50,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
-  OBSERVER, REPO, bucketDir, functionalSubject, indexRunPlan, nodeOptionsRefusals, observationRefusals, pruneRecord,
+  OBSERVER, REPO, bucketDir, functionalSubject, readObservations, indexRunPlan, nodeOptionsRefusals, observationRefusals, pruneRecord,
   writeManifestEntry,
 } from "./certification.mjs";
 import { indexManifest, indexReaders } from "./drift.mjs";
@@ -281,8 +281,7 @@ function observerEnv(run) {
 /** After a PASS: every observation file the run's processes wrote, judged by `observationRefusals()`
  *  against `functionalSubject()` over the run's index copy. Returns the refusal text, or null. */
 function observationRefusal(root, run, dir, label, counts) {
-  const observations = fs.readdirSync(dir).filter((n) => n.endsWith(".json"))
-    .map((n) => JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")));
+  const observations = readObservations(dir);
   const readers = indexReaders(root, { indexFile: run.indexCopy });
   const subject = functionalSubject({ root, ...readers });
   const { missed, unarrived, excluded } = observationRefusals({ observations, subject, tracked: readers.paths });

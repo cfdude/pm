@@ -401,3 +401,49 @@ unitTest("3.2 an expected Node child that neither arrived nor was cancelled is U
   });
   assert.deepEqual(r.unarrived.map((x) => x.token), ["b"]);
 });
+
+// ─────────────── Gate 2 G2 — the observation file is an append-only event log ───────────────
+
+const obsLine = (e) => `${JSON.stringify(e)}\n`;
+const OBS = obsLine({ kind: "process", pid: 7, argv: ["x.mjs"], test: "scripts/test/functional/t.test.mjs" }) +
+  obsLine({ kind: "arrived", token: "a" }) +
+  obsLine({ kind: "expected", token: "b", test: "scripts/test/functional/t.test.mjs", argv: ["node", "y.mjs"] }) +
+  obsLine({ kind: "cancelled", token: "b" }) +
+  obsLine({ kind: "read", path: "scripts/lib/a.mjs" }) +
+  obsLine({ kind: "read", path: "scripts/lib/hidden.mjs" });
+
+unitTest("G2 parseObservation() reads every event line into the shape observationRefusals() judges", () => {
+  assert.equal(typeof certification.parseObservation, "function", "certification.mjs exports no parseObservation()");
+  const o = certification.parseObservation(OBS, "/run/observe/7.aa.jsonl");
+  assert.equal(o.pid, 7);
+  assert.equal(o.test, "scripts/test/functional/t.test.mjs");
+  assert.deepEqual(o.arrived, ["a"]);
+  assert.deepEqual(o.expected, [{ token: "b", test: "scripts/test/functional/t.test.mjs", argv: ["node", "y.mjs"] }]);
+  assert.deepEqual(o.cancelled, ["b"]);
+  assert.deepEqual(o.reads, ["scripts/lib/a.mjs", "scripts/lib/hidden.mjs"]);
+  assert.equal(o.torn, false);
+  const r = certification.observationRefusals({ observations: [o], subject: ["scripts/lib/a.mjs"], tracked: ["scripts/lib/a.mjs", "scripts/lib/hidden.mjs"] });
+  assert.deepEqual(r.missed, ["scripts/lib/hidden.mjs"]);
+  assert.deepEqual(r.unarrived, []);
+});
+
+unitTest("G2 a torn LAST line — a process killed mid-write — is dropped, and every complete line is kept", () => {
+  const torn = OBS + '{"kind":"read","path":"scripts/lib/sec';
+  const o = certification.parseObservation(torn, "/run/observe/7.aa.jsonl");
+  assert.equal(o.torn, true);
+  assert.deepEqual(o.reads, ["scripts/lib/a.mjs", "scripts/lib/hidden.mjs"], "the complete reads survive the torn tail");
+  assert.deepEqual(certification.parseObservation("", "e").reads, [], "an empty file is no events");
+  assert.equal(certification.parseObservation('{"kind":"proc', "e").torn, true, "a file holding only a torn line is no events");
+});
+
+unitTest("G2 any corruption other than a torn last line is REFUSED, naming the file and the line", () => {
+  const name = "/run/observe/9.bb.jsonl";
+  const lines = OBS.split("\n");
+  const middle = [...lines.slice(0, 2), '{"kind":"read","pa', ...lines.slice(2)].join("\n");
+  assert.throws(() => certification.parseObservation(middle, name), /\/run\/observe\/9\.bb\.jsonl is corrupt at line 3/,
+    "a torn line that is NOT the last is corruption");
+  assert.throws(() => certification.parseObservation(OBS + obsLine({ kind: "wrote", path: "x" }), name), /9\.bb\.jsonl is corrupt at line 7/,
+    "an unknown event kind is corruption");
+  assert.throws(() => certification.parseObservation(OBS + "[1]\n", name), /corrupt at line 7/, "a line that is not an object is corruption");
+  assert.throws(() => certification.parseObservation(OBS + "\n", name), /corrupt at line 7/, "an empty complete line is corruption");
+});

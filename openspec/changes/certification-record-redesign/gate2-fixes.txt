@@ -3,3 +3,6 @@
 G1 names git would quote: drift trackedTestFiles()/stagedFiles() and the hook's floor read NUL-delimited -> <sha> ->
    functional/drift-script "G1 …" (3), functional/conductor-09 "G1 the floor counts…", twins assert/drift-script "G1 every
    name listing…" and assert/conductor-09's floor pins; red-G1.txt, name-read-sweep-G1.txt
+G2 a signal-killed child lost its reads: the observer appends each event (each NEW read included) as one JSON line
+   when it happens; parseObservation() drops a torn LAST line only and refuses any other corruption by file and
+   line -> <sha> -> functional/certify-index "G2 a child SIGTERMed…", unit/certify-index "G2 …" (3); red-G2.txt
