@@ -15,3 +15,6 @@ m3 functionalSubject() rule 4 admits a name that opens with a backtick (a templa
 m4 guard: an untracked failing functional test in the working tree is neither run nor recorded -> <sha> ->
    functional/certify-index "m4 an UNTRACKED failing functional test…" (mutation: run the bucket in the working tree ->
    fails), twin unit/certify-index "m4 the run tree is built from the index copy alone…"; mutation-m4.txt
+m5 docs: certify.mjs's header states the tracked-symlink limit (as .githooks/pre-commit does) and that a SIGKILL
+   cannot be cleaned up; CONTRIBUTING's "How certify runs" says INT/TERM/HUP are clean, a SIGKILLed certify can orphan
+   its bucket, and its run directory is pruned after 24 hours -> <sha> -> docs only (no test)

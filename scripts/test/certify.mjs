@@ -40,6 +40,16 @@
 // removed when the runner exits, and on INT/TERM/HUP, which also kill the bucket. The runner never
 // writes the working tree, the index, the stash or a worktree registration.
 //
+// ONE KNOWN LIMIT, shared with .githooks/pre-commit's index snapshot: `checkout-index` exports a tracked
+// symlink AS a symlink, so an ABSOLUTE one still points into the working tree (or anywhere), and a test
+// reading through it reads those bytes, not the index's. This repository tracks no symlinks
+// (`git ls-files -s | rg '^120000'` is empty), so nothing is lost today; a tracked symlink added later is
+// where this run stops meaning "the index" (Gate 2 m5).
+//
+// A SIGKILL CANNOT BE CLEANED UP. INT/TERM/HUP kill the bucket's process group and remove the run
+// directory; a SIGKILLed runner does neither, so its bucket can run on orphaned, and its `pm-certify-run.*`
+// directory stays until a later certify's pruner removes it once it is older than 24 hours (`pruneRecord()`).
+//
 // IMPORT-SAFE: importing this module runs no git, copies no index and clones nothing
 // (`assert/certify-count` imports it into the assertion half, where a spawn is a refusal). All of it
 // runs from main(), which only the direct invocation at the bottom calls.

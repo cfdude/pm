@@ -239,6 +239,12 @@ nothing. The functional run also loads a run-time observer into every Node proce
 file the half reads that the derivation missed fails the certification, naming the file (spell its name
 in the test that reads it), and so does a Node child started with a `NODE_OPTIONS` that drops the
 observer. The superseded single-file record `pm-suite-certification.json` is neither read nor removed.
+Ctrl-C, SIGTERM and SIGHUP are clean: certify kills the bucket and removes its run directory. A
+SIGKILLed certify cannot clean up — its bucket can keep running, orphaned (find it with
+`pgrep -fl pm-certify-run`), and its `pm-certify-run.*` directory under the OS temp directory stays until a
+later certify prunes it, once it is more than 24 hours old. One known limit, shared with the pre-commit snapshot: a
+tracked symlink is exported as a symlink, so an absolute one reads outside the index; this repository
+tracks none.
 
 ### Parallel worktrees
 
