@@ -1,0 +1,48 @@
+# mutation-1.3 — the guard 'the four files a bare export breaks pass in the run directory the runner builds'
+# Scratch copy: git clone of the repo at 2f93c776 + 1.3's working changes, in <scratch>/mut. The tree is never mutated.
+# Mutation: certify.mjs prepareRun() builds the run directory as a bare 'checkout-index -a --prefix=<tree>/' export (no clone, no .git):
+#   diff --git a/scripts/test/certify.mjs b/scripts/test/certify.mjs
+#   index 97320326..12a86a29 100644
+#   --- a/scripts/test/certify.mjs
+#   +++ b/scripts/test/certify.mjs
+#   @@ -91,11 +91,10 @@ export function prepareRun(root, gitCommonDir) {
+#      try { headSha = git(root, ["rev-parse", "--verify", "-q", "HEAD"]) || null; } catch { headSha = null; }
+#      const plan = indexRunPlan({ indexFile: indexFileOf(root), commonDir: gitCommonDir, headSha, tmp: dir });
+#      let lsFiles = null;
+#   -  for (const step of plan.steps) {
+#   -    if (step.op === "copy") { fs.copyFileSync(step.from, step.to); continue; }
+#   -    const out = execFileSync("git", step.args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...cleanEnv(), ...(step.env || {}) } });
+#   -    if (step.args.includes("ls-files")) lsFiles = out;
+#   -  }
+#   +  // MUTATION (1.3): the run directory built as a BARE checkout-index export — no clone, no .git.
+#   +  fs.copyFileSync(plan.steps[0].from, plan.copy);
+#   +  lsFiles = execFileSync("git", ["-C", gitCommonDir, "ls-files", "-s", "-z"], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...cleanEnv(), GIT_INDEX_FILE: plan.copy } });
+#   +  execFileSync("git", ["-C", root, "checkout-index", "-a", `--prefix=${plan.tree}/`], { env: { ...cleanEnv(), GIT_INDEX_FILE: plan.copy } });
+#      // `ls-files -s -z`: "<mode> <blob> <stage>\t<path>\0" per entry.
+#      const blobs = new Map();
+#      for (const rec of (lsFiles || "").split("\0").filter(Boolean)) {
+
+## MUTANT — node --test --test-name-pattern 1.3 scripts/test/functional/certify-index.test.mjs  (2026-09-29T01:13:10Z, load { 11.02 17.53 23.82 })
+      'fatal: not a git repository (or any of the parent directories): .git\n'
+      output: [ null, '', 'fatal: not a git repository (or any of the parent directories): .git\n' ],
+      stderr: 'fatal: not a git repository (or any of the parent directories): .git\n'
+    fatal: not a git repository (or any of the parent directories): .git
+    stderr: 'fatal: not a git repository (or any of the parent directories): .git\n'
+  AssertionError [ERR_ASSERTION]: the files a bare export breaks failed in the runner's run directory (status 1):
+  fatal: not a git repository (or any of the parent directories): .git
+✖ 1.3 the four files a bare export breaks pass in the run directory the runner builds (19303.772375ms)
+ℹ fail 1
+✖ failing tests:
+ℹ pass 0
+ℹ tests 1
+
+## REVERTED (git checkout -- scripts/test/certify.mjs in the scratch copy) — same command:
+✔ 1.3 the four files a bare export breaks pass in the run directory the runner builds (146741.811208ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+
+# Certify functional by hand before this commit (B9) — staged exactly:
+#   node scripts/test/certify.mjs functional   (286 s, load { 8.52 14.02 21.22 } -> { 17.22 15.77 20.01 })
+certify: functional half passed (1231/1231); recorded 8 module entries in <repo>/.git/pm-suite-certification.json
+# 1231 = 1227 + 1.2's 3 + this guard's 1.

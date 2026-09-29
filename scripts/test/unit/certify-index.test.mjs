@@ -124,3 +124,18 @@ unitTest("1.2 the run's environment drops every variable git sets for a hook, an
   certify.cleanEnv(input);
   assert.deepEqual(input, { GIT_DIR: "/x", KEEP: "1" }, "the scrub returns a copy; the caller's object is not modified");
 });
+
+// ─────────────── 1.3 — the bucket runs in the CLONE, never in a bare export ───────────────
+//
+// The functional twin's 1.3 guard runs the four files a bare `checkout-index --prefix` export breaks
+// (no `.git`, so `fatal: not a git repository`) in the directory the runner builds. This pins the
+// plan's half of that: the export is written INTO the clone the bucket runs in, never to a prefix.
+
+unitTest("1.3 the export lands inside the clone, never in a bare --prefix directory", () => {
+  const p = plan();
+  const exp = p.steps.find(isGit("checkout-index"));
+  assert.equal(exp.args.some((a) => a.startsWith("--prefix")), false,
+    "a --prefix export has no repository around it; the functional half's HEAD and history reads die there");
+  assert.equal(exp.args[1], p.tree, "the export runs in the clone");
+  assert.equal(p.steps.find(isGit("clone")).args.at(-1), p.tree, "and the clone is the directory the bucket runs in");
+});

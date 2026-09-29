@@ -27,6 +27,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo } from "../fixtures/functional-harness.mjs";
 import { RECORD_NAME, contentHash } from "../certification.mjs";
+import { removeTempDir } from "../fixtures/temp-dir.mjs";
 
 const TEST_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MODULE = "scripts/lib/m.mjs";
@@ -222,5 +223,46 @@ test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they 
     assert.deepEqual(snapshot(cwd), was, "an interrupted run changed the working tree, the index, the stash or the worktrees");
     assert.equal(fs.existsSync(recordPath(cwd)), false, "an interrupted run recorded an entry");
     assert.deepEqual(runDirsIn(tmp), [], "an interrupted run left its run directory behind");
+  }
+});
+
+// ─────────────── 1.3 — REGRESSION GUARD: the bucket passes in the shared clone ───────────────
+//
+// Several functional tests need a repository AROUND the content they run over: a HEAD, a parent
+// commit, a readable object. Run from a bare `checkout-index` export, which has no `.git`, the
+// functional half lost four files (task 0.3(d), baseline-before.md): conductor-13's "16.3" (`git
+// rev-parse --short HEAD`), conductor-15 and gate-artifact-evidence as whole files, and conductor-37's
+// history read — every failure `fatal: not a git repository`. The runner builds a `clone --shared`
+// instead (design D2). This guard builds the run directory with the runner's OWN prepareRun(), over
+// THIS repository's index, and runs those four files there. It passes the moment it exists; it is
+// verified by building the run directory as a bare export in a scratch copy of certify.mjs, which
+// must turn it red naming `not a git repository` (mutation-1.3.txt).
+
+const BARE_EXPORT_CASUALTIES = [
+  "scripts/test/functional/conductor-13.test.mjs",
+  "scripts/test/functional/conductor-15.test.mjs",
+  "scripts/test/functional/conductor-37.test.mjs",
+  "scripts/test/functional/gate-artifact-evidence.test.mjs",
+];
+
+test("1.3 the four files a bare export breaks pass in the run directory the runner builds", async () => {
+  const { prepareRun } = await import("../certify.mjs");
+  const repo = path.join(TEST_ROOT, "..", "..");
+  const commonDir = path.resolve(repo, git(repo, "rev-parse", "--git-common-dir").trim());
+  const run = prepareRun(repo, commonDir);
+  try {
+    for (const rel of BARE_EXPORT_CASUALTIES) {
+      assert.ok(fs.existsSync(path.join(run.tree, rel)), `${rel} is not in the run directory: the index no longer holds it`);
+    }
+    const r = spawnSync(process.execPath, ["--test", "--test-reporter=spec", ...BARE_EXPORT_CASUALTIES],
+      { cwd: run.tree, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: certifyEnv({ FORCE_COLOR: "0" }) });
+    const out = `${r.stdout}${r.stderr}`;
+    const failing = out.split("\n").filter((l) => /^✖ /.test(l) || /not a git repository/.test(l));
+    assert.equal(r.status, 0,
+      `the files a bare export breaks failed in the runner's run directory (status ${r.status}):\n` +
+      `${[...new Set(failing)].slice(0, 20).join("\n")}\n${out.split("\n").filter((l) => /^ℹ (tests|pass|fail) /.test(l)).join("\n")}`);
+    assert.doesNotMatch(out, /not a git repository/, "a test in the run directory found no repository around it");
+  } finally {
+    removeTempDir(run.dir);
   }
 });

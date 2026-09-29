@@ -83,8 +83,9 @@ function indexFileOf(root) {
 /** Execute `indexRunPlan()` in a fresh run directory. Returns the run directory, the clone the bucket
  *  runs in, and readers over the INDEX COPY in the shape the certification functions take — `readdir`
  *  over the copy's paths, `readFile` returning a path's blob as the copy holds it (or "" for a path
- *  the copy does not hold, exactly as drift's `indexReaders()` reads the commit's index). */
-function prepareRun(root, gitCommonDir) {
+ *  the copy does not hold, exactly as drift's `indexReaders()` reads the commit's index).
+ *  Exported for functional/certify-index's 1.3 guard, which runs files in the directory it builds. */
+export function prepareRun(root, gitCommonDir) {
   const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-certify-run.")));
   let headSha = null;
   try { headSha = git(root, ["rev-parse", "--verify", "-q", "HEAD"]) || null; } catch { headSha = null; }

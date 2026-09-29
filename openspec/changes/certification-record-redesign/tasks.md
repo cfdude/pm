@@ -158,7 +158,7 @@ These rules bind every section below.
       RED `red-1.2.txt`. Certify functional by hand before this commit (B9).
       Verify: `node --test scripts/test/functional/certify-index.test.mjs`; `certify.mjs functional`
       passes in this repository with a load average recorded; the count equals 0.3(b)'s.
-- [ ] 1.3 **REGRESSION GUARD, FUNCTIONAL**: the bucket passes in the shared clone.
+- [x] 1.3 **REGRESSION GUARD, FUNCTIONAL**: the bucket passes in the shared clone.
       - **The guard.** A test in `functional/certify-index` runs the four files 0.3(d) found failing
         in a bare export (`conductor-13` "16.3", `conductor-15`, `conductor-37`,
         `gate-artifact-evidence`) from a shared clone built by the plan, and asserts they pass.
