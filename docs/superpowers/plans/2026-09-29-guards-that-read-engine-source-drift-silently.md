@@ -1,0 +1,88 @@
+# guards-that-read-engine-source-drift-silently — plan
+
+## Goal
+
+A source-reading guard in the test tree answers from CODE, never from a comment, and cannot quietly
+start doing otherwise. Two deliverables, both named by the epic:
+
+1. **One shared, sound source-stripping helper** built on `scripts/test/js-lexer.mjs` (regex-aware,
+   fails closed on a misparse), replacing every hand-rolled comment stripper in the test tree.
+2. **A lint** that fails when a positive assertion (`assert.match`, `assert.ok(<re>.test(x))`,
+   `assert.ok(x.includes(…))`) is made against RAW engine source.
+
+## Premise, as verified against today's code (c37b20e5)
+
+- `js-lexer.mjs` exists and lexes all 305 `.mjs` files under `scripts/` with ZERO misparse
+  (measured). Its `stripComments()` DELETES a block comment (line numbers shift), and it is certify
+  machinery (`certification.mjs` imports it) — so it is NOT changed; the helper is a new module.
+- The two strippers the epic names are still live: `assert/assert-half-has-no-spawn.test.mjs`
+  (character-level, no regex state — the desync the epic measured) and `assert/conductor-13.test.mjs`
+  `codeLines()` (line-oriented; drops comment-only lines, keeps a TRAILING comment, so
+  `x(); // archiveGate(` still satisfies it — a false negative).
+- **Five more hand-rolled strippers** (rg `function stripComments|function codeLines|replace\(/\\/\\*`):
+  `assert/save-report-surface.test.mjs`, `assert/detour-frame-drop.test.mjs` (both character-level,
+  no string state), `assert/conductor-35.test.mjs` (regex), `assert/temp-dir-cleanup.test.mjs`
+  (line regex), `assert/conformance.test.mjs:164` (inline regex, eats `//` inside a string).
+- Positive assertions against raw engine reads, found mechanically (prototype of the lint over
+  `scripts/test/**/*.test.mjs`): 21 uses in 14 files, plus `assert/conductor-25.test.mjs:133`, which
+  reads through `path.join(REPO, rel)` and is invisible to a mechanical scan (see limits).
+
+## Tasks
+
+### 1. The shared helper — `scripts/test/fixtures/source-code.mjs`
+- `codeOnly(src, name)`: every comment BLANKED (each char → space, newlines kept) so line and column
+  numbers survive; strings, templates and regexes kept; THROWS on any `lex()` misparse.
+- `engineCode(rel)`: reads a repo-relative engine path (`scripts/conductor.mjs`, `scripts/lib/*.mjs`)
+  and returns `codeOnly` of it; refuses a path outside the engine.
+- RED: `assert/source-code.test.mjs` — a comment naming a token is gone; the desync case (a regex
+  literal holding a quote, then a comment naming the token) is gone; strings kept; line count and
+  offsets preserved; a misparse throws; a non-engine path is refused. Fails first on the missing module.
+- GREEN: write the module.
+
+### 2. The no-spawn guard uses it
+- RED: `installsShim('const q = /"/;\n// import "../fixtures/assert-git-shim.mjs";\n')` must be FALSE.
+  With the character-level stripper it is TRUE (the regex's quote opens a "string", the commented
+  import survives) — a false NEGATIVE of the install walk, the direction its docstring said was
+  impossible. Seen failing before the swap.
+- GREEN: `violations`, `installsShim`, `fixtureInstallsShim` use `codeOnly`; the old stripper and its
+  docstring's soundness claim go.
+
+### 3. conductor-13's twin guard uses it
+- RED: a discrimination test over a pure `callsArchiveGate(code)`: `x(); // archiveGate(` must not
+  satisfy it — `codeLines()` keeps a trailing comment, so it does.
+- GREEN: `engineCode("scripts/lib/update-epic.mjs")`; `codeLines()` removed.
+- Mutation proof: in a scratch copy, alias the import and call site away — guard goes RED.
+
+### 4. The five sibling strippers
+Each replaced by `codeOnly` (line-preserving where a line number is reported). Their own
+discrimination/non-vacuity assertions must stay green; any that goes red is a finding, reported.
+
+### 5. The lint — `assert/raw-engine-source-match.test.mjs`
+- Walks every `scripts/test/**/*.test.mjs`, lexes it (fail closed), finds each `readFileSync(<arg>)`
+  whose argument names the engine (`conductor.mjs`, a `lib` path segment, `ENGINE`, `LIB`, `libDir`;
+  not `.md`/`.json`), binds it to the name it initialises, and flags a positive assertion whose subject
+  is that name (the NEAREST preceding binding of it, so a re-declared `src` in a later test is judged
+  by its own read) or the read inline.
+- RED: run it — lists the 21 uses. Discrimination test (samples built from parts so the walk does not
+  flag this file): conductor-13's ORIGINAL shape is flagged; `engineCode(…)` is not; a
+  `doesNotMatch` is not (against raw source it is the stricter form); a non-engine read is not.
+- GREEN: migrate every flagged use to `engineCode`, including `conductor-25:133` by hand. A guard that
+  goes RED after migration was satisfied by a comment: that is a real finding, reported, not muted.
+- Mutation proof: revert conductor-13's migration in a scratch copy → the lint goes red.
+- **Inverse / sanctioned exemption**: none is shipped unless a migrated guard is found that must match
+  comment text. If one is found, it gets an explicit, reasoned raw read the lint accepts; otherwise
+  there is no exemption to revoke, and that is stated.
+
+## Required task items (CLAUDE.md "The gate procedure")
+- **Call-site sweep**: done mechanically above (rg for strippers; the lint prototype for raw reads).
+  The lint's STATED LIMITS, each named rather than silently uncovered: (a) a read whose path is a
+  variable (`path.join(REPO, rel)` — `conductor-25:132`, `conductor-35:213/218`,
+  `emitted-invocations:82–127`, `store-ownership`, …); (b) a value DERIVED from the raw source
+  (`src.slice(…)`, an extraction regex) and then matched; (c) the lexer's own `)`/`}`-then-regex
+  blind spot. `doesNotMatch` against raw source is deliberately not flagged.
+- **Inverses**: the helper has no write; the lint's inverse is an exemption, handled in task 5.
+- **Verify against the commit**: `git show --stat <sha>` per task, every claimed file present.
+- **Out of scope, named for the orchestrator**: the other half of the epic's title — silent drift, an
+  extraction regex that matches NOTHING after the engine reshapes (the dispatch-table readers) — is a
+  vacuity problem a match lint cannot see. Each such reader already carries its own non-vacuity
+  assertion; a general guard for it is separate work.
