@@ -123,20 +123,24 @@ fi
 # drift script arriving would otherwise be a commit in which a file is run by nothing; 6.4 retires
 # that copy as it hands the check over, so the hook stops carrying two versions of one rule.
 #
-# WHAT IT REFUSES, all four of them by NAME: a tracked test file in neither half and in no bucket;
-# a functional id with no assertion twin; a staged functional file without its twin in the same
-# staged diff; and a staged change to a bucket's subject with no passing entry whose manifest (mode
-# and blob id per subject path) equals the WHOLE subject in this index -- where the refusal NAMES the
-# bucket, the staged subject paths and the run that produces one (`node scripts/test/certify.mjs
-# functional|sweeps`) rather than starting it.
+# WHAT THIS PHASE REFUSES (`--phase pre-commit`), all three of them by NAME: a tracked test file in
+# neither half and in no bucket; a functional id with no assertion twin; and a staged change to a
+# bucket's subject with no passing entry whose manifest (mode and blob id per subject path) equals the
+# WHOLE subject in this index -- where the refusal NAMES the bucket, the staged subject paths and the
+# run that produces one (`node scripts/test/certify.mjs functional|sweeps`) rather than starting it.
+# The fourth rule, DIFF COUPLING (a staged functional file without its twin in the same staged diff),
+# is NOT judged here: it may be exempted by a `Twin-Unchanged: <id> — <reason>` trailer, and the
+# message does not exist yet, so it runs in `.githooks/commit-msg` (`--phase commit-msg`) and in no
+# other hook (certification-record-redesign D4).
 #
 # IT DOES NOT RUN THE FUNCTIONAL HALF, and that is a requirement rather than a choice (design D8):
 # the check must be produced by reading files and the index, with no engine process and no git
 # fixture started by it, and it runs BEFORE the suite -- so a check that demanded a record its own
 # later step would write would refuse one step too early to ever be satisfied. It starts no test
 # runner, no engine and no fixture: `git ls-files` (with `-s` for modes and blob ids), `git diff
-# --cached`, `git show` (`:path`, and `HEAD:path` for a staged deletion), `git ls-tree` (HEAD's tree)
-# and `git rev-parse` are the whole of its access, enforced at the call.
+# --cached`, `git show` (`:path`, and `HEAD:path` for a staged deletion), `git ls-tree` (HEAD's tree),
+# `git rev-parse` and `git interpret-trailers` (the commit-msg phase's parse of the message) are the
+# whole of its access, enforced at the call.
 #
 # BEFORE THE SUITE, INSIDE THE LOCK: it reads the index, and the suite's own writes are irrelevant
 # to it, but a refusal should not make the developer wait ~75s for a suite that was never going to
@@ -154,9 +158,9 @@ fi
 # snapshot's copy always runs.
 DRIFT="$SNAP/scripts/test/drift.mjs"
 [ -f "$DRIFT" ] || DRIFT="$ROOT/scripts/test/drift.mjs"
-if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT"; then
+if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT" --phase pre-commit; then
   echo "pre-commit: ABORT -- the drift script refused this commit (see above)." >&2
-  echo "pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness." >&2
+  echo "pre-commit: it checks enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook." >&2
   exit 1
 fi
 

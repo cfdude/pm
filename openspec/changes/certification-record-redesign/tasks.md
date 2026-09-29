@@ -651,7 +651,7 @@ These rules bind every section below.
           message is given.
 
       RED `red-4.2.txt`.
-- [ ] 4.3 **TDD, FUNCTIONAL** (`functional/conductor-09`, twin edited): the two hooks.
+- [x] 4.3 **TDD, FUNCTIONAL** (`functional/conductor-09`, twin edited): the two hooks.
       - **Seeding (Gate 1 round 3, R2).** Every case below stages a functional file, which is in
         the functional subject, so pre-commit refuses it for freshness and commit-msg never runs
         unless the fixture's record agrees. Each case, accepted or refused, therefore seeds with

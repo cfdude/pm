@@ -233,6 +233,11 @@ unitTest("a bare invocation with no subcommand prints usage and exits 0", () => 
 // 7. THE OBSERVED SUBJECT (certification-record-redesign 3.3). IX-j's `zz-probe.mjs` is imported,
 //    executed and named by nothing, so from L3 it is outside the functional subject: IX-j asserts a
 //    SWEEPS demand naming it and NO functional demand.
+// 8. THE TWO HOOKS (certification-record-redesign 4.3). Diff coupling left the pre-commit run for
+//    `.githooks/commit-msg`, and the functional file's 4.3 cases commit through BOTH real hooks with a
+//    real `git commit` (`hookedRepo()`), so they spawn and stay functional. Their value-level half is on
+//    this rung in `unit/drift-coupling` (the trailer parse, the exemption rule, the phases), and the
+//    hooks' TEXT is pinned on the file rung in `assert/conductor-09`.
 
 // ──────────────── the pre-commit hook's SHAPE ────────────────
 //

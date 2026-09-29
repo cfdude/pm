@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, expectFail, runHookAgainstFixture, ENGINE, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, readState, writeState, expectFail, runHookAgainstFixture, ENGINE, fixtureCommits, hookedRepo, hookedGit, seedAgreeingEntry } from "../fixtures/functional-harness.mjs";
 import { removeAtExit } from "../fixtures/temp-dir.mjs";
 
 // ──────────────── reconciler structured writeback: record-reconcile ────────────────
@@ -805,6 +805,287 @@ test("IX-f an INTERRUPTED hook (SIGTERM mid-suite) leaves the tree, the index, T
     fs.rmSync(stubDir, { recursive: true, force: true });
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+});
+
+// ---------- coupling in the commit-msg hook, with a declared exemption (certification-record-redesign 4.3, design D4) ----------
+//
+// Check 3 (diff coupling) left the pre-commit run: only commit-msg can read the message, and the
+// message is where `Twin-Unchanged: <id> — <reason>` declares a subject-free change. Every case below
+// commits through BOTH real hooks with a real `git commit` (`hookedRepo()`/`hookedGit()`), so git hands
+// each hook the index and message file it would hand them in this repository.
+//
+// EVERY CASE SEEDS (Gate 1 round 3, R2). Each stages a functional file, which is in the functional
+// subject, so pre-commit's freshness check refuses it — and commit-msg never runs — unless the record
+// agrees. The seed is `seedAgreeingEntry()` over the index THAT commit is made from.
+//
+// EVERY REFUSAL PROVES WHICH HOOK REFUSED (Gate 1 round 4, T2): pre-commit's success line was printed
+// (so the seed agreed and pre-commit passed), and the refusal after it is commit-msg's coupling line
+// naming the id and the twin's path — never a freshness refusal. A seed that silently disagreed fails
+// the first half rather than passing as a coupling refusal.
+
+const HK_ALPHA = "scripts/test/functional/alpha.test.mjs";
+const HK_TWIN = "scripts/test/assert/alpha.test.mjs";
+const hkGit = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+const hkTouch = (cwd, rel, marker) => fs.appendFileSync(path.join(cwd, rel), `// ${marker}\n`);
+const hkHead = (cwd) => hkGit(cwd, "rev-parse", "HEAD");
+const hkIndex = (cwd) => hkGit(cwd, "rev-parse", "--path-format=absolute", "--git-path", "index");
+const hkGitDir = (cwd) => hkGit(cwd, "rev-parse", "--path-format=absolute", "--git-dir");
+const hkWithIndex = (cwd, idx, ...args) =>
+  execFileSync("git", args, { cwd, env: { ...process.env, GIT_INDEX_FILE: idx }, stdio: ["ignore", "pipe", "pipe"] });
+/** The index `git commit -a` is made from: a copy of the index, updated with `add -u`. */
+function hkIndexForAll(cwd) {
+  const idx = path.join(hkGitDir(cwd), "seed-index-all");
+  fs.copyFileSync(hkIndex(cwd), idx);
+  hkWithIndex(cwd, idx, "add", "-u");
+  return idx;
+}
+/** The index `git commit <path>` is made from: `read-tree HEAD` plus `add <path>`. */
+function hkIndexForPath(cwd, rel) {
+  const idx = path.join(hkGitDir(cwd), "seed-index-path");
+  hkWithIndex(cwd, idx, "read-tree", "HEAD");
+  hkWithIndex(cwd, idx, "add", "--", rel);
+  return idx;
+}
+const hkSeed = (cwd, indexFile = hkIndex(cwd)) => seedAgreeingEntry(cwd, "functional", { indexFile });
+const HK_PASS = /^pre-commit: (\d+)\/\1 passing$/m;
+/** commit-msg's coupling line for an undeclared unpaired id: the id, the functional path, the twin's. */
+const hkCoupling = (id) => new RegExp(
+  `^  ${id} — scripts/test/functional/${id}\\.test\\.mjs is staged, scripts/test/(?:assert|unit)/${id}\\.test\\.mjs is not$`, "m");
+/** A message file outside the repository, so it is never staged. */
+const hkMsgDir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-hk-msg-")));
+let hkMsgSeq = 0;
+function hkMsg(text) {
+  const f = path.join(hkMsgDir, `${++hkMsgSeq}.txt`);
+  fs.writeFileSync(f, text);
+  return f;
+}
+/** The declarations git parses from a commit's message — what Gate 2's audit reads. */
+const hkTrailers = (cwd, rev = "HEAD") =>
+  hkGit(cwd, "log", "-1", "--format=%(trailers:key=Twin-Unchanged,valueonly)", rev).split("\n").filter(Boolean);
+
+/** T2: the commit was refused, by commit-msg, for coupling — and pre-commit passed first. */
+function hkRefusedByCommitMsg(r, cwd, headBefore, refusal, label) {
+  assert.notEqual(r.status, 0, `${label}: the commit must be refused: ${r.out}`);
+  assert.equal(hkHead(cwd), headBefore, `${label}: a refused commit must not move HEAD`);
+  const pass = HK_PASS.exec(r.out);
+  assert.ok(pass, `${label}: pre-commit's success line was not printed — the seed did not agree, or pre-commit refused: ${r.out}`);
+  const before = r.out.slice(0, pass.index);
+  const after = r.out.slice(pass.index);
+  assert.match(before, /^drift: ok — /m, `${label}: the pre-commit phase's drift must pass before its suite: ${r.out}`);
+  assert.doesNotMatch(before, /is staged, |Twin-Unchanged|coupling/i, `${label}: pre-commit's output mentions coupling: ${before}`);
+  assert.match(after, refusal, `${label}: the refusal must be commit-msg's coupling line: ${after}`);
+  assert.match(after, /^commit-msg: ABORT/m, `${label}: the refusal must be the commit-msg hook's: ${after}`);
+  assert.doesNotMatch(after, /subject changed/, `${label}: a freshness refusal is pre-commit's, never commit-msg's: ${after}`);
+}
+/** The commit was made; returns the declarations the accepting drift run printed. */
+function hkAccepted(r, cwd, headBefore, label) {
+  assert.equal(r.status, 0, `${label}: the commit must be accepted: ${r.out}`);
+  assert.notEqual(hkHead(cwd), headBefore, `${label}: an accepted commit moves HEAD`);
+  assert.match(r.out, HK_PASS, `${label}: pre-commit passed: ${r.out}`);
+  return [...r.out.matchAll(/^drift: coupling exemption (.+)$/gm)].map((m) => m[1]);
+}
+/** A linked worktree of `cwd` in a scheduled temp dir; removed and pruned by the caller's `finally`. */
+function hkWorktree(cwd, branch, start = "HEAD") {
+  const wt = path.join(removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-hk-wt-"))), "wt");
+  hkGit(cwd, "worktree", "add", "-q", "-b", branch, wt, start);
+  return wt;
+}
+function hkRemoveWorktree(cwd, wt) {
+  execFileSync("git", ["worktree", "remove", "--force", wt], { cwd, stdio: "ignore" });
+  execFileSync("git", ["worktree", "prune"], { cwd, stdio: "ignore" });
+  assert.equal(hkGit(cwd, "worktree", "list", "--porcelain").split("\n").filter((l) => l.startsWith("worktree ")).length, 1,
+    "only the main worktree may remain");
+}
+/** A branch `feat` whose one commit changed alpha WITHOUT its twin under a Twin-Unchanged trailer. */
+function hkExemptedBranch(cwd) {
+  const base = hkHead(cwd);
+  hkGit(cwd, "checkout", "-q", "-b", "feat");
+  hkTouch(cwd, HK_ALPHA, "feat");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const r = hookedGit(cwd, ["commit", "-m", "change alpha on feat", "-m", "Twin-Unchanged: alpha — a comment-only edit"]);
+  assert.deepEqual(hkAccepted(r, cwd, base, "feat"), ["alpha — a comment-only edit"]);
+  hkGit(cwd, "checkout", "-q", "main");
+  return base;
+}
+
+test("4.3 plain commit: a functional file staged without its twin or a trailer is refused by commit-msg, and pre-commit never mentions coupling", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "plain");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "change alpha, no trailer"]), cwd, head, hkCoupling("alpha"), "plain");
+});
+
+test("4.3 plain commit with a Twin-Unchanged trailer is accepted, and the exemption is printed as git's audit reads it", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "declared");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  const printed = hkAccepted(hookedGit(cwd, ["commit", "-m", "change alpha", "-m", "Twin-Unchanged: alpha — a comment-only edit"]),
+    cwd, head, "declared");
+  assert.deepEqual(printed, ["alpha — a comment-only edit"], "the accepting run names the exempted id and the reason");
+  assert.deepEqual(hkTrailers(cwd), printed, "drift read exactly the declarations Gate 2's %(trailers) audit reads");
+});
+
+test("4.3 `commit -a` is judged by its OWN index: the working-tree change it sweeps in is refused though .git/index stages nothing", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "all");
+  hkSeed(cwd, hkIndexForAll(cwd));
+  assert.equal(hkGit(cwd, "diff", "--cached", "--name-only"), "", "fixture: .git/index stages nothing, so a hook reading it would pass");
+  const head = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-a", "-m", "change alpha with -a"]), cwd, head, hkCoupling("alpha"), "commit -a");
+});
+
+test("4.3 `commit <path>` is judged by its OWN index: the path alone is refused though .git/index pairs it with its twin", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "path");
+  hkTouch(cwd, HK_TWIN, "path");
+  hkGit(cwd, "add", "--", HK_ALPHA, HK_TWIN);
+  hkSeed(cwd, hkIndexForPath(cwd, HK_ALPHA));
+  const head = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "change alpha by path", "--", HK_ALPHA]), cwd, head, hkCoupling("alpha"), "commit <path>");
+});
+
+test("4.3 a linked worktree's commit is judged by the worktree's index, not the main checkout's", () => {
+  const cwd = hookedRepo();
+  const wt = hkWorktree(cwd, "wt");
+  try {
+    hkTouch(cwd, HK_ALPHA, "main");
+    hkTouch(cwd, HK_TWIN, "main");
+    hkGit(cwd, "add", "--", HK_ALPHA, HK_TWIN);   // the MAIN index pairs them: a hook reading it would pass
+    hkTouch(wt, HK_ALPHA, "wt");
+    hkGit(wt, "add", "--", HK_ALPHA);
+    hkSeed(wt);
+    const head = hkHead(wt);
+    hkRefusedByCommitMsg(hookedGit(wt, ["commit", "-m", "change alpha in a worktree"]), wt, head, hkCoupling("alpha"), "linked worktree");
+  } finally {
+    hkRemoveWorktree(cwd, wt);
+  }
+});
+
+test("4.3 a declaration that exempts nothing staged, and one with no reason, are each refused by commit-msg naming the id", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "decl");
+  hkTouch(cwd, HK_TWIN, "decl");
+  hkGit(cwd, "add", "--", HK_ALPHA, HK_TWIN);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "pair", "-m", "Twin-Unchanged: beta — a stale claim"]), cwd, head,
+    /^  beta — declared Twin-Unchanged, but scripts\/test\/functional\/beta\.test\.mjs is not staged/m, "not staged");
+  hkGit(cwd, "reset", "-q", "--", HK_TWIN);
+  hkSeed(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "alpha", "-m", "Twin-Unchanged: alpha"]), cwd, head,
+    /^  alpha — declared Twin-Unchanged with no reason/m, "no reason");
+});
+
+test("4.3 a --no-ff merge of an exempted change is accepted; a squash of the same change without the trailer is refused", () => {
+  const cwd = hookedRepo();
+  const base = hkExemptedBranch(cwd);
+  const head = hkHead(cwd);
+  const m = hookedGit(cwd, ["merge", "--no-ff", "-m", "merge feat", "feat"]);
+  assert.equal(m.status, 0, `a merge is not judged by the coupling check: ${m.out}`);
+  assert.equal(hkGit(cwd, "rev-list", "--parents", "-n", "1", "HEAD").split(" ").length, 3, "a merge commit was made");
+  assert.notEqual(hkHead(cwd), head);
+  assert.match(m.out, /^drift: ok — a merge commit/m, `the commit-msg hook ran on the merge and did not judge it: ${m.out}`);
+  hkGit(cwd, "checkout", "-q", "-b", "sq", base);
+  hkGit(cwd, "merge", "--squash", "feat");
+  hkSeed(cwd);
+  const sq = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "squash feat"]), cwd, sq, hkCoupling("alpha"), "squash");
+});
+
+test("4.3 the same --no-ff merge made IN A LINKED WORKTREE is accepted — MERGE_HEAD is found through --git-path", () => {
+  const cwd = hookedRepo();
+  const base = hkExemptedBranch(cwd);
+  const wt = hkWorktree(cwd, "m2", base);
+  try {
+    const head = hkHead(wt);
+    const m = hookedGit(wt, ["merge", "--no-ff", "-m", "merge feat in a worktree", "feat"]);
+    assert.equal(m.status, 0, `a merge in a linked worktree is not judged either: ${m.out}`);
+    assert.notEqual(hkHead(wt), head);
+    assert.equal(hkGit(wt, "rev-list", "--parents", "-n", "1", "HEAD").split(" ").length, 3, "a merge commit was made");
+    assert.match(m.out, /^drift: ok — a merge commit/m, `the commit-msg hook ran on the merge and did not judge it: ${m.out}`);
+  } finally {
+    hkRemoveWorktree(cwd, wt);
+  }
+});
+
+test("4.3 trailer parsing is git's: subject-only, prose-paragraph and after-the-scissors declarations declare nothing; above the scissors does", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "parse");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  // An editor for `commit -v`: it puts HK_TOP above the template and HK_BOTTOM after its diff, i.e.
+  // after the scissors line. git runs commit-msg BEFORE it strips that tail, so the hook sees it.
+  const editor = path.join(hkMsgDir, "editor.mjs");
+  fs.writeFileSync(editor, 'import fs from "node:fs";\nconst f = process.argv[2];\n' +
+    'fs.writeFileSync(f, (process.env.HK_TOP || "") + fs.readFileSync(f, "utf8") + (process.env.HK_BOTTOM || ""));\n');
+  const GIT_EDITOR = `"${process.execPath}" "${editor}"`;
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "change alpha"]), cwd, head, hkCoupling("alpha"), "subject only");
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-F",
+    hkMsg("change alpha\n\nA paragraph of prose that goes on.\nTwin-Unchanged: alpha — in the prose\n")]),
+  cwd, head, hkCoupling("alpha"), "prose paragraph");
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-v"], {
+    env: { GIT_EDITOR, HK_TOP: "change alpha\n", HK_BOTTOM: "\nTwin-Unchanged: alpha — after the scissors\n" },
+  }), cwd, head, hkCoupling("alpha"), "after the scissors");
+  const printed = hkAccepted(hookedGit(cwd, ["commit", "-v"], {
+    env: { GIT_EDITOR, HK_TOP: "change alpha\n\nTwin-Unchanged: alpha — above the scissors\n", HK_BOTTOM: "" },
+  }), cwd, head, "above the scissors");
+  assert.deepEqual(printed, ["alpha — above the scissors"]);
+  assert.deepEqual(hkTrailers(cwd), printed, "drift read exactly the declarations Gate 2's %(trailers) audit reads");
+});
+
+test("4.3 the `---` divider: before the trailer paragraph it is accepted, after it refused — and drift agrees with %(trailers)", () => {
+  // The same messages committed with `git commit -F` in a repository with NO hooks installed
+  // (trailer-divider-probe.log): what git's own `%(trailers)` reads there is what drift must read.
+  const hookless = tmpRepo();
+  hkGit(hookless, "init", "-q", "-b", "main");
+  hkGit(hookless, "config", "user.email", "test@example.com");
+  hkGit(hookless, "config", "user.name", "Test");
+  hkGit(hookless, "config", "commit.gpgsign", "false");
+  let n = 0;
+  const hooklessTrailers = (msgFile) => {
+    fs.writeFileSync(path.join(hookless, "f.txt"), `${++n}\n`);
+    hkGit(hookless, "add", "--", "f.txt");
+    hkGit(hookless, "commit", "-q", "-F", msgFile);
+    return hkTrailers(hookless);
+  };
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "divider");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  const after = hkMsg("change alpha\n\nTwin-Unchanged: alpha — a divider after the trailers\n\n---\nmore text\n");
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-F", after]), cwd, head, hkCoupling("alpha"), "divider after");
+  assert.deepEqual(hooklessTrailers(after), [], "git's %(trailers) reads no declaration there either");
+  const before = hkMsg("change alpha\n\n---\n\nTwin-Unchanged: alpha — a divider above the trailers\n");
+  const printed = hkAccepted(hookedGit(cwd, ["commit", "-F", before]), cwd, head, "divider before");
+  assert.deepEqual(printed, ["alpha — a divider above the trailers"]);
+  assert.deepEqual(hooklessTrailers(before), printed, "drift read what git's %(trailers) reads in a hookless repository");
+});
+
+test("4.3 the working-tree fallback: the snapshot's drift judges when the index holds one, the working tree's when it holds none", () => {
+  // (a) The index holds drift.mjs (and what it imports); the working tree's copy is replaced, UNSTAGED,
+  //     by a script that exits 0. A commit-msg run of the working tree's copy would wave the commit through.
+  const tracked = hookedRepo();
+  fs.writeFileSync(path.join(tracked, "scripts", "test", "drift.mjs"), "process.exit(0);\n");
+  hkTouch(tracked, HK_ALPHA, "snapshot");
+  hkGit(tracked, "add", "--", HK_ALPHA);
+  hkSeed(tracked);
+  const head = hkHead(tracked);
+  hkRefusedByCommitMsg(hookedGit(tracked, ["commit", "-m", "change alpha"]), tracked, head, hkCoupling("alpha"), "snapshot drift");
+  // (b) The index holds no drift.mjs (the `runHookAgainstFixture` shape): the working tree's copy runs.
+  const untracked = hookedRepo({ trackMachinery: false });
+  assert.equal(hkGit(untracked, "ls-files", "--", "scripts/test/drift.mjs"), "", "fixture: the index holds no drift.mjs");
+  hkTouch(untracked, HK_ALPHA, "fallback");
+  hkGit(untracked, "add", "--", HK_ALPHA);
+  hkSeed(untracked);
+  const head2 = hkHead(untracked);
+  hkRefusedByCommitMsg(hookedGit(untracked, ["commit", "-m", "change alpha"]), untracked, head2, hkCoupling("alpha"), "working-tree drift");
 });
 
 // ---------- sync must not register a directory's own index file as a plan (#87) ----------

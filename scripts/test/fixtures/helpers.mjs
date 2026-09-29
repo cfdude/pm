@@ -353,7 +353,7 @@ export function runHookAgainstFixture(testFileBody, {
   // copied in, and the minimal tree it reads is created: an EMPTY `scripts/lib/` and an untracked,
   // empty `conductor.mjs` put nothing in the engine source, the two empty buckets derive no functional
   // ids, and with no functional test and no tracked entry point the observed functional subject
-  // (`functionalSubject()`) has no closure to hold anything — so all four checks pass on the fixture by
+  // (`functionalSubject()`) has no closure to hold anything — so every check the pre-commit phase runs passes on the fixture by
   // construction, which is what lets the floor and
   // the quiet/failure behaviour below be observed through the real hook.
   const repoRoot = path.join(path.dirname(ENGINE), "..");
@@ -411,6 +411,79 @@ export function seedAgreeingEntry(cwd, bucket, { indexFile } = {}) {
   const commonDir = path.resolve(cwd, execFileSync("git", ["rev-parse", "--git-common-dir"], { cwd, encoding: "utf8" }).trim());
   const { manifest } = indexManifest(cwd, bucket, indexFile ? { indexFile } : {});
   return writeManifestEntry(commonDir, { bucket, manifest, counts: { tests: 1, pass: 1, fail: 0 }, engineSha: "seeded", worktree: "seeded" }).key;
+}
+
+/** A FIXTURE REPOSITORY WHOSE COMMITS GO THROUGH BOTH REAL HOOKS (certification-record-redesign 4.3/4.4,
+ *  design D4). `runHookAgainstFixture` runs `pre-commit` by hand with no message, so it cannot reach
+ *  the commit-msg phase, the four commit forms or a merge — here git itself runs the hooks, on a real
+ *  `git commit`, with the index and the message file it hands them.
+ *
+ *  The baseline commit holds a passing assertion-half file, one functional id (`alpha`) with its twin,
+ *  and — with `trackMachinery` (the default, as in this repository) — this repository's
+ *  `scripts/test/{drift,certification,js-lexer}.mjs`, so both hooks run the SNAPSHOT's drift and a
+ *  linked worktree's checkout holds it too. With `trackMachinery: false` they are copied in UNTRACKED,
+ *  the `runHookAgainstFixture` shape, and each hook falls back to the working tree's drift.mjs.
+ *  The hooks are this repository's `.githooks/pre-commit` and `.githooks/commit-msg`, copied in
+ *  untracked, and installed by an ABSOLUTE `core.hooksPath` — as this repository's own is — so a linked
+ *  worktree runs them too. The baseline is committed BEFORE `core.hooksPath` is set: no hook is
+ *  installed yet, so none runs and none is bypassed. */
+export function hookedRepo({ trackMachinery = true } = {}) {
+  const cwd = tmpRepo();
+  const git = (...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  git("init", "-q", "-b", "main");
+  git("config", "user.email", "test@example.com");
+  git("config", "user.name", "Test");
+  git("config", "commit.gpgsign", "false");
+  const repoRoot = path.join(path.dirname(ENGINE), "..");
+  const write = (rel, text) => {
+    fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
+    fs.writeFileSync(path.join(cwd, rel), text);
+  };
+  const header = 'import { test } from "node:test";\nimport assert from "node:assert/strict";\n';
+  write("scripts/test/assert/fixture.test.mjs", `${header}test("hooked fixture", () => { assert.ok(true); });\n`);
+  write("scripts/test/functional/alpha.test.mjs", `${header}test("alpha, functional", () => { assert.ok(true); });\n`);
+  write("scripts/test/assert/alpha.test.mjs", `${header}test("alpha, its twin", () => { assert.ok(true); });\n`);
+  const machinery = ["scripts/test/drift.mjs", "scripts/test/certification.mjs", "scripts/test/js-lexer.mjs"];
+  for (const rel of machinery) fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
+  for (const hook of ["pre-commit", "commit-msg"]) {
+    const src = path.join(repoRoot, ".githooks", hook);
+    assert.ok(fs.existsSync(src), `.githooks/${hook} does not exist in this repository — a hooked fixture needs both hooks (design D4)`);
+    write(`.githooks/${hook}`, fs.readFileSync(src, "utf8"));
+    fs.chmodSync(path.join(cwd, ".githooks", hook), 0o755);
+  }
+  write("scripts/conductor.mjs", "");
+  fs.mkdirSync(path.join(cwd, "scripts", "lib"), { recursive: true });
+  git("add", "--", "scripts/test/assert/fixture.test.mjs", "scripts/test/functional/alpha.test.mjs",
+    "scripts/test/assert/alpha.test.mjs", ...(trackMachinery ? machinery : []));
+  git("commit", "-q", "-m", "baseline");
+  git("config", "core.hooksPath", path.join(cwd, ".githooks"));
+  return cwd;
+}
+
+/** `git <args>` in a hooked fixture, as a developer would type it, so git runs the hooks. The node
+ *  test-runner markers are stripped (as `runHookAgainstFixture` does), or the pre-commit hook's own
+ *  `node --test` short-circuits as a child worker. stdout and stderr are ONE ordered stream — they
+ *  share a file descriptor — so a caller can tell which hook printed what, and in what order. */
+let hookedLogDir = null;
+let hookedLogSeq = 0;
+export function hookedGit(cwd, args, { env: overlay = {} } = {}) {
+  const env = { ...process.env, ...overlay };
+  for (const k of ["NODE_TEST_CONTEXT", "NODE_TEST_WORKER_ID", "GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"]) {
+    if (!(k in overlay)) delete env[k];
+  }
+  // Not under `cwd/.git`: in a linked worktree `.git` is a FILE. One scheduled directory per process.
+  hookedLogDir ??= removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-hooked-log-")));
+  const log = path.join(hookedLogDir, `${++hookedLogSeq}.log`);
+  const fd = fs.openSync(log, "w");
+  let r;
+  try {
+    r = spawnSync("git", args, { cwd, env, stdio: ["ignore", fd, fd] });
+  } finally {
+    fs.closeSync(fd);
+  }
+  const out = fs.readFileSync(log, "utf8");
+  fs.rmSync(log, { force: true });
+  return { status: r.status, out };
 }
 
 // ────────────── multi-tracker-primary-secondary-support: secondaryTrackers[] ──────────────

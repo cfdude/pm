@@ -1,0 +1,64 @@
+#!/bin/sh
+# THE COMMIT-MSG HOOK: DIFF COUPLING, AND ONLY IT (certification-record-redesign D4, #227).
+#
+# A staged change to a functional file must carry its assertion twin in the same commit, UNLESS the
+# commit message declares, as a git trailer, that the change leaves what the file tests untouched:
+#
+#   Twin-Unchanged: <id> — <reason>
+#
+# Only this hook can read the message — `pre-commit` runs before the message exists — so the check
+# lives here and nowhere else: `.githooks/pre-commit` runs the drift script's OTHER three checks
+# (`--phase pre-commit`), and this hook runs the fourth (`--phase commit-msg`). Coupling is therefore
+# enforced in exactly one place. git, not the drift script, decides what is a trailer
+# (`git interpret-trailers --parse --no-divider`), so the check reads the declarations Gate 2's
+# `%(trailers:key=Twin-Unchanged)` audit reads. A merge (MERGE_HEAD present) is not judged: each
+# merged-in commit was judged, with its own declarations, when it was made.
+#
+# THE SAME DISCIPLINE AS PRE-COMMIT, line for line where it applies:
+#   * GIT_INDEX_FILE names the index THIS commit is made from — `.git/index` (relative) for a plain
+#     commit, `.git/index.lock` for `-a`, `.git/next-index-<pid>.lock` for `<path>`, the worktree's own
+#     index in a linked worktree (commit-msg-probe.log). It is captured and made absolute BEFORE the
+#     scrub, and handed back to the drift script alone.
+#   * `$1`, the message file, is relative to the directory git ran the hook in (`.git/COMMIT_EDITMSG`)
+#     — or absolute, in a linked worktree — so it is made absolute before the hook changes directory.
+#   * The drift script that judges the commit is the COMMIT's copy: the pre-commit hook's snapshot is
+#     gone by now, so this hook exports its own (`checkout-index -a`), and falls back to the working
+#     tree's drift.mjs only when the index holds none (a hook fixture that copies it in untracked).
+#   * Nothing the user owns is written; the snapshot is removed on exit, a signal included.
+INDEX_FILE=${GIT_INDEX_FILE:-}
+case "$INDEX_FILE" in "" | /*) ;; *) INDEX_FILE="$PWD/$INDEX_FILE" ;; esac
+MSG_FILE=${1:-}
+case "$MSG_FILE" in "" | /*) ;; *) MSG_FILE="$PWD/$MSG_FILE" ;; esac
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
+set -e
+if [ -z "$MSG_FILE" ]; then
+  echo "commit-msg: ABORT -- git handed this hook no message file, so no declaration can be read" >&2
+  exit 1
+fi
+cd "$(git rev-parse --show-toplevel)"
+ROOT=$PWD
+[ -n "$INDEX_FILE" ] || INDEX_FILE=$(git rev-parse --path-format=absolute --git-path index)
+
+SNAP=""
+cleanup() {
+  if [ -n "$SNAP" ]; then rm -rf "$SNAP"; fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+SNAP=$(mktemp -d "${TMPDIR:-/tmp}/pm-commitmsg-index.XXXXXX")
+if ! GIT_INDEX_FILE="$INDEX_FILE" git checkout-index -a --prefix="$SNAP/"; then
+  echo "commit-msg: ABORT -- could not export the index ($INDEX_FILE) to $SNAP to judge it" >&2
+  exit 1
+fi
+
+DRIFT="$SNAP/scripts/test/drift.mjs"
+[ -f "$DRIFT" ] || DRIFT="$ROOT/scripts/test/drift.mjs"
+if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT" --phase commit-msg --message "$MSG_FILE"; then
+  echo "commit-msg: ABORT -- the drift script refused this commit's diff coupling (see above)." >&2
+  echo "commit-msg: a functional file is staged without its twin, or a Twin-Unchanged declaration is refused." >&2
+  exit 1
+fi
+exit 0

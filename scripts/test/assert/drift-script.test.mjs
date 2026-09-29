@@ -272,9 +272,10 @@ test("6.1/6.4: the drift script starts no engine, no runner and no fixture — i
   const src = readFile(path.join(REPO, "scripts", "test", "drift.mjs"));
   const spawns = [...src.matchAll(/execFileSync\(/g)].length;
   assert.equal(spawns, 1, "the whole script has exactly ONE spawn, and it is the git read");
-  assert.deepEqual(PERMITTED_SUBCOMMANDS, ["ls-files", "diff", "show", "rev-parse", "ls-tree"],
+  assert.deepEqual(PERMITTED_SUBCOMMANDS, ["ls-files", "diff", "show", "rev-parse", "ls-tree", "interpret-trailers"],
     "the subcommands it may ask for are reads and nothing else — `ls-tree` since 2.4, to judge a staged " +
-    "deletion against HEAD's tree — and the guard throws on any other");
+    "deletion against HEAD's tree; `interpret-trailers` since 4.3, git's own parse of the message's " +
+    "Twin-Unchanged trailers (design D4) — and the guard throws on any other");
   // The permitted set is enforced AT THE CALL, not only asserted here: `gitRead` throws on a
   // subcommand outside it, so a later `git commit` added to this file fails when it runs.
   assert.throws(() => gitRead(REPO, ["commit", "-m", "x"]), /not an index read/,
