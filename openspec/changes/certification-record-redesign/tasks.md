@@ -802,7 +802,7 @@ These rules bind every section below.
       it as not being one.
       Done: `disposition-5.8.txt` — all five non-goals, the open question and the deferral are named by
       8.2 or justified as not deferrals; the commands are prepared there and NOT run (8.2 runs them).
-- [ ] 5.9 **Route what the work taught** (item 7), naming which of the three kinds each item is.
+- [x] 5.9 **Route what the work taught** (item 7), naming which of the three kinds each item is.
       - **PRACTICE.** The staged-certify-before-commit order this change needs while it rewrites its
         own gate. Register it if it recurs outside this change; otherwise say why not.
       - **TOOLING FRICTION.** `openspec` 1.13.2 has no `new change` verb, so this change's directory
@@ -820,6 +820,11 @@ These rules bind every section below.
           record and the new refusal text (round 2 m10);
         - `docs/lessons/README.md:39` (the trigger row naming `certifiedModules()`) and `:102` (the
           `enforced_in` index row "habit — no mechanism") are rewritten to match.
+      Done: `routing-5.9.txt`. The three lessons are rewritten in this commit. The PRACTICE is not registered: from
+      L4 the gate enforces it. The openspec premise is WRONG: 1.13.2 has `openspec new change <name>`,
+      so there is nothing to file. The flake's occurrences went to its epic's notes, and a `/pm:feedback`
+      body for commit-msg's missing `git secrets` chain was drafted for the orchestrator to file. One
+      process lesson was drafted for the orchestrator; the other gets no lesson, and the file says why.
 
 ## 6. Docs
 

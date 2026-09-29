@@ -1,0 +1,67 @@
+# 5.9 Route what the work taught (required task item 7), 2026-09-29. Each item names its KIND:
+# PRACTICE (register an epic), TOOLING FRICTION (file it), PROCESS (a lesson in docs/lessons/).
+
+## From tasks.md 5.9
+
+1. PRACTICE — "stage exactly, certify over the staged index, then a PLAIN `git commit`".
+   NOT registered as an epic, and why: after L4 the order is no longer a discipline the committer must
+   remember — freshness is judged on the index git hands the hook, certify certifies a copy of that
+   index, so a commit made any other way (working-tree certify, `git commit -a`/`<path>` after a
+   partial stage) is refused by the gate, which names the run. It is documented for contributors by 6.1
+   (CONTRIBUTING, "The order"). It does not reach pm's users: the certify machinery is this repository's
+   dev tooling, not something the plugin ships.
+
+2. TOOLING FRICTION — "openspec 1.13.2 has no `new change` verb". THE PREMISE IS WRONG; nothing to file.
+   `openspec new --help` on 1.13.2 lists `change [options] <name>  Create a new change directory`, and
+   `openspec new change probe-x` in a scratch repository created `openspec/changes/probe-x/.openspec.yaml`
+   holding exactly `schema: spec-driven` / `created: <date>` — byte-for-byte the shape of this change's
+   hand-made file. The verb is `openspec new change <name>`, not `openspec change new`; the hand-made
+   directory is equivalent to what it makes.
+
+3. PROCESS — the lessons named by 5.9 are updated in this commit:
+   - docs/lessons/an-uncertified-module-change-skips-the-functional-half.md: `enforced_in` moves from
+     "habit — no mechanism" to drift check 4 over functionalSubject() (3.3), the observer (3.2) and the
+     3.5 guard; trigger and rule rewritten for the observed subject and certify-over-the-index; a
+     "Closed by" paragraph added.
+   - docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md: `enforced_in` (:7), the record path
+     (:35) and check 4's reads and quoted refusal (:39-43) rewritten for the manifest directory and
+     today's describeRefusal() text.
+   - docs/lessons/README.md: that lesson's trigger/rule row and its enforced_in index row, to match.
+
+## From the orchestrator's brief
+
+4. (a) The emitted-invocations ENOENT flake — TOOLING FRICTION already registered as epic
+   `emitted-invocations-copy-flake` (superpowers, P3). Occurrences during this change were appended with
+   `update-epic emitted-invocations-copy-flake --notes`: 2.2 (659a2e55), 2.3 (f663cbdd), 4.1 (bb4cd4c2),
+   each a first functional certify failing 'Layer B integrity:archived-with-zero-ticked-tasks' with ENOENT
+   inside fs.cpSync, passing on re-run with the index unchanged. Any occurrence in L5's own certify runs
+   is appended the same way (see baseline-after.md).
+
+5. (b) `.githooks/commit-msg` does not run `git secrets --commit_msg_hook`, and core.hooksPath bypasses the
+   template hooks (`.git/hooks/commit-msg`, `.git/hooks/prepare-commit-msg`) — TOOLING FRICTION (this
+   repository's own hooks). A `/pm:feedback bug` body is drafted for the orchestrator to file; not filed
+   here. Found by 5.1's sweep (call-site-sweep-5.1.txt, section C).
+
+6. (c) PROCESS, two items:
+   - The brief's "at least" expected list against its stop rule (3.2: the observer report's seven
+     docs/superpowers/plans/*.md files were in no list; the task said "at least" for the record and
+     "STOP" for a path outside every subject root). NO LESSON, because the trigger is not precise: the
+     situation is "an author writes an expected list and a stop rule that can disagree", which is
+     recognisable only after the disagreement, not before it. It happened once, and the task's own
+     classes (record by rule, subject root, outside every root) resolved it in one adjudication with no
+     redone work (observer-report-3.2.txt, "Reading"). A lesson that cannot be matched before the
+     mistake is retrieval noise.
+   - Task lists that went stale when earlier landing steps added files — trigger IS precise (the start of
+     a landing step whose task enumerates files or call sites written at proposal time). A lesson is
+     DRAFTED for the orchestrator, `a-task-list-is-as-old-as-its-proposal`, with the measured misses
+     (2.4: functional/certify-index at seven sites, sweepIds, recordRefusals; 3.1: two fixtures; L2-L4:
+     drifted line citations). It is retrieval-only: no `detect:` matcher can see the moment. Not committed
+     here; the orchestrator decides whether it lands (it needs its README index row in the same commit).
+
+7. (d) Anything else L1-L4 taught:
+   - PLAN ERROR, recorded here rather than routed: task 5.9's openspec premise (item 2).
+   - PLAN WORDING: 6.1 names a CONTRIBUTING section "The triggered buckets" that does not exist; the
+     triggered-bucket text lives in "Pre-commit hook" and at the end of "What the unit rung's guard
+     refuses". 6.1 rewrites those paragraphs.
+   - The attribution array holds 4c1e7e97 twice (append-only, harmless: Gate 2's head reaches it either
+     way). Not a tool bug — `--attribute-commit` is documented as append-only and non-deduplicating.
