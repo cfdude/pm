@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "test-isolation-guard",
+  "active": "guards-that-read-engine-source-drift-silently",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10306,7 +10306,7 @@
       "id": "guards-that-read-engine-source-drift-silently",
       "title": "Source-reading guards drift silently when the engine's shape moves, and a comment can satisfy one",
       "priority": "P2",
-      "status": "later",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10320,7 +10320,7 @@
       "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well: this is a product observation about pm's own test suite, not just this repo's history. EVIDENCE, all measured in 5.6 by mutating a copy of the repository. (1) A guard a COMMENT could satisfy: scripts/test/assert/conductor-13.test.mjs asserted /archiveGate\\(/ against the RAW source of lib/update-epic.mjs, and the verb's own prose calls the gate by name -- 'one level down from archiveGate()'s refusal ...' at :561. Aliasing the import and its call site away left the guard GREEN, so the call it claims to watch could be deleted with nothing to say so. Repaired by dropping comment-only lines before matching; the repair is mutation-verified (20/20 unmutated, 19/1 mutated). (2) The repair is not mechanical to make: the FIRST attempt used the same character-level stripper assert-half-has-no-spawn.test.mjs carries, and it DESYNCS on a regex literal holding a quote -- every comment after that point passes through VERBATIM, a false NEGATIVE, which is the opposite of the direction that helper's own docstring claims is the only one it can fail in. (3) 5.6's list is itself evidence of a class: conductor-25's dispatch readers, verb-surface's dispatch-table regex, save-report-surface's call-site scan, conductor-13, emitted-invocations, output-interpolations and conductor-12's cache-busting imports ALL read engine source and ALL had to be re-pointed by hand as 0.47.0 moved the engine's shape (dispatch table indented into main(), frozen constants becoming functions). A product opportunity: a shared, sound source-stripping helper in the test tree, and a lint that flags an assert.match against raw engine source.",
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:07:20.220Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-09-29T21:13:45.572Z",
       "notes": [
         {
           "at": "2026-09-28T22:29:12.706Z",
@@ -10328,7 +10328,8 @@
           "text": "lane: superpowers not claude-code — multi-file with a shared helper/procedure and tests; unresolved routing leans away from claude-code (triage 2026-09-28)"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "startedAt": "2026-09-29T21:13:45.569Z"
     },
     {
       "id": "hook-fixtures-couple-to-every-hook-step",
@@ -11397,16 +11398,33 @@
       "id": "test-isolation-guard",
       "title": "No test may write the developer's real .conductor record: pin CLAUDE_PROJECT_DIR in the suite and assert the real record is byte-identical at exit (alpha/from-caller and 554 honcho-memories.log lines leaked on 2026-09-21)",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "181e7de4a92ed5b7988a5f4ada31ad751c414b60",
+        "ee4517bd5f9af332d8dcc4c906c9bca3107e5b79",
+        "5642336fc05b9e9a71e333c07dd6b73f10c453b4",
+        "1425bb7d05e8862419373ed0ac82056c736d5821"
+      ],
       "createdAt": "2026-09-28T22:28:54.382Z",
-      "touchedAt": "2026-09-29T19:03:13.297Z",
+      "touchedAt": "2026-09-29T21:13:46.400Z",
       "release": "0.51.0",
-      "startedAt": "2026-09-29T19:03:13.291Z"
+      "startedAt": "2026-09-29T19:03:13.291Z",
+      "planPath": "docs/superpowers/plans/2026-09-29-test-isolation-guard.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-29T21:13:46.398Z",
+        "reason": "Shipped on dev (181e7de4..1425bb7d): every test bucket, the hook snapshot and certify's clone load scripts/test/fixtures/record-isolation.mjs, which pins CLAUDE_PROJECT_DIR to an empty scratch dir and fails any test file that adds, changes or removes a file under a protected .conductor (plus PROJECT.md/CLAUDE.md/.gitignore fingerprints) — never restoring. Tests that read the live record name their root via withRoot(REPO). Reviewed thorough: 2 lenses, then a scoped re-review; prevention proven by mutation."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-29T21:13:46.396Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-29T21:13:46.398Z"
     },
     {
       "id": "emitted-invocations-copy-flake",
@@ -11459,6 +11477,32 @@
           "text": "lane: claude-code not (none routed) — removal of a legacy file and its tolerance path, well under 2h; the design record lives in certification-record-redesign design D5"
         }
       ]
+    },
+    {
+      "id": "engine-source-extraction-vacuity",
+      "title": "Test guards that extract a value from engine source (indexOf slices, regex captures, dispatch-table readers) silently match nothing after the engine changes shape — one helper that refuses an empty extraction",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "guards-that-read-engine-source-drift-silently",
+          "reason": "its declared out-of-scope half; both Gate-style reviews of that epic (2026-09-29) said this is real work, not polish — e.g. spec-sync-index.test.mjs:34 slices on two unchecked indexOf calls; verb-surface:66, emitted-invocations:30, conductor-31:46, conductor-09:87, conductor-25:232, conductor-35:42, output-text-integrity:641 read raw source and assert on derived values"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-29T20:03:48.175Z",
+      "touchedAt": "2026-09-29T20:03:49.247Z",
+      "notes": [
+        {
+          "at": "2026-09-29T20:03:49.244Z",
+          "actor": "agent",
+          "text": "lane: superpowers (routing returned none) — a shared helper plus a migration across ~8 test files"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -11469,7 +11513,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1666,
+  "revision": 1675,
   "reviewMode": "thorough",
   "releases": [
     {
