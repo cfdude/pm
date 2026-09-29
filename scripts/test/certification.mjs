@@ -285,11 +285,12 @@ export function functionalSubject({ root = REPO, readFile = readDefault, readdir
     // A backtick OPENS a string literal as well as closing one (Gate 2 m3): a template literal is a string literal.
     if (new RegExp(`["'\`/]${esc(path.posix.basename(f))}["'\`]`).test(spelled)) out.add(f);
   }
+  // Rules 5 and 6 admit a backtick exactly as rule 4 does (Gate 2 follow-up S1: m3's siblings).
   for (const r of SHIPPED_ROOTS) {
-    if (new RegExp(`["'/]${esc(r)}["'/]`).test(spelled)) for (const f of listing) if (f.startsWith(`${r}/`)) out.add(f);
+    if (new RegExp(`["'\`/]${esc(r)}["'\`/]`).test(spelled)) for (const f of listing) if (f.startsWith(`${r}/`)) out.add(f);
   }
   for (const f of SUBJECT_ROOT_FILES) {
-    if (tracked.has(f) && new RegExp(`["'/]${esc(path.posix.basename(f))}["']`).test(spelled)) out.add(f);
+    if (tracked.has(f) && new RegExp(`["'\`/]${esc(path.posix.basename(f))}["'\`]`).test(spelled)) out.add(f);
   }
   return [...out].sort();
 }

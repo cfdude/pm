@@ -473,6 +473,24 @@ unitTest("m3 rule 4 admits a file named in a TEMPLATE literal — a backtick ope
   assert.equal(prefix.has(hidden), false, "a longer name ending in the file's name is still not its name");
 });
 
+unitTest("S1 rules 5 and 6 admit a shipped root and a root file named in a TEMPLATE literal, as rule 4 does", () => {
+  // Gate 2 follow-up (m3's siblings, required task item 1). Rules 5 and 6 carried the same opening class
+  // `["'/]` rule 4 had, so a root or a root file spelled only inside a template literal was not admitted.
+  const cmd = "commands/status.md";
+  const whole = subjectOf({ [cmd]: "# status\n", [FN]: "const d = path.join(root, `commands`);\n" });
+  assert.ok(whole.has(cmd), "a shipped root named in a whole template literal admits the files under it");
+  const segment = subjectOf({ [cmd]: "# status\n", [FN]: "const d = `commands/status.md`;\n" });
+  assert.ok(segment.has(cmd), "and so does a root opening a template literal's path");
+  const notRoot = subjectOf({ [cmd]: "# status\n", [FN]: "const d = `subcommands`;\n" });
+  assert.equal(notRoot.has(cmd), false, "a longer name ending in the root's name is still not the root");
+  const readme = subjectOf({ "README.md": "# pm\n", [FN]: "const r = load(`README.md`);\n" });
+  assert.ok(readme.has("README.md"), "a root file named in a whole template literal is admitted");
+  const ledger = subjectOf({ "docs/parity-ledger.json": "{}\n", [FN]: "const l = `docs/parity-ledger.json`;\n" });
+  assert.ok(ledger.has("docs/parity-ledger.json"), "and so is a root file named as a template literal's last segment");
+  const notFile = subjectOf({ "CLAUDE.md": "# c\n", [FN]: "const c = `NOTCLAUDE.md`;\n" });
+  assert.equal(notFile.has("CLAUDE.md"), false, "a longer name ending in the root file's name is still not its name");
+});
+
 unitTest("m4 the run tree is built from the index copy alone: nothing is copied or exported from the working tree", () => {
   // Gate 2 m4's assertion half: an untracked working-tree file can reach the run only if a step reads the
   // working tree. Every copy is of the index or of its copy, the export is `checkout-index` inside the
