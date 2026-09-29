@@ -36,10 +36,21 @@
 //   (d) a `let` declared first and assigned the read later;
 //   (e) a destructured alias of the read call itself (`const { readFileSync: r } = fs`);
 //   (f) the lexer's own blind spot: a regex literal in statement position after `)` or `}` — which
-//       a separate sweep over the engine's own files asserts does not occur there.
-// No exemption is shipped: no guard in this tree needs to match engine COMMENT text positively. If one
-// ever does, it states why beside a raw read this scan can see — and this file grows the exemption
-// then, with its inverse, rather than now with nothing to justify it.
+//       a separate sweep over the engine's own files asserts does not occur there;
+//   (g) further alias shapes (final re-review minor 1), named rather than chased: a callback alias
+//       (`.forEach(([n, src]) => …)`, `.map(…)`), a plain rebinding (`const src = a`), a two-hop loop
+//       (`const pairs = [["x", a]]; for (const [n, src] of pairs)`), and a `.toString()` / `String(…)`
+//       wrap of the read;
+//   (h) further positive subject shapes, likewise named: `assert.equal/strictEqual(x.includes(…), true)`,
+//       `assert.ok(x.indexOf(…) !== -1)` and `assert.ok(x.search(…) >= 0)`.
+// These are covered by review, not by this scan; the plan's section 7 lists every helper that returns
+// engine source and where each positive call site reads it.
+//
+// ONE DELIBERATE EXCEPTION, and no exemption mechanism: `assert/save-report-surface.test.mjs`'s
+// non-vacuity test counts `saveState(` mentions in constants.mjs's PROSE, raw, on purpose — it is the
+// witness that the comment stripper really strips (every mention there is a comment). It reads through a
+// variable path, so this scan does not see it (limit (a)). Any other guard that must match engine
+// comment text positively states why beside its read in the same way, and this file names it here.
 
 import "../fixtures/assert-git-shim.mjs";
 import { test } from "node:test";
