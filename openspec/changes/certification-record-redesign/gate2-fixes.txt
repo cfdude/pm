@@ -51,3 +51,5 @@ F3 re-certifying content already recorded refreshes the entry's ranAt (the exist
    (passLine()) -> <sha> -> assert/drift-script "m1/F3 an entry's CONTENT is never rewritten…" (m1 test re-pointed) and
    "F3 a re-certified entry is RECENT to the pruner…", unit/certify-index "F3 a pass over content already recorded…";
    spec "Writing" + "safe by construction" wording, design D1 ranAt and "Writing"; red-F3.txt
+F4 docs: certify.mjs RUNNER_CODE says why fixtures/temp-dir.mjs is omitted (cleanup only, never touches the key) and
+   why fixtures/observe-reads.mjs is listed (conservative; the run tree's copy is what loads) -> <sha> -> comment only (no test)

@@ -98,6 +98,8 @@ function indexFileOf(root) {
  *  (`.githooks/pre-commit` runs drift from its index snapshot). An unstaged edit to one of them lets certify
  *  record a key the commit's drift does not compute. So certify FAILS CLOSED: before it builds anything it
  *  refuses when any of them differs between the working tree and the index it certifies. */
+// fixtures/temp-dir.mjs is OMITTED: certify imports it only to remove the run directory, so it never touches the key.
+// fixtures/observe-reads.mjs is LISTED conservatively: certify loads the RUN TREE's (index) copy, not this one.
 export const RUNNER_CODE = Object.freeze([
   "scripts/test/certify.mjs", "scripts/test/certification.mjs", "scripts/test/drift.mjs",
   "scripts/test/js-lexer.mjs", "scripts/test/fixtures/observe-reads.mjs",

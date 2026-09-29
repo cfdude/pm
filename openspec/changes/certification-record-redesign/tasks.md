@@ -947,6 +947,7 @@ These rules bind every section below.
       - F1 (re-review, Important): a failed observation write removes the process sentinel; a file without it is refused, and a torn last line is accepted only from a killed process (`red-F1.txt`).
       - F2 (re-review): a filesystem that cannot link falls back to an exclusive create; EEXIST keeps the first entry (`red-F2.txt`).
       - F3 (re-review): re-certifying recorded content refreshes only `ranAt`, atomically, and certify prints "already recorded" (`red-F3.txt`).
+      - F4 (re-review): docs — why `RUNNER_CODE` omits `fixtures/temp-dir.mjs` and lists `fixtures/observe-reads.mjs`.
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**
