@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "emitted-invocations-copy-flake",
+  "active": "hook-fixtures-couple-to-every-hook-step",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10371,7 +10371,7 @@
       "id": "hook-fixtures-couple-to-every-hook-step",
       "title": "A fixture that copies the real pre-commit hook breaks on every new hook step",
       "priority": "P3",
-      "status": "later",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10385,7 +10385,7 @@
       "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well. EVIDENCE: runHookAgainstFixture (scripts/test/fixtures/helpers.mjs) builds a scratch git repository, copies the REAL .githooks/pre-commit into it, and runs it -- deliberately, so the hook is exercised rather than a stub. 6.4 added a step to that hook (the drift script), and the three fixtures that run it went red for a reason that had nothing to do with what they test: the fixture held a hook but not the script, and the script but not the minimum tree it reads (scripts/lib/, conductor.mjs, the two bucket directories). The fix was to have the fixture construct that skeleton -- which means every future hook step has to be mirrored into a fixture builder, and nothing enforces the mirror. Measured cost: half an hour of diagnosis for a one-line hook insertion, and the failure mode is the worst kind -- three unrelated tests red, all pointing at the hook rather than at themselves. Candidate fix: derive the fixture tree from the hook's own invocations, or give the hook a single well-known entry point so a fixture can stub it by contract.",
       "attributedCommits": [],
       "createdAt": "2026-09-21T13:07:20.863Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-09-29T22:48:33.142Z",
       "notes": [
         {
           "at": "2026-09-28T22:29:13.604Z",
@@ -10393,7 +10393,8 @@
           "text": "lane: superpowers not claude-code — multi-file with a shared helper/procedure and tests; unresolved routing leans away from claude-code (triage 2026-09-28)"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "startedAt": "2026-09-29T22:48:33.138Z"
     },
     {
       "id": "unit-rung-and-fixture-snapshots",
@@ -11484,14 +11485,20 @@
       "id": "emitted-invocations-copy-flake",
       "title": "functional emitted-invocations 'Layer B integrity:archived-with-zero-ticked-tasks' fails intermittently under load with ENOENT copying the template repo's .git/objects (2 of 4 full runs, 2026-09-28)",
       "priority": "P3",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "d7b29502e81bd5bf014397f8e3e2b2d016f219da",
+        "a7a02196a0d05bdf898106e85011a1810ba36f95",
+        "ebf1c8e1346b5aaa00cda8e15ae8519f1b2d9755",
+        "4443f0ebb64d021154db5d6ac9e2b47453aa9616",
+        "e488588e00270241cc8e05c18dcb2b972a5e0d15"
+      ],
       "createdAt": "2026-09-28T22:28:55.196Z",
-      "touchedAt": "2026-09-29T22:02:41.544Z",
+      "touchedAt": "2026-09-29T22:48:34.137Z",
       "release": "0.51.0",
       "notes": [
         {
@@ -11510,7 +11517,24 @@
           "text": "2026-09-29 (0.51.0 build): the ENOENT in fs.cpSync hit about 1 in 3 functional certifies across ~20 runs under load 20–200 (cert-redesign L1–L5, Gate 2 fixes, both Theme A worktrees); always passed on re-run with the same index. Related new flakes seen alongside: certify-index 1.2 SIGTERM process-lifetime check; a lock-timing assertion (G2-C1/I2) under load."
         }
       ],
-      "startedAt": "2026-09-29T22:02:41.536Z"
+      "startedAt": "2026-09-29T22:02:41.536Z",
+      "planPath": "docs/superpowers/plans/2026-09-29-emitted-invocations-copy-flake.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-29T22:48:34.132Z",
+        "reason": "Root cause fixed, no retry: hermetic-git's GIT_CONFIG_GLOBAL=/dev/null hid gc.autodetach=false, so every fixture commit spawned a detached git maintenance run whose maintenance.lock raced remedyRepo's cpSync (ENOENT ~1 in 3 certifies). Fixture env now sets maintenance.auto=false and gc.auto=0; stress 1-7/24-72 failures before, 0/168 after; lesson nulling-global-git-config-changes-defaults-not-just-output. Siblings (certify-index 1.2 SIGTERM, G2-C1/I2 2000 ms) have other causes and stay open."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-29T22:48:34.131Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "certify-index 1.2 and G2-C1/I2 flakes",
+            "reason": "different causes (process-lifetime check; wall-clock bound under load), not this epic's; left for a later flake batch"
+          }
+        ]
+      },
+      "completedAt": "2026-09-29T22:48:34.132Z"
     },
     {
       "id": "retire-single-file-certification-record",
@@ -11573,7 +11597,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1704,
+  "revision": 1712,
   "reviewMode": "thorough",
   "releases": [
     {
