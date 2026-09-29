@@ -46,44 +46,75 @@ the one behaviour it unpinned.
 ## Tasks
 
 ### 1. RED — a fixture commit spawns no maintenance or gc
-- [ ] 1.1 `functional/hermetic-git.test.mjs`: commit in a fixture repo under
+- [x] 1.1 `functional/hermetic-git.test.mjs`: commit in a fixture repo under
       `GIT_TRACE2_EVENT=<scratch dir>`; assert no `start`/`child_start` argv names `maintenance` or
       `gc`. Seen failing on today's module (commit spawns `maintenance run --auto`).
-- [ ] 1.2 `assert/hermetic-git.test.mjs` (twin): walk `GIT_CONFIG_KEY_n`/`VALUE_n` up to
+- [x] 1.2 `assert/hermetic-git.test.mjs` (twin): walk `GIT_CONFIG_KEY_n`/`VALUE_n` up to
       `GIT_CONFIG_COUNT` and assert `maintenance.auto=false` and `gc.auto=0` are present, alongside
       the two signing keys. Pure value check, no spawn. Seen failing.
 
 ### 2. GREEN — the keys
-- [ ] 2.1 `hermetic-git.mjs`: COUNT 4, the two keys, a comment carrying the evidence above.
-- [ ] 2.2 Both tests pass. Trace2 over the real test process shows no `maintenance`/`gc` argv.
-- [ ] 2.3 Stress rerun (native `cpSync`, unchanged test file): 0 failures where the baseline failed.
+- [x] 2.1 `hermetic-git.mjs`: COUNT 4, the two keys, a comment carrying the evidence above.
+- [x] 2.2 Both tests pass. Trace2 over the real test process shows no `maintenance`/`gc` argv.
+- [x] 2.3 Stress rerun (native `cpSync`, unchanged test file): 0 failures where the baseline failed.
 
 ### 3. REGRESSION GUARD — mutation proof
-- [ ] 3.1 Drop `maintenance.auto` → both tests red. Restore COUNT to 2 → both red. Restore → green.
+- [x] 3.1 Drop `maintenance.auto` → both tests red. Restore COUNT to 2 → both red. Restore → green.
 
 ### 4. Call-site completeness sweep (required)
-- [ ] 4.1 `rg -n "GIT_CONFIG_COUNT|GIT_CONFIG_KEY"` over `scripts/` and `.githooks/`: every site that
+- [x] 4.1 `rg -n "GIT_CONFIG_COUNT|GIT_CONFIG_KEY"` over `scripts/` and `.githooks/`: every site that
       sets the env-config list itself. Known: `functional/per-call-roots.test.mjs` `nestedRepo()`
       REPLACES it with COUNT=1 and makes porcelain commits — it drops the new keys. Fix it to spread
       the hermetic env instead of re-declaring it.
-- [ ] 4.2 `rg -n "env: \{" scripts/test` for any env object built without `process.env` that runs a
+- [x] 4.2 `rg -n "env: \{" scripts/test` for any env object built without `process.env` that runs a
       porcelain commit/merge/pull; list each and why it holds.
-- [ ] 4.3 `certify.mjs` `cleanEnv()`: its git steps are `clone --shared`/`checkout-index`/`read-tree`
+- [x] 4.3 `certify.mjs` `cleanEnv()`: its git steps are `clone --shared`/`checkout-index`/`read-tree`
       class plumbing that runs no auto-maintenance, and every bucket test process imports
       hermetic-git itself. State it.
-- [ ] 4.4 Inverse: the operation is "disable automatic maintenance in fixture repos". Its inverse
+- [x] 4.4 Inverse: the operation is "disable automatic maintenance in fixture repos". Its inverse
       (enabling it) has no caller — no test exercises git maintenance — so no helper is shipped. A
       test that ever needs it passes `git -c maintenance.auto=true`: per git-config(1),
       `GIT_CONFIG_COUNT` values override configuration files but are overridden by `-c`. Verify
       that precedence once and state it in the module comment.
 
 ### 5. Verify against the commit (required)
-- [ ] 5.1 For every task commit: `git show --stat <sha>` lists every file the task claims.
+- [x] 5.1 For every task commit: `git show --stat <sha>` lists every file the task claims.
 
 ### 6. Siblings (report only unless they share the cause)
-- [ ] 6.1 certify-index 1.2 SIGTERM process-lifetime and state-file-refuses-to-guess G2-C1/I2
+- [x] 6.1 certify-index 1.2 SIGTERM process-lifetime and state-file-refuses-to-guess G2-C1/I2
       lock-timing: state whether either shares this cause, with evidence.
 
 ### 7. Route what the work taught (required)
-- [ ] 7.1 Name it: a PROCESS lesson candidate (a hermetic env that nulls global config can change
+- [x] 7.1 Name it: a PROCESS lesson candidate (a hermetic env that nulls global config can change
       git's defaults, not only its output) — reported to the orchestrator, not filed from here.
+
+## Outcomes
+
+- **Tasks 1–4 landed in ONE commit, 5d16b623** (RED + GREEN + the call-site fix). A failing test cannot
+  be committed alone here, and the call-site fix touches the same functional subject, so one certify
+  covers both. `git show --stat 5d16b623` lists all four claimed files: `fixtures/hermetic-git.mjs`,
+  `functional/hermetic-git.test.mjs`, `assert/hermetic-git.test.mjs`, `functional/per-call-roots.test.mjs`.
+- **RED, both for the stated reason.** Functional: `a fixture commit started automatic maintenance:
+  [["git","maintenance","run","--auto","--quiet","--no-detach"], …]`. That file does not import the
+  harness, so it shows `--no-detach`; the check fails on either form. Twin: the env pairs lacked
+  `gc.auto`/`maintenance.auto`.
+- **GREEN.** Both files are 7/7. Trace2 over the real test process shows init/config/add/commit and
+  no maintenance or gc argv. Stress runs with native `cpSync` and the test file unchanged: 0/96 and
+  0/72, against a baseline of 1–7 failures per 24–72.
+- **Mutations killed.** With COUNT back to 2, both tests are red. With `maintenance.auto=true`, both
+  are red. Restored, both are green.
+- **Sweep.** `rg GIT_CONFIG_(COUNT|KEY)` finds the module itself, and one other site,
+  `per-call-roots` `nestedRepo()`. That site replaced the list with COUNT=1 and now inherits
+  `process.env` (Twin-Unchanged trailer). Every `env: {…}` object in `functional/` that does not
+  spread `process.env` is an engine-run options bag, which the harness merges over `process.env`.
+  None re-declares the git config. `certify.mjs` `cleanEnv()` spreads `process.env` minus hook
+  variables, and its git steps are clone, checkout-index and read-tree plumbing, which run no
+  auto-maintenance.
+- **Siblings do not share the cause.**
+  - certify-index 1.2 asserts that ONE stub pid dies after SIGTERM. A setsid'd maintenance daemon
+    is neither that pid nor in its process group.
+  - state-file-refuses-to-guess G2-C1/I2 is a wall-clock bound (`r.ms < 2000` on a spawned engine
+    refusal) over lock directories. It makes no porcelain commit, and its failure mode is spawn
+    latency under load.
+  - The env fix now reaches every functional process, so neither can meet a maintenance daemon.
+    Their own causes remain open.
