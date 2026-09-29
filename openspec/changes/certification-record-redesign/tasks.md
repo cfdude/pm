@@ -752,7 +752,7 @@ These rules bind every section below.
       with its callers listed; the gaps (commit-msg runs no freshness, pre-commit no exemption, CI no
       record) are justified there. Found: CONTRIBUTING's stale wording (6.1) and commit-msg's missing
       `git secrets` chain (5.9 b).
-- [ ] 5.2 **Data references** (item 1).
+- [x] 5.2 **Data references** (item 1).
       - **Retired.** The OLD record's ids that point at other records (`covers`, `conformanceRows`,
         entry ids keyed on module paths) are retired. Say where each was written (`writeEntry`),
         read (`recordRefusals`) and removed (never; that was #226's second failure mode).
@@ -760,6 +760,9 @@ These rules bind every section below.
         another record, and an entry is removed only by pruning.
       - **The trailer** names a functional id. It is read by commit-msg and by Gate 2 and is never
         stored.
+      Done: `data-references-5.2.txt` — every retired reference's writer, reader and (absent) remover at
+      c96240ab; the manifest's fields, of which none points at another record (`engineSha`, `worktree`
+      are written and never read); the trailer's writer, readers and lifetime.
 - [ ] 5.3 **Every operation has an inverse** (item 1). Name each, shipped or not:
       - writing an entry: pruning (shipped, D1);
       - the shared-clone build: its removal on exit and on signal (shipped, D2; guarded by 1.2's
