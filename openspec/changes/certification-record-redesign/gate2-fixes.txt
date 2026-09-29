@@ -8,3 +8,5 @@ G2 a signal-killed child lost its reads: the observer appends each event (each N
    line -> <sha> -> functional/certify-index "G2 a child SIGTERMed…", unit/certify-index "G2 …" (3); red-G2.txt
 m1 writeManifestEntry() links the temp file into place (EEXIST keeps the existing entry byte for byte), never renames
    over it -> <sha> -> assert/drift-script "m1 an entry is NEVER rewritten…", 2.2 tests moved to link; red-m1.txt
+m2 certify turns an unreadable observation into a named refusal (file and line, no stack), recording nothing -> <sha> ->
+   functional/certify-index "m2 a corrupt observation file…", unit/certify-index "m2 …"; red-m2.txt

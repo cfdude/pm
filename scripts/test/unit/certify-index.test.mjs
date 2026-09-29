@@ -447,3 +447,15 @@ unitTest("G2 any corruption other than a torn last line is REFUSED, naming the f
   assert.throws(() => certification.parseObservation(OBS + "[1]\n", name), /corrupt at line 7/, "a line that is not an object is corruption");
   assert.throws(() => certification.parseObservation(OBS + "\n", name), /corrupt at line 7/, "an empty complete line is corruption");
 });
+
+unitTest("m2 an observation that cannot be read is a NAMED refusal: the error's message (the file and line), and no stack", () => {
+  assert.equal(typeof certify.observationReadRefusal, "function", "certify.mjs exports no observationReadRefusal()");
+  let err;
+  try { certification.parseObservation("not json\n", "/run/observe/3.cc.jsonl"); } catch (e) { err = e; }
+  assert.ok(err, "precondition: the parser refuses the damaged file");
+  const text = certify.observationReadRefusal("functional half", { pass: 4, tests: 4 }, err);
+  assert.match(text, /functional half passed \(4\/4\), but its run-time observation cannot be read/);
+  assert.match(text, /\/run\/observe\/3\.cc\.jsonl is corrupt at line 1/, "the refusal names the file and the line");
+  assert.match(text, /nothing recorded/);
+  assert.doesNotMatch(text, /^\s+at /m, "no stack frame");
+});

@@ -454,6 +454,22 @@ test("G2 a child SIGTERMed after a read still reports the read: each new read re
   assert.deepEqual(entriesOf(cwd, "functional"), [], "a refused run records no entry");
 });
 
+test("m2 a corrupt observation file is a NAMED refusal — the file's path, no stack trace — and no entry is written", () => {
+  // Gate 2 m2. A damaged observation used to escape as an exception, printed as a stack trace by the
+  // runner's last-resort handler. The fixture test writes a corrupt observation file into its own run's
+  // observation directory (the observer publishes it), so the half passes and the read of it fails.
+  const cwd = observedFixture(HEAD_LINES +
+    'test("damages the observation", () => {\n' +
+    '  const dir = globalThis[Symbol.for("pm.observe-reads")].dir;\n' +
+    '  fs.writeFileSync(path.join(dir, "damaged.jsonl"), "not json\\n{}\\n");\n' +
+    "});\n");
+  const r = certify(cwd, "functional");
+  assert.notEqual(r.status, 0, `a run whose observation cannot be read must not be recorded:\n${r.out}`);
+  assert.match(r.out, /damaged\.jsonl is corrupt at line 1/, `the refusal names the file and the line:\n${r.out}`);
+  assert.doesNotMatch(r.out, /^\s+at /m, `a refusal, not a stack trace:\n${r.out}`);
+  assert.deepEqual(entriesOf(cwd, "functional"), [], "no entry is written");
+});
+
 test("3.2 the token rule: a Node spawn that fails to start cancels its expectation and is not refused", () => {
   const cwd = observedFixture(HEAD_LINES +
     'test("spawns that never start", async () => {\n' +

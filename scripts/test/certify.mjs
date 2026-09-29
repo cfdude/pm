@@ -278,10 +278,20 @@ function observerEnv(run) {
   return { dir, env: { NODE_OPTIONS: `${inherited ? `${inherited} ` : ""}--import=${url.href}` } };
 }
 
+/** The refusal when a run's observations cannot be READ (Gate 2 m2): a damaged file (`parseObservation()`
+ *  names it and its line) or an unreadable directory. A NAMED refusal carrying the error's message — the
+ *  file path — and never a stack trace; nothing is recorded. Pure; exported for its test. */
+export function observationReadRefusal(label, counts, error) {
+  const why = error && error.message ? error.message : String(error);
+  return `certify: the ${label} passed (${counts.pass}/${counts.tests}), but its run-time observation cannot be read:\n  ${why}\n` +
+    "certify: nothing recorded — a run whose observation is damaged is a run nobody observed.\n";
+}
+
 /** After a PASS: every observation file the run's processes wrote, judged by `observationRefusals()`
  *  against `functionalSubject()` over the run's index copy. Returns the refusal text, or null. */
 function observationRefusal(root, run, dir, label, counts) {
-  const observations = readObservations(dir);
+  let observations;
+  try { observations = readObservations(dir); } catch (e) { return observationReadRefusal(label, counts, e); }
   const readers = indexReaders(root, { indexFile: run.indexCopy });
   const subject = functionalSubject({ root, ...readers });
   const { missed, unarrived, excluded } = observationRefusals({ observations, subject, tracked: readers.paths });

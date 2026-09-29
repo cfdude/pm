@@ -940,6 +940,7 @@ These rules bind every section below.
       - G1 (Important): drift and the pre-commit floor read git name listings NUL-delimited (`red-G1.txt`, `name-read-sweep-G1.txt`).
       - G2 (Important): the observer writes each event when it happens; a torn last line is dropped, other corruption refused (`red-G2.txt`).
       - m1: an entry is linked into place, never renamed over an existing one (`red-m1.txt`).
+      - m2: an unreadable observation is a named refusal, never a stack trace (`red-m2.txt`).
       Fix Critical and Important findings, then record
       `record-gate-review certification-record-redesign --gate 2 --verdict pass --reviewer "<identity>" --base-sha <sha> --head-sha <last attributed sha>`.
 - [ ] 8.2 <!-- pm:lifecycle --> **Disposition and tracker close.**
