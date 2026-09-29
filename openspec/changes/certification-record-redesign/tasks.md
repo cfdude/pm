@@ -123,7 +123,7 @@ These rules bind every section below.
 
 ## 1. L1: certify runs over the index (design D2, ADDED "Certification runs over the index…")
 
-- [ ] 1.1 **TDD, UNIT**: the run plan as a pure value.
+- [x] 1.1 **TDD, UNIT**: the run plan as a pure value.
       - **The pure function.** Extract `indexRunPlan({ indexFile, commonDir, headSha, tmp })` into
         `scripts/test/certification.mjs`. It returns the ordered git argv lists for:
         - the index copy;

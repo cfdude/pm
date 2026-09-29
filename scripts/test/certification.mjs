@@ -322,6 +322,43 @@ export function triggerEntry({ root = REPO, counts, ranAt, engineSha, readFile =
   };
 }
 
+// ───────────────────────────── the index run plan (certification-record-redesign D2) ─────────────────────────────
+
+/** THE CERTIFY RUN, AS A VALUE: the ordered steps that take ONE copy of the index and build the
+ *  directory a bucket runs in (#230). A pure function of its four inputs, so which index each step
+ *  reads is asserted on the plan (`unit/certify-index`) rather than only observed by running it.
+ *
+ *  THE LIVE INDEX IS READ ONCE, by the first step, which copies it to `<tmp>/index`. Everything after
+ *  reads that copy: the manifest (`ls-files -s` under `GIT_INDEX_FILE` = the copy), and the export,
+ *  because the copy is installed as the clone's own index before `checkout-index` runs. So an edit or
+ *  a `git add` during a run of several minutes changes neither what ran nor what is recorded.
+ *
+ *  WHY A `clone --shared`, NOT A BARE `checkout-index` EXPORT. Several functional tests need a
+ *  repository around the content (a HEAD, a parent commit, a readable object); run from a bare export
+ *  they die with `not a git repository`. A shared clone borrows the object store through `alternates`
+ *  (so the index's staged, unreachable blobs are readable), copies no objects, registers no worktree
+ *  and touches no stash. HEAD is set explicitly, detached, because `clone` would otherwise take the
+ *  common repository's default branch rather than this worktree's HEAD; an unborn HEAD sets none.
+ *
+ *  A step is `{ op: "copy", from, to }` or `{ op: "git", args, env? }`, where `env` holds only what
+ *  the step adds to the environment. The caller executes them in order. */
+export function indexRunPlan({ indexFile, commonDir, headSha, tmp }) {
+  const copy = path.join(tmp, "index");
+  const tree = path.join(tmp, "tree");
+  return {
+    copy,
+    tree,
+    steps: [
+      { op: "copy", from: indexFile, to: copy },
+      { op: "git", args: ["-C", commonDir, "ls-files", "-s", "-z"], env: { GIT_INDEX_FILE: copy } },
+      { op: "git", args: ["clone", "--shared", "--no-checkout", "-q", commonDir, tree] },
+      ...(headSha ? [{ op: "git", args: ["-C", tree, "update-ref", "--no-deref", "HEAD", headSha] }] : []),
+      { op: "copy", from: copy, to: path.join(tree, ".git", "index") },
+      { op: "git", args: ["-C", tree, "checkout-index", "-a", "-f"] },
+    ],
+  };
+}
+
 // ───────────────────────────── the record ─────────────────────────────
 
 /** Read the record, or an empty one. A fresh clone has NO record, and that is correct behaviour

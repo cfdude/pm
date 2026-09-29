@@ -1,0 +1,117 @@
+# red-1.1 — node --test scripts/test/unit/certify-index.test.mjs, against the pre-GREEN tree (HEAD 48afa418 + the new unit file only), 2026-09-29T00:31:26Z
+✖ 1.1 the plan copies the index, reads its manifest, clones shared, sets HEAD and exports, in that order (1.100541ms)
+✖ 1.1 the manifest and the export both read the COPY, and the live index is read exactly once (0.141542ms)
+✖ 1.1 the plan never names a worktree, the stash, GIT_DIR or GIT_WORK_TREE (0.103083ms)
+✖ 1.1 an unborn HEAD sets no HEAD in the clone, and the plan is a pure function of its input (0.133625ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 267.779166
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the plan copies the index, reads its manifest, clones shared, sets HEAD and exports, in that order (1.100541ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no indexRunPlan(): the run plan is not a value, so which index the runner reads cannot be asserted without running it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at plan (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:29:10)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:45:13
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the manifest and the export both read the COPY, and the live index is read exactly once (0.141542ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no indexRunPlan(): the run plan is not a value, so which index the runner reads cannot be asserted without running it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at plan (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:29:10)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:68:13
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the plan never names a worktree, the stash, GIT_DIR or GIT_WORK_TREE (0.103083ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no indexRunPlan(): the run plan is not a value, so which index the runner reads cannot be asserted without running it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at plan (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:29:10)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:89:31
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 an unborn HEAD sets no HEAD in the clone, and the plan is a pure function of its input (0.133625ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no indexRunPlan(): the run plan is not a value, so which index the runner reads cannot be asserted without running it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at plan (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:29:10)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:99:18
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit: 1
+
+# GREEN — same command after indexRunPlan() landed in certification.mjs:
+✔ 1.1 the plan copies the index, reads its manifest, clones shared, sets HEAD and exports, in that order (0.855542ms)
+✔ 1.1 the manifest and the export both read the COPY, and the live index is read exactly once (0.156042ms)
+✔ 1.1 the plan never names a worktree, the stash, GIT_DIR or GIT_WORK_TREE (0.348583ms)
+✔ 1.1 an unborn HEAD sets no HEAD in the clone, and the plan is a pure function of its input (0.314666ms)
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+
+# Certify functional by hand before this commit (Commit mechanics, B9) — staged exactly, then:
+#   node scripts/test/certify.mjs functional   (344 s, load { 27.61 26.58 29.35 } -> { 18.85 40.86 37.62 })
+certify: functional half passed (1227/1227); recorded 8 module entries in <repo>/.git/pm-suite-certification.json
