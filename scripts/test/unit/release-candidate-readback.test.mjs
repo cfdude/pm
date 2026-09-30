@@ -9,7 +9,7 @@ const H1 = "1111111111111111111111111111111111111111";
 const H2 = "2222222222222222222222222222222222222222";
 const epic = (id, extra = {}) => ({ id, title: id, priority: "P1", status: "active", role: "epic", lane: "claude-code",
   links: [], reconcileNeeded: false, release: "R", attributedCommits: ["c".repeat(40)], ...extra });
-const gate2 = (head, verdict = "pass") => ({ gate2: { verdict, reviewedAt: "2026-09-29T00:00:00Z", baseSha: "b".repeat(40), headSha: head } });
+const gate2 = (head, verdict = "pass", base = "b".repeat(40)) => ({ gate2: { verdict, reviewedAt: "2026-09-29T00:00:00Z", baseSha: base, headSha: head } });
 const repo = (epics, releaseExtra = {}) => memoryEngine({ ...emptyRecord(), releases: [{ id: "R", intent: "x", deferred: [], ...releaseExtra }], epics });
 const line = (out) => out.split("\n").filter(l => /candidate review/.test(l)).join("\n");
 
@@ -67,11 +67,22 @@ unitTest("a release with no candidate members prints no candidate line", () => {
   assert.doesNotMatch(repo([]).result(["release", "show", "R"]).stdout, /candidate review/);
 });
 
-unitTest("a recorded fail is a verdict at its head, and is named as failed", () => {
+unitTest("a recorded fail is a verdict at its head, but is never reported as converged and is named", () => {
   const engine = repo([epic("a", { gateReview: gate2(H1) }), epic("b", { gateReview: gate2(H1, "fail") })]);
   const out = engine(["release", "show", "R"]);
-  assert.match(out, /converged at/);
+  assert.match(out, /NOT converged/);
+  assert.doesNotMatch(out, /converged at/);
   assert.match(out, /failed: `b`/);
+});
+
+unitTest("the same head reviewed over a different base is not one range: NOT converged", () => {
+  const B2 = "3333333333333333333333333333333333333333";
+  const engine = repo([epic("a", { gateReview: gate2(H1) }), epic("b", { gateReview: gate2(H1, "pass", B2) })]);
+  const out = engine(["release", "show", "R"]);
+  assert.match(out, /NOT converged/);
+  assert.doesNotMatch(out, /converged at/);
+  assert.match(out, new RegExp(`${"b".repeat(40)}\\.\\.${H1} — \`a\``));
+  assert.match(out, new RegExp(`${B2}\\.\\.${H1} — \`b\``));
 });
 
 unitTest("a Gate 2 with no recorded head is treated as no verdict", () => {

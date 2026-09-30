@@ -356,6 +356,9 @@ export function release() {
  *  the range" is therefore read as "has an attributed commit", which is the same set whenever the
  *  release's members were built inside the one candidate. Returns `null` with no candidate members.
  *
+ *  Converged means ONE shared range (the same baseSha AND headSha) across every candidate member, no
+ *  member without a verdict, and no member whose verdict is `fail`.
+ *
  *  A member has a verdict when its `gateReview.gate2` carries a string `headSha`; a withdrawn Gate 2
  *  leaves no `gate2` entry (the verdict moved to `withdrawnGateReviews`), and a legacy entry with no
  *  head cannot be compared, so both read as no verdict. */
@@ -369,11 +372,14 @@ export function candidateReview(epics, releaseId) {
   for (const e of members) {
     const g = e.gateReview && e.gateReview.gate2;
     if (!g || typeof g.headSha !== "string" || !g.headSha) { missing.push(e.id); continue; }
-    if (!heads.has(g.headSha)) heads.set(g.headSha, []);
-    heads.get(g.headSha).push(e.id);
+    // A range is base AND head: two members reviewed at one head over different bases reviewed
+    // different code, so the key carries both (a legacy entry with no base keys on the head alone).
+    const range = typeof g.baseSha === "string" && g.baseSha ? `${escapeControls(g.baseSha)}..${escapeControls(g.headSha)}` : g.headSha;
+    if (!heads.has(range)) heads.set(range, []);
+    heads.get(range).push(e.id);
     if (g.verdict === "fail") failed.push(e.id);
   }
-  return { count: members.length, heads, missing, failed, converged: !missing.length && heads.size === 1 };
+  return { count: members.length, heads, missing, failed, converged: !missing.length && !failed.length && heads.size === 1 };
 }
 
 /** `release show [<id>]` — render a release back, or list them all.
@@ -471,9 +477,9 @@ export function releaseShow(rest) {
   if (candidate) {
     const who = (ids) => ids.map(m => `\`${escapeControls(m)}\``).join(", ");
     if (candidate.converged) {
-      const [head, ids] = [...candidate.heads.entries()][0];
-      out.push(`  candidate review: converged at \`${head}\` (${ids.length} member${ids.length === 1 ? "" : "s"}: ${who(ids)})` +
-        `${candidate.failed.length ? ` — failed: ${who(candidate.failed)}` : ""}`);
+      const [range, ids] = [...candidate.heads.entries()][0];
+      const head = range.slice(range.lastIndexOf(".") + 1);
+      out.push(`  candidate review: converged at \`${head}\` (${ids.length} member${ids.length === 1 ? "" : "s"}: ${who(ids)})`);
     } else {
       out.push("  candidate review: NOT converged —");
       for (const [head, ids] of candidate.heads) out.push(`    • ${head} — ${who(ids)}`);
