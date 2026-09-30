@@ -10383,9 +10383,13 @@
       ],
       "reconcileNeeded": false,
       "description": "FRICTION ROUTED BY functional-assertion-test-split (0.47.0), required task item 7. File with /pm:feedback as well. EVIDENCE: runHookAgainstFixture (scripts/test/fixtures/helpers.mjs) builds a scratch git repository, copies the REAL .githooks/pre-commit into it, and runs it -- deliberately, so the hook is exercised rather than a stub. 6.4 added a step to that hook (the drift script), and the three fixtures that run it went red for a reason that had nothing to do with what they test: the fixture held a hook but not the script, and the script but not the minimum tree it reads (scripts/lib/, conductor.mjs, the two bucket directories). The fix was to have the fixture construct that skeleton -- which means every future hook step has to be mirrored into a fixture builder, and nothing enforces the mirror. Measured cost: half an hour of diagnosis for a one-line hook insertion, and the failure mode is the worst kind -- three unrelated tests red, all pointing at the hook rather than at themselves. Candidate fix: derive the fixture tree from the hook's own invocations, or give the hook a single well-known entry point so a fixture can stub it by contract.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "07879d04264e27d06b29fd37b317af48fad9872d",
+        "22767825ceb1340f4f3d0a58656859049c9d8077",
+        "05c8eba65c58c57725d7a29fbd3d449707f4438a"
+      ],
       "createdAt": "2026-09-21T13:07:20.863Z",
-      "touchedAt": "2026-09-30T03:40:45.416Z",
+      "touchedAt": "2026-09-30T05:22:46.034Z",
       "notes": [
         {
           "at": "2026-09-28T22:29:13.604Z",
@@ -11730,7 +11734,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1740,
+  "revision": 1743,
   "reviewMode": "standard",
   "releases": [
     {
