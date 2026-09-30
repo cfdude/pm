@@ -1,0 +1,45 @@
+✖ the execution profile's closed lists are exactly the spec's (1.290667ms)
+✖ every model that takes no effort is a known model (0.109292ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 126.176667
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the execution profile's closed lists are exactly the spec's (1.290667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'fable',
+  -   'opus',
+  -   'sonnet',
+  -   'haiku'
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-lists.test.mjs:12:10
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'fable', 'opus', 'sonnet', 'haiku' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ every model that takes no effort is a known model (0.109292ms)
+  TypeError [Error]: c.MODELS_WITHOUT_EFFORT is not iterable
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-lists.test.mjs:21:21
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

@@ -43,7 +43,7 @@ These rules bind every section below.
 
 ## 1. Closed lists and the pair parser
 
-- [ ] 1.1 TDD (UNIT): add `KNOWN_MODELS`, `KNOWN_EFFORTS`, `MODELS_WITHOUT_EFFORT`,
+- [x] 1.1 TDD (UNIT): add `KNOWN_MODELS`, `KNOWN_EFFORTS`, `MODELS_WITHOUT_EFFORT`,
       `KNOWN_JOB_ROLES` and `KNOWN_VERBOSITY_LEVELS` to `scripts/lib/constants.mjs`, one
       declaration each. RED: a test that imports them and asserts the exact lists from the spec.
 - [ ] 1.2 TDD (UNIT): a shared parser for `<role>=<model>[:<effort>]` and

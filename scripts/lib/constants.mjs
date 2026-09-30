@@ -1426,6 +1426,14 @@ export const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
 /** Rank used to compare review modes so an epic-level override can only ESCALATE above the
  *  repo-global dial, never de-escalate below it — see currentReviewMode(epicId). */
 export const REVIEW_MODE_RANK = { off: 0, standard: 1, thorough: 2 };
+/** THE EXECUTION PROFILE'S CLOSED LISTS (execution-profile-layered-settings D1), one declaration each.
+ *  Every verb that accepts or reports a profile field reads them from here. A model name means that
+ *  family's latest release; `fable` is the top tier. `haiku` takes no effort. */
+export const KNOWN_MODELS = ["fable", "opus", "sonnet", "haiku"];
+export const KNOWN_EFFORTS = ["low", "medium", "high", "xhigh", "max", "ultracode"];
+export const MODELS_WITHOUT_EFFORT = ["haiku"];
+export const KNOWN_JOB_ROLES = ["implement", "test", "review"];
+export const KNOWN_VERBOSITY_LEVELS = ["quiet", "verbose"];
 export const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 export const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 
