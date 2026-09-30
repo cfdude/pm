@@ -11617,10 +11617,11 @@
         "8aa4b53a366787a9f81e89d66639986390b41507",
         "4f56051e3e1b7d15caad3f510278a38ce16a83e8",
         "c44742ae041f775269ef24d2ff8bd3cc101da874",
-        "17afef26aa5f029a4bd323cd1563e711005d7874"
+        "17afef26aa5f029a4bd323cd1563e711005d7874",
+        "1830d91d3f56e544bbac88a79a45560cb3637014"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T05:59:36.151Z",
+      "touchedAt": "2026-09-30T06:20:13.634Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11663,10 +11664,11 @@
         "72eeba54b77bc1c38d8adc20c2ec551ab7b83168",
         "9c23222d975ab5a41d81d21418584d12e0cf530e",
         "f0bac4380318a13cb564fb470171225198271b72",
-        "076849ab858d167c27c68db75f0580bb35693742"
+        "076849ab858d167c27c68db75f0580bb35693742",
+        "1830d91d3f56e544bbac88a79a45560cb3637014"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T06:13:53.364Z",
+      "touchedAt": "2026-09-30T06:20:14.435Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11741,7 +11743,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1749,
+  "revision": 1751,
   "reviewMode": "standard",
   "releases": [
     {
