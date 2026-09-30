@@ -116,6 +116,7 @@ import { setTracker } from "./lib/tracker.mjs";
 import { setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
 import { triage } from "./lib/triage.mjs";
 import { setReviewMode } from "./lib/review-mode.mjs";
+import { setProfile, profile } from "./lib/profile-verbs.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { lessonAdvice } from "./lib/lessons.mjs";
 import { upgrade } from "./lib/migrations.mjs";
@@ -241,7 +242,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -434,6 +435,8 @@ function runInvocation(argv, io = {}) {
     "record-cross-spec-review": recordCrossSpecReview,
     "record-tracker-refresh": recordTrackerRefresh,
     "set-review-mode": setReviewMode,
+    "set-profile": setProfile,
+    profile,
     release,
     "set-gate-guard": setGateGuard,
     "gate-guard": gateGuardCheck,

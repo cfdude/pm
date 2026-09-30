@@ -37,6 +37,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { die } from "./command-exit.mjs";
 import { currentCwd, currentEnv } from "./invocation.mjs";
+import { profileDeltas } from "./execution-profile.mjs";
 
 /** Re-derived per call, like write-conflicts.mjs's: the tests cache-bust by moving
  *  CLAUDE_PROJECT_DIR, and a module-scope constant would freeze the first repo seen. */
@@ -246,6 +247,9 @@ function removedKind(verb) {
  *    reconcile-recorded                         → when a reconcile verdict was recorded against which
  *                                                 detour, and whether it corrected an earlier one —
  *                                                 read in the same GATES sequence
+ *    profile-setting                            → a profile field (verbosity, model per role, a lane's
+ *                                                 review) changed at some layer: names the layer, the
+ *                                                 field, and from/to
  *    epic-priority / epic-autonomy / review-mode → what was re-prioritised, what trust was granted or
  *                                                 revoked (and what was notified in the user's
  *                                                 absence), and when review intensity changed
@@ -352,6 +356,10 @@ export function diffEvents(before, after, meta = {}) {
   const pm = before ? (before.reviewMode || null) : null;
   const nm = after ? (after.reviewMode || null) : null;
   if (pm !== nm) out.push(ev("review-mode", { epic: null, from: pm, to: nm }));
+
+  // Every OTHER profile field at every layer (verbosity, model per role, a lane's review) — the
+  // epic and project `review` stay `review-mode` events above. One event per field that moved.
+  for (const d of profileDeltas(before, after)) out.push(ev("profile-setting", d));
 
   const pa = before ? (before.active || null) : null;
   const na = after ? (after.active || null) : null;

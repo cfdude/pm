@@ -3,11 +3,11 @@
 // existing epic. One-directional dependencies only.
 
 import {
-  EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
+  EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES,
   CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
-import { globalReviewMode } from "./rules.mjs";
+import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
@@ -528,19 +528,23 @@ export function updateEpic() {
     if (hit) { die(`conductor: ${trackerKeyRefusal(hit, candidate)}\n`); }
   }
 
-  // --review-mode: a per-epic escalation-only override of the repo-global review-mode dial
-  // (set-review-mode). It must never be usable to quietly de-escalate below the global dial —
-  // that would let one epic silently weaken review rigor a human explicitly raised repo-wide.
-  const reviewMode = str(f["review-mode"]);
-  if (reviewMode !== undefined) {
-    if (!KNOWN_REVIEW_MODES.includes(reviewMode)) {
-      die(`conductor: --review-mode must be one of ${KNOWN_REVIEW_MODES.join("|")}\n`);
-    }
-    const global = globalReviewMode(state);
-    if (REVIEW_MODE_RANK[reviewMode] < REVIEW_MODE_RANK[global]) {
-      die(
-        `conductor: --review-mode '${escapeControls(reviewMode)}' would de-escalate below the repo-global dial ` +
-        `('${escapeControls(global)}') — an epic-level override may only escalate above the global dial, never below it\n`);
+  // The epic layer of the execution profile: --review-mode, --verbosity and the repeatable --model.
+  // --review-mode used to be ESCALATE-ONLY and refused a value below the repo dial; that guard is
+  // gone by decision (execution-profile-layered-settings D3). Nothing here compares against the
+  // project or lane layer: the epic's own value wins wherever it sits, and `profile --epic` names
+  // the layer and the value it overrides.
+  const profileFlags = parseEpicProfileFlags(f);
+  if (!profileFlags.ok) die(`conductor: ${profileFlags.message}\n`);
+  const { review: reviewMode, verbosity, model: modelPairs } = profileFlags;
+  // `--clear-model <role>`: the one-role inverse of `--model`. Validated with the same role list, and
+  // refused against a --model naming that role in the same call (set and unset of one field).
+  const clearModelRoles = [].concat(f["clear-model"] === undefined ? [] : f["clear-model"])
+    .filter(v => typeof v === "string");
+  for (const role of clearModelRoles) {
+    const r = checkRole(role);
+    if (!r.ok) die(`conductor: --clear-model: ${r.message}\n`);
+    if (modelPairs && modelPairs[role]) {
+      die(`conductor: --clear-model ${role} contradicts --model ${role}=… in the same invocation — set the role or unset it, not both. Nothing was written.\n`);
     }
   }
 
@@ -862,6 +866,8 @@ export function updateEpic() {
   // `add-many`.
   if (suppliedLinks !== undefined) epic.links = mergeLinks(epic.links, suppliedLinks);
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
+  if (verbosity !== undefined) epic.verbosity = verbosity;
+  if (modelPairs !== undefined || clearModelRoles.length) applyEpicModel(epic, modelPairs, clearModelRoles);
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
     epic.attributedCommits.push(...attributed);

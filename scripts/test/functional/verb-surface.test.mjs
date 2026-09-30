@@ -439,6 +439,8 @@ const DISPATCH_BASELINE = {
     args: ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me"] },
   "record-tracker-refresh": { args: ["record-tracker-refresh", "ext", "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"] },
   "set-review-mode": { args: ["set-review-mode", "--mode", "standard"] },
+  "set-profile": { args: ["set-profile", "--review", "standard"] },
+  profile: { args: ["profile"] },
   release: { args: ["release", "r1", "--intent", "x"] },
   "set-gate-guard": { args: ["set-gate-guard", "on"] },
   "gate-guard": { args: ["gate-guard"], input: "{}" },

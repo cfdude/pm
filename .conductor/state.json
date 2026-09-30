@@ -11603,10 +11603,11 @@
         "a2bb4b2b0808a6d631f5914cfebf40133947b16c",
         "5838559f6b0abaec801fdb394f99c490230770c4",
         "0d9adb56510507d16362c9afc657182b49d66eb9",
-        "168e5bbb3039b4eac28ce16c811fe051d20383c2"
+        "168e5bbb3039b4eac28ce16c811fe051d20383c2",
+        "6e709146ba7eeff44530623a277c259f8fd3756f"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T03:50:44.474Z",
+      "touchedAt": "2026-09-30T04:20:00.384Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11618,7 +11619,14 @@
           "reviewer": "opus fresh-context (1 round, Critical fixed a2bb4b2b, fix verified by orchestrator)"
         }
       },
-      "startedAt": "2026-09-30T03:40:45.413Z"
+      "startedAt": "2026-09-30T03:40:45.413Z",
+      "notes": [
+        {
+          "at": "2026-09-30T04:20:00.381Z",
+          "actor": "agent",
+          "text": "3.x landed in one commit: every scripts/lib edit needs both certifies (~5 min), so section 3 tasks were grouped"
+        }
+      ]
     },
     {
       "id": "converged-release-candidate-review",
@@ -11715,7 +11723,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1731,
+  "revision": 1733,
   "reviewMode": "standard",
   "releases": [
     {

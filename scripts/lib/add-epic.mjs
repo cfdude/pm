@@ -16,6 +16,7 @@ import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { rankOf } from "./epic-progress.mjs";
 import { assertKnownPlatform, platformFlag } from "./platform.mjs";
 import { die } from "./command-exit.mjs";
+import { parseEpicProfileFlags } from "./execution-profile.mjs";
 import { currentArgv, outStream } from "./invocation.mjs";
 
 /** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
@@ -385,6 +386,10 @@ export function addEpic() {
   if (!KNOWN_STATUSES.includes(status)) {
     die(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`);
   }
+  // The epic layer of the execution profile, validated with the id and lane checks so a bad value
+  // registers nothing (execution-profile-layered-settings D4).
+  const profileFlags = parseEpicProfileFlags(f);
+  if (!profileFlags.ok) die(`conductor: ${profileFlags.message}\n`);
   const state = loadState();
   if (state.epics.some(e => e.id === id)) {
     die(`conductor: epic '${escapeControls(id)}' already exists\n`);
@@ -454,6 +459,9 @@ export function addEpic() {
   if (str(f.description) !== undefined) epic.description = str(f.description);
   if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
+  if (profileFlags.review !== undefined) epic.reviewMode = profileFlags.review;
+  if (profileFlags.verbosity !== undefined) epic.verbosity = profileFlags.verbosity;
+  if (profileFlags.model !== undefined) epic.model = profileFlags.model;
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (externalUrl !== undefined) epic.externalUrl = externalUrl;
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);

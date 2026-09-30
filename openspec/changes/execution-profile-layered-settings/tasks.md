@@ -82,7 +82,7 @@ These rules bind every section below.
 
 ## 3. Verbs and records
 
-- [ ] 3.1 TDD (UNIT, plus FILE for byte-identity): `set-profile` (design D4). Cover set and unset at
+- [x] 3.1 TDD (UNIT, plus FILE for byte-identity): `set-profile` (design D4). Cover set and unset at
       the project and lane layers, lane validation, the refusal when no operation is named, the
       refusal when one field is set and unset together, an emptied lane layer being removed, and a
       no-op unset writing nothing (FILE: `state.json` bytes unchanged). The project `--review` writes
@@ -90,20 +90,20 @@ These rules bind every section below.
       `set-profile` to the dispatch at the bottom of `conductor.mjs`, to the verb priority table in
       `constants.mjs`, and to the verb-surface registry so `--help` projects its flags. Verify:
       `node scripts/conductor.mjs set-profile --help` lists exactly the D4 flags.
-- [ ] 3.2 TDD (UNIT): `profile [--epic <id> | --lane <lane>]`, read-only. Cover the source label per
+- [x] 3.2 TDD (UNIT): `profile [--epic <id> | --lane <lane>]`, read-only. Cover the source label per
       field and per role, naming the overridden value when an epic lowers it, naming ignored stored
       values, and refusing an unknown epic or lane. Verify: `profile --help`, and that the verb
       writes nothing (UNIT: the store is unchanged).
-- [ ] 3.3 TDD (UNIT): epic-layer flags. Widen the `review-mode` `EPIC_FLAGS` row to
+- [x] 3.3 TDD (UNIT): epic-layer flags. Widen the `review-mode` `EPIC_FLAGS` row to
       `add-epic`/`add-many`/`update-epic`, and add rows for `model` (repeatable, parsed by 1.2) and
       `verbosity`, all `nullable`. Add `--clear-model <role>`. REMOVE the de-escalation refusal in
       `update-epic.mjs`, and rewrite the row's `clearNote` (design D3). Cover "An epic override set at
       creation", "add-many accepts the same fields as batch keys", "Setting one model role leaves the
       others" and "Clearing one epic model role".
-- [ ] 3.4 TDD (UNIT): `activity-log.mjs` emits an event for every profile field change at every layer,
+- [x] 3.4 TDD (UNIT): `activity-log.mjs` emits an event for every profile field change at every layer,
       not only `reviewMode`. Verify: a lane `model.test` change produces one event naming layer, field,
       from and to.
-- [ ] 3.5 Command docs in the same commits as their verbs:
+- [x] 3.5 Command docs in the same commits as their verbs:
       - a new `commands/profile.md` covering `set-profile` and `profile`, with every flag, every
         inverse, and the resolution order;
       - `commands/review-mode.md`: rewrite "Per-epic override" (no longer escalate-only), and name

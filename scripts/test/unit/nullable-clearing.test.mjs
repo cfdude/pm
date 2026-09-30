@@ -58,13 +58,14 @@ const stateBytes = (engine) => engine.store.read("state.json").text;
 const epicOf = (engine, id = "subject") => readState(engine).epics.find(e => e.id === id);
 
 /** How to SET each nullable field, so the sweep can clear something that is actually there.
- *  A value table is unavoidable — `--parent` needs a real epic id, `--review-mode` a legal mode
- *  that does not de-escalate below the repo dial — but the ENUMERATION driving it is the
+ *  A value table is unavoidable — `--parent` needs a real epic id, `--review-mode` a legal mode — but the ENUMERATION driving it is the
  *  registry, so a nullable row with no entry here is a hard failure naming the flag rather than
  *  a silent skip. */
 const SET_VALUE = {
   parent: "other",
   "review-mode": "thorough",
+  verbosity: "verbose",
+  model: "implement=opus:medium",
   "external-updated-at": "2026-08-23T09:30:00Z",
   plan: "docs/superpowers/plans/p.md",
   spec: "docs/superpowers/specs/d.md",

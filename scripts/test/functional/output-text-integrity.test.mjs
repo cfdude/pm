@@ -1033,6 +1033,9 @@ recipe("add-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic"
 recipe("add-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("d"), ...planned, "--description", v]) });
 recipe("add-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("n"), ...planned, "--notes", v]) });
 recipe("add-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
+recipe("add-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("rm"), "--lane", "claude-code", "--review-mode", v]) });
+recipe("add-epic --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("vb"), "--lane", "claude-code", "--verbosity", v]) });
+recipe("add-epic --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("md"), "--lane", "claude-code", "--model", v]) });
 recipe("add-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   const id = fresh("as");
   ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code", "--add-story", v]);
@@ -1062,6 +1065,9 @@ recipe("add-many --title", { rendered: true, run: (c, v) => batch(c, { id: fresh
 recipe("add-many --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => batch(c, { id: fresh("ml"), lane: v }) });
 recipe("add-many --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
 recipe("add-many --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => batch(c, { id: fresh("ms"), lane: "claude-code", status: v }) });
+recipe("add-many --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => batch(c, { id: fresh("mrm"), lane: "claude-code", reviewMode: v }) });
+recipe("add-many --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => batch(c, { id: fresh("mvb"), lane: "claude-code", verbosity: v }) });
+recipe("add-many --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => batch(c, { id: fresh("mmd"), lane: "claude-code", model: [v] }) });
 recipe("add-many --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => batch(c, { id: fresh("mpa"), lane: "claude-code", parent: v }) });
 recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: v })) });
 recipe("add-many --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: "X-2", externalUrl: v })) });
@@ -1140,6 +1146,9 @@ recipe("update-epic --declined-deferral", { notRendered: "a deferral assertion i
 recipe("update-epic --carried-to", { exempt: EXEMPT.knownEpic("carried-to"), run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
 recipe("update-epic --correct-disposition", { rendered: true, run: (c, v) => (ok(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "killed", "--reason", "r", "--no-deferrals"]), pm(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "abandoned", "--reason", "r2", "--correct-disposition", v, "--no-deferrals"])) });
 recipe("update-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--review-mode", v]) });
+recipe("update-epic --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--verbosity", v]) });
+recipe("update-epic --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--model", v]) });
+recipe("update-epic --clear-model", { exempt: EXEMPT.vocab("clear-model"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear-model", v]) });
 recipe("update-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   ok(c.cwd, ["update-epic", "st", "--add-story", v]);
   return pm(c.cwd, ["update-epic", "st", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
@@ -1200,6 +1209,13 @@ recipe("set-autonomy --revoke-reason", { notRendered: "autonomy grants, context 
 recipe("set-lane-routing --add", { notRendered: "a lane-routing override is read by suggest-lane, whose output is JSON", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--add", `${v}:claude-code`]) });
 recipe("set-lane-routing --remove", { notRendered: "removing an override prints the count removed, not the match", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--remove", v]) });
 recipe("set-review-mode --mode", { exempt: EXEMPT.vocab("mode"), run: (c, v) => pm(c.cwd, ["set-review-mode", "--mode", v]) });
+recipe("set-profile --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["set-profile", "--lane", v, "--review", "off"]) });
+recipe("set-profile --review", { exempt: EXEMPT.vocab("review"), run: (c, v) => pm(c.cwd, ["set-profile", "--review", v]) });
+recipe("set-profile --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm(c.cwd, ["set-profile", "--model", v]) });
+recipe("set-profile --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["set-profile", "--verbosity", v]) });
+recipe("set-profile --unset", { exempt: EXEMPT.vocab("unset"), run: (c, v) => pm(c.cwd, ["set-profile", "--unset", v]) });
+recipe("profile --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["profile", "--lane", v]) });
+recipe("profile --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["profile", "--epic", v]) });
 recipe("set-tracker --role", { exempt: EXEMPT.vocab("role"), run: (c, v) => pm(c.cwd, ["set-tracker", "--role", v, "--system", "jira"]) });
 recipe("set-tracker --system", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--system", v, "--project", "ABC", "--direction", "inward"]) });
 recipe("set-tracker --repo", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--role", "secondary", "--system", "gitlab", "--repo", v]) });

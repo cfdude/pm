@@ -1,0 +1,343 @@
+✖ set-profile records project model pairs and verbosity, and the project review in state.reviewMode (59.5245ms)
+✖ set-review-mode and set-profile write one record (48.578666ms)
+✖ a lane layer is written, resolved by an epic of that lane, and removed when emptied (51.581708ms)
+✖ an unset of a field that is not set exits zero, says so, and leaves state.json byte-identical (38.448ms)
+✔ a refused set-profile leaves state.json byte-identical (42.404041ms)
+✖ set-profile refreshes the managed block in CLAUDE.md with the new project review (48.025ms)
+✖ a call that names no operation is refused before anything is read (0.953833ms)
+✖ an unknown lane is refused naming the known lanes (0.112ms)
+✖ a field set and unset in one call is refused, at every spelling (0.105416ms)
+✖ every model, review and verbosity refusal names the accepted values (0.097708ms)
+✖ a project model pair is recorded whole, and haiku carries no effort key (0.116375ms)
+✖ the project review is written to state.reviewMode, the existing key (0.098833ms)
+✖ setting one model role leaves the layer's other roles unchanged (0.125542ms)
+✖ a lane override lands in laneProfiles and touches neither the project nor any epic (0.109833ms)
+✖ unsetting the project review restores the default; unsetting the last lane field removes the lane layer (0.113334ms)
+✖ unsetting one role, then the rest, empties the model map away (0.126459ms)
+✖ unsetting what is not set reports it and changes nothing (0.089625ms)
+✖ re-setting the same value is not a change (0.079333ms)
+✔ set-profile refusals exit non-zero and leave state.json byte-identical (2.756ms)
+✖ set-profile's refusals name the offender and the accepted list on stderr (0.693209ms)
+✖ profile prints each field with its source and names the value an epic lowered (0.284459ms)
+✖ profile names a stored value it ignored (0.2005ms)
+✖ profile --lane resolves what an override-free epic of that lane would; bare profile is the project layer (0.485917ms)
+✖ profile refuses an unknown epic, an unknown lane, and both scopes at once, writing nothing (0.358459ms)
+✖ profile writes nothing on success (0.241583ms)
+✖ set-profile --help lists exactly the D4 flags, and profile --help its two (0.224708ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 2
+ℹ fail 24
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 433.854667
+
+✖ failing tests:
+
+test at scripts/test/assert/set-profile.test.mjs:13:1
+✖ set-profile records project model pairs and verbosity, and the project review in state.reviewMode (59.5245ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/harness.mjs:116:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/set-profile.test.mjs:15:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/assert/set-profile.test.mjs:21:1
+✖ set-review-mode and set-profile write one record (48.578666ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/harness.mjs:116:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/set-profile.test.mjs:24:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/assert/set-profile.test.mjs:29:1
+✖ a lane layer is written, resolved by an epic of that lane, and removed when emptied (51.581708ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/harness.mjs:116:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/set-profile.test.mjs:32:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/assert/set-profile.test.mjs:39:1
+✖ an unset of a field that is not set exits zero, says so, and leaves state.json byte-identical (38.448ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/harness.mjs:116:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/set-profile.test.mjs:42:15)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/assert/set-profile.test.mjs:55:1
+✖ set-profile refreshes the managed block in CLAUDE.md with the new project review (48.025ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/harness.mjs:116:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/set-profile.test.mjs:57:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a call that names no operation is refused before anything is read (0.953833ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:23:13
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an unknown lane is refused naming the known lanes (0.112ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:31:13
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a field set and unset in one call is refused, at every spelling (0.105416ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:38:16
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ every model, review and verbosity refusal names the accepted values (0.097708ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:47:16
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a project model pair is recorded whole, and haiku carries no effort key (0.116375ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:61:22
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the project review is written to state.reviewMode, the existing key (0.098833ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:69:22
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ setting one model role leaves the layer's other roles unchanged (0.125542ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:77:22
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a lane override lands in laneProfiles and touches neither the project nor any epic (0.109833ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:85:22
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ unsetting the project review restores the default; unsetting the last lane field removes the lane layer (0.113334ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:94:22
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ unsetting one role, then the rest, empties the model map away (0.126459ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:104:22
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ unsetting what is not set reports it and changes nothing (0.089625ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:115:32
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ re-setting the same value is not a change (0.079333ms)
+  TypeError [Error]: parseSetProfile is not a function
+      at ops (file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:56:80)
+      at async file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:127:35
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ set-profile's refusals name the offender and the accepted list on stderr (0.693209ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^conductor: --lane 'marketing' is not one of openspec\|/. Input:
+  
+  'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:153:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n',
+    expected: /^conductor: --lane 'marketing' is not one of openspec\|/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ profile prints each field with its source and names the value an epic lowered (0.284459ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:161:15
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ profile names a stored value it ignored (0.2005ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:169:15
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ profile --lane resolves what an override-free epic of that lane would; bare profile is the project layer (0.485917ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:176:16
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ profile refuses an unknown epic, an unknown lane, and both scopes at once, writing nothing (0.358459ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /no epic 'no-such-epic'/. Input:
+  
+  'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:185:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n',
+    expected: /no epic 'no-such-epic'/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ profile writes nothing on success (0.241583ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:194:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ set-profile --help lists exactly the D4 flags, and profile --help its two (0.224708ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--lane/. Input:
+  
+  'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/set-profile.test.mjs:201:90
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n',
+    expected: /--lane/,
+    operator: 'match',
+    diff: 'simple'
+  }

@@ -653,18 +653,34 @@ export const EPIC_FLAGS = [
   { flag: "undefer", key: null, commands: ["release"], write: "custom",
     requires: "\"<epicId>:<why it is back in scope>\" (or --reason)",
     placeholder: "epicId[:why it is back in scope]" },
-  // NULLABLE, and the absence is the DEFAULT rather than a hole: with no per-epic override the
-  // epic falls back to the repo-global dial, which is exactly what "this epic needs no
-  // escalation of its own" means. An escalation recorded in error was previously uncorrectable —
-  // the de-escalation guard refuses lowering it, so there was no way back to the global.
+  // THE EPIC LAYER OF THE EXECUTION PROFILE (execution-profile-layered-settings D3/D4). Three fields,
+  // each NULLABLE: with no epic-level value the field falls through to the epic's lane, then the
+  // project (`profile --epic <id>` names the layer). `add-epic` and `add-many` now accept them too,
+  // so an epic can be created with its own review, model or verbosity; before, `--review-mode`
+  // was `update-epic` only.
   //
-  // The clearNote is a DECLARED JUDGEMENT rather than something the cross-record sweep demands:
-  // `reviewMode` points at a repo-global dial, not at another record, so it is deliberately
-  // outside that population (see nullable-clearing.test.mjs). It carries one anyway because the
-  // consequence is real and silent — the epic's escalation is gone, and the de-escalation guard
-  // means nothing will complain.
-  { flag: "review-mode", key: "reviewMode", commands: ["update-epic"], nullable: true,
-    clearNote: "this epic stops carrying its own escalation and falls back to the repo-global dial (`set-review-mode`), which may be LOWER — and the de-escalation guard that would normally refuse a lowering does not see a clear. Re-escalate with --review-mode <mode>" },
+  // `--review-mode` USED TO BE ESCALATE-ONLY: `update-epic` refused a value below the repo dial, and
+  // read time took the max. That guard is gone by decision — a thorough project needs a standard
+  // non-critical component — and VISIBILITY replaces it: `profile --epic`/`rules --epic` name the
+  // source layer and the value a lowering overrides, and the activity log records the change. So
+  // there is no guard left for a clear to slip past.
+  //
+  // `--model` is REPEATABLE (`--model implement=sonnet:medium --model test=haiku`), parsed by the one
+  // shared parser in execution-profile.mjs, and `--clear model` empties every role while
+  // `--clear-model <role>` (below) removes one.
+  { flag: "review-mode", key: "reviewMode", commands: ["add-epic", "add-many", "update-epic"], nullable: true,
+    placeholder: "off|standard|thorough",
+    clearNote: "this epic stops carrying its own review value and falls back to its lane's, then the project's (`set-profile`, `set-review-mode`) — which may be HIGHER or LOWER than the value it held. the `profile` verb with --epic shows where it now comes from. Re-set it with --review-mode <mode>" },
+  { flag: "verbosity", key: "verbosity", commands: ["add-epic", "add-many", "update-epic"], nullable: true,
+    placeholder: "quiet|verbose",
+    clearNote: "this epic stops carrying its own verbosity and falls back to its lane's, then the project's — the `profile` verb with --epic shows where it now comes from. Re-set it with --verbosity <level>" },
+  { flag: "model", key: "model", commands: ["add-epic", "add-many", "update-epic"], repeats: true, nullable: true,
+    placeholder: "role=model[:effort]",
+    clearNote: "this epic stops carrying its own model for EVERY role and each falls back to its lane's, then the project's — the `profile` verb with --epic shows where each now comes from. To drop one role only, use --clear-model <role>. Re-set with --model <role>=<model>[:<effort>]" },
+  // The one-role inverse of `--model`. `key` is null: the write lands inside `epic.model`, so the
+  // command owns it, exactly as `--wont-do` owns its write into a story.
+  { flag: "clear-model", key: null, commands: ["update-epic"], repeats: true, write: "custom",
+    requires: "a job role (implement|test|review)", placeholder: "implement|test|review" },
   // Stories, and the ONE registry edit that makes a plan land with its milestones (#95).
   // `add-epic` and `add-many` join `update-epic` here rather than growing a second literal:
   // `epicFlagsFor("add-epic")` builds add-epic's allowlist and `epicBatchKeys()` builds
@@ -797,6 +813,16 @@ export const VERB_FLAGS = [
   { flag: "from", commands: ["add-many"], requires: "a path, or `-` to read the batch from stdin" },
   { flag: "cascade", commands: ["remove-epic"], valueless: true },
   { flag: "mode", commands: ["set-review-mode"], placeholder: "off|standard|thorough" },
+  // set-profile / profile (execution-profile-layered-settings D4). `--review`, `--model`,
+  // `--verbosity` here are the PROJECT/LANE-layer writers; the same names are EPIC_FLAGS rows for
+  // add-epic/add-many/update-epic. `--model` and `--unset` repeat. `--lane` is also add-epic's
+  // (an epic's own lane) but the rows are scoped per command, so neither reads the other.
+  { flag: "lane", commands: ["set-profile", "profile"], placeholder: "openspec|superpowers|claude-code|decision|external" },
+  { flag: "review", commands: ["set-profile"], placeholder: "off|standard|thorough" },
+  { flag: "model", commands: ["set-profile"], repeats: true, placeholder: "role=model[:effort]" },
+  { flag: "verbosity", commands: ["set-profile"], placeholder: "quiet|verbose" },
+  { flag: "unset", commands: ["set-profile"], repeats: true, placeholder: "review|verbosity|model|model:role" },
+  { flag: "epic", commands: ["profile"], requires: "an epic id" },
   // set-autonomy — #152's sharpest instance.
   { flag: "level", commands: ["set-autonomy"], placeholder: "off|autonomous" },
   { flag: "preauthorize", commands: ["set-autonomy"], repeats: true },
@@ -978,7 +1004,7 @@ const EPIC_ID = { min: 1, max: 1, form: "<id>", idFirst: true, freeText: false }
 export const VERB_POSITIONALS = {
   init: P0, render: P0, brief: P0, snapshot: P0, "commit-nudge": P0, sync: P0,
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
-  "set-review-mode": P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
+  "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
   activity: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
   integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
@@ -1423,9 +1449,6 @@ export const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // is not a breaking change for existing preAuthorized entries.
 export const KNOWN_PREAUTHORIZE_CATEGORIES = ["filesystem", "network", "schema", "external-api"];
 export const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
-/** Rank used to compare review modes so an epic-level override can only ESCALATE above the
- *  repo-global dial, never de-escalate below it — see currentReviewMode(epicId). */
-export const REVIEW_MODE_RANK = { off: 0, standard: 1, thorough: 2 };
 /** THE EXECUTION PROFILE'S CLOSED LISTS (execution-profile-layered-settings D1), one declaration each.
  *  Every verb that accepts or reports a profile field reads them from here. A model name means that
  *  family's latest release; `fable` is the top tier. `haiku` takes no effort. */

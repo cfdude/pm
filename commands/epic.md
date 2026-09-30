@@ -256,7 +256,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--parent <id>` | `parent` | no self-parent, no cycle |
 | `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
 | `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically. **Refused** on an epic that owes a reconcile and holds an armed (or pre-0.44.0) `may-invalidate` link — the clear-and-re-supply repair included — until `record-reconcile` answers it |
-| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `review-mode`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
@@ -273,7 +273,10 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--deferral "<epicId>:<section>"` | `deferralAssertion` | **repeatable**; splits on the FIRST colon |
 | `--declined-deferral "<what>::<why not>"` | `deferralAssertion` | **repeatable**; `::` separates, and a lone `:` still works |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none" |
-| `--review-mode <m>` | `reviewMode` | per-epic escalation above the repo dial |
+| `--review-mode <m>` | `reviewMode` | the epic's own review value, above OR below the lane's and the repo's (most specific wins; see `/pm:profile`). Also accepted by `add-epic` and `add-many` (batch key `reviewMode`) |
+| `--model <role>=<model>[:<effort>]` | `model` | **repeatable**; the epic's model and effort for one job role (`implement\|test\|review`). `haiku` takes no effort; every other model requires one. Setting one role leaves the others. Also on `add-epic` and `add-many` (batch key `model`: an array of the same strings, or a `{role: "model:effort"}` object) |
+| `--clear-model <role>` | `model` | **repeatable**; removes one role's pair (`--clear model` removes every role) |
+| `--verbosity <quiet\|verbose>` | `verbosity` | the epic's own report frequency. Also on `add-epic` and `add-many` |
 | `--add-story "<title>"` | `stories` | **repeatable**; appends `{title, done: false}` |
 | `--story <n> --done` | `stories[n-1].done` | 1-indexed |
 | `--story <n> --wont-do "<reason>"` | `stories[n-1].disposition` | 1-indexed; the reason is REQUIRED |
@@ -584,9 +587,12 @@ carry such a note — the ones pointing at another record, at a file on disk, or
   clearing may well mean *let sync find this plan's real owner*. Re-attach with `--plan <path>`.
 - `--clear spec` — the same, for a design document: the epic drops out of that document's coverage
   count in `verify-specs` and the file reads as unclaimed. No tombstone, for the reason above.
-- `--clear review-mode` — the epic stops carrying its own escalation and falls back to the
-  repo-global dial (`set-review-mode`), which may be **lower**. The de-escalation guard that would
-  refuse a lowering does not see a clear. Re-escalate with `--review-mode <mode>`.
+- `--clear review-mode` — the epic stops carrying its own review value and falls back to its
+  lane's, then the repo-global dial (`set-review-mode`), which may be **higher or lower** than the
+  value it held. There is no de-escalation guard any more, so nothing complains either way;
+  the `profile` verb, pointed at this epic, shows where the value now comes from. Re-set it with `--review-mode <mode>`.
+- `--clear verbosity` and `--clear model` — the same fall-through for the epic's verbosity and for
+  every model role. `--clear-model <role>` drops one role only.
 - `--clear created-at` — the registration date returns to **absent**, which the schema reads as
   UNKNOWN and never as today. `recover-created-at` will attempt it again from this checkout's git
   history on its next run, and it never overwrites a date that is present — so **clear, then

@@ -229,6 +229,7 @@ test("every add-many key the registry declares round-trips through a batch entry
       links: [], description: "why this epic exists",
       externalUpdatedAt: "2026-08-23T09:30:00Z",
       stories: ["a milestone", { title: "one already behind us", done: true }],
+      reviewMode: "thorough", verbosity: "verbose", model: ["implement=opus:medium", "test=haiku"],
     }],
   });
   run(["add-many", "--from", batch], { cwd });
@@ -304,6 +305,18 @@ const EXERCISE = {
     check: (e) => assert.ok(!("planPath" in e), "--clear plan left planPath on the record"),
   },
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
+  "--verbosity": { args: ["--verbosity", "verbose"], check: (e) => assert.equal(e.verbosity, "verbose") },
+  "--model": {
+    args: ["--model", "implement=opus:medium", "--model", "test=haiku"],
+    check: (e) => assert.deepEqual(e.model, { implement: { model: "opus", effort: "medium" }, test: { model: "haiku" } }),
+  },
+  // The one-role inverse of --model. `setup` is load-bearing for the reason --clear's is: a fresh
+  // epic carries no model, so without it this entry would pass against an implementation that did nothing.
+  "--clear-model": {
+    setup: ["--model", "implement=opus:medium", "--model", "test=haiku"],
+    args: ["--clear-model", "test"],
+    check: (e) => assert.deepEqual(e.model, { implement: { model: "opus", effort: "medium" } }),
+  },
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
   "--spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },

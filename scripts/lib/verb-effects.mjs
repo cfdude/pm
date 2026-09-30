@@ -51,6 +51,7 @@ export const VERB_EFFECTS = {
   "plan-hierarchy": { effect: "read-only", exercise: ["--parent", "p"], note: "recomputes execution batches fresh every call; no persistent state" },
   rules: { effect: "read-only", exercise: [], note: "prints the CLAUDE.md rules block to stdout — `write-rules` is the writing half" },
   "rules-target": { effect: "read-only", exercise: [], note: "prints which file this platform's rules block belongs in; deliberately does NOT record the platform" },
+  profile: { effect: "read-only", exercise: [], note: "prints the effective execution profile with each value's source layer; writes nothing" },
   "suggest-lane": { effect: "read-only", exercise: ["a caching bug"], note: "returns the routed lane for a title" },
   triage: { effect: "read-only", exercise: ["a caching bug in the renderer"], note: "candidate duplicates + lane suggestion; emits verdict:null and registers nothing" },
   "verify-specs": { effect: "read-only", exercise: [], note: "design-document coverage inventory" },
@@ -110,6 +111,7 @@ export const VERB_EFFECTS = {
   "set-lane-routing": { effect: "mutates", writes: "state.json (lane-routing overrides)" },
   "set-autonomy": { effect: "mutates", writes: "state.json (an epic's autonomy block and notifications)" },
   "set-review-mode": { effect: "mutates", writes: "state.json (the review-mode dial), CLAUDE.md (the rules block)" },
+  "set-profile": { effect: "mutates", writes: "state.json (the project or lane execution-profile layer), CLAUDE.md (the rules block), plus render()'s writes" },
   "set-gate-guard": { effect: "mutates", writes: "state.json (the gate-guard toggle)" },
   // `release show [<id>]` is a PURE READ under this verb and writes nothing — the same shape
   // `set-gate-guard`'s read form has. The classification stays `mutates` because it is a property

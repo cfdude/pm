@@ -768,3 +768,55 @@ x("purge-logs.mjs", "purgeLogs", {
 x("rules.mjs", "rulesBlockAmbiguousMessage", {
   "L.join(\"\\n\")": 1,
 }, "passthrough", "L is a local array of templates and literals only (err.markers mapped to a template), each value swept where it is built");
+
+// ── execution-profile-layered-settings (0.51.0): the profile verbs and their pure helpers
+j("execution-profile.mjs", "profileLines", ALL, "sink-flow", "every line is a raw string returned to a printer that joins them through lines.map(escapeControls): `profile` (profile-verbs.mjs), `rules --epic` and the brief. The values are closed-list literals, layer names (`lane:<lane>` is escapeControls()d where the source label is built) and ignored stored values, which are exactly what the printer escapes");
+x("execution-profile.mjs", "parseSetProfile", {
+  "role": 1,
+  "r": 1,
+  "u.role": 1,
+  "clash.replace(\":\", \" \")": 1,
+}, "engine", "field names built from the closed lists KNOWN_JOB_ROLES and `review`/`verbosity`/`model` — each parsed and validated earlier in the same function, so none is user text");
+x("execution-profile.mjs", "applyProfileOps", {
+  "ops.review": 1,
+  "ops.verbosity": 1,
+  "role": 1,
+  "pair.model": 1,
+  "pair.effort": 1,
+  "u.role": 2,
+}, "engine", "values that parseSetProfile already checked against their closed lists; the phrase is escapeControls()d again where set-profile prints it");
+x("execution-profile.mjs", "modelText", {
+  "pair.model": 1,
+  "pair.effort": 1,
+}, "passthrough", "text returned into profileLines (a sink-flow judgment); a stored, unvalidated pair is escaped by the printer that joins those lines");
+x("profile-verbs.mjs", "setProfile", {
+  "parsed.message": 1,
+  "where": 3,
+  "notes": 2,
+}, "escaped", "parsed.message is composed of escapeControls()d values and closed-list literals (execution-profile.mjs); `where` is a literal or names the lane through escapeControls; `notes` maps the already-unset field names through escapeControls");
+x("profile-verbs.mjs", "profile", {
+  "f.epic": 1,
+  "f.lane": 1,
+  "scope": 1,
+}, "sink-flow", "the scope label is the first line of the output, joined through lines.map(escapeControls); f.epic was just found in state.epics and f.lane in KNOWN_LANES");
+x("execution-profile.mjs", "parseEpicProfileFlags", {
+  "r.message": 1,
+  "v.message": 1,
+  "p.message": 1,
+}, "escaped", "the refusal text of checkReview/checkVerbosity/parseModelPair (this file): every offending value in it goes through escapeControls, the rest is a closed-list literal");
+x("execution-profile.mjs", "profileDeltas", {
+  "role": 1,
+}, "engine", "a job role from KNOWN_JOB_ROLES, a constants.mjs literal");
+x("add-epic.mjs", "addEpic", {
+  "profileFlags.message": 1,
+}, "escaped", "parseEpicProfileFlags' refusal text (execution-profile.mjs): offending values escapeControls()d, the rest closed-list literals");
+x("add-many.mjs", "addMany", {
+  "r.message": 1,
+  "v.message": 1,
+  "m.message": 1,
+}, "escaped", "the refusal text of checkReview/checkVerbosity/normalizeBatchModel (execution-profile.mjs): offending values escapeControls()d, the rest closed-list literals");
+x("update-epic.mjs", "updateEpic", {
+  "profileFlags.message": 1,
+  "r.message": 1,
+  "role": 2,
+}, "escaped", "parseEpicProfileFlags/checkRole refusal text (offending values escapeControls()d); `role` is the --clear-model value AFTER checkRole accepted it from KNOWN_JOB_ROLES");

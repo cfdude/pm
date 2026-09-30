@@ -176,7 +176,8 @@ detours" table rotation (both change on nearly every render without meaning anyt
 changed) so deciding whether a PROJECT.md diff is safe to discard as noise is mechanical
 instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
-escalates a single epic above the repo dial · `set-lane-routing` / `suggest-lane` per-repo
+escalates a single epic above the repo dial · `set-profile` / `profile` write and read the
+execution profile (review, model per job role, verbosity) at the project and lane layers · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
