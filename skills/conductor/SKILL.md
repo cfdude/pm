@@ -176,7 +176,7 @@ detours" table rotation (both change on nearly every render without meaning anyt
 changed) so deciding whether a PROJECT.md diff is safe to discard as noise is mechanical
 instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
-escalates a single epic above the repo dial · `set-profile` / `profile` write and read the
+sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
 execution profile (review, model per job role, verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
 epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `set-lane-routing` / `suggest-lane` per-repo

@@ -15,8 +15,8 @@ import { currentArgv } from "./invocation.mjs";
 /** `set-review-mode --mode off|standard|thorough` — the repo-level dial, mirroring Comet's
  *  review_mode: bounds how many fresh-context reviewer passes run and when, replacing an
  *  ad-hoc judgment call with an explicit, dedup'd budget. Pure local state write — no
- *  external calls. A single epic can escalate ABOVE this dial via
- *  `update-epic <id> --review-mode <mode>` (never below it) — see currentReviewMode(epicId). */
+ *  external calls. A single epic can RAISE or LOWER its own review via
+ *  `update-epic <id> --review-mode <mode>` (its value wins over the dial) — see currentReviewMode(epicId). */
 export function setReviewMode() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const f = parseFlags(currentArgv().slice(3));

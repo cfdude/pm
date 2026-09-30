@@ -854,8 +854,9 @@ are none. A revoked grant is not restored by re-arming and is not in that report
 
 `set-review-mode --mode off|standard|thorough`: `off` (self-review only) · `standard`
 (default — one fresh-context reviewer per gate) · `thorough` (two independent reviewers,
-adjudicated). A single epic can escalate above the repo's dial via `update-epic <id>
---review-mode`, but never de-escalate below it.
+adjudicated). A single epic can set its own review via `update-epic <id>
+--review-mode`, raising or lowering the repo's dial (the epic's value wins; `profile --epic <id>` names the
+layer it came from).
 
 `set-profile` and `profile` set and read the execution profile (review, model per job role,
 verbosity) at the project and lane layers; see `commands/profile.md`. The full README section

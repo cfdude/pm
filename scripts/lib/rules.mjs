@@ -806,7 +806,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "Each field resolves independently, most specific first: the epic's own value, else its lane's,",
     "else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).",
     "Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own",
-    "through `update-epic`; `profile` prints the effective values with the layer each came from",
+    "through `add-epic`, `add-many` or `update-epic`; `profile` prints the effective values with the layer each came from",
     "(pass its `--epic` flag for one epic). The engine records and emits the profile — it never",
     "dispatches an agent or checks which model ran.",
     "",
