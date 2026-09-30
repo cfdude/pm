@@ -13,7 +13,7 @@ See proposal.md, "Why". The current mechanism, as of `fc04700d`:
   nullable: true, clearNote}` in `scripts/lib/constants.mjs`. It gives `--clear review-mode` for
   free, but it is `update-epic` only, so `add-epic` and `add-many` cannot set it at creation.
 - `rulesBlock(tracker, reviewMode, …)` emits `## Review mode` with `Current mode: **<m>**.`. The
-  managed-rules fixtures in `scripts/test/fixtures/rules-0.26.0-*.txt` and the assertion tests pin
+  managed-rules fixtures in `scripts/test/fixtures/rules-0.26.0-*.txt` (historical upgrade inputs, left unchanged) and the assertion tests pin
   that line.
 - `activity-log.mjs` emits a `review-mode` event when `epic.reviewMode` or `state.reviewMode`
   changes.
@@ -55,11 +55,11 @@ Starting call-site list, from
 
 ### D1. Storage: reuse the two review keys and add three optional keys
 
-| Layer | review | model | notifications |
+| Layer | review | model | verbosity |
 |---|---|---|---|
-| project | `state.reviewMode` (existing) | `state.executionProfile.model` | `state.executionProfile.notifications` |
-| lane | `state.laneProfiles[<lane>].review` | `state.laneProfiles[<lane>].model` | `state.laneProfiles[<lane>].notifications` |
-| epic | `epic.reviewMode` (existing) | `epic.model` | `epic.notifications` |
+| project | `state.reviewMode` (existing) | `state.executionProfile.model` | `state.executionProfile.verbosity` |
+| lane | `state.laneProfiles[<lane>].review` | `state.laneProfiles[<lane>].model` | `state.laneProfiles[<lane>].verbosity` |
+| epic | `epic.reviewMode` (existing) | `epic.model` | `epic.verbosity` |
 
 `model` is `{implement?: {model, effort?}, test?: …, review?: …}`.
 
@@ -75,7 +75,7 @@ project's `reviewMode` and the lane's `review` is contained in one module. Alter
 
 ```
 { review: {value, source, ignored?},
-  notifications: {…},
+  verbosity: {…},
   model: { implement: {value, source, ignored?}, … } }
 ```
 
@@ -103,13 +103,13 @@ a clear", is rewritten, because there is no longer a guard.
 
 | Verb | Flags | Notes |
 |---|---|---|
-| `set-profile` | `--lane <lane>`, `--review <m>`, `--model <role>=<model>[:<effort>]` (repeatable), `--notifications <n>`, `--unset <field>` (repeatable) | Refuses a call that names no operation, as `set-lane-routing` does. Refuses the same field being set and unset in one call. The project `--review` writes `state.reviewMode`. |
+| `set-profile` | `--lane <lane>`, `--review <m>`, `--model <role>=<model>[:<effort>]` (repeatable), `--verbosity <n>`, `--unset <field>` (repeatable) | Refuses a call that names no operation, as `set-lane-routing` does. Refuses the same field being set and unset in one call. The project `--review` writes `state.reviewMode`. |
 | `profile` | `--epic <id>`, `--lane <lane>` (mutually exclusive) | Read-only. It is not in the mutating verbs' `--force` set. |
-| `add-epic`, `add-many`, `update-epic` | `--review-mode` (existing row, widened to all three), `--model` (repeatable), `--notifications` | New `EPIC_FLAGS` rows. The `add-many` batch keys follow from the rows. |
-| `update-epic` | `--clear review-mode`, `--clear notifications`, `--clear model`, `--clear-model <role>` (repeatable) | `nullable: true` on the rows gives `--clear`, and `--clear-model` is a dedicated flag. |
+| `add-epic`, `add-many`, `update-epic` | `--review-mode` (existing row, widened to all three), `--model` (repeatable), `--verbosity` | New `EPIC_FLAGS` rows. The `add-many` batch keys follow from the rows. |
+| `update-epic` | `--clear review-mode`, `--clear verbosity`, `--clear model`, `--clear-model <role>` (repeatable) | `nullable: true` on the rows gives `--clear`, and `--clear-model` is a dedicated flag. |
 | `set-review-mode` | unchanged | Its doc names `set-profile --unset review` as its inverse. |
 
-`<field>` in `--unset` is `review | notifications | model | model:<role>`. The `=` and `:` separators
+`<field>` in `--unset` is `review | verbosity | model | model:<role>`. The `=` and `:` separators
 are parsed by one shared parser, used by `set-profile` and the epic verbs alike.
 
 Every set in this surface has a shipped inverse. The two unshipped inverses:
@@ -127,11 +127,13 @@ Every set in this surface has a shipped inverse. The two unshipped inverses:
   - one line per lane override;
   - the resolution order;
   - the dispatch instruction;
-  - the notification rule;
+  - the verbosity rule;
   - the unchanged `Current mode: **<review>**.` line.
 
-  The 0.26.0 fixtures compare named sections, so the heading change is covered by updating the
-  fixtures in the same commit (task 3.2).
+  The `rules-0.26.0-*.txt` fixtures are historical upgrade inputs and stay unchanged. A
+  current-version fixture pins the new section instead, added in the same commit (task 4.1). The
+  managed-rules surface is functional-bucket subject, so that commit needs
+  `node scripts/test/certify.mjs functional` (task 4.1).
 - **`writeRules` refresh.** `set-profile` refreshes the block the same way `set-review-mode` does.
   Epic-layer writes do not refresh it, because the block shows project and lane values only.
   `rules --epic` is the epic view.
@@ -146,7 +148,7 @@ Every set in this surface has a shipped inverse. The two unshipped inverses:
 Every new key is optional, and every absent key resolves to the pre-0.51.0 behaviour:
 
 - review falls back to `standard`;
-- notifications fall back to `quiet`, which is today's implicit default of one completion report;
+- verbosity falls back to `quiet`, which is today's implicit default of one completion report;
 - model falls back to no directive.
 
 An existing `epic.reviewMode` that was escalated keeps its meaning. It was at or above the dial when

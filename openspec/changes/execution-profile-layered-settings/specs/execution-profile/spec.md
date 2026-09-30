@@ -17,7 +17,7 @@ An execution profile SHALL hold at most three fields.
   - `model` is one of `fable | opus | sonnet | haiku`. Each name means that family's latest
     release, and `fable` is the top tier for the hardest and longest tasks.
   - `effort` is one of `low | medium | high | xhigh | max | ultracode`.
-- `notifications`: one of `quiet | verbose`.
+- `verbosity`: one of `quiet | verbose`.
 
 Each list SHALL be declared once in the engine, and every verb that accepts or reports the field
 SHALL read it from there.
@@ -48,10 +48,10 @@ accepted values. Every refusal exits non-zero and writes nothing.
 - **WHEN** the agent runs `update-epic <id> --model review=opus`
 - **THEN** the command exits non-zero naming the accepted efforts, and nothing is written
 
-#### Scenario: An unknown model, role, effort or notification level is refused
+#### Scenario: An unknown model, role, effort or verbosity level is refused
 
 - **WHEN** the agent passes `--model deploy=opus:medium`, `--model implement=gpt:high`,
-  `--model implement=opus:huge`, or `--notifications loud`
+  `--model implement=opus:huge`, or `--verbosity loud`
 - **THEN** each exits non-zero naming the offending value and the accepted list, and nothing is
   written
 
@@ -65,7 +65,7 @@ A profile field SHALL be settable at three layers:
   lanes. Any other lane SHALL be refused.
 - **Epic.** Written by `add-epic`, `add-many` (as batch keys) and `update-epic` through
   `--review-mode`, `--model <role>=<model>[:<effort>]` (repeatable) and
-  `--notifications <level>`.
+  `--verbosity <level>`.
 
 A detour registered as an epic SHALL resolve from its own epic record. It SHALL NOT inherit any
 field from the epic it paused. A minimal detour is a log line, not an epic, and has no profile.
@@ -79,7 +79,7 @@ Setting one role of `model` SHALL leave the layer's other roles unchanged.
 
 #### Scenario: add-many accepts the same fields as batch keys
 
-- **WHEN** an `add-many` batch entry carries `model` and `notifications` keys with valid values
+- **WHEN** an `add-many` batch entry carries `model` and `verbosity` keys with valid values
 - **THEN** the created epic records them exactly as `add-epic` would, and an invalid value refuses
   the whole batch with nothing written
 
@@ -135,9 +135,9 @@ that layer. Resolution falls through it, and the read verb names the value it ig
 #### Scenario: An epic overrides only review
 
 - **WHEN** the project sets `review: standard`, `model.implement: opus/medium` and
-  `notifications: quiet`, and epic `e` sets only `review: thorough`
+  `verbosity: quiet`, and epic `e` sets only `review: thorough`
 - **THEN** `e` resolves `review: thorough` (epic), `model.implement: opus/medium` (project) and
-  `notifications: quiet` (project)
+  `verbosity: quiet` (project)
 
 #### Scenario: A lane value sits between project and epic
 
@@ -160,13 +160,13 @@ that layer. Resolution falls through it, and the read verb names the value it ig
 
 - **WHEN** a state file written before this capability, holding no profile keys at any layer, is
   resolved for any epic
-- **THEN** `review` resolves to `standard`, `notifications` to `quiet`, and each `model` role to
+- **THEN** `review` resolves to `standard`, `verbosity` to `quiet`, and each `model` role to
   "no model directive", all with source `default`, and the file loads with no migration
 
 #### Scenario: A stored invalid value falls through
 
-- **WHEN** an epic's `notifications` field holds `loud` in `state.json` and the lane sets `verbose`
-- **THEN** the epic resolves `notifications: verbose` from `lane:<lane>`, and `profile --epic <id>`
+- **WHEN** an epic's `verbosity` field holds `loud` in `state.json` and the lane sets `verbose`
+- **THEN** the epic resolves `verbosity: verbose` from `lane:<lane>`, and `profile --epic <id>`
   names `loud` as an ignored epic-layer value
 
 ### Requirement: Every set has an inverse at every layer
@@ -175,8 +175,8 @@ Each field SHALL be clearable at each layer it can be set, and clearing SHALL ma
 through to the next layer.
 
 - **Project and lane layers.** `set-profile [--lane <lane>] --unset <field>`, repeatable. `<field>`
-  is `review`, `notifications`, `model` (every role) or `model:<role>` (one role).
-- **Epic layer.** `update-epic <id> --clear review-mode`, `--clear notifications`, `--clear model`
+  is `review`, `verbosity`, `model` (every role) or `model:<role>` (one role).
+- **Epic layer.** `update-epic <id> --clear review-mode`, `--clear verbosity`, `--clear model`
   (every role) and `--clear-model <role>` (repeatable).
 - **The shorthand.** `set-review-mode` ships no inverse of its own. Its inverse is
   `set-profile --unset review`, and `commands/review-mode.md` SHALL name it.
@@ -204,7 +204,7 @@ nothing, and say that it was already unset.
 
 #### Scenario: Unsetting what is not set writes nothing
 
-- **WHEN** the agent runs `set-profile --unset notifications` on a project with no notifications set
+- **WHEN** the agent runs `set-profile --unset verbosity` on a project with no verbosity set
 - **THEN** the command exits zero, reports the field was already unset, and `state.json` is
   byte-identical
 
@@ -243,13 +243,15 @@ model for any agent at run time. Emission SHALL reach the agent through surfaces
   - the instruction to resolve the active epic's profile before dispatching a job, and to use the
     resolved `{model, effort}` for that job's role where the platform supports it (and to say so
     where it does not);
-  - the notification rule: `quiet` means one completion message per epic, `verbose` means a message
+  - the verbosity rule: `quiet` means one completion message per epic, `verbose` means a message
     at each phase transition and gate.
 
   The existing line `Current mode: **<review>**.` SHALL remain, carrying the resolved project
   `review`.
 - **`rules --epic <id>`** emits the same section with that epic's effective values.
-- **The session briefing** names the active epic's effective profile, one field per item.
+- **The session briefing** names the active epic's effective profile: one line per field, such as
+  `review: thorough (epic)`, plus a `model:` line only for each role that resolves to something
+  other than the default.
 - **The `/pm:init` instructions** tell the agent to ASK the user for the project profile before
   writing it. They recommend `opus` with `medium` effort for every role, and name `sonnet` for
   `implement` and `haiku` for `test` as the cheaper alternative. The user's choice is recorded with

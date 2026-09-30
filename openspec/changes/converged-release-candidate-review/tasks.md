@@ -47,7 +47,9 @@ These rules bind every section below.
 
 ## 2. Emission
 
-- [ ] 2.1 TDD (UNIT): `rulesBlock` emits a "Release candidate" section naming the skill, the
+- [ ] 2.1 **Shared chokepoint.** `execution-profile-layered-settings` task 4.1 (rulesBlock, rules
+      fixtures, `commands/review-mode.md`) lands FIRST. This task rebases on it and does not start
+      until that commit is in. TDD (UNIT): `rulesBlock` emits a "Release candidate" section naming the skill, the
       budget-is-the-maximum rule, the one-round cap with Critical-only reopen, and the
       same-range-per-member recording rule. Update the rules fixtures and managed-rules assertions in
       the same commit. Cover "The rules block points to the procedure".
@@ -58,8 +60,10 @@ These rules bind every section below.
 
 - [ ] 3.1 TDD (UNIT): `release show <id>` prints the derived "candidate review" line (design D3). Cover
       "Converged members", "A member with a divergent head is named" and "A member with no verdict
-      is named", plus a release with no members printing no line. Verify: the store is unchanged
-      after the read.
+      is named", "A withdrawn Gate 2 is named as missing" and "Archived and unbuilt members are not
+      candidate members", plus a release with no candidate members printing no line. Candidate
+      members are the release members that are not archived and have at least one attributed commit
+      in `<base>..<head>`. Verify: the store is unchanged after the read.
 - [ ] 3.2 TDD (FUNCTIONAL plus assertion twin): "A verdict recorded before a fix is stale". This uses
       the real git in a temp repo: attribute two commits, record Gate 2 at the first head, attribute
       a fix commit descending from it, and assert the verdict renders stale and a `delivered` archive
@@ -89,9 +93,9 @@ These rules bind every section below.
       `commit-verification-5.2.txt`.
 - [ ] 5.3 **Attribute every commit.** Run
       `node scripts/conductor.mjs update-epic converged-release-candidate-review --attribute-commit <sha>`
-      at each commit, including the proposal commit. Never attribute the archive move (8.3). Verify
+      at each commit, including the proposal commit. Never attribute the archive move (8.4). Verify
       that the attribution array lists the commits in landing order.
-- [ ] 5.4 **Lifecycle marker.** 8.2 and 8.3 carry `<!-- pm:lifecycle -->` on their task lines. Verify:
+- [ ] 5.4 **Lifecycle marker.** 8.3 and 8.4 carry `<!-- pm:lifecycle -->` on their task lines. Verify:
       `rg -n "pm:lifecycle" openspec/changes/converged-release-candidate-review/tasks.md`.
 - [ ] 5.5 **Dogfood it.** Run 0.51.0 itself through this procedure, as the first candidate. Record the
       tokens spent reviewing and building against the `certification-record-redesign` baseline
@@ -106,8 +110,10 @@ These rules bind every section below.
 - [ ] 6.1 **Gate 2** via the converged 0.51.0 candidate review (this procedure, by construction). Fix
       Critical and Important findings. Record the verdict with
       `record-gate-review converged-release-candidate-review --gate 2 --verdict pass --base-sha <rc base> --head-sha <rc head> --reviewer "<identity>"`,
-      at the same range as every other 0.51.0 member. Verify: `release show 0.51.0` reports the
-      candidate review converged.
+      at the same range as every other 0.51.0 CANDIDATE member (release members that are not
+      archived and have an attributed commit in `<rc base>..<rc head>`). Archived and unbuilt
+      members are not recorded. Verify: `release show 0.51.0` reports the candidate review converged
+      over its candidate members, each of which has a current, non-withdrawn Gate 2.
 
 ## 7. Docs (after Gate 2 only)
 
@@ -120,8 +126,13 @@ These rules bind every section below.
 
 - [ ] 8.1 Integration: the full suite passes, the functional and sweeps certify runs pass, and
       `openspec validate converged-release-candidate-review --strict` passes.
-- [ ] 8.2 <!-- pm:lifecycle --> **Disposition.**
+- [ ] 8.2 **Re-record Gate 2 after docs.** Once the docs commits (7.1, 7.2) have landed and been
+      attributed, re-record Gate 2 at the post-docs head:
+      `record-gate-review converged-release-candidate-review --gate 2 --verdict pass --base-sha <rc base> --head-sha <post-docs head> --reviewer "<identity>"`.
+      Re-record, never withdraw. Verify: the epic's Gate 2 renders as a pass, not stale, so the
+      `delivered` archive in 8.3 is not refused.
+- [ ] 8.3 <!-- pm:lifecycle --> **Disposition.**
       `update-epic converged-release-candidate-review --status archived --outcome delivered --reason "<why>" --no-deferrals`,
       or `--deferral` / `--declined-deferral` for anything held back. Run `/pm:status`.
-- [ ] 8.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive converged-release-candidate-review`. The
+- [ ] 8.4 <!-- pm:lifecycle --> **Archive.** `/opsx:archive converged-release-candidate-review`. The
       archive move is NOT attributed.

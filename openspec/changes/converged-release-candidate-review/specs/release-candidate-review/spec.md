@@ -15,7 +15,8 @@ an instruction to the agent. The procedure SHALL state six steps, in this order:
 
 1. **Batch by area.** Work items that touch the same component go to ONE sub-agent.
 2. **One integration branch.** Each worktree branch merges into one candidate branch, `rc/<releaseId>`,
-   cut from the release's target branch. The cut point is the review's base.
+   cut from `dev` by default. When the release's `--target` is set and names an existing branch, the
+   candidate is cut from that branch instead. The cut point is the review's base.
 3. **One converged review** of `<base>..<candidate head>`, at the budget the next requirement
    defines, capped at one round.
 4. **Route failures back.** A finding goes back to the sub-agent that owns the code. The fix is made
@@ -48,10 +49,23 @@ epic, as resolved by the execution profile, and SHALL be the HIGHEST of them:
 
 A candidate holding one `thorough` member SHALL be reviewed at `thorough`.
 
+Only CANDIDATE MEMBERS count toward the maximum (see the next requirement for the definition).
+
+When the candidate members resolve to DIFFERENT `review` levels, the procedure SHALL SURFACE the
+mismatch, naming each member with its level, and SHALL recommend splitting the candidate by level so
+a trivial member is not reviewed at `thorough`. It recommends only. The maximum remains the budget
+unless the agent splits the candidate.
+
 #### Scenario: One thorough member raises the whole candidate
 
 - **WHEN** a candidate's members resolve to `standard`, `standard` and `thorough`
 - **THEN** the procedure directs two independent reviewers over the candidate
+
+#### Scenario: Mixed levels are surfaced with a split recommendation
+
+- **WHEN** a candidate's members resolve to `standard` (`a`) and `thorough` (`b`)
+- **THEN** the procedure names `a: standard` and `b: thorough`, recommends splitting the candidate by
+  level, and still directs two reviewers if the candidate is not split
 
 #### Scenario: Every member resolves to off
 
@@ -82,10 +96,15 @@ The procedure SHALL classify each finding as Critical, Important or Minor, and S
 - **THEN** the procedure directs a check scoped to that fix's diff, and not a second full review of
   `<base>..<head>`
 
-### Requirement: One converged verdict is recorded as every member's Gate 2 at the same range
+### Requirement: One converged verdict is recorded as every candidate member's Gate 2 at the same range
+
+A release's members are the epics that carry the release. The CANDIDATE MEMBERS are the subset of
+those release members that are NOT archived AND have at least one attributed commit in
+`<base>..<head>`. Archived epics and epics with no built work in the range are excluded from the
+Gate 2 recording loop, from the `release show` candidate line and from the reviewer-budget maximum.
 
 After the last fix has merged into the candidate, the procedure SHALL direct the agent to record the
-converged verdict once PER MEMBER epic with the existing verb, using the SAME range for every member:
+converged verdict once PER CANDIDATE MEMBER epic with the existing verb, using the SAME range for every member:
 
 `record-gate-review <memberId> --gate 2 --verdict pass|fail --base-sha <base> --head-sha <candidate head> --reviewer "<identity>"`
 
@@ -105,6 +124,13 @@ apply to each per-member record unchanged.
 - **THEN** `a` and `b` each carry a passing Gate 2 with `baseSha: B` and `headSha: H`, and each
   renders as a pass because `H` reaches all of its attributed commits
 
+#### Scenario: Archived and unbuilt members are not candidate members
+
+- **WHEN** release `R` has members `a` (built in the range), `b` (archived) and `c` (no attributed
+  commit in `<base>..<head>`)
+- **THEN** only `a` is a candidate member: the procedure records Gate 2 for `a` alone, `b` and `c`
+  do not raise the budget, and `release show R` does not report `b` or `c` as missing a verdict
+
 #### Scenario: A verdict recorded before a fix is stale
 
 - **WHEN** member `a`'s verdict is recorded at head `H`, and then a fix commit `F` descending from `H`
@@ -114,14 +140,15 @@ apply to each per-member record unchanged.
 
 ### Requirement: The release read-back reports whether its members' Gate 2 converged
 
-`release show <id>` SHALL print a derived "candidate review" line, computed from the members' existing
-Gate 2 records with nothing new stored.
+`release show <id>` SHALL print a derived "candidate review" line, computed from the CANDIDATE MEMBERS'
+existing Gate 2 records with nothing new stored.
 
-- When every member carries a Gate 2 verdict at one shared `headSha`, it reports that the candidate
+- When every candidate member carries a Gate 2 verdict at one shared `headSha`, it reports that the candidate
   review converged at that sha.
-- Otherwise it names each member with no Gate 2 verdict, and, where the recorded heads are not all
+- Otherwise it names each candidate member with no Gate 2 verdict, and, where the recorded heads are not all
   equal, lists every distinct `headSha` with the members that hold it.
-- A release with no members reports no candidate line.
+- A Gate 2 that has been withdrawn counts as no verdict, and its member is named as missing one.
+- A release with no candidate members reports no candidate line.
 
 `release show` SHALL remain read-only.
 
@@ -136,6 +163,11 @@ Gate 2 records with nothing new stored.
 - **WHEN** `a` carries Gate 2 at `H` and `b` carries Gate 2 at `H2`
 - **THEN** the output reports the candidate review as not converged and lists `H` with `a` and `H2`
   with `b`
+
+#### Scenario: A withdrawn Gate 2 is named as missing
+
+- **WHEN** `a` carries Gate 2 at `H` and `b`'s Gate 2 has been withdrawn
+- **THEN** the output names `b` as missing a Gate 2 verdict and does not report convergence
 
 #### Scenario: A member with no verdict is named
 

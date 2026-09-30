@@ -14,15 +14,16 @@ These rules bind every section below.
   - **FILE** (`scripts/test/assert/`): bytes on disk. `CLAUDE.md` after `set-profile` refreshes the
     block, and `state.json` being byte-identical after a refusal or a no-op unset.
   - **FUNCTIONAL** (`scripts/test/functional/` plus an assertion twin of the same id): only where
-    real git or the process boundary is the subject. This change needs none unless 5.1 finds a
-    git-backed caller.
+    real git or the process boundary is the subject. This change needs the functional certify
+    (`node scripts/test/certify.mjs functional`) because it changes the managed-rules surface
+    (4.1), and may add a functional test if 1.3 finds a git-backed caller.
 - **Commits.**
   - One conventional commit per task.
   - `git add` with explicit paths. Stage exactly, run `node scripts/test/certify.mjs functional|sweeps`
     when the hook names a bucket, then run a plain `git commit`.
   - Never `--no-verify`.
-  - After each commit, run `git show --stat <sha>` (5.2) and
-    `update-epic execution-profile-layered-settings --attribute-commit <sha>` (5.4).
+  - After each commit, run `git show --stat <sha>` (5.1) and
+    `update-epic execution-profile-layered-settings --attribute-commit <sha>` (5.3).
 
 ## 0. Before any code
 
@@ -43,12 +44,27 @@ These rules bind every section below.
 ## 1. Closed lists and the pair parser
 
 - [ ] 1.1 TDD (UNIT): add `KNOWN_MODELS`, `KNOWN_EFFORTS`, `MODELS_WITHOUT_EFFORT`,
-      `KNOWN_JOB_ROLES` and `KNOWN_NOTIFICATION_LEVELS` to `scripts/lib/constants.mjs`, one
+      `KNOWN_JOB_ROLES` and `KNOWN_VERBOSITY_LEVELS` to `scripts/lib/constants.mjs`, one
       declaration each. RED: a test that imports them and asserts the exact lists from the spec.
 - [ ] 1.2 TDD (UNIT): a shared parser for `<role>=<model>[:<effort>]` and
       `<field>` / `model:<role>`. Cover every "refused" scenario in "A profile holds three fields…"
       (haiku with an effort, a non-haiku model with none, an unknown role, model, effort or level).
       Verify: each refusal message names the accepted list.
+
+- [ ] 1.3 **Call-site completeness sweep, including inverses.**
+      - Derive every caller mechanically with
+        `rg -n "currentReviewMode|globalReviewMode|REVIEW_MODE_RANK|KNOWN_REVIEW_MODES|reviewMode|executionProfile|laneProfiles|\.verbosity\b|autonomy\.notifications|epic\.model" scripts commands skills`,
+        including tests. For each site, state whether the most-specific-wins rule and the new fields
+        hold there, and justify each omission. The de-escalation guard removal must reach every site
+        that repeats "escalate only": the design's Context table is the starting list, not the final
+        one.
+      - **DATA references:** none of the new fields holds another record's id. The lane KEY in
+        `laneProfiles` names a lane, which is an engine constant, not a record. Say so in the sweep
+        file.
+      - **Inverses:** confirm each set has its shipped unset, per the spec requirement "Every set has
+        an inverse at every layer". The unshipped ones are `set-review-mode` (covered by
+        `set-profile --unset review`) and the init recommendation (text, not a write). Justify both.
+      - Save the result as `call-site-sweep-1.3.txt`.
 
 ## 2. The resolver
 
@@ -59,7 +75,7 @@ These rules bind every section below.
       through with `ignored` set.
 - [ ] 2.2 TDD (UNIT): make `currentReviewMode(epicId)` an adapter over the resolver. RED: an epic
       whose `reviewMode` is BELOW the project resolves to its own value (it resolves to the max
-      today). Update the existing unit tests that pin max-resolution (5.1 lists them) in the same
+      today). Update the existing unit tests that pin max-resolution (1.3 lists them) in the same
       commit, and cite this spec's "An epic lowers review below the project" scenario in each.
 - [ ] 2.3 TDD (UNIT): "A detour epic does not inherit from the epic it paused". Push a detour over an
       in-memory store and resolve it. Verify: the parent's `thorough` never appears in its profile.
@@ -80,7 +96,7 @@ These rules bind every section below.
       writes nothing (UNIT: the store is unchanged).
 - [ ] 3.3 TDD (UNIT): epic-layer flags. Widen the `review-mode` `EPIC_FLAGS` row to
       `add-epic`/`add-many`/`update-epic`, and add rows for `model` (repeatable, parsed by 1.2) and
-      `notifications`, all `nullable`. Add `--clear-model <role>`. REMOVE the de-escalation refusal in
+      `verbosity`, all `nullable`. Add `--clear-model <role>`. REMOVE the de-escalation refusal in
       `update-epic.mjs`, and rewrite the row's `clearNote` (design D3). Cover "An epic override set at
       creation", "add-many accepts the same fields as batch keys", "Setting one model role leaves the
       others" and "Clearing one epic model role".
@@ -101,9 +117,13 @@ These rules bind every section below.
 
 - [ ] 4.1 TDD (UNIT): `rulesBlock` emits `## Execution profile` (design D5). Include the project
       values, the lane overrides, the resolution order, the dispatch instruction (apply
-      `{model, effort}` per role where supported, and say so where not), the notification rule, and
-      the unchanged `Current mode: **<review>**.` line. Update the `rules-0.26.0-*.txt` fixtures and
-      the managed-rules assertions in the same commit. Cover "The rules block names lane overrides".
+      `{model, effort}` per role where supported, and say so where not), the verbosity rule, and
+      the unchanged `Current mode: **<review>**.` line. Leave the `rules-0.26.0-*.txt` fixtures
+      unchanged (historical upgrade inputs), add a current-version rules fixture that pins the new
+      section, and update the managed-rules assertions, in the same commit. Stage exactly, run
+      `node scripts/test/certify.mjs functional`, then commit plainly. Cover "The rules block names
+      lane overrides". **This is the shared chokepoint with `converged-release-candidate-review`
+      2.1: task 4.1 lands FIRST, and converged 2.1 rebases on it.**
 - [ ] 4.2 TDD (UNIT): `rules --epic <id>` emits the epic's effective values with sources. Cover
       "rules --epic emits the effective value".
 - [ ] 4.3 TDD (FILE): `set-profile` refreshes `CLAUDE.md`, and the block on disk carries the new
@@ -114,39 +134,26 @@ These rules bind every section below.
       `set-profile`). TDD (UNIT): "init writes no model on its own". A fresh init's state holds no
       `executionProfile.model`. Update `skills/conductor/SKILL.md` (the verb summary near "review
       mode", and the state schema entries for `executionProfile`, `laneProfiles`, `epic.model` and
-      `epic.notifications`).
+      `epic.verbosity`).
 
 ## 5. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 5.1 **Call-site completeness sweep, including inverses.**
-      - Derive every caller mechanically with
-        `rg -n "currentReviewMode|globalReviewMode|REVIEW_MODE_RANK|KNOWN_REVIEW_MODES|reviewMode|executionProfile|laneProfiles|\.notifications\b|epic\.model" scripts commands skills`,
-        including tests. For each site, state whether the most-specific-wins rule and the new fields
-        hold there, and justify each omission. The de-escalation guard removal must reach every site
-        that repeats "escalate only": the design's Context table is the starting list, not the final
-        one.
-      - **DATA references:** none of the new fields holds another record's id. The lane KEY in
-        `laneProfiles` names a lane, which is an engine constant, not a record. Say so in the sweep
-        file.
-      - **Inverses:** confirm each set has its shipped unset, per the spec requirement "Every set has
-        an inverse at every layer". The unshipped ones are `set-review-mode` (covered by
-        `set-profile --unset review`) and the init recommendation (text, not a write). Justify both.
-      - Save the result as `call-site-sweep-5.1.txt`.
-- [ ] 5.2 **Verify each task against its commit.** For every task above, run
+- [ ] 5.1 **Verify each task against its commit.** For every task above, run
       `git show --stat <that task's sha>` and assert every file the task claims appears in THAT commit.
       A missing file fails the task even when the working tree holds the edit. Save the result as
-      `commit-verification-5.2.txt`.
-- [ ] 5.3 **Behaviour-change inventory (design D6).** List every epic in this repo's
+      `commit-verification-5.1.txt`.
+- [ ] 5.2 **Behaviour-change inventory (design D6).** List every epic in this repo's
       `.conductor/state.json` whose `reviewMode` is below `state.reviewMode`. Those resolve lower
       after this change. Report them in the closeout. Do not transform them.
-- [ ] 5.4 **Attribute every commit.** At each commit, run
+- [ ] 5.3 **Attribute every commit.** At each commit, run
       `node scripts/conductor.mjs update-epic execution-profile-layered-settings --attribute-commit <sha>`,
-      including the proposal commit. Do NOT attribute the archive move (8.3). Verify: the epic's
-      attribution array equals the implementation commits, in landing order.
-- [ ] 5.5 **Lifecycle marker.** The archive task 8.3 carries `<!-- pm:lifecycle -->` on its task line,
-      and so does the disposition task 8.2. Verify:
+      including the proposal commit and the Gate 1 fix commit, which are attributed already. Do NOT
+      attribute the archive move (8.4). Verify: the attribution array is the proposal commit, the
+      Gate 1 fix commit, then the implementation commits, in landing order.
+- [ ] 5.4 **Lifecycle marker.** The archive task 8.4 carries `<!-- pm:lifecycle -->` on its task line,
+      and so does the disposition task 8.3. Verify:
       `rg -n "pm:lifecycle" openspec/changes/execution-profile-layered-settings/tasks.md` lists both.
-- [ ] 5.6 **Route what the work taught you.**
+- [ ] 5.5 **Route what the work taught you.**
       - Name each lesson as a practice (register an epic), tooling friction (`/pm:feedback`) or a
         process failure (`docs/lessons/`), with evidence.
       - "None" is a claim, and it must say what was looked at.
@@ -176,9 +183,14 @@ These rules bind every section below.
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`, plus
       `node scripts/test/certify.mjs functional` and `… sweeps`), and
       `openspec validate execution-profile-layered-settings --strict` passes.
-- [ ] 8.2 <!-- pm:lifecycle --> **Disposition.**
+- [ ] 8.2 **Re-record Gate 2 after docs.** Once the docs commits (7.1, 7.2) have landed and been
+      attributed, re-record Gate 2 at the post-docs head:
+      `record-gate-review execution-profile-layered-settings --gate 2 --verdict pass --base-sha <a> --head-sha <post-docs head> --reviewer "<identity>"`.
+      Re-record, never withdraw. Verify: the epic's Gate 2 renders as a pass, not stale, so the
+      `delivered` archive in 8.3 is not refused.
+- [ ] 8.3 <!-- pm:lifecycle --> **Disposition.**
       `update-epic execution-profile-layered-settings --status archived --outcome delivered --reason "<why>" --no-deferrals`,
       or `--deferral` / `--declined-deferral` for anything held back, such as `profile --json` from
       design Open Questions. Run `/pm:status`.
-- [ ] 8.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive execution-profile-layered-settings`. The
-      archive-move commit is NOT attributed (5.4).
+- [ ] 8.4 <!-- pm:lifecycle --> **Archive.** `/opsx:archive execution-profile-layered-settings`. The
+      archive-move commit is NOT attributed (5.3).

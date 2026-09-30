@@ -14,7 +14,7 @@ inherited it because the only lever was the whole repo. The inverse case was not
 all: a financial app that runs `thorough` everywhere cannot mark a non-critical component
 `standard`, because the epic override refuses to go below the dial.
 
-Rob, 2026-09-29: review thoroughness, model and notification verbosity must cascade the way Claude
+Rob, 2026-09-29: review thoroughness, model and verbosity must cascade the way Claude
 Code settings do. Project default, overridden per lane, overridden per epic.
 
 ## What Changes
@@ -25,7 +25,7 @@ Code settings do. Project default, overridden per lane, overridden per epic.
     closed list `fable | opus | sonnet | haiku`, each meaning "latest". Effort is
     `low | medium | high | xhigh | max | ultracode`. `haiku` takes no effort, and an effort given
     with `haiku` is refused.
-  - `notifications`: `quiet | verbose`. `quiet` means one completion message.
+  - `verbosity`: `quiet | verbose`. `quiet` means one completion message.
 - **Three layers: project, lane, epic.** A detour is an epic and resolves from its own record. It
   does not inherit from the epic it paused. There is no separate detour layer.
 - **Configure top-down.**
@@ -46,9 +46,9 @@ Code settings do. Project default, overridden per lane, overridden per epic.
   - `set-profile [--lane <lane>] …` sets and unsets at the project or lane layer.
   - `profile [--epic <id> | --lane <lane>]` reads the effective profile and names each value's
     source layer.
-- **New epic flags** on `add-epic`, `add-many` and `update-epic`: `--model`, `--notifications`,
+- **New epic flags** on `add-epic`, `add-many` and `update-epic`: `--model`, `--verbosity`,
   plus the existing `--review-mode`. Their inverses are `--clear review-mode`,
-  `--clear notifications`, `--clear model` and `--clear-model <role>`.
+  `--clear verbosity`, `--clear model` and `--clear-model <role>`.
 - `set-review-mode` stays as shorthand for the project-layer `review`. Its inverse is
   `set-profile --unset review`.
 - **Emission.**
@@ -59,7 +59,7 @@ Code settings do. Project default, overridden per lane, overridden per epic.
 - **The engine only records, resolves and emits.** It never dispatches an agent and never picks a
   model at run time. pm is an instruction layer.
 - **The schema change is additive.** Every new key is optional, and an absent key resolves to
-  today's behaviour: `review` falls back to `standard`, `notifications` to `quiet`, and `model` to
+  today's behaviour: `review` falls back to `standard`, `verbosity` to `quiet`, and `model` to
   no model directive. No `MIGRATIONS` entry.
 
 ## Capabilities
@@ -95,8 +95,8 @@ spec: `rg -n -i "escalat" openspec/specs` returns nothing.
   - README and the Mintlify site after Gate 2.
 - **State.**
   - `state.reviewMode` is kept as the project `review`.
-  - New optional `state.executionProfile` for the project `model` and `notifications`.
+  - New optional `state.executionProfile` for the project `model` and `verbosity`.
   - New optional `state.laneProfiles`.
-  - New optional `epic.model` and `epic.notifications`. `epic.reviewMode` is kept.
+  - New optional `epic.model` and `epic.verbosity`. `epic.reviewMode` is kept.
 - **Consumers.** `converged-release-candidate-review` reads the effective `review` to size its
   reviewer budget.
