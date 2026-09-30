@@ -138,22 +138,22 @@ These rules bind every section below.
 
 ## 5. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 5.1 **Verify each task against its commit.** For every task above, run
+- [x] 5.1 **Verify each task against its commit.** For every task above, run
       `git show --stat <that task's sha>` and assert every file the task claims appears in THAT commit.
       A missing file fails the task even when the working tree holds the edit. Save the result as
       `commit-verification-5.1.txt`.
-- [ ] 5.2 **Behaviour-change inventory (design D6).** List every epic in this repo's
+- [x] 5.2 **Behaviour-change inventory (design D6).** List every epic in this repo's
       `.conductor/state.json` whose `reviewMode` is below `state.reviewMode`. Those resolve lower
       after this change. Report them in the closeout. Do not transform them.
-- [ ] 5.3 **Attribute every commit.** At each commit, run
+- [x] 5.3 **Attribute every commit.** At each commit, run
       `node scripts/conductor.mjs update-epic execution-profile-layered-settings --attribute-commit <sha>`,
       including the proposal commit and the Gate 1 fix commit, which are attributed already. Do NOT
       attribute the archive move (8.4). Verify: the attribution array is the proposal commit, the
       Gate 1 fix commit, then the implementation commits, in landing order.
-- [ ] 5.4 **Lifecycle marker.** The archive task 8.4 carries `<!-- pm:lifecycle -->` on its task line,
+- [x] 5.4 **Lifecycle marker.** The archive task 8.4 carries `<!-- pm:lifecycle -->` on its task line,
       and so does the disposition task 8.3. Verify:
       `rg -n "pm:lifecycle" openspec/changes/execution-profile-layered-settings/tasks.md` lists both.
-- [ ] 5.5 **Route what the work taught you.**
+- [x] 5.5 **Route what the work taught you.**
       - Name each lesson as a practice (register an epic), tooling friction (`/pm:feedback`) or a
         process failure (`docs/lessons/`), with evidence.
       - "None" is a claim, and it must say what was looked at.
