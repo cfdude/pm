@@ -11587,6 +11587,87 @@
           "text": "lane: superpowers (routing returned none) — a shared helper plus a migration across ~8 test files"
         }
       ]
+    },
+    {
+      "id": "execution-profile-layered-settings",
+      "title": "Layered execution profile: review mode, model and notification verbosity set per project, overridable per lane, epic and detour",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "Rob, 2026-09-29 retrospective: review thoroughness (and model, and notification verbosity) must be configuration that cascades like Claude Code settings — project default, overridden per lane, per epic, per detour. Example: a financial app runs thorough project-wide but sets standard on non-critical components; a plugin runs standard and raises one risky epic to thorough; a minimal detour never gets a thorough review. Model: project default (e.g. Opus 5.5 medium) overridable per job (Sonnet 5.5 for implementation, Haiku 4.5 for running tests); coding and testing agents may be split. Notifications: project default quiet (one completion message), overridable to verbose for a critical job. The engine only records and resolves the effective setting and emits it in the instructions it already writes; it never dispatches agents (instruction layer). Evidence: 0.51.0 spent ~11M+ subagent tokens on 5 epics, ~70% on one epic's 7+ review rounds under repo-wide thorough.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-30T00:07:41.930Z",
+      "touchedAt": "2026-09-30T00:07:50.411Z",
+      "release": "0.51.0"
+    },
+    {
+      "id": "converged-release-candidate-review",
+      "title": "Converged release-candidate workflow: batch by area, one integration branch, one capped review, fixes routed back, one push",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "execution-profile-layered-settings",
+          "reason": "the review count per gate comes from the effective review mode"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob, 2026-09-29: (1) batch by area — work items on the same component go to ONE agent so code is written once and tested once; (2) worktree branches merge into one integration (release-candidate) branch; (3) ONE converged review of the candidate, capped at one round (standard = 1 reviewer, thorough = 2); only Critical reopens; Minors are logged, never re-reviewed; (4) gate failures go back to sub-agents to fix and re-merge; (5) targeted re-test — after a fix, re-run only the failed tests; the full suite runs at the candidate gate and in CI; (6) the orchestrator commits and pushes ONCE, so CI does not run heavy suites per worktree commit. Evidence: certification-record-redesign took 5 Gate 1 fix rounds + 3 Gate 2 rounds (~5.8M tokens reviewing vs ~2.0M building); the new functional trigger demands a certify on ~70/126 commits.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-30T00:07:42.809Z",
+      "touchedAt": "2026-09-30T00:07:50.411Z",
+      "release": "0.51.0"
+    },
+    {
+      "id": "lean-subagent-bootstrap",
+      "title": "A lean sub-agent startup file instead of every agent re-reading CLAUDE.md, CONTRIBUTING and the design in full",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "Every dispatched agent currently pays an estimated 40-80K tokens (unmeasured) onboarding: the global and project CLAUDE.md load automatically, and briefs told agents to read CLAUDE.md/CONTRIBUTING/design in full. ~56 agent runs in 0.51.0 so far. Design a compact agent-startup file (the rules sub-agents must follow, not the whole handbook), trim the project CLAUDE.md where it only serves the orchestrator, and point briefs at exact files. Measure startup tokens before/after on the same task.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-30T00:07:43.555Z",
+      "touchedAt": "2026-09-30T00:07:50.411Z",
+      "release": "0.51.0"
+    },
+    {
+      "id": "flaky-test-quarantine-and-targeted-rerun",
+      "title": "Stop burning tokens on flaky tests: quarantine known flakes, re-run only failed files automatically, record each occurrence",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "In 0.51.0 roughly 1 in 3 functional certifies re-ran for a known flake (emitted-invocations ENOENT — now fixed; certify-index 1.2 SIGTERM process-lifetime; G2-C1/I2 2000 ms bound under load), and agents spent tokens diagnosing each. Proposal: the runner re-runs only the failed FILES once and logs the occurrence (time, load) to a flake ledger; a test failing twice is a real failure; known flakes get an owning epic and are fixed or made load-independent; agents are told not to diagnose a ledgered flake. Also reconsider test demands per commit (see converged-release-candidate-review). Vitest (dev-only dependency, allowed) could supply rerun-failed/related-test selection — evaluate against node:test's --test-name-pattern and per-file runs before adopting.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-30T00:07:44.247Z",
+      "touchedAt": "2026-09-30T00:07:50.411Z",
+      "release": "0.51.0"
+    },
+    {
+      "id": "hook-friction-0-51",
+      "title": "Hook friction found in 0.51.0: attribution nudge on bookkeeping commits, amend refused with Twin-Unchanged, drift names one stale bucket per attempt, a release with no active epic fires the delivered check",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "(1) PostToolUse attribution nudge fires on state-only bookkeeping commits and tells the agent to attribute them to the active epic. (2) git commit --amend with Twin-Unchanged trailers is refused by commit-msg because an amend stages nothing. (3) drift names only one stale bucket per commit attempt (sweeps, then functional) — three attempts to learn both. (4) archiving the only active member of a release makes delivered-release-epic-left-open fire on the live-record tests (worked around with set-active). (5) honcho-memories.log is ignored only by a global *.log rule for most users.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-30T00:07:44.896Z",
+      "touchedAt": "2026-09-30T00:07:50.411Z",
+      "release": "0.51.0"
     }
   ],
   "detourStack": [],
@@ -11597,8 +11678,8 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1712,
-  "reviewMode": "thorough",
+  "revision": 1719,
+  "reviewMode": "standard",
   "releases": [
     {
       "id": "0.27.0",
