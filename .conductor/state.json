@@ -11599,10 +11599,11 @@
       "reconcileNeeded": false,
       "description": "Rob, 2026-09-29 retrospective: review thoroughness (and model, and notification verbosity) must be configuration that cascades like Claude Code settings — project default, overridden per lane, per epic, per detour. Example: a financial app runs thorough project-wide but sets standard on non-critical components; a plugin runs standard and raises one risky epic to thorough; a minimal detour never gets a thorough review. Model: project default (e.g. Opus 5.5 medium) overridable per job (Sonnet 5.5 for implementation, Haiku 4.5 for running tests); coding and testing agents may be split. Notifications: project default quiet (one completion message), overridable to verbose for a critical job. The engine only records and resolves the effective setting and emits it in the instructions it already writes; it never dispatches agents (instruction layer). Evidence: 0.51.0 spent ~11M+ subagent tokens on 5 epics, ~70% on one epic's 7+ review rounds under repo-wide thorough.",
       "attributedCommits": [
-        "ac9594effbd20c6508b3ca3845ed7b774a1ffaf1"
+        "ac9594effbd20c6508b3ca3845ed7b774a1ffaf1",
+        "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T03:31:57.736Z",
+      "touchedAt": "2026-09-30T03:39:06.074Z",
       "release": "0.51.0"
     },
     {
@@ -11622,10 +11623,11 @@
       "reconcileNeeded": false,
       "description": "Rob, 2026-09-29: (1) batch by area — work items on the same component go to ONE agent so code is written once and tested once; (2) worktree branches merge into one integration (release-candidate) branch; (3) ONE converged review of the candidate, capped at one round (standard = 1 reviewer, thorough = 2); only Critical reopens; Minors are logged, never re-reviewed; (4) gate failures go back to sub-agents to fix and re-merge; (5) targeted re-test — after a fix, re-run only the failed tests; the full suite runs at the candidate gate and in CI; (6) the orchestrator commits and pushes ONCE, so CI does not run heavy suites per worktree commit. Evidence: certification-record-redesign took 5 Gate 1 fix rounds + 3 Gate 2 rounds (~5.8M tokens reviewing vs ~2.0M building); the new functional trigger demands a certify on ~70/126 commits.",
       "attributedCommits": [
-        "27b697b65d490651bd051fdffec36572dabd2134"
+        "27b697b65d490651bd051fdffec36572dabd2134",
+        "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T03:34:25.074Z",
+      "touchedAt": "2026-09-30T03:39:06.925Z",
       "release": "0.51.0"
     },
     {
@@ -11670,8 +11672,15 @@
       "description": "(1) PostToolUse attribution nudge fires on state-only bookkeeping commits and tells the agent to attribute them to the active epic. (2) git commit --amend with Twin-Unchanged trailers is refused by commit-msg because an amend stages nothing. (3) drift names only one stale bucket per commit attempt (sweeps, then functional) — three attempts to learn both. (4) archiving the only active member of a release makes delivered-release-epic-left-open fire on the live-record tests (worked around with set-active). (5) honcho-memories.log is ignored only by a global *.log rule for most users.",
       "attributedCommits": [],
       "createdAt": "2026-09-30T00:07:44.896Z",
-      "touchedAt": "2026-09-30T00:07:50.411Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-09-30T03:35:45.561Z",
+      "release": "0.51.0",
+      "notes": [
+        {
+          "at": "2026-09-30T03:35:45.554Z",
+          "actor": "agent",
+          "text": "(6) PostToolUse attribution hint names the ACTIVE epic (hook-fixtures-couple-to-every-hook-step) for commits belonging to other epics — seen on ac9594ef, 27b697b6, c7e9ef16 (2026-09-29)"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -11682,7 +11691,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1721,
+  "revision": 1724,
   "reviewMode": "standard",
   "releases": [
     {
