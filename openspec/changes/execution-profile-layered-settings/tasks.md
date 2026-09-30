@@ -115,7 +115,7 @@ These rules bind every section below.
 
 ## 4. Emission
 
-- [ ] 4.1 TDD (UNIT): `rulesBlock` emits `## Execution profile` (design D5). Include the project
+- [x] 4.1 TDD (UNIT): `rulesBlock` emits `## Execution profile` (design D5). Include the project
       values, the lane overrides, the resolution order, the dispatch instruction (apply
       `{model, effort}` per role where supported, and say so where not), the verbosity rule, and
       the unchanged `Current mode: **<review>**.` line. Leave the `rules-0.26.0-*.txt` fixtures
@@ -124,12 +124,12 @@ These rules bind every section below.
       `node scripts/test/certify.mjs functional`, then commit plainly. Cover "The rules block names
       lane overrides". **This is the shared chokepoint with `converged-release-candidate-review`
       2.1: task 4.1 lands FIRST, and converged 2.1 rebases on it.**
-- [ ] 4.2 TDD (UNIT): `rules --epic <id>` emits the epic's effective values with sources. Cover
+- [x] 4.2 TDD (UNIT): `rules --epic <id>` emits the epic's effective values with sources. Cover
       "rules --epic emits the effective value".
-- [ ] 4.3 TDD (FILE): `set-profile` refreshes `CLAUDE.md`, and the block on disk carries the new
+- [x] 4.3 TDD (FILE): `set-profile` refreshes `CLAUDE.md`, and the block on disk carries the new
       project value after the verb. An epic-layer write does not rewrite the block.
-- [ ] 4.4 TDD (UNIT): the brief names the active epic's effective profile (design D5).
-- [ ] 4.5 `commands/init.md`: the ask-and-recommend step (`opus` / `medium` recommended,
+- [x] 4.4 TDD (UNIT): the brief names the active epic's effective profile (design D5).
+- [x] 4.5 `commands/init.md`: the ask-and-recommend step (`opus` / `medium` recommended,
       `sonnet` / `haiku` as the cheaper option, lane overrides offered, the answer recorded with
       `set-profile`). TDD (UNIT): "init writes no model on its own". A fresh init's state holds no
       `executionProfile.model`. Update `skills/conductor/SKILL.md` (the verb summary near "review

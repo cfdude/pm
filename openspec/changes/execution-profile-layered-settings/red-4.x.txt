@@ -1,0 +1,631 @@
+✖ 4.1: the rules block's Execution profile section is byte-pinned by the current-version fixture (0.607792ms)
+✖ 4.3: set-profile refreshes the block on disk with the new project value; an epic-layer write does not rewrite it (196.073291ms)
+✖ 4.5: init writes no model on its own, and its instructions ask the user with the recommended default (41.212208ms)
+✖ The rules block names lane overrides, the project values and the unchanged Current mode line (1.217875ms)
+✖ the rules block with no lane override says so, and a caller with no profile still shows the defaults (0.156542ms)
+✖ a stored invalid value never reaches the block (0.134833ms)
+✖ rules --epic emits the effective value with its source (3.618875ms)
+✖ rules --epic for an unknown epic falls back to the project scope (0.935ms)
+✖ the brief names the active epic's effective profile, and a model line only for a non-default role (13.968875ms)
+✔ the brief carries no profile lines when there is no active epic (1.730833ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 1
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 521.94375
+
+✖ failing tests:
+
+test at scripts/test/assert/execution-profile-emission.test.mjs:15:1
+✖ 4.1: the rules block's Execution profile section is byte-pinned by the current-version fixture (0.607792ms)
+  TypeError [Error]: profileContext is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/execution-profile-emission.test.mjs:21:65)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at scripts/test/assert/execution-profile-emission.test.mjs:26:1
+✖ 4.3: set-profile refreshes the block on disk with the new project value; an epic-layer write does not rewrite it (196.073291ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /- review: standard \(default\)/. Input:
+  
+  '# CLAUDE.md\n' +
+    '\n' +
+    '<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n' +
+    '## PM Conductor — operating rules\n' +
+    '\n' +
+    'This repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.\n' +
+    'Epics are **lane-agnostic** (openspec | superpowers | claude-code | decision | external);\n' +
+    "OpenSpec is one lane. Stories come from each epic's source (OpenSpec `tasks.md`, a Superpowers\n" +
+    'plan, or a manual list). Follow these rules:\n' +
+    '\n' +
+    '1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:\n' +
+    '   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,\n' +
+    '     then run `/pm:detour --minimal "<what>"` so it is recorded in `.conductor/detours.log`.\n' +
+    '     Then resume.\n' +
+    '   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.\n' +
+    '     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,\n' +
+    '     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with\n' +
+    '     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.\n' +
+    '     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the\n' +
+    '     transition, and it is what supplies the validation, the write-conflict guard, the\n' +
+    '     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the\n' +
+    '     two reconcile flags is REQUIRED and there is no default: whether the detour can\n' +
+    "     invalidate the paused epic's plan is a judgment, and a default makes an absent decision\n" +
+    '     look like a considered one. Say `--reconcile` unless you are certain the detour touches\n' +
+    '     nothing the paused epic depends on.\n' +
+    '2. **State of record is `.conductor/state.json`.** After any change to epics, status,\n' +
+    '   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.\n' +
+    '3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with\n' +
+    '   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,\n' +
+    '   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the\n' +
+    "   obligation survive the frame's removal. If the popped frame had\n" +
+    '   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,\n' +
+    '   then write its verdict back durably with `record-reconcile <id> --detour <detourId>\n' +
+    "   --verdict valid|invalidated --amendments none` (the reconciler's `AMENDMENTS: none`), or\n" +
+    '   one `--amendment "<line>"` per other AMENDMENTS line — this attaches\n' +
+    "   `{verdict, amendments, reconciledAt}` to the paused epic's link to that detour, instead of\n" +
+    '   the judgment only ever living in conversation. It is accepted only for a detour pushed\n' +
+    '   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is\n' +
+    '   left unanswered; `pop-detour` names every detour owed.\n' +
+    '   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a\n' +
+    '   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,\n' +
+    '   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those\n' +
+    '   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an\n' +
+    '   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing\n' +
+    '   the check is not permission; this line is the obligation and the check is only its backstop.\n' +
+    '4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho\n' +
+    '   ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside\n' +
+    '   this repo. `push-detour` prints the PUSH line for you and logs it to\n' +
+    '   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints\n' +
+    '   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is\n' +
+    '   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the\n' +
+    '   verdict. The engine formats and logs; it never calls Honcho itself.\n' +
+    '5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.\n' +
+    "6. **Roadmap as backlog** — work you intend to do but haven't proposed yet can be\n" +
+    '   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show\n' +
+    '   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a\n' +
+    '   "no change on disk" warning; `/pm:sync` flips an openspec planned epic to untriaged once\n' +
+    '   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.\n' +
+    '7. **Delegate discovery. If you do not already know the file path, do not go looking\n' +
+    "   yourself.** A subagent's transcript never enters yours — only its final report does — so\n" +
+    '   an open-ended read costs a conclusion instead of a transcript when it is delegated.\n' +
+    '   "Where is X handled", "does a spec for this already exist", "what does this epic touch",\n' +
+    '   "what did the last three changes here do": dispatch an `Explore` or `general-purpose`\n' +
+    '   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you\n' +
+    '   already know the exact file and want one value out of it.\n' +
+    '   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched\n' +
+    '   child is already told to return a fixed report and not to narrate. It binds hardest across\n' +
+    '   a hierarchy run or a multi-epic backlog, where your context survives many epics and is\n' +
+    '   therefore the scarce resource — discovery you perform inline is paid for once per epic and\n' +
+    '   never reclaimed.\n' +
+    '   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole\n' +
+    "   document — the epic-level-autonomy preflight scan, and re-reading an epic's source before\n" +
+    '   it becomes the work — the subagent reads the whole document and returns the finding. What\n' +
+    '   is forbidden is substituting a keyword grep for a full read, and that is forbidden\n' +
+    '   whoever performs it.\n' +
+    '\n' +
+    '## Getting help with pm — two channels, and which one can lie\n' +
+    '\n' +
+    '**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`\n' +
+    "(resolve `$ENGINE` the way pm's own command docs do) prints that verb's real flags, projected\n" +
+    'from its own registry — version-exact by construction. Use it before reading engine source.\n' +
+    '\n' +
+    '**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are\n' +
+    'already markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.\n' +
+    '\n' +
+    '**The site documents the LATEST release, which may be newer than the pm running here.** A flag\n' +
+    'it shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.\n' +
+    '\n' +
+    '## The gate procedure — required task items\n' +
+    '\n' +
+    "Every item below is a NUMBERED REQUIRED TASK ITEM in the change's own task list, carried\n" +
+    'into both gates. They are not review guidance and must not be restated as prose bullets:\n' +
+    'measured across one audited repository, a rule carried by a mandatory task section reached\n' +
+    '14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.\n' +
+    '\n' +
+    '1. **Call-site completeness sweep.** For every rule, guard or invariant this change introduces\n' +
+    '   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically\n' +
+    '   (`rg` for the callers), never a list typed from memory, which goes stale the moment a\n' +
+    '   caller is added. Then state where the rule holds and where it does not, and\n' +
+    '   justify each omission. A guard added at one call site while an identical sibling site is\n' +
+    '   left untouched is a FINDING, not a detail: raise it even though the unedited site never\n' +
+    '   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that\n' +
+    '   is absent from a file the diff never touched — the dominant defect class in this\n' +
+    "   repository's own audit, ~38 instances in one shard.\n" +
+    '   A DATA reference is a call site too: for every field the change adds that holds another\n' +
+    "   record's id, enumerate the places that write it, read it and REMOVE it. A deletion path\n" +
+    '   that strips one holder and not its siblings leaves a dangling reference — the record\n' +
+    '   rendering a pointer to something that no longer exists — and it is invisible to both\n' +
+    '   gates for the same diff-scoped reason.\n' +
+    '   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation\n' +
+    '   this change adds or modifies, enumerate that inverse — set against unset, add against\n' +
+    '   remove, append against replace, enable against disable, grant against revoke — then\n' +
+    '   name and justify each inverse that is not shipped, exactly as an unguarded call site\n' +
+    '   must be. An operation shipped without its inverse, and not justified, is a FINDING.\n' +
+    '   The reason the sweep cannot reach this class is mechanical rather than a matter of\n' +
+    '   diligence: enumerating the callers of a thing that is written never leads to the\n' +
+    '   question of whether it can be unwritten. Measured here, six instances shipped past both\n' +
+    '   gates while the call-site obligation was already in force, and the most consequential\n' +
+    '   was a safety surface: pre-authorization grants accumulated with no revoke, so turning\n' +
+    '   autonomy off left every prior grant intact and turning it back on silently restored\n' +
+    '   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and\n' +
+    '   the evidence is kept rather than deleted, because a practice recorded without what went\n' +
+    '   wrong to earn it reads as a preference.\n' +
+    '2. **Verify against the commit, not the working tree.** The commit is the unit of verification.\n' +
+    '   Reading a file in the working tree is NOT verification. For every task, run\n' +
+    "   `git show --stat <that task's sha>` and assert that\n" +
+    '   every file the task claims to change appears in THAT commit. A task whose claimed file is\n' +
+    '   absent from its commit FAILS, even though the working tree holds the intended edit, the\n' +
+    '   suite passes and both gates are green. Audited here: two commits each claimed to remove a\n' +
+    "   file's code and neither staged it, because a `git add` with an explicit path list aborted\n" +
+    '   on an alread'... 20704 more characters
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/execution-profile-emission.test.mjs:29:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '# CLAUDE.md\n\n<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n## PM Conductor — operating rules\n\nThis repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.\nEpics are **lane-agnostic** (openspec | superpowers | claude-code | decision | external);\nOpenSpec is one lane. Stories come from each epic\'s source (OpenSpec `tasks.md`, a Superpowers\nplan, or a manual list). Follow these rules:\n\n1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:\n   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,\n     then run `/pm:detour --minimal "<what>"` so it is recorded in `.conductor/detours.log`.\n     Then resume.\n   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.\n     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,\n     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with\n     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.\n     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the\n     transition, and it is what supplies the validation, the write-conflict guard, the\n     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the\n     two reconcile flags is REQUIRED and there is no default: whether the detour can\n     invalidate the paused epic\'s plan is a judgment, and a default makes an absent decision\n     look like a considered one. Say `--reconcile` unless you are certain the detour touches\n     nothing the paused epic depends on.\n2. **State of record is `.conductor/state.json`.** After any change to epics, status,\n   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.\n3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with\n   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,\n   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the\n   obligation survive the frame\'s removal. If the popped frame had\n   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,\n   then write its verdict back durably with `record-reconcile <id> --detour <detourId>\n   --verdict valid|invalidated --amendments none` (the reconciler\'s `AMENDMENTS: none`), or\n   one `--amendment "<line>"` per other AMENDMENTS line — this attaches\n   `{verdict, amendments, reconciledAt}` to the paused epic\'s link to that detour, instead of\n   the judgment only ever living in conversation. It is accepted only for a detour pushed\n   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is\n   left unanswered; `pop-detour` names every detour owed.\n   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a\n   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,\n   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those\n   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an\n   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing\n   the check is not permission; this line is the obligation and the check is only its backstop.\n4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho\n   ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside\n   this repo. `push-detour` prints the PUSH line for you and logs it to\n   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints\n   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is\n   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the\n   verdict. The engine formats and logs; it never calls Honcho itself.\n5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.\n6. **Roadmap as backlog** — work you intend to do but haven\'t proposed yet can be\n   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show\n   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a\n   "no change on disk" warning; `/pm:sync` flips an openspec planned epic to untriaged once\n   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.\n7. **Delegate discovery. If you do not already know the file path, do not go looking\n   yourself.** A subagent\'s transcript never enters yours — only its final report does — so\n   an open-ended read costs a conclusion instead of a transcript when it is delegated.\n   "Where is X handled", "does a spec for this already exist", "what does this epic touch",\n   "what did the last three changes here do": dispatch an `Explore` or `general-purpose`\n   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you\n   already know the exact file and want one value out of it.\n   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched\n   child is already told to return a fixed report and not to narrate. It binds hardest across\n   a hierarchy run or a multi-epic backlog, where your context survives many epics and is\n   therefore the scarce resource — discovery you perform inline is paid for once per epic and\n   never reclaimed.\n   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole\n   document — the epic-level-autonomy preflight scan, and re-reading an epic\'s source before\n   it becomes the work — the subagent reads the whole document and returns the finding. What\n   is forbidden is substituting a keyword grep for a full read, and that is forbidden\n   whoever performs it.\n\n## Getting help with pm — two channels, and which one can lie\n\n**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`\n(resolve `$ENGINE` the way pm\'s own command docs do) prints that verb\'s real flags, projected\nfrom its own registry — version-exact by construction. Use it before reading engine source.\n\n**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are\nalready markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.\n\n**The site documents the LATEST release, which may be newer than the pm running here.** A flag\nit shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.\n\n## The gate procedure — required task items\n\nEvery item below is a NUMBERED REQUIRED TASK ITEM in the change\'s own task list, carried\ninto both gates. They are not review guidance and must not be restated as prose bullets:\nmeasured across one audited repository, a rule carried by a mandatory task section reached\n14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.\n\n1. **Call-site completeness sweep.** For every rule, guard or invariant this change introduces\n   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically\n   (`rg` for the callers), never a list typed from memory, which goes stale the moment a\n   caller is added. Then state where the rule holds and where it does not, and\n   justify each omission. A guard added at one call site while an identical sibling site is\n   left untouched is a FINDING, not a detail: raise it even though the unedited site never\n   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that\n   is absent from a file the diff never touched — the dominant defect class in this\n   repository\'s own audit, ~38 instances in one shard.\n   A DATA reference is a call site too: for every field the change adds that holds another\n   record\'s id, enumerate the places that write it, read it and REMOVE it. A deletion path\n   that strips one holder and not its siblings leaves a dangling reference — the record\n   rendering a pointer to something that no longer exists — and it is invisible to both\n   gates for the same diff-scoped reason.\n   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation\n   this change adds or modifies, enumerate that inverse — set against unset, add against\n   remove, append against replace, enable against disable, grant against revoke — then\n   name and justify each inverse that is not shipped, exactly as an unguarded call site\n   must be. An operation shipped without its inverse, and not justified, is a FINDING.\n   The reason the sweep cannot reach this class is mechanical rather than a matter of\n   diligence: enumerating the callers of a thing that is written never leads to the\n   question of whether it can be unwritten. Measured here, six instances shipped past both\n   gates while the call-site obligation was already in force, and the most consequential\n   was a safety surface: pre-authorization grants accumulated with no revoke, so turning\n   autonomy off left every prior grant intact and turning it back on silently restored\n   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and\n   the evidence is kept rather than deleted, because a practice recorded without what went\n   wrong to earn it reads as a preference.\n2. **Verify against the commit, not the working tree.** The commit is the unit of verification.\n   Reading a file in the working tree is NOT verification. For every task, run\n   `git show --stat <that task\'s sha>` and assert that\n   every file the task claims to change appears in THAT commit. A task whose claimed file is\n   absent from its commit FAILS, even though the working tree holds the intended edit, the\n   suite passes and both gates are green. Audited here: two commits each claimed to remove a\n   file\'s code and neither staged it, because a `git add` with an explicit path list aborted\n   on an alread'... 20704 more characters,
+    expected: /- review: standard \(default\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/execution-profile-emission.test.mjs:42:1
+✖ 4.5: init writes no model on its own, and its instructions ask the user with the recommended default (41.212208ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ASK\s+the\s+user/. Input:
+  
+  '---\n' +
+    'description: Initialize the PM conductor in this repo (scaffold state, register epics)\n' +
+    'allowed-tools: Bash, Read, Edit\n' +
+    '---\n' +
+    '\n' +
+    'Initialize the `pm` conductor for the current project.\n' +
+    '\n' +
+    '0. **Orient first (especially on a cold/first-time install).** Before scaffolding, load the\n' +
+    '   **`conductor` skill** — it is the agent-facing how-to (the mental model, lanes, statuses, the\n' +
+    '   detour → PUSH/POP → reconcile workflow, and the `state.json` reference). This is what lets you\n' +
+    "   drive the plugin correctly even if you've never seen this version before. For deeper human\n" +
+    '   reference, `${CLAUDE_PLUGIN_ROOT}/README.md` also ships with the plugin. If you need more than\n' +
+    '   either of those covers, `https://pm-plugin.dev/llms.txt` is a lightweight, AI-agent-oriented\n' +
+    '   index of every doc page (~7KB) — fetch `https://pm-plugin.dev/llms-full.txt` only if you\n' +
+    '   genuinely need the entire site as one document (~200KB, tens of thousands of tokens; use\n' +
+    '   sparingly). (You do NOT need to re-read any of these every session — the persistent CLAUDE.md\n' +
+    '   rules block written below carries the recurring essentials; this step is the one-time deep\n' +
+    '   orientation.)\n' +
+    '\n' +
+    "1. Run the engine's init (it creates `.conductor/state.json`, registers existing OpenSpec\n" +
+    '   changes as untriaged epics, and renders `PROJECT.md`):\n' +
+    '\n' +
+    '   ```bash\n' +
+    '   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" init\n' +
+    '   ```\n' +
+    '\n' +
+    '   If `${CLAUDE_PLUGIN_ROOT}` is empty, locate the engine first:\n' +
+    '   `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" init`\n' +
+    '\n' +
+    '   `init` takes no positional arguments and one flag of its own, `--platform\n' +
+    '   <claude-code|hermes|codex>` (see `/pm:upgrade`), plus the `--force` every mutating verb accepts. A valueless or unknown `--platform`, or any other flag, is refused before\n' +
+    "   anything is created, so a failed `init` leaves no `.conductor/` behind to end pm's dormancy:\n" +
+    '   `conductor: --platform must be one of claude-code|hermes|codex`. `init --help` prints its flags\n' +
+    '   and creates nothing.\n' +
+    '\n' +
+    '   **`init` refuses, with exit 11 and nothing written, in two more cases** — both mean a file it\n' +
+    '   depends on is in a state the engine will not guess about, and a human fixes the file:\n' +
+    '\n' +
+    '   - **`.conductor/state.json` exists but cannot be read** (conflict markers, truncation, the\n' +
+    '     wrong shape). `init` loads it before its first write, so it never writes over, beside or\n' +
+    '     around it — not even `.gitignore`. The refusal names the reason and the remedies (see\n' +
+    '     `/pm:gate-guard` for the full message). For a file git has never had, move it aside and\n' +
+    '     re-run: `mv .conductor/state.json .conductor/state.json.damaged`, then `/pm:init`.\n' +
+    "   - **The rules file's managed-block markers are ambiguous.** A BEGIN marker line with no END, an\n" +
+    '     END with no BEGIN, or two blocks. Markers are whole lines — a marker string quoted in prose or\n' +
+    '     inline code is ordinary text. The check runs before anything is created, so a fresh repo gets\n' +
+    '     no `.conductor/`:\n' +
+    '\n' +
+    '     ```text\n' +
+    '     conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:\n' +
+    '       line 3: BEGIN\n' +
+    '       Delete the stray marker line(s) from the shell, highest line number first, e.g.:\n' +
+    "         sed -i.bak '<N>d' CLAUDE.md\n" +
+    '       (a whole managed block is safe to delete; hand-written text between markers is yours to keep).\n' +
+    '       Nothing was written. After fixing the markers, re-run the command.\n' +
+    '     ```\n' +
+    '\n' +
+    '     Delete the stray lines by hand, then run `init` again.\n' +
+    '\n' +
+    '2. Read `.conductor/state.json` and help the user TRIAGE, recording each decision with its verb:\n' +
+    '   - make the epic currently being built active with `set-active <id>`,\n' +
+    '   - give each epic a priority with `update-epic <id> --priority <P0-P3>` and a status with\n' +
+    '     `update-epic <id> --status <active|queued|later>`,\n' +
+    '   - leave the detour stack empty unless work is already paused (`push-detour` records a pause).\n' +
+    '\n' +
+    '3. **Offer external-tracker mirroring (optional).** Only if there is a *real* signal that work is\n' +
+    '   actively managed in an issue tracker — a connected/in-use tracker MCP, issue-key conventions in\n' +
+    '   history, or an explicit "we track work in X" note. **Being hosted on GitHub/GitLab/Bitbucket is\n' +
+    '   NOT a signal** (every Git host has issues/PRs; hosting ≠ tracking there) — never infer a tracker\n' +
+    '   from the remote. If there is a real signal, *offer it as a choice* and follow the `/pm:tracker`\n' +
+    '   procedure on a yes. Make clear that saying no loses nothing: the conductor always tracks\n' +
+    '   everything locally in `.conductor/state.json` + `PROJECT.md`; a tracker only *adds* an external\n' +
+    '   mirror. Default to tracker-unaware.\n' +
+    '\n' +
+    '4. Show the result with `/pm:status`.\n' +
+    '\n' +
+    "Note: until this runs, the plugin's hooks stay dormant in this repo by design — like\n" +
+    '`openspec init`. The conductor sits ABOVE OpenSpec and Superpowers; epics are lane-agnostic\n' +
+    '(openspec | superpowers | claude-code | decision | external). It does not replace either.\n'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/execution-profile-emission.test.mjs:48:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '---\ndescription: Initialize the PM conductor in this repo (scaffold state, register epics)\nallowed-tools: Bash, Read, Edit\n---\n\nInitialize the `pm` conductor for the current project.\n\n0. **Orient first (especially on a cold/first-time install).** Before scaffolding, load the\n   **`conductor` skill** — it is the agent-facing how-to (the mental model, lanes, statuses, the\n   detour → PUSH/POP → reconcile workflow, and the `state.json` reference). This is what lets you\n   drive the plugin correctly even if you\'ve never seen this version before. For deeper human\n   reference, `${CLAUDE_PLUGIN_ROOT}/README.md` also ships with the plugin. If you need more than\n   either of those covers, `https://pm-plugin.dev/llms.txt` is a lightweight, AI-agent-oriented\n   index of every doc page (~7KB) — fetch `https://pm-plugin.dev/llms-full.txt` only if you\n   genuinely need the entire site as one document (~200KB, tens of thousands of tokens; use\n   sparingly). (You do NOT need to re-read any of these every session — the persistent CLAUDE.md\n   rules block written below carries the recurring essentials; this step is the one-time deep\n   orientation.)\n\n1. Run the engine\'s init (it creates `.conductor/state.json`, registers existing OpenSpec\n   changes as untriaged epics, and renders `PROJECT.md`):\n\n   ```bash\n   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" init\n   ```\n\n   If `${CLAUDE_PLUGIN_ROOT}` is empty, locate the engine first:\n   `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" init`\n\n   `init` takes no positional arguments and one flag of its own, `--platform\n   <claude-code|hermes|codex>` (see `/pm:upgrade`), plus the `--force` every mutating verb accepts. A valueless or unknown `--platform`, or any other flag, is refused before\n   anything is created, so a failed `init` leaves no `.conductor/` behind to end pm\'s dormancy:\n   `conductor: --platform must be one of claude-code|hermes|codex`. `init --help` prints its flags\n   and creates nothing.\n\n   **`init` refuses, with exit 11 and nothing written, in two more cases** — both mean a file it\n   depends on is in a state the engine will not guess about, and a human fixes the file:\n\n   - **`.conductor/state.json` exists but cannot be read** (conflict markers, truncation, the\n     wrong shape). `init` loads it before its first write, so it never writes over, beside or\n     around it — not even `.gitignore`. The refusal names the reason and the remedies (see\n     `/pm:gate-guard` for the full message). For a file git has never had, move it aside and\n     re-run: `mv .conductor/state.json .conductor/state.json.damaged`, then `/pm:init`.\n   - **The rules file\'s managed-block markers are ambiguous.** A BEGIN marker line with no END, an\n     END with no BEGIN, or two blocks. Markers are whole lines — a marker string quoted in prose or\n     inline code is ordinary text. The check runs before anything is created, so a fresh repo gets\n     no `.conductor/`:\n\n     ```text\n     conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:\n       line 3: BEGIN\n       Delete the stray marker line(s) from the shell, highest line number first, e.g.:\n         sed -i.bak \'<N>d\' CLAUDE.md\n       (a whole managed block is safe to delete; hand-written text between markers is yours to keep).\n       Nothing was written. After fixing the markers, re-run the command.\n     ```\n\n     Delete the stray lines by hand, then run `init` again.\n\n2. Read `.conductor/state.json` and help the user TRIAGE, recording each decision with its verb:\n   - make the epic currently being built active with `set-active <id>`,\n   - give each epic a priority with `update-epic <id> --priority <P0-P3>` and a status with\n     `update-epic <id> --status <active|queued|later>`,\n   - leave the detour stack empty unless work is already paused (`push-detour` records a pause).\n\n3. **Offer external-tracker mirroring (optional).** Only if there is a *real* signal that work is\n   actively managed in an issue tracker — a connected/in-use tracker MCP, issue-key conventions in\n   history, or an explicit "we track work in X" note. **Being hosted on GitHub/GitLab/Bitbucket is\n   NOT a signal** (every Git host has issues/PRs; hosting ≠ tracking there) — never infer a tracker\n   from the remote. If there is a real signal, *offer it as a choice* and follow the `/pm:tracker`\n   procedure on a yes. Make clear that saying no loses nothing: the conductor always tracks\n   everything locally in `.conductor/state.json` + `PROJECT.md`; a tracker only *adds* an external\n   mirror. Default to tracker-unaware.\n\n4. Show the result with `/pm:status`.\n\nNote: until this runs, the plugin\'s hooks stay dormant in this repo by design — like\n`openspec init`. The conductor sits ABOVE OpenSpec and Superpowers; epics are lane-agnostic\n(openspec | superpowers | claude-code | decision | external). It does not replace either.\n',
+    expected: /ASK\s+the\s+user/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ The rules block names lane overrides, the project values and the unchanged Current mode line (1.217875ms)
+  TypeError [Error]: profileContext is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-emission.test.mjs:24:65
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the rules block with no lane override says so, and a caller with no profile still shows the defaults (0.156542ms)
+  TypeError [Error]: profileContext is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-emission.test.mjs:38:64
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a stored invalid value never reaches the block (0.134833ms)
+  TypeError [Error]: profileContext is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-emission.test.mjs:48:65
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ rules --epic emits the effective value with its source (3.618875ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Effective values for epic `e`:/. Input:
+  
+  '<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n' +
+    '## PM Conductor — operating rules\n' +
+    '\n' +
+    'This repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.\n' +
+    'Epics are **lane-agnostic** (openspec | superpowers | claude-code | decision | external);\n' +
+    "OpenSpec is one lane. Stories come from each epic's source (OpenSpec `tasks.md`, a Superpowers\n" +
+    'plan, or a manual list). Follow these rules:\n' +
+    '\n' +
+    '1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:\n' +
+    '   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,\n' +
+    '     then run `/pm:detour --minimal "<what>"` so it is recorded in `.conductor/detours.log`.\n' +
+    '     Then resume.\n' +
+    '   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.\n' +
+    '     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,\n' +
+    '     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with\n' +
+    '     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.\n' +
+    '     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the\n' +
+    '     transition, and it is what supplies the validation, the write-conflict guard, the\n' +
+    '     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the\n' +
+    '     two reconcile flags is REQUIRED and there is no default: whether the detour can\n' +
+    "     invalidate the paused epic's plan is a judgment, and a default makes an absent decision\n" +
+    '     look like a considered one. Say `--reconcile` unless you are certain the detour touches\n' +
+    '     nothing the paused epic depends on.\n' +
+    '2. **State of record is `.conductor/state.json`.** After any change to epics, status,\n' +
+    '   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.\n' +
+    '3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with\n' +
+    '   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,\n' +
+    '   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the\n' +
+    "   obligation survive the frame's removal. If the popped frame had\n" +
+    '   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,\n' +
+    '   then write its verdict back durably with `record-reconcile <id> --detour <detourId>\n' +
+    "   --verdict valid|invalidated --amendments none` (the reconciler's `AMENDMENTS: none`), or\n" +
+    '   one `--amendment "<line>"` per other AMENDMENTS line — this attaches\n' +
+    "   `{verdict, amendments, reconciledAt}` to the paused epic's link to that detour, instead of\n" +
+    '   the judgment only ever living in conversation. It is accepted only for a detour pushed\n' +
+    '   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is\n' +
+    '   left unanswered; `pop-detour` names every detour owed.\n' +
+    '   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a\n' +
+    '   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,\n' +
+    '   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those\n' +
+    '   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an\n' +
+    '   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing\n' +
+    '   the check is not permission; this line is the obligation and the check is only its backstop.\n' +
+    '4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho\n' +
+    '   ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside\n' +
+    '   this repo. `push-detour` prints the PUSH line for you and logs it to\n' +
+    '   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints\n' +
+    '   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is\n' +
+    '   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the\n' +
+    '   verdict. The engine formats and logs; it never calls Honcho itself.\n' +
+    '5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.\n' +
+    "6. **Roadmap as backlog** — work you intend to do but haven't proposed yet can be\n" +
+    '   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show\n' +
+    '   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a\n' +
+    '   "no change on disk" warning; `/pm:sync` flips an openspec planned epic to untriaged once\n' +
+    '   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.\n' +
+    '7. **Delegate discovery. If you do not already know the file path, do not go looking\n' +
+    "   yourself.** A subagent's transcript never enters yours — only its final report does — so\n" +
+    '   an open-ended read costs a conclusion instead of a transcript when it is delegated.\n' +
+    '   "Where is X handled", "does a spec for this already exist", "what does this epic touch",\n' +
+    '   "what did the last three changes here do": dispatch an `Explore` or `general-purpose`\n' +
+    '   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you\n' +
+    '   already know the exact file and want one value out of it.\n' +
+    '   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched\n' +
+    '   child is already told to return a fixed report and not to narrate. It binds hardest across\n' +
+    '   a hierarchy run or a multi-epic backlog, where your context survives many epics and is\n' +
+    '   therefore the scarce resource — discovery you perform inline is paid for once per epic and\n' +
+    '   never reclaimed.\n' +
+    '   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole\n' +
+    "   document — the epic-level-autonomy preflight scan, and re-reading an epic's source before\n" +
+    '   it becomes the work — the subagent reads the whole document and returns the finding. What\n' +
+    '   is forbidden is substituting a keyword grep for a full read, and that is forbidden\n' +
+    '   whoever performs it.\n' +
+    '\n' +
+    '## Getting help with pm — two channels, and which one can lie\n' +
+    '\n' +
+    '**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`\n' +
+    "(resolve `$ENGINE` the way pm's own command docs do) prints that verb's real flags, projected\n" +
+    'from its own registry — version-exact by construction. Use it before reading engine source.\n' +
+    '\n' +
+    '**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are\n' +
+    'already markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.\n' +
+    '\n' +
+    '**The site documents the LATEST release, which may be newer than the pm running here.** A flag\n' +
+    'it shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.\n' +
+    '\n' +
+    '## The gate procedure — required task items\n' +
+    '\n' +
+    "Every item below is a NUMBERED REQUIRED TASK ITEM in the change's own task list, carried\n" +
+    'into both gates. They are not review guidance and must not be restated as prose bullets:\n' +
+    'measured across one audited repository, a rule carried by a mandatory task section reached\n' +
+    '14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.\n' +
+    '\n' +
+    '1. **Call-site completeness sweep.** For every rule, guard or invariant this change introduces\n' +
+    '   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically\n' +
+    '   (`rg` for the callers), never a list typed from memory, which goes stale the moment a\n' +
+    '   caller is added. Then state where the rule holds and where it does not, and\n' +
+    '   justify each omission. A guard added at one call site while an identical sibling site is\n' +
+    '   left untouched is a FINDING, not a detail: raise it even though the unedited site never\n' +
+    '   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that\n' +
+    '   is absent from a file the diff never touched — the dominant defect class in this\n' +
+    "   repository's own audit, ~38 instances in one shard.\n" +
+    '   A DATA reference is a call site too: for every field the change adds that holds another\n' +
+    "   record's id, enumerate the places that write it, read it and REMOVE it. A deletion path\n" +
+    '   that strips one holder and not its siblings leaves a dangling reference — the record\n' +
+    '   rendering a pointer to something that no longer exists — and it is invisible to both\n' +
+    '   gates for the same diff-scoped reason.\n' +
+    '   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation\n' +
+    '   this change adds or modifies, enumerate that inverse — set against unset, add against\n' +
+    '   remove, append against replace, enable against disable, grant against revoke — then\n' +
+    '   name and justify each inverse that is not shipped, exactly as an unguarded call site\n' +
+    '   must be. An operation shipped without its inverse, and not justified, is a FINDING.\n' +
+    '   The reason the sweep cannot reach this class is mechanical rather than a matter of\n' +
+    '   diligence: enumerating the callers of a thing that is written never leads to the\n' +
+    '   question of whether it can be unwritten. Measured here, six instances shipped past both\n' +
+    '   gates while the call-site obligation was already in force, and the most consequential\n' +
+    '   was a safety surface: pre-authorization grants accumulated with no revoke, so turning\n' +
+    '   autonomy off left every prior grant intact and turning it back on silently restored\n' +
+    '   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and\n' +
+    '   the evidence is kept rather than deleted, because a practice recorded without what went\n' +
+    '   wrong to earn it reads as a preference.\n' +
+    '2. **Verify against the commit, not the working tree.** The commit is the unit of verification.\n' +
+    '   Reading a file in the working tree is NOT verification. For every task, run\n' +
+    "   `git show --stat <that task's sha>` and assert that\n" +
+    '   every file the task claims to change appears in THAT commit. A task whose claimed file is\n' +
+    '   absent from its commit FAILS, even though the working tree holds the intended edit, the\n' +
+    '   suite passes and both gates are green. Audited here: two commits each claimed to remove a\n' +
+    "   file's code and neither staged it, because a `git add` with an explicit path list aborted\n" +
+    '   on an already-removed pat'... 20691 more characters
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-emission.test.mjs:58:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n## PM Conductor — operating rules\n\nThis repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.\nEpics are **lane-agnostic** (openspec | superpowers | claude-code | decision | external);\nOpenSpec is one lane. Stories come from each epic\'s source (OpenSpec `tasks.md`, a Superpowers\nplan, or a manual list). Follow these rules:\n\n1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:\n   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,\n     then run `/pm:detour --minimal "<what>"` so it is recorded in `.conductor/detours.log`.\n     Then resume.\n   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.\n     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,\n     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with\n     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.\n     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the\n     transition, and it is what supplies the validation, the write-conflict guard, the\n     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the\n     two reconcile flags is REQUIRED and there is no default: whether the detour can\n     invalidate the paused epic\'s plan is a judgment, and a default makes an absent decision\n     look like a considered one. Say `--reconcile` unless you are certain the detour touches\n     nothing the paused epic depends on.\n2. **State of record is `.conductor/state.json`.** After any change to epics, status,\n   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.\n3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with\n   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,\n   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the\n   obligation survive the frame\'s removal. If the popped frame had\n   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,\n   then write its verdict back durably with `record-reconcile <id> --detour <detourId>\n   --verdict valid|invalidated --amendments none` (the reconciler\'s `AMENDMENTS: none`), or\n   one `--amendment "<line>"` per other AMENDMENTS line — this attaches\n   `{verdict, amendments, reconciledAt}` to the paused epic\'s link to that detour, instead of\n   the judgment only ever living in conversation. It is accepted only for a detour pushed\n   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is\n   left unanswered; `pop-detour` names every detour owed.\n   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a\n   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,\n   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those\n   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an\n   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing\n   the check is not permission; this line is the obligation and the check is only its backstop.\n4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho\n   ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside\n   this repo. `push-detour` prints the PUSH line for you and logs it to\n   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints\n   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is\n   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the\n   verdict. The engine formats and logs; it never calls Honcho itself.\n5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.\n6. **Roadmap as backlog** — work you intend to do but haven\'t proposed yet can be\n   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show\n   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a\n   "no change on disk" warning; `/pm:sync` flips an openspec planned epic to untriaged once\n   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.\n7. **Delegate discovery. If you do not already know the file path, do not go looking\n   yourself.** A subagent\'s transcript never enters yours — only its final report does — so\n   an open-ended read costs a conclusion instead of a transcript when it is delegated.\n   "Where is X handled", "does a spec for this already exist", "what does this epic touch",\n   "what did the last three changes here do": dispatch an `Explore` or `general-purpose`\n   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you\n   already know the exact file and want one value out of it.\n   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched\n   child is already told to return a fixed report and not to narrate. It binds hardest across\n   a hierarchy run or a multi-epic backlog, where your context survives many epics and is\n   therefore the scarce resource — discovery you perform inline is paid for once per epic and\n   never reclaimed.\n   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole\n   document — the epic-level-autonomy preflight scan, and re-reading an epic\'s source before\n   it becomes the work — the subagent reads the whole document and returns the finding. What\n   is forbidden is substituting a keyword grep for a full read, and that is forbidden\n   whoever performs it.\n\n## Getting help with pm — two channels, and which one can lie\n\n**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`\n(resolve `$ENGINE` the way pm\'s own command docs do) prints that verb\'s real flags, projected\nfrom its own registry — version-exact by construction. Use it before reading engine source.\n\n**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are\nalready markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.\n\n**The site documents the LATEST release, which may be newer than the pm running here.** A flag\nit shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.\n\n## The gate procedure — required task items\n\nEvery item below is a NUMBERED REQUIRED TASK ITEM in the change\'s own task list, carried\ninto both gates. They are not review guidance and must not be restated as prose bullets:\nmeasured across one audited repository, a rule carried by a mandatory task section reached\n14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.\n\n1. **Call-site completeness sweep.** For every rule, guard or invariant this change introduces\n   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically\n   (`rg` for the callers), never a list typed from memory, which goes stale the moment a\n   caller is added. Then state where the rule holds and where it does not, and\n   justify each omission. A guard added at one call site while an identical sibling site is\n   left untouched is a FINDING, not a detail: raise it even though the unedited site never\n   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that\n   is absent from a file the diff never touched — the dominant defect class in this\n   repository\'s own audit, ~38 instances in one shard.\n   A DATA reference is a call site too: for every field the change adds that holds another\n   record\'s id, enumerate the places that write it, read it and REMOVE it. A deletion path\n   that strips one holder and not its siblings leaves a dangling reference — the record\n   rendering a pointer to something that no longer exists — and it is invisible to both\n   gates for the same diff-scoped reason.\n   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation\n   this change adds or modifies, enumerate that inverse — set against unset, add against\n   remove, append against replace, enable against disable, grant against revoke — then\n   name and justify each inverse that is not shipped, exactly as an unguarded call site\n   must be. An operation shipped without its inverse, and not justified, is a FINDING.\n   The reason the sweep cannot reach this class is mechanical rather than a matter of\n   diligence: enumerating the callers of a thing that is written never leads to the\n   question of whether it can be unwritten. Measured here, six instances shipped past both\n   gates while the call-site obligation was already in force, and the most consequential\n   was a safety surface: pre-authorization grants accumulated with no revoke, so turning\n   autonomy off left every prior grant intact and turning it back on silently restored\n   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and\n   the evidence is kept rather than deleted, because a practice recorded without what went\n   wrong to earn it reads as a preference.\n2. **Verify against the commit, not the working tree.** The commit is the unit of verification.\n   Reading a file in the working tree is NOT verification. For every task, run\n   `git show --stat <that task\'s sha>` and assert that\n   every file the task claims to change appears in THAT commit. A task whose claimed file is\n   absent from its commit FAILS, even though the working tree holds the intended edit, the\n   suite passes and both gates are green. Audited here: two commits each claimed to remove a\n   file\'s code and neither staged it, because a `git add` with an explicit path list aborted\n   on an already-removed pat'... 20691 more characters,
+    expected: /Effective values for epic `e`:/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ rules --epic for an unknown epic falls back to the project scope (0.935ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Project values:/. Input:
+  
+  '<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n' +
+    '## PM Conductor — operating rules\n' +
+    '\n' +
+    'This repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.\n' +
+    'Epics are **lane-agnostic** (openspec | superpowers | claude-code | decision | external);\n' +
+    "OpenSpec is one lane. Stories come from each epic's source (OpenSpec `tasks.md`, a Superpowers\n" +
+    'plan, or a manual list). Follow these rules:\n' +
+    '\n' +
+    '1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:\n' +
+    '   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,\n' +
+    '     then run `/pm:detour --minimal "<what>"` so it is recorded in `.conductor/detours.log`.\n' +
+    '     Then resume.\n' +
+    '   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.\n' +
+    '     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,\n' +
+    '     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with\n' +
+    '     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.\n' +
+    '     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the\n' +
+    '     transition, and it is what supplies the validation, the write-conflict guard, the\n' +
+    '     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the\n' +
+    '     two reconcile flags is REQUIRED and there is no default: whether the detour can\n' +
+    "     invalidate the paused epic's plan is a judgment, and a default makes an absent decision\n" +
+    '     look like a considered one. Say `--reconcile` unless you are certain the detour touches\n' +
+    '     nothing the paused epic depends on.\n' +
+    '2. **State of record is `.conductor/state.json`.** After any change to epics, status,\n' +
+    '   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.\n' +
+    '3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with\n' +
+    '   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,\n' +
+    '   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the\n' +
+    "   obligation survive the frame's removal. If the popped frame had\n" +
+    '   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,\n' +
+    '   then write its verdict back durably with `record-reconcile <id> --detour <detourId>\n' +
+    "   --verdict valid|invalidated --amendments none` (the reconciler's `AMENDMENTS: none`), or\n" +
+    '   one `--amendment "<line>"` per other AMENDMENTS line — this attaches\n' +
+    "   `{verdict, amendments, reconciledAt}` to the paused epic's link to that detour, instead of\n" +
+    '   the judgment only ever living in conversation. It is accepted only for a detour pushed\n' +
+    '   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is\n' +
+    '   left unanswered; `pop-detour` names every detour owed.\n' +
+    '   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a\n' +
+    '   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,\n' +
+    '   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those\n' +
+    '   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an\n' +
+    '   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing\n' +
+    '   the check is not permission; this line is the obligation and the check is only its backstop.\n' +
+    '4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho\n' +
+    '   ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside\n' +
+    '   this repo. `push-detour` prints the PUSH line for you and logs it to\n' +
+    '   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints\n' +
+    '   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is\n' +
+    '   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the\n' +
+    '   verdict. The engine formats and logs; it never calls Honcho itself.\n' +
+    '5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.\n' +
+    "6. **Roadmap as backlog** — work you intend to do but haven't proposed yet can be\n" +
+    '   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show\n' +
+    '   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a\n' +
+    '   "no change on disk" warning; `/pm:sync` flips an openspec planned epic to untriaged once\n' +
+    '   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.\n' +
+    '7. **Delegate discovery. If you do not already know the file path, do not go looking\n' +
+    "   yourself.** A subagent's transcript never enters yours — only its final report does — so\n" +
+    '   an open-ended read costs a conclusion instead of a transcript when it is delegated.\n' +
+    '   "Where is X handled", "does a spec for this already exist", "what does this epic touch",\n' +
+    '   "what did the last three changes here do": dispatch an `Explore` or `general-purpose`\n' +
+    '   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you\n' +
+    '   already know the exact file and want one value out of it.\n' +
+    '   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched\n' +
+    '   child is already told to return a fixed report and not to narrate. It binds hardest across\n' +
+    '   a hierarchy run or a multi-epic backlog, where your context survives many epics and is\n' +
+    '   therefore the scarce resource — discovery you perform inline is paid for once per epic and\n' +
+    '   never reclaimed.\n' +
+    '   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole\n' +
+    "   document — the epic-level-autonomy preflight scan, and re-reading an epic's source before\n" +
+    '   it becomes the work — the subagent reads the whole document and returns the finding. What\n' +
+    '   is forbidden is substituting a keyword grep for a full read, and that is forbidden\n' +
+    '   whoever performs it.\n' +
+    '\n' +
+    '## Getting help with pm — two channels, and which one can lie\n' +
+    '\n' +
+    '**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`\n' +
+    "(resolve `$ENGINE` the way pm's own command docs do) prints that verb's real flags, projected\n" +
+    'from its own registry — version-exact by construction. Use it before reading engine source.\n' +
+    '\n' +
+    '**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are\n' +
+    'already markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.\n' +
+    '\n' +
+    '**The site documents the LATEST release, which may be newer than the pm running here.** A flag\n' +
+    'it shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.\n' +
+    '\n' +
+    '## The gate procedure — required task items\n' +
+    '\n' +
+    "Every item below is a NUMBERED REQUIRED TASK ITEM in the change's own task list, carried\n" +
+    'into both gates. They are not review guidance and must not be restated as prose bullets:\n' +
+    'measured across one audited repository, a rule carried by a mandatory task section reached\n' +
+    '14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.\n' +
+    '\n' +
+    '1. **Call-site completeness sweep.** For every rule, guard or invariant this change introduces\n' +
+    '   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically\n' +
+    '   (`rg` for the callers), never a list typed from memory, which goes stale the moment a\n' +
+    '   caller is added. Then state where the rule holds and where it does not, and\n' +
+    '   justify each omission. A guard added at one call site while an identical sibling site is\n' +
+    '   left untouched is a FINDING, not a detail: raise it even though the unedited site never\n' +
+    '   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that\n' +
+    '   is absent from a file the diff never touched — the dominant defect class in this\n' +
+    "   repository's own audit, ~38 instances in one shard.\n" +
+    '   A DATA reference is a call site too: for every field the change adds that holds another\n' +
+    "   record's id, enumerate the places that write it, read it and REMOVE it. A deletion path\n" +
+    '   that strips one holder and not its siblings leaves a dangling reference — the record\n' +
+    '   rendering a pointer to something that no longer exists — and it is invisible to both\n' +
+    '   gates for the same diff-scoped reason.\n' +
+    '   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation\n' +
+    '   this change adds or modifies, enumerate that inverse — set against unset, add against\n' +
+    '   remove, append against replace, enable against disable, grant against revoke — then\n' +
+    '   name and justify each inverse that is not shipped, exactly as an unguarded call site\n' +
+    '   must be. An operation shipped without its inverse, and not justified, is a FINDING.\n' +
+    '   The reason the sweep cannot reach this class is mechanical rather than a matter of\n' +
+    '   diligence: enumerating the callers of a thing that is written never leads to the\n' +
+    '   question of whether it can be unwritten. Measured here, six instances shipped past both\n' +
+    '   gates while the call-site obligation was already in force, and the most consequential\n' +
+    '   was a safety surface: pre-authorization grants accumulated with no revoke, so turning\n' +
+    '   autonomy off left every prior grant intact and turning it back on silently restored\n' +
+    '   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and\n' +
+    '   the evidence is kept rather than deleted, because a practice recorded without what went\n' +
+    '   wrong to earn it reads as a preference.\n' +
+    '2. **Verify against the commit, not the working tree.** The commit is the unit of verification.\n' +
+    '   Reading a file in the working tree is NOT verification. For every task, run\n' +
+    "   `git show --stat <that task's sha>` and assert that\n" +
+    '   every file the task claims to change appears in THAT commit. A task whose claimed file is\n' +
+    '   absent from its commit FAILS, even though the working tree holds the intended edit, the\n' +
+    '   suite passes and both gates are green. Audited here: two commits each claimed to remove a\n' +
+    "   file's code and neither staged it, because a `git add` with an explicit path list aborted\n" +
+    '   on an already-removed pat'... 20691 more characters
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-emission.test.mjs:67:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n## PM Conductor — operating rules\n\nThis repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.\nEpics are **lane-agnostic** (openspec | superpowers | claude-code | decision | external);\nOpenSpec is one lane. Stories come from each epic\'s source (OpenSpec `tasks.md`, a Superpowers\nplan, or a manual list). Follow these rules:\n\n1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:\n   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,\n     then run `/pm:detour --minimal "<what>"` so it is recorded in `.conductor/detours.log`.\n     Then resume.\n   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.\n     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,\n     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with\n     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.\n     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the\n     transition, and it is what supplies the validation, the write-conflict guard, the\n     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the\n     two reconcile flags is REQUIRED and there is no default: whether the detour can\n     invalidate the paused epic\'s plan is a judgment, and a default makes an absent decision\n     look like a considered one. Say `--reconcile` unless you are certain the detour touches\n     nothing the paused epic depends on.\n2. **State of record is `.conductor/state.json`.** After any change to epics, status,\n   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.\n3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with\n   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,\n   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the\n   obligation survive the frame\'s removal. If the popped frame had\n   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,\n   then write its verdict back durably with `record-reconcile <id> --detour <detourId>\n   --verdict valid|invalidated --amendments none` (the reconciler\'s `AMENDMENTS: none`), or\n   one `--amendment "<line>"` per other AMENDMENTS line — this attaches\n   `{verdict, amendments, reconciledAt}` to the paused epic\'s link to that detour, instead of\n   the judgment only ever living in conversation. It is accepted only for a detour pushed\n   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is\n   left unanswered; `pop-detour` names every detour owed.\n   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a\n   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,\n   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those\n   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an\n   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing\n   the check is not permission; this line is the obligation and the check is only its backstop.\n4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho\n   ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside\n   this repo. `push-detour` prints the PUSH line for you and logs it to\n   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints\n   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is\n   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the\n   verdict. The engine formats and logs; it never calls Honcho itself.\n5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.\n6. **Roadmap as backlog** — work you intend to do but haven\'t proposed yet can be\n   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show\n   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a\n   "no change on disk" warning; `/pm:sync` flips an openspec planned epic to untriaged once\n   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.\n7. **Delegate discovery. If you do not already know the file path, do not go looking\n   yourself.** A subagent\'s transcript never enters yours — only its final report does — so\n   an open-ended read costs a conclusion instead of a transcript when it is delegated.\n   "Where is X handled", "does a spec for this already exist", "what does this epic touch",\n   "what did the last three changes here do": dispatch an `Explore` or `general-purpose`\n   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you\n   already know the exact file and want one value out of it.\n   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched\n   child is already told to return a fixed report and not to narrate. It binds hardest across\n   a hierarchy run or a multi-epic backlog, where your context survives many epics and is\n   therefore the scarce resource — discovery you perform inline is paid for once per epic and\n   never reclaimed.\n   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole\n   document — the epic-level-autonomy preflight scan, and re-reading an epic\'s source before\n   it becomes the work — the subagent reads the whole document and returns the finding. What\n   is forbidden is substituting a keyword grep for a full read, and that is forbidden\n   whoever performs it.\n\n## Getting help with pm — two channels, and which one can lie\n\n**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`\n(resolve `$ENGINE` the way pm\'s own command docs do) prints that verb\'s real flags, projected\nfrom its own registry — version-exact by construction. Use it before reading engine source.\n\n**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are\nalready markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.\n\n**The site documents the LATEST release, which may be newer than the pm running here.** A flag\nit shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.\n\n## The gate procedure — required task items\n\nEvery item below is a NUMBERED REQUIRED TASK ITEM in the change\'s own task list, carried\ninto both gates. They are not review guidance and must not be restated as prose bullets:\nmeasured across one audited repository, a rule carried by a mandatory task section reached\n14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.\n\n1. **Call-site completeness sweep.** For every rule, guard or invariant this change introduces\n   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically\n   (`rg` for the callers), never a list typed from memory, which goes stale the moment a\n   caller is added. Then state where the rule holds and where it does not, and\n   justify each omission. A guard added at one call site while an identical sibling site is\n   left untouched is a FINDING, not a detail: raise it even though the unedited site never\n   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that\n   is absent from a file the diff never touched — the dominant defect class in this\n   repository\'s own audit, ~38 instances in one shard.\n   A DATA reference is a call site too: for every field the change adds that holds another\n   record\'s id, enumerate the places that write it, read it and REMOVE it. A deletion path\n   that strips one holder and not its siblings leaves a dangling reference — the record\n   rendering a pointer to something that no longer exists — and it is invisible to both\n   gates for the same diff-scoped reason.\n   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation\n   this change adds or modifies, enumerate that inverse — set against unset, add against\n   remove, append against replace, enable against disable, grant against revoke — then\n   name and justify each inverse that is not shipped, exactly as an unguarded call site\n   must be. An operation shipped without its inverse, and not justified, is a FINDING.\n   The reason the sweep cannot reach this class is mechanical rather than a matter of\n   diligence: enumerating the callers of a thing that is written never leads to the\n   question of whether it can be unwritten. Measured here, six instances shipped past both\n   gates while the call-site obligation was already in force, and the most consequential\n   was a safety surface: pre-authorization grants accumulated with no revoke, so turning\n   autonomy off left every prior grant intact and turning it back on silently restored\n   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and\n   the evidence is kept rather than deleted, because a practice recorded without what went\n   wrong to earn it reads as a preference.\n2. **Verify against the commit, not the working tree.** The commit is the unit of verification.\n   Reading a file in the working tree is NOT verification. For every task, run\n   `git show --stat <that task\'s sha>` and assert that\n   every file the task claims to change appears in THAT commit. A task whose claimed file is\n   absent from its commit FAILS, even though the working tree holds the intended edit, the\n   suite passes and both gates are green. Audited here: two commits each claimed to remove a\n   file\'s code and neither staged it, because a `git add` with an explicit path list aborted\n   on an already-removed pat'... 20691 more characters,
+    expected: /Project values:/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the brief names the active epic's effective profile, and a model line only for a non-default role (13.968875ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\n {2}review: thorough \(epic\)/. Input:
+  
+  '⚠ pm 0.0.0 → 0.50.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n' +
+    "   - **Delegate discovery, so exploration never enters the orchestrating agent's context** (#89). A\n" +
+    "   - **pm no longer imposes a house style over the user's** (#90). A user configures verbosity and\n" +
+    '   - **Link types are a closed vocabulary now** (#100). `--link "<type>:<epic>[:<reason>]"` validated\n' +
+    '\n' +
+    "CONDUCTOR STATE — where we are and what's next\n" +
+    'Progress is claimed completion — ticked checkboxes, not verified delivery.\n' +
+    '\n' +
+    'NOW: `e` (claude-code, epic, P1) — —\n' +
+    '\n' +
+    "LIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n" +
+    '\n' +
+    'RULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n' +
+    '\n' +
+    'Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-emission.test.mjs:75:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '⚠ pm 0.0.0 → 0.50.0 since this repo was set up — run `/pm:upgrade` (CLAUDE.md rules and epic schema may need refreshing).\n   - **Delegate discovery, so exploration never enters the orchestrating agent\'s context** (#89). A\n   - **pm no longer imposes a house style over the user\'s** (#90). A user configures verbosity and\n   - **Link types are a closed vocabulary now** (#100). `--link "<type>:<epic>[:<reason>]"` validated\n\nCONDUCTOR STATE — where we are and what\'s next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: `e` (claude-code, epic, P1) — —\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change\'s own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.',
+    expected: /\n {2}review: thorough \(epic\)/,
+    operator: 'match',
+    diff: 'simple'
+  }

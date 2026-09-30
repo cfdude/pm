@@ -115,7 +115,8 @@ unitTest("update-epic rejects an unrecognized flag instead of silently no-op'ing
 unitTest("rules block always includes the Review mode section, defaulting to standard when never set", () => {
   const engine = memoryEngine(emptyRecord());
   const out = engine(["rules"]);
-  assert.match(out, /## Review mode/);
+  assert.match(out, /## Execution profile/);
+  assert.match(out, /\*\*Review mode\.\*\*/);
   assert.match(out, /set-review-mode/);
   assert.match(out, /\| `off` \|/);
   assert.match(out, /\| `standard` \|/);

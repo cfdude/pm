@@ -820,3 +820,26 @@ x("update-epic.mjs", "updateEpic", {
   "r.message": 1,
   "role": 2,
 }, "escaped", "parseEpicProfileFlags/checkRole refusal text (offending values escapeControls()d); `role` is the --clear-model value AFTER checkRole accepted it from KNOWN_JOB_ROLES");
+x("execution-profile.mjs", "laneLayerPhrase", {
+  "layer.review": 1,
+  "layer.verbosity": 1,
+  "role": 1,
+  "modelText(layer.model[role])": 1,
+}, "engine", "each value is emitted ONLY after its checkReview/checkVerbosity/checkModelEntry accepted it from a closed list (a stored invalid value is skipped), and the role is KNOWN_JOB_ROLES");
+x("execution-profile.mjs", "laneOverrideLines", {
+  "lane": 1,
+  "phrase": 1,
+}, "engine", "`lane` iterates KNOWN_LANES (a constants.mjs literal); `phrase` is laneLayerPhrase's validated closed-list text");
+x("execution-profile.mjs", "briefProfileLines", {
+  "r.source": 1,
+  "view.review.value": 1,
+  "src(view.review)": 1,
+  "view.verbosity.value": 1,
+  "src(view.verbosity)": 1,
+  "role": 1,
+  "modelText(r.value)": 1,
+  "src(r)": 1,
+}, "sink-flow", "the lines are pushed onto buildBrief's L, joined through L.map(escapeControls); every value is a resolved closed-list value and a layer label (`lane:<lane>` is escapeControls()d where the label is built)");
+x("rules.mjs", "profileScopeLines", {
+  "l": 2,
+}, "engine", "lines from profileBlockLines()/laneOverrideLines(): resolved closed-list values and layer labels only, the `ignored:` notes (the one place a raw stored value appears) filtered out");

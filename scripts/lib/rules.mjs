@@ -28,7 +28,7 @@ import {
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
-import { resolveProfile } from "./execution-profile.mjs";
+import { profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -93,6 +93,12 @@ export function currentReviewMode(epicId) {
     const state = loadState();
     return resolveProfile(state, epicId ? { epicId } : {}).review.value;
   } catch (e) { rethrowUnreadable(e); return "standard"; }
+}
+
+/** The profile context `rulesBlock` renders: project scope with no `epicId`, else that epic's
+ *  effective values. Falls back to defaults like the other readers when state cannot be consulted. */
+export function currentProfileContext(epicId) {
+  try { return profileContext(loadState(), epicId); } catch (e) { rethrowUnreadable(e); return null; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -621,7 +627,23 @@ const watermarkStep = (n) => [
   "   advance the watermark or sync erases the drift it exists to find.",
 ];
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
+/** The `## Execution profile` section's value lines: the project's (or one epic's) resolved values,
+ *  each with its source, then one line per lane override. `profile` is `profileContext()`'s answer;
+ *  absent (a caller that has no state), the defaults are shown. */
+function profileScopeLines(profile, mode) {
+  const ctx = profile || { scope: "project", view: resolveProfile({ reviewMode: mode }), lanes: [] };
+  const lines = [ctx.scope === "epic" ? `Effective values for epic \`${escapeControls(String(ctx.epicId))}\`:` : "Project values:"];
+  for (const l of profileBlockLines(ctx.view)) lines.push(`- ${l}`);
+  if (ctx.lanes.length) {
+    lines.push("", "Lane overrides:");
+    for (const l of ctx.lanes) lines.push(`- ${l}`);
+  } else {
+    lines.push("", "Lane overrides: none.");
+  }
+  return lines;
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -778,9 +800,26 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   from that log, not from memory), with an explicit \"are you OK with these?\" checkpoint, THEN",
     "   run tests. Leave room to iterate — including rewriting code — if the user is not satisfied.",
     "",
-    "## Review mode",
+    "## Execution profile",
     "",
-    "Review intensity is a bounded dial, not a free-form call each time — set via",
+    "How intensely to review, which model and effort each job role runs on, and how often you report.",
+    "Each field resolves independently, most specific first: the epic's own value, else its lane's,",
+    "else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).",
+    "Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own",
+    "through `update-epic`; `profile` prints the effective values with the layer each came from",
+    "(pass its `--epic` flag for one epic). The engine records and emits the profile — it never",
+    "dispatches an agent or checks which model ran.",
+    "",
+    ...profileScopeLines(profile, mode),
+    "",
+    "**Before dispatching a job** (implementing, testing, reviewing), resolve the active epic's",
+    "profile and run that job's role on its `{model, effort}` where your platform lets you set them",
+    "per dispatch. Where it does not, say so rather than implying it was applied.",
+    "",
+    "**Verbosity:** `quiet` — one completion message per epic; `verbose` — a message at each phase",
+    "transition and gate.",
+    "",
+    "**Review mode.** Review intensity is a bounded dial, not a free-form call each time — set via",
     "`set-review-mode --mode <off|standard|thorough>` (default: `standard` if never set).",
     "",
     "| Mode | Reviewer budget | Trigger |",
@@ -1084,7 +1123,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform);
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext());
   let next;
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and

@@ -17,6 +17,7 @@ import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
 
 /** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
  *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
@@ -156,6 +157,10 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
     // incurred it — a compaction is exactly when it would otherwise be lost, and it was incurred
     // at activation, which may have been many turns ago.
     if (active.trackerRefreshNeeded) L.push(briefRemedy("tracker-refresh-owed", active));
+    // The active epic's EFFECTIVE execution profile (execution-profile-layered-settings D5): one line
+    // per field with the layer it came from, plus a `model:` line only for a role that resolves to
+    // something other than the default. Read from the raw state record, like the resolver expects.
+    for (const l of briefProfileLines(resolveProfile(state, { epicId: active.id }))) L.push(`  ${l}`);
   } else if (activeEpic && activeEpic.status === "archived") {
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {

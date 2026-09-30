@@ -415,3 +415,64 @@ export function profileDeltas(before, after) {
   }
   return out;
 }
+
+// ─────────────── emission: what the rules block and the brief say (D5) ───────────────
+
+/** One phrase per set field of ONE lane layer, valid values only (a stored invalid value is not
+ *  emitted): `review off, model test haiku`. */
+function laneLayerPhrase(layer) {
+  const parts = [];
+  if (checkReview(layer.review).ok) parts.push(`review ${layer.review}`);
+  if (checkVerbosity(layer.verbosity).ok) parts.push(`verbosity ${layer.verbosity}`);
+  if (isObj(layer.model)) {
+    for (const role of KNOWN_JOB_ROLES) {
+      if (checkModelEntry(layer.model[role]).ok) parts.push(`model ${role} ${modelText(layer.model[role])}`);
+    }
+  }
+  return parts.join(", ");
+}
+
+/** The lane overrides a rules block lists, one line each (`claude-code: review off, model test haiku`),
+ *  in lane order. Lanes that hold nothing valid are omitted. */
+export function laneOverrideLines(state) {
+  const lp = state && isObj(state.laneProfiles) ? state.laneProfiles : {};
+  const lines = [];
+  for (const lane of KNOWN_LANES) {
+    if (!isObj(lp[lane])) continue;
+    const phrase = laneLayerPhrase(lp[lane]);
+    if (phrase) lines.push(`${lane}: ${phrase}`);
+  }
+  return lines;
+}
+
+/** What `rulesBlock` needs about the profile: the resolved view for the project (or for one epic),
+ *  the lane override lines, and the scope's name. PURE. */
+export function profileContext(state, epicId) {
+  const known = epicId && Array.isArray(state.epics) && state.epics.some((e) => e && e.id === epicId);
+  return {
+    scope: known ? "epic" : "project",
+    epicId: known ? epicId : undefined,
+    view: resolveProfile(state, known ? { epicId } : {}),
+    lanes: laneOverrideLines(state),
+  };
+}
+
+/** The lines of a resolved profile for the rules block: like profileLines() but WITHOUT the
+ *  `ignored:` notes, which belong to the read verb. */
+export function profileBlockLines(view) {
+  return profileLines(view).filter((l) => !l.startsWith("ignored:"));
+}
+
+/** The brief's lines for the active epic: `review: thorough (epic)` and `verbosity: …`, plus a
+ *  `model <role>:` line only for a role that resolves to something other than the default. */
+export function briefProfileLines(view) {
+  const lines = [];
+  const src = (r) => `(${r.source})`;
+  lines.push(`review: ${view.review.value} ${src(view.review)}`);
+  lines.push(`verbosity: ${view.verbosity.value} ${src(view.verbosity)}`);
+  for (const role of KNOWN_JOB_ROLES) {
+    const r = view.model[role];
+    if (r.source !== "default") lines.push(`model: ${role} ${modelText(r.value)} ${src(r)}`);
+  }
+  return lines;
+}

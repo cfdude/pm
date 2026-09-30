@@ -177,7 +177,9 @@ changed) so deciding whether a PROJECT.md diff is safe to discard as noise is me
 instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
 escalates a single epic above the repo dial · `set-profile` / `profile` write and read the
-execution profile (review, model per job role, verbosity) at the project and lane layers · `set-lane-routing` / `suggest-lane` per-repo
+execution profile (review, model per job role, verbosity) at the project and lane layers — resolved
+most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
+epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
@@ -1308,6 +1310,13 @@ pmVersion     : "<semver>" — release that last touched this repo (set by init/
 tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
                 opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
+executionProfile? : { model?: {implement?|test?|review?: {model, effort?}}, verbosity?: "quiet"|"verbose" } —
+                the PROJECT layer of the execution profile (the project `review` is `reviewMode` above,
+                reused rather than moved). `model` ∈ fable|opus|sonnet|haiku, `effort` ∈
+                low|medium|high|xhigh|max|ultracode; haiku takes no effort, every other model requires
+                one. Set/unset via `set-profile`; read via `profile`. Absent resolves to today's behaviour.
+laneProfiles? : { "<lane>": { review?, model?, verbosity? } } — the LANE layer, same value shapes; an
+                emptied lane is removed. Set via `set-profile --lane <lane>`.
 gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate the reconcile-owed
                 check (that blocks unconditionally whenever reconcileNeeded is true). What it
                 does gate is the TRACKER REFRESH check, which blocks only while it is on.
@@ -1317,7 +1326,7 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
 createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
                 through — at the moment the epic is registered. ABSENT means UNKNOWN, never
                 today and never another field's value; `recover-created-at` backfills it from

@@ -72,7 +72,22 @@ Initialize the `pm` conductor for the current project.
    everything locally in `.conductor/state.json` + `PROJECT.md`; a tracker only *adds* an external
    mirror. Default to tracker-unaware.
 
-4. Show the result with `/pm:status`.
+4. **Ask for the project's execution profile, and record the answer.** The profile says how
+   intensely to review, which model and effort each job role (`implement`, `test`, `review`) runs
+   on, and how often you report (see `/pm:profile`). `init` writes NO model on its own — ASK the
+   user, and record what they choose with `set-profile`:
+   - **Recommend `opus` with `medium` effort for every role.** Offer the cheaper option as an
+     alternative: `sonnet` for `implement` and `haiku` for `test` (`haiku` takes no effort; every
+     other model needs one).
+   - Offer **lane overrides** at the same point (for example a lower `review` for the
+     `claude-code` lane), and record them with `set-profile --lane <lane>`.
+   - If the user declines, record nothing: every field then resolves to its default.
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-profile --model implement=opus:medium --model test=opus:medium --model review=opus:medium
+   ```
+
+5. Show the result with `/pm:status`.
 
 Note: until this runs, the plugin's hooks stay dormant in this repo by design — like
 `openspec init`. The conductor sits ABOVE OpenSpec and Superpowers; epics are lane-agnostic

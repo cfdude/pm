@@ -522,6 +522,11 @@ export const ALWAYS_ON_HEADINGS = [
   "## The gate procedure — required task items",
   "## Intake — triage an ask against the whole backlog BEFORE registering it",
   "## Reporting — pm owns what is recorded and what is said; you own how you say it",
+  // execution-profile-layered-settings: `## Execution profile` REPLACED `## Review mode` (the reviewer
+  // table and the `Current mode:` line moved inside it). Neither is a sync section, so each side of a
+  // comparison drops whichever one it carries — the 0.26.0 fixtures the old, the engine the new.
+  "## Execution profile",
+  "## Review mode",
 ];
 export const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 

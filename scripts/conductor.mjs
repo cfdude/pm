@@ -87,7 +87,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
@@ -464,7 +464,7 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
+      outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId)));
     },
     "write-rules": () => {
       // #152: `--platform` is read straight off argv by platformFlag(), which treats a valueless
