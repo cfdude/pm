@@ -97,17 +97,21 @@ These rules bind every section below.
       that the attribution array lists the commits in landing order.
 - [x] 5.4 **Lifecycle marker.** 8.3 and 8.4 carry `<!-- pm:lifecycle -->` on their task lines. Verify:
       `rg -n "pm:lifecycle" openspec/changes/converged-release-candidate-review/tasks.md`.
-- [ ] 5.5 **Dogfood it.** Run 0.51.0 itself through this procedure, as the first candidate. Record the
+- [x] 5.5 **Dogfood it.** Run 0.51.0 itself through this procedure, as the first candidate. Record the
       tokens spent reviewing and building against the `certification-record-redesign` baseline
       (5.8M / 2.0M), and put the numbers in the closeout. The measurement is evidence for the
       practice, and without it the practice reads as a preference.
+      Measured 2026-09-29 (sub-agent tokens, orchestrator excluded), 4 candidate members: reviewing
+      335K (Gate 1 140K + converged review 195K, one round each) vs 5.8M baseline for ONE epic;
+      building 1.04M (propose 168K, Gate 1 fixes 120K, build 507K, rc merge + full suite 99K,
+      review fixes + docs 149K) vs 2.0M. `release show 0.51.0` reads converged at 33a82ff6.
 - [x] 5.6 **Route what the work taught you.** Name each item as a practice, as tooling friction
       (`/pm:feedback`) or as a process failure (`docs/lessons/`), with evidence. "None" must say what
       was looked at.
 
 ## 6. Gate 2
 
-- [ ] 6.1 **Gate 2** via the converged 0.51.0 candidate review (this procedure, by construction). Fix
+- [x] 6.1 **Gate 2** via the converged 0.51.0 candidate review (this procedure, by construction). Fix
       Critical and Important findings. Record the verdict with
       `record-gate-review converged-release-candidate-review --gate 2 --verdict pass --base-sha <rc base> --head-sha <rc head> --reviewer "<identity>"`,
       at the same range as every other 0.51.0 CANDIDATE member (release members that are not
@@ -125,7 +129,7 @@ These rules bind every section below.
 
 ## 8. Close
 
-- [ ] 8.1 Integration: the full suite passes, the functional and sweeps certify runs pass, and
+- [x] 8.1 Integration: the full suite passes, the functional and sweeps certify runs pass, and
       `openspec validate converged-release-candidate-review --strict` passes.
 - [ ] 8.2 **Re-record Gate 2 after docs.** Once the docs commits (7.1, 7.2) have landed and been
       attributed, re-record Gate 2 at the post-docs head:

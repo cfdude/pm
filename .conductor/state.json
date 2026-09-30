@@ -10371,7 +10371,7 @@
       "id": "hook-fixtures-couple-to-every-hook-step",
       "title": "A fixture that copies the real pre-commit hook breaks on every new hook step",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10389,7 +10389,7 @@
         "05c8eba65c58c57725d7a29fbd3d449707f4438a"
       ],
       "createdAt": "2026-09-21T13:07:20.863Z",
-      "touchedAt": "2026-09-30T05:22:46.034Z",
+      "touchedAt": "2026-09-30T06:21:16.668Z",
       "notes": [
         {
           "at": "2026-09-28T22:29:13.604Z",
@@ -10398,7 +10398,27 @@
         }
       ],
       "release": "0.51.0",
-      "startedAt": "2026-09-29T22:48:33.138Z"
+      "startedAt": "2026-09-29T22:48:33.138Z",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-30T06:21:03.126Z",
+          "baseSha": "fc04700d59f802ab43d6f24cf6b4462125ba0d40",
+          "headSha": "33a82ff63037ecc892a2706347e9b1ccc064d2c1",
+          "reviewer": "converged RC review rc/0.51.0: opus fresh-context, 1 round, 0 Critical / 2 Important fixed (17afef26, 076849ab)"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-30T06:21:16.666Z",
+        "reason": "hook and certify fixtures derive the machinery they copy from the hooks' own code; converged RC Gate 2 pass at 33a82ff6"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-30T06:21:16.665Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-30T06:21:16.666Z"
     },
     {
       "id": "unit-rung-and-fixture-snapshots",
@@ -10888,7 +10908,7 @@
         "87c6436461026891e0c2faf95cfd2f94ed9132e1"
       ],
       "createdAt": "2026-09-26T01:35:08.414Z",
-      "touchedAt": "2026-09-30T05:23:38.087Z",
+      "touchedAt": "2026-09-30T06:21:03.821Z",
       "notes": [
         {
           "at": "2026-09-28T22:29:14.458Z",
@@ -10896,7 +10916,16 @@
           "text": "lane: superpowers not claude-code — multi-file with a shared helper/procedure and tests; unresolved routing leans away from claude-code (triage 2026-09-28)"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-30T06:21:03.817Z",
+          "baseSha": "fc04700d59f802ab43d6f24cf6b4462125ba0d40",
+          "headSha": "33a82ff63037ecc892a2706347e9b1ccc064d2c1",
+          "reviewer": "converged RC review rc/0.51.0: opus fresh-context, 1 round, 0 Critical / 2 Important fixed (17afef26, 076849ab)"
+        }
+      }
     },
     {
       "id": "integrity-reports-set-aside-archive-dirs",
@@ -11621,7 +11650,7 @@
         "1830d91d3f56e544bbac88a79a45560cb3637014"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T06:20:13.634Z",
+      "touchedAt": "2026-09-30T06:21:01.384Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11631,6 +11660,13 @@
             "openspec/changes/execution-profile-layered-settings"
           ],
           "reviewer": "opus fresh-context (1 round, Critical fixed a2bb4b2b, fix verified by orchestrator)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-30T06:21:01.380Z",
+          "baseSha": "fc04700d59f802ab43d6f24cf6b4462125ba0d40",
+          "headSha": "33a82ff63037ecc892a2706347e9b1ccc064d2c1",
+          "reviewer": "converged RC review rc/0.51.0: opus fresh-context, 1 round, 0 Critical / 2 Important fixed (17afef26, 076849ab)"
         }
       },
       "startedAt": "2026-09-30T03:40:45.413Z",
@@ -11668,7 +11704,7 @@
         "1830d91d3f56e544bbac88a79a45560cb3637014"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T06:20:14.435Z",
+      "touchedAt": "2026-09-30T06:21:02.339Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11678,6 +11714,13 @@
             "openspec/changes/converged-release-candidate-review"
           ],
           "reviewer": "opus fresh-context (1 round, Critical fixed a2bb4b2b, fix verified by orchestrator)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-30T06:21:02.334Z",
+          "baseSha": "fc04700d59f802ab43d6f24cf6b4462125ba0d40",
+          "headSha": "33a82ff63037ecc892a2706347e9b1ccc064d2c1",
+          "reviewer": "converged RC review rc/0.51.0: opus fresh-context, 1 round, 0 Critical / 2 Important fixed (17afef26, 076849ab)"
         }
       },
       "startedAt": "2026-09-30T04:54:23.746Z"
@@ -11743,7 +11786,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1751,
+  "revision": 1756,
   "reviewMode": "standard",
   "releases": [
     {

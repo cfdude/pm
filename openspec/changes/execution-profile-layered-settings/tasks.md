@@ -160,7 +160,7 @@ These rules bind every section below.
 
 ## 6. Gate 2
 
-- [ ] 6.1 **Gate 2** at the effective review of this epic. When built inside the 0.51.0 release
+- [x] 6.1 **Gate 2** at the effective review of this epic. When built inside the 0.51.0 release
       candidate, it is satisfied by the converged review defined by `converged-release-candidate-review`.
       The review covers the full `BASE..HEAD` diff for spec alignment, real tests passing, and error
       and edge handling (invalid stored values, the haiku rule). Fix Critical and Important findings,
@@ -180,7 +180,7 @@ These rules bind every section below.
 
 ## 8. Close
 
-- [ ] 8.1 Integration: the full suite passes
+- [x] 8.1 Integration: the full suite passes
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`, plus
       `node scripts/test/certify.mjs functional` and `… sweeps`), and
       `openspec validate execution-profile-layered-settings --strict` passes.
