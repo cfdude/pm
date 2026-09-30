@@ -71,6 +71,11 @@
       "platforms": { "claude-code": "slash command (/pm:cross-spec-review) driving the release-scope review, recorded via `record-cross-spec-review`" }
     },
     {
+      "id": "release-candidate-procedure",
+      "artifacts": ["skills/release-candidate/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block" }
+    },
+    {
       "id": "process-lessons",
       "artifacts": ["skills/lessons/SKILL.md"],
       "platforms": { "claude-code": "skill loaded by name, plus the `lesson-advice` PreToolUse hook in hooks.json which surfaces a docs/lessons/ entry whose `detect:` matcher matches the pending tool call (advisory; never blocks)" }

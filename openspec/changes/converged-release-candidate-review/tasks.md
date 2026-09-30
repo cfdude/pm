@@ -36,7 +36,7 @@ These rules bind every section below.
 
 ## 1. The shipped skill
 
-- [ ] 1.1 Write `skills/release-candidate/SKILL.md` with the six steps and the rules on budget, cap,
+- [x] 1.1 Write `skills/release-candidate/SKILL.md` with the six steps and the rules on budget, cap,
       classification, recording and attribution from the spec. Include the per-member
       `record-gate-review` loop and the `update-epic --attribute-commit` rule for fix commits, as
       exact invocations using the engine-resolution preamble the command docs use. Add it to a
@@ -47,13 +47,13 @@ These rules bind every section below.
 
 ## 2. Emission
 
-- [ ] 2.1 **Shared chokepoint.** `execution-profile-layered-settings` task 4.1 (rulesBlock, rules
+- [x] 2.1 **Shared chokepoint.** `execution-profile-layered-settings` task 4.1 (rulesBlock, rules
       fixtures, `commands/review-mode.md`) lands FIRST. This task rebases on it and does not start
       until that commit is in. TDD (UNIT): `rulesBlock` emits a "Release candidate" section naming the skill, the
       budget-is-the-maximum rule, the one-round cap with Critical-only reopen, and the
       same-range-per-member recording rule. Update the rules fixtures and managed-rules assertions in
       the same commit. Cover "The rules block points to the procedure".
-- [ ] 2.2 TDD (FILE): after `write-rules`, `CLAUDE.md` on disk carries the section once, inside the
+- [x] 2.2 TDD (FILE): after `write-rules`, `CLAUDE.md` on disk carries the section once, inside the
       managed markers.
 
 ## 3. Read-back

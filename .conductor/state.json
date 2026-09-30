@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "execution-profile-layered-settings",
+  "active": "converged-release-candidate-review",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -11592,7 +11592,7 @@
       "id": "execution-profile-layered-settings",
       "title": "Layered execution profile: review mode, model and notification verbosity set per project, overridable per lane, epic and detour",
       "priority": "P1",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -11606,10 +11606,11 @@
         "168e5bbb3039b4eac28ce16c811fe051d20383c2",
         "6e709146ba7eeff44530623a277c259f8fd3756f",
         "8aa4b53a366787a9f81e89d66639986390b41507",
-        "4f56051e3e1b7d15caad3f510278a38ce16a83e8"
+        "4f56051e3e1b7d15caad3f510278a38ce16a83e8",
+        "c44742ae041f775269ef24d2ff8bd3cc101da874"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T04:53:03.803Z",
+      "touchedAt": "2026-09-30T04:54:23.758Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11634,7 +11635,7 @@
       "id": "converged-release-candidate-review",
       "title": "Converged release-candidate workflow: batch by area, one integration branch, one capped review, fixes routed back, one push",
       "priority": "P1",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -11651,7 +11652,7 @@
         "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T03:39:54.782Z",
+      "touchedAt": "2026-09-30T04:54:23.758Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11662,7 +11663,8 @@
           ],
           "reviewer": "opus fresh-context (1 round, Critical fixed a2bb4b2b, fix verified by orchestrator)"
         }
-      }
+      },
+      "startedAt": "2026-09-30T04:54:23.746Z"
     },
     {
       "id": "lean-subagent-bootstrap",
@@ -11725,7 +11727,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1735,
+  "revision": 1737,
   "reviewMode": "standard",
   "releases": [
     {

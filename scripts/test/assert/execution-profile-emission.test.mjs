@@ -19,7 +19,7 @@ test("4.1: the rules block's Execution profile section is byte-pinned by the cur
     executionProfile: { verbosity: "verbose", model: { implement: { model: "sonnet", effort: "medium" }, test: { model: "haiku" } } },
     laneProfiles: { "claude-code": { review: "standard", model: { test: { model: "haiku" } } }, decision: { review: "off" } }, epics: [] };
   const block = rulesBlock(null, "thorough", [], "claude-code", profileContext(state));
-  const section = block.slice(block.indexOf("## Execution profile"), block.indexOf("## Feedback"));
+  const section = block.slice(block.indexOf("## Execution profile"), block.indexOf("## Release candidate"));
   assert.equal(section, FIXTURE, "regenerate scripts/test/fixtures/rules-0.51.0-execution-profile.txt deliberately if this changes");
 });
 

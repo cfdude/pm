@@ -527,6 +527,8 @@ export const ALWAYS_ON_HEADINGS = [
   // comparison drops whichever one it carries — the 0.26.0 fixtures the old, the engine the new.
   "## Execution profile",
   "## Review mode",
+  // converged-release-candidate-review: an always-on pointer to the release-candidate skill.
+  "## Release candidate",
 ];
 export const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 
