@@ -1,0 +1,20 @@
+Task-to-commit verification (5.2) — `git show --name-only <sha>` per task; every claimed file must appear in THAT commit.
+
+PASS  1.1  72eeba54  skills/release-candidate/SKILL.md
+PASS  1.1  72eeba54  docs/parity-ledger.json
+PASS  2.1  72eeba54  scripts/lib/rules.mjs
+PASS  2.1  72eeba54  scripts/test/unit/release-candidate-emission.test.mjs
+PASS  2.1  72eeba54  scripts/test/fixtures/rules-0.51.0-release-candidate.txt
+PASS  2.1  72eeba54  scripts/test/fixtures/helpers.mjs
+PASS  2.1  72eeba54  openspec/changes/converged-release-candidate-review/red-2.1.txt
+PASS  2.2  72eeba54  scripts/test/assert/release-candidate-emission.test.mjs
+PASS  3.1  9c23222d  scripts/lib/releases.mjs
+PASS  3.1  9c23222d  scripts/test/unit/release-candidate-readback.test.mjs
+PASS  3.1  9c23222d  openspec/changes/converged-release-candidate-review/red-3.1.txt
+PASS  3.2  9c23222d  scripts/test/functional/release-candidate-staleness.test.mjs
+PASS  3.2  9c23222d  scripts/test/unit/release-candidate-staleness.test.mjs
+PASS  4.1  9c23222d  commands/review-mode.md
+PASS  4.1  9c23222d  commands/status.md
+
+RESULT: all claimed files present in their commits
+Note: tasks grouped into two commits (72eeba54: 1.1, 2.1, 2.2; 9c23222d: 3.1, 3.2, 4.1) because each lib edit forces both certify runs (~5 min). 5.1 and this file are docs(openspec) commits.

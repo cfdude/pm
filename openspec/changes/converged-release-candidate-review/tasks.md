@@ -78,7 +78,7 @@ These rules bind every section below.
 
 ## 5. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 5.1 **Call-site completeness sweep, including inverses.**
+- [x] 5.1 **Call-site completeness sweep, including inverses.**
       - Derive with `rg -n "record-gate-review|gateReview|gate2|releaseShow|release show" scripts commands skills`
         every site that writes, reads or removes a Gate 2 record, or renders a release.
       - State where the "same range for every member" rule is emitted, which is the skill and the
@@ -88,20 +88,20 @@ These rules bind every section below.
         --withdrawal-reason …`, applied per member. The skill must name it for the case where a
         converged verdict is withdrawn, and the withdrawal applies to every member.
       - Save the result as `call-site-sweep-5.1.txt`.
-- [ ] 5.2 **Verify each task against its commit.** For every task, run `git show --stat <sha>` and
+- [x] 5.2 **Verify each task against its commit.** For every task, run `git show --stat <sha>` and
       assert that every claimed file is in THAT commit. Save the result as
       `commit-verification-5.2.txt`.
-- [ ] 5.3 **Attribute every commit.** Run
+- [x] 5.3 **Attribute every commit.** Run
       `node scripts/conductor.mjs update-epic converged-release-candidate-review --attribute-commit <sha>`
       at each commit, including the proposal commit. Never attribute the archive move (8.4). Verify
       that the attribution array lists the commits in landing order.
-- [ ] 5.4 **Lifecycle marker.** 8.3 and 8.4 carry `<!-- pm:lifecycle -->` on their task lines. Verify:
+- [x] 5.4 **Lifecycle marker.** 8.3 and 8.4 carry `<!-- pm:lifecycle -->` on their task lines. Verify:
       `rg -n "pm:lifecycle" openspec/changes/converged-release-candidate-review/tasks.md`.
 - [ ] 5.5 **Dogfood it.** Run 0.51.0 itself through this procedure, as the first candidate. Record the
       tokens spent reviewing and building against the `certification-record-redesign` baseline
       (5.8M / 2.0M), and put the numbers in the closeout. The measurement is evidence for the
       practice, and without it the practice reads as a preference.
-- [ ] 5.6 **Route what the work taught you.** Name each item as a practice, as tooling friction
+- [x] 5.6 **Route what the work taught you.** Name each item as a practice, as tooling friction
       (`/pm:feedback`) or as a process failure (`docs/lessons/`), with evidence. "None" must say what
       was looked at.
 

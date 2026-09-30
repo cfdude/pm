@@ -1,0 +1,35 @@
+Call-site sweep 5.1 — converged-release-candidate-review
+Derived mechanically:
+  rg -n "record-gate-review|gateReview|gate2|releaseShow|release show" scripts commands skills -g '!scripts/test/**'
+  (per-file counts: archive-gate 32, constants 22, integrity 19, releases 17, conductor SKILL 15, commands/epic 12,
+   update-epic 10, commands/status 8, gate-review-writeback 7, render 5, ... 29 files in all)
+
+SITES THAT WRITE a Gate 2 record: scripts/lib/gate-review-writeback.mjs (the ONLY writer: record-gate-review), and
+  update-epic.mjs (--withdraw-gate-review moves the entry to withdrawnGateReviews; removal path).
+  -> UNCHANGED by this change. No new writer, no new flag on either (unit/release-candidate-staleness asserts it).
+SITES THAT READ a Gate 2 record: archive-gate.mjs (the delivered gate and gateStaleness), integrity.mjs, render.mjs and
+  briefing.mjs (the stalenessMarking suffix), epic-progress.mjs, activity-log.mjs (gate-review events).
+  -> UNCHANGED. Each reads per epic, so a converged verdict (N ordinary records) is checked by all of them for free.
+SITES THAT RENDER A RELEASE: releases.mjs releaseShow (the ONLY new surface: the derived `candidate review:` line) and
+  constants.mjs releaseSummaries/releaseLine, used by PROJECT.md, the brief and `release` (list form).
+  -> The candidate line is deliberately in `release show` only. The one-line list forms (release show with no id, PROJECT.md,
+     the brief) already carry the member and cross-spec counts; adding a convergence figure there would need a per-release
+     sha grouping on every render, for a fact only the candidate review's operator asks for. Justified omission.
+
+WHERE THE "SAME RANGE FOR EVERY MEMBER" RULE IS EMITTED: skills/release-candidate/SKILL.md (the full procedure and both exact
+  invocations) and the rules block's `## Release candidate` section (rules.mjs). commands/review-mode.md and commands/status.md
+  point at the skill.
+WHERE IT IS DELIBERATELY NOT: every per-change surface — record-gate-review, update-epic, the archive gate, integrity, the brief's
+  gate row, commands/epic.md's "Record a gate verdict". A change's Gate 2 is still recorded at that change's own range when it is
+  NOT built inside a candidate; the rule is a property of a candidate review, not of a change, and pm cannot know a change is in
+  one (no stored release-review id, by design D2). Enforcing it per change would refuse legitimate solo Gate 2 records.
+
+DATA references: this change stores none (design D2 rejects `record-gate-review --release <id>` for exactly that reason). The
+  candidate line is derived from epic.release, epic.status, epic.attributedCommits and epic.gateReview.gate2.headSha at read time,
+  so there is no pointer to strip on release --unmember, --defer or remove-epic.
+
+INVERSES: recording -> the existing `update-epic <id> --withdraw-gate-review 2 --withdrawal-reason "<why>"`, applied to EVERY member
+  the verdict was recorded for (named in the skill, section "If a converged verdict has to be taken back"). A withdrawn Gate 2 leaves
+  no gate2 entry, so `release show` names that member as missing a verdict (unit/release-candidate-readback). The skill's other
+  writes (`update-epic --attribute-commit`) have their existing inverse `--withdraw-commit`. `release show` and the rules section are
+  reads/text and have none.
