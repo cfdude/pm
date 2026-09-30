@@ -23,13 +23,13 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1**, at this epic's effective review: one fresh-context reviewer over `proposal.md`,
+- [x] 0.1 **Gate 1**, at this epic's effective review: one fresh-context reviewer over `proposal.md`,
       `design.md`, `specs/release-candidate-review/spec.md` and this file, BY PATH. Check the
       WHEN/THEN rungs, whether D2's rejection of a new verb holds against the staleness spec, and
       consistency with `execution-profile-layered-settings`'s `review` resolution. Fix Critical and
       Important findings, and run `openspec validate converged-release-candidate-review --strict`.
       Record the verdict with `record-gate-review converged-release-candidate-review --gate 1 …`.
-- [ ] 0.2 **Cross-spec review** (required item 5). This is covered by the single 0.51.0 cross-spec
+- [x] 0.2 **Cross-spec review** (required item 5). This is covered by the single 0.51.0 cross-spec
       pass in `execution-profile-layered-settings` task 0.2, which MUST include this change's spec.
       Verify: `release show 0.51.0` shows a current verdict whose hashed set includes
       `specs/release-candidate-review/spec.md`.
@@ -117,10 +117,11 @@ These rules bind every section below.
 
 ## 7. Docs (after Gate 2 only)
 
-- [ ] 7.1 README: the release-candidate procedure in brief, and the skill. Verify: the README names
+- [x] 7.1 README: the release-candidate procedure in brief, and the skill. Verify: the README names
       `release-candidate` and `release show`'s candidate line.
 - [ ] 7.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill: a release-candidate page or
       section, and the `release show` reference. Merge live and verify the pages render.
+      NOT DONE — at release cut: the Mintlify site ships with the release PR.
 
 ## 8. Close
 

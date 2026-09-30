@@ -350,9 +350,10 @@ opposite of the truth. It is a pure read: it saves nothing and re-renders nothin
 It also prints a derived **`candidate review:`** line, computed from the CANDIDATE members' existing
 Gate 2 records with nothing stored (the `release-candidate` skill has the procedure). A candidate
 member is a release member that is not archived and has at least one attributed commit. The line reads
-`converged at <sha>` when every candidate member carries a Gate 2 verdict at one shared head; otherwise
-`NOT converged`, listing each distinct head with its members and each member with no Gate 2 verdict
-(a withdrawn Gate 2, or one with no recorded head, counts as no verdict). A release with no candidate
+`converged at <sha>` when every candidate member carries a passing Gate 2 verdict over one shared range
+(the same base AND the same head); otherwise `NOT converged`, listing each distinct range with its
+members, each member with no Gate 2 verdict (a withdrawn Gate 2, or one with no recorded head, counts
+as no verdict) and each member whose verdict is `fail`. A release with no candidate
 members prints no such line.
 
 `release show` takes at most one further positional; a second is refused before anything runs.

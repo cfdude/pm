@@ -715,7 +715,7 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. The document may hold only `parent` and `epics`; `links` take the `--link` grammar or `{type, epic, reason}` objects and must name an epic in the record or the batch — anything else refuses the batch by name. |
-| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
+| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--verbosity …] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic execution-profile values (`--review-mode`, `--model`, `--verbosity`; an epic may raise or lower the lane's and repo's), inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at write time and stored as the full object name (`HEAD` or a tag records the commit it names now); a value that is not a commit in this clone is refused with nothing written. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. Matched by commit identity where the value resolves (a full sha withdraws a legacy short entry of the same commit), and by exact spelling otherwise, so a legacy value that no longer resolves stays withdrawable. The array stays append-only, so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
 | `update-epic <id> --withdraw-gate-review <1\|2> --withdrawal-reason "<why>"` | **Withdraw a recorded gate verdict** that does not belong on this epic — re-recording can replace a verdict, but only this says it was never this epic's. Repeatable, so both gates go in one call under the one reason. The whole entry, `superseded` included, moves into `withdrawnGateReviews` — recorded, never erased — and re-recording is the way back. Refused without a reason, for a gate other than 1 or 2, for the same gate twice, where no verdict is stored, and against an `ungated` stamp (cleared by recording a real verdict); `--withdrawal-reason` alone is refused too. It is a field write the archive gate decides on: a Gate 2 withdrawal in a `delivered` archive call, or on an archived `delivered` epic whose Gate 2 was met, is refused and prints the one call that withdraws AND records the right disposition. |
@@ -749,8 +749,8 @@ compared only when neither side carries a URL. `--clear plan` and `--clear spec`
 claiming that file, so the next `sync` registers it as a fresh untriaged epic — and no sync-ignore
 tombstone is written, deliberately, because the epic survives and the clear may well mean *let sync
 find this file's real owner*. `--clear parent` drops the epic out of the hierarchy;
-`--clear review-mode` falls back to the repo-global dial, which may be LOWER, and the de-escalation
-guard does not see a clear. Clearing an already-absent field prints nothing — there was no removal
+`--clear review-mode` falls back to the lane's value, then the repo-global dial, which may be higher or
+lower than the epic's own; there is no de-escalation guard, so nothing complains either way. Clearing an already-absent field prints nothing — there was no removal
 to have a consequence.
 
 **A flag with no value is refused, on every command that accepts it.** `--clear-links`,
@@ -858,9 +858,28 @@ adjudicated). A single epic can set its own review via `update-epic <id>
 --review-mode`, raising or lowering the repo's dial (the epic's value wins; `profile --epic <id>` names the
 layer it came from).
 
-`set-profile` and `profile` set and read the execution profile (review, model per job role,
-verbosity) at the project and lane layers; see `commands/profile.md`. The full README section
-lands with the release's docs.
+</details>
+
+<details>
+<summary><code>/pm:profile</code> — Set and read the execution profile</summary>
+
+The execution profile says how intensely to review, which model and effort each job role runs on, and
+how often you report. Three fields: `review` (`off|standard|thorough`), `model` (per role
+`implement|test|review`, a `{model, effort}` pair; `model` is `fable|opus|sonnet|haiku`, and every
+model except `haiku` takes an effort) and `verbosity` (`quiet|verbose`). `/pm:init` asks about it and
+recommends `opus` at `medium` effort for every role.
+
+Each field resolves on its own, most specific first: **epic, then lane, then project, then the
+default** (`review: standard`, `verbosity: quiet`, no model directive). Set the project or a lane
+with `set-profile [--lane <lane>] --review … --model <role>=<model>[:<effort>] --verbosity …`; an epic
+sets its own with `add-epic` / `update-epic` (`--review-mode`, `--model`, `--verbosity`) or
+`add-many`. An epic may lower a value as well as raise it. Every set has an inverse:
+`set-profile --unset review|verbosity|model|model:<role>` and, on an epic, `--clear` or
+`--clear-model <role>`. `profile [--lane <lane> | --epic <id>]` reads the effective values back and
+names the layer each came from; an epic that lowers a value names the one it overrides.
+
+The engine only records and emits the profile, into the managed rules block and the session brief. It
+never dispatches an agent or checks which model ran. Full reference: `commands/profile.md`.
 
 </details>
 
@@ -1036,6 +1055,17 @@ Membership being derived is right, but nothing ever presented the derived view, 
 opened the release object saw `deferred[]` populated and members absent — "exclusions and no
 members", the opposite of the truth. It is a pure read. `show` is reserved as the first positional,
 so a release cannot be named `show`.
+
+**The release candidate is reviewed once, as a whole, and `release show` reads the result back.** The
+`release-candidate` skill is the procedure: batch the release's work by area, merge every worktree
+into one candidate, run one fresh-context review round over the candidate range (the reviewer budget
+is a maximum, and reopening after the round needs a Critical finding), fix, then record the SAME
+`baseSha..headSha` as every member's Gate 2 with `record-gate-review` and attribute the fix commits
+with `update-epic --attribute-commit`. `release show <id>` prints a derived `candidate review:` line
+from those Gate 2 records (nothing is stored): `converged at <sha>` only when every candidate member
+(not archived, at least one attributed commit) carries a passing verdict over one shared base AND head;
+otherwise `NOT converged`, listing each distinct range, each member with no verdict and each member
+whose verdict is `fail`.
 
 **A new release id must match `^[a-z0-9][a-z0-9._-]*$`**, checked before the missing-intent refusal
 and before any write; a release stored before the rule is still updated and shown by its id.
@@ -1769,7 +1799,7 @@ pm/ (this repo)
 ├── CHANGELOG.md                 release history (Keep a Changelog + SemVer)
 ├── commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync
 │                                 /pm:epic /pm:hierarchy /pm:tracker /pm:feedback /pm:lane-routing
-│                                 /pm:review-mode /pm:gate-guard /pm:changelog /pm:upgrade
+│                                 /pm:review-mode /pm:profile /pm:gate-guard /pm:changelog /pm:upgrade
 │                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md

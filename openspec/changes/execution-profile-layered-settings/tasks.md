@@ -27,14 +27,14 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review mode per the effective profile of this epic, `standard` today): one
+- [x] 0.1 **Gate 1** (review mode per the effective profile of this epic, `standard` today): one
       fresh-context reviewer over `proposal.md`, `design.md`, `specs/execution-profile/spec.md` and
       this file, BY PATH. Check WHEN/THEN testability on the rung named above, D1 storage against the
       "absent resolves to today" claim, and task ordering. Fix Critical and Important findings, then
       re-validate with `openspec validate execution-profile-layered-settings --strict`. Record the
       verdict:
       `record-gate-review execution-profile-layered-settings --gate 1 --verdict pass|fail --artifact <path>…`.
-- [ ] 0.2 **Cross-spec review of release 0.51.0** (required item 5). This change and
+- [x] 0.2 **Cross-spec review of release 0.51.0** (required item 5). This change and
       `converged-release-candidate-review` each add a spec, and change 2 reads this change's `review`
       resolution. Invoke the `cross-spec-review` skill over the release's whole spec set and fix
       BLOCKS. Record the verdict with
@@ -171,11 +171,12 @@ These rules bind every section below.
 
 ## 7. Docs (after Gate 2 only)
 
-- [ ] 7.1 README: the execution profile (fields, layers, resolution order, verbs and inverses), and
+- [x] 7.1 README: the execution profile (fields, layers, resolution order, verbs and inverses), and
       removing the "escalate only" wording. Verify: `rg -n -i "escalat" README.md` returns no stale
       claim.
 - [ ] 7.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill: the review-mode page, a
       profile page or section, and the epic flag reference. Merge live and verify the pages render.
+      NOT DONE — at release cut: the Mintlify site ships with the release PR.
 
 ## 8. Close
 

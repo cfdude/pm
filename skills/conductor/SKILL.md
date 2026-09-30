@@ -179,7 +179,7 @@ repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --re
 sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
 execution profile (review, model per job role, verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
-epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `set-lane-routing` / `suggest-lane` per-repo
+epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still

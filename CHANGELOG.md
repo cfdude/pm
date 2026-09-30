@@ -6,6 +6,46 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased] — 0.51.0
+
+### Added
+
+* **An execution profile: review intensity, model and effort per job role, and report verbosity,
+  resolved most-specific-wins across four layers.** `set-profile` writes the project layer or, with
+  `--lane <lane>`, a lane's; an epic sets its own with `--review-mode`, `--model <role>=<model>[:<effort>]`
+  and `--verbosity` on `add-epic`, `update-epic` and `add-many`. Each field resolves on its own: epic,
+  then lane, then project, then the default (`review: standard`, `verbosity: quiet`, no model directive).
+  Models are `fable | opus | sonnet | haiku` with an effort (`haiku` takes none), for the roles
+  `implement | test | review`; `/pm:init` walks the user through it top-down and recommends `opus` at
+  `medium` for every role. `profile [--lane <lane> | --epic <id>]` reads the effective values back and
+  names the layer each came from. Every set has an inverse: `set-profile --unset …`, and on an epic
+  `--clear <field>` or `--clear-model <role>`. The engine records and emits the profile into the rules
+  block and the session brief; it never dispatches an agent or checks which model ran.
+* **`release show` prints a derived `candidate review:` line, and a `release-candidate` skill carries
+  the procedure.** One fresh-context review round over the merged candidate, a reviewer budget that is
+  a maximum, Critical-only reopening, and the same `baseSha..headSha` recorded as every member's Gate 2.
+  Nothing is stored: the line is derived from the candidate members' Gate 2 records and reads
+  `converged at <sha>` only when every member shares one base AND head, has a verdict, and none is a
+  `fail`; otherwise it lists each range, each member with no verdict and each failed member.
+
+### Changed
+
+* **An epic's `--review-mode` may now be BELOW the lane's or the repo's.** The old escalate-only
+  refusal is gone by decision; what replaces it is visibility: `profile --epic <id>` and `rules --epic`
+  name the layer each value came from and the higher value an epic lowers. `--clear review-mode` falls
+  back to the lane, then the repo dial.
+
+### Fixed
+
+* **`.conductor/brief.txt` is git-ignored, and a repo that already committed it is told how to stop.**
+  14 of 24 pm-managed repos on one machine had committed it, and every snapshot left a changed tracked
+  file. It is ignored now, as is `.conductor/write-conflicts.log.prev`. Because an ignore line does
+  nothing for a file already in the index, `upgrade` (and `init`) print an `⚠ UNTRACK PM'S SESSION
+  FILES` block with the exact `git rm -r --cached` line and a commit line. pm never runs it; the files
+  stay on disk. No `state.json` change and no migration.
+
+---
+
 ## [0.50.0] — 2026-09-25
 
 The per-commit gate now tests the commit itself: the index git hands it, `git commit -a` and
