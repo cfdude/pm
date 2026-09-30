@@ -51,7 +51,7 @@ These rules bind every section below.
       (haiku with an effort, a non-haiku model with none, an unknown role, model, effort or level).
       Verify: each refusal message names the accepted list.
 
-- [ ] 1.3 **Call-site completeness sweep, including inverses.**
+- [x] 1.3 **Call-site completeness sweep, including inverses.**
       - Derive every caller mechanically with
         `rg -n "currentReviewMode|globalReviewMode|REVIEW_MODE_RANK|KNOWN_REVIEW_MODES|reviewMode|executionProfile|laneProfiles|\.verbosity\b|autonomy\.notifications|epic\.model" scripts commands skills`,
         including tests. For each site, state whether the most-specific-wins rule and the new fields
