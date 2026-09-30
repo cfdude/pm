@@ -11603,8 +11603,18 @@
         "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T03:39:06.074Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-09-30T03:39:54.025Z",
+      "release": "0.51.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-30T03:39:54.022Z",
+          "artifacts": [
+            "openspec/changes/execution-profile-layered-settings"
+          ],
+          "reviewer": "opus fresh-context (1 round, Critical fixed a2bb4b2b, fix verified by orchestrator)"
+        }
+      }
     },
     {
       "id": "converged-release-candidate-review",
@@ -11627,8 +11637,18 @@
         "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T03:39:06.925Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-09-30T03:39:54.782Z",
+      "release": "0.51.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-30T03:39:54.779Z",
+          "artifacts": [
+            "openspec/changes/converged-release-candidate-review"
+          ],
+          "reviewer": "opus fresh-context (1 round, Critical fixed a2bb4b2b, fix verified by orchestrator)"
+        }
+      }
     },
     {
       "id": "lean-subagent-bootstrap",
@@ -11691,7 +11711,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1724,
+  "revision": 1727,
   "reviewMode": "standard",
   "releases": [
     {
@@ -12220,7 +12240,26 @@
     {
       "id": "0.51.0",
       "intent": "Tests and records you can trust: the certification redesign that broke parallel work in 0.50.0, a guard that no test can write the real record, the fragile and flaky test surfaces (Theme A); and the gate/record verbs refusing what they should, stale Gate 1 detection, archive and date-rule follow-ups, tracker-duplicate reporting (Theme B). store-owns ships only if a quiet-machine measurement still justifies it.",
-      "deferred": []
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-30T03:39:55.674Z",
+        "specs": [
+          {
+            "key": "certification-record-redesign/specs/suite-certification/spec.md",
+            "sha256": "d4afae07c60cdf35aa98e4f69f86ce03676f73be5f13488fa724189e9287a6d6"
+          },
+          {
+            "key": "converged-release-candidate-review/specs/release-candidate-review/spec.md",
+            "sha256": "ab77d56e7d846f692cc8fe8ff0abddda4efa8f3d31804fbffe8031b78dd965a9"
+          },
+          {
+            "key": "execution-profile-layered-settings/specs/execution-profile/spec.md",
+            "sha256": "4448bfba4d42f73cfc073d46991fde1cace9abe7b795acd8fe3397e6de9e570a"
+          }
+        ],
+        "reviewer": "opus fresh-context, combined with Gate 1; Critical fixed a2bb4b2b"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
