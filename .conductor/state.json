@@ -11600,10 +11600,12 @@
       "description": "Rob, 2026-09-29 retrospective: review thoroughness (and model, and notification verbosity) must be configuration that cascades like Claude Code settings — project default, overridden per lane, per epic, per detour. Example: a financial app runs thorough project-wide but sets standard on non-critical components; a plugin runs standard and raises one risky epic to thorough; a minimal detour never gets a thorough review. Model: project default (e.g. Opus 5.5 medium) overridable per job (Sonnet 5.5 for implementation, Haiku 4.5 for running tests); coding and testing agents may be split. Notifications: project default quiet (one completion message), overridable to verbose for a critical job. The engine only records and resolves the effective setting and emits it in the instructions it already writes; it never dispatches agents (instruction layer). Evidence: 0.51.0 spent ~11M+ subagent tokens on 5 epics, ~70% on one epic's 7+ review rounds under repo-wide thorough.",
       "attributedCommits": [
         "ac9594effbd20c6508b3ca3845ed7b774a1ffaf1",
-        "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
+        "a2bb4b2b0808a6d631f5914cfebf40133947b16c",
+        "5838559f6b0abaec801fdb394f99c490230770c4",
+        "0d9adb56510507d16362c9afc657182b49d66eb9"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T03:40:45.416Z",
+      "touchedAt": "2026-09-30T03:48:15.366Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11712,7 +11714,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1728,
+  "revision": 1730,
   "reviewMode": "standard",
   "releases": [
     {

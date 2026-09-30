@@ -46,7 +46,7 @@ These rules bind every section below.
 - [x] 1.1 TDD (UNIT): add `KNOWN_MODELS`, `KNOWN_EFFORTS`, `MODELS_WITHOUT_EFFORT`,
       `KNOWN_JOB_ROLES` and `KNOWN_VERBOSITY_LEVELS` to `scripts/lib/constants.mjs`, one
       declaration each. RED: a test that imports them and asserts the exact lists from the spec.
-- [ ] 1.2 TDD (UNIT): a shared parser for `<role>=<model>[:<effort>]` and
+- [x] 1.2 TDD (UNIT): a shared parser for `<role>=<model>[:<effort>]` and
       `<field>` / `model:<role>`. Cover every "refused" scenario in "A profile holds three fields…"
       (haiku with an effort, a non-haiku model with none, an unknown role, model, effort or level).
       Verify: each refusal message names the accepted list.
