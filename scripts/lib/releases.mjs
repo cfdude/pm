@@ -349,6 +349,33 @@ export function release() {
 
 // ─────────────────── the READ form (gh#178) ───────────────────
 
+/** The CANDIDATE review's convergence, DERIVED from existing Gate 2 records — nothing is stored
+ *  (converged-release-candidate-review D3). A candidate member is a release member that is NOT
+ *  archived and HAS BUILT WORK, meaning at least one attributed commit. `release show` takes no flags
+ *  and is a pure read, so the review's `<base>..<head>` range is not an input here; "built work in
+ *  the range" is therefore read as "has an attributed commit", which is the same set whenever the
+ *  release's members were built inside the one candidate. Returns `null` with no candidate members.
+ *
+ *  A member has a verdict when its `gateReview.gate2` carries a string `headSha`; a withdrawn Gate 2
+ *  leaves no `gate2` entry (the verdict moved to `withdrawnGateReviews`), and a legacy entry with no
+ *  head cannot be compared, so both read as no verdict. */
+export function candidateReview(epics, releaseId) {
+  const members = releaseMembers(epics, releaseId)
+    .filter(e => e.status !== "archived" && Array.isArray(e.attributedCommits) && e.attributedCommits.length > 0);
+  if (!members.length) return null;
+  const heads = new Map();
+  const missing = [];
+  const failed = [];
+  for (const e of members) {
+    const g = e.gateReview && e.gateReview.gate2;
+    if (!g || typeof g.headSha !== "string" || !g.headSha) { missing.push(e.id); continue; }
+    if (!heads.has(g.headSha)) heads.set(g.headSha, []);
+    heads.get(g.headSha).push(e.id);
+    if (g.verdict === "fail") failed.push(e.id);
+  }
+  return { count: members.length, heads, missing, failed, converged: !missing.length && heads.size === 1 };
+}
+
 /** `release show [<id>]` — render a release back, or list them all.
  *
  *  WHY THIS EXISTS. `release` was a write verb with no reader, so the only way to inspect what a
@@ -438,6 +465,22 @@ export function releaseShow(rest) {
   // separator, on precisely the warning gh#126 shipped to make unmissable.
   const cross = crossSpecLine(state, epics, id);
   out.push(cross ? `  ${cross.replace(/^ · /, "")}` : "  cross-spec review: — (below the gate's threshold)");
+  // The converged release-candidate review, derived from the candidate members' Gate 2 records
+  // (converged-release-candidate-review D3). No line at all when the release has no candidate members.
+  const candidate = candidateReview(epics, id);
+  if (candidate) {
+    const who = (ids) => ids.map(m => `\`${escapeControls(m)}\``).join(", ");
+    if (candidate.converged) {
+      const [head, ids] = [...candidate.heads.entries()][0];
+      out.push(`  candidate review: converged at \`${head}\` (${ids.length} member${ids.length === 1 ? "" : "s"}: ${who(ids)})` +
+        `${candidate.failed.length ? ` — failed: ${who(candidate.failed)}` : ""}`);
+    } else {
+      out.push("  candidate review: NOT converged —");
+      for (const [head, ids] of candidate.heads) out.push(`    • ${head} — ${who(ids)}`);
+      if (candidate.missing.length) out.push(`    • no Gate 2 verdict — ${who(candidate.missing)}`);
+      if (candidate.failed.length) out.push(`    • failed: ${who(candidate.failed)}`);
+    }
+  }
   if (amendments.length) {
     out.push(`  amendments (${amendments.length}):`);
     for (const a of amendments) {

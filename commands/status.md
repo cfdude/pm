@@ -347,6 +347,14 @@ half is the point: membership lives on the epic, so a reader who opened the rele
 `deferred[]` populated and members absent — which reads as "exclusions and no members", the
 opposite of the truth. It is a pure read: it saves nothing and re-renders nothing.
 
+It also prints a derived **`candidate review:`** line, computed from the CANDIDATE members' existing
+Gate 2 records with nothing stored (the `release-candidate` skill has the procedure). A candidate
+member is a release member that is not archived and has at least one attributed commit. The line reads
+`converged at <sha>` when every candidate member carries a Gate 2 verdict at one shared head; otherwise
+`NOT converged`, listing each distinct head with its members and each member with no Gate 2 verdict
+(a withdrawn Gate 2, or one with no recorded head, counts as no verdict). A release with no candidate
+members prints no such line.
+
 `release show` takes at most one further positional; a second is refused before anything runs.
 `release show --force` is refused by the read form itself: `--force` passes the engine's
 command-line check because `release` mutates, and the read form declines every flag.

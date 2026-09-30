@@ -104,5 +104,14 @@ Rules:
   `set-profile --unset review` is it (it removes the recorded dial, so the default `standard`
   applies again).
 
+## When several changes are reviewed as one release candidate
+
+Building a release from several changes, the budget applies **per candidate, not per change**: the
+converged review runs at the HIGHEST effective `review` among the candidate members (the members that
+are not archived and have built work), so one `thorough` member makes the whole candidate `thorough`.
+When members resolve to different levels the procedure names each and recommends splitting the
+candidate by level. The whole procedure — batching, one integration branch, one capped review round,
+recording the same range as every member's Gate 2 — is the `release-candidate` skill.
+
 This dial is one field of the **execution profile**, which also carries the model and effort per
 job role and a verbosity level. See `/pm:profile`.

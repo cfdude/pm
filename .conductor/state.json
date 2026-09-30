@@ -11649,10 +11649,11 @@
       "description": "Rob, 2026-09-29: (1) batch by area — work items on the same component go to ONE agent so code is written once and tested once; (2) worktree branches merge into one integration (release-candidate) branch; (3) ONE converged review of the candidate, capped at one round (standard = 1 reviewer, thorough = 2); only Critical reopens; Minors are logged, never re-reviewed; (4) gate failures go back to sub-agents to fix and re-merge; (5) targeted re-test — after a fix, re-run only the failed tests; the full suite runs at the candidate gate and in CI; (6) the orchestrator commits and pushes ONCE, so CI does not run heavy suites per worktree commit. Evidence: certification-record-redesign took 5 Gate 1 fix rounds + 3 Gate 2 rounds (~5.8M tokens reviewing vs ~2.0M building); the new functional trigger demands a certify on ~70/126 commits.",
       "attributedCommits": [
         "27b697b65d490651bd051fdffec36572dabd2134",
-        "a2bb4b2b0808a6d631f5914cfebf40133947b16c"
+        "a2bb4b2b0808a6d631f5914cfebf40133947b16c",
+        "72eeba54b77bc1c38d8adc20c2ec551ab7b83168"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T04:54:23.758Z",
+      "touchedAt": "2026-09-30T05:10:00.827Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11727,7 +11728,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1737,
+  "revision": 1738,
   "reviewMode": "standard",
   "releases": [
     {

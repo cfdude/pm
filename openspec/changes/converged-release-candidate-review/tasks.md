@@ -58,13 +58,13 @@ These rules bind every section below.
 
 ## 3. Read-back
 
-- [ ] 3.1 TDD (UNIT): `release show <id>` prints the derived "candidate review" line (design D3). Cover
+- [x] 3.1 TDD (UNIT): `release show <id>` prints the derived "candidate review" line (design D3). Cover
       "Converged members", "A member with a divergent head is named" and "A member with no verdict
       is named", "A withdrawn Gate 2 is named as missing" and "Archived and unbuilt members are not
       candidate members", plus a release with no candidate members printing no line. Candidate
       members are the release members that are not archived and have at least one attributed commit
       in `<base>..<head>`. Verify: the store is unchanged after the read.
-- [ ] 3.2 TDD (FUNCTIONAL plus assertion twin): "A verdict recorded before a fix is stale". This uses
+- [x] 3.2 TDD (FUNCTIONAL plus assertion twin): "A verdict recorded before a fix is stale". This uses
       the real git in a temp repo: attribute two commits, record Gate 2 at the first head, attribute
       a fix commit descending from it, and assert the verdict renders stale and a `delivered` archive
       is refused naming the fix. Then re-record at the new head and assert a pass. This pins that D2
@@ -72,7 +72,7 @@ These rules bind every section below.
 
 ## 4. Command docs
 
-- [ ] 4.1 `commands/review-mode.md`: the budget applies per candidate as the maximum over members, and
+- [x] 4.1 `commands/review-mode.md`: the budget applies per candidate as the maximum over members, and
       links the skill. `commands/release.md` (or whichever doc covers `release show`): the candidate
       review line. Verify: `rg -n "release-candidate" commands` names both.
 

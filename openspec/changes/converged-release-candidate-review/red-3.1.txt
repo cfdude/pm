@@ -1,0 +1,229 @@
+✖ Converged members: one shared head over every candidate member reads converged (2.996375ms)
+✖ A member with a divergent head is named: every distinct head is listed with its members (0.534792ms)
+✖ A member with no verdict is named, and nothing is written (0.446667ms)
+✖ A withdrawn Gate 2 is named as missing (0.397125ms)
+✖ Archived and unbuilt members are not candidate members (0.464458ms)
+✔ a release with no candidate members prints no candidate line (0.529083ms)
+✖ a recorded fail is a verdict at its head, and is named as failed (0.346ms)
+✖ a Gate 2 with no recorded head is treated as no verdict (0.377209ms)
+✖ other releases' members are not counted (0.370292ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 1
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 134.654167
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ Converged members: one shared head over every candidate member reads converged (2.996375ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /candidate review: converged at `1111111111111111111111111111111111111111`/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (2) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '    • `b` — b · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:19:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (2) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n    • `b` — b · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /candidate review: converged at `1111111111111111111111111111111111111111`/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ A member with a divergent head is named: every distinct head is listed with its members (0.534792ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /NOT converged/. Input:
+  
+  ''
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:26:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /NOT converged/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ A member with no verdict is named, and nothing is written (0.446667ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /NOT converged/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (2) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '    • `b` — b · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:36:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (2) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n    • `b` — b · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /NOT converged/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ A withdrawn Gate 2 is named as missing (0.397125ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /no Gate 2 verdict — `b`/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (2) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '    • `b` — b · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:46:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (2) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n    • `b` — b · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /no Gate 2 verdict — `b`/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ Archived and unbuilt members are not candidate members (0.464458ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /candidate review: converged at `1111111111111111111111111111111111111111`/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (4) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '    • `b` — b · archived · P1\n' +
+    '    • `c` — c · active · P1\n' +
+    '    • `d` — d · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:58:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (4) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n    • `b` — b · archived · P1\n    • `c` — c · active · P1\n    • `d` — d · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /candidate review: converged at `1111111111111111111111111111111111111111`/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a recorded fail is a verdict at its head, and is named as failed (0.346ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /converged at/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (2) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '    • `b` — b · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:73:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (2) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n    • `b` — b · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /converged at/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a Gate 2 with no recorded head is treated as no verdict (0.377209ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /no Gate 2 verdict — `b`/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (2) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '    • `b` — b · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:79:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (2) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n    • `b` — b · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /no Gate 2 verdict — `b`/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ other releases' members are not counted (0.370292ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /converged at/. Input:
+  
+  'conductor: release `R` — x\n' +
+    '  target: —\n' +
+    '  members (1) — derived from `epic.release`, never stored on the release:\n' +
+    '    • `a` — a · active · P1\n' +
+    '  deferred (0):\n' +
+    '    (none)\n' +
+    "  cross-spec review: — (below the gate's threshold)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-candidate-readback.test.mjs:86:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release `R` — x\n  target: —\n  members (1) — derived from `epic.release`, never stored on the release:\n    • `a` — a · active · P1\n  deferred (0):\n    (none)\n  cross-spec review: — (below the gate's threshold)\n",
+    expected: /converged at/,
+    operator: 'match',
+    diff: 'simple'
+  }
