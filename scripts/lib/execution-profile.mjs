@@ -75,3 +75,70 @@ export function parseUnsetField(text) {
   }
   return { ok: false, message: `unset field '${escapeControls(String(s))}' is not one of review|verbosity|model|model:<role> (role one of ${KNOWN_JOB_ROLES.join("|")})` };
 }
+
+// ─────────────── the resolver (D2) ───────────────
+
+const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const DEFAULT_REVIEW = "standard";
+const DEFAULT_VERBOSITY = "quiet";
+
+/** The layers of one field, most specific first. A layer is `{ source, review, verbosity, model }`
+ *  holding the RAW stored values (a hand-edited one may be invalid; resolution checks them). D1's
+ *  storage asymmetry lives here and nowhere else: the project's review is `state.reviewMode`, the
+ *  lane's is `laneProfiles[<lane>].review`, the epic's is `epic.reviewMode`. */
+function layersFor(state, epic, lane) {
+  const layers = [];
+  if (epic) layers.push({ source: "epic", review: epic.reviewMode, verbosity: epic.verbosity, model: epic.model });
+  const lp = lane && isObj(state.laneProfiles) ? state.laneProfiles[lane] : undefined;
+  if (isObj(lp)) layers.push({ source: `lane:${escapeControls(String(lane))}`, review: lp.review, verbosity: lp.verbosity, model: lp.model });
+  const ep = isObj(state.executionProfile) ? state.executionProfile : {};
+  layers.push({ source: "project", review: state.reviewMode, verbosity: ep.verbosity, model: ep.model });
+  return layers;
+}
+
+/** Resolve one field across the layers. `read(layer)` returns `undefined` when the layer holds nothing,
+ *  else the raw stored value; `check(raw)` returns `{ok, value}`. A stored value that fails its check
+ *  is treated as unset at that layer, resolution falls through, and it is reported in `ignored`. When
+ *  the winning layer is not the bottom one, `overrides` names the value it lowered or raised. */
+function resolveField(layers, read, check, dflt) {
+  const ignored = [];
+  const valid = [];
+  for (const layer of layers) {
+    const raw = read(layer);
+    if (raw === undefined || raw === null) continue;
+    const c = check(raw);
+    if (c.ok) valid.push({ source: layer.source, value: c.value });
+    else ignored.push({ source: layer.source, value: raw });
+  }
+  const win = valid[0] || { value: dflt, source: "default" };
+  const out = { value: win.value, source: win.source };
+  const below = valid[1];
+  if (below && JSON.stringify(below.value) !== JSON.stringify(win.value)) {
+    out.overrides = { value: below.value, source: below.source };
+  }
+  if (ignored.length) out.ignored = ignored;
+  return out;
+}
+
+const checkModelEntry = (raw) => (isObj(raw) ? checkPair(raw.model, raw.effort) : { ok: false });
+
+/** The effective profile of an epic, a lane, or (with neither) the project — every field with the
+ *  layer it came from. PURE: `state` in, a plain object out. `model` resolves PER ROLE and takes the
+ *  `{model, effort}` pair whole from the first layer that sets that role. A detour epic has no layer
+ *  of its own beyond the epic layer: nothing here follows a `detourStack` frame, so it never inherits
+ *  from the epic it paused. `lane` defaults to the epic's own lane. */
+export function resolveProfile(state, { epicId, lane } = {}) {
+  const s = state || {};
+  const epic = epicId ? (Array.isArray(s.epics) ? s.epics.find((e) => e && e.id === epicId) : undefined) : undefined;
+  const useLane = lane || (epic && epic.lane) || undefined;
+  const layers = layersFor(s, epic, useLane);
+  const model = {};
+  for (const role of KNOWN_JOB_ROLES) {
+    model[role] = resolveField(layers, (l) => (isObj(l.model) ? l.model[role] : undefined), checkModelEntry, null);
+  }
+  return {
+    review: resolveField(layers, (l) => l.review, checkReview, DEFAULT_REVIEW),
+    verbosity: resolveField(layers, (l) => l.verbosity, checkVerbosity, DEFAULT_VERBOSITY),
+    model,
+  };
+}

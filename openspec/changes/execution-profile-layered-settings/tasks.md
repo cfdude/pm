@@ -68,16 +68,16 @@ These rules bind every section below.
 
 ## 2. The resolver
 
-- [ ] 2.1 TDD (UNIT): `resolveProfile(state, {epicId?, lane?})` in the new
+- [x] 2.1 TDD (UNIT): `resolveProfile(state, {epicId?, lane?})` in the new
       `scripts/lib/execution-profile.mjs` (design D2). Cover every scenario of "The effective value is
       resolved bottom-up, per field", including "Nothing set resolves to today's behaviour" over a
       0.50.0-shaped fixture state, the whole-pair rule for `model`, and a stored invalid value falling
       through with `ignored` set.
-- [ ] 2.2 TDD (UNIT): make `currentReviewMode(epicId)` an adapter over the resolver. RED: an epic
+- [x] 2.2 TDD (UNIT): make `currentReviewMode(epicId)` an adapter over the resolver. RED: an epic
       whose `reviewMode` is BELOW the project resolves to its own value (it resolves to the max
       today). Update the existing unit tests that pin max-resolution (1.3 lists them) in the same
       commit, and cite this spec's "An epic lowers review below the project" scenario in each.
-- [ ] 2.3 TDD (UNIT): "A detour epic does not inherit from the epic it paused". Push a detour over an
+- [x] 2.3 TDD (UNIT): "A detour epic does not inherit from the epic it paused". Push a detour over an
       in-memory store and resolve it. Verify: the parent's `thorough` never appears in its profile.
 
 ## 3. Verbs and records

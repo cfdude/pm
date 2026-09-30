@@ -22,12 +22,13 @@ function rethrowUnreadable(e) {
 import fs from "node:fs";
 import path from "node:path";
 import {
-  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
+  KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
+import { resolveProfile } from "./execution-profile.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -83,20 +84,14 @@ export function globalReviewMode(state) {
   return KNOWN_REVIEW_MODES.includes(m) ? m : "standard";
 }
 
-/** The active review-mode dial. With no `epicId`, this is just the repo-global dial. With an
- *  `epicId`, returns the EFFECTIVE mode for that epic: the higher-ranked of the repo-global
- *  dial and the epic's own `reviewMode` override (if any) — an epic override can only escalate
- *  above the global dial, never silently de-escalate below it (enforced at write time in
- *  updateEpic(), not here; this is just "take the max" for read time). */
+/** The active review mode. With no `epicId`, the project layer (lane and epic layers do not apply).
+ *  With an `epicId`, that epic's EFFECTIVE mode, resolved most-specific-wins by resolveProfile()
+ *  (epic, then its lane, then the project, then `standard`) — an epic's value wins even where it is
+ *  LOWER than the project's. An adapter over the resolver, so every existing caller is untouched. */
 export function currentReviewMode(epicId) {
   try {
     const state = loadState();
-    const global = globalReviewMode(state);
-    if (!epicId) return global;
-    const epic = state.epics.find(e => e.id === epicId);
-    const override = epic && KNOWN_REVIEW_MODES.includes(epic.reviewMode) ? epic.reviewMode : null;
-    if (!override) return global;
-    return REVIEW_MODE_RANK[override] > REVIEW_MODE_RANK[global] ? override : global;
+    return resolveProfile(state, epicId ? { epicId } : {}).review.value;
   } catch (e) { rethrowUnreadable(e); return "standard"; }
 }
 
