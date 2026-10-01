@@ -426,8 +426,10 @@ export function commitNudge() {
       // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung:
       // on the unverifiable rung nothing is known to have landed, and naming HEAD there would
       // assert a commit the repository never confirmed against an APPEND-ONLY array.
-      const files = commits.flatMap(c => changedFiles(c.sha) || []);
-      const attribution = attributionNudge(state, ctx, commits.map(c => c.sha), files);
+      // Per commit, NOT merged: bookkeeping is judged on each commit's own paths, and the hedge for a
+      // commit that does not name the active epic reads each commit's own subject.
+      const attribution = attributionNudge(state, ctx,
+        commits.map(c => ({ sha: c.sha, subject: c.subject, files: changedFiles(c.sha) })));
       runNudge(state, ctx, commits, attribution, event, dead, amendNote);
     } else {
       const subject = unverifiableSubject(cmd);
@@ -539,6 +541,40 @@ function attributionCandidates(state, ctx, files = []) {
   return [...out.filter(touches), ...out.filter(e => !touches(e))];
 }
 
+/** A change archived by `/opsx:archive`: `openspec/changes/archive/<YYYY-MM-DD>-<id>/<rest>`. */
+const ARCHIVED_CHANGE_PATH = /^openspec\/changes\/archive\/(?:\d{4}-\d{2}-\d{2}-)?([^/]+)\/(.+)$/;
+const LIVE_CHANGE_PATH = /^openspec\/changes\/(?!archive\/)([^/]+)\/(.+)$/;
+
+/** Does this commit's changed-path list hold ONLY pm bookkeeping — `.conductor/**`, `PROJECT.md`, and a
+ *  change MOVED under `openspec/changes/archive/`? Such a commit is lifecycle bookkeeping and is never
+ *  attributed (the nudge's own exclusion, which an agent obeying a bare command used to violate).
+ *
+ *  A MOVE is recognised by PAIRING NAMES, because the gateway's `diff-tree` runs with no rename detection
+ *  and so lists both halves: `openspec/changes/<id>/<rest>` removed and
+ *  `openspec/changes/archive/<date>-<id>/<rest>` added. A path under `openspec/changes/` with no partner is
+ *  an EDIT or a new change, which is real work, so it is not bookkeeping. Deliberately NOT
+ *  `isConductorOwnFiles()`, which detour logging uses and which must not widen. `false` for `null` (git
+ *  could not answer) and for an empty list: not being able to tell keeps the nudge. */
+export function isAttributionBookkeeping(files) {
+  if (!Array.isArray(files) || files.length === 0) return false;
+  const archived = files.map(f => ARCHIVED_CHANGE_PATH.exec(f)).filter(Boolean);
+  return files.every((f) => {
+    if (f === "PROJECT.md" || f.startsWith(".conductor/")) return true;
+    const a = ARCHIVED_CHANGE_PATH.exec(f);
+    if (a) return files.includes(`openspec/changes/${a[1]}/${a[2]}`);
+    const live = LIVE_CHANGE_PATH.exec(f);
+    return Boolean(live) && archived.some(m => m[1] === live[1] && m[2] === live[2]);
+  });
+}
+
+/** Does this commit subject name the epic by id — as a whole token, so `a` is not found in `data`? A
+ *  conventional scope (`feat(<id>): …`) and a prefix (`<id>: …`) both count. */
+export function subjectNamesEpic(subject, id) {
+  if (typeof subject !== "string" || typeof id !== "string" || !id) return false;
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^A-Za-z0-9_-])${esc}($|[^A-Za-z0-9_-])`, "i").test(subject);
+}
+
 /** gh#129 — the commit-TIME half of the attribution obligation, appended to the advisory the hook
  *  already emits on a real commit. The engine records NOTHING: attribution is append-only and its
  *  order decides the Gate 2 range, so it is the agent's write, made with a command it can run.
@@ -548,13 +584,31 @@ function attributionCandidates(state, ctx, files = []) {
  *  and the statement that choosing is the agent's. Every command names every reported live commit,
  *  oldest first, as ONE invocation. NOISE BUDGET: one short paragraph per real commit, on a message
  *  that already prints; what it must never do is fire when no commit landed, or name a wrong sha. */
-function attributionNudge(state, ctx, shas, files = []) {
-  // Every value is a full sha read from a reflog line (commit-watch.mjs parseReflog), so none can
+function attributionNudge(state, ctx, commits) {
+  // Every sha is a full sha read from a reflog line (commit-watch.mjs parseReflog), so none can
   // be empty; the filter keeps an empty one from emitting a command that appends nothing.
-  const list = (shas || []).filter(s => typeof s === "string" && s);
-  if (!list.length) return null;
+  const all = (commits || []).filter(c => c && typeof c.sha === "string" && c.sha);
+  if (!all.length) return null;
+  // BOOKKEEPING IS CLASSIFIED PER COMMIT, never on the merged file list: one real commit among
+  // three bookkeeping ones must still be named, and a bookkeeping one must never be attributed.
+  const real = all.filter(c => !isAttributionBookkeeping(c.files));
+  const bookkeeping = all.filter(c => !real.includes(c));
+  const shown = (cs) => cs.map(c => `\`${shortSha(c.sha)}\``).join(", ");
+  if (!real.length) {
+    return `ATTRIBUTION — ${shown(bookkeeping)} ${bookkeeping.length === 1 ? "is" : "are"} pm bookkeeping (only ` +
+      "`.conductor/` files, `PROJECT.md` and/or a change moved under `openspec/changes/archive/`) and needs no attribution.";
+  }
+  const list = real.map(c => c.sha);
+  const files = real.flatMap(c => c.files || []);
   const candidates = attributionCandidates(state, ctx, files);
   if (!candidates.length) return null;
+  const bookkeepingNote = bookkeeping.length
+    ? ` (${shown(bookkeeping)} ${bookkeeping.length === 1 ? "is" : "are"} bookkeeping and needs no attribution.)` : "";
+  // A candidate is TIED to these commits when one of them touched its own artifacts or named its id in
+  // its subject. Anything else is the engine guessing that the active epic owns work it merely happens
+  // to be active during, so the single-candidate sentence stops asserting it.
+  const tied = (epic) => real.some(c =>
+    (c.files || []).some(f => withinOwnArtifacts(f, ownArtifacts(epic))) || subjectNamesEpic(c.subject, epic.id));
   // The no-remedy message in place of the command for an id holding a control character (D4a).
   const cmd = (epic) => orNoRemedy(() => `update-epic ${printedId(epic.id)} ${list.map(s => `--attribute-commit ${s}`).join(" ")}`);
   // The exclusion travels WITH the commands, once: the archive move is the one commit obeying them
@@ -568,19 +622,29 @@ function attributionNudge(state, ctx, shas, files = []) {
     return "ATTRIBUTION — the engine recorded nothing; choosing is yours. Each of these epics could own " +
       "what landed (a candidate whose own files the commits touch is listed first):\n" +
       candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")).join("\n") +
-      `\n${exclusion}`;
+      `\n${exclusion}${bookkeepingNote}`;
   }
   const epic = candidates[0];
-  if (epic.attributedCommits.length === 0) {
-    return `ATTRIBUTION — \`${escapeControls(epic.id)}\` has attributed no commits yet: ` +
+  const id = escapeControls(epic.id);
+  const first = epic.attributedCommits.length === 0;
+  if (!tied(epic)) {
+    // Neither the subject nor the paths name this epic: it is a CANDIDATE only because it is the active
+    // one, and the engine says so rather than asserting ownership.
+    return `ATTRIBUTION — the engine cannot tell whether this commit is \`${id}\`'s work: its subject and paths do not ` +
+      `name it, and \`${id}\` is only the active epic. If this commit is \`${id}\`'s work, record it` +
+      (first ? ", after every commit of that epic's work that already landed, IN THE ORDER THEY LANDED (it has attributed none yet)" : "") +
+      ` — ${asCode(cmd(epic))}. If it is not, attribute nothing. ${exclusion}${bookkeepingNote}`;
+  }
+  if (first) {
+    return `ATTRIBUTION — \`${id}\` has attributed no commits yet: ` +
       "attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
       `${asCode(cmd(epic))}. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
       "entry, so a commit left unattributed is work that gate is never checked against. " +
-      `${exclusion}`;
+      `${exclusion}${bookkeepingNote}`;
   }
   return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
-    `${asCode(cmd(epic))}. ${exclusion}`;
+    `${asCode(cmd(epic))}. ${exclusion}${bookkeepingNote}`;
 }
 
 /** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no

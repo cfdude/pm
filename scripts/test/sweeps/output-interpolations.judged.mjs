@@ -664,13 +664,25 @@ x("subcommands.mjs", "supersedeAmended", {
 }, "engine", "reflog object names and git short shas; the reason is `amended into <sha>`; commands through orNoRemedy/printedId; ids escaped");
 x("subcommands.mjs", "attributionNudge", {
   "asCode(cmd(e))": 1,
-  "asCode(cmd(epic))": 2,
+  "asCode(cmd(epic))": 3,
 }, "escaped", "cmd() is attributionNudge's local builder: orNoRemedy(() => a template of printedId(epic.id) and resolved commit names); asCode() only wraps it");
 x("subcommands.mjs", "attributionNudge", {
   "s": 1,
-  "exclusion": 3,
+  "exclusion": 4,
   "candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? \" (attributes no commits yet)\" : \"\")).join(\"\\n\")": 1,
 }, "engine", "full commit object names from the observation, engine exclusion prose, and commands through asCode/orNoRemedy/printedId");
+x("subcommands.mjs", "attributionNudge", {
+  "id": 4,
+}, "escaped", "the single candidate's id after escapeControls(epic.id) (hook-friction-0-51): bound once as `const id`, so the sweep cannot see the escape at each use");
+x("subcommands.mjs", "attributionNudge", {
+  "shortSha(c.sha)": 1,
+  "shown(bookkeeping)": 2,
+  "bookkeepingNote": 4,
+}, "engine", "git short shas of reflog-observed commits, joined by shown(), and the note composed from them and fixed prose (hook-friction-0-51)");
+x("subcommands.mjs", "isAttributionBookkeeping", {
+  "a[1]": 1,
+  "a[2]": 1,
+}, "not-output", "the two capture groups of the archived-change path, interpolated into a LOOKUP KEY for files.includes(); the function returns a boolean and prints nothing (hook-friction-0-51)");
 x("subcommands.mjs", "runNudge", {
   "shortSha(c.sha)": 1,
   "named.join(\", \")": 1,
