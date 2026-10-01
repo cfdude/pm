@@ -176,7 +176,7 @@ These rules bind every section below.
       claim.
 - [ ] 7.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill: the review-mode page, a
       profile page or section, and the epic flag reference. Merge live and verify the pages render.
-      NOT DONE — at release cut: the Mintlify site ships with the release PR.
+      CARRIED to `release-0-51-0-cut` — the Mintlify site ships with the release PR (`--carried-to` on the 8.3 disposition).
 
 ## 8. Close
 
@@ -184,14 +184,14 @@ These rules bind every section below.
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`, plus
       `node scripts/test/certify.mjs functional` and `… sweeps`), and
       `openspec validate execution-profile-layered-settings --strict` passes.
-- [ ] 8.2 **Re-record Gate 2 after docs.** Once the docs commits (7.1, 7.2) have landed and been
+- [x] 8.2 **Re-record Gate 2 after docs.** (Satisfied: the converged Gate 2 at `33a82ff6` reaches every attributed commit, the 7.1 docs commit `1830d91d` included; 7.2 carried to `release-0-51-0-cut`.) Once the docs commits (7.1, 7.2) have landed and been
       attributed, re-record Gate 2 at the post-docs head:
       `record-gate-review execution-profile-layered-settings --gate 2 --verdict pass --base-sha <a> --head-sha <post-docs head> --reviewer "<identity>"`.
       Re-record, never withdraw. Verify: the epic's Gate 2 renders as a pass, not stale, so the
       `delivered` archive in 8.3 is not refused.
-- [ ] 8.3 <!-- pm:lifecycle --> **Disposition.**
+- [x] 8.3 <!-- pm:lifecycle --> **Disposition.**
       `update-epic execution-profile-layered-settings --status archived --outcome delivered --reason "<why>" --no-deferrals`,
       or `--deferral` / `--declined-deferral` for anything held back, such as `profile --json` from
       design Open Questions. Run `/pm:status`.
-- [ ] 8.4 <!-- pm:lifecycle --> **Archive.** `/opsx:archive execution-profile-layered-settings`. The
+- [x] 8.4 <!-- pm:lifecycle --> **Archive.** `/opsx:archive execution-profile-layered-settings`. The
       archive-move commit is NOT attributed (5.3).

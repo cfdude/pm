@@ -125,19 +125,19 @@ These rules bind every section below.
       `release-candidate` and `release show`'s candidate line.
 - [ ] 7.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill: a release-candidate page or
       section, and the `release show` reference. Merge live and verify the pages render.
-      NOT DONE — at release cut: the Mintlify site ships with the release PR.
+      CARRIED to `release-0-51-0-cut` — the Mintlify site ships with the release PR (`--carried-to` on the 8.3 disposition).
 
 ## 8. Close
 
 - [x] 8.1 Integration: the full suite passes, the functional and sweeps certify runs pass, and
       `openspec validate converged-release-candidate-review --strict` passes.
-- [ ] 8.2 **Re-record Gate 2 after docs.** Once the docs commits (7.1, 7.2) have landed and been
+- [x] 8.2 **Re-record Gate 2 after docs.** (Satisfied: the converged Gate 2 at `33a82ff6` reaches every attributed commit, the 7.1 docs commit `1830d91d` included; 7.2 carried to `release-0-51-0-cut`.) Once the docs commits (7.1, 7.2) have landed and been
       attributed, re-record Gate 2 at the post-docs head:
       `record-gate-review converged-release-candidate-review --gate 2 --verdict pass --base-sha <rc base> --head-sha <post-docs head> --reviewer "<identity>"`.
       Re-record, never withdraw. Verify: the epic's Gate 2 renders as a pass, not stale, so the
       `delivered` archive in 8.3 is not refused.
-- [ ] 8.3 <!-- pm:lifecycle --> **Disposition.**
+- [x] 8.3 <!-- pm:lifecycle --> **Disposition.**
       `update-epic converged-release-candidate-review --status archived --outcome delivered --reason "<why>" --no-deferrals`,
       or `--deferral` / `--declined-deferral` for anything held back. Run `/pm:status`.
-- [ ] 8.4 <!-- pm:lifecycle --> **Archive.** `/opsx:archive converged-release-candidate-review`. The
+- [x] 8.4 <!-- pm:lifecycle --> **Archive.** `/opsx:archive converged-release-candidate-review`. The
       archive move is NOT attributed.

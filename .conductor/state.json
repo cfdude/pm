@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "converged-release-candidate-review",
+  "active": "lean-subagent-bootstrap",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10896,7 +10896,7 @@
       "id": "brief-txt-tracked-in-fleet-repos",
       "title": ".conductor/brief.txt is tracked in 14 of 24 pm-managed repos: ensureGitignore() never ignores it, so every snapshot churns a committed file (found by 0.50.0 Gate 2)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -10908,7 +10908,7 @@
         "87c6436461026891e0c2faf95cfd2f94ed9132e1"
       ],
       "createdAt": "2026-09-26T01:35:08.414Z",
-      "touchedAt": "2026-09-30T06:21:03.821Z",
+      "touchedAt": "2026-10-01T02:52:14.646Z",
       "notes": [
         {
           "at": "2026-09-28T22:29:14.458Z",
@@ -10925,7 +10925,19 @@
           "headSha": "33a82ff63037ecc892a2706347e9b1ccc064d2c1",
           "reviewer": "converged RC review rc/0.51.0: opus fresh-context, 1 round, 0 Critical / 2 Important fixed (17afef26, 076849ab)"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T02:52:14.643Z",
+        "reason": "Built for 0.51.0 (ships with the release cut). ensureGitignore now ignores .conductor/brief.txt and write-conflicts.log.prev (e46c36cb); /pm:upgrade prints the exact git rm --cached for pm session files already tracked, never runs it (eb386d01). Reviewed in the converged RC Gate 2 at 33a82ff6. /pm:upgrade Mintlify page carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T02:52:14.642Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T02:52:14.643Z"
     },
     {
       "id": "integrity-reports-set-aside-archive-dirs",
@@ -11630,7 +11642,7 @@
       "id": "execution-profile-layered-settings",
       "title": "Layered execution profile: review mode, model and notification verbosity set per project, overridable per lane, epic and detour",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -11650,7 +11662,7 @@
         "1830d91d3f56e544bbac88a79a45560cb3637014"
       ],
       "createdAt": "2026-09-30T00:07:41.930Z",
-      "touchedAt": "2026-09-30T06:21:01.384Z",
+      "touchedAt": "2026-10-01T02:52:06.509Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11676,13 +11688,30 @@
           "actor": "agent",
           "text": "3.x landed in one commit: every scripts/lib edit needs both certifies (~5 min), so section 3 tasks were grouped"
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T02:52:06.502Z",
+        "reason": "Built for 0.51.0 (ships with the release cut). Layered execution profile — review mode, per-role model:effort and notification verbosity — set per project and overridable per lane, epic and detour, resolved most-specific-wins; set-profile/profile verbs with unset inverses, emitted in the rules block, rules --epic and the brief. Gate 1 + cross-spec pass (Critical fixed a2bb4b2b); converged RC Gate 2 at 33a82ff6, 1 round, 0 Critical, 2 Important fixed (17afef26, 076849ab). Mintlify task 7.2 carried to release-0-51-0-cut so the site does not document it before the plugin ships.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T02:52:06.445Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "profile --json (design Open Questions)",
+            "reason": "no consumer yet; text output is the contract until one exists"
+          }
+        ]
+      },
+      "completedAt": "2026-10-01T02:52:06.502Z"
     },
     {
       "id": "converged-release-candidate-review",
       "title": "Converged release-candidate workflow: batch by area, one integration branch, one capped review, fixes routed back, one push",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -11704,7 +11733,7 @@
         "1830d91d3f56e544bbac88a79a45560cb3637014"
       ],
       "createdAt": "2026-09-30T00:07:42.809Z",
-      "touchedAt": "2026-09-30T06:21:02.339Z",
+      "touchedAt": "2026-10-01T02:52:13.704Z",
       "release": "0.51.0",
       "gateReview": {
         "gate1": {
@@ -11723,13 +11752,25 @@
           "reviewer": "converged RC review rc/0.51.0: opus fresh-context, 1 round, 0 Critical / 2 Important fixed (17afef26, 076849ab)"
         }
       },
-      "startedAt": "2026-09-30T04:54:23.746Z"
+      "startedAt": "2026-09-30T04:54:23.746Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T02:52:13.701Z",
+        "reason": "Built for 0.51.0 (ships with the release cut). release-candidate skill and emitted Release candidate section: batch by area onto one integration branch, one capped converged review, fixes routed back, one push; release show reads the candidate review back and converges only on one shared range with no failed member (076849ab). Gate 1 + cross-spec pass; dogfooded on its own batch — converged RC Gate 2 at 33a82ff6. Mintlify task 7.2 carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T02:52:13.683Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T02:52:13.701Z"
     },
     {
       "id": "lean-subagent-bootstrap",
       "title": "A lean sub-agent startup file instead of every agent re-reading CLAUDE.md, CONTRIBUTING and the design in full",
       "priority": "P2",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11737,8 +11778,9 @@
       "description": "Every dispatched agent currently pays an estimated 40-80K tokens (unmeasured) onboarding: the global and project CLAUDE.md load automatically, and briefs told agents to read CLAUDE.md/CONTRIBUTING/design in full. ~56 agent runs in 0.51.0 so far. Design a compact agent-startup file (the rules sub-agents must follow, not the whole handbook), trim the project CLAUDE.md where it only serves the orchestrator, and point briefs at exact files. Measure startup tokens before/after on the same task.",
       "attributedCommits": [],
       "createdAt": "2026-09-30T00:07:43.555Z",
-      "touchedAt": "2026-09-30T00:07:50.411Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-01T02:52:49.965Z",
+      "release": "0.51.0",
+      "startedAt": "2026-10-01T02:52:49.961Z"
     },
     {
       "id": "flaky-test-quarantine-and-targeted-rerun",
@@ -11776,6 +11818,35 @@
           "text": "(6) PostToolUse attribution hint names the ACTIVE epic (hook-fixtures-couple-to-every-hook-step) for commits belonging to other epics — seen on ac9594ef, 27b697b6, c7e9ef16 (2026-09-29)"
         }
       ]
+    },
+    {
+      "id": "release-0-51-0-cut",
+      "title": "Cut pm 0.51.0: version bump, CHANGELOG section, Mintlify sync (execution profile + review-mode page and epic flag reference; release-candidate page and release show reference; /pm:upgrade untrack block), Changelog page and Real Numbers, release PR into main, fleet pass",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "execution-profile-layered-settings",
+          "reason": "Mintlify 7.2 carried here"
+        },
+        {
+          "type": "relates-to",
+          "epic": "converged-release-candidate-review",
+          "reason": "Mintlify 7.2 carried here"
+        },
+        {
+          "type": "relates-to",
+          "epic": "brief-txt-tracked-in-fleet-repos",
+          "reason": "/pm:upgrade Mintlify page carried here"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T02:51:50.830Z",
+      "touchedAt": "2026-10-01T02:51:50.835Z"
     }
   ],
   "detourStack": [],
@@ -11786,7 +11857,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1756,
+  "revision": 1761,
   "reviewMode": "standard",
   "releases": [
     {
