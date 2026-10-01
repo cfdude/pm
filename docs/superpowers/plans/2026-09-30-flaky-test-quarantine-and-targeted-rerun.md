@@ -25,12 +25,13 @@ here ships to plugin users, so there is no changeset.
 
 Vitest has `retry` and per-test reruns, but adopting it means rewriting every `node:test` file and the
 machinery that reads them (the `unitTest()` filesystem counter, the observer loaded through `NODE_OPTIONS`, the
-hook floor that counts `^test(` declarations and the spec-summary parse). The measured problem is two flaky files;
-a file-level retry is ~170 lines. Node 26 here has `--test-rerun-failures <state-file>` (measured: it re-ran
-nothing differently on a plain second invocation, and it needs a state file the floor and certify do not
-manage); it is not verified on the Node 22 floor (`NODE_FLOOR_MAJOR`), and it carries no known-flake
-classification or ledger. A runner swap does not earn its place against this problem; revisit if flakes spread
-beyond a handful of files.
+hook floor that counts `^test(` declarations and the spec-summary parse). The measured problem is two flaky
+files; a file-level retry is 177 lines in `scripts/test/flake-retry.mjs`. Node 26 here has
+`--test-rerun-failures <state-file>` and it works (measured: on the second invocation the passing test printed
+`(passed on attempt 0)` and only the failures re-ran), but it is not adopted: it needs a state file that neither
+the hook nor certify manages, it is not verified on the Node 22 floor (`NODE_FLOOR_MAJOR`), and it has no
+known-flake list or ledger. Revisit if flakes spread beyond a handful of files, or when the floor reaches a Node
+major that carries the flag.
 
 ## Tasks
 
