@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { die } from "./command-exit.mjs";
-import { newStory, parentError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
+import { newStory, parentError, sourceArtifactPathError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -146,6 +146,11 @@ export function addMany() {
       if (typeof e[k] !== "string" || !e[k].trim()) {
         refuse(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
       }
+    }
+    // gh#232 — the same refusal add-epic / update-epic apply, from the one shared helper.
+    for (const [key, flag] of [["planPath", "plan"], ["specPath", "spec"]]) {
+      const bad = e[key] === undefined ? null : sourceArtifactPathError(flag, e[key]);
+      if (bad) refuse(`epic '${escapeControls(id)}': ${escapeControls(bad)}`);
     }
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) refuse(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";

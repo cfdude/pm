@@ -163,6 +163,13 @@ test("205.1 attributing a commit past a passing Gate 2 says the verdict went sta
   assert.equal(epicOf(cwd, "e").status, "archived");
 });
 
+test("205.3 the advisory also fires when the first attribution lands after a Gate 2 recorded with none attributed", () => {
+  const { cwd, shas: [root, a, b] } = repoWith(["root", "a", "b"]);
+  accepted(cwd, ["record-gate-review", "e", "--gate", "2", "--verdict", "pass", "--base-sha", root, "--head-sha", a]);
+  const r = accepted(cwd, ["update-epic", "e", "--attribute-commit", b]);
+  assert.match(r.stderr, /moved 'e's passing Gate 2/, r.stderr);
+});
+
 test("205.2 no advisory when the commit is covered by the head, or when no Gate 2 is recorded", () => {
   const { cwd, shas: [root, a, b] } = repoWith(["root", "a", "b"]);
   let r = accepted(cwd, ["update-epic", "e", "--attribute-commit", a]);

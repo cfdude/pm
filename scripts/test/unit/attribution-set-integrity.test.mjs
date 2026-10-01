@@ -6,7 +6,7 @@
 // wording of the stale-Gate-2 remedy (gh#216), and the legacy reading of a Gate 1 verdict (gh#198).
 // The real-commit behaviour (duplicates, catch-up, the post-gate advisory) lives in the functional file;
 // a directory on disk (gh#232) and a digest of a file (gh#198) live in
-// scripts/test/assert/gate-artifact-evidence.test.mjs, because they need bytes.
+// scripts/test/assert/gate1-artifact-digests.test.mjs, because they need bytes.
 
 import assert from "node:assert/strict";
 import { emptyRecord, expectFail, memoryEngine, recordWithEpic, unitTest } from "../fixtures/unit-harness.mjs";

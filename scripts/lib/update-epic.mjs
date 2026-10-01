@@ -918,8 +918,11 @@ export function updateEpic() {
     // sometimes right (it changed the implementation) and sometimes the rule's own exclusion (lifecycle
     // bookkeeping: the lessons task item 7 routes, the task-list tick, the archive move). The engine
     // classifies no commit, so it says what happened and names both ways out instead of staling in silence.
+    // Fresh before, OR no coverage before (none-attributed / attribution-withdrawn): the first attribution
+    // after a passing Gate 2 can stale it just the same.
     if (attributedWritten.length && gate2 && gate2.verdict === "pass" &&
-        gateStaleness({ ...epic, attributedCommits: attributedBefore }, gate2).state === "fresh") {
+        ["fresh", "none-attributed", "attribution-withdrawn"].includes(
+          gateStaleness({ ...epic, attributedCommits: attributedBefore }, gate2).state)) {
       const after = gateStaleness(epic, gate2);
       if (after.state === "stale") {
         announcements.push(

@@ -15,10 +15,14 @@
   attribute it where you cannot. The commit is still recorded nowhere the engine reads. (gh#205)
 * **A Gate 1 verdict goes stale when a reviewed artifact is amended.** `record-gate-review --gate 1 --artifact`
   now stores a sha-256 per readable artifact as `artifactDigests` beside the unchanged `artifacts` paths; amending
-  an artifact reads `⚠ stale` on `/pm:status` and the brief, an unreadable one (or a verdict recorded before this
-  release) reads `⚠ unverifiable`, never stale. The archive move is not an amendment. It never blocks an archive.
-  (gh#198)
+  an artifact reads `⚠ stale` on `/pm:status` and the brief, and an unreadable one reads `⚠ unverifiable`. A
+  verdict recorded before this release carries no digests and renders exactly as it did before (for example
+  `· no attributed commits`), never stale and never `⚠ unverifiable`. A live change's `tasks.md` is a progress
+  ledger that `/opsx:apply` ticks constantly: it stays in the recorded artifact list but is never digested, so
+  ticking a checkbox does not stale the verdict (proposal, design and specs do). The archive move is not an
+  amendment. It never blocks an archive. (gh#198)
 * **`update-epic` refuses contradictory deferral assertions and a directory as a plan.** `--no-deferrals` together
   with `--deferral` or `--declined-deferral` is refused by name with nothing written (gh#233). `--plan` / `--spec`
   on `update-epic` and `add-epic` refuse a trailing-slash value and a path that exists and is not a regular file;
-  a path that does not exist yet is still accepted (gh#232).
+  a path that does not exist yet is still accepted (gh#232). `add-many` batch entries'
+  `planPath` / `specPath` get the same refusal.

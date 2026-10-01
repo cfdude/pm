@@ -33,6 +33,12 @@ const LIVE_CHANGE_FILE = /^openspec\/changes\/(?!archive\/)([^/]+)\/(.+)$/;
 
 const normalize = (p) => String(p).trim().replace(/\\/g, "/").replace(/^\.\//, "");
 
+/** A change's `tasks.md` is a PROGRESS LEDGER, not reviewed content: /opsx:apply ticks it constantly, so
+ *  digesting it staled every openspec epic's Gate 1 at the first ticked checkbox. It stays in the recorded
+ *  artifact list (the reviewer did read it) but is exempt from the digest — never recorded, never compared,
+ *  never unreadable. proposal/design/specs keep their digests. */
+export const isProgressLedger = (p) => /^openspec\/changes\/(?!archive\/)[^/]+\/tasks\.md$/.test(normalize(p));
+
 /** The sha-256 of the file at `abs`, or null where it cannot be read as a file. */
 export function artifactDigest(abs) {
   try {
@@ -66,6 +72,7 @@ export function recordArtifactDigests(paths, root = engineRoot()) {
   const digests = [];
   const unreadable = [];
   for (const p of paths || []) {
+    if (isProgressLedger(p)) continue;
     const sha256 = artifactDigest(locateArtifact(p, root));
     if (sha256 === null) unreadable.push(p); else digests.push({ path: p, sha256 });
   }
@@ -89,13 +96,13 @@ export function artifactStaleness(entry, root = engineRoot()) {
   const unreadable = [];
   const digested = new Set();
   for (const d of entry.artifactDigests) {
-    if (!d || typeof d.path !== "string") continue;
+    if (!d || typeof d.path !== "string" || isProgressLedger(d.path)) continue;
     digested.add(d.path);
     const now = artifactDigest(locateArtifact(d.path, root));
     if (now === null) unreadable.push(d.path);
     else if (now !== d.sha256) changed.push(d.path);
   }
-  for (const p of gateArtifacts(entry)) if (!digested.has(p)) unreadable.push(p);
+  for (const p of gateArtifacts(entry)) if (!digested.has(p) && !isProgressLedger(p)) unreadable.push(p);
   if (changed.length) return { state: "stale", changed, unreadable };
   if (unreadable.length) return { state: "unverifiable", changed, unreadable };
   return { state: "fresh", changed, unreadable };

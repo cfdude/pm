@@ -37,8 +37,8 @@ test("198.1 a Gate 1 verdict records a digest per artifact beside the unchanged 
   const g1 = readState(cwd).epics[0].gateReview.gate1;
   assert.deepEqual(g1.artifacts, ["openspec/changes/e/proposal.md", "openspec/changes/e/tasks.md"],
     "artifacts stays a list of paths: every reader of it filters strings");
-  assert.equal(g1.artifactDigests.length, 2);
-  assert.deepEqual(g1.artifactDigests.map(d => d.path), g1.artifacts);
+  // tasks.md is the progress ledger: listed as read, never digested (198.8).
+  assert.deepEqual(g1.artifactDigests.map(d => d.path), ["openspec/changes/e/proposal.md"]);
   for (const d of g1.artifactDigests) assert.match(d.sha256, /^[0-9a-f]{64}$/);
 });
 
@@ -66,7 +66,7 @@ test("198.4 an artifact unreadable at record time gets no digest, is said so, an
   assert.match(out, /no content digest recorded for 1 of 3 artifact\(s\)/);
   assert.doesNotMatch(out, /design\.md/, "a count, never the path (the governed-input sweep's rule)");
   const g1 = readState(cwd).epics[0].gateReview.gate1;
-  assert.equal(g1.artifactDigests.length, 2);
+  assert.equal(g1.artifactDigests.length, 1, "proposal digested; tasks.md exempt; design.md unreadable");
   assert.equal(g1.artifacts.length, 3);
   assert.match(gate1Row(cwd), /⚠ unverifiable/);
   write(cwd, "openspec/changes/e/proposal.md", "changed\n");
@@ -81,6 +81,15 @@ test("198.5 a legacy Gate 1 verdict (paths only) reads unverifiable-or-silent as
   fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), JSON.stringify(s, null, 2) + "\n");
   write(cwd, "openspec/changes/e/proposal.md", "edited\n");
   assert.doesNotMatch(gate1Row(cwd), /⚠ stale/);
+});
+
+test("198.8 ticking a checkbox in the live change's tasks.md does NOT stale Gate 1; amending proposal.md does", () => {
+  const cwd = repoWithChange();
+  run(REVIEW, { cwd });
+  write(cwd, "openspec/changes/e/tasks.md", "- [x] 1.1 a task\n");
+  assert.doesNotMatch(gate1Row(cwd), /⚠/, "the progress ledger is exempt from the digest");
+  write(cwd, "openspec/changes/e/proposal.md", "# proposal\namended\n");
+  assert.match(gate1Row(cwd), /⚠ stale/);
 });
 
 test("198.6 a stale Gate 1 never blocks the archive: only Gate 2 is read by the archive gate", () => {

@@ -875,8 +875,10 @@ only what a *pass* requires. Paths are stored as given. **A Gate 1 verdict also 
 each artifact it could read, as `artifactDigests` beside the unchanged `artifacts` list** (Gate 1
 only — Gate 2's evidence is its commit range). The engine computes it; no flag accepts one. Amend a
 reviewed artifact afterwards and the rendered Gate 1 cell reads `⚠ stale`; an artifact unreadable
-at record time gets no digest (said on stderr) and reads `⚠ unverifiable`, and so does a verdict
-recorded before digests existed — absence of evidence is never staleness. `/opsx:archive` moving the
+at record time gets no digest (said on stderr) and reads `⚠ unverifiable`; a verdict recorded before
+digests existed renders as it always did (never stale, never `⚠ unverifiable`) — absence of evidence is
+never staleness. A live change's `tasks.md` is a progress ledger: listed, never digested, so ticking a
+checkbox does not stale the verdict. `/opsx:archive` moving the
 change under `archive/` is not an amendment: a recorded `openspec/changes/<id>/<file>` is found under
 its archive directory. Gate 1 staleness is a signal on `/pm:status` and the brief; it does not
 block an archive (only Gate 2 does). A verdict is corrected by RECORDING IT AGAIN — the write
