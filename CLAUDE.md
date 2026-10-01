@@ -100,6 +100,14 @@ branch cleanup). A change that is genuinely internal (a test, an engine-internal
 process-only doc fix) does not need either — but say so explicitly rather than silently
 skipping the check.
 
+## Dispatching agents — lean briefs
+
+A dispatched build, test or review agent already gets this file auto-loaded. Its brief points it at
+`.claude/agent-startup.md` (what it must obey here: rungs, commit and certify order, twin and drift rules,
+the zero-dependency engine, the parity ledger, never touching `state.json`, the flake rule, the report
+format) and names the exact files or sections it needs (`path` plus section). It does not say "read
+`CLAUDE.md` / `CONTRIBUTING.md` in full" — that re-reads this file and adds a design doc per agent.
+
 <!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->
 ## PM Conductor — operating rules
 
