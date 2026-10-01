@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "lean-subagent-bootstrap",
+  "active": "gh-cfdude-pm-216",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -11259,7 +11259,7 @@
       "id": "gh-cfdude-pm-216",
       "title": "Catching up an EARLIER commit with --attribute-commit breaks the invariant attributedCommits is read with",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11269,8 +11269,10 @@
       "externalUpdatedAt": "2026-09-22T08:20:55Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:06.318Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-01T06:09:20.756Z",
+      "release": "0.51.0",
+      "startedAt": "2026-10-01T06:09:20.753Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-215",
@@ -11770,46 +11772,91 @@
       "id": "lean-subagent-bootstrap",
       "title": "A lean sub-agent startup file instead of every agent re-reading CLAUDE.md, CONTRIBUTING and the design in full",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "description": "Every dispatched agent currently pays an estimated 40-80K tokens (unmeasured) onboarding: the global and project CLAUDE.md load automatically, and briefs told agents to read CLAUDE.md/CONTRIBUTING/design in full. ~56 agent runs in 0.51.0 so far. Design a compact agent-startup file (the rules sub-agents must follow, not the whole handbook), trim the project CLAUDE.md where it only serves the orchestrator, and point briefs at exact files. Measure startup tokens before/after on the same task.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6fd11e8b6eec495d6c9ab67934d7f9127e1ac011"
+      ],
       "createdAt": "2026-09-30T00:07:43.555Z",
-      "touchedAt": "2026-10-01T02:52:49.965Z",
+      "touchedAt": "2026-10-01T06:08:31.197Z",
       "release": "0.51.0",
-      "startedAt": "2026-10-01T02:52:49.961Z"
+      "startedAt": "2026-10-01T02:52:49.961Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T06:08:31.193Z",
+        "reason": "Built for 0.51.0 (ships with the release cut). .claude/agent-startup.md replaces re-reading CLAUDE.md/CONTRIBUTING in briefs; estimate (bytes/4, unmeasured in a live agent): ~35.8K tokens before, ~13.7K after. Orchestrator-only CLAUDE.md trims proposed, not made.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T06:08:31.192Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T06:08:31.193Z"
     },
     {
       "id": "flaky-test-quarantine-and-targeted-rerun",
       "title": "Stop burning tokens on flaky tests: quarantine known flakes, re-run only failed files automatically, record each occurrence",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "description": "In 0.51.0 roughly 1 in 3 functional certifies re-ran for a known flake (emitted-invocations ENOENT — now fixed; certify-index 1.2 SIGTERM process-lifetime; G2-C1/I2 2000 ms bound under load), and agents spent tokens diagnosing each. Proposal: the runner re-runs only the failed FILES once and logs the occurrence (time, load) to a flake ledger; a test failing twice is a real failure; known flakes get an owning epic and are fixed or made load-independent; agents are told not to diagnose a ledgered flake. Also reconsider test demands per commit (see converged-release-candidate-review). Vitest (dev-only dependency, allowed) could supply rerun-failed/related-test selection — evaluate against node:test's --test-name-pattern and per-file runs before adopting.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f9d88ac4d7c5e2e5118dec20446acb4037bdf4c8",
+        "373f48f32ebb7fc7a9e9dc196b2eba7e939161c5",
+        "9b57a8eb405aeed21367022df765eabb9b962d53"
+      ],
       "createdAt": "2026-09-30T00:07:44.247Z",
-      "touchedAt": "2026-09-30T00:07:50.411Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-01T06:08:28.066Z",
+      "release": "0.51.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T06:08:28.058Z",
+        "reason": "Built for 0.51.0 (ships with the release cut). Runner re-runs only failed test FILES once; ledgered known flakes pass quietly, unlisted pass loudly, fail-twice is real; unlocated/file-level failures are unmapped so another file's flake can never mask them. One converged review round: 1 Critical + 3 Important fixed (9b57a8eb, a1004663). README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T06:08:28.057Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Vitest adoption",
+            "reason": "node:test per-file reruns suffice; recorded in the plan"
+          },
+          {
+            "what": "unit-rung flake retry",
+            "reason": "filed as unit-rung-flake-retry-gap"
+          }
+        ]
+      },
+      "completedAt": "2026-10-01T06:08:28.058Z"
     },
     {
       "id": "hook-friction-0-51",
       "title": "Hook friction found in 0.51.0: attribution nudge on bookkeeping commits, amend refused with Twin-Unchanged, drift names one stale bucket per attempt, a release with no active epic fires the delivered check",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "description": "(1) PostToolUse attribution nudge fires on state-only bookkeeping commits and tells the agent to attribute them to the active epic. (2) git commit --amend with Twin-Unchanged trailers is refused by commit-msg because an amend stages nothing. (3) drift names only one stale bucket per commit attempt (sweeps, then functional) — three attempts to learn both. (4) archiving the only active member of a release makes delivered-release-epic-left-open fire on the live-record tests (worked around with set-active). (5) honcho-memories.log is ignored only by a global *.log rule for most users.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "3eaae5a52c4a0ee56a90bb0f997f747102edd567",
+        "13a0d885aefd492ed14e6a2e02f51c95dace19aa",
+        "7db940b7cd3b81f9d7af6759d30e3de185dc4919",
+        "32a3f588767d4d325e8373130bd42bda113f3b8d",
+        "a1004663107fb1d6a7469dfb3bbd36b1cec9d007"
+      ],
       "createdAt": "2026-09-30T00:07:44.896Z",
-      "touchedAt": "2026-09-30T03:35:45.561Z",
+      "touchedAt": "2026-10-01T06:08:29.860Z",
       "release": "0.51.0",
       "notes": [
         {
@@ -11817,13 +11864,30 @@
           "actor": "agent",
           "text": "(6) PostToolUse attribution hint names the ACTIVE epic (hook-fixtures-couple-to-every-hook-step) for commits belonging to other epics — seen on ac9594ef, 27b697b6, c7e9ef16 (2026-09-29)"
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T06:08:29.853Z",
+        "reason": "Built for 0.51.0 (ships with the release cut). Items 1,2,3,4,6 shipped: bookkeeping commits need no attribution and the active epic is only a candidate; amend judged against HEAD's parent with argv-parsed detection; drift names every stale bucket; honcho log ignored by name. Item 5 (in-flight release rule) has no clean rule in the schema: carried to release-in-flight-rule-needs-decision, finding now names the set-active workaround. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T06:08:29.851Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "amend whose message contains the word --amend verbatim",
+            "reason": "ps path cannot tell; /proc cmdline untestable on this machine"
+          }
+        ]
+      },
+      "completedAt": "2026-10-01T06:08:29.853Z"
     },
     {
       "id": "release-0-51-0-cut",
       "title": "Cut pm 0.51.0: version bump, CHANGELOG section, Mintlify sync (execution profile + review-mode page and epic flag reference; release-candidate page and release show reference; /pm:upgrade untrack block), Changelog page and Real Numbers, release PR into main, fleet pass",
       "priority": "P1",
-      "status": "planned",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -11846,7 +11910,84 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T02:51:50.830Z",
-      "touchedAt": "2026-10-01T02:51:50.835Z"
+      "touchedAt": "2026-10-01T06:09:20.756Z",
+      "startedAt": "2026-10-01T06:08:24.532Z"
+    },
+    {
+      "id": "flake-owner-certify-index-sigterm",
+      "title": "Owning epic for known flake certify-index 1.2 (SIGTERM process-lifetime): make it load-independent, then drop it from known-flakes.json",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "flaky-test-quarantine-and-targeted-rerun",
+          "reason": "seeded with owningEpic null"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T06:08:08.495Z",
+      "touchedAt": "2026-10-01T06:08:08.500Z"
+    },
+    {
+      "id": "flake-owner-g2-c1-i2-2000ms-bound",
+      "title": "Owning epic for known flake G2-C1/I2 (state-file-refuses-to-guess, 2000 ms bound under load): make it load-independent, then drop it from known-flakes.json",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "flaky-test-quarantine-and-targeted-rerun",
+          "reason": "seeded with owningEpic null"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T06:08:09.640Z",
+      "touchedAt": "2026-10-01T06:08:09.644Z"
+    },
+    {
+      "id": "release-in-flight-rule-needs-decision",
+      "title": "hook-friction 3.5: delivered-release-epic-left-open fires when the last active member archives mid-release; schema has no cut-epic, parent or delivery marker, so no clean rule exists — decide: add a marker/field, or keep the set-active workaround",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "decision",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "hook-friction-0-51",
+          "reason": "item 5 carried here"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T06:08:10.862Z",
+      "touchedAt": "2026-10-01T06:08:10.868Z"
+    },
+    {
+      "id": "unit-rung-flake-retry-gap",
+      "title": "A unit-rung failure reports unit-harness.mjs as its location, so the flake retry never re-runs it: flakes in the unit rung are uncovered",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "flaky-test-quarantine-and-targeted-rerun",
+          "reason": "found in batch-2 build"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T06:08:12.232Z",
+      "touchedAt": "2026-10-01T06:08:12.237Z"
     }
   ],
   "detourStack": [],
@@ -11857,7 +11998,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1761,
+  "revision": 1779,
   "reviewMode": "standard",
   "releases": [
     {
