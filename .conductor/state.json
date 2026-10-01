@@ -9926,7 +9926,7 @@
       "priority": "P2",
       "status": "untriaged",
       "role": "epic",
-      "lane": "openspec",
+      "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "205",
@@ -9934,12 +9934,17 @@
       "externalUpdatedAt": "2026-09-16T23:30:23Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T19:47:13.184Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-10-01T21:34:00.327Z",
       "notes": [
         {
           "at": "2026-09-17T19:47:13.644Z",
           "actor": "agent",
           "text": "lane: openspec not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
+        },
+        {
+          "at": "2026-10-01T21:34:00.322Z",
+          "actor": "agent",
+          "text": "lane: superpowers not openspec — single-subsystem attribution/staleness fix batched with 216/237/198 (same area); a plan, not a spec change"
         }
       ],
       "release": "0.51.0"
@@ -11988,6 +11993,38 @@
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:12.232Z",
       "touchedAt": "2026-10-01T06:08:12.237Z"
+    },
+    {
+      "id": "token-spend-tracking-per-epic",
+      "title": "Token spend tracking per epic: start at planning, end at release, split by phase (spec, build, test, review, gate retries), a config flag off by default and on for pm's own development",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "execution-profile-layered-settings",
+          "reason": "the on/off flag and verbosity live in the profile layers"
+        },
+        {
+          "type": "relates-to",
+          "epic": "converged-release-candidate-review",
+          "reason": "per-candidate cost is the number that proves convergence"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-01: token spend is an invisible problem. Measure each epic from the moment it is planned and specced until it is released, and break the total down by phase so process changes target real cost: spec/plan, build, test runs, review, gate retries and autonomous fix loops. Flag the outliers (cost or wall-clock). Config-gated, OFF by default for end users (measuring costs tokens), ON in this repo. Evidence for need: 0.51.0 burned ~11M sub-agent tokens on 5 of 27 epics, 70% on one epic (7 Gate 1 + 3 Gate 2 rounds); an overnight autonomous run with failing gates and five sub-agents spent a weekly allowance. Baselines to compare against (sub-agent tokens, orchestrator excluded): certification-record-redesign review 5.8M / build 2.0M; batch-1 review 335K / build 1.04M; batch-2 3 epics ~694K (~231K/epic). Constraint: the engine is an instruction layer and never opens a network connection; the data source and who records it (agent vs engine reading local transcripts) is the first design decision.",
+      "notes": [
+        {
+          "at": "2026-10-01T07:33:57.580Z",
+          "actor": "agent",
+          "text": "lane: openspec — new capability, cross-system, >8h. Triage 2026-10-01: no duplicate (nearest lexical hits were unrelated archived epics). Relates to execution-profile-layered-settings (the flag lives in the profile layers) and pm activity log."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T07:33:57.581Z",
+      "touchedAt": "2026-10-01T07:33:57.585Z"
     }
   ],
   "detourStack": [],
@@ -11998,7 +12035,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1779,
+  "revision": 1782,
   "reviewMode": "standard",
   "releases": [
     {
@@ -12549,5 +12586,22 @@
       }
     }
   ],
-  "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
+  "archiveBackfilledAt": "2026-08-27T04:52:42.658Z",
+  "executionProfile": {
+    "verbosity": "quiet",
+    "model": {
+      "implement": {
+        "model": "sonnet",
+        "effort": "medium"
+      },
+      "test": {
+        "model": "sonnet",
+        "effort": "low"
+      },
+      "review": {
+        "model": "opus",
+        "effort": "high"
+      }
+    }
+  }
 }

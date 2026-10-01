@@ -461,9 +461,33 @@ shared branch); those are out of scope regardless of autonomy level.
    from that log, not from memory), with an explicit "are you OK with these?" checkpoint, THEN
    run tests. Leave room to iterate — including rewriting code — if the user is not satisfied.
 
-## Review mode
+## Execution profile
 
-Review intensity is a bounded dial, not a free-form call each time — set via
+How intensely to review, which model and effort each job role runs on, and how often you report.
+Each field resolves independently, most specific first: the epic's own value, else its lane's,
+else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).
+Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own
+through `add-epic`, `add-many` or `update-epic`; `profile` prints the effective values with the layer each came from
+(pass its `--epic` flag for one epic). The engine records and emits the profile — it never
+dispatches an agent or checks which model ran.
+
+Project values:
+- review: standard (project)
+- verbosity: quiet (project)
+- model implement: sonnet (medium) (project)
+- model test: sonnet (low) (project)
+- model review: opus (high) (project)
+
+Lane overrides: none.
+
+**Before dispatching a job** (implementing, testing, reviewing), resolve the active epic's
+profile and run that job's role on its `{model, effort}` where your platform lets you set them
+per dispatch. Where it does not, say so rather than implying it was applied.
+
+**Verbosity:** `quiet` — one completion message per epic; `verbose` — a message at each phase
+transition and gate.
+
+**Review mode.** Review intensity is a bounded dial, not a free-form call each time — set via
 `set-review-mode --mode <off|standard|thorough>` (default: `standard` if never set).
 
 | Mode | Reviewer budget | Trigger |
@@ -473,6 +497,25 @@ Review intensity is a bounded dial, not a free-form call each time — set via
 | `thorough` | two independent fresh-context reviewers per gate; adjudicate any disagreement yourself | schema/migration changes, security-sensitive work, or anything explicitly flagged high-stakes |
 
 Current mode: **standard**.
+
+## Release candidate
+
+Building a release from several changes? Do not run a Gate 2 round per change: batch the work by
+area, merge every worktree branch into ONE candidate branch (`rc/<releaseId>`), review that
+candidate ONCE, and push once. The `release-candidate` skill carries the procedure — load it
+before you start. Two rules to get right without it:
+
+- **The budget is the highest review among the candidate members.** The converged review runs at
+  the highest effective `review` of the members not yet archived that have built work in the
+  range (`thorough` two independent reviewers, `standard` one, `off` your own self-review), so one
+  `thorough` member makes the whole candidate `thorough`.
+- **One round; only a Critical reopens it.** An Important finding is fixed and re-tested, not
+  re-reviewed; a Minor one is logged and never re-reviewed.
+
+Recording: attribute each fix commit to the member whose code it fixes, then record the verdict
+with `record-gate-review` as Gate 2 for EACH candidate member at the SAME base and head, after
+the last fix has merged. A verdict recorded before a fix is stale. `release show` reads whether the
+members converged.
 
 ## Feedback — don't let friction stay silent
 
