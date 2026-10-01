@@ -443,14 +443,18 @@ bullet reached 3/15.
    commits landed, then keep attributing forward. Each value is resolved when it is written and
    stored as its full object name — `HEAD` or a tag records the commit it names at that moment, and
    a value that is not a commit in this clone is refused with nothing written. The array is
-   append-only — the engine neither reorders nor de-duplicates it — and **every attributed commit
+   append-only — the engine never reorders it and records each commit once (a repeat is a no-op) — and **every attributed commit
    must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
    whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
    refuses the archive. **One exclusion:** the commit that moves
    `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
-   the epic's own Gate 2 stale at the instant the archive gate reads it.
+   the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for the
+   lifecycle commits a required task makes AFTER Gate 2 is recorded (the lessons item 7 routes, the
+   task-list tick): commit them before recording Gate 2 where you can, and do not attribute them
+   where you cannot — the engine says so when an attribution turns the verdict stale, and
+   `--withdraw-commit` undoes it.
 5. **Review a release's specs against each other.** Gate 1 and Gate 2 each take ONE CHANGE as
    their unit, so nothing above them asks whether a release's specs AGREE. Before `/opsx:apply`
    on any release holding **two or more spec files** — counted FLAT across its member changes, so

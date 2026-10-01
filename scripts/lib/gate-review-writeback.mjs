@@ -10,6 +10,7 @@ import { render } from "./render.mjs";
 import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream } from "./invocation.mjs";
+import { recordArtifactDigests } from "./gate-artifact-evidence.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
  *  than transcribing it, and deliberately NOT the same list as constants.mjs's
@@ -148,6 +149,24 @@ export function recordGateReview() {
   // there would be a second rule for a field that means the same thing on both gates. What
   // differs between the gates is what a PASS requires, which is decided above and nowhere else.
   if (artifacts.length) entry.artifacts = artifacts;
+  // gh#198 — GATE 1 ONLY: a digest of what each artifact CONTAINED when the reviewer read it, computed
+  // here by the engine (never supplied), so amending a reviewed artifact reads the verdict stale. `artifacts`
+  // above stays a list of PATHS — every reader of it filters strings — and the digests ride beside it.
+  // Gate 2's evidence is the commit range, which has its own staleness; hashing artifacts there would make
+  // an optional note a gate on archiving. An artifact unreadable now gets no digest and is said so: its
+  // edits will read `unverifiable`, never stale, which is the only honest reading of a file never seen.
+  if (gate === "1" && artifacts.length) {
+    const { digests, unreadable } = recordArtifactDigests(artifacts);
+    if (digests.length) entry.artifactDigests = digests;
+    if (unreadable.length) {
+      errStream().write(
+        // A COUNT, never a path: Gate 1 renders an artifact count and no surface may echo a path (the
+        // governed-input sweep declares `--artifact` notRendered). Re-running the same verb after the file
+        // exists records its digest.
+        `conductor: no content digest recorded for ${unreadable.length} of ${artifacts.length} artifact(s) — ` +
+        "not a readable file, so later edits to them will read unverifiable rather than stale.\n");
+    }
+  }
   if (reviewer !== undefined) entry.reviewer = reviewer;
 
   // Supersede, never destroy. This write used to replace the entry wholesale, so the `ungated`

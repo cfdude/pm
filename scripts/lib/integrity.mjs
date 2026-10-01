@@ -393,7 +393,7 @@ export const CHECKS = [
         const g1 = e.gateReview && e.gateReview.gate1;
         const g2 = e.gateReview && e.gateReview.gate2;
         // ARM 1 — an UNEVIDENCED verdict dated AFTER the work it reviewed had already merged.
-        // The merge commit is defined as the LAST hash in the epic's attribution array, and
+        // The merge commit is defined as the LATEST-DATED hash in the epic's attribution array (gh#216), and
         // where that array is absent or empty this arm simply does not apply: every other
         // reading of "the merge commit" is either inert on all live epics or fires on
         // essentially all of them, and a check that fires on everything is a check nobody reads.
@@ -411,7 +411,21 @@ export const CHECKS = [
         // that recorded range actually REACHES the attributed commits is a different question,
         // answered by gateStaleness() and refused at the archive gate, not guessed at here.
         const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
-        const mergedAt = attributed.length ? commitDate(attributed[attributed.length - 1]) : null;
+        // gh#216 — "the merge commit" is the LATEST-DATED attributed commit, not the last array element.
+        // A catch-up appends an ancestor AFTER its descendants, so position says nothing about which
+        // commit landed last. Computed lazily: only a verdict with no evidence needs it, and each date is
+        // a git call.
+        let merged;
+        const mergedCommit = () => {
+          if (merged === undefined) {
+            merged = null;
+            for (const sha of attributed) {
+              const at = commitDate(sha);
+              if (at !== null && (merged === null || Date.parse(at) > Date.parse(merged.at))) merged = { sha, at };
+            }
+          }
+          return merged;
+        };
         for (const [gate, entry] of [["gate1", g1], ["gate2", g2]]) {
           // gh#191: EITHER evidence form exempts. `gateHasEvidence` means "carries a checkable
           // COMMIT RANGE" and stays that, because two of its callers dereference `entry.headSha`
@@ -425,12 +439,13 @@ export const CHECKS = [
           // recording it earlier would mean recording a verdict for artifacts nobody had corrected.
           // Measured: this arm fired on the FIRST Gate 1 recorded with --artifact, which is
           // precisely the compliance its own comment above says the exemption exists to protect.
-          if (!entry || !entry.reviewedAt || !mergedAt) continue;
+          if (!entry || !entry.reviewedAt || !attributed.length) continue;
           if (gateHasEvidence(entry) || gateArtifacts(entry).length) continue;
-          if (Date.parse(entry.reviewedAt) > Date.parse(mergedAt)) {
+          const tip = mergedCommit();
+          if (tip && Date.parse(entry.reviewedAt) > Date.parse(tip.at)) {
             out.push({ epic: e.id, detail:
               `${gate} was recorded ${entry.reviewedAt} — after the epic's merge commit ` +
-              `${attributed[attributed.length - 1]} (${mergedAt}), so the verdict post-dates the ` +
+              `${tip.sha} (${tip.at}), so the verdict post-dates the ` +
               "work it claims to have reviewed" });
           }
         }

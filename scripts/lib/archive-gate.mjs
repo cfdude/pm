@@ -1,6 +1,6 @@
 // scripts/lib/archive-gate.mjs
 // What the archive transition requires, per path. May import constants.mjs,
-// epic-progress.mjs, disposition.mjs and git.mjs — and nothing else, and nothing under those
+// epic-progress.mjs, disposition.mjs, git.mjs and gate-artifact-evidence.mjs — and nothing else, and nothing under those
 // imports back up. `update-epic.mjs` imports THIS module; the reverse never happens.
 //
 // Why a module rather than the inline refusal this replaces: the Gate 2 check lived at
@@ -17,6 +17,7 @@
 
 import { CONTROL_CHARACTER, asCode, escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, noRemedyMessage, orNoRemedy, printedId, withdrawnGate } from "./constants.mjs";
 import { commitsNotReachedBy, isCommitNameShaped, resolveCommits } from "./git.mjs";
+import { artifactStaleness } from "./gate-artifact-evidence.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
 
@@ -110,6 +111,19 @@ export function outstandingStories(epic) {
  */
 export function gateStaleness(epic, entry) {
   if (!entry || typeof entry.verdict !== "string") return { state: "none", uncovered: [] };
+  // gh#198 — A GATE 1 VERDICT'S EVIDENCE IS ARTIFACT CONTENT. An entry carrying `artifactDigests` reads
+  // stale when a reviewed artifact was amended and unverifiable when one cannot be checked, BEFORE the
+  // commit logic below, which knows nothing of artifacts. Fresh falls through only when the entry also
+  // carries a commit range (that range's reachability is still a question); an artifact-only verdict is
+  // answered here, so a fresh spec review no longer reads `unverifiable` for lacking a range it never had.
+  // Never consulted by the archive gate: staleGate2() reads the Gate 2 entry only, so a stale spec
+  // review blocks nothing — it is a rendering signal, as the issue asked.
+  if (Array.isArray(entry.artifactDigests)) {
+    const art = artifactStaleness(entry);
+    if (art.state === "stale") return { state: "stale", uncovered: [], artifactsChanged: art.changed };
+    if (art.state === "unverifiable") return { state: "unverifiable", uncovered: [] };
+    if (!gateHasEvidence(entry)) return { state: "fresh", uncovered: [] };
+  }
   const attributed = epic && epic.attributedCommits;
   if (!Array.isArray(attributed)) return { state: "unverifiable", uncovered: [] };
   // WITHDRAWN IS NOT THE SAME AS NEVER-ATTRIBUTED. Gate 2 found the bypass: an epic whose
@@ -415,7 +429,7 @@ export const DELIVERED_OBLIGATIONS = [
       }
       return { items: [], detail: parts.join("; and ") };
     },
-    remedy: (epic) => [gateRemedy(epic.id, 2, { base: "<parent of the first attributed commit>", head: "<the last attributed commit>" })],
+    remedy: (epic) => [gateRemedy(epic.id, 2, { base: "<parent of the earliest attributed commit>", head: "<the attributed commit every other one is an ancestor of>" })],
   },
   {
     variant: "gate2-attribution-withdrawn", kind: "gate2",

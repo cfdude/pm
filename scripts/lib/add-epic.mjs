@@ -5,11 +5,13 @@
 // parentError are general-purpose and imported by most other lib modules; they live
 // here because that's where the "add-epic" comment section originally put them.
 
+import fs from "node:fs";
+import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
+import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls, priorityValueError, timestampValueError, engineRoot } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
@@ -349,6 +351,31 @@ export function parentError(epics, id, parent) {
   return null;
 }
 
+/** gh#232 — a `--plan` / `--spec` value must be able to BE a source artifact: a file, never a directory.
+ *  Returns the refusal text, or null. `update-epic <id> --plan docs/superpowers/plans/` (a shell
+ *  substitution that came back empty) was stored as `planPath`; nothing reads a directory as a plan, so
+ *  the epic's progress source silently became nothing and the real plan file stayed unclaimed for the
+ *  next sync to register as a stray epic.
+ *
+ *  Refused: a trailing slash (names a directory by spelling, needs no disk), and a path that EXISTS and
+ *  is not a regular file. NOT refused: a path that does not exist. A plan may be attached before it is
+ *  written, and an archived-and-moved plan is the deliberate dangling case epicProgress() already
+ *  reports and exempts — refusing absence here would close the attach-first order and re-break it.
+ *  Resolved against the engine root, never the process cwd. */
+export function sourceArtifactPathError(flag, raw, root = engineRoot()) {
+  if (typeof raw !== "string") return null;
+  if (/[\\/]\s*$/.test(raw)) {
+    return `--${escapeControls(flag)} ${escapeControls(JSON.stringify(raw))} ends in a slash, which names a directory — ` +
+      `a ${escapeControls(flag)} is a file. Nothing was written.`;
+  }
+  let st = null;
+  try { st = fs.statSync(path.resolve(root, raw.trim())); } catch { return null; }
+  return st.isFile() ? null
+    : `--${escapeControls(flag)} ${escapeControls(JSON.stringify(raw))} exists but is not a regular file ` +
+      `(${st.isDirectory() ? "a directory" : "not a file"}) — ` +
+      `a ${escapeControls(flag)} is a file the epic's work is drawn from. Nothing was written.`;
+}
+
 export function addEpic() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const f = parseFlags(currentArgv().slice(3));
@@ -360,6 +387,10 @@ export function addEpic() {
   // `["description", "notes", "spec"]` this command used to check: `--plan` was absent from that
   // list and was silently dropped, while `update-epic` refused it. Before loadState().
   requireFlagValues("add-epic", f);
+  for (const flag of ["plan", "spec"]) {
+    const bad = typeof f[flag] === "string" ? sourceArtifactPathError(flag, f[flag]) : null;
+    if (bad) die(`conductor: ${escapeControls(bad)}\n`);
+  }
   const str = (v) => (typeof v === "string" ? v : undefined); // valueless flags arrive as boolean true
   // Stories are parsed BEFORE loadState(), with the id and lane checks, so a bad title refuses
   // the whole registration rather than creating a story-less epic somebody then has to notice.

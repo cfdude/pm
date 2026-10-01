@@ -10,9 +10,9 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
-import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
+import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues, sourceArtifactPathError } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, gateStaleness, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
@@ -354,6 +354,9 @@ export function updateEpic() {
     die("conductor: --attribute-commit requires a commit sha\n");
   }
   let attributed = [];
+  // What THIS call appended, after the once-only rule at the write site (gh#237). `attributed` stays
+  // index-aligned with `attributedTyped`, which the withdraw/attribute contradiction check reads.
+  const attributedWritten = [];
   if (attributedTyped.length) {
     const { resolved, unresolved } = resolveCommits(attributedTyped);
     if (unresolved.length) { die(unresolvedCommitsMessage(unresolved, "--attribute-commit")); }
@@ -428,6 +431,11 @@ export function updateEpic() {
   // moved to requireFlagValues() above, which covers every flag rather than these two.
   const planPath = str(f.plan);
   const specPath = str(f.spec);
+  // gh#232: a directory or trailing-slash value is refused by name; both flags, same rule, add-epic's too.
+  for (const [flag, value] of [["plan", planPath], ["spec", specPath]]) {
+    const bad = value === undefined ? null : sourceArtifactPathError(flag, value);
+    if (bad) die(`conductor: ${escapeControls(bad)}\n`);
+  }
   // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
   // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
   // `[true]`; parseLinkFlags filters non-strings away and yields `[]`, which then REPLACED the
@@ -726,6 +734,21 @@ export function updateEpic() {
       `--correct-disposition "<why the recorded one was wrong>" alongside the corrected flags.\n`);
   }
 
+  // CONTRADICTORY ASSERTIONS (gh#233). `--no-deferrals` is the explicit claim that this change deferred
+  // NOTHING; `--deferral` and `--declined-deferral` each name something it deferred or declined. Given
+  // together, deferralAssertion() built one record holding both, and `deferrals: [...]` beside a
+  // "there are none" claim is a record that contradicts itself — recoverable only with
+  // `--correct-disposition`. Refused by name, before any write. Both siblings, not just the one the issue
+  // named: a declined deferral is still a deferral. `--deferral`'s section half is NOT validated beyond
+  // what it already is (gh#233's "section 'none'" aside is declined: the section is free text by design).
+  if (f["no-deferrals"] === true && (f.deferral !== undefined || f["declined-deferral"] !== undefined)) {
+    die(
+      `conductor: --no-deferrals claims this change deferred nothing, and ` +
+      `${escapeControls([f.deferral !== undefined && "--deferral", f["declined-deferral"] !== undefined && "--declined-deferral"]
+        .filter(Boolean).join(" and "))} names something it did — two contradictory assertions. ` +
+      "Pass --no-deferrals OR the deferral flag(s). Nothing was written.\n");
+  }
+
   const asserted = f.deferral !== undefined || f["declined-deferral"] !== undefined || f["no-deferrals"] === true
     ? deferralAssertion({
         deferrals: pairs(f.deferral, "epic", "section"),
@@ -870,7 +893,45 @@ export function updateEpic() {
   if (modelPairs !== undefined || clearModelRoles.length) applyEpicModel(epic, modelPairs, clearModelRoles);
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
-    epic.attributedCommits.push(...attributed);
+    // gh#237 — A COMMIT IS RECORDED ONCE. A verbatim duplicate carries no information and only inflates
+    // the counts Gate 2 reachability and integrity reason over; an agent retrying after a hook failure
+    // hits it routinely. So it is a NO-OP, not a refusal: exit 0, said on stderr, nothing written for it.
+    // Judged against the array AS THIS CALL LEAVES IT (a `--withdraw-commit X --attribute-commit X` pair
+    // is refused above; a sha withdrawn by an EARLIER call is absent from the array and so re-attributes
+    // normally), and within the call itself (`HEAD` and its full sha resolve to one name).
+    const held = new Set(epic.attributedCommits);
+    const skipped = [];
+    for (const sha of attributed) {
+      if (held.has(sha)) { if (!skipped.includes(sha)) skipped.push(sha); continue; }
+      held.add(sha);
+      attributedWritten.push(sha);
+    }
+    for (const sha of skipped) {
+      announcements.push(
+        `conductor: ${escapeControls(sha)} is already attributed to '${escapeControls(id)}' — recorded once, ` +
+        "nothing written for it.\n");
+    }
+    const gate2 = epic.gateReview && epic.gateReview.gate2;
+    const attributedBefore = epic.attributedCommits.slice();
+    epic.attributedCommits.push(...attributedWritten);
+    // gh#205 — attributing a commit AFTER a recorded Gate 2 can turn that verdict stale, and that is
+    // sometimes right (it changed the implementation) and sometimes the rule's own exclusion (lifecycle
+    // bookkeeping: the lessons task item 7 routes, the task-list tick, the archive move). The engine
+    // classifies no commit, so it says what happened and names both ways out instead of staling in silence.
+    if (attributedWritten.length && gate2 && gate2.verdict === "pass" &&
+        gateStaleness({ ...epic, attributedCommits: attributedBefore }, gate2).state === "fresh") {
+      const after = gateStaleness(epic, gate2);
+      if (after.state === "stale") {
+        announcements.push(
+          `conductor: attributing ${escapeControls(attributedWritten.join(", "))} moved '${escapeControls(id)}'s passing Gate 2 ` +
+          `(reviewed up to ${escapeControls(String(gate2.headSha))}) to STALE — it does not reach the ` +
+          `${after.uncovered.length ? after.uncovered.map(escapeControls).join(", ") : "attributed"} commit(s).\n` +
+          "  If the commit changes the implementation, re-record Gate 2 over the new range. If it only records " +
+          "lifecycle bookkeeping (lessons or feedback routed after the gate, a task-list tick, the archive move) it " +
+          "is NOT attributed: undo this with " +
+          `${asCode(orNoRemedy(() => `update-epic ${printedId(id)} --withdraw-commit ${escapeControls(attributedWritten[0])} --withdrawal-reason "<why>"`))}.\n`);
+      }
+    }
   }
   // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
@@ -1057,10 +1118,11 @@ export function updateEpic() {
   // The success message is printed only after the record on disk is READ BACK and confirmed to
   // hold what this invocation claims to have written. Everything above verifies its own write;
   // this verifies the COMMAND, after render() has had its turn at the file too.
-  if (attributed.length) {
+  if (attributedWritten.length) {
     // The RESOLVED names, which are what was written — comparing the typed strings would report a
-    // short hash stored in full as "NOT in state.json" and exit 1 on a write that landed.
-    const wrote = attributed;
+    // short hash stored in full as "NOT in state.json" and exit 1 on a write that landed. Only the
+    // ones THIS call appended: a duplicate was already there and nothing was written for it.
+    const wrote = attributedWritten;
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       die(
