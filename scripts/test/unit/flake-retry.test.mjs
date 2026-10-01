@@ -135,3 +135,28 @@ unitTest("one retry covers several tests of one file with one rerun and one ledg
   assert.deepEqual(reruns[0], [`${CWD}/${A}`, `${CWD}/${B}`]);
   assert.equal(io.appended[0].text.trim().split("\n").length, 3);
 });
+
+// A file-level failure (`process.exitCode = 1`) can print NO `test at` line: Node prints one only for a test
+// with a file. It must count as unmapped, so a flaky test in another file can never recover the run.
+const withUnlocated = (located, name = "scripts/test/fixtures/record-isolation.mjs") =>
+  `${specOutput(located, { fail: located.length + 1 })}\n✖ ${name} (5.1ms)\n  'test failed'\n`;
+
+unitTest("an unlocated failure beside a mapped flaky one is unmapped, and the run does NOT recover", async () => {
+  const { failuresOf } = await load();
+  const out = withUnlocated([[A, "flaky one"]]);
+  const r = failuresOf(out, { cwd: CWD, files: FILES, realpath: (p) => p });
+  assert.deepEqual(r.failures, [{ file: A, test: "flaky one" }]);
+  assert.equal(r.unmapped, 1, "the entry with no `test at` is counted, not dropped");
+  const io = fakeIo([]);
+  const { result, reruns } = await run({ io, output: out, counts: { tests: 10, pass: 8, fail: 2 } });
+  assert.equal(result.recovered, false);
+  assert.deepEqual(reruns, [], "nothing is retried while a failure cannot be attributed");
+  assert.deepEqual(io.appended, []);
+});
+
+unitTest("a listing whose failure count disagrees with the runner's summary is never recovered", async () => {
+  const { result, reruns } = await run({ output: specOutput([[A, "flaky one"]], { fail: 2 }) });
+  assert.equal(result.recovered, false);
+  assert.match(result.reason, /summary counts 2/);
+  assert.deepEqual(reruns, []);
+});

@@ -35,7 +35,10 @@ export const KNOWN_FLAKES_FILE = "scripts/test/known-flakes.json";
 
 const posix = (p) => p.split(path.sep).join("/");
 
-/** One count from the runner's spec summary, or null — the same single format certify.mjs reads. */
+/** One count from the runner's spec summary, or null: `ℹ <label> N` at the start of a line. ONE FORMAT (0.49.0,
+ *  design D4): the runner is started with `--test-reporter=spec` and `FORCE_COLOR=0`, so the summary is these
+ *  bytes on every supported Node major. A TAP summary (`# tests N`) or a coloured one is NOT read. The single
+ *  definition: certify.mjs imports and re-exports it. */
 export function summaryCount(output, label) {
   const m = new RegExp(`^ℹ ${label} (\\d+)$`, "m").exec(output);
   return m ? Number(m[1]) : null;
@@ -58,14 +61,23 @@ export function failuresOf(output, { cwd, files, realpath = (p) => p }) {
   const failures = [];
   let unmapped = 0;
   if (start < 0) return { failures, unmapped: 1 };   // a failed run that lists nothing is unreadable
+  // EVERY top-level `✖ <name>` entry is a failure; the `test at` line before it, when the runner printed
+  // one, is its location. Node prints that line only for a test with a file, so an entry WITHOUT one (a
+  // file-level failure such as `process.exitCode = 1`) is UNMAPPED — never silently dropped, or a retry
+  // of some other file's flake would be recorded as a recovery that masked it. Error bodies are indented,
+  // so a `✖` at column 0 is always an entry. A `test at` with no entry after it is unmapped too.
+  let pending = null;
   for (let i = start + 1; i < lines.length; i++) {
-    const at = /^\s*test at (.+):(\d+):(\d+)\s*$/.exec(lines[i]);
-    if (!at) continue;
-    const rel = posix(path.relative(base, path.resolve(base, at[1])));
-    const named = /^\s*✖ (.*?)(?: \([\d.]+m?s\))?\s*$/.exec(lines[i + 1] || "");
-    if (!named || !given.has(rel)) { unmapped++; continue; }
+    const at = /^test at (.+):(\d+):(\d+)\s*$/.exec(lines[i]);
+    if (at) { if (pending) unmapped++; pending = at; continue; }
+    const named = /^✖ (.*?)(?: \([\d.]+m?s\))?\s*$/.exec(lines[i]);
+    if (!named) continue;
+    const loc = pending; pending = null;
+    const rel = loc ? posix(path.relative(base, path.resolve(base, loc[1]))) : null;
+    if (rel === null || !given.has(rel)) { unmapped++; continue; }
     failures.push({ file: rel, test: named[1] });
   }
+  if (pending) unmapped++;
   return { failures, unmapped };
 }
 
@@ -107,6 +119,9 @@ export async function recoverFlakes({
   if (counts.tests === null || counts.fail === null) return none("the failed run's count could not be read");
   if (!(counts.fail > 0)) return none("the failed run reports no failing test");
   const { failures, unmapped } = failuresOf(output, { cwd, files, realpath });
+  if (failures.length + unmapped !== counts.fail) {
+    return none(`the listing holds ${failures.length + unmapped} failure(s) but the runner's summary counts ${counts.fail}`);
+  }
   if (unmapped > 0 || failures.length === 0) {
     return none(`${unmapped} failure(s) could not be mapped to a test file the runner was given`);
   }

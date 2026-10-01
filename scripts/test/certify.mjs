@@ -67,7 +67,9 @@ import {
   writeManifestEntry,
 } from "./certification.mjs";
 import { indexManifest, indexReaders } from "./drift.mjs";
-import { KNOWN_FLAKES_FILE, recoverFlakes } from "./flake-retry.mjs";
+import { KNOWN_FLAKES_FILE, recoverFlakes, summaryCount } from "./flake-retry.mjs";
+// ONE count parser, defined in flake-retry.mjs (the leaf both callers share); re-exported for certify-count.test.mjs.
+export { summaryCount };
 import { removeAtExit, removeTempDir } from "./fixtures/temp-dir.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -174,15 +176,6 @@ function bucketFiles(root, bucket) {
   const files = fs.readdirSync(dir).filter((f) => f.endsWith(".test.mjs")).sort().map((f) => path.join(dir, f));
   if (!files.length) throw new Error(`certify: no test files under ${path.relative(root, dir)} — refusing to record a run of nothing`);
   return files;
-}
-
-/** One count from the runner's summary: `ℹ <label> N` at the start of a line, or `null`. ONE FORMAT
- *  (0.49.0, design D4): the runner is started with `--test-reporter=spec` and `FORCE_COLOR=0`, so the
- *  summary is these bytes on every supported Node major. A TAP summary (`# tests N`) or a coloured one
- *  (`ESC[34mℹ tests N`) is NOT read — a count in another format is one this runner did not ask for. */
-export function summaryCount(output, label) {
-  const m = new RegExp(`^ℹ ${label} (\\d+)$`, "m").exec(output);
-  return m ? Number(m[1]) : null;
 }
 
 /** One bucket run. Returns `{ ok, counts, output }`; `counts` is read from the runner's own summary
