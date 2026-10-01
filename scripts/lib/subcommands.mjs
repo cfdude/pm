@@ -595,6 +595,10 @@ function attributionNudge(state, ctx, commits) {
   // be empty; the filter keeps an empty one from emitting a command that appends nothing.
   const all = (commits || []).filter(c => c && typeof c.sha === "string" && c.sha);
   if (!all.length) return null;
+  // NO CANDIDATE, NO LINE — decided BEFORE the bookkeeping split. A repo with no active epic (or one whose epic
+  // predates attributedCommits) has never been nudged about attribution, and a "needs no attribution" line for
+  // every re-render commit there would be exactly the noise this function's budget forbids.
+  if (!attributionCandidates(state, ctx, all.flatMap(c => c.files || [])).length) return null;
   // BOOKKEEPING IS CLASSIFIED PER COMMIT, never on the merged file list: one real commit among
   // three bookkeeping ones must still be named, and a bookkeeping one must never be attributed.
   const real = all.filter(c => !isAttributionBookkeeping(c.files));

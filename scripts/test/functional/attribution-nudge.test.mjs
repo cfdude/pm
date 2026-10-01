@@ -82,3 +82,15 @@ test("2 a commit whose subject names the epic, or whose paths are the epic's own
   const byPath = repo.observe("PostToolUse", "git commit -m 'docs: write the design'");
   assert.doesNotMatch(byPath.context, /cannot tell whether/, byPath.context);
 });
+
+test("1 with NO active epic there is still no attribution line at all, bookkeeping or not", () => {
+  const repo = observationRepo({ epicId: null });
+  repo.observe();
+  repo.commit({ "PROJECT.md": "re-rendered\n" }, "chore(conductor): re-render");
+  const o = repo.observe("PostToolUse", "git commit -m 'chore(conductor): re-render'");
+  assert.equal(o.status, 0, o.stderr);
+  assert.doesNotMatch(o.context, /ATTRIBUTION/, `no candidate means no line, even a 'needs no attribution' one: ${o.context}`);
+  repo.commit({ "src/work.txt": "w\n" }, "feat: some work");
+  const real = repo.observe("PostToolUse", "git commit -m 'feat: some work'");
+  assert.doesNotMatch(real.context, /ATTRIBUTION/, real.context);
+});
