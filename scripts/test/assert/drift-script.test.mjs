@@ -42,7 +42,7 @@ import {
   engineSourceFiles, enrolmentRefusals, freshnessRefusal, functionalIds, functionalSubject, homeOf, twinRefusals,
   writeManifestEntry,
 } from "../certification.mjs";
-import { PERMITTED_SUBCOMMANDS, gitRead } from "../drift.mjs";
+import { PERMITTED_SUBCOMMANDS, gitRead, staleBucketsLine } from "../drift.mjs";
 import { stripComments } from "../js-lexer.mjs";
 import { codeOnly } from "../fixtures/source-code.mjs";
 import * as recordDir from "../certification.mjs";  // 2.2: resolved per test, so a missing export fails that test alone
@@ -693,4 +693,23 @@ test("2.5 two worktrees' entries coexist in either write order, and each certifi
     assert.equal(judge(common, mB, [onlyOnB]), null, "and B's commit is fresh on B's, whichever run wrote last");
     assert.equal(fs.readdirSync(path.join(common, "pm-suite-certification.d", "functional")).length, 2, "neither write replaced the other");
   }
+});
+
+// ───────────────────── hook-friction-0-51 item 4: EVERY stale bucket, in ONE run ─────────────────────
+
+test("3.4 two stale buckets are both refused in one pass, and the closing line names each one's command", () => {
+  // checkAll() maps over BUCKETS, so a commit that stales both is refused for both at once (the
+  // functional twin's G1 case reads it through a real run). What was missing is the closing line: a
+  // developer who certified one bucket per attempt was reading a generic "functional|sweeps" and
+  // guessing which. It now lists every stale bucket's exact command, from the refusals themselves.
+  const refusal = (bucket) => ({ kind: "stale-record", bucket, changed: ["scripts/lib/x.mjs"],
+    run: recordDir.runForBucket(bucket), key: "k", why: "no passing run over this content is recorded" });
+  const both = [refusal("functional"), refusal("sweeps")];
+  const line = staleBucketsLine(both);
+  assert.match(line, /2 buckets are stale/);
+  assert.ok(line.includes("`node scripts/test/certify.mjs functional`"), line);
+  assert.ok(line.includes("`node scripts/test/certify.mjs sweeps`"), line);
+  assert.match(staleBucketsLine([refusal("sweeps")]), /1 bucket is stale/);
+  assert.equal(staleBucketsLine([]), null, "nothing stale, no line");
+  for (const r of both) assert.match(describeRefusal(r), new RegExp(`the ${r.bucket} bucket's subject changed`));
 });

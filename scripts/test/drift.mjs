@@ -114,8 +114,18 @@ export function trackedTestFiles(root) {
  *  reports only the NEW path and the pairing check would see one half of a rename and refuse a
  *  legitimate move. With it off, a rename reports as a delete plus an add, so both paths are present
  *  and check 3 passes on it — exactly the behaviour D6 states. */
-export function stagedFiles(root) {
-  return gitRead(root, ["diff", "--cached", "--name-only", "-z", "--no-renames"]).split("\0").filter(Boolean).sort();
+export function stagedFiles(root, { amend = false } = {}) {
+  if (!amend) return gitRead(root, ["diff", "--cached", "--name-only", "-z", "--no-renames"]).split("\0").filter(Boolean).sort();
+  // AN AMEND (hook-friction-0-51, item 3). `git commit --amend` hands the hooks an index that already HOLDS the
+  // amended commit's content, so `diff --cached` (against HEAD, the commit being REPLACED) shows only what the
+  // amend newly stages — usually nothing — and a `Twin-Unchanged` declaration on a reworded message was refused as
+  // "not staged". The commit the amend MAKES differs from HEAD's PARENT, so that is the base here. A root commit
+  // has no parent: everything in the index is what it adds. Never used unless the caller says it is an amend.
+  let hasParent = true;
+  try { gitRead(root, ["rev-parse", "--verify", "-q", "HEAD^"]); } catch { hasParent = false; }
+  return (hasParent
+    ? gitRead(root, ["diff", "--cached", "--name-only", "-z", "--no-renames", "HEAD^"])
+    : gitRead(root, ["ls-files", "-z"])).split("\0").filter(Boolean).sort();
 }
 
 /** THE INDEX AS A FILESYSTEM — `readdir` and `readFile` over what is STAGED, in the shape the
@@ -195,10 +205,10 @@ export function headSubject(root, bucket, { indexFile } = {}) {
  *  gathered here and checked in certification.mjs, so the checks themselves are pure and can be
  *  exercised by the assertion half. A check the phase does not run reports nothing, and its inputs are
  *  not gathered. `message` is the ABSOLUTE path of the commit message file (the hook makes it so). */
-export function checkAll(root = REPO, { phase, message } = {}) {
+export function checkAll(root = REPO, { phase, message, amend = false } = {}) {
   const checks = new Set(phaseChecks(phase));
   const tracked = trackedTestFiles(root);
-  const staged = stagedFiles(root);
+  const staged = stagedFiles(root, { amend: amend && checks.has("coupling") });
   // EVERY SET BELOW IS READ FROM THE INDEX (0.50.0) — see indexReaders(). The record is the one
   // thing still read from disk: it lives in the git common dir and is not part of any commit. Every
   // read here is on the INHERITED index — the one the hook hands drift — so no indexFile.
@@ -288,6 +298,15 @@ const invokedDirectly = (() => {
   try { return fs.realpathSync(path.resolve(process.argv[1])) === fs.realpathSync(fileURLToPath(import.meta.url)); }
   catch { return false; }  // no argv[1], or one that is not a file: imported, not run
 })();
+/** The closing line of a freshness refusal: how many buckets are stale and the exact command for EACH, from the
+ *  refusals themselves, so a developer certifies every one before the next attempt instead of one per attempt.
+ *  `null` when nothing is stale. Pure; exported for its test. */
+export function staleBucketsLine(records) {
+  const stale = (records || []).filter((r) => r && r.kind === "stale-record");
+  if (!stale.length) return null;
+  const word = stale.length === 1 ? "1 bucket is stale" : `${stale.length} buckets are stale`;
+  return `drift: ${word}; each is refused above. Run ${stale.map((r) => `\`${r.run}\``).join(" and ")} over the staged commit.`;
+}
 /** What a refusal's closing line says the checks are, per phase — the reader is told which hook ran
  *  which checks, so a pre-commit refusal never names coupling and a commit-msg refusal names only it. */
 const CHECKS_IN_PROSE = {
@@ -300,9 +319,12 @@ if (invokedDirectly) {
   if (arg("--root")) root = path.resolve(arg("--root"));
   const phase = arg("--phase");
   const message = arg("--message") === undefined ? undefined : path.resolve(arg("--message"));
+  // `--amend`: the commit-msg hook says this commit is an amend, so coupling is judged against HEAD's parent (see
+  // stagedFiles()). Optional, and absent from every older caller.
+  const amend = process.argv.includes("--amend");
   let payload;
   try {
-    payload = checkAll(root, { phase, message });
+    payload = checkAll(root, { phase, message, amend });
   } catch (e) {
     process.stderr.write(`drift: could not run the checks — ${e && e.message}\n`);
     process.exit(1);
@@ -313,7 +335,9 @@ if (invokedDirectly) {
     for (const l of lines) process.stderr.write(`${l}\n`);
     process.stderr.write(`\n${CHECKS_IN_PROSE[phase] || "drift: the checks are enrolment, twin coverage, diff coupling and record freshness."}\n`);
     if (payload.checks.has("record")) {
-      process.stderr.write("drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.\n");
+      // EVERY stale bucket was refused above, in this one run; the closing line names each one's command (hook-friction-0-51).
+      process.stderr.write(`${staleBucketsLine(payload.result.record) ||
+        "drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names."}\n`);
     }
     process.exit(1);
   }

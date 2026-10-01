@@ -1261,3 +1261,75 @@ test("L5 5.9 a machine with no git-secrets still commits through all three hooks
   assert.equal(r.status, 0, `the commit must be accepted: ${r.out}`);
   assert.notEqual(hkHead(cwd), head, "an accepted commit moves HEAD");
 });
+
+// ---------- an amend is judged against HEAD's PARENT (hook-friction-0-51, item 3) ----------
+//
+// `git commit --amend` stages nothing of its own: the index already holds the amended commit, so measured
+// against HEAD the staged set was empty and a `Twin-Unchanged` trailer on a reworded amend was refused as
+// "declared … but not staged". The commit-msg hook now tells drift it is an amend (read from its parent's
+// command line) and drift measures against HEAD^ — or, for a root commit, against nothing. EVERY CASE commits
+// through both real hooks, so the detection is exercised through git itself.
+
+const hkAlphaWithTrailer = (cwd, marker) => {
+  hkTouch(cwd, HK_ALPHA, marker);
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const base = hkHead(cwd);
+  hkAccepted(hookedGit(cwd, ["commit", "-m", "change alpha", "-m", "Twin-Unchanged: alpha — a comment-only edit"]), cwd, base, marker);
+};
+
+test("AM an amend that rewords a Twin-Unchanged commit is accepted though it stages nothing of its own", () => {
+  const cwd = hookedRepo();
+  hkAlphaWithTrailer(cwd, "to be amended");
+  const head = hkHead(cwd);
+  assert.equal(hkGit(cwd, "diff", "--cached", "--name-only"), "", "fixture: the amend stages nothing against HEAD");
+  const r = hookedGit(cwd, ["commit", "--amend", "-m", "change alpha, reworded", "-m", "Twin-Unchanged: alpha — a comment-only edit"]);
+  assert.equal(r.status, 0, `the amend must be accepted: ${r.out}`);
+  assert.notEqual(hkHead(cwd), head, "an accepted amend replaces HEAD");
+  assert.match(r.out, /^drift: coupling exemption alpha — a comment-only edit$/m, `the exemption is printed: ${r.out}`);
+  assert.deepEqual(hkTrailers(cwd), ["alpha — a comment-only edit"], "the amended commit carries the declaration Gate 2 audits");
+});
+
+test("AM an amend declaring Twin-Unchanged for a file the amended commit does NOT change is still refused", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, "scripts/test/assert/fixture.test.mjs", "an unrelated change");
+  hkGit(cwd, "add", "--", "scripts/test/assert/fixture.test.mjs");
+  hkSeed(cwd);
+  const base = hkHead(cwd);
+  hkAccepted(hookedGit(cwd, ["commit", "-m", "touch the fixture"]), cwd, base, "unrelated");
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", "--amend", "-m", "touch the fixture", "-m", "Twin-Unchanged: alpha — a comment-only edit"]);
+  hkRefusedByCommitMsg(r, cwd, head, /alpha — declared Twin-Unchanged, but scripts\/test\/functional\/alpha\.test\.mjs is not staged/, "amend, unrelated");
+});
+
+test("AM an amend that drops the twin from a commit that paired it is refused, which HEAD-relative judging missed", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "paired");
+  hkTouch(cwd, HK_TWIN, "paired");
+  hkGit(cwd, "add", "--", HK_ALPHA, HK_TWIN);
+  hkSeed(cwd);
+  const base = hkHead(cwd);
+  hkAccepted(hookedGit(cwd, ["commit", "-m", "change alpha with its twin"]), cwd, base, "paired");
+  hkGit(cwd, "checkout", "HEAD^", "--", HK_TWIN);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "--amend", "-m", "change alpha, twin dropped"]), cwd, head, hkCoupling("alpha"), "amend dropping the twin");
+});
+
+test("AM amending the ROOT commit has no parent: everything in the index is what it adds, so a paired alpha is accepted", () => {
+  const cwd = hookedRepo();
+  assert.equal(spawnSync("git", ["rev-parse", "--verify", "-q", "HEAD^"], { cwd }).status, 1, "fixture: HEAD is a root commit");
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", "--amend", "-m", "baseline, reworded"]);
+  assert.equal(r.status, 0, `a root amend must be accepted: ${r.out}`);
+  assert.notEqual(hkHead(cwd), head);
+});
+
+test("AM a message that merely MENTIONS --amend is not an amend: an undeclared alpha is refused as before", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "mentions amend");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "docs: explain how --amend behaves"]), cwd, head, hkCoupling("alpha"), "mentions --amend");
+});

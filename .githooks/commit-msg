@@ -63,9 +63,29 @@ if ! GIT_INDEX_FILE="$INDEX_FILE" git checkout-index -a --prefix="$SNAP/"; then
   exit 1
 fi
 
+# IS THIS AN AMEND? (hook-friction-0-51, item 3.) An amend stages nothing of its own: git hands the hook an index
+# that already holds the amended commit, so measured against HEAD the staged set is empty and a
+# `Twin-Unchanged` trailer on a reworded amend was refused as "not staged". The drift script then judges the
+# amend against HEAD's PARENT. No hook argument or environment variable says so — measured with git 2.55:
+# prepare-commit-msg's source is `message` for `--amend -m`, exactly as for a plain `-m`, and
+# GIT_REFLOG_ACTION is empty — so the hook reads its parent's command line (`git commit …`). Words from the
+# first message flag on are IGNORED, so `git commit -m "explain --amend"` is not an amend. If `ps` cannot answer,
+# or `--amend` follows `-m`, this stays "not an amend" and the commit is judged as it always was (the
+# direction that refuses, never the one that exempts).
+AMEND=""
+CMDLINE=$(ps -o command= -p "$PPID" 2>/dev/null || true)
+set -f
+for word in $CMDLINE; do
+  case "$word" in
+    --amend) AMEND="--amend"; break ;;
+    -m | --message | --message=* | -F | --file | --file=* | -[A-Za-z]*m) break ;;
+  esac
+done
+set +f
+
 DRIFT="$SNAP/scripts/test/drift.mjs"
 [ -f "$DRIFT" ] || DRIFT="$ROOT/scripts/test/drift.mjs"
-if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT" --phase commit-msg --message "$MSG_FILE"; then
+if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT" --phase commit-msg --message "$MSG_FILE" $AMEND; then
   echo "commit-msg: ABORT -- the drift script refused this commit's diff coupling (see above)." >&2
   echo "commit-msg: a functional file is staged without its twin, or a Twin-Unchanged declaration is refused." >&2
   exit 1

@@ -350,6 +350,10 @@ test("G1 a staged edit to a non-ASCII engine module demands the sweeps AND the f
   assert.notEqual(r.status, 0, `an uncertified change to an engine module must be refused: ${r.out}`);
   assert.ok(r.out.includes(`the sweeps bucket's subject changed (${NA_MODULE})`), `the sweeps demand names the module: ${r.out}`);
   assert.ok(r.out.includes(`the functional bucket's subject changed (${NA_MODULE})`), `the functional demand names it too: ${r.out}`);
+  // hook-friction-0-51 item 4: BOTH stale buckets in ONE run, and the closing line names each command.
+  assert.match(r.out, /drift: 2 buckets are stale/, `the closing line counts the stale buckets: ${r.out}`);
+  assert.ok(r.out.includes("`node scripts/test/certify.mjs functional`") && r.out.includes("`node scripts/test/certify.mjs sweeps`"),
+    `and names each bucket's exact command: ${r.out}`);
 });
 
 test("G1 a staged non-ASCII functional file without its twin is refused by coupling, naming its id", () => {

@@ -33,6 +33,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, expectFail, ENGINE } from "../fixtures/assert-harness.mjs";
 import { PHASES, phaseChecks } from "../certification.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 // ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
 
@@ -312,7 +313,7 @@ test("4.3 .githooks/commit-msg runs the COMMIT's drift in the commit-msg phase, 
   assert.equal(at(/^DRIFT="\$SNAP\/scripts\/test\/drift\.mjs"$/) + 1, at(/^\[ -f "\$DRIFT" \] \|\| DRIFT="\$ROOT\/scripts\/test\/drift\.mjs"$/),
     "DRIFT must be the snapshot's copy, with the working tree's used only when the index holds none");
   // 3. The commit-msg phase, with the message, over the captured index.
-  const driftAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node "\$DRIFT" --root "\$ROOT" --phase commit-msg --message "\$MSG_FILE"; then$/);
+  const driftAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node "\$DRIFT" --root "\$ROOT" --phase commit-msg --message "\$MSG_FILE" \$AMEND; then$/);
   assert.ok(driftAt > exportAt, "the hook must run the snapshot's drift in the commit-msg phase with the absolute message path");
   // 4. The snapshot is removed on every exit, a signal included.
   const text = lines.join("\n");
@@ -324,6 +325,23 @@ test("4.3 .githooks/commit-msg runs the COMMIT's drift in the commit-msg phase, 
   const pre = fs.readFileSync(HOOK, "utf8");
   assert.doesNotMatch(pre, /checks enrolment, twin coverage, diff coupling/,
     ".githooks/pre-commit still says it checks diff coupling — that check is the commit-msg hook's now");
+});
+
+test("AM .githooks/commit-msg tells drift when a commit is an amend, from its parent's command line and never from a message word", () => {
+  // THE SHAPE HALF of functional/conductor-09's AM cases (hook-friction-0-51, item 3). Those amend through
+  // both real hooks; this pins the lines that make the detection safe: it reads the PARENT's command line,
+  // stops at the first message flag so a message that mentions --amend is not an amend, and hands drift
+  // an OPTIONAL flag — an older drift ignores nothing it was not given.
+  const text = fs.readFileSync(COMMIT_MSG_HOOK, "utf8");
+  assert.match(text, /^CMDLINE=\$\(ps -o command= -p "\$PPID" 2>\/dev\/null \|\| true\)$/m, "the parent's command line is read, tolerating a missing ps");
+  assert.match(text, /^    --amend\) AMEND="--amend"; break ;;$/m, "--amend sets the flag");
+  assert.match(text, /^    -m \| --message \| --message=\* \| -F \| --file \| --file=\* \| -\[A-Za-z\]\*m\) break ;;$/m,
+    "the scan stops at the first message flag, so words inside a message are never read as flags");
+  // CODE ONLY: a comment naming a shape must not satisfy a guard for it (raw-engine-source-match).
+  const drift = codeOnly(fs.readFileSync(path.join(path.dirname(ENGINE), "test", "drift.mjs"), "utf8"), "drift.mjs");
+  assert.match(drift, /process\.argv\.includes\("--amend"\)/, "drift's CLI reads the optional --amend flag");
+  assert.match(drift, /"diff", "--cached", "--name-only", "-z", "--no-renames", "HEAD\^"/, "an amend is measured against HEAD's parent");
+  assert.match(drift, /: gitRead\(root, \["ls-files", "-z"\]\)\)/, "a root commit has no parent: everything in the index is what it adds");
 });
 
 test("4.4 the phase table puts diff coupling in exactly one hook's phase, and it is commit-msg's", () => {
