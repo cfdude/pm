@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-216",
+  "active": "gh-cfdude-pm-200",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -7587,7 +7587,7 @@
       "id": "gh-cfdude-pm-200",
       "title": "integrity: an archived OpenSpec change cannot be associated with an epic of a different name",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -7597,7 +7597,7 @@
       "externalUpdatedAt": "2026-09-15T01:56:36Z",
       "attributedCommits": [],
       "createdAt": "2026-09-15T04:39:23.081Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-10-01T23:09:42.859Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:39.267Z",
@@ -7605,7 +7605,9 @@
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "startedAt": "2026-10-01T23:09:42.825Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-199",
@@ -7645,7 +7647,7 @@
       "id": "gh-cfdude-pm-198",
       "title": "A Gate 1 verdict recorded with --artifact stores no content hash, so amending the reviewed artifacts never reads stale",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7659,9 +7661,12 @@
       "externalId": "198",
       "externalUrl": "https://github.com/cfdude/pm/issues/198",
       "externalUpdatedAt": "2026-09-14T20:57:01Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "438d54e972af89bff56a5f88aa0d4efd757d7fb0",
+        "951f4e0723414beafd806d888042226bde268265"
+      ],
       "createdAt": "2026-09-15T04:39:27.255Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-10-01T23:10:08.986Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:35.261Z",
@@ -7669,7 +7674,19 @@
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T23:10:08.950Z",
+        "reason": "Built for 0.51.0 theme B1 (ships with the release cut), one commit 438d54e9 + review-fix 951f4e07: attribution read as a set; duplicate --attribute-commit a no-op; --no-deferrals with --deferral refused; --plan/--spec refuse directories (update-epic, add-epic, add-many); Gate 1 artifactDigests (tasks.md exempt); post-Gate-2 ordering rule + advisory. One Opus review round, PASS, 2 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T23:10:08.941Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T23:10:08.950Z"
     },
     {
       "id": "state-json-unparseable-loads-as-empty",
@@ -9924,7 +9941,7 @@
       "id": "gh-cfdude-pm-205",
       "title": "A required post-Gate-2 task's commit cannot be attributed without staling the verdict",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -9932,9 +9949,12 @@
       "externalId": "205",
       "externalUrl": "https://github.com/cfdude/pm/issues/205",
       "externalUpdatedAt": "2026-09-16T23:30:23Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "438d54e972af89bff56a5f88aa0d4efd757d7fb0",
+        "951f4e0723414beafd806d888042226bde268265"
+      ],
       "createdAt": "2026-09-17T19:47:13.184Z",
-      "touchedAt": "2026-10-01T21:34:00.327Z",
+      "touchedAt": "2026-10-01T23:10:12.462Z",
       "notes": [
         {
           "at": "2026-09-17T19:47:13.644Z",
@@ -9947,7 +9967,19 @@
           "text": "lane: superpowers not openspec — single-subsystem attribution/staleness fix batched with 216/237/198 (same area); a plan, not a spec change"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T23:10:12.456Z",
+        "reason": "Built for 0.51.0 theme B1 (ships with the release cut), one commit 438d54e9 + review-fix 951f4e07: attribution read as a set; duplicate --attribute-commit a no-op; --no-deferrals with --deferral refused; --plan/--spec refuse directories (update-epic, add-epic, add-many); Gate 1 artifactDigests (tasks.md exempt); post-Gate-2 ordering rule + advisory. One Opus review round, PASS, 2 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T23:10:12.454Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T23:10:12.456Z"
     },
     {
       "id": "operations-ship-their-inverses",
@@ -11026,7 +11058,7 @@
       "id": "gh-cfdude-pm-237",
       "title": "update-epic --attribute-commit silently accepts a verbatim duplicate sha",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11034,16 +11066,31 @@
       "externalId": "237",
       "externalUrl": "https://github.com/cfdude/pm/issues/237",
       "externalUpdatedAt": "2026-09-26T14:55:09Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "438d54e972af89bff56a5f88aa0d4efd757d7fb0",
+        "951f4e0723414beafd806d888042226bde268265"
+      ],
       "createdAt": "2026-09-28T17:10:56.004Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-01T23:09:59.620Z",
+      "release": "0.51.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T23:09:59.615Z",
+        "reason": "Built for 0.51.0 theme B1 (ships with the release cut), one commit 438d54e9 + review-fix 951f4e07: attribution read as a set; duplicate --attribute-commit a no-op; --no-deferrals with --deferral refused; --plan/--spec refuse directories (update-epic, add-epic, add-many); Gate 1 artifactDigests (tasks.md exempt); post-Gate-2 ordering rule + advisory. One Opus review round, PASS, 2 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T23:09:59.613Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T23:09:59.615Z"
     },
     {
       "id": "gh-cfdude-pm-233",
       "title": "update-epic accepts --deferral together with --no-deferrals and stores the deferral — two contradictory assertions, no refusal",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11051,16 +11098,31 @@
       "externalId": "233",
       "externalUrl": "https://github.com/cfdude/pm/issues/233",
       "externalUpdatedAt": "2026-09-26T05:19:52Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "438d54e972af89bff56a5f88aa0d4efd757d7fb0",
+        "951f4e0723414beafd806d888042226bde268265"
+      ],
       "createdAt": "2026-09-28T17:10:57.061Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-01T23:10:03.181Z",
+      "release": "0.51.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T23:10:03.160Z",
+        "reason": "Built for 0.51.0 theme B1 (ships with the release cut), one commit 438d54e9 + review-fix 951f4e07: attribution read as a set; duplicate --attribute-commit a no-op; --no-deferrals with --deferral refused; --plan/--spec refuse directories (update-epic, add-epic, add-many); Gate 1 artifactDigests (tasks.md exempt); post-Gate-2 ordering rule + advisory. One Opus review round, PASS, 2 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T23:10:03.155Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T23:10:03.160Z"
     },
     {
       "id": "gh-cfdude-pm-232",
       "title": "update-epic --plan accepts a directory (and a trailing-slash path) as an epic's plan",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11068,10 +11130,25 @@
       "externalId": "232",
       "externalUrl": "https://github.com/cfdude/pm/issues/232",
       "externalUpdatedAt": "2026-09-26T05:16:24Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "438d54e972af89bff56a5f88aa0d4efd757d7fb0",
+        "951f4e0723414beafd806d888042226bde268265"
+      ],
       "createdAt": "2026-09-28T17:10:58.037Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-01T23:10:06.190Z",
+      "release": "0.51.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T23:10:06.184Z",
+        "reason": "Built for 0.51.0 theme B1 (ships with the release cut), one commit 438d54e9 + review-fix 951f4e07: attribution read as a set; duplicate --attribute-commit a no-op; --no-deferrals with --deferral refused; --plan/--spec refuse directories (update-epic, add-epic, add-many); Gate 1 artifactDigests (tasks.md exempt); post-Gate-2 ordering rule + advisory. One Opus review round, PASS, 2 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T23:10:06.183Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T23:10:06.184Z"
     },
     {
       "id": "gh-cfdude-pm-231",
@@ -11264,7 +11341,7 @@
       "id": "gh-cfdude-pm-216",
       "title": "Catching up an EARLIER commit with --attribute-commit breaks the invariant attributedCommits is read with",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11272,12 +11349,28 @@
       "externalId": "216",
       "externalUrl": "https://github.com/cfdude/pm/issues/216",
       "externalUpdatedAt": "2026-09-22T08:20:55Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "438d54e972af89bff56a5f88aa0d4efd757d7fb0",
+        "951f4e0723414beafd806d888042226bde268265"
+      ],
       "createdAt": "2026-09-28T17:11:06.318Z",
-      "touchedAt": "2026-10-01T06:09:20.756Z",
+      "touchedAt": "2026-10-01T23:09:55.805Z",
       "release": "0.51.0",
       "startedAt": "2026-10-01T06:09:20.753Z",
-      "trackerRefreshNeeded": true
+      "trackerRefreshNeeded": true,
+      "planPath": "docs/superpowers/plans/2026-10-01-theme-b1.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-01T23:09:55.802Z",
+        "reason": "Built for 0.51.0 theme B1 (ships with the release cut), one commit 438d54e9 + review-fix 951f4e07: attribution read as a set; duplicate --attribute-commit a no-op; --no-deferrals with --deferral refused; --plan/--spec refuse directories (update-epic, add-epic, add-many); Gate 1 artifactDigests (tasks.md exempt); post-Gate-2 ordering rule + advisory. One Opus review round, PASS, 2 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-01T23:09:55.801Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-01T23:09:55.802Z"
     },
     {
       "id": "gh-cfdude-pm-215",
@@ -12025,6 +12118,44 @@
       "attributedCommits": [],
       "createdAt": "2026-10-01T07:33:57.581Z",
       "touchedAt": "2026-10-01T07:33:57.585Z"
+    },
+    {
+      "id": "integrity-reports-legacy-duplicate-attributions",
+      "title": "integrity has no check for legacy duplicate attributedCommits entries (written before B1 made attribution once-only)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-237",
+          "reason": "found in B1 build"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T23:10:14.992Z",
+      "touchedAt": "2026-10-01T23:10:14.997Z"
+    },
+    {
+      "id": "integrity-reports-stale-gate-1",
+      "title": "integrity has no check naming an epic whose Gate 1 artifactDigests read stale",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-198",
+          "reason": "found in B1 build"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-01T23:10:17.077Z",
+      "touchedAt": "2026-10-01T23:10:17.082Z"
     }
   ],
   "detourStack": [],
@@ -12035,7 +12166,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1782,
+  "revision": 1804,
   "reviewMode": "standard",
   "releases": [
     {
