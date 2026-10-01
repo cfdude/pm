@@ -1333,3 +1333,40 @@ test("AM a message that merely MENTIONS --amend is not an amend: an undeclared a
   const head = hkHead(cwd);
   hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "docs: explain how --amend behaves"]), cwd, head, hkCoupling("alpha"), "mentions --amend");
 });
+
+// ---------- amend detection reads the argv, not its words (review of 32a3f588, findings 3 and 4) ----------
+// The hook reads `ps`, which joins argv and drops the quoting. `--amend` counts anywhere in any order and as an
+// unambiguous long-option prefix; the value of -m (detached, or attached as `-mfoo`) is a value, never a flag.
+
+const amendCase = (extraArgs) => {
+  const cwd = hookedRepo();
+  hkAlphaWithTrailer(cwd, "to be amended");
+  const head = hkHead(cwd);
+  const r = hookedGit(cwd, ["commit", ...extraArgs]);
+  assert.equal(r.status, 0, `the amend must be accepted (${extraArgs.join(" ")}): ${r.out}`);
+  assert.notEqual(hkHead(cwd), head, "an accepted amend replaces HEAD");
+  assert.deepEqual(hkTrailers(cwd), ["alpha — a comment-only edit"]);
+};
+const TRAILER = "Twin-Unchanged: alpha — a comment-only edit";
+
+test("AM --amend AFTER -m is still an amend", () => amendCase(["-m", "change alpha, reworded", "-m", TRAILER, "--amend"]));
+test("AM --amend after a bundled -am is still an amend", () => amendCase(["-am", "change alpha, reworded", "-m", TRAILER, "--amend"]));
+test("AM the unambiguous prefix --amen is an amend", () => amendCase(["--amen", "-m", "change alpha, reworded", "-m", TRAILER]));
+test("AM --amend after an ATTACHED -m value is an amend", () => amendCase([`-mchange alpha, reworded`, `-m${TRAILER}`, "--amend"]));
+
+test("AM an ATTACHED -m value that mentions --amend is not an amend: HEAD^ must not excuse a twin-less alpha", () => {
+  const cwd = hookedRepo();
+  hkTouch(cwd, HK_ALPHA, "paired");
+  hkTouch(cwd, HK_TWIN, "paired");
+  hkGit(cwd, "add", "--", HK_ALPHA, HK_TWIN);
+  hkSeed(cwd);
+  const base = hkHead(cwd);
+  hkAccepted(hookedGit(cwd, ["commit", "-m", "change alpha with its twin"]), cwd, base, "paired");
+  hkTouch(cwd, HK_ALPHA, "alpha alone");
+  hkGit(cwd, "add", "--", HK_ALPHA);
+  hkSeed(cwd);
+  const head = hkHead(cwd);
+  // `ps` shows this as `commit -mfix alpha, see --amend`: judged against HEAD^ it would be excused by HEAD's twin.
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-mfix alpha, see --amend"]), cwd, head, hkCoupling("alpha"), "attached -m mentioning --amend");
+  hkRefusedByCommitMsg(hookedGit(cwd, ["commit", "-m", "fix alpha, see --amend"]), cwd, head, hkCoupling("alpha"), "detached -m mentioning --amend");
+});

@@ -330,13 +330,15 @@ test("4.3 .githooks/commit-msg runs the COMMIT's drift in the commit-msg phase, 
 test("AM .githooks/commit-msg tells drift when a commit is an amend, from its parent's command line and never from a message word", () => {
   // THE SHAPE HALF of functional/conductor-09's AM cases (hook-friction-0-51, item 3). Those amend through
   // both real hooks; this pins the lines that make the detection safe: it reads the PARENT's command line,
-  // stops at the first message flag so a message that mentions --amend is not an amend, and hands drift
+  // consumes message values (and the message's own words) so a message that mentions --amend is not an amend, and hands drift
   // an OPTIONAL flag — an older drift ignores nothing it was not given.
   const text = fs.readFileSync(COMMIT_MSG_HOOK, "utf8");
-  assert.match(text, /^CMDLINE=\$\(ps -o command= -p "\$PPID" 2>\/dev\/null \|\| true\)$/m, "the parent's command line is read, tolerating a missing ps");
-  assert.match(text, /^    --amend\) AMEND="--amend"; break ;;$/m, "--amend sets the flag");
-  assert.match(text, /^    -m \| --message \| --message=\* \| -F \| --file \| --file=\* \| -\[A-Za-z\]\*m\) break ;;$/m,
-    "the scan stops at the first message flag, so words inside a message are never read as flags");
+  assert.match(text, /^CMDLINE=\$\(ps -ww -o command= -p "\$PPID" 2>\/dev\/null \|\| true\)$/m, "the parent's command line is read, tolerating a missing ps");
+  assert.match(text, /^    --am \| --ame \| --amen \| --amend\) AMEND="--amend"; break ;;$/m, "--amend, and its unambiguous prefixes, set the flag");
+  assert.match(text, /^          m \| F \| C \| c \| t\)$/m,
+    "the value of a value-taking short option, detached or attached, is consumed and never scanned as a flag");
+  assert.match(text, /^    --m \| --me \| --mes \| --mess \| --messa \| --messag \| --message\) SKIP=1; ISMSG=1 ;;$/m,
+    "a detached --message value is consumed");
   // CODE ONLY: a comment naming a shape must not satisfy a guard for it (raw-engine-source-match).
   const drift = codeOnly(fs.readFileSync(path.join(path.dirname(ENGINE), "test", "drift.mjs"), "utf8"), "drift.mjs");
   assert.match(drift, /process\.argv\.includes\("--amend"\)/, "drift's CLI reads the optional --amend flag");

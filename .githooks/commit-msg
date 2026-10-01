@@ -68,17 +68,58 @@ fi
 # `Twin-Unchanged` trailer on a reworded amend was refused as "not staged". The drift script then judges the
 # amend against HEAD's PARENT. No hook argument or environment variable says so — measured with git 2.55:
 # prepare-commit-msg's source is `message` for `--amend -m`, exactly as for a plain `-m`, and
-# GIT_REFLOG_ACTION is empty — so the hook reads its parent's command line (`git commit …`). Words from the
-# first message flag on are IGNORED, so `git commit -m "explain --amend"` is not an amend. If `ps` cannot answer,
-# or `--amend` follows `-m`, this stays "not an amend" and the commit is judged as it always was (the
-# direction that refuses, never the one that exempts).
+# GIT_REFLOG_ACTION is empty — so the hook reads its parent's command line (`git commit ...`).
+#
+# `ps` joins argv with single spaces and drops the quoting, so the scan is a best-effort parse of that line:
+#   * `--amend` counts ANYWHERE in the argv, in any order with `-m`, and as any unambiguous long-option
+#     prefix (`--am`, `--ame`, `--amen`); git commit has no other option starting with "am".
+#   * The value of `-m` / `-F` / `-C` / `-c` / `-t` (and of `--message`, `--file`, ... given detached) is
+#     CONSUMED as a value, never read as a flag, and so is a value attached to a short option (`-mfoo`,
+#     `-amfoo`, `-m"fix --amend"` which `ps` shows as `-mfix --amend`).
+#   * A multi-word message is several tokens. Tokens straight after a message value that are words of the
+#     message file ($MSG_FILE) are part of that message and are skipped, so `-m "explain --amend"` is not an
+#     amend. The one miss: a REAL `--amend` that the message also contains word for word is not detected.
+# WHEN THE FALLBACK APPLIES (no `ps`, an unreadable line, or that one miss) the commit is judged as a plain
+# commit, against HEAD — exactly as every commit was before this check existed. That can REFUSE a legitimate
+# reworded amend (it stages nothing, so a Twin-Unchanged trailer reads as "not staged"; the fix is to retry
+# where `ps` works), and it can fail to see that an amend dropped a twin its commit had paired. It is not a
+# claim that the fallback only ever refuses.
 AMEND=""
-CMDLINE=$(ps -o command= -p "$PPID" 2>/dev/null || true)
+CMDLINE=$(ps -ww -o command= -p "$PPID" 2>/dev/null || true)
+MSGTEXT=" $(tr -s '[:space:]' ' ' < "$MSG_FILE" 2>/dev/null || true) "
+SKIP=0      # the next token is the VALUE of an option that takes one
+ISMSG=0     # that option is a message option, so the tokens after the value may still be message words
+INMSG=0     # the previous tokens were a message value: skip tokens that are words of the message
 set -f
 for word in $CMDLINE; do
+  if [ "$SKIP" = 1 ]; then SKIP=0; INMSG=$ISMSG; continue; fi
+  if [ "$INMSG" = 1 ]; then
+    case "$MSGTEXT" in *" $word "*) continue ;; esac
+    INMSG=0
+  fi
   case "$word" in
-    --amend) AMEND="--amend"; break ;;
-    -m | --message | --message=* | -F | --file | --file=* | -[A-Za-z]*m) break ;;
+    --) break ;;
+    --am | --ame | --amen | --amend) AMEND="--amend"; break ;;
+    --m | --me | --mes | --mess | --messa | --messag | --message) SKIP=1; ISMSG=1 ;;
+    --message=* | --mess*=*) INMSG=1 ;;
+    --fil | --file | --reuse-message | --reedit-message | --template | --author | --date | --cleanup | --trailer | --fixup | --squash | --pathspec-from-file) SKIP=1; ISMSG=0 ;;
+    --*) ;;
+    -?*)
+      rest=${word#-}
+      while [ -n "$rest" ]; do
+        c=${rest%"${rest#?}"}
+        rest=${rest#?}
+        case "$c" in
+          m | F | C | c | t)
+            if [ -z "$rest" ]; then
+              SKIP=1
+              if [ "$c" = m ]; then ISMSG=1; else ISMSG=0; fi
+            elif [ "$c" = m ]; then INMSG=1
+            fi
+            break ;;
+          S | u) break ;;
+        esac
+      done ;;
   esac
 done
 set +f
