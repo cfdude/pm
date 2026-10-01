@@ -16,3 +16,7 @@ evals/.pytest_cache/
 .conductor/state.json.tmp*
 .conductor/commit-observe.json*
 node_modules/
+
+# flaky-test-quarantine-and-targeted-rerun: the retry ledger. Repo-only: not an ENGINE_IGNORED entry, so
+# `init`/`upgrade` never write it into a user's .gitignore.
+.test-flakes.log

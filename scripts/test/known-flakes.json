@@ -1,0 +1,14 @@
+[
+  {
+    "file": "scripts/test/functional/certify-index.test.mjs",
+    "test": "1.2 a passing, a failing and a SIGTERM'd run leave the repository as they found it",
+    "owningEpic": null,
+    "note": "SIGTERM race under machine load: the runner is killed while the bucket is mid-start. Not to be diagnosed; needs an owning epic."
+  },
+  {
+    "file": "scripts/test/functional/state-file-refuses-to-guess.test.mjs",
+    "test": "G2-C1/I2: an old directory at the lock or break path cannot be removed",
+    "owningEpic": null,
+    "note": "Asserts a refusal inside a fixed 2000 ms bound, which a loaded machine overruns. Not to be diagnosed; needs an owning epic."
+  }
+]

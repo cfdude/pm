@@ -129,6 +129,10 @@ function snapshot(cwd) {
     for (const e of fs.readdirSync(path.join(cwd, rel), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       const r = path.join(rel, e.name);
       if (r === ".git") continue;
+      // The retry ledger (flaky-test-quarantine-and-targeted-rerun) is gitignored machine state that a FAILED
+      // run appends to after retrying its failed files. It is not something the user owns; the cases that
+      // pin it are in functional/flake-retry.
+      if (r === ".test-flakes.log") continue;
       if (e.isDirectory()) walk(r);
       else h.update(r).update("\0").update(fs.readFileSync(path.join(cwd, r))).update("\0");
     }

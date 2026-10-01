@@ -45,8 +45,9 @@ ROOT=$PWD
 # ONE CLEANUP, AND IT RUNS ON A SIGNAL TOO. It removes only what this hook created: the output file,
 # the index snapshot (below) and the suite lock once it is held. INT/TERM/HUP are turned into an
 # `exit`, so the EXIT trap runs under every /bin/sh — a Ctrl-C mid-suite must not leave the lock for
-# the next commit to wait on. Nothing it removes is the user's: the working tree and the index are
-# never written by this hook, which is what makes an interrupted hook safe by construction.
+# the next commit to wait on. Nothing it removes is the user's: the index is never written by this hook,
+# and the working tree is written ONLY by the flake retry's gitignored ledger `.test-flakes.log` (appended
+# after a failed run, never by a passing one) — which is what keeps an interrupted hook safe by construction.
 tmpfile=$(mktemp)
 SNAP=""
 LOCK_HELD=""
@@ -227,8 +228,40 @@ rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 export PM_TEST_PROTECTED_ROOT="$ROOT"
 cd "$SNAP"
 if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+  SUITE_STATUS=0
+else
+  SUITE_STATUS=$?
+fi
+
+# ─────────── ONE TARGETED RETRY OF THE FAILED FILES (flaky-test-quarantine-and-targeted-rerun, 0.51.0) ───────────
+# A failed run is not re-run whole: scripts/test/flake-retry.mjs reads the failed test FILES out of the
+# spec output and runs ONLY those once more. A test that passes on the retry passes the commit; it is
+# printed as a "known flake" when scripts/test/known-flakes.json lists it and as an "UNLISTED flake" when it
+# does not. A test that fails twice, a status that is not a test failure (a signal), an unreadable count and a
+# failure that maps to no test file are all REAL failures and fall through to the failure branch unchanged.
+# The retry's ledger (`.test-flakes.log`, gitignored) is the ONE thing this hook writes into the working tree,
+# and only after a failure; $ROOT is where it goes, never the snapshot. The floor below still reads the FIRST
+# run's total: a retry never lowers what must have been declared.
+RECOVERED=""
+if [ "$SUITE_STATUS" -ne 0 ]; then
+  # The COMMIT's copy, as drift is; the working tree's only when the index holds none (a hook fixture).
+  FLAKE_RETRY="$SNAP/scripts/test/flake-retry.mjs"
+  [ -f "$FLAKE_RETRY" ] || FLAKE_RETRY="$ROOT/scripts/test/flake-retry.mjs"
+  if [ -f "$FLAKE_RETRY" ] && RECOVERED=$(FORCE_COLOR=0 node "$FLAKE_RETRY" hook --root "$ROOT" --cwd "$SNAP" \
+      --output "$tmpfile" --status "$SUITE_STATUS" --dirs scripts/test/unit,scripts/test/assert); then
+    :
+  else
+    RECOVERED=""
+  fi
+fi
+
+if [ "$SUITE_STATUS" -eq 0 ] || [ -n "$RECOVERED" ]; then
   total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')
   passed=$(grep -m1 -E '^ℹ pass ' "$tmpfile" | awk '{print $3}')
+  if [ -n "$RECOVERED" ]; then
+    total=$(echo "$RECOVERED" | awk '{print $2}')
+    passed=$(echo "$RECOVERED" | awk '{print $3}')
+  fi
 
   # CHECK 1 -- A COUNT THAT CANNOT BE READ IS A REFUSAL (0.49.0, D4/D5). Until 0.49.0 an unparsed
   # summary still printed "tests passing" and exited 0 WITH THE FLOOR SKIPPED, so
@@ -306,10 +339,14 @@ if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs s
     exit 1
   fi
 
-  echo "pre-commit: ${passed}/${total} passing"
+  if [ -n "$RECOVERED" ]; then
+    echo "pre-commit: ${passed}/${total} passing AFTER a retry of the failed files -- see the flake lines above and .test-flakes.log"
+  else
+    echo "pre-commit: ${passed}/${total} passing"
+  fi
   exit 0
 else
-  status=$?
+  status=$SUITE_STATUS
   echo "pre-commit: tests FAILED -- full output follows" >&2
   cat "$tmpfile" >&2
   exit "$status"

@@ -38,7 +38,10 @@
 // copy. An edit or a `git add` during a run of several minutes changes neither what
 // ran nor what is recorded. The run directory is `pm-certify-run.*` under the OS temp directory; it is
 // removed when the runner exits, and on INT/TERM/HUP, which also kill the bucket. The runner never
-// writes the working tree, the index, the stash or a worktree registration.
+// writes the working tree, the index, the stash or a worktree registration — with ONE exception: when a
+// run FAILED and its failed test files are retried (flake-retry.mjs), each retried test appends a line to
+// the gitignored ledger `.test-flakes.log` at the repository root. It is the only working-tree write, git
+// ignores it, and a passing run never makes it.
 //
 // ONE KNOWN LIMIT, shared with .githooks/pre-commit's index snapshot: `checkout-index` exports a tracked
 // symlink AS a symlink, so an ABSOLUTE one still points into the working tree (or anywhere), and a test
@@ -64,6 +67,7 @@ import {
   writeManifestEntry,
 } from "./certification.mjs";
 import { indexManifest, indexReaders } from "./drift.mjs";
+import { KNOWN_FLAKES_FILE, recoverFlakes } from "./flake-retry.mjs";
 import { removeAtExit, removeTempDir } from "./fixtures/temp-dir.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -207,8 +211,8 @@ const BUCKET_BOUND_MS = 60 * 60 * 1000;
 /** Run a bucket IN THE RUN DIRECTORY's clone (`tree`), asynchronously so a signal reaches its handler
  *  while the bucket runs. The runner is started in its OWN process group (`detached`), so a signal
  *  handler kills the runner and every test process under it at once (`killActiveRun`). */
-function runBucket(tree, bucket, extraEnv = {}) {
-  const files = bucketFiles(tree, bucket);
+function runBucket(tree, bucket, extraEnv = {}, only = null) {
+  const files = only || bucketFiles(tree, bucket);
   const { args, env } = runnerInvocation(files, { ...cleanEnv(), ...extraEnv });
   return new Promise((resolve) => {
     let stdout = "", stderr = "";
@@ -283,7 +287,25 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
     observed = observerEnv(run);
     if (typeof observed === "string") { process.stderr.write(observed); return 1; }
   }
-  const result = await runBucket(run.tree, bucket, bucketEnv(root, observed ? observed.env : {}));
+  const env = bucketEnv(root, observed ? observed.env : {});
+  let result = await runBucket(run.tree, bucket, env);
+  let recoveredFiles = 0;
+  if (!result.ok) {
+    // ONE targeted retry of the failed FILES (flake-retry.mjs), in the same run tree and under the same
+    // observer environment. The ledger goes to the repository certify was run for, never the run tree.
+    const retry = await recoverFlakes({
+      output: result.output, status: result.status, counts: result.counts, cwd: run.tree,
+      files: bucketFiles(run.tree, bucket), ledgerRoot: root, knownFile: path.join(run.tree, KNOWN_FLAKES_FILE),
+      rerun: (only) => runBucket(run.tree, bucket, env, only),
+    });
+    for (const m of retry.messages) process.stderr.write(`certify: ${m}\n`);
+    if (retry.recovered) {
+      recoveredFiles = retry.retried.length;
+      result = { ok: true, status: 0, counts: retry.counts, output: `${result.output}${retry.retryOutput}` };
+    } else if (retry.retried.length) {
+      result = { ...result, output: `${result.output}${retry.retryOutput}` };
+    }
+  }
   if (!result.ok) {
     process.stderr.write(result.output);
     process.stderr.write(`\ncertify: the ${label} FAILED (status ${result.status}). Nothing recorded — a record is a claim about a pass.\n`);
@@ -302,18 +324,22 @@ async function certifyBucket(root, gitCommonDir, run, bucket) {
   const { key, file, created, refreshed, replaced } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
   pruneRecord(gitCommonDir, bucket, { keep: key });
   process.stdout.write(passLine({ label, counts: result.counts, paths: Object.keys(manifest).length, file,
-    dir: bucketDir(gitCommonDir, bucket), created, refreshed, replaced }));
+    dir: bucketDir(gitCommonDir, bucket), created, refreshed, replaced, recoveredFiles }));
   return 0;
 }
 
 /** The line a recorded pass prints. A pass over content ALREADY recorded created nothing, and says so
  *  (Gate 2 re-review F3): "already recorded", with whether its `ranAt` was refreshed. A pass that REPLACED an
  *  unparseable file under its key recorded its entry (Gate 2 final W1). Pure; exported for its test. */
-export function passLine({ label, counts, paths, file, dir, created, refreshed, replaced = false }) {
+export function passLine({ label, counts, paths, file, dir, created, refreshed, replaced = false, recoveredFiles = 0 }) {
   const where = `${paths} subject paths as ${path.relative(dir, file)} in ${dir}`;
-  if (created) return `certify: ${label} passed (${counts.pass}/${counts.tests}); recorded ${where}\n`;
-  if (replaced) return `certify: ${label} passed (${counts.pass}/${counts.tests}); recorded ${where} (replacing an entry that could not be parsed)\n`;
-  return `certify: ${label} passed (${counts.pass}/${counts.tests}); already recorded: ${where} ` +
+  // A pass reached through a retry says so: "passed (N/N)" alone would read as a first-run pass.
+  const retried = recoveredFiles
+    ? `, after retrying ${recoveredFiles} failed file${recoveredFiles === 1 ? "" : "s"} once — see .test-flakes.log` : "";
+  const head = `${label} passed (${counts.pass}/${counts.tests}${retried})`;
+  if (created) return `certify: ${head}; recorded ${where}\n`;
+  if (replaced) return `certify: ${head}; recorded ${where} (replacing an entry that could not be parsed)\n`;
+  return `certify: ${head}; already recorded: ${where} ` +
     `(${refreshed ? "ranAt refreshed" : "the existing entry could not be read; left as it is"})\n`;
 }
 

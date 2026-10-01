@@ -285,7 +285,7 @@ test("certify hands every bucket run the real top level, and the observer's vari
   assert.deepEqual(bucketEnv("/real/top", { NODE_OPTIONS: "--import=x" }),
     { PM_TEST_PROTECTED_ROOT: "/real/top", NODE_OPTIONS: "--import=x" });
   const src = fs.readFileSync(path.join(TEST_DIR, "certify.mjs"), "utf8");
-  assert.match(src, /await runBucket\(run\.tree, bucket, bucketEnv\(root, /,
+  assert.match(src, /bucketEnv\(root, [^\n]*\n\s*let result = await runBucket\(run\.tree, bucket, env\)/,
     "certify's bucket run no longer passes bucketEnv(root, …): the run over the index copy would guard only the copy");
 });
 
