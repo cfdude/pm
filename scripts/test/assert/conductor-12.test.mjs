@@ -69,6 +69,17 @@ test("init ignores the brief and the rotated conflict log — engine-written, pe
   assert.ok(lines.includes(".conductor/write-conflicts.log.prev"), "the rotated conflict log is ignored");
 });
 
+test("init ignores the Honcho outbox explicitly — no repo may depend on a global *.log rule to keep it out of git", () => {
+  // hook-friction-0-51 item 6. `.conductor/honcho-memories.log` was untracked only where a global
+  // `*.log` rule covered it (the maintainer's does), and a permanently untracked file everywhere else.
+  // Line-exact, so a neighbouring `*.log` glob cannot satisfy it. `.test-flakes.log` is the repo's OWN
+  // test ledger, in this repository's root .gitignore, and is deliberately NOT written into a user's.
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const lines = gitignore(cwd).split("\n");
+  assert.ok(lines.includes(".conductor/honcho-memories.log"), "the Honcho outbox is ignored by name");
+  assert.ok(!lines.includes(".test-flakes.log"), "the repo-only ledger is not a user entry");
+});
+
 test("init is idempotent — a second run does not duplicate the entries", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   const first = gitignore(cwd);

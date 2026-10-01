@@ -200,8 +200,9 @@ file, then re-run. `--force` does not override it.
 `upgrade` also back-fills `.gitignore` through the `ensureGitignore()` it already runs, adding any
 of pm's per-checkout files the file lacks: `.conductor/brief.txt` (the SessionStart/PreCompact
 brief), `.conductor/detours.log`, `.conductor/write-conflicts.log` and its rotated
-`.conductor/write-conflicts.log.prev`, `.conductor/write-conflicts.latch`,
-`.conductor/commit-watch.json`, `.conductor/commit-observe.json*`, `.conductor/session-claim.json*`
+`.conductor/write-conflicts.log.prev`, `.conductor/write-conflicts.latch`, the Honcho outbox
+`.conductor/honcho-memories.log` (written explicitly, so a repo does not depend on a global `*.log`
+rule to keep it out of git), `.conductor/commit-watch.json`, `.conductor/commit-observe.json*`, `.conductor/session-claim.json*`
 (appended alongside any older exact `session-claim.json` entry, which is left in place, harmless),
 `.conductor/state.json.lock*`, `.conductor/state.json.tmp*` and `.conductor/activity/`. It never
 removes a line.

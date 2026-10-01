@@ -51,6 +51,12 @@ export const ENGINE_IGNORED = Object.freeze([
   // Its ROTATION (store.rotate(), rotateWriteConflictsLog). No `*.log` rule matches `.log.prev`,
   // so without this line it was an untracked file on every machine, the maintainer's included.
   ".conductor/write-conflicts.log.prev",
+  // The Honcho outbox (`honcho-memory`, and every PUSH/POP line). Machine-local and append-only, so a
+  // tracked copy conflicts on every merge. It was never listed: it stayed untracked only where a
+  // GLOBAL `*.log` rule happened to cover it (the maintainer's ~/.gitignore_global does), and was a
+  // permanently untracked file everywhere else — #106 again. A repo that already tracks it is now told
+  // to untrack it (`untrackInstruction`), the same as for brief.txt.
+  ".conductor/honcho-memories.log",
   // The brief the SessionStart `brief` and PreCompact `snapshot` hooks rewrite (briefPath). It was
   // never here, so 14 of 24 pm-managed repos had COMMITTED it and every snapshot churned a tracked
   // file (0.50.0 Gate 2). Derived from state.json, which stays tracked, so nothing is lost. A repo

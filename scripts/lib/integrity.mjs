@@ -756,6 +756,19 @@ export const CHECKS = [
      *  `active` gets this check firing mid-release, and the two remedies it prints are both
      *  correct answers in that case anyway.
      *
+     *  KNOWN LIMIT, WITH NO CLEAN RULE YET (0.51.0, hook-friction-0-51 item 5 — NEEDS A DECISION). The
+     *  guard reads `active`/`paused` and nothing else, so ARCHIVING THE LAST ACTIVE MEMBER of a release
+     *  that is still mid-flight leaves a `delivered` member and no active one — and the release reads as
+     *  delivered while its queued siblings are the next work, not leftovers. The schema offers no
+     *  discriminator: a release carries no "cut epic", no parent pointer and no delivery marker, and
+     *  `disposition.carriedTo` names where an archived member's work went, which says nothing about the
+     *  release's own state. Every candidate rule tried (a queued member that something carried to, an id
+     *  naming convention, "queued/planned since before the delivered one") is either a guess or needs a
+     *  field the record does not hold, and a wrong guess silences a TRUE finding — the failure gh-138
+     *  taught this check to avoid. So the rule is unchanged and the MESSAGE names the workaround instead:
+     *  mark the member being resumed `--status active`, which keeps the release in flight. A real rule
+     *  needs an owner decision on which signal marks a release as delivered.
+     *
      *  THE EXCLUSION HALF — `deferred[]` — is honoured because the release object ALREADY
      *  distinguishes "cut on purpose" from "shipped", and consuming only one half of that
      *  distinction is the whole shape of the bug. Note what it defends against: the `--defer`
@@ -800,7 +813,12 @@ export const CHECKS = [
             `${asCode(deliveredArchiveInvocation(e, carry))} — or it ` +
             // The release id goes through printedId() too (D4a): shell-quoted when it fails the id
             // format, the no-remedy message when it holds a control character.
-            `was cut, and you record that instead: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --defer ${printedId(e.id)} --reason "<why>"\``)}` });
+            `was cut, and you record that instead: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --defer ${printedId(e.id)} --reason "<why>"\``)}` +
+            // The false-positive this check cannot tell apart from a real one (see the KNOWN LIMIT above). No
+            // `update-epic …` invocation is spelled: this is the OWNER's call, not one of the two alternatives.
+            " If the release is NOT finished — archiving the last `active` member makes a mid-release look delivered, because this " +
+            "check reads `active`/`paused` and nothing else — mark the member you are about to work on `--status active` (with " +
+            "`update-epic`) instead: that keeps the release in flight and silences this finding." });
         }
       }
       return out;

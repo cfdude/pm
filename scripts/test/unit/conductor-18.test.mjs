@@ -49,6 +49,23 @@ unitTest("gh-137: an epic left non-terminal in a release whose parent delivered 
   assert.match(out, /left-open/);
 });
 
+unitTest("hook-friction-0-51: the finding names the `--status active` workaround for a release that is only mid-flight", () => {
+  // Archiving the last ACTIVE member leaves a delivered member and no active one, so a release that is
+  // still mid-flight reads as delivered. The rule is unchanged (no clean discriminator exists); the message
+  // says what to do, and spells it without an `update-epic …` invocation that would read as a third remedy.
+  const engine = repoWith({
+    releases: [{ id: "1.0", intent: "x", deferred: [] }],
+    epics: [shipped("shipped"), epic("next-up", { release: "1.0", status: "queued" })] });
+  const out = engine(["integrity"]);
+  assert.equal(countLine(out, DELIVERED), 1, "the rule itself did not change");
+  assert.match(out, /If the release is NOT finished/);
+  assert.match(out, /mark the member you are about to work on `--status active`/);
+  const inFlight = repoWith({
+    releases: [{ id: "1.0", intent: "x", deferred: [] }],
+    epics: [shipped("shipped"), epic("next-up", { release: "1.0", status: "active" })] });
+  assert.equal(countLine(inFlight(["integrity"]), DELIVERED), 0, "and the workaround it names does silence the finding");
+});
+
 unitTest("gh-137: the release's own `deferred[]` excludes an epic cut on purpose", () => {
   const engine = repoWith({
     releases: [{ id: "1.0", intent: "x",
