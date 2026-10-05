@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-200",
+  "active": "gh-cfdude-pm-167",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -5578,7 +5578,7 @@
       "id": "gh-cfdude-pm-167",
       "title": "sync has no --dry-run: registering archived changes is unpreviewable, and no selective import",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -5607,7 +5607,9 @@
       "externalUpdatedAt": "2026-09-03T01:14:23Z",
       "createdAt": "2026-09-08T17:55:42-07:00",
       "release": "0.51.0",
-      "touchedAt": "2026-09-28T22:29:16.270Z"
+      "touchedAt": "2026-10-05T01:44:11.659Z",
+      "startedAt": "2026-10-05T01:44:11.655Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "fleet-upgrade-after-release",
@@ -7313,7 +7315,7 @@
       "id": "archived-delivered-gate2-regression-report",
       "title": "No integrity check names an archived delivered epic that fails a delivered obligation (Gate 2 not a covering pass, or outstanding work with no handoff) reached by paths no gate sees: record-gate-review recording fail after archive, the heal re-archiving a changed epic with its kept delivered disposition, remove-epic stripping disposition.carriedTo, and disk-side task changes",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7324,9 +7326,12 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-14T18:39:53.765Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-10-05T01:44:06.214Z",
       "notes": [
         {
           "at": "2026-09-14T19:29:54.971Z",
@@ -7344,13 +7349,26 @@
           "text": "2026-09-16 sibling path, confirmed on 0.44.0 in a scratch repo during the 0.45.0 cross-spec round 4: on an archived delivered epic whose only attributed commit C1 was amended to C2 (C1 still resolvable), record-gate-review --gate 2 --verdict pass --head-sha C2 exits 0, then update-epic --withdraw-commit C1 exits 0, leaving archived+delivered with zero attributed commits (integrity reports delivered-epic-attributed-no-commits). The withdraw regression check compares before/after and the before is already non-covering after the re-record. emitted-commands-run-as-written design now forbids printing that re-record as a standalone step; the engine refusal is not fixed."
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:06.210Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:06.209Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:06.210Z"
     },
     {
       "id": "status-write-undone-by-heal-reports-updated",
       "title": "update-epic --status <non-archived> on an epic whose change directory is archived on disk prints 'updated' while render()'s heal immediately restores archived — a false-success report on the write surface",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7361,16 +7379,32 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-14T18:52:24.263Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T01:44:07.000Z",
+      "release": "0.51.0",
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:06.996Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:06.996Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:06.996Z"
     },
     {
       "id": "disposition-invocation-prints-bare-no-deferrals",
       "title": "dispositionInvocation() (used by unconsideredOutcomes and the integrity check for engine-stamped unknown outcomes) prints a bare --no-deferrals, suggesting a claim the agent has not made — CLAUDE.md required item 6 says --no-deferrals is a claim, not a default; print a deferral placeholder instead",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7381,10 +7415,26 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-14T19:44:41.018Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T01:44:07.768Z",
+      "release": "0.51.0",
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:07.764Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:07.764Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:07.764Z"
     },
     {
       "id": "handoff-refusal-prints-story-titles-raw",
@@ -7563,7 +7613,7 @@
       "id": "gh-cfdude-pm-201",
       "title": "integrity: a retrospective FAILING Gate 2 is reported as \"recorded as bookkeeping\"",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -7571,9 +7621,12 @@
       "externalId": "201",
       "externalUrl": "https://github.com/cfdude/pm/issues/201",
       "externalUpdatedAt": "2026-09-15T01:56:37Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-15T04:39:20.782Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
+      "touchedAt": "2026-10-05T01:44:03.908Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:41.322Z",
@@ -7581,13 +7634,31 @@
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-10-05T00:19:52.042Z",
+        "externalUpdatedAt": "2026-09-15T01:56:37Z"
+      },
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:03.904Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:03.904Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:03.904Z"
     },
     {
       "id": "gh-cfdude-pm-200",
       "title": "integrity: an archived OpenSpec change cannot be associated with an epic of a different name",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -7595,9 +7666,12 @@
       "externalId": "200",
       "externalUrl": "https://github.com/cfdude/pm/issues/200",
       "externalUpdatedAt": "2026-09-15T01:56:36Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-15T04:39:23.081Z",
-      "touchedAt": "2026-10-01T23:09:42.859Z",
+      "touchedAt": "2026-10-05T01:44:03.115Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:39.267Z",
@@ -7607,7 +7681,25 @@
       ],
       "release": "0.51.0",
       "startedAt": "2026-10-01T23:09:42.825Z",
-      "trackerRefreshNeeded": true
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-10-05T00:19:49.062Z",
+        "externalUpdatedAt": "2026-09-15T01:56:36Z"
+      },
+      "trackerRefreshNeeded": true,
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:03.112Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:03.111Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:03.112Z"
     },
     {
       "id": "gh-cfdude-pm-199",
@@ -10980,7 +11072,7 @@
       "id": "integrity-reports-set-aside-archive-dirs",
       "title": "integrity's archive-directory-has-no-epic does not report an archive directory the 0.50.0 date rule set aside (older than the epic it name-matches); only sync names it",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -10991,10 +11083,26 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-26T04:14:54.221Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T01:44:08.555Z",
+      "release": "0.51.0",
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:08.551Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:08.550Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:08.551Z"
     },
     {
       "id": "created-at-recovery-dates-too-late",
@@ -11154,7 +11262,7 @@
       "id": "gh-cfdude-pm-231",
       "title": "integrity does not report two epics already holding one tracker item (pre-0.50.0 duplicates)",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11162,10 +11270,31 @@
       "externalId": "231",
       "externalUrl": "https://github.com/cfdude/pm/issues/231",
       "externalUpdatedAt": "2026-09-25T23:44:29Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-28T17:10:59.107Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T01:44:04.688Z",
+      "release": "0.51.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-10-05T00:19:54.872Z",
+        "externalUpdatedAt": "2026-09-25T23:44:29Z"
+      },
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:04.684Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:04.684Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:04.684Z"
     },
     {
       "id": "gh-cfdude-pm-230",
@@ -11376,7 +11505,7 @@
       "id": "gh-cfdude-pm-215",
       "title": "openspec archive COPIES a change tree instead of moving it, and the duplicate keeps counting as live",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11384,10 +11513,36 @@
       "externalId": "215",
       "externalUrl": "https://github.com/cfdude/pm/issues/215",
       "externalUpdatedAt": "2026-09-22T05:39:52Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-09-28T17:11:07.321Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T01:44:05.458Z",
+      "release": "0.51.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-10-05T00:19:57.505Z",
+        "externalUpdatedAt": "2026-09-22T05:39:52Z"
+      },
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:05.454Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:05.453Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "upstream openspec archive copies instead of moving",
+            "reason": "not pm's to patch; detection and remedy shipped"
+          }
+        ]
+      },
+      "completedAt": "2026-10-05T01:44:05.454Z"
     },
     {
       "id": "gh-cfdude-pm-213",
@@ -12053,9 +12208,9 @@
       "id": "release-in-flight-rule-needs-decision",
       "title": "hook-friction 3.5: delivered-release-epic-left-open fires when the last active member archives mid-release; schema has no cut-epic, parent or delivery marker, so no clean rule exists — decide: add a marker/field, or keep the set-active workaround",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
-      "lane": "decision",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -12064,9 +12219,32 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "1d3d8611235ed9678eda7310549e1c7b1dff9ddc",
+        "b69519f8793ef437fc6841bb114e26c6fbd2d538"
+      ],
       "createdAt": "2026-10-01T06:08:10.862Z",
-      "touchedAt": "2026-10-01T06:08:10.868Z"
+      "touchedAt": "2026-10-05T01:44:09.332Z",
+      "notes": [
+        {
+          "at": "2026-10-05T00:19:25.726Z",
+          "actor": "agent",
+          "text": "lane: superpowers not decision — Rob approved 2026-10-01 the small release 'delivered' marker; now a build (release verb sets it; integrity reads it instead of member-derived guess)"
+        }
+      ],
+      "planPath": "docs/superpowers/plans/2026-10-04-theme-b2.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T01:44:09.329Z",
+        "reason": "Built for 0.51.0 theme B2 (ships with the release cut), commits 1d3d8611 + review-fix b69519f8: new integrity checks (late-failing-gate-review, tracker-item-held-by-two-epics, archived-change-also-live, archived-delivered-fails-delivered-obligation, set-aside archive dirs), plan/spec path associates an epic with an archived change, update-epic --status reports a heal-restored status, release --deliver/--undeliver marker read by delivered-release-epic-left-open, every printed archive remedy carries the deferral placeholder. One Opus review round, PASS, 1 Important fixed. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T01:44:09.328Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T01:44:09.329Z"
     },
     {
       "id": "unit-rung-flake-retry-gap",
@@ -12156,6 +12334,44 @@
       "attributedCommits": [],
       "createdAt": "2026-10-01T23:10:17.077Z",
       "touchedAt": "2026-10-01T23:10:17.082Z"
+    },
+    {
+      "id": "conductor-tells-the-truth-gate2-unreviewed-range",
+      "title": "conductor-tells-the-truth is archived delivered but eb787d9 (attributed) is not reached by its Gate 2 headSha bd2b1e6; review bd2b1e6..eb787d9 before any re-record — a re-recorded pass would extend a pass nobody reviewed",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "release-in-flight-rule-needs-decision",
+          "reason": "found by B2 review, check archived-delivered-fails-delivered-obligation"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-05T01:44:10.097Z",
+      "touchedAt": "2026-10-05T01:44:10.102Z"
+    },
+    {
+      "id": "record-gate-review-fail-requires-shas",
+      "title": "record-gate-review --verdict fail should require --base-sha/--head-sha so a failing retrospective review carries its range",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-201",
+          "reason": "found in B2 build"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-05T01:44:10.877Z",
+      "touchedAt": "2026-10-05T01:44:10.882Z"
     }
   ],
   "detourStack": [],
@@ -12166,7 +12382,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1804,
+  "revision": 1848,
   "reviewMode": "standard",
   "releases": [
     {
