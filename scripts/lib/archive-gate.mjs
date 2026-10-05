@@ -261,12 +261,14 @@ export function gateRemedy(id, gate, { base = "<sha>", head = "<sha>" } = {}) {
  *                refused call was making;
  *    correction  add `--correct-disposition` (true only for an AGENT-recorded disposition, since
  *                the correction flag is refused against an engine stamp);
- *    deferrals   "bare" (the default, `--no-deferrals`), "asserted" (the epic already carries an
- *                assertion: print nothing) or "placeholder" (print DEFERRAL_PLACEHOLDER);
+ *    deferrals   "placeholder" (the DEFAULT: print DEFERRAL_PLACEHOLDER — a bare `--no-deferrals` is a
+ *                CLAIM about the change, so no printer puts it in the caller's mouth), "asserted" (the
+ *                epic already carries an assertion: print nothing) or "bare" (`--no-deferrals`; no
+ *                caller asks for it — kept only so an explicit request still has a spelling);
  *    carry       obligationArchiveFlags() for a record whose `delivered` would be refused on a
  *                checkbox source's open tasks — the refusal's invocation keeps offering `delivered`,
  *                so it must carry the handoff that makes `delivered` recordable (Gate 2 R-I1). */
-export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "bare", keepDelivered = false, carry = [] } = {}) {
+export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "placeholder", keepDelivered = false, carry = [] } = {}) {
   // A record no verb can rename gets the no-remedy message in place of the invocation (D4a).
   if (CONTROL_CHARACTER.test(String(epic.id))) return noRemedyMessage("epic", epic.id);
   const outcomes = keepDelivered || !blockedDelivered(epic).length
@@ -735,4 +737,25 @@ export function archiveGate(epic, request = {}) {
     disposition: agentDisposition({ outcome, reason, carriedTo: request.carriedTo,
       corrects: correction !== undefined ? { prior: existing, reason: correction } : undefined }),
     deferralAssertion: request.deferralAssertion };
+}
+
+/** The tail of the line that names ONE archive directory the 0.50.0 date rule set aside for `epic` — an
+ *  archive directory that matches the epic by NAME but predates its registration, so the resolver
+ *  neither ended the epic by it nor registered it. Rendered ONCE for its two readers, `sync` (which
+ *  prefixes `conductor: sync set aside archive directory '<dir>' — `) and integrity's
+ *  `archive-directory-has-no-epic`, so the two cannot come to word one condition two ways.
+ *
+ *  The "end the epic" invocation is dispositionInvocation()'s, so it carries the deferral PLACEHOLDER and
+ *  never a bare `--no-deferrals`. */
+export function setAsideDetail(epic) {
+  const day = typeof epic.createdAt === "string" && !Number.isNaN(Date.parse(epic.createdAt)) ? epic.createdAt.slice(0, 10) : null;
+  return day
+    ? `it predates epic '${escapeControls(epic.id)}' (registered ${day}), so it is not that epic's archive and did not end it; ` +
+      "rename the directory if it is unrelated work. " +
+      // The other reading: the epic was registered AFTER its own change was archived. Then the
+      // operator ends it deliberately, with the archive gate's own invocation (never a bare
+      // `--status archived`, which the gate refuses).
+      `If it IS this epic's archive (registered after the change was archived), end the epic: ${asCode(dispositionInvocation(epic))}`
+    : `epic '${escapeControls(epic.id)}' has no registration date (\`createdAt\`) to compare it with, so a live epic is never ended by a bare name match; run ` +
+      "`recover-created-at` to date it from git history, and the next sync decides by the date rule";
 }

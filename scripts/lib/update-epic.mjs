@@ -1172,9 +1172,25 @@ export function updateEpic() {
   // Routed through the SHARED reporter rather than kept as this verb's own if/else: the rule
   // binds the write surface, and a rule implemented once at the verb that introduced it is how
   // twenty siblings came to print success on a save that wrote nothing.
+  // A `--status` the write did not keep. render() above runs the drift heal, which re-archives any epic whose
+  // change directory is archived on disk — so `--status queued` on such an epic was written, then undone in the
+  // same call, and "updated" claimed a status that is not there. Read back from the file, like every other claim
+  // this command makes. The record is not wrong (the change IS archived), so this REPORTS rather than refuses: the
+  // other fields the call supplied did land, and refusing would drop them.
+  const statusUndone = status !== undefined && status !== "archived" && (() => {
+    const after = loadState().epics.find(e => e.id === id);
+    return !!after && after.status === "archived";
+  })();
+  const undoneNote = statusUndone
+    ? ` — but --status ${escapeControls(status)} was NOT kept: its change directory is archived on disk, so the ` +
+      "archive-drift heal restored `archived`. To reopen it, move the change back out of openspec/changes/archive/ " +
+      "first (or leave it archived)."
+    : "";
   reportSave(saved, {
-    changed: `conductor: updated '${escapeControls(id)}'`,
-    unchanged: `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
-      "already the value the record holds. Nothing was written.",
+    changed: `conductor: updated '${escapeControls(id)}'${undoneNote}`,
+    unchanged: statusUndone
+      ? `conductor: nothing changed on '${escapeControls(id)}'${undoneNote}`
+      : `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
+        "already the value the record holds. Nothing was written.",
   });
 }

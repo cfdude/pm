@@ -42,11 +42,15 @@ load and still render — validation is on write only. `integrity`'s `link-of-un
 reports each one so it can be corrected deliberately rather than rewritten by a guess.
 
 `--spec <path>` records the **design document** this epic's work was drawn from. It is
-provenance and nothing else — no progress is read from it, no scan registers epics from it —
+provenance, plus the change association below — no progress is read from it, no scan registers epics from it —
 and it is deliberately **many-to-one**: a design too large for a single implementation plan
 enumerates N chunks, and every one of those epics carries the same `--spec`. That association is
 what makes "which design documents have no epic?" answerable at all; ask it with
-`verify-specs` (see `/pm:status`). `--plan` and `--spec` are independent: an epic may carry
+`verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also
+records which change the epic owns, whatever the epic is called: `integrity`'s
+`archive-directory-has-no-epic` and `sync`'s archive backfill both read it, so a change proposed under a
+different name than its premise epic is held by that epic instead of reported as unheld (or registered a
+second time). `--clear spec` / `--clear plan` is the inverse. `--plan`/`--spec` are independent: an epic may carry
 either, both, or neither.
 
 `--description "<why>"` records the epic's **durable rationale** — why this epic exists and what

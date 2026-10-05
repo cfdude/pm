@@ -18,12 +18,16 @@
 // had been quietly removed — and "the check measured nothing" is exactly the failure this
 // capability exists to end.
 
+import fs from "node:fs";
+import path from "node:path";
 import { isInitialized, loadState } from "./state.mjs";
-import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
-import { CONTROL_CHARACTER, KNOWN_STATUSES, asCode, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
-import { AGENT_OUTCOMES, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
+import { activeChangeIds, archivedChanges, epicProgress, isArchived, setAsideArchiveDirs, strippedChangeId } from "./epic-progress.mjs";
+import { changeNamesClaimedByArtifacts } from "./source-artifacts.mjs";
+import { trackerKeyFlag, trackerKeyHolder } from "./tracker-dedup.mjs";
+import { CONTROL_CHARACTER, KNOWN_STATUSES, archiveDir, changesDir, asCode, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
+import { AGENT_OUTCOMES, setAsideDetail, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
-import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
+import { isArchiveBackfilled, isEngineStamped, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 import { getAutonomy, grantLabel } from "./autonomy.mjs";
@@ -194,6 +198,44 @@ export function withdrawnArchiveNote({ withdrawal, archivedUngated }) {
     (archivedUngated ? " — and it was archived ungated before the withdrawn review was recorded" : "");
 }
 
+/** The LATEST-DATED attributed commit, as `{sha, at}`, or null — "the merge commit" (gh#216: not the
+ *  last array element, since a catch-up appends an ancestor after its descendants). One definition for
+ *  the two checks that date a verdict against it, `gate-recorded-as-bookkeeping` and
+ *  `late-failing-gate-review`. Each date is a git call, so callers ask lazily. */
+function mergeTip(attributed) {
+  let tip = null;
+  for (const sha of attributed) {
+    const at = commitDate(sha);
+    if (at !== null && (tip === null || Date.parse(at) > Date.parse(tip.at))) tip = { sha, at };
+  }
+  return tip;
+}
+
+/** Every file under `root` as relative-path → bytes, or null when it cannot be read. */
+function readTree(root) {
+  const out = new Map();
+  try {
+    const walk = (rel) => {
+      for (const d of fs.readdirSync(path.join(root, rel), { withFileTypes: true })) {
+        const r = path.posix.join(rel, d.name);
+        if (d.isDirectory()) walk(r);
+        else if (d.isFile()) out.set(r, fs.readFileSync(path.join(root, r)));
+      }
+    };
+    walk("");
+  } catch { return null; }
+  return out;
+}
+
+/** Do two directory trees hold exactly the same files with exactly the same bytes? */
+function treesIdentical(a, b) {
+  const ta = readTree(a);
+  const tb = readTree(b);
+  if (!ta || !tb || ta.size !== tb.size) return false;
+  for (const [k, v] of ta) { if (!tb.has(k) || !v.equals(tb.get(k))) return false; }
+  return true;
+}
+
 /** The registry. One entry per check: a stable `id` a reader can grep for, a one-line `title`
  *  saying what shape it looks for, and `run(state)` returning findings.
  *
@@ -341,17 +383,30 @@ export const CHECKS = [
     run(state) {
       const held = new Set();
       for (const e of state.epics) { held.add(e.id); held.add(strippedChangeId(e.id)); }
+      // An epic whose `--plan` / `--spec` names a file inside the change holds that change whatever its id
+      // is called (gh#200) — the same set sync's backfill reads, so the two cannot disagree.
+      for (const name of changeNamesClaimedByArtifacts(state)) held.add(strippedChangeId(name));
       // Registering it is explicitly OUT of scope here — that belongs to `sync`'s archive
       // reconciliation. A check that registered would be a repair, and this module repairs
       // nothing.
       // A directory whose name no epic id can carry is NOT registered by `/pm:sync` (it skips it),
       // so saying it would be is the false instruction this detail must not give (design D4).
-      return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail: STORABLE_EPIC_ID(c.id)
+      // THE SECOND ARM — a directory the date rule SET ASIDE (0.50.0): it matches a live epic by NAME, so
+      // the held set above takes it for held, yet the resolver did not accept it as that epic's archive.
+      // `sync` names it on every run; this check is the audit surface and said nothing, so the same
+      // text now comes from the same renderer (setAsideDetail). Reported against the epic it matches.
+      const setAside = [];
+      for (const e of state.epics) {
+        for (const dir of setAsideArchiveDirs(e)) {
+          setAside.push({ epic: e.id, detail: `archive/${dir} matches this epic by name and the date rule set it aside — ${setAsideDetail(e)}` });
+        }
+      }
+      return [...archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail: STORABLE_EPIC_ID(c.id)
         ? `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
           "registers it; this check only reports it"
         : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name is not a ` +
           "valid epic id (lowercase letters, digits, `.`, `_`, `-`), so `/pm:sync` skips it — rename the " +
-          "directory to register it" }));
+          "directory to register it" })), ...setAside];
     },
   },
   {
@@ -417,13 +472,7 @@ export const CHECKS = [
         // a git call.
         let merged;
         const mergedCommit = () => {
-          if (merged === undefined) {
-            merged = null;
-            for (const sha of attributed) {
-              const at = commitDate(sha);
-              if (at !== null && (merged === null || Date.parse(at) > Date.parse(merged.at))) merged = { sha, at };
-            }
-          }
+          if (merged === undefined) merged = mergeTip(attributed);
           return merged;
         };
         for (const [gate, entry] of [["gate1", g1], ["gate2", g2]]) {
@@ -441,6 +490,11 @@ export const CHECKS = [
           // precisely the compliance its own comment above says the exemption exists to protect.
           if (!entry || !entry.reviewedAt || !attributed.length) continue;
           if (gateHasEvidence(entry) || gateArtifacts(entry).length) continue;
+          // gh#201: "recorded after the merge" is the signature of bookkeeping for a PASS only. A pass stamped
+          // after the fact certifies nothing that gated the merge; a FAIL recorded after it is the ordinary shape
+          // of a retrospective or audit review, which can only exist after the work. It is reported by
+          // `late-failing-gate-review` below under its own name, never as an accusation.
+          if (entry.verdict === "fail") continue;
           const tip = mergedCommit();
           if (tip && Date.parse(entry.reviewedAt) > Date.parse(tip.at)) {
             out.push({ epic: e.id, detail:
@@ -459,6 +513,41 @@ export const CHECKS = [
               `gate 1 and gate 2 were recorded ${apart} ms apart — a spec review and an ` +
               "implementation review of the same change are never that close together" });
           }
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: "late-failing-gate-review",
+    title: "a FAILING gate verdict recorded after the epic's merge commit — a retrospective review, not bookkeeping",
+    /** gh#201. `gate-recorded-as-bookkeeping` used to report this shape as "the verdict post-dates the work it
+     *  claims to have reviewed". For a fail that is the wrong reading: an audit of already-merged work returns
+     *  a real verdict, it blocks the epic from closing, and it cannot exist before the work. Same population
+     *  the bookkeeping arm used to catch (no commit range, no artifacts — a verdict carrying evidence was
+     *  never reported), so this adds no new noise: it relabels, and names the way out. The check never says the
+     *  review was not real. */
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
+        if (!attributed.length) continue;
+        let tip;
+        for (const gate of ["gate1", "gate2"]) {
+          const entry = e.gateReview && e.gateReview[gate];
+          if (!entry || entry.verdict !== "fail" || !entry.reviewedAt) continue;
+          if (gateHasEvidence(entry) || gateArtifacts(entry).length) continue;
+          if (tip === undefined) tip = mergeTip(attributed);
+          if (!tip || !(Date.parse(entry.reviewedAt) > Date.parse(tip.at))) continue;
+          const rerecord = orNoRemedy(() => (gate === "gate1"
+            ? `record-gate-review ${printedId(e.id)} --gate 1 --verdict fail --artifact <path>`
+            : `record-gate-review ${printedId(e.id)} --gate 2 --verdict fail --base-sha <sha> --head-sha <sha>`));
+          out.push({ epic: e.id, detail:
+            `${gate} is a FAILING review recorded ${entry.reviewedAt}, after the epic's merge commit ${tip.sha} (${tip.at}) — a late ` +
+            "failing review: an audit of work that had already merged, which can only exist after it. It is a real " +
+            "verdict, not bookkeeping, and it stands until the findings are fixed and a passing verdict supersedes " +
+            `it (${asCode(gateRemedy(e.id, gate === "gate1" ? 1 : 2))}). It carries no checkable evidence, so it also reads ` +
+            `unverifiable; record the range or artifacts it reviewed with ${asCode(rerecord)}` });
         }
       }
       return out;
@@ -753,9 +842,10 @@ export const CHECKS = [
      *  release was named for. Three signals were in `state.json` at that moment and nothing read
      *  one of them.
      *
-     *  WHAT "THE RELEASE HAS DELIVERED" MEANS HERE, and it is a CHOICE rather than a derivation:
-     *  a release object carries no parent pointer and no delivery marker — `id`, `intent`,
-     *  `target`, `deferred[]`, `crossSpecReview` and nothing else — so "the release's parent epic
+     *  WHAT "THE RELEASE HAS DELIVERED" MEANS HERE FOR A RELEASE WITH NO MARKER (see THE DELIVERY MARKER
+     *  below for one that has it), and it is a CHOICE rather than a derivation:
+     *  a release object carries no parent pointer — `id`, `intent`, `target`, `deferred[]`,
+     *  `crossSpecReview` and an optional `delivered` marker — so "the release's parent epic
      *  is delivered" is not a question this schema can be asked. The reading is therefore
      *  MEMBER-DERIVED: at least one member carries a `delivered` disposition. Nothing new is
      *  recorded for it, which is the point — the act that reliably happens at the end of a
@@ -771,18 +861,18 @@ export const CHECKS = [
      *  `active` gets this check firing mid-release, and the two remedies it prints are both
      *  correct answers in that case anyway.
      *
-     *  KNOWN LIMIT, WITH NO CLEAN RULE YET (0.51.0, hook-friction-0-51 item 5 — NEEDS A DECISION). The
-     *  guard reads `active`/`paused` and nothing else, so ARCHIVING THE LAST ACTIVE MEMBER of a release
-     *  that is still mid-flight leaves a `delivered` member and no active one — and the release reads as
-     *  delivered while its queued siblings are the next work, not leftovers. The schema offers no
-     *  discriminator: a release carries no "cut epic", no parent pointer and no delivery marker, and
-     *  `disposition.carriedTo` names where an archived member's work went, which says nothing about the
-     *  release's own state. Every candidate rule tried (a queued member that something carried to, an id
-     *  naming convention, "queued/planned since before the delivered one") is either a guess or needs a
-     *  field the record does not hold, and a wrong guess silences a TRUE finding — the failure gh-138
-     *  taught this check to avoid. So the rule is unchanged and the MESSAGE names the workaround instead:
-     *  mark the member being resumed `--status active`, which keeps the release in flight. A real rule
-     *  needs an owner decision on which signal marks a release as delivered.
+     *  THE DELIVERY MARKER (0.51.0, release-in-flight-rule-needs-decision — decided). The member-derived
+     *  reading above cannot tell a finished release from a mid-flight one whose last `active` member just
+     *  archived: it leaves a `delivered` member and no active one, so the release reads as delivered while
+     *  its queued siblings are the next work. Every member-derived rule tried (a queued member something
+     *  carried to, an id naming convention, "queued since before the delivered one") is a guess, and a wrong
+     *  guess silences a TRUE finding. So the record now says it: `release <id> --deliver` sets
+     *  `release.delivered = {recordedAt}` (`--undeliver` removes it). WHEN THE MARKER IS PRESENT IT IS THE
+     *  ANSWER: the member-derived test and the in-flight guard are both skipped, and every non-archived
+     *  member not in `deferred[]` is reported, `active` or not — a release the owner declared delivered with
+     *  an epic still active is a finding. WHEN IT IS ABSENT the reading above is unchanged, byte for byte,
+     *  which is why no MIGRATIONS entry exists: an optional field a prior state file simply lacks. The
+     *  markerless finding names the guess as a guess and prints \`--deliver\` as the way to replace it.
      *
      *  THE EXCLUSION HALF — `deferred[]` — is honoured because the release object ALREADY
      *  distinguishes "cut on purpose" from "shipped", and consuming only one half of that
@@ -804,8 +894,14 @@ export const CHECKS = [
       for (const rel of Array.isArray(state.releases) ? state.releases : []) {
         if (!rel || !rel.id) continue;
         const members = releaseMembers(state.epics, rel.id);
-        if (!members.some(e => outcomeOf(e) === "delivered")) continue;
-        if (members.some(e => e.status === "active" || e.status === "paused")) continue;
+        // THE MARKER, when present, IS the answer (release-in-flight-rule-needs-decision): `release <id> --deliver`
+        // recorded that the release shipped, so neither the member-derived reading nor the in-flight guard below
+        // is consulted. A release with NO marker keeps the member-derived reading exactly as it was.
+        const marked = !!rel.delivered;
+        if (!marked) {
+          if (!members.some(e => outcomeOf(e) === "delivered")) continue;
+          if (members.some(e => e.status === "active" || e.status === "paused")) continue;
+        }
         const cut = new Set((Array.isArray(rel.deferred) ? rel.deferred : [])
           .map(d => d && d.epic).filter(Boolean));
         for (const e of members) {
@@ -820,7 +916,7 @@ export const CHECKS = [
           // (`--carried-to`), unless they are ticked in the task source first (Gate 2 E-I5).
           const carry = failing.flatMap(o => obligationArchiveFlags(e, o));
           out.push({ epic: e.id, detail:
-            `still \`${e.status}\` in release \`${rel.id}\`, which has already delivered — and ` +
+            `still \`${e.status}\` in release \`${rel.id}\`, which ${marked ? "is marked delivered" : "has already delivered"} — and ` +
             "it is not in that release's deferred[], so the record says neither that it shipped " +
             "nor that it was cut. Give it the ending it actually had — either it shipped: " +
             (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
@@ -829,11 +925,12 @@ export const CHECKS = [
             // The release id goes through printedId() too (D4a): shell-quoted when it fails the id
             // format, the no-remedy message when it holds a control character.
             `was cut, and you record that instead: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --defer ${printedId(e.id)} --reason "<why>"\``)}` +
-            // The false-positive this check cannot tell apart from a real one (see the KNOWN LIMIT above). No
-            // `update-epic …` invocation is spelled: this is the OWNER's call, not one of the two alternatives.
-            " If the release is NOT finished — archiving the last `active` member makes a mid-release look delivered, because this " +
-            "check reads `active`/`paused` and nothing else — mark the member you are about to work on `--status active` (with " +
-            "`update-epic`) instead: that keeps the release in flight and silences this finding." });
+            // A markerless release's "delivered" is a GUESS from its members (see the doc comment above), and the
+            // finding says so, with the one command that replaces the guess with the fact.
+            (marked ? ""
+              : ` This release carries no delivery marker, so "delivered" was inferred from its members; once it HAS shipped, ` +
+                `record that: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --deliver\``)} — this check then reads the marker alone. If the release is still in flight, this is that guess being wrong.`) +
+            (marked ? ` If the release did not ship after all: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --undeliver\``)}.` : "") });
         }
       }
       return out;
@@ -851,6 +948,96 @@ export const CHECKS = [
      *  printed by specSyncDetail(); it names no engine invocation. */
     run(state) {
       return specSyncFindings(state.epics).map(f => ({ epic: f.epic, detail: specSyncDetail(f, engineRoot()) }));
+    },
+  },
+  {
+    id: "tracker-item-held-by-two-epics",
+    title: "two epics holding one tracker item — the duplicate a record written before 0.50.0 can still carry",
+    /** gh#231. 0.50.0's writers refuse a second holder of a tracker item; a state file written earlier can
+     *  hold several, and sync step 2 and the completion write-back each act on whichever holder they find
+     *  first. Keyed by trackerKeyHolder() — the SAME rule the writers use (URL against URL; `externalId` only
+     *  where neither side has a URL) — never a second copy of it. Every pair is reported once, against the
+     *  LATER epic, naming both; archived holders count, as they do for the writers. The repair is the one the
+     *  writers' refusal prints: free the key on the holder that should not have it. */
+    run(state) {
+      const out = [];
+      const epics = (state.epics || []).filter(e => e && typeof e === "object");
+      epics.forEach((e, i) => {
+        for (const other of epics.slice(0, i)) {
+          const hit = trackerKeyHolder([other], e);
+          if (!hit) continue;
+          const flag = trackerKeyFlag(hit.key);
+          out.push({ epic: e.id, detail:
+            `${flag} \`${escapeControls(e[hit.key])}\` is held by both \`${escapeControls(other.id)}\` (${escapeControls(other.status)}) and \`${escapeControls(e.id)}\` (${escapeControls(e.status)}) — ` +
+            "one tracker item maps to one epic, and sync and the completion write-back act on whichever holder they find first. " +
+            `Free the key on the one that is not the item's epic: ${orNoRemedy(() => `\`update-epic ${printedId(other.id)} --clear ${flag}\``)} or ` +
+            orNoRemedy(() => `\`update-epic ${printedId(e.id)} --clear ${flag}\``) });
+        }
+      });
+      return out;
+    },
+  },
+  {
+    id: "archived-change-also-live",
+    title: "a change present both under openspec/changes/ and under archive/ with identical content",
+    /** gh#215. `openspec archive` COPIED a change tree instead of moving it (observed at pm 0.47.0, commit
+     *  ab171b7): the live directory stayed, so `openspec list` kept counting an archived change as live work
+     *  and the release-scope spec enumeration hashed its specs twice. That is UPSTREAM behaviour — pm does not
+     *  patch openspec — so this check only names it and the remedy: remove the live copy. Reported only when
+     *  the two trees are byte-identical: a live change that differs from an archived one of the same name is a
+     *  re-proposal, which is legitimate. A read of the disk, never a repair. */
+    run(state) {
+      const out = [];
+      const owner = (id) => (state.epics || []).find(e => e && strippedChangeId(e.id) === id);
+      const archived = archivedChanges();
+      for (const name of activeChangeIds()) {
+        for (const c of archived.filter(a => a.id === strippedChangeId(name))) {
+          if (!treesIdentical(path.join(changesDir(), name), path.join(archiveDir(), c.dir))) continue;
+          const live = `openspec/changes/${name}`;
+          const holder = owner(strippedChangeId(name));
+          out.push({ epic: holder ? holder.id : null, detail:
+            `\`${escapeControls(live)}\` is present live AND as archive/${escapeControls(c.dir)} with identical content, so \`openspec list\` ` +
+            "still counts it as live work and a release's spec enumeration reads its specs twice. This is upstream " +
+            "`openspec archive` copying instead of moving (cfdude/pm#215), not something pm did. Remove the live copy: " +
+            (CONTROL_CHARACTER.test(live) ? "`git rm -r <the live change directory>`" : `\`git rm -r ${shellQuote(live)}\``) });
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: "archived-delivered-fails-delivered-obligation",
+    title: "an archived epic recorded `delivered` that fails an obligation `delivered` carries — reached by a path no gate sees",
+    /** The standing-condition half the archive gate deliberately leaves out. The gate refuses `delivered` at the
+     *  moment of the write; four later paths change the record without passing it — `record-gate-review --verdict
+     *  fail` after the archive, the drift heal re-archiving a changed epic with its kept `delivered`,
+     *  `remove-epic` stripping a `carriedTo`, and tasks that change on disk. This reads the stored record through
+     *  deliveredObligations(), the one definition the gate and update-epic's regression refusal use.
+     *
+     *  NOT DOUBLE-REPORTED: a WITHDRAWN Gate 2 is `archived-with-withdrawn-gate-2`'s, an `ungated` stamp is
+     *  `archived-with-no-gate-2-review`'s, and the attribution-withdrawn variant is `delivered-epic-attributed-no-commits`'s,
+     *  so those variants are excluded here. Scoped by inCompletionScope() like the other completion-shaped checks. */
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        if (e.status !== "archived" || outcomeOf(e) !== "delivered" || !inCompletionScope(e)) continue;
+        const gate2 = e.gateReview && e.gateReview.gate2;
+        if (gate2 && gate2.verdict === "ungated") continue;
+        const carriedTo = (e.disposition && e.disposition.carriedTo) || undefined;
+        const failing = deliveredObligations(e, { carriedTo })
+          .filter(o => o.variant !== "gate2-withdrawn" && o.variant !== "gate2-attribution-withdrawn");
+        if (!failing.length) continue;
+        const owed = failing.flatMap(o => obligationRemedy(e, o)).map(asCode);
+        const carry = failing.flatMap(o => obligationArchiveFlags(e, o));
+        out.push({ epic: e.id, detail:
+          `recorded \`delivered\` and no longer meets what \`delivered\` requires: ${failing.map(o => o.detail).join("; and ")}. ` +
+          "The archive gate checked this when it was written; a later change reached the record by a path it does not guard. " +
+          (owed.length ? `Meet it: ${owed.join(", then ")}. ` : "") +
+          (carry.length ? "Its open tasks have no command of their own: tick them in the task source, or record where they went with " : "Or, if it did not ship as recorded, correct the disposition with ") +
+          asCode(dispositionInvocation(e, { keepDelivered: true, carry, correction: !isEngineStamped(e.disposition),
+            deferrals: e.deferralAssertion ? "asserted" : "placeholder" })) });
+      }
+      return out;
     },
   },
   {

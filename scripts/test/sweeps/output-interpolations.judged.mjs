@@ -702,9 +702,15 @@ x("subcommands.mjs", "sync", {
   "skipped": 1,
   "setAside": 1,
 }, "engine", "a literal artifact label and counts");
-x("subcommands.mjs", "sync", {
+x("archive-gate.mjs", "setAsideDetail", {
   "day": 1,
-}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day");
+}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day (moved with the set-aside line out of sync, so sync and integrity render it once)");
+x("subcommands.mjs", "sync", {
+  "setAsideDetail(e)": 1,
+}, "passthrough", "the set-aside line's tail, composed and swept where it is built (setAsideDetail: escaped epic id, an asCode() remedy, engine prose)");
+x("update-epic.mjs", "updateEpic", {
+  "undoneNote": 2,
+}, "passthrough", "the \"--status was NOT kept\" clause, composed just above from escapeControls(status) and literal text");
 x("subcommands.mjs", "sync", {
   "skipNote": 2,
 }, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");

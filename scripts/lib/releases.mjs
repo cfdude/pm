@@ -101,7 +101,7 @@ export function release() {
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     errStream().write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"]\n");
+    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"] [--deliver | --undeliver]\n");
     die("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
@@ -194,6 +194,17 @@ export function release() {
         `conductor: '${escapeControls(one.epic)}' cannot be both --${one.flag} and --${others[0].flag} of ` +
         `'${escapeControls(id)}' in one invocation — say which one it is. Nothing was written.\n`);
     }
+  }
+
+  // THE DELIVERY MARKER and its inverse. One or the other per invocation: both is a contradiction, and
+  // removing a marker that is not there is refused rather than reported as done (the --undefer rule).
+  const deliver = f.deliver !== undefined;
+  const undeliver = f.undeliver !== undefined;
+  if (deliver && undeliver) {
+    die(`conductor: --deliver and --undeliver cannot both be given for '${escapeControls(id)}' — say which. Nothing was written.\n`);
+  }
+  if (undeliver && !rel.delivered) {
+    die(`conductor: '${escapeControls(id)}' carries no delivered marker — there is nothing to remove. Nothing was written.\n`);
   }
 
   if (deferred) {
@@ -338,6 +349,16 @@ export function release() {
       `(the exclusion read: ${escapeControls(was && was.reason)}). It is NOT a member: say so with --member.\n`);
   }
 
+  if (deliver && !rel.delivered) {
+    // A marker, not a judgment: no reason is demanded. `recordedAt` is when the fact was recorded, nothing more.
+    rel.delivered = { recordedAt: new Date().toISOString() };
+    errStream().write(`conductor: release '${escapeControls(id)}' is now marked delivered — \`integrity\` reads that marker, not its members\n`);
+  }
+  if (undeliver) {
+    delete rel.delivered;
+    errStream().write(`conductor: release '${escapeControls(id)}' is no longer marked delivered — \`integrity\` reads its members again\n`);
+  }
+
   const saved = saveState(state);
   render();
   reportSave(saved, {
@@ -449,6 +470,9 @@ export function releaseShow(rest) {
   const amendments = Array.isArray(rel.amendments) ? rel.amendments : [];
   const out = [`conductor: release \`${rel.id}\`${rel.intent ? ` — ${rel.intent}` : ""}`];
   out.push(`  target: ${rel.target || "—"}`);
+  out.push(rel.delivered
+    ? `  delivered: yes — marked${rel.delivered.recordedAt ? ` ${rel.delivered.recordedAt}` : ""} (\`integrity\` reads this marker)`
+    : "  delivered: — (no marker: integrity derives it from the members; this verb's --deliver flag records it)");
   out.push(`  members (${members.length}) — derived from \`epic.release\`, never stored on the release:`);
   if (!members.length) out.push("    (none)");
   for (const e of members) {

@@ -1243,6 +1243,89 @@ const INTEGRITY_BUILDERS = {
     produce: integrityProducer("grant-names-nothing"),
     reported: blockHas(),
   },
+  // theme-b2 (gh#201): a FAILING Gate 2 recorded after the merge, carrying no range. Its two printed
+  // invocations are alternatives — a passing verdict that supersedes it, or the same fail with the range it
+  // reviewed — and each clears the finding (a verdict carrying a range is evidenced, so never reported).
+  "late-failing-gate-review": [
+    {
+      case: "gate 2",
+      setup() {
+        const repo = remedyRepo();
+        openspecEpic(repo, "lf", 1);
+        repo.ok(["record-gate-review", "lf", "--gate", "2", "--verdict", "fail", "--reviewer", "audit"]);
+        return { repo, epicId: "lf" };
+      },
+      produce: integrityProducer("late-failing-gate-review"),
+      reported: blockHas(),
+      meaning: (fx) => rangeMeaning(fx.repo, fx.epicId)(),
+      alternatives: [
+        { name: "pass supersedes", select: (invs) => invs.filter(i => i.text.includes("--verdict pass")) },
+        { name: "fail with its range", select: (invs) => invs.filter(i => i.text.includes("--verdict fail")) },
+      ],
+    },
+    {
+      case: "gate 1",
+      setup() {
+        const repo = remedyRepo();
+        openspecEpic(repo, "lg", 1);
+        repo.ok(["record-gate-review", "lg", "--gate", "1", "--verdict", "fail", "--reviewer", "audit"]);
+        return { repo, epicId: "lg" };
+      },
+      produce: integrityProducer("late-failing-gate-review"),
+      reported: blockHas(),
+      meaning: (fx) => ({ artifact: fx.repo.file("openspec/changes/lg/proposal.md", "# lg\n") }),
+      alternatives: [
+        { name: "pass supersedes", select: (invs) => invs.filter(i => i.text.includes("--verdict pass")) },
+        { name: "fail with its artifacts", select: (invs) => invs.filter(i => i.text.includes("--verdict fail")) },
+      ],
+    },
+  ],
+  // theme-b2 (gh#231): two epics holding one tracker item. Either holder may be the one that should not.
+  "tracker-item-held-by-two-epics": {
+    setup() {
+      const repo = remedyRepo();
+      const base = { priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [],
+        externalUrl: "https://example.test/issues/7" };
+      repo.write({ epics: [{ id: "first-holder", title: "first", ...base }, { id: "second-holder", title: "second", ...base }] });
+      return { repo, epicId: "second-holder" };
+    },
+    produce: integrityProducer("tracker-item-held-by-two-epics"),
+    reported: blockHas(),
+    alternatives: [
+      { name: "free the first", select: (invs) => invs.filter(i => i.text.startsWith("update-epic first-holder ")) },
+      { name: "free the second", select: (invs) => invs.filter(i => i.text.startsWith("update-epic second-holder ")) },
+    ],
+  },
+  // theme-b2 (gh#215): the remedy is a `git rm`, which is not an engine invocation.
+  "archived-change-also-live": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.file("openspec/changes/dup-change/proposal.md", "# dup\n");
+      repo.file("openspec/changes/archive/2026-09-01-dup-change/proposal.md", "# dup\n");
+      return { repo };
+    },
+    produce: integrityProducer("archived-change-also-live"),
+    reported: (out) => out.includes("dup-change") && out.includes("git rm -r"),
+  },
+  // theme-b2: a delivered epic whose Gate 2 was flipped to `fail` AFTER the archive — a path no gate sees.
+  // Only the Gate 2 re-record is followed: the disposition correction printed beside it would rewrite the
+  // record, which is the other alternative, not part of clearing this one.
+  "archived-delivered-fails-delivered-obligation": {
+    setup() {
+      const repo = remedyRepo();
+      const [c1] = openspecEpic(repo, "ad", 1);
+      passGate2(repo, "ad", repo.parent(c1), c1);
+      repo.ok(["update-epic", "ad", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
+      repo.ok(["record-gate-review", "ad", "--gate", "2", "--verdict", "fail", "--reviewer", "audit",
+        "--base-sha", repo.parent(c1), "--head-sha", c1]);
+      return { repo, epicId: "ad" };
+    },
+    produce: integrityProducer("archived-delivered-fails-delivered-obligation"),
+    reported: blockHas(),
+    meaning: (fx) => rangeMeaning(fx.repo, fx.epicId)(),
+    alternatives: [{ name: "re-record Gate 2", select: (invs) => invs.filter(i => i.text.startsWith("record-gate-review ")) }],
+  },
   "superseded-epic-never-ended": {
     setup() {
       const repo = remedyRepo();
@@ -1257,7 +1340,7 @@ const INTEGRITY_BUILDERS = {
   "delivered-release-epic-left-open": [
     // 2.3 — an openspec member with no Gate 2, still open in a release another member delivered.
     // Each alternative in its own fixture: the archive (Gate 2 precondition first) and the deferral.
-    ...[["archive", (i) => !i.text.startsWith("release ")], ["release --defer", (i) => i.text.startsWith("release ")]].map(([name, pick]) => ({
+    ...[["archive", (i) => !i.text.startsWith("release ")], ["release --defer", (i) => i.text.startsWith("release ") && i.text.includes("--defer")]].map(([name, pick]) => ({
       case: name,
       setup() {
         const repo = remedyRepo();
@@ -1308,6 +1391,22 @@ const INTEGRITY_BUILDERS = {
       reported: blockHas(),
       meaning: () => ({ "carried-to": "later", reason: REASON }),
       alternatives: [{ name: "archive, carrying the open task", select: (invs) => invs.filter(i => !i.text.startsWith("release ")) }],
+    },
+    // theme-b2 (release-in-flight-rule-needs-decision) — a release carrying the delivered MARKER, with a member
+    // still open. The finding prints the marker's inverse beside the two endings: the owner may say it did not
+    // ship after all, which returns the release to the member-derived reading (silent here: nothing delivered).
+    {
+      case: "marked delivered",
+      setup() {
+        const repo = remedyRepo();
+        repo.ok(["add-epic", "--id", "still-open", "--lane", "claude-code", "--title", "still-open"]);
+        repo.ok(["release", "1.0.0", "--intent", "fixture", "--member", "still-open", "--deliver"]);
+        return { repo, epicId: "still-open" };
+      },
+      produce: integrityProducer("delivered-release-epic-left-open"),
+      reported: blockHas(),
+      meaning: () => ({ reason: REASON, defer: "still-open" }),
+      alternatives: [{ name: "release --undeliver", select: (invs) => invs.filter(i => i.text.includes("--undeliver")) }],
     },
   ],
   // Gate 2 E-I2 — a github-issues repo recorded before the shape rule, which silently lost its `gh`

@@ -102,8 +102,9 @@ unitTest("4.2: each returned epic carries a runnable invocation naming the epic 
   assert.ok(row, "the walker returned nothing to carry an invocation");
   assert.equal(row.epic.id, "nobody-was-asked");
   assert.match(row.invocation, /^update-epic nobody-was-asked --status archived --outcome /);
-  assert.match(row.invocation, /--reason "<why>" --no-deferrals$/,
-    "the archive gate refuses either half alone, so the remedy must carry both in one invocation");
+  assert.match(row.invocation, /--reason "<why>" <--no-deferrals \| --deferral "<epicId>:<section>">$/,
+    "the archive gate refuses either half alone, so the remedy must carry both in one invocation — the deferral half " +
+    "as the PLACEHOLDER, because a bare --no-deferrals is a claim the agent has not made");
 });
 
 unitTest("4.2: the invocation QUOTES the engine's vocabulary rather than a literal", () => {

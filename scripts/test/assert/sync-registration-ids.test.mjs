@@ -182,5 +182,6 @@ test("the set-aside line also prints a runnable way to end the epic, for a direc
   assert.equal(r.status, 0, r.stderr);
   const line = r.stderr.split("\n").find(l => l.includes("set aside archive directory '2025-01-01-late-registered'")) || "";
   assert.match(line, /rename the directory if it is unrelated work/, line);
-  assert.match(line, /`update-epic late-registered --status archived --outcome <[a-z|]+> --reason "<why>" --no-deferrals`/, line);
+  assert.match(line, /`update-epic late-registered --status archived --outcome <[a-z|]+> --reason "<why>" <--no-deferrals \| --deferral "<epicId>:<section>">`/, line);
+  assert.doesNotMatch(line, /--reason "<why>" --no-deferrals/, "a bare --no-deferrals is a claim, not a default");
 });

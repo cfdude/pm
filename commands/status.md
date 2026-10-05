@@ -108,7 +108,18 @@ does not reach the commits it cites, a gate recorded as bookkeeping rather than 
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
 that reads `outcome: unknown` while carrying a passing Gate 2, an epic sitting in a status the
 engine does not define, a dangling epic reference, an archive directory no epic corresponds to, a
-recorded commit sha this repository can no longer resolve, an epic still open in a release that
+recorded commit sha this repository can no longer resolve, two epics holding one tracker item
+(`tracker-item-held-by-two-epics`, the pre-0.50.0 duplicates the writers now refuse; it names both
+holders and `update-epic <one> --clear external-url`), a change present BOTH live and under
+`archive/` with identical content (`archived-change-also-live`: upstream `openspec archive` copied
+instead of moving, cfdude/pm#215; the remedy is `git rm -r` of the live copy, and a live change that
+differs from its archived namesake is a re-proposal and is not reported), a FAILING gate verdict
+recorded after the epic's merge (`late-failing-gate-review`: an audit of merged work is a real review,
+not bookkeeping, and `gate-recorded-as-bookkeeping` no longer reports it), an archived epic recorded
+`delivered` that no longer meets what `delivered` requires
+(`archived-delivered-fails-delivered-obligation`: a Gate 2 flipped to fail after the archive, the heal
+re-archiving a changed epic, a stripped `carriedTo`, tasks that changed on disk; epics whose Gate 2 is
+withdrawn or `ungated` are left to their own checks), an epic still open in a release that
 has already delivered, an epic another epic declares it supersedes that never ended, a `delivered`
 openspec epic whose archived spec deltas never reached the main specs
 (`delivered-epic-spec-deltas-absent`, below), and a
@@ -120,9 +131,11 @@ reports every check with its count, including the ones that found nothing, so a 
 measured nothing is visibly a check that ran.
 
 `delivered-release-epic-left-open` is the one that catches a release closing out. A release
-object carries no delivery marker, so "the release delivered" is read from its members — at
-least one carrying a `delivered` disposition, and none `active` or `paused`, so a staged release
-in flight stays silent. Anything left non-terminal that the release's own `deferred[]` does not
+carrying the **delivered marker** (`release <id> --deliver`, below) is delivered, full stop: every
+non-archived member not in its `deferred[]` is reported, `active` or not. A release with NO marker
+keeps the older member-derived reading — at least one member carrying a `delivered` disposition, and
+none `active` or `paused`, so a staged release in flight stays silent — and that finding says it is a
+guess and prints `release <id> --deliver` as the way to replace the guess with the fact. Anything left non-terminal that the release's own `deferred[]` does not
 name is reported: the record says neither that it shipped nor that it was cut. That is #137,
 where 0.27.0 shipped with all twenty of its member epics still `queued` and `next` then
 recommended two P0s that had shipped hours earlier. The finding offers two alternatives, each
@@ -334,6 +347,22 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --defer <epicI
   an epic id cannot contain one, so the reason keeps every colon it carries. The separate
   `--reason` form still works; supplying BOTH is refused rather than resolved by last-wins.
 
+**Recording that a release shipped — `--deliver`, and its inverse `--undeliver`:**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --deliver
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --undeliver
+```
+
+- `--deliver` sets `release.delivered = {recordedAt}`. It is a marker, not a judgment, so no reason is
+  demanded. `integrity`'s `delivered-release-epic-left-open` reads it instead of guessing from the members.
+  Marking an already-marked release changes nothing.
+- `--undeliver` removes the marker (the release returns to the member-derived reading). It is refused
+  when there is no marker to remove, and `--deliver` together with `--undeliver` is refused. Nothing is
+  written in either refusal.
+- A release recorded before this existed has no marker, and nothing needs migrating: absent means "derive
+  it from the members", exactly as before.
+
 **Reading a release back — `release show`:**
 
 ```bash
@@ -341,7 +370,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release show 0.27.0   # one r
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release show          # every release, one line each
 ```
 
-It renders intent, target, the **derived** members, the deferrals with their reasons, the
+It renders intent, target, whether the release carries the **delivered marker**, the **derived** members, the deferrals with their reasons, the
 cross-spec verdict in the same wording every other surface uses, and any amendments. That derived
 half is the point: membership lives on the epic, so a reader who opened the release object saw
 `deferred[]` populated and members absent — which reads as "exclusions and no members", the

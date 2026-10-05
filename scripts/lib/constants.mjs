@@ -653,6 +653,12 @@ export const EPIC_FLAGS = [
   { flag: "undefer", key: null, commands: ["release"], write: "custom",
     requires: "\"<epicId>:<why it is back in scope>\" (or --reason)",
     placeholder: "epicId[:why it is back in scope]" },
+  // THE DELIVERY MARKER (release-in-flight-rule-needs-decision). `integrity`'s
+  // `delivered-release-epic-left-open` had to GUESS whether a release had delivered, from its members. This
+  // records the fact: `--deliver` sets `release.delivered = {recordedAt}`, `--undeliver` removes it (back to
+  // the member-derived reading). Both are BOOLEANS, so they are valueless, and mutually exclusive.
+  { flag: "deliver", key: null, commands: ["release"], write: "custom", valueless: true },
+  { flag: "undeliver", key: null, commands: ["release"], write: "custom", valueless: true },
   // THE EPIC LAYER OF THE EXECUTION PROFILE (execution-profile-layered-settings D3/D4). Three fields,
   // each NULLABLE: with no epic-level value the field falls through to the epic's lane, then the
   // project (`profile --epic <id>` names the layer). `add-epic` and `add-many` now accept them too,

@@ -171,3 +171,28 @@ never a refusal.
 Zero here, measured 2026-09-25 against the index: 17 in-scope epics, 186 requirement headers, the index
 read answering for all 15 capabilities. Replayed against `3256cc2^` it names exactly 0.48.0's four lost
 ADDED headers, which is the loss it exists for (that change's `evidence-4.3.txt`). The check RAN.
+
+## `late-failing-gate-review` — 0 findings
+
+Added 2026-10-04 by theme B2 (cfdude/pm#201). A FAILING gate verdict recorded after the epic's merge commit,
+carrying no range and no artifacts, is a real retrospective review and not bookkeeping; `gate-recorded-as-bookkeeping`
+no longer reports it and this check does, without the accusation. Zero here: no live epic holds such a verdict.
+The check RAN.
+
+## `tracker-item-held-by-two-epics` — 0 findings
+
+Added 2026-10-04 by theme B2 (cfdude/pm#231). Reads `trackerKeyHolder()`, the rule the 0.50.0 writers use, over every
+pair of epics. Zero here, measured 2026-10-04. The check RAN.
+
+## `archived-change-also-live` — 0 findings
+
+Added 2026-10-04 by theme B2 (cfdude/pm#215). A change present under `openspec/changes/` and `archive/` with
+identical content is upstream `openspec archive` copying instead of moving. Zero here, measured 2026-10-04 against the disk. The check RAN.
+
+## `archived-delivered-fails-delivered-obligation` — 1 finding
+
+Added 2026-10-04 by theme B2. An archived epic recorded `delivered` that fails an obligation `delivered`
+carries, reached by a path no gate sees. The one live finding is `conductor-tells-the-truth`: its passing Gate 2
+reviewed up to bd2b1e6, which does not reach the commit attributed to it, eb787d9. That is the check doing its
+job on a real record, not a defect in the check; the repair is a Gate 2 re-record over a range that reaches the
+attributed commit, and belongs to the orchestrator.

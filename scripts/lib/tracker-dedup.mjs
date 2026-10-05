@@ -22,6 +22,8 @@
 import { EPIC_DEDUP_KEYS, escapeControls, orNoRemedy, printedId } from "./constants.mjs";
 
 const FLAG_OF = { externalUrl: "external-url", externalId: "external-id" };
+/** The flag spelling of a dedup key (`externalUrl` → `external-url`), for a printed `--clear`. */
+export const trackerKeyFlag = (key) => FLAG_OF[key] || key;
 const holds = (o, k) => !!o && typeof o === "object" && typeof o[k] === "string" && o[k] !== "";
 
 /** The first of `others` already holding `candidate`'s tracker item, as `{holder, key}` where
