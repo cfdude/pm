@@ -24,9 +24,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { archiveDir, isOpenspecLane, shellQuote } from "./constants.mjs";
-import { archivedChangeDir, archivedChanges } from "./epic-progress.mjs";
-import { outcomeOf } from "./disposition.mjs";
+import { archiveDir, shellQuote } from "./constants.mjs";
+import { archivedChangeDir, archivedChanges, specDeltasScopeBase, specDeltasWaiver } from "./epic-progress.mjs";
 import { indexFileContents } from "./git.mjs";
 
 // ─────────────────────────────── 1. the grammar ───────────────────────────────
@@ -261,13 +260,18 @@ function readDeltas(dir, root) {
 /** An epic is IN SCOPE when the one resolver finds its archived change directory (that alone decides
  *  "archived" here, whatever the stored status says, so integrity and the briefing read the same
  *  directory), its lane is openspec (absent read as openspec) and its outcome is `delivered`. */
-export function inSpecSyncScope(epic) {
+export function inSpecSyncScope(epic, dirOf = archivedChangeDir) {
   // A recorded WAIVER (`update-epic --spec-deltas-waived "<why>"`, the reason being its value) takes the
   // epic out of scope: its deltas were deliberately not applied. Only a non-blank string counts, so a
   // hand-written empty value waives nothing. The waiver removes the epic from the REPORT only; the
   // epic's archived change still DISCHARGES others' obligations (compareSpecSync reads every change).
-  const waived = typeof epic?.specDeltasWaived === "string" && epic.specDeltasWaived.trim() !== "";
-  return !!epic && !waived && isOpenspecLane(epic) && outcomeOf(epic) === "delivered" && archivedChangeDir(epic) !== null;
+  return specDeltasWaiver(epic) === null && specDeltasScopeBase(epic, dirOf);
+}
+
+/** The ids of every epic carrying a recorded waiver, in record order — what the briefing prints so a
+ *  waived-but-actually-missing epic is never indistinguishable from a clean one. */
+export function waivedSpecEpics(epics) {
+  return (epics || []).filter(e => specDeltasWaiver(e) !== null).map(e => e.id);
 }
 
 /**
@@ -276,7 +280,7 @@ export function inSpecSyncScope(epic) {
  * is in scope. `readIndex` defaults to git.mjs indexFileContents(); a test hands it a stub.
  */
 export function specSyncFindings(epics, { readIndex = indexFileContents } = {}) {
-  const inScope = (epics || []).filter(inSpecSyncScope).map(e => ({ epic: e.id, dir: archivedChangeDir(e) }));
+  const inScope = (epics || []).filter(e => inSpecSyncScope(e)).map(e => ({ epic: e.id, dir: archivedChangeDir(e) }));
   if (!inScope.length) return [];
   const root = archiveDir();
   const scopeDirs = new Set(inScope.map(s => s.dir));

@@ -14,7 +14,7 @@ import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, re
 import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, gateStaleness, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
-import { isArchived } from "./epic-progress.mjs";
+import { isArchived, SPEC_DELTAS_SCOPE, specDeltasScopeBase } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
@@ -562,6 +562,11 @@ export function updateEpic() {
   // spec-sync-waive-for-skip-specs: the reason a delivered change's archived spec deltas were deliberately
   // not applied. Blank is refused by requireFlagValues() above; `--clear spec-deltas-waived` is the inverse.
   const specDeltasWaived = str(f["spec-deltas-waived"]);
+  // A waiver only means something to an epic the spec-deltas check reads. Anywhere else it would be a
+  // stored claim that no surface evaluates, so it is refused here, naming the scope.
+  if (specDeltasWaived !== undefined && !specDeltasScopeBase(snapshot)) {
+    die(`conductor: --spec-deltas-waived applies only to ${SPEC_DELTAS_SCOPE}; '${escapeControls(id)}' is not in that scope, so there is nothing to waive. Nothing was written.\n`);
+  }
 
   // --add-story "<title>" appends { title, done: false } to the epic's inline stories[]
   // (creating the array if this is its first inline story) -- closes the recurring

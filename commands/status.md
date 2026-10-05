@@ -164,8 +164,11 @@ reset discarded four ADDED requirements for two days. The index equals `HEAD` at
 `git add` and `git commit`, is what the next commit will record. **A change deliberately archived with
 `--skip-specs` is waived, not fixed:** `update-epic <id> --spec-deltas-waived "<why>"` takes that epic
 out of this report (the reason is the value and cannot be blank), and `update-epic <id> --clear
-spec-deltas-waived` puts it back. A waived epic's archived change still discharges other epics'
-obligations. **The stated cost: from
+spec-deltas-waived` puts it back. The flag is refused for an epic outside the check's scope (a
+delivered, openspec-lane epic whose change is archived), and a waiver is never silent: the briefing and
+the `render` verb's output print `SPEC DELTAS WAIVED (N)` with the epic ids, so a waived epic whose
+deltas really are missing is distinguishable from a clean one. A waived epic's archived change still
+discharges other epics' obligations. **The stated cost: from
 `openspec archive` until `git add`, the index still holds the old main specs, so a CORRECT archive is
 reported in that window too** — stage `openspec/` whole and it clears. That window is why the
 condition is never written into `PROJECT.md` (a tracked file that would then change with staging

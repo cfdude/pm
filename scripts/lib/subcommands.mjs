@@ -927,11 +927,14 @@ export function sync(quiet = false, { dryRun = false, only = null } = {}) {
   // What a dry run reports instead of doing; the real run fills the same lists and ignores them.
   const would = { flips: [], changes: [], plans: [], archives: [], healed: [] };
   const onDiskChanges = new Set(activeChangeIds());
+  const flipLines = [];
   for (const e of state.epics) {
     if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
       e.status = "untriaged";
       would.flips.push(e.id);
-      if (!quiet && !dryRun) errStream().write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
+      // Held until the `--only` check below passes: a run that then dies "nothing was written" must
+      // not have printed a flip it did not make.
+      if (!quiet && !dryRun) flipLines.push(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
     }
   }
   const known = new Set(state.epics.map(e => e.id));
@@ -1073,6 +1076,7 @@ export function sync(quiet = false, { dryRun = false, only = null } = {}) {
       "unregistered change, plan or archived change and no existing epic — nothing was written\n");
   }
   if (dryRun) { reportSyncDryRun(would, { firstBackfill, only, skipped }); return; }
+  for (const line of flipLines) errStream().write(line);
   const saved = saveState(state);
   // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
   // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic

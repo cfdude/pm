@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { engineRoot, changesDir, archiveDir, plansDir, laneRank, isOpenspecLane, withdrawnGate, escapeControls } from "./constants.mjs";
-import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
+import { engineStamp, isArchiveBackfilled, isStoryDisposed, outcomeOf } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
 import { errStream } from "./invocation.mjs";
@@ -101,6 +101,23 @@ export function archivedChangeDir(epicOrId, dir = archiveDir()) {
   if (!hits.length) return null;
   hits.sort((a, b) => dated(b).localeCompare(dated(a)) || b.localeCompare(a));
   return hits[0];
+}
+
+/** The scope of the spec-deltas check, in words — named by the refusal of `--spec-deltas-waived` outside it. */
+export const SPEC_DELTAS_SCOPE = "a DELIVERED, openspec-lane epic whose change directory is archived under openspec/changes/archive/";
+
+/** Is `epic` in the spec-deltas check's scope BEFORE any waiver is looked at: the one resolver finds its
+ *  archived change directory (`dirOf`, injectable so a test needs no disk), its lane is openspec (absent
+ *  read as openspec) and its outcome is `delivered`. spec-sync.mjs's inSpecSyncScope() adds the waiver
+ *  on top; update-epic uses THIS to refuse a waiver for an epic the check never reads. */
+export function specDeltasScopeBase(epic, dirOf = archivedChangeDir) {
+  return !!epic && isOpenspecLane(epic) && outcomeOf(epic) === "delivered" && dirOf(epic) !== null;
+}
+
+/** The recorded waiver reason (trimmed), or `null`: only a non-blank string counts. */
+export function specDeltasWaiver(epic) {
+  const w = epic && epic.specDeltasWaived;
+  return typeof w === "string" && w.trim() !== "" ? w.trim() : null;
 }
 
 /** THE DATE RULE, applied inside the one resolver and nowhere else (sync-registers-ids-add-epic-refuses).

@@ -79,10 +79,8 @@ test("167: a planned epic whose change now exists is previewed as a FLIP, never 
   assert.deepEqual(watched(cwd), before);
 });
 
-test("167: sync declares its dry-run flag in VERB_EFFECTS, so the detached-tree discarded-write warning skips it", async () => {
-  const { VERB_EFFECTS } = await import("../../lib/verb-effects.mjs");
-  assert.equal(VERB_EFFECTS.sync.dryRunFlag, "--dry-run");
-});
+// The detached-tree half of --dry-run (the discarded-write warning must NOT print) needs a real detached
+// checkout, so it lives on the functional rung: scripts/test/functional/detached-suppression.test.mjs.
 
 test("167: sync --only registers exactly the named ids, repeatably, and leaves the backfill marker unstamped", () => {
   const cwd = backlogRepo();
@@ -106,6 +104,22 @@ test("167: sync --only an id that is neither a candidate nor an epic is refused,
     assert.match(r.stderr, /--only named 'typo-id'[^\n]*nothing was written/);
     assert.deepEqual(watched(cwd), before, `${extra.join(" ") || "real run"}: nothing written`);
   }
+});
+
+test("167: a refused --only prints NO flip line for a flip it did not make", () => {
+  const cwd = initRepo();
+  run(["add-epic", "--id", "live-p", "--lane", "openspec", "--status", "planned"], { cwd });
+  mkdirs(cwd, "openspec/changes/live-p");
+  const before = watched(cwd);
+  const r = invokeEngine(["sync", "--only", "bogus"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /nothing was written/);
+  assert.doesNotMatch(r.stderr, /proposed — planned → untriaged/, "the flip was never written, so it is never announced");
+  assert.deepEqual(watched(cwd), before);
+  // Control: a run that is NOT refused still announces the flip, so the absence above means something.
+  const ok = invokeEngine(["sync"], { cwd });
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.match(ok.stderr, /'live-p' proposed — planned → untriaged/);
 });
 
 test("167: sync --only an id that is ALREADY an epic is accepted and registers nothing", () => {
@@ -151,9 +165,21 @@ test("waiver: a delivered epic with an unapplied delta is reported; a recorded w
   assert.equal((await find(delivered("skipped", { specDeltasWaived: 7 }))).length, 1, "a non-string value waives nothing");
 });
 
-test("waiver: update-epic records it with a REQUIRED reason, and --clear is the inverse (announced)", () => {
+/** A repo holding one epic that IS in the spec-deltas check's scope: delivered, openspec lane, archived. */
+function inScopeEpicRepo(id = "w1") {
   const cwd = initRepo();
-  run(["add-epic", "--id", "w1", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", id, "--lane", "openspec"], { cwd });
+  put(cwd, `openspec/changes/archive/${id}/proposal.md`, "# p\n");
+  const s = readState(cwd);
+  const e = s.epics.find(x => x.id === id);
+  e.status = "archived";
+  e.disposition = { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" };
+  writeState(cwd, s);
+  return cwd;
+}
+
+test("waiver: update-epic records it with a REQUIRED reason, and --clear is the inverse (announced)", () => {
+  const cwd = inScopeEpicRepo();
   const noValue = invokeEngine(["update-epic", "w1", "--spec-deltas-waived"], { cwd });
   assert.notEqual(noValue.status, 0, "no reason, no waiver");
   assert.equal("specDeltasWaived" in readState(cwd).epics[0], false);
@@ -166,4 +192,29 @@ test("waiver: update-epic records it with a REQUIRED reason, and --clear is the 
   assert.match(clear.stderr, /cleared `w1`'s spec-deltas-waived — `delivered-epic-spec-deltas-absent` reports this epic again/);
   const both = invokeEngine(["update-epic", "w1", "--spec-deltas-waived", "x", "--clear", "spec-deltas-waived"], { cwd });
   assert.notEqual(both.status, 0, "set and clear of one field in one call is contradictory");
+});
+
+test("waiver: refused for an epic outside the spec-deltas check's scope, naming the scope, and nothing is written", () => {
+  const cwd = initRepo();
+  run(["add-epic", "--id", "cc", "--lane", "claude-code"], { cwd });          // wrong lane
+  run(["add-epic", "--id", "live", "--lane", "openspec"], { cwd });            // not delivered, no archive
+  const before = watched(cwd);
+  for (const id of ["cc", "live"]) {
+    const r = invokeEngine(["update-epic", id, "--spec-deltas-waived", "why"], { cwd });
+    assert.notEqual(r.status, 0, `${id} is out of scope`);
+    assert.match(r.stderr, /applies only to a DELIVERED, openspec-lane epic whose change directory is archived/, r.stderr);
+    assert.match(r.stderr, /Nothing was written/);
+  }
+  assert.deepEqual(watched(cwd), before, "a refused waiver writes nothing");
+});
+
+test("waiver: a waived epic is LISTED by the briefing block, so a waived-but-missing epic is never indistinguishable from a clean one", async () => {
+  const cwd = skippedSpecsRepo();
+  const { specSyncBlock } = await import("../../lib/briefing.mjs");
+  const epics = [delivered("skipped"), delivered("quiet", { specDeltasWaived: "folded by hand" })];
+  const lines = await withAssertInvocation(cwd, () => specSyncBlock({ epics }, { readIndex: emptyMain }));
+  const text = lines.join("\n");
+  assert.match(text, /SPEC DELTAS ABSENT FROM THE MAIN SPECS/);
+  assert.match(text, /SPEC DELTAS WAIVED \(1\): `quiet`/);
+  assert.doesNotMatch(text, /folded by hand/, "the ids are listed, the reason is not echoed");
 });

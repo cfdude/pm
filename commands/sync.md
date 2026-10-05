@@ -1,9 +1,12 @@
 ---
 description: Register any new OpenSpec proposals as epics in the conductor index
+argument-hint: "[--dry-run] [--only <id> ...]"
 allowed-tools: Bash, Read, Edit
 ---
 
-Pull any OpenSpec changes that aren't yet tracked into the conductor.
+Pull any OpenSpec changes that aren't yet tracked into the conductor. If the user passed `--dry-run` and/or
+`--only <id>` (`$ARGUMENTS`), append exactly those flags to the command below (`sync --dry-run`,
+`sync --only <id>`, or both); see "Previewing and selecting" below.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" sync

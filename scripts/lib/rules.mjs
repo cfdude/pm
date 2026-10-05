@@ -1028,7 +1028,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     // command. How to check belongs to the installed OpenSpec and moves with its version; baking one
     // invocation into pm's rules is the version-specific coupling this rules block avoids elsewhere.
     "An OpenSpec-lane epic owes one more check before it is treated as ready to apply: confirm its",
-    "planning is COMPLETE — its proposal, design, specs and tasks all exist and agree with one",
+    "planning is COMPLETE — every artifact your OpenSpec schema requires exists and they agree with one",
     "another. If any is missing, or one contradicts another, finish the planning first; never start",
     "building against a partial plan. This is an obligation and not a command: pm names no OpenSpec",
     "invocation for it, because how to check belongs to the OpenSpec you have installed.",

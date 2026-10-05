@@ -76,11 +76,13 @@ function shallowBoundaries() {
  *
  *  created-at-recovery-dates-too-late: the recovery used to take the FIRST line of the pickaxe's output
  *  and call it the introducing commit. That is the first commit in git's TRAVERSAL order, which is not
- *  the earliest one: history simplification prunes a side branch whose merge is TREESAME to the other
- *  parent, so the commit that really introduced the id (06-30) is never listed and a later one (07-09)
- *  is stamped instead (measured in the fleet on knowledge-store, where it then made the archive date
- *  rule disagree with the stamp). The query now asks for full history, and this picks the minimum
- *  instant among every match, so neither the traversal order nor a skewed committer date chooses.
+ *  the earliest one, and the query printed the COMMITTER date, which a rewrite (rebase, amend,
+ *  cherry-pick) moves later than the authoring. Measured in the fleet on knowledge-store: the pickaxe
+ *  returns ONE non-merge commit (b60abd4d) with and without --full-history, authored 06-30 and
+ *  committed 07-09 (rewritten), so the epic was stamped 07-09 and the archive date rule then
+ *  disagreed with the stamp. The query now prints the AUTHOR date (%aI), keeps --full-history
+ *  (harmless, and it stops a merge pruning a side branch), and this picks the minimum instant among
+ *  every match, so neither the traversal order nor a skewed date on one commit chooses.
  *
  *  A GRAFTED commit (a shallow boundary) that is itself the earliest match answers `null`: at a graft
  *  point "introduced here" and "already existed" are indistinguishable, so absence is the honest answer.
@@ -111,9 +113,9 @@ export function earliestIntroduction(output, grafted = new Set()) {
  *  answer `null` today and recover it after it fetches, rather than reaching into refs its user
  *  has not merged.
  *
- *  `%cI` (committer date) matches commitDate()'s reasoning in git.mjs: a rebased or cherry-picked
- *  commit keeps an author date from before the rebase, and what is being recorded is when the
- *  registration as it stands came into existence.
+ *  `%aI` (AUTHOR date), deliberately NOT commitDate()'s `%cI` (git.mjs): a rebased, amended or
+ *  cherry-picked commit gets a later committer date, but what is recorded here is when the
+ *  registration was first authored, and that is the author date.
  *
  *  Local only — this reads the object database and contacts nothing. */
 export function introducedAt(epicId, grafted = shallowBoundaries()) {

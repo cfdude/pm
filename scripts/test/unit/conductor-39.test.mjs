@@ -119,3 +119,11 @@ unitTest("2.1b: a grafted earliest match, no output and unparseable lines are AB
   assert.equal(earliestIntroduction(""), null);
   assert.equal(earliestIntroduction("no-date-here\n\n  \nsha notadate"), null);
 });
+
+unitTest("the recovery's pickaxe prints the AUTHOR date (%aI), never the committer date (a rewrite moves only the latter)", async () => {
+  const { GIT_OPERATIONS } = await import(new URL("../../lib/git-gateway.mjs", import.meta.url).href);
+  const op = GIT_OPERATIONS.find(o => o.name === "logPickaxe");
+  assert.ok(op, "the pickaxe is a named gateway operation");
+  assert.match(op.command, /--format=%H %aI/);
+  assert.doesNotMatch(op.command, /%cI/, "restoring the committer date re-introduces the knowledge-store stamp (authored 06-30, committed 07-09)");
+});

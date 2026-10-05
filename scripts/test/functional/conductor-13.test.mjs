@@ -321,7 +321,17 @@ const EXERCISE = {
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
   "--spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
   // spec-sync-waive-for-skip-specs: the value IS the reason, stored verbatim; `--clear spec-deltas-waived` is its inverse.
-  "--spec-deltas-waived": { args: ["--spec-deltas-waived", "folded into the main spec by hand"], check: (e) => assert.equal(e.specDeltasWaived, "folded into the main spec by hand") },
+  // The flag is refused outside the check's scope (a delivered, openspec-lane epic with an archived change
+  // directory), so `prep` puts `subject` in it: the archive directory and the delivered record.
+  "--spec-deltas-waived": { prep: (cwd) => {
+    fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "subject"), { recursive: true });
+    fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "subject", "proposal.md"), "# p\n");
+    const s = readState(cwd);
+    const e = s.epics.find(x => x.id === "subject");
+    e.lane = "openspec"; e.status = "archived";
+    e.disposition = { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" };
+    writeState(cwd, s);
+  }, args: ["--spec-deltas-waived", "folded into the main spec by hand"], check: (e) => assert.equal(e.specDeltasWaived, "folded into the main spec by hand") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
@@ -427,6 +437,7 @@ test("every DOCUMENTED update-epic flag is accepted and its value reads back fro
     const [first, second] = fixtureCommits(cwd, ["fixture", "fixture-2"]);
     const commits = { [COMMIT]: first, [COMMIT_2]: second };
     const sub = (argv) => argv.map(a => Object.hasOwn(commits, a) ? commits[a] : a);
+    if (spec.prep) spec.prep(cwd);
     for (const step of spec.pre || []) run(sub(step), { cwd });
     if (spec.setup) run(["update-epic", "subject", ...sub(spec.setup)], { cwd });
     const err = expectFail(() => run(["update-epic", "subject", ...sub(spec.args)], { cwd }));

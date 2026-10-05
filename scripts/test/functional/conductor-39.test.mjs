@@ -259,6 +259,33 @@ test("2.1b: the date is the EARLIEST introducing commit even when a merge hides 
     "dated from the introducing commit, not from the first commit the simplified log happens to list");
 });
 
+test("2.1c: only the COMMITTER date is rewritten — the stamp is the AUTHOR date (the real knowledge-store cause)", () => {
+  // One non-merge commit, authored 06-30 and committed 07-09 (a rebase/amend moved only the committer
+  // date). No merge, no side branch: history simplification has nothing to do with it. Restoring `%cI`
+  // in the pickaxe stamps 07-09 and this test fails.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  git(cwd, "init", "-q");
+  git(cwd, "config", "user.email", "test@example.com");
+  git(cwd, "config", "user.name", "Test");
+  git(cwd, "add", "-A");
+  git(cwd, "commit", "-q", "-m", "chore: baseline");
+  writeState(cwd, { version: 1, active: null, detourStack: [], pmVersion: "0.39.0", epics: [
+    { id: "kappa", title: "kappa", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false }] });
+  git(cwd, "add", "-A");
+  execFileSync("git", ["commit", "-q", "-m", "chore: register kappa"],
+    { cwd, encoding: "utf8", env: { ...process.env,
+      GIT_AUTHOR_DATE: "2026-06-30 12:00:00 +0000", GIT_COMMITTER_DATE: "2026-07-09 12:00:00 +0000" } });
+  const pickaxe = (fmt) => git(cwd, "log", "-S", '"id": "kappa"', "--full-history", "--format=" + fmt, "--",
+    ".conductor/state.json").split("\n").filter(Boolean);
+  assert.equal(pickaxe("%H").length, 1, "fixture sanity: exactly one commit introduces the id");
+  assert.equal(Date.parse(pickaxe("%cI")[0]), Date.parse("2026-07-09T12:00:00Z"), "fixture sanity: the committer date is the rewritten one");
+
+  recover(cwd);
+  assert.equal(Date.parse(epicOf(cwd, "kappa").createdAt), Date.parse("2026-06-30T12:00:00Z"),
+    "stamped with the author date, not the rewritten committer date");
+});
+
 test("2.2: degradation — no git repository yields ABSENT, not an error and not a date", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

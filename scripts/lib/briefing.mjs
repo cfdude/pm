@@ -10,7 +10,7 @@ import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./li
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
-import { specSyncFindings } from "./spec-sync.mjs";
+import { specSyncFindings, waivedSpecEpics } from "./spec-sync.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, asCode, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
@@ -83,7 +83,15 @@ export function specSyncBlock(state, { readIndex } = {}) {
   } catch (e) {
     return [specSyncUnavailable(e), ""];
   }
-  if (!findings.length) return [];
+  // A WAIVER is visible: a waived epic whose deltas really are missing reads the same as a clean one
+  // unless something names it. One capped line, after any findings.
+  const waived = waivedSpecEpics((state && state.epics) || []);
+  const waivedLines = waived.length
+    ? [`SPEC DELTAS WAIVED (${waived.length}): ${waived.slice(0, 5).map(id => `\`${id}\``).join(", ")}` +
+       `${waived.length > 5 ? `, +${waived.length - 5} more` : ""} — deliberately not applied to the main specs, so no check reads ` +
+       "them; clearing a waiver (see the update-epic command doc) puts an epic back under the check"]
+    : [];
+  if (!findings.length) return waivedLines.length ? [...waivedLines, ""] : [];
   const CAP = 5;
   const word = { absent: "absent", present: "still present", unpaired: "unpaired RENAMED line" };
   const L = ["SPEC DELTAS ABSENT FROM THE MAIN SPECS (a delivered change's archived spec deltas the main " +
@@ -95,6 +103,7 @@ export function specSyncBlock(state, { readIndex } = {}) {
       headers.map(h => JSON.stringify(h)).join(", "));
   }
   if (findings.length > CAP) L.push(`  (+${findings.length - CAP} more — see \`integrity\`)`);
+  L.push(...waivedLines);
   L.push("");
   return L;
 }

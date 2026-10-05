@@ -1130,7 +1130,7 @@ recipe("update-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["update
 recipe("update-epic --clear", { exempt: "--clear must name a field this command can unset", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear", v]) });
 recipe("update-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--description", v]) });
 recipe("update-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--notes", v]) });
-recipe("update-epic --spec-deltas-waived", { notRendered: "the waiver's reason is stored and printed by no surface (the clear's announcement does not echo it)", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--spec-deltas-waived", v]) });
+recipe("update-epic --spec-deltas-waived", { notRendered: "the waiver's reason is stored and printed by no surface (the briefing lists the waived epic's id, never the reason; the clear's announcement does not echo it)", run: (c, v) => pm(c.cwd, ["update-epic", "sw", "--spec-deltas-waived", v]) });
 recipe("update-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
 recipe("update-epic --attribute-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--attribute-commit", v]) });
 recipe("update-epic --withdraw-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-commit", v, "--withdrawal-reason", "r"]) });
@@ -1463,6 +1463,16 @@ test("7.2 the sweep: every governed input, one accumulated record, every surface
   ok(cwd, ["add-epic", "--id", "cs1", "--lane", "openspec"]);
   ok(cwd, ["release", "cs", "--intent", "cross-spec fixture", "--member", "cs1"]);
   ok(cwd, ["add-epic", "--id", "ue2", "--lane", "superpowers"]);
+  // `sw`: an epic IN the spec-deltas check's scope (delivered, openspec lane, archived), the only kind
+  // `update-epic --spec-deltas-waived` accepts.
+  ok(cwd, ["add-epic", "--id", "sw", "--lane", "openspec"]);
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "sw"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "sw", "proposal.md"), "# p\n");
+  legacyWrite(cwd, (s) => {
+    const e = s.epics.find(x => x.id === "sw");
+    e.status = "archived";
+    e.disposition = { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" };
+  });
   ok(cwd, ["add-epic", "--id", "tr", "--lane", "claude-code", "--external-id", "TR-1", "--external-url", "https://example.test/TR-1"]);
   ok(cwd, ["update-epic", "st", "--add-story", "a story"]);
   ok(cwd, ["claim", "cl2", "--session", "s2"]);

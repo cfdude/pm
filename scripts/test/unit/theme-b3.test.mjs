@@ -15,7 +15,7 @@ unitTest("the rules block tells an agent to confirm an OpenSpec epic's planning 
   for (const platform of ["claude-code", "codex"]) {
     const block = rulesBlock(null, "standard", [], platform);
     assert.match(block, /An OpenSpec-lane epic owes one more check before it is treated as ready to apply/, platform);
-    assert.match(block, /planning is COMPLETE — its proposal, design, specs and tasks all exist and agree with one\s+another/, platform);
+    assert.match(block, /planning is COMPLETE — every artifact your OpenSpec schema requires exists and they agree with one\s+another/, platform);
     assert.match(block, /finish the planning first/, platform);
   }
 });
@@ -31,13 +31,33 @@ unitTest("the planning-completeness obligation names NO OpenSpec command or json
   assert.match(paragraph, /pm names no OpenSpec\s+invocation for it/);
 });
 
-unitTest("inSpecSyncScope: a waiver can only REMOVE an epic from scope, never add one", async () => {
+unitTest("inSpecSyncScope: a waiver REMOVES an in-scope epic and can never ADD one (in-memory directory resolver, no disk)", async () => {
   const { inSpecSyncScope } = await import(SPEC_SYNC);
   const base = { id: "x", lane: "openspec", status: "archived", disposition: { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" } };
-  // archivedChangeDir() reads the disk, so a bare record is never in scope on this rung; the in-scope
-  // half (and the waiver taking an in-scope epic out) is the file rung, in assert/theme-b3.test.mjs.
-  for (const w of [undefined, "", "   ", 7, null, {}, "archived with --skip-specs"]) {
-    assert.equal(inSpecSyncScope({ ...base, specDeltasWaived: w }), false, `waiver ${JSON.stringify(w)}`);
+  const found = () => "2026-09-20-x";
+  const none = () => null;
+  assert.equal(inSpecSyncScope(base, found), true, "precondition: a delivered openspec-lane epic with an archive directory is in scope");
+  // The waiver removes it. Reverting the waiver code makes the next three lines fail.
+  assert.equal(inSpecSyncScope({ ...base, specDeltasWaived: "archived with --skip-specs" }, found), false);
+  assert.equal(inSpecSyncScope({ ...base, specDeltasWaived: "  folded by hand  " }, found), false);
+  // Only a non-blank string waives: every other value leaves the epic in scope.
+  for (const w of [undefined, "", "   ", 7, null, {}]) {
+    assert.equal(inSpecSyncScope({ ...base, specDeltasWaived: w }, found), true, `waiver ${JSON.stringify(w)} waives nothing`);
   }
-  assert.equal(inSpecSyncScope(null), false);
+  // And a waiver can never ADD an epic the check does not read.
+  assert.equal(inSpecSyncScope({ ...base, specDeltasWaived: "why" }, none), false);
+  assert.equal(inSpecSyncScope(base, none), false, "no archive directory, not in scope");
+  assert.equal(inSpecSyncScope({ ...base, lane: "claude-code" }, found), false);
+  assert.equal(inSpecSyncScope({ ...base, disposition: { outcome: "killed", reason: "r" } }, found), false);
+  assert.equal(inSpecSyncScope(null, found), false);
+});
+
+unitTest("waivedSpecEpics lists exactly the epics carrying a non-blank waiver, and the briefing block names them", async () => {
+  const { waivedSpecEpics } = await import(SPEC_SYNC);
+  const { specSyncBlock } = await import(new URL("../../lib/briefing.mjs", import.meta.url).href);
+  const epics = [{ id: "a", specDeltasWaived: "why" }, { id: "b", specDeltasWaived: " " }, { id: "c" }, { id: "d", specDeltasWaived: "also" }];
+  assert.deepEqual(waivedSpecEpics(epics), ["a", "d"]);
+  const lines = specSyncBlock({ epics });
+  assert.match(lines.join("\n"), /SPEC DELTAS WAIVED \(2\): `a`, `d`/);
+  assert.deepEqual(specSyncBlock({ epics: [{ id: "c" }] }), [], "no waiver, no findings: the block stays empty");
 });
