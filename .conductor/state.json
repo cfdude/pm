@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-167",
+  "active": "store-owns-claude-md-managed-block",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -3037,7 +3037,7 @@
       "id": "openspec-planning-completeness-instruction",
       "title": "Before treating an openspec epic as ready to apply, pm's rules must direct the agent to confirm the change's planning is complete — stating the OBLIGATION and naming NO command (resolves the page's Tier 3 #2 vs #4 contradiction: #2 proposed baking openspec status --json / isPlanningComplete / applyRequires into pm, which is the 1.9.0-specific coupling #4 forbids and that carried pm through the upgrade unharmed)",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3066,8 +3066,30 @@
           "text": "GROOMING 0.41.0 — absorbed two epics whose completion test is identical to this one's (does the emitted rules block say X, in the same two files). From conductor-skill-orient-reads-spec-inventory: Orient for an openspec-lane epic must read the inventory of ALREADY-ESTABLISHED specs, explicitly NOT the in-flight change list, and the wording must disambiguate the object because OpenSpec's own generated skills surface 'openspec list --json' (changes) 10x and '--specs' 0x, so a vague obligation gets discharged against the wrong data. Verified still unbuilt: rg 'list --specs|spec inventory' across skills/ commands/ scripts/lib/ agents/ returns zero. From autonomy-grant-starts-at-apply-not-propose: state the propose/apply boundary for an autonomy grant — SKILL.md gives a flag-timing rule and rules.mjs scopes actions, and neither says which side of that boundary a grant begins on."
         }
       ],
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T21:51:47.004Z",
+      "release": "0.51.0",
+      "attributedCommits": [
+        "a6c95c8e9e3eb61c21271e9f13793bd776160831",
+        "6c6e5d9dbafdc82e780f20b955764f98ce24a3f1"
+      ],
+      "planPath": "docs/superpowers/plans/2026-10-05-theme-b3.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T21:51:46.998Z",
+        "reason": "Built for 0.51.0 theme B3 (ships with the release cut), commits a6c95c8e + review-fix 6c6e5d9d: sync --dry-run/--only; verb-registration guard; scoped, visible --spec-deltas-waived (+ --clear); recover-created-at takes the earliest AUTHOR date (committer date was the cause); planning-completeness rules paragraph. One Opus review round FAIL on 1 Critical (wrong cause for createdAt) + 1 Important, fixed and tested. README/Mintlify carried to release-0-51-0-cut. Partial by design: the rules paragraph shipped; Orient-reads-spec-inventory and the propose/apply autonomy boundary are held by a registered epic.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T21:51:46.997Z",
+        "deferrals": [
+          {
+            "epic": "planning-completeness-orient-and-autonomy-boundary",
+            "section": ""
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T21:51:46.998Z"
     },
     {
       "id": "dehardcode-openspec-change-root-in-instructions",
@@ -4333,16 +4355,16 @@
       "gateReview": {
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-08-25T23:06:47.851Z",
-          "baseSha": "7829e80",
-          "headSha": "bd2b1e6",
-          "reviewer": "two independent fresh-context reviewers (review mode: thorough) — Gate 2 and Gate 2B; both returned merge-once-group-17-lands, and their BLOCKS are the group-17 tasks now complete. Re-recorded to extend the range over bd2b1e6, which the reviewers did NOT see: it is the arm-1 narrowing this epic's own integrity check surfaced while 17.2's first verdict was being written — self-reported, not covered by either review",
+          "reviewedAt": "2026-10-05T20:22:06.974Z",
+          "baseSha": "7829e803c6c97890457fc559442c02c6515d2ea0",
+          "headSha": "eb787d99fc54589249e2771150163ae788b5ca2f",
+          "reviewer": "Original Gate 2 (thorough, two reviewers) covered 7829e80..489809f. bd2b1e6 (integrity.mjs arm-1 narrowing) was self-reported, NOT covered by either review — unchanged by this review (only skimmed: coherent, tested both ways). 2026-10-05 Opus fresh-context review covers bd2b1e6..eb787d9 ONLY: test fix + fixture-hash derivation correct (full clone 70/70, shallow clone fails visibly, fresh dev clone 71/71), spec sync exact vs archived deltas, archive move lossless, no engine change. Verdict EXTEND.",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-08-25T22:59:38.168Z",
+            "reviewedAt": "2026-08-25T23:06:47.851Z",
             "baseSha": "7829e80",
-            "headSha": "489809f",
-            "reviewer": "two independent fresh-context reviewers (review mode: thorough) — Gate 2 and Gate 2B; both returned merge-once-group-17-lands, and their BLOCKS were fixed in group 17"
+            "headSha": "bd2b1e6",
+            "reviewer": "two independent fresh-context reviewers (review mode: thorough) — Gate 2 and Gate 2B; both returned merge-once-group-17-lands, and their BLOCKS are the group-17 tasks now complete. Re-recorded to extend the range over bd2b1e6, which the reviewers did NOT see: it is the arm-1 narrowing this epic's own integrity check surfaced while 17.2's first verdict was being written — self-reported, not covered by either review"
           }
         },
         "gate1": {
@@ -4382,7 +4404,8 @@
         ]
       },
       "completedAt": "2026-08-25T23:12:02.877Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "touchedAt": "2026-10-05T20:22:06.979Z"
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -5578,7 +5601,7 @@
       "id": "gh-cfdude-pm-167",
       "title": "sync has no --dry-run: registering archived changes is unpreviewable, and no selective import",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -5591,7 +5614,10 @@
       "reconcileNeeded": false,
       "externalId": "167",
       "externalUrl": "https://github.com/cfdude/pm/issues/167",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a6c95c8e9e3eb61c21271e9f13793bd776160831",
+        "6c6e5d9dbafdc82e780f20b955764f98ce24a3f1"
+      ],
       "notes": [
         {
           "at": "2026-09-06T02:20:41.834Z",
@@ -5607,9 +5633,27 @@
       "externalUpdatedAt": "2026-09-03T01:14:23Z",
       "createdAt": "2026-09-08T17:55:42-07:00",
       "release": "0.51.0",
-      "touchedAt": "2026-10-05T01:44:11.659Z",
+      "touchedAt": "2026-10-05T21:51:36.949Z",
       "startedAt": "2026-10-05T01:44:11.655Z",
-      "trackerRefreshNeeded": true
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-10-05T20:16:18.543Z",
+        "externalUpdatedAt": "2026-09-03T01:14:23Z"
+      },
+      "trackerRefreshNeeded": true,
+      "planPath": "docs/superpowers/plans/2026-10-05-theme-b3.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T21:51:36.946Z",
+        "reason": "Built for 0.51.0 theme B3 (ships with the release cut), commits a6c95c8e + review-fix 6c6e5d9d: sync --dry-run/--only; verb-registration guard; scoped, visible --spec-deltas-waived (+ --clear); recover-created-at takes the earliest AUTHOR date (committer date was the cause); planning-completeness rules paragraph. One Opus review round FAIL on 1 Critical (wrong cause for createdAt) + 1 Important, fixed and tested. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T21:51:36.944Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T21:51:36.946Z"
     },
     {
       "id": "fleet-upgrade-after-release",
@@ -6354,7 +6398,7 @@
       "id": "gh-cfdude-pm-176",
       "title": "--story <n> is 1-indexed but --help says only '<a value>'; a wrong index writes a wont-do reason onto the wrong story with no correction path",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -6364,14 +6408,16 @@
       "externalUpdatedAt": "2026-09-08T17:49:40Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:20:59.267Z",
-      "touchedAt": "2026-09-09T00:21:30.533Z",
+      "touchedAt": "2026-10-05T22:07:30.407Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:30.522Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. Registered via add-many --from rather than add-epic: this issue's own title begins with '--story', and the argv parser reads any value starting with -- as a flag, so neither --title \"--story ...\" nor --title=--story ... could register it. Filed as cfdude/pm#182."
         }
-      ]
+      ],
+      "startedAt": "2026-10-05T21:51:49.812Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-182",
@@ -9909,7 +9955,7 @@
       "id": "gh-cfdude-pm-206",
       "title": "Adding an engine verb means hand-writing rows in several tables with no single source; the verb-surface harness has no documented seed step",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -9917,10 +9963,31 @@
       "externalId": "206",
       "externalUrl": "https://github.com/cfdude/pm/issues/206",
       "externalUpdatedAt": "2026-09-17T03:19:56Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a6c95c8e9e3eb61c21271e9f13793bd776160831",
+        "6c6e5d9dbafdc82e780f20b955764f98ce24a3f1"
+      ],
       "createdAt": "2026-09-17T03:20:01.306Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T21:51:39.654Z",
+      "release": "0.51.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-10-05T20:16:19.418Z",
+        "externalUpdatedAt": "2026-09-17T03:19:56Z"
+      },
+      "planPath": "docs/superpowers/plans/2026-10-05-theme-b3.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T21:51:39.635Z",
+        "reason": "Built for 0.51.0 theme B3 (ships with the release cut), commits a6c95c8e + review-fix 6c6e5d9d: sync --dry-run/--only; verb-registration guard; scoped, visible --spec-deltas-waived (+ --clear); recover-created-at takes the earliest AUTHOR date (committer date was the cause); planning-completeness rules paragraph. One Opus review round FAIL on 1 Critical (wrong cause for createdAt) + 1 Important, fixed and tested. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T21:51:39.632Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T21:51:39.635Z"
     },
     {
       "id": "commit-observation-gate2-minors",
@@ -10717,7 +10784,7 @@
       "id": "store-owns-claude-md-managed-block",
       "title": "Make init's repository-file writes (the CLAUDE.md managed block AND .gitignore) store-owned, so the tests that reach them can leave the disk (last lever on the per-commit gate)",
       "priority": "P3",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -10735,7 +10802,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-09-28T22:29:17.889Z",
+      "touchedAt": "2026-10-05T22:07:30.407Z",
       "notes": [
         {
           "at": "2026-09-25T21:14:34.648Z",
@@ -10748,7 +10815,8 @@
           "text": "0.51.0 conditional: include only if an n=3 quiet-machine measurement (no agents running, empty-preload control) still shows the file rung dominated by init's CLAUDE.md/.gitignore writes; otherwise --defer it from 0.51.0 with the numbers"
         }
       ],
-      "release": "0.51.0"
+      "release": "0.51.0",
+      "startedAt": "2026-10-05T22:07:30.403Z"
     },
     {
       "id": "node-support-policy",
@@ -11005,7 +11073,7 @@
       "id": "spec-sync-waive-for-skip-specs",
       "title": "A delivered change deliberately archived with --skip-specs is reported by the spec-deltas check forever — no verb records that the deltas were intentionally not applied",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -11016,10 +11084,26 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a6c95c8e9e3eb61c21271e9f13793bd776160831",
+        "6c6e5d9dbafdc82e780f20b955764f98ce24a3f1"
+      ],
       "createdAt": "2026-09-26T01:35:07.603Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T21:51:42.034Z",
+      "release": "0.51.0",
+      "planPath": "docs/superpowers/plans/2026-10-05-theme-b3.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T21:51:42.028Z",
+        "reason": "Built for 0.51.0 theme B3 (ships with the release cut), commits a6c95c8e + review-fix 6c6e5d9d: sync --dry-run/--only; verb-registration guard; scoped, visible --spec-deltas-waived (+ --clear); recover-created-at takes the earliest AUTHOR date (committer date was the cause); planning-completeness rules paragraph. One Opus review round FAIL on 1 Critical (wrong cause for createdAt) + 1 Important, fixed and tested. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T21:51:42.027Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T21:51:42.028Z"
     },
     {
       "id": "brief-txt-tracked-in-fleet-repos",
@@ -11108,7 +11192,7 @@
       "id": "created-at-recovery-dates-too-late",
       "title": "0.40.0's createdAt recovery can stamp an epic LATER than its real registration (knowledge-store: stamped 07-09, git pickaxe dates the ids to 06-30, archives 07-01/07-06) — the recorded date is not the introducing commit",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -11119,10 +11203,26 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a6c95c8e9e3eb61c21271e9f13793bd776160831",
+        "6c6e5d9dbafdc82e780f20b955764f98ce24a3f1"
+      ],
       "createdAt": "2026-09-26T04:36:40.106Z",
-      "touchedAt": "2026-09-28T22:29:16.270Z",
-      "release": "0.51.0"
+      "touchedAt": "2026-10-05T21:51:44.208Z",
+      "release": "0.51.0",
+      "planPath": "docs/superpowers/plans/2026-10-05-theme-b3.md",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T21:51:44.204Z",
+        "reason": "Built for 0.51.0 theme B3 (ships with the release cut), commits a6c95c8e + review-fix 6c6e5d9d: sync --dry-run/--only; verb-registration guard; scoped, visible --spec-deltas-waived (+ --clear); recover-created-at takes the earliest AUTHOR date (committer date was the cause); planning-completeness rules paragraph. One Opus review round FAIL on 1 Critical (wrong cause for createdAt) + 1 Important, fixed and tested. README/Mintlify carried to release-0-51-0-cut.",
+        "carriedTo": "release-0-51-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T21:51:44.199Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T21:51:44.204Z"
     },
     {
       "id": "lesson-budget-tests-flake-under-load",
@@ -12339,7 +12439,7 @@
       "id": "conductor-tells-the-truth-gate2-unreviewed-range",
       "title": "conductor-tells-the-truth is archived delivered but eb787d9 (attributed) is not reached by its Gate 2 headSha bd2b1e6; review bd2b1e6..eb787d9 before any re-record — a re-recorded pass would extend a pass nobody reviewed",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -12352,7 +12452,18 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.097Z",
-      "touchedAt": "2026-10-05T01:44:10.102Z"
+      "touchedAt": "2026-10-05T20:22:23.077Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-05T20:22:23.074Z",
+        "reason": "Reviewed bd2b1e6..eb787d9 (Opus fresh context, 2026-10-05): verdict EXTEND. Gate 2 re-recorded for conductor-tells-the-truth at eb787d99 with a note that bd2b1e6 remains self-reported and unreviewed. Integrity back to 6 findings."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-05T20:22:23.073Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-05T20:22:23.074Z"
     },
     {
       "id": "record-gate-review-fail-requires-shas",
@@ -12372,6 +12483,25 @@
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.877Z",
       "touchedAt": "2026-10-05T01:44:10.882Z"
+    },
+    {
+      "id": "planning-completeness-orient-and-autonomy-boundary",
+      "title": "Planning-completeness follow-up: Orient reads the spec inventory, and the propose/apply boundary governs an autonomy grant (the two obligations from the 2026-09-10 grooming note not built in 0.51.0)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "openspec-planning-completeness-instruction",
+          "reason": "remainder carried here"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-05T21:51:24.361Z",
+      "touchedAt": "2026-10-05T21:51:24.375Z"
     }
   ],
   "detourStack": [],
@@ -12382,7 +12512,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1848,
+  "revision": 1875,
   "reviewMode": "standard",
   "releases": [
     {

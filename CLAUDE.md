@@ -261,8 +261,8 @@ measured across one audited repository, a rule carried by a mandatory task secti
    in the order the commits landed, then keep attributing forward. Each value is resolved
    when it is written and stored as its full object name — `HEAD` or a tag records the
    commit it names at that moment, and a value that is not a commit in this clone is
-   refused with nothing written. The array is append-only — the engine neither reorders nor
-   de-duplicates it — and every attributed commit must be reached by a recorded Gate 2
+   refused with nothing written. The array is append-only — the engine never reorders it and
+   records each commit once (a repeat is a no-op) — and every attributed commit must be reached by a recorded Gate 2
    `headSha` (equal to that head or an ancestor of it), whatever position it holds: one the reviewed
    head does not reach reads as a stale verdict and refuses the archive.
    ONE EXCLUSION, and it is not a judgment call: the commit that moves
@@ -270,7 +270,11 @@ measured across one audited repository, a rule carried by a mandatory task secti
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed. That move lands after the reviewed range by construction, so
    attributing it
-   makes the epic's own Gate 2 stale at the instant the archive gate reads it.
+   makes the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for
+   the lifecycle commits a required task makes AFTER Gate 2 is recorded (the lessons item 7 routes,
+   the task-list tick): commit them before recording Gate 2 where you can, and do not attribute
+   them where you cannot — the engine says so when an attribution turns the verdict stale, and
+   `--withdraw-commit` undoes it.
 5. **Review a release's specs against each other.** Gate 1 and Gate 2 each take ONE CHANGE
    as their unit, so nothing above them asks whether a release's specs AGREE. Before
    `/opsx:apply` on any release holding two or more spec files — counted FLAT across its
@@ -612,6 +616,11 @@ what it is FOR. Which source depends on provenance, never on any tracker's direc
 An outward-mirrored epic owes the same look as an inward-born one: a linked item accumulates
 third-party context regardless of which way it was born. Origin decides only whose ask wins
 when the item and a local spec disagree.
+An OpenSpec-lane epic owes one more check before it is treated as ready to apply: confirm its
+planning is COMPLETE — every artifact your OpenSpec schema requires exists and they agree with one
+another. If any is missing, or one contradicts another, finish the planning first; never start
+building against a partial plan. This is an obligation and not a command: pm names no OpenSpec
+invocation for it, because how to check belongs to the OpenSpec you have installed.
 <!-- END pm-conductor rules -->
 
 ### 🔗 Cross-spec review — now a shipped gate, not a repo practice
