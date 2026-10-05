@@ -57,6 +57,7 @@ unitTest("release-in-flight-rule-needs-decision: a release with NO marker keeps 
   assert.equal(countLine(out, DELIVERED), 1, "the markerless rule did not change");
   assert.match(out, /carries no delivery marker, so "delivered" was inferred from its members/);
   assert.match(out, /`release 1\.0 --deliver`/, "the one command that replaces the guess with the fact");
+  assert.match(out, /mid-flight[^.]*--defer form/, "the markerless finding states the mid-flight way out");
   assert.doesNotMatch(out, /--status active/, "the workaround wording added in the previous batch is gone");
   const inFlight = repoWith({
     releases: [{ id: "1.0", intent: "x", deferred: [] }],

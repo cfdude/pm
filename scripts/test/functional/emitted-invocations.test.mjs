@@ -1083,7 +1083,7 @@ const INTEGRITY_BUILDERS = {
       },
       observe(fx) {
         const out = integrityBlock(fx.repo, "heal-archived-epic-passed-gate-2");
-        assert.match(out, /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/, out);
+        assert.match(out, /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" <--no-deferrals \| --deferral "<epicId>:<section>">/, out);
       },
       produce: integrityProducer("heal-archived-epic-passed-gate-2"),
       reported: blockHas(),
@@ -1385,7 +1385,7 @@ const INTEGRITY_BUILDERS = {
         // Gate 2 R-M3 — the handoff carries WHICH tasks moved, not only where: `--reason` is optional for
         // `delivered`, so a remedy dropping it still exits 0 and only this assertion sees the loss.
         const out = integrityBlock(fx.repo, "delivered-release-epic-left-open");
-        assert.match(out, /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/, out);
+        assert.match(out, /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" <--no-deferrals \| --deferral "<epicId>:<section>">/, out);
       },
       produce: integrityProducer("delivered-release-epic-left-open"),
       reported: blockHas(),
@@ -1810,7 +1810,7 @@ registerBuilder("unconsidered:handoff-checkbox", {
     assert.ok(h, `deliveredBlockedBy names the handoff: ${JSON.stringify(u.deliveredBlockedBy)}`);
     assert.ok(h.remedy.length > 0, `the handoff blocker names a way past it: ${JSON.stringify(h)}`);
     assert.match(h.remedy.join("\n"),
-      /update-epic uc --status archived --outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/);
+      /update-epic uc --status archived --outcome delivered --carried-to <epicId> --reason "<which tasks moved>" <--no-deferrals \| --deferral "<epicId>:<section>">/);
   },
   produce: blockerRemedies,
   reported: (out) => out.length > 0,

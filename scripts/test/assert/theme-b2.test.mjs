@@ -195,8 +195,16 @@ test("gh-201: a failing Gate 1 is reported under the same label", () => {
 
 // ─────────────── #7 call-site sweep: no printer asks for the bare flag ───────────────
 
-test("no engine file asks dispositionInvocation() for a bare --no-deferrals", () => {
-  for (const f of ["integrity.mjs", "subcommands.mjs", "update-epic.mjs", "archive-gate.mjs", "releases.mjs"]) {
-    assert.doesNotMatch(engineCode(`scripts/lib/${f}`), /deferrals:\s*"bare"/, `${f} must not print a claim as a default`);
+test("no engine printer carries a bare --no-deferrals (the flag is a claim, never a default)", () => {
+  const dir = new URL("../../lib/", import.meta.url).pathname;
+  // Files that PARSE/ACCEPT the flag or document it as a claim; every other engine file is a printer.
+  const documents = new Set(["constants.mjs", "update-epic.mjs", "rules.mjs", "detour-stack.mjs", "help.mjs", "argv-surface.mjs"]);
+  const files = fs.readdirSync(dir).filter(f => f.endsWith(".mjs") && !documents.has(f));
+  for (const f of files) {
+    const code = engineCode(`scripts/lib/${f}`);
+    assert.doesNotMatch(code, /deferrals:\s*"bare"/, `${f} must not print a claim as a default`);
+    // archive-gate.mjs alone may name the flag: the placeholder constant, the explicit "bare" spelling, and refusal prose.
+    const bare = code.split("\n").filter(l => l.includes("--no-deferrals") && !/DEFERRAL_PLACEHOLDER|deferrals === "bare"|if there are none/.test(l));
+    assert.deepEqual(bare, [], `${f} prints a bare --no-deferrals`);
   }
 });

@@ -25,7 +25,7 @@ import { activeChangeIds, archivedChanges, epicProgress, isArchived, setAsideArc
 import { changeNamesClaimedByArtifacts } from "./source-artifacts.mjs";
 import { trackerKeyFlag, trackerKeyHolder } from "./tracker-dedup.mjs";
 import { CONTROL_CHARACTER, KNOWN_STATUSES, archiveDir, changesDir, asCode, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
-import { AGENT_OUTCOMES, setAsideDetail, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
+import { AGENT_OUTCOMES, DEFERRAL_PLACEHOLDER, setAsideDetail, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, isEngineStamped, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -827,7 +827,7 @@ export const CHECKS = [
           `\`${superseded.get(e.id)}\` declares that it supersedes this epic, which is still ` +
           `\`${e.status}\` — one piece of work carrying two live rows. End it with the record ` +
           `the consolidation implies: ${orNoRemedy(() => `\`update-epic ${printedId(e.id)} --status archived --outcome superseded ` +
-          `--reason "<what replaced it>" --no-deferrals\``)}` });
+          `--reason "<what replaced it>" ${DEFERRAL_PLACEHOLDER}\``)}` });
       }
       return out;
     },
@@ -929,7 +929,7 @@ export const CHECKS = [
             // finding says so, with the one command that replaces the guess with the fact.
             (marked ? ""
               : ` This release carries no delivery marker, so "delivered" was inferred from its members; once it HAS shipped, ` +
-                `record that: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --deliver\``)} — this check then reads the marker alone. If the release is still in flight, this is that guess being wrong.`) +
+                `record that: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --deliver\``)} — this check then reads the marker alone. If the release is still in flight, this is that guess being wrong: a member that is mid-flight stays silent once it is active, and one that was cut is recorded with the --defer form above.`) +
             (marked ? ` If the release did not ship after all: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --undeliver\``)}.` : "") });
         }
       }

@@ -315,7 +315,7 @@ export function blockedDelivered(epic) {
  *  integrity's `delivered-release-epic-left-open` and `heal-archived-epic-passed-gate-2`, and by
  *  blockedDelivered() as a checkbox handoff's remedy, so the three cannot drift apart. */
 export function deliveredArchiveInvocation(epic, carry = []) {
-  return orNoRemedy(() => `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals`);
+  return orNoRemedy(() => `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} ${DEFERRAL_PLACEHOLDER}`);
 }
 
 /** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that

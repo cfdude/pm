@@ -18,7 +18,7 @@
   `carriedTo`, tasks changed on disk).
 * **`archive-directory-has-no-epic` also reports an archive directory the date rule set aside,** in the same
   words `sync` uses for it.
-* **A printed archive invocation never carries a bare `--no-deferrals`.** Every printer of `dispositionInvocation()`
+* **A printed archive invocation never carries a bare `--no-deferrals`.** Every printed archive invocation (`dispositionInvocation()`, `deliveredArchiveInvocation()`, the superseded-epic remedy)
   now prints the deferral placeholder (`<--no-deferrals | --deferral "<epicId>:<section>">`) because the bare flag is
   a claim the agent has not made.
 * **`update-epic --status <non-archived>` no longer claims a status the heal undoes.** On an epic whose change
