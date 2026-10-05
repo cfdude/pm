@@ -460,6 +460,15 @@ export const EPIC_FLAGS = [
   // `add-many` flag — its state shape is an array of {at, actor, text} entries the batch loop
   // would silently drop, and rejecting the key by name is the whole point of #79.
   { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  // spec-sync-waive-for-skip-specs. The ONE record that a delivered change's archived spec deltas were
+  // INTENTIONALLY not applied to the main specs (an archive taken with `openspec archive --skip-specs`).
+  // The value IS the reason, so a waiver cannot be recorded without one. `delivered-epic-spec-deltas-absent`
+  // (spec-sync.mjs inSpecSyncScope) stops reporting an epic that carries it. Nullable: `--clear
+  // spec-deltas-waived` is the inverse, and the check reports the epic again. update-epic only — a waiver
+  // judges an archive that already happened, so no creation surface has one to carry.
+  { flag: "spec-deltas-waived", key: "specDeltasWaived", commands: ["update-epic"], nullable: true,
+    requires: REASON_REQUIRES,
+    clearNote: "`delivered-epic-spec-deltas-absent` reports this epic again if its archived spec deltas are absent from the main specs. Re-record with --spec-deltas-waived \"<why>\"" },
   { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append",
     setOnly: "an APPEND-ONLY trail — each entry records what was said and when, so removing one would edit history rather than clear a value" },
   // The tracker's OWN updated timestamp as of the last time the agent read that item's content
@@ -816,6 +825,9 @@ export const PURGE_KINDS = ["activity", "conflicts", "detours", "all"];
 // `--platform` IS declared, on the verbs that read it or are passed it, because a valueless one
 // silently fell back to the recorded platform while looking answered.
 export const VERB_FLAGS = [
+  // sync (#167). `--only` repeats and limits REGISTRATION to the named ids; `--dry-run` writes nothing.
+  { flag: "only", commands: ["sync"], repeats: true, requires: "a change, plan or archived-change id" },
+  { flag: "dry-run", commands: ["sync"], valueless: true },
   { flag: "from", commands: ["add-many"], requires: "a path, or `-` to read the batch from stdin" },
   { flag: "cascade", commands: ["remove-epic"], valueless: true },
   { flag: "mode", commands: ["set-review-mode"], placeholder: "off|standard|thorough" },
@@ -1042,7 +1054,7 @@ export const VERB_POSITIONALS = {
 };
 
 export const FLAGLESS_VERBS = [
-  "sync", "log-detour", "honcho-memory",
+  "log-detour", "honcho-memory",
   "reorder", "set-active", "clear-active", "set-gate-guard",
   "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused

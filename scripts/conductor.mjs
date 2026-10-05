@@ -27,7 +27,7 @@
  *                  AUTO-DETOUR entry when a small fix/chore commit's diff shape looks like an
  *                  unlogged minimal detour AND an epic is active (see
  *                  looksLikeUnloggedMinimalDetour)
- *   sync           add any new openspec changes to state.json as "untriaged"
+ *   sync           add any new openspec changes to state.json as "untriaged" (--dry-run previews; --only <id> selects)
  *   triage         INTAKE: the mechanical half of admitting an ask — a candidate set of
  *                  existing epics sharing distinctive vocabulary with it, the repo's lane
  *                  suggestion, and the backlog's shape. Emits `verdict: null`: whether two
@@ -102,7 +102,7 @@ import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render, renderVerb } from "./lib/render.mjs";
-import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
+import { init, brief, snapshot, commitNudge, syncVerb, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
@@ -342,7 +342,8 @@ function runInvocation(argv, io = {}) {
     // VERB_EFFECTS and the dispatch object so a new verb cannot arrive undeclared.
     // A verb whose whole write set is session bookkeeping writes NOTHING here, so there is no
     // discarded write to warn about — and one of them runs on every Bash tool call.
-    if (isDetachedTree() && !VERB_EFFECTS[cmd]?.detachedNoOp) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
+    const dryRun = VERB_EFFECTS[cmd]?.dryRunFlag && currentArgv().includes(VERB_EFFECTS[cmd].dryRunFlag);
+    if (isDetachedTree() && !VERB_EFFECTS[cmd]?.detachedNoOp && !dryRun) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
   }
 
   // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
@@ -411,7 +412,7 @@ function runInvocation(argv, io = {}) {
     brief,
     snapshot,
     "commit-nudge": commitNudge,
-    sync: () => sync(false),
+    sync: syncVerb,
     "log-detour": logDetour,
     "retract-detour": retractDetour,
     "push-detour": pushDetour,

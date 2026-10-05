@@ -320,6 +320,8 @@ const EXERCISE = {
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
   "--spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
+  // spec-sync-waive-for-skip-specs: the value IS the reason, stored verbatim; `--clear spec-deltas-waived` is its inverse.
+  "--spec-deltas-waived": { args: ["--spec-deltas-waived", "folded into the main spec by hand"], check: (e) => assert.equal(e.specDeltasWaived, "folded into the main spec by hand") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text

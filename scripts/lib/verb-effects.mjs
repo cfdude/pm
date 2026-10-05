@@ -89,7 +89,8 @@ export const VERB_EFFECTS = {
   // warned on EVERY Bash tool call in a deployed checkout — three stderr lines and a `git
   // describe` spawn per call, for a verb that does nothing.
   "commit-nudge": { effect: "mutates", hook: true, detachedNoOp: true, writes: ".conductor/commit-observe.json (reflog anchor + reported set, under its .lock), .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
-  sync: { effect: "mutates", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics" },
+  // `dryRunFlag`: with that flag present the verb writes NOTHING, so the detached-tree "discarded write" warning (conductor.mjs) is false and is not printed.
+  sync: { effect: "mutates", dryRunFlag: "--dry-run", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics (`--dry-run` writes nothing)" },
   "log-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only)" },
   "retract-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only), PROJECT.md" },
   // #151. The substantial-detour PUSH and POP were a documented HAND-EDIT of state.json until

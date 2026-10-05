@@ -108,6 +108,8 @@ const VERB_BASELINE = {
     "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"],
   "remove-epic": () => ["remove-epic", "other"],
   render: () => ["render"],
+  // sync (#167): `--dry-run` and `--only` made it a flag-bearing verb. The baseline registers nothing on this fixture.
+  sync: () => ["sync"],
   rules: () => ["rules", "--epic", "e1"],
   "rules-target": () => ["rules-target", "--platform", "claude-code"],
   "set-autonomy": () => ["set-autonomy", "e1", "--level", "off"],
@@ -339,6 +341,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "render --diff-summary",
     "set-lane-routing --clear",
     "set-tracker --remove",
+    "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");
 });

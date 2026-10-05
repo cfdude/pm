@@ -291,7 +291,7 @@ export function updateEpic() {
   // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
     errStream().write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--spec-deltas-waived \"<why the archived deltas were deliberately not applied>\"] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
@@ -559,6 +559,9 @@ export function updateEpic() {
   // The valueless --description / --notes loop that stood here is requireFlagValues()' job now.
   const description = str(f.description);
   const note = str(f.notes);
+  // spec-sync-waive-for-skip-specs: the reason a delivered change's archived spec deltas were deliberately
+  // not applied. Blank is refused by requireFlagValues() above; `--clear spec-deltas-waived` is the inverse.
+  const specDeltasWaived = str(f["spec-deltas-waived"]);
 
   // --add-story "<title>" appends { title, done: false } to the epic's inline stories[]
   // (creating the array if this is its first inline story) -- closes the recurring
@@ -940,6 +943,7 @@ export function updateEpic() {
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.
   if (description !== undefined) epic.description = description;
+  if (specDeltasWaived !== undefined) epic.specDeltasWaived = specDeltasWaived;
   if (note !== undefined) {
     if (!Array.isArray(epic.notes)) epic.notes = [];
     epic.notes.push(noteEntry(note));

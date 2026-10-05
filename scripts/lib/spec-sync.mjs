@@ -262,7 +262,12 @@ function readDeltas(dir, root) {
  *  "archived" here, whatever the stored status says, so integrity and the briefing read the same
  *  directory), its lane is openspec (absent read as openspec) and its outcome is `delivered`. */
 export function inSpecSyncScope(epic) {
-  return !!epic && isOpenspecLane(epic) && outcomeOf(epic) === "delivered" && archivedChangeDir(epic) !== null;
+  // A recorded WAIVER (`update-epic --spec-deltas-waived "<why>"`, the reason being its value) takes the
+  // epic out of scope: its deltas were deliberately not applied. Only a non-blank string counts, so a
+  // hand-written empty value waives nothing. The waiver removes the epic from the REPORT only; the
+  // epic's archived change still DISCHARGES others' obligations (compareSpecSync reads every change).
+  const waived = typeof epic?.specDeltasWaived === "string" && epic.specDeltasWaived.trim() !== "";
+  return !!epic && !waived && isOpenspecLane(epic) && outcomeOf(epic) === "delivered" && archivedChangeDir(epic) !== null;
 }
 
 /**

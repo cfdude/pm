@@ -856,7 +856,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
  *
  *  Returns the ids it registered, so the caller owns what is said about them.
  */
-export function backfillArchive(state, skipped = []) {
+export function backfillArchive(state, skipped = [], wanted = () => true) {
   // Identity is the DATE-PREFIX-STRIPPED id on both sides. An epic may itself carry a
   // date-prefixed id (this repository holds four such registrations), so comparing the stripped
   // archive id against the epic's literal id alone would miss it and register a duplicate —
@@ -868,7 +868,10 @@ export function backfillArchive(state, skipped = []) {
   for (const name of changeNamesClaimedByArtifacts(state)) held.add(strippedChangeId(name));
   const registered = [];
   for (const { id, dir } of archivedChanges()) {
-    if (held.has(id)) continue;
+    // `wanted` is `sync --only`'s selector and records that it SAW the id, held or not (so a held id
+    // is "already registered", not "matches nothing"). The default accepts everything and sees nothing.
+    const take = wanted(id);
+    if (held.has(id) || !take) continue;
     // The final registration step (design D4): an entry already held never reaches here. A name no
     // epic id can carry is reported by the caller, never stored.
     if (!STORABLE_EPIC_ID(id)) { skipped.push(dir); continue; }
@@ -904,27 +907,47 @@ export function backfillArchive(state, skipped = []) {
   return registered;
 }
 
-export function sync(quiet = false) {
+/** `sync [--dry-run] [--only <id>]…` — the verb entry. Parses the two flags and hands them to sync().
+ *  `--only` is repeatable and limits REGISTRATION to the named change, plan or archived-change ids;
+ *  `--dry-run` computes everything sync would do and writes nothing. */
+export function syncVerb() {
+  const flags = parseFlags(currentArgv().slice(3));
+  requireFlagValues("sync", flags);
+  const only = Array.isArray(flags.only) && flags.only.length ? new Set(flags.only) : null;
+  sync(false, { dryRun: flags["dry-run"] === true, only });
+}
+
+export function sync(quiet = false, { dryRun = false, only = null } = {}) {
   const state = loadState();
+  // `--only`'s selector. Every candidate id a registration site meets goes through it, which is what
+  // lets the run tell "this id is already registered" and "this id is a candidate" from "this id
+  // matches nothing" (refused below, before anything is written).
+  const seen = new Set();
+  const wanted = (id) => { if (only && only.has(id)) seen.add(id); return !only || only.has(id); };
+  // What a dry run reports instead of doing; the real run fills the same lists and ignores them.
+  const would = { flips: [], changes: [], plans: [], archives: [], healed: [] };
   const onDiskChanges = new Set(activeChangeIds());
   for (const e of state.epics) {
     if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
       e.status = "untriaged";
-      if (!quiet) errStream().write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
+      would.flips.push(e.id);
+      if (!quiet && !dryRun) errStream().write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
     }
   }
   const known = new Set(state.epics.map(e => e.id));
+  for (const id of known) wanted(id);
   let added = 0;
   // Every entry skipped for its NAME, counted into the final line: a sync that skipped something must
   // not read as a clean "synced" (sync-registers-ids-add-epic-refuses).
   let skipped = 0;
   for (const id of activeChangeIds()) {
+    if (!wanted(id)) continue;
     if (!known.has(id)) {
       // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
       // silent skip would read as a clean sync (design D4).
       if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); skipped++; continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
-      known.add(id); added++;
+      known.add(id); added++; would.changes.push(id);
     }
   }
   // THE RESOLUTION LADDER (#64/#69). Dedup used to key on the plan's FILENAME-DERIVED id alone,
@@ -941,6 +964,7 @@ export function sync(quiet = false) {
   const ignored = syncIgnoredArtifacts(state);
   for (const fname of planFiles()) {
     const id = fname.replace(/\.md$/, "");
+    if (!wanted(id)) continue;
     const planPath = path.join("docs", "superpowers", "plans", fname);
     const norm = normalizeArtifactPath(planPath);
 
@@ -1007,7 +1031,7 @@ export function sync(quiet = false) {
     }
     const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
-    known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
+    known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++; would.plans.push(id);
   }
   // EXEMPTION NOTE: registering a historical archived change does NOT go through archiveGate().
   // Like the heal below and the two archived-at-creation paths, it supplies no disposition,
@@ -1019,11 +1043,17 @@ export function sync(quiet = false) {
   // has been accounted for.
   const firstBackfill = !("archiveBackfilledAt" in state);
   const skippedArchives = [];
-  const backfilled = backfillArchive(state, skippedArchives);
+  const backfilled = backfillArchive(state, skippedArchives, wanted);
+  would.archives = backfilled;
   for (const dir of skippedArchives) errStream().write(unstorableSkipLine("archive directory", dir));
   skipped += skippedArchives.length;
-  if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
+  // A SELECTIVE run has not accounted for history, so it does not stamp the marker: the next full
+  // sync still announces the backfill it is. (A dry run never reaches a save, so the stamp is moot.)
+  if (firstBackfill && !only) state.archiveBackfilledAt = new Date().toISOString();
+  // Snapshot HERE, after the planned flip above and the registrations: only a status the HEAL changes is drift.
+  const statusBefore = new Map(state.epics.map(e => [e.id, e.status]));
   reconcileArchived(state);
+  would.healed = state.epics.filter(e => statusBefore.has(e.id) && statusBefore.get(e.id) !== e.status).map(e => e.id);
   // An archive directory that matches an epic by NAME but that the resolver's date rule set aside is
   // neither that epic's archive nor registered by the backfill (the name is held), so it would sit
   // unexplained. Said on EVERY run, quiet included, like the unstorable skips: it is the only report
@@ -1035,6 +1065,14 @@ export function sync(quiet = false) {
       setAside++;
     }
   }
+  // A `--only` id that is neither a candidate nor an existing epic is a typo or a stale id. Refused
+  // BEFORE the save, on a dry run too, so it never reads as a clean selective sync.
+  const unmatched = only ? [...only].filter(id => !seen.has(id)) : [];
+  if (unmatched.length) {
+    die(`conductor: sync --only named ${unmatched.map(id => `'${escapeControls(id)}'`).join(", ")}, which matches no ` +
+      "unregistered change, plan or archived change and no existing epic — nothing was written\n");
+  }
+  if (dryRun) { reportSyncDryRun(would, { firstBackfill, only, skipped }); return; }
   const saved = saveState(state);
   // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
   // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
@@ -1076,6 +1114,25 @@ export function sync(quiet = false) {
         "sources only; nothing was read from your tracker(s), and nothing should be\n");
     }
   }
+}
+
+/** The `sync --dry-run` answer: what a real run would register, flip and heal, on stdout, with the same
+ *  `conductor:` prefix the real run's lines carry. It is a READ — no `saveState`, no render, no marker. */
+function reportSyncDryRun(would, { firstBackfill, only, skipped }) {
+  const ids = (xs) => xs.map(escapeControls).join(", ");
+  const total = would.changes.length + would.plans.length + would.archives.length;
+  const L = [`conductor: sync --dry-run — ${total} epic(s) would be registered; nothing was written`];
+  if (would.changes.length) L.push(`  would register ${would.changes.length} change(s) as untriaged: ${ids(would.changes)}`);
+  if (would.plans.length) L.push(`  would register ${would.plans.length} plan(s) as untriaged: ${ids(would.plans)}`);
+  if (would.archives.length) {
+    L.push(`  would register ${would.archives.length} archived change(s) as archived: ${ids(would.archives)}`);
+    if (firstBackfill && !only) L.push("  this would be the one-time archive BACKFILL: it alters the epic counts and stamps archiveBackfilledAt");
+  }
+  if (would.flips.length) L.push(`  would flip planned -> untriaged: ${ids(would.flips)}`);
+  if (would.healed.length) L.push(`  would heal archive drift (status change): ${ids(would.healed)}`);
+  if (skipped) L.push(`  ${skipped} entr${skipped === 1 ? "y" : "ies"} skipped — named on stderr, none would be registered`);
+  if (!total && !would.flips.length && !would.healed.length) L.push("  nothing to register");
+  outStream().write(L.map(escapeControls).join("\n") + "\n");
 }
 
 export function logDetour() {

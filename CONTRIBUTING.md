@@ -251,6 +251,28 @@ later certify prunes it, once it is more than 24 hours old. One known limit, sha
 tracked symlink is exported as a symlink, so an absolute one reads outside the index; this repository
 tracks none.
 
+### Adding an engine verb — the tables, and the seed step
+
+A verb is registered by hand in several tables that nothing derives from one another (gh#206).
+`scripts/test/assert/verb-registration.test.mjs` reads the dispatch table out of `scripts/conductor.mjs`
+and checks all of them in ONE run, naming every missing row, so you do not find them one suite run at a
+time. The rows:
+
+| table | file | what goes in it |
+| --- | --- | --- |
+| dispatch table, `USAGE` | `scripts/conductor.mjs` | the handler and the verb's name in the usage line |
+| `VERB_POSITIONALS` | `scripts/lib/constants.mjs` | how many positional arguments it reads |
+| flag surface | `scripts/lib/constants.mjs` | `VERB_FLAGS` / `EPIC_FLAGS` rows naming it, or `FLAGLESS_VERBS` |
+| `VERB_EFFECTS` | `scripts/lib/verb-effects.mjs` | `read-only` or `mutates`, and what it writes |
+| `DISPATCH_BASELINE` | `scripts/test/functional/verb-surface.test.mjs` | one working invocation |
+| `VERB_BASELINE` | `scripts/test/functional/conductor-31.test.mjs` | one working invocation, for a verb that declares `VERB_FLAGS` |
+
+**The seed step.** A `DISPATCH_BASELINE` entry runs in an empty, `init`ed repository. A verb that needs
+state no other verb can write gives its entry a `seed: (cwd) => { … }` hook: setup that is not a verb call
+(`retract-detour` seeds an automatic `detours.log` row, because no verb writes one in a repository without
+git). `pre: [[verb, args…]]` runs verbs first; `local` and `input` are the other optional keys. Every
+entry needs `args`. A flag-bearing verb also gets a command doc under `commands/`.
+
 ### Parallel worktrees
 
 Certify and commit in each worktree on its own, with no lock. Every entry is its own file, named by

@@ -404,6 +404,7 @@ x("git.mjs", "differsFromHead", {
 x("git.mjs", "resolveCommits", {
   "v": 1,
 }, "not-output", "a git argument — one line of the batch-check stdin payload, peeled to ^{commit}. It was SINK-FLOW inside the execFileSync `input` option until 4.2 moved the call to the injected gateway, which is why the judgment moves from the sink heuristic to here. A value reaching this point has already had whitespace and control characters filtered out above it, and the loop's own `unresolved` message escapes every value it names");
+j("subcommands.mjs", "reportSyncDryRun", ALL, "sink-flow", "the `sync --dry-run` report: every line is pushed onto L and written through L.map(escapeControls); the ids it names are escapeControls()-ed again at interpolation, and the counts are numbers");
 j("spec-sync.mjs", "specSyncDetail", ALL, "sink-flow", "an integrity finding's detail (handoff-demand-blind-spots D6): its only caller is the delivered-epic-spec-deltas-absent CHECKS entry, printed through formatIntegrity()'s L.map(escapeControls); header names are JSON-quoted and the root is shellQuote()d");
 x("spec-sync.mjs", "compareSpecSync", {
   "u.side": 1,

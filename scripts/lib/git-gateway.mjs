@@ -134,9 +134,11 @@ export function realGit(context) {
       execFileSync("git", ["rev-parse", "--git-path", name],
         { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(),
 
-    // created-at.mjs:99 — the pickaxe over a fixed string, oldest first.
+    // created-at.mjs — the pickaxe over a fixed string, over FULL history (no simplification, so a
+    // side-branch commit that introduced the string is not pruned behind a merge). The caller picks
+    // the earliest match by DATE (earliestIntroduction), not by position.
     logPickaxe: (needle, pathspec) =>
-      execFileSync("git", ["log", `-S${needle}`, "--reverse", "--format=%H %cI", "--", pathspec],
+      execFileSync("git", ["log", `-S${needle}`, "--full-history", "--reverse", "--format=%H %cI", "--", pathspec],
         { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }),
 
     // ── lib/subcommands.mjs, 4 sites ───────────────────────────────────────────────────────────
@@ -228,7 +230,7 @@ export const GIT_OPERATIONS = [
   { name: "revListNotReached", command: "git rev-list <commits...> ^<head>", asks: "which of these are not reached by head" },
   { name: "isShallowRepository", command: "git rev-parse --is-shallow-repository", asks: "is this a shallow clone" },
   { name: "gitPath", command: "git rev-parse --git-path <name>", asks: "a git-internal path, relative to this directory" },
-  { name: "logPickaxe", command: "git log -S<needle> --reverse --format=%H %cI -- <pathspec>", asks: "when a fixed string first appeared in these paths" },
+  { name: "logPickaxe", command: "git log -S<needle> --full-history --reverse --format=%H %cI -- <pathspec>", asks: "when a fixed string first appeared in these paths, across every branch" },
   { name: "diffTreeNames", command: "git diff-tree -z --no-commit-id --name-only -r --root <sha>", asks: "the names one commit changed" },
   { name: "showPrefix", command: "git -c core.quotePath=false rev-parse --show-prefix", asks: "this directory's prefix inside the git tree" },
   { name: "commitSubject", command: "git log -1 --format=%s <sha>", asks: "one commit's subject line" },

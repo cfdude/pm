@@ -72,13 +72,39 @@ function shallowBoundaries() {
   } catch { return new Set(); }
 }
 
+/** THE EARLIEST commit in the pickaxe's `<sha> <iso date>` lines, by DATE, or `null`.
+ *
+ *  created-at-recovery-dates-too-late: the recovery used to take the FIRST line of the pickaxe's output
+ *  and call it the introducing commit. That is the first commit in git's TRAVERSAL order, which is not
+ *  the earliest one: history simplification prunes a side branch whose merge is TREESAME to the other
+ *  parent, so the commit that really introduced the id (06-30) is never listed and a later one (07-09)
+ *  is stamped instead (measured in the fleet on knowledge-store, where it then made the archive date
+ *  rule disagree with the stamp). The query now asks for full history, and this picks the minimum
+ *  instant among every match, so neither the traversal order nor a skewed committer date chooses.
+ *
+ *  A GRAFTED commit (a shallow boundary) that is itself the earliest match answers `null`: at a graft
+ *  point "introduced here" and "already existed" are indistinguishable, so absence is the honest answer.
+ *  Unparseable lines are ignored; no parseable line is `null`. Pure. */
+export function earliestIntroduction(output, grafted = new Set()) {
+  let best = null;
+  for (const line of String(output || "").split("\n")) {
+    const [sha, date] = line.trim().split(" ");
+    const t = Date.parse(date || "");
+    if (!sha || Number.isNaN(t)) continue;
+    if (!best || t < best.t) best = { sha, date, t };
+  }
+  if (!best || grafted.has(best.sha)) return null;
+  return best.date;
+}
+
 /** When `epicId` FIRST appeared in the tracked state file, as an ISO-8601 committer date, or
  *  `null` when this checkout holds no evidence.
  *
  *  `-S` is git's pickaxe over a FIXED string (not `-G`, which is a regex), so an id containing
- *  characters a regex would read specially is still matched literally. `--reverse` and then the
- *  FIRST line, rather than `-n 1`: git applies `-n` before reversing, so `-n 1 --reverse` returns
- *  the NEWEST commit — the opposite of the one being asked for.
+ *  characters a regex would read specially is still matched literally. Over FULL history, and the
+ *  earliest match BY DATE (earliestIntroduction) rather than the first line or `-n 1`: git applies
+ *  `-n` before reversing (so `-n 1 --reverse` returns the NEWEST commit), and its default history
+ *  simplification can prune the side branch that really introduced the id.
  *
  *  No `--all`. HEAD-only traversal is exactly what produces the per-checkout variation this verb
  *  exists to be re-runnable against: a checkout that cannot see the introducing commit must
@@ -93,12 +119,7 @@ function shallowBoundaries() {
 export function introducedAt(epicId, grafted = shallowBoundaries()) {
   if (typeof epicId !== "string" || !epicId) return null;
   try {
-    const out = gitOps().logPickaxe(idNeedle(epicId), STATE_PATHSPEC);
-    const first = out.split("\n").map(l => l.trim()).filter(Boolean)[0];
-    if (!first) return null;
-    const [sha, date] = first.split(" ");
-    if (grafted.has(sha)) return null;
-    return date || null;
+    return earliestIntroduction(gitOps().logPickaxe(idNeedle(epicId), STATE_PATHSPEC), grafted);
   } catch {
     // No git, no repository, no commits yet. Every one of those is "no evidence", which is the
     // same answer as "the history does not reach it" and calls for the same response.

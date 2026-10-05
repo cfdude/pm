@@ -215,6 +215,50 @@ test("2.1: the verb recovers a real date for an id whose introducing commit is i
     "two epics introduced by two commits a minute apart do not share a date");
 });
 
+test("2.1b: the date is the EARLIEST introducing commit even when a merge hides it from the default log (the knowledge-store case)", () => {
+  // created-at-recovery-dates-too-late. Epic `zeta` is introduced on a side branch on 06-30. The trunk
+  // later carries the SAME state change (07-09) and merges the branch. The merge is TREESAME to the
+  // trunk parent, so git's default history simplification PRUNES the side branch: a plain pickaxe
+  // names 07-09, the epic was stamped 07-09, and every archive dated 07-01..07-06 then read as
+  // predating it. The recovery must date it 06-30, the commit that really introduced it.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  git(cwd, "init", "-q");
+  git(cwd, "config", "user.email", "test@example.com");
+  git(cwd, "config", "user.name", "Test");
+  git(cwd, "add", "-A");
+  git(cwd, "commit", "-q", "-m", "chore: baseline");
+  const trunk = git(cwd, "branch", "--show-current").trim();
+  const withZeta = { version: 1, active: null, detourStack: [], pmVersion: "0.39.0", epics: [
+    { id: "zeta", title: "zeta", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false }] };
+  const commitAt = (when, message) => {
+    git(cwd, "add", "-A");
+    execFileSync("git", ["commit", "-q", "-m", message],
+      { cwd, encoding: "utf8", env: { ...process.env, GIT_AUTHOR_DATE: when, GIT_COMMITTER_DATE: when } });
+  };
+  git(cwd, "checkout", "-q", "-b", "side");
+  writeState(cwd, withZeta);
+  commitAt("2026-06-30 12:00:00 +0000", "chore: register zeta on the side branch");
+  git(cwd, "checkout", "-q", trunk);
+  writeState(cwd, withZeta);
+  commitAt("2026-07-09 12:00:00 +0000", "chore: register zeta on trunk");
+  execFileSync("git", ["merge", "-q", "--no-ff", "-m", "merge side", "side"],
+    { cwd, encoding: "utf8", env: { ...process.env, GIT_AUTHOR_DATE: "2026-07-10 12:00:00 +0000", GIT_COMMITTER_DATE: "2026-07-10 12:00:00 +0000" } });
+
+  const pickaxe = (...extra) => git(cwd, "log", "-S", '"id": "zeta"', ...extra, "--reverse", "--format=%cI", "--",
+    ".conductor/state.json").split("\n").filter(Boolean);
+  // Compared as instants: the tool prints a UTC offset as `Z` or `+00:00` depending on its version.
+  const at = (iso) => Date.parse(iso);
+  assert.equal(at(pickaxe()[0]), at("2026-07-09T12:00:00Z"),
+    "fixture sanity: the DEFAULT log really does prune the side branch and name the later commit");
+  assert.ok(pickaxe("--full-history").some(d => at(d) === at("2026-06-30T12:00:00Z")),
+    "fixture sanity: full history still sees the real introduction");
+
+  recover(cwd);
+  assert.equal(at(epicOf(cwd, "zeta").createdAt), at("2026-06-30T12:00:00Z"),
+    "dated from the introducing commit, not from the first commit the simplified log happens to list");
+});
+
 test("2.2: degradation — no git repository yields ABSENT, not an error and not a date", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

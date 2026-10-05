@@ -1024,6 +1024,14 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "An outward-mirrored epic owes the same look as an inward-born one: a linked item accumulates",
     "third-party context regardless of which way it was born. Origin decides only whose ask wins",
     "when the item and a local spec disagree.",
+    // openspec-planning-completeness-instruction: the OBLIGATION, deliberately naming NO OpenSpec
+    // command. How to check belongs to the installed OpenSpec and moves with its version; baking one
+    // invocation into pm's rules is the version-specific coupling this rules block avoids elsewhere.
+    "An OpenSpec-lane epic owes one more check before it is treated as ready to apply: confirm its",
+    "planning is COMPLETE — its proposal, design, specs and tasks all exist and agree with one",
+    "another. If any is missing, or one contradicts another, finish the planning first; never start",
+    "building against a partial plan. This is an obligation and not a command: pm names no OpenSpec",
+    "invocation for it, because how to check belongs to the OpenSpec you have installed.",
   );
   lines.push(RULES_END, "");
   // THE LINE SINK (user-text-never-forges-output): each entry is one line of the block, so a stored
