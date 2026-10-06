@@ -1833,7 +1833,7 @@
       "id": "codex-platform-support",
       "title": "Port pm to Codex CLI at full parity -- the first non-Claude-Code platform, deliberately done under the parity gates rather than before them. Design doc: docs/superpowers/specs/2026-07-25-codex-platform-support-design.md. Verified hands-on against Codex CLI 0.145.0 (both secondary research methods were wrong): hooks/multi_agent/skill_search are all stable+default-on, there is a Git-sourced plugin marketplace, and Codex's hook schema is near-identical to Claude Code's including hookSpecificOutput.additionalContext injection, a compact source value, and exit-code-2 blocking -- so pm's briefing-after-compaction and gate-guard port essentially intact. Architecture: per-platform dirs (.codex-plugin/ + codex/{hooks,skills,commands}/) with the existing platform-neutral scripts/ engine shared. Build order is hard-part-first: a throwaway probe proving hooks actually fire and inject before any layout work.",
       "priority": "P3",
-      "status": "queued",
+      "status": "later",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -1861,7 +1861,15 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "specPath": "docs/superpowers/specs/2026-07-25-codex-platform-support-design.md",
-      "createdAt": "2026-07-28T19:25:39-07:00"
+      "createdAt": "2026-07-28T19:25:39-07:00",
+      "notes": [
+        {
+          "at": "2026-10-06T19:57:52.525Z",
+          "actor": "agent",
+          "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
+        }
+      ],
+      "touchedAt": "2026-10-06T19:57:52.529Z"
     },
     {
       "id": "hermes-platform-support",
@@ -2088,7 +2096,7 @@
       "id": "rules-block-cli-fallback",
       "title": "rules block: CLI fallback for any platform lacking slash commands or hitting a namespace collision",
       "priority": "P3",
-      "status": "planned",
+      "status": "later",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2106,7 +2114,14 @@
         }
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
-      "touchedAt": "2026-09-10T04:38:24.521Z"
+      "touchedAt": "2026-10-06T19:57:51.747Z",
+      "notes": [
+        {
+          "at": "2026-10-06T19:57:51.743Z",
+          "actor": "agent",
+          "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
+        }
+      ]
     },
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
@@ -3028,10 +3043,19 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false,
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "notes": [
+        {
+          "at": "2026-10-06T19:57:48.472Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — a new guard on /opsx:apply; under-processing costs the record (intake rule 4)"
+        }
+      ],
+      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "release": "0.52.0"
     },
     {
       "id": "openspec-planning-completeness-instruction",
@@ -3800,7 +3824,7 @@
       "id": "gh-114-lane-routing-blind-to-product",
       "title": "Lane routing reads the ask and nothing else",
       "priority": "P2",
-      "status": "queued",
+      "status": "later",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3815,11 +3839,21 @@
           "at": "2026-08-29T14:55:22.370Z",
           "actor": "agent",
           "text": "0.36.0 (04fdd8a) shipped the instruction half: suggestion demoted to an input, judgment half named as absent, tie-break made directional away from the lightest lane. The primary complaint stays OPEN — routing has no product/milestone layer to weigh and the engine cannot invent one without becoming an integration layer."
+        },
+        {
+          "at": "2026-10-06T19:57:50.963Z",
+          "actor": "agent",
+          "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
+        },
+        {
+          "at": "2026-10-06T19:57:53.291Z",
+          "actor": "agent",
+          "text": "OPEN QUESTION (Rob 2026-10-06): lane routing wants product/milestone context pm does not hold. The 'instruction layer, never integration layer' rule is a CONSUMER-surface rule; contributor/dogfood tooling (measurement, EDD harness, analysis) may legitimately go further. Before building, decide whether this ask is consumer-facing (then it conflicts with the rule and needs a design conversation) or contributor-only."
         }
       ],
       "createdAt": "2026-08-25T16:36:38-07:00",
       "externalUpdatedAt": "2026-08-29T14:55:03Z",
-      "touchedAt": "2026-09-15T04:39:45.282Z"
+      "touchedAt": "2026-10-06T19:57:53.294Z"
     },
     {
       "id": "gh-115-gates-blind-to-absent-edit",
@@ -5481,12 +5515,21 @@
       "lane": "external",
       "links": [],
       "reconcileNeeded": false,
-      "description": "Filed while shipping 0.39.0. The fix is in another repository, which is why the lane is external.",
+      "description": "TruffleHog 3.96.0 (pinned in cfdude/.github security-trivy.yml, SHA-pinned from this repo's .github/workflows/security.yml) flags test_-prefixed pytest names as a verified Lob key; 3.97.0 corrects the detector. Worked around by renaming two test functions. Fix needs a bump to >=3.97.0 (+ new sha256) in cfdude/.github, then re-pin security.yml here. VERIFIED 2026-10-06: cfdude/.github main still installs 3.96.0, so it is NOT fixed yet (an earlier claim that it was fixed elsewhere was unverified and wrong). It is a SHARED workflow every consuming repo uses: announce it as an out-of-repo write; verify against the real string test_a_runner_without_stderr_still_works, not a synthetic one.",
       "externalId": "172",
       "externalUrl": "https://github.com/cfdude/pm/issues/172",
       "externalUpdatedAt": "2026-09-05T09:41:51Z",
       "attributedCommits": [],
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "notes": [
+        {
+          "at": "2026-10-06T19:58:02.156Z",
+          "actor": "agent",
+          "text": "2026-10-06 Rob asked to consider this as a 0.52.0 bug fix. Lane kept; the build step is in cfdude/.github, then re-pin here."
+        }
+      ],
+      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "release": "0.52.0"
     },
     {
       "id": "gh-cfdude-pm-168",
@@ -6408,7 +6451,7 @@
       "externalUpdatedAt": "2026-09-08T17:49:40Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:20:59.267Z",
-      "touchedAt": "2026-10-05T22:07:30.407Z",
+      "touchedAt": "2026-10-06T19:58:03.743Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:30.522Z",
@@ -6417,7 +6460,8 @@
         }
       ],
       "startedAt": "2026-10-05T21:51:49.812Z",
-      "trackerRefreshNeeded": true
+      "trackerRefreshNeeded": true,
+      "release": "0.52.0"
     },
     {
       "id": "gh-cfdude-pm-182",
@@ -7090,14 +7134,15 @@
       "externalUpdatedAt": "2026-09-14T18:17:01Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:17.982Z",
-      "touchedAt": "2026-09-14T18:18:20.119Z",
+      "touchedAt": "2026-10-06T19:58:03.743Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:20.116Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
-      ]
+      ],
+      "release": "0.52.0"
     },
     {
       "id": "gh-cfdude-pm-194",
@@ -10006,14 +10051,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-17T05:13:42.425Z",
-      "touchedAt": "2026-09-17T05:13:42.893Z",
+      "touchedAt": "2026-10-06T19:58:03.743Z",
       "notes": [
         {
           "at": "2026-09-17T05:13:42.890Z",
           "actor": "agent",
           "text": "Evidence (0.45.0 Gate 2, scratch repros under the session scratchpad gate2-45-nudge/l2): 200 commits since the anchor took 8 s and printed 24 KB of hook context; a 330-commit window held the lock ~10 s. Partial-line anchor not reproduced. Old-format commit-observe.json {size,line} from unreleased dev builds reads as no anchor (acceptable: never on main). Spec write-site table in conductor-record omits commit-observe.json.lock/.lock.break and the retract-detour non-hex refusal is not listed in the commit-observation refusal scenario — declined at archive to avoid staling the release cross-spec review; fold into this epic's spec touch."
         }
-      ]
+      ],
+      "release": "0.52.0"
     },
     {
       "id": "gh-cfdude-pm-207",
@@ -11066,7 +11112,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-25T21:57:39.453Z",
-      "touchedAt": "2026-09-25T21:57:39.457Z"
+      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "release": "0.52.0"
     },
     {
       "id": "spec-sync-waive-for-skip-specs",
@@ -11663,7 +11710,8 @@
       "externalUpdatedAt": "2026-09-23T19:40:15Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:08.328Z",
-      "touchedAt": "2026-09-28T22:28:57.641Z"
+      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "release": "0.52.0"
     },
     {
       "id": "gh-cfdude-pm-211",
@@ -11695,7 +11743,8 @@
       "externalUpdatedAt": "2026-09-18T17:37:17Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:10.612Z",
-      "touchedAt": "2026-09-28T17:11:10.616Z"
+      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "release": "0.52.0"
     },
     {
       "id": "certification-record-redesign",
@@ -12427,7 +12476,7 @@
       "priority": "P3",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -12438,7 +12487,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T23:10:17.077Z",
-      "touchedAt": "2026-10-01T23:10:17.082Z"
+      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "notes": [
+        {
+          "at": "2026-10-06T19:57:49.395Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — new integrity check sharing the Gate 1 surface with openspec-gate1-guard-on-apply"
+        }
+      ],
+      "release": "0.52.0"
     },
     {
       "id": "conductor-tells-the-truth-gate2-unreviewed-range",
@@ -12531,8 +12588,8 @@
       "description": "Rob 2026-10-06: a postmortem must say WHERE tokens went, not just that an epic burned millions. Output shaped like Claude Code's usage report: how much is in context, in tools, in sub-agent work, and how tokens distribute across models; per phase and per role. Detect inefficiencies and name them: sub-agent spend in the millions = an execution problem — was planning too thin for execution to be unambiguous, did the executor make too many decisions alone, did it hit bugs/failing tests/QA loops, did a model tier mismatch (Opus on mechanical work, Haiku on design). Cross-epic trend: average spend per epic across releases, flagging worsening. Recommendations are rendered from rules over the ledger, not model calls. Depends on the ledger from token-spend-tracking-per-epic.",
       "attributedCommits": [],
       "createdAt": "2026-10-06T17:29:46.271Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-06T19:58:04.528Z",
+      "release": "0.53.0"
     },
     {
       "id": "spend-budget-and-stuck-loop-guard",
@@ -12609,7 +12666,28 @@
       "description": "Rob 2026-10-06: log the decision-making process — that a specific decision was made and cost ~750,000 tokens — as self-reflection to find process improvements, not as raw spend. A verb to record a decision (what, why, alternatives considered, tokens spent reaching it, epic/phase) attached to the epic, rendered in the postmortem alongside the spend breakdown; likely built on the activity log. Off with the rest of the spend feature by default. Depends on the ledger.",
       "attributedCommits": [],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
+      "touchedAt": "2026-10-06T19:58:04.528Z",
+      "release": "0.53.0"
+    },
+    {
+      "id": "rules-block-session-cost",
+      "title": "Measure and cap the per-session cost of pm's managed rules block (about 40 KB, roughly 10K tokens, in this repo) plus the SessionStart brief",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "lean-subagent-bootstrap",
+          "reason": "agents already skip re-reading CLAUDE.md; this shrinks the part they cannot skip"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Found by the 0.52.0 backlog assessment 2026-10-06: the managed rules block in CLAUDE.md is 40,087 bytes (lines 111-624), roughly 10K tokens by bytes/4, paid by EVERY session and every dispatched agent, and no epic measures or caps it. A per-epic ledger never sees it. Measure per-repo size, decide what can move to on-demand skills (a task item beats a prose bullet for adoption, so keep the required items), cap the brief, and report block size in upgrade/status. Must not drop any required task item (14/14 vs 3/15 adoption evidence).",
+      "attributedCommits": [],
+      "createdAt": "2026-10-06T19:57:50.197Z",
+      "touchedAt": "2026-10-06T19:58:03.743Z",
       "release": "0.52.0"
     }
   ],
@@ -12621,7 +12699,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1884,
+  "revision": 1895,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13179,7 +13257,27 @@
     },
     {
       "id": "0.52.0",
-      "intent": "Token spend you can see: measure each epic's tokens by phase, role and model (off by default, on here), analyse where they went and what to change, guard against runaway and stuck loops, align model tiers, and log what decisions cost",
+      "intent": "Safe to leave running: stop runaway and stuck-loop token burn, stop hooks injecting large context, stop silent wrong records, measure spend (off by default, on here), and align model tiers",
+      "deferred": [],
+      "amendments": [
+        {
+          "op": "unmember",
+          "epic": "decision-cost-log",
+          "reason": "deferred to 0.53.0 — needs the ledger",
+          "at": "2026-10-06T19:58:02.939Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "token-spend-analysis-and-recommendations",
+          "via": "member",
+          "to": "0.53.0",
+          "at": "2026-10-06T19:58:04.525Z"
+        }
+      ]
+    },
+    {
+      "id": "0.53.0",
+      "intent": "Token spend analysis: where the tokens went and what to change, plus the decision cost log, built on one release of ledger data",
       "deferred": []
     }
   ],
