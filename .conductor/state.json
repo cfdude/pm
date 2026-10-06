@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "store-owns-claude-md-managed-block",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10784,7 +10784,7 @@
       "id": "store-owns-claude-md-managed-block",
       "title": "Make init's repository-file writes (the CLAUDE.md managed block AND .gitignore) store-owned, so the tests that reach them can leave the disk (last lever on the per-commit gate)",
       "priority": "P3",
-      "status": "active",
+      "status": "planned",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -10802,7 +10802,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-10-05T22:07:30.407Z",
+      "touchedAt": "2026-10-06T19:36:18.057Z",
       "notes": [
         {
           "at": "2026-09-25T21:14:34.648Z",
@@ -10815,7 +10815,6 @@
           "text": "0.51.0 conditional: include only if an n=3 quiet-machine measurement (no agents running, empty-preload control) still shows the file rung dominated by init's CLAUDE.md/.gitignore writes; otherwise --defer it from 0.51.0 with the numbers"
         }
       ],
-      "release": "0.51.0",
       "startedAt": "2026-10-05T22:07:30.403Z"
     },
     {
@@ -12622,7 +12621,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1882,
+  "revision": 1884,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13151,7 +13150,13 @@
     {
       "id": "0.51.0",
       "intent": "Tests and records you can trust: the certification redesign that broke parallel work in 0.50.0, a guard that no test can write the real record, the fragile and flaky test surfaces (Theme A); and the gate/record verbs refusing what they should, stale Gate 1 detection, archive and date-rule follow-ups, tracker-duplicate reporting (Theme B). store-owns ships only if a quiet-machine measurement still justifies it.",
-      "deferred": [],
+      "deferred": [
+        {
+          "epic": "store-owns-claude-md-managed-block",
+          "reason": "ships only if a quiet-machine measurement still justifies it; no measurement taken, so cut from 0.51.0 and held for a later release",
+          "recordedAt": "2026-10-06T19:36:17.116Z"
+        }
+      ],
       "crossSpecReview": {
         "verdict": "pass",
         "reviewedAt": "2026-09-30T03:39:55.674Z",
