@@ -12385,17 +12385,23 @@
         }
       ],
       "reconcileNeeded": false,
-      "description": "Rob 2026-10-01: token spend is an invisible problem. Measure each epic from the moment it is planned and specced until it is released, and break the total down by phase so process changes target real cost: spec/plan, build, test runs, review, gate retries and autonomous fix loops. Flag the outliers (cost or wall-clock). Config-gated, OFF by default for end users (measuring costs tokens), ON in this repo. Evidence for need: 0.51.0 burned ~11M sub-agent tokens on 5 of 27 epics, 70% on one epic (7 Gate 1 + 3 Gate 2 rounds); an overnight autonomous run with failing gates and five sub-agents spent a weekly allowance. Baselines to compare against (sub-agent tokens, orchestrator excluded): certification-record-redesign review 5.8M / build 2.0M; batch-1 review 335K / build 1.04M; batch-2 3 epics ~694K (~231K/epic). Constraint: the engine is an instruction layer and never opens a network connection; the data source and who records it (agent vs engine reading local transcripts) is the first design decision.",
+      "description": "FOUNDATION of the token-spend theme (0.52.0). Rob 2026-10-01/10-06: token spend is an invisible problem. Record each epic's spend from the moment it is planned/specced until it is released (push to main where there is no release), tagged by PHASE (plan/spec, build, test, review, gate-retry, orchestrator), by ROLE and by MODEL, so later epics can analyse it. Config flag: OFF by default for end users (measuring costs tokens), ON in this repo for dogfooding; set in the execution-profile layers. DATA SOURCE (decision, recommended): an optional Claude Code adapter reads the local transcript files (~/.claude/projects/<repo>/*.jsonl, a local file read, no network, no model call) and a platform-neutral 'record-spend' verb is the fallback an agent runs with a sub-agent report's figures. Engine stays an instruction layer and zero-dependency. Evidence for need: 0.51.0 burned ~11M sub-agent tokens on 5 of 27 epics (70% on one: 7 Gate 1 + 3 Gate 2 rounds); an overnight autonomous run with failing gates and five sub-agents spent a weekly allowance. Baselines (sub-agent tokens, orchestrator excluded): certification-record-redesign review 5.8M/build 2.0M; batch-1 review 335K/build 1.04M; batch 2 ~231K/epic; B1 ~93K/epic; B2 ~73K/epic; B3 ~144K/epic. Goal: show whether average spend per epic is falling or growing across epics.",
       "notes": [
         {
           "at": "2026-10-01T07:33:57.580Z",
           "actor": "agent",
           "text": "lane: openspec — new capability, cross-system, >8h. Triage 2026-10-01: no duplicate (nearest lexical hits were unrelated archived epics). Relates to execution-profile-layered-settings (the flag lives in the profile layers) and pm activity log."
+        },
+        {
+          "at": "2026-10-06T17:29:45.503Z",
+          "actor": "agent",
+          "text": "2026-10-06 Rob asked for this in 0.51.0; recommendation taken instead: split into a themed 0.52.0 release (5 epics) so 0.51.0 ships now — adding it would force a new Gate 1 + cross-spec review + a second converged review on a finished 24-epic release, delaying the fixes that already cut process cost. This epic is the foundation the other four build on."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-01T07:33:57.581Z",
-      "touchedAt": "2026-10-01T07:33:57.585Z"
+      "touchedAt": "2026-10-06T17:29:49.360Z",
+      "release": "0.52.0"
     },
     {
       "id": "integrity-reports-legacy-duplicate-attributions",
@@ -12502,6 +12508,110 @@
       "attributedCommits": [],
       "createdAt": "2026-10-05T21:51:24.361Z",
       "touchedAt": "2026-10-05T21:51:24.375Z"
+    },
+    {
+      "id": "token-spend-analysis-and-recommendations",
+      "title": "Token spend analysis and postmortem recommendations: breakdown by context, tools, sub-agents and model; per-epic trend (is average spend per epic falling or growing); outlier flags; for any epic that spent heavily, the specific areas to improve",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "token-spend-tracking-per-epic",
+          "reason": "reads its ledger"
+        },
+        {
+          "type": "relates-to",
+          "epic": "flaky-test-quarantine-and-targeted-rerun",
+          "reason": "the flake ledger is one input"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-06: a postmortem must say WHERE tokens went, not just that an epic burned millions. Output shaped like Claude Code's usage report: how much is in context, in tools, in sub-agent work, and how tokens distribute across models; per phase and per role. Detect inefficiencies and name them: sub-agent spend in the millions = an execution problem — was planning too thin for execution to be unambiguous, did the executor make too many decisions alone, did it hit bugs/failing tests/QA loops, did a model tier mismatch (Opus on mechanical work, Haiku on design). Cross-epic trend: average spend per epic across releases, flagging worsening. Recommendations are rendered from rules over the ledger, not model calls. Depends on the ledger from token-spend-tracking-per-epic.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-06T17:29:46.271Z",
+      "touchedAt": "2026-10-06T17:29:49.360Z",
+      "release": "0.52.0"
+    },
+    {
+      "id": "spend-budget-and-stuck-loop-guard",
+      "title": "Spend budget and stuck-loop guard: a per-epic token ceiling, and detection of a failure repeating through gate rounds, with escalation to a stronger model or to the user instead of more retries",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "token-spend-tracking-per-epic",
+          "reason": "needs live spend to compare against the ceiling"
+        },
+        {
+          "type": "relates-to",
+          "epic": "converged-release-candidate-review",
+          "reason": "the one-round cap already limits review loops"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-06: a test fails repeatedly, loops back through Gate 1 and Gate 2, fails again, and burns millions of tokens without fixing the problem. Guard: (1) per-epic token ceiling, soft warn then stop-and-ask (set in the profile layers); (2) stuck-loop detector — the same test/finding failing across N review or fix rounds, or a sub-agent past a spend threshold with no green test, stops the autonomous run; (3) escalation protocol: hand the failure to a higher model with the failure evidence ('what is wrong and how do we resolve it') or to the user, rather than another same-tier retry. Instruction-layer: the engine emits the stop rule and the check verb; the interactive agent acts. Interacts with epic-level autonomy's stop conditions. Depends on the ledger from token-spend-tracking-per-epic.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-06T17:29:47.026Z",
+      "touchedAt": "2026-10-06T17:29:49.360Z",
+      "release": "0.52.0"
+    },
+    {
+      "id": "execution-profile-planning-and-light-roles",
+      "title": "Execution profile model tiers: add planning and mechanical roles so the profile says Opus plans, Sonnet executes, Haiku does rudimentary work, and a one-shot model (Fable) can build straight off a plan",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "execution-profile-layered-settings",
+          "reason": "extends its roles"
+        },
+        {
+          "type": "relates-to",
+          "epic": "token-spend-tracking-per-epic",
+          "reason": "analysis flags tier mismatches"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-06: clear alignment on model tiers — planning on an Opus-class model, execution on Sonnet by default (unless a one-shot model such as Fable builds directly off a finished plan), rudimentary/simple tasks on Haiku. The profile today has roles implement/test/review only (0.51.0). Add a 'plan' role and a 'mechanical' role (and a documented one-shot mode), recommended defaults, and let the spend analysis flag a tier mismatch. Extends execution-profile-layered-settings (archived, 0.51.0); closed role/value lists live in the profile's constants.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-06T17:29:47.792Z",
+      "touchedAt": "2026-10-06T17:29:49.360Z",
+      "release": "0.52.0"
+    },
+    {
+      "id": "decision-cost-log",
+      "title": "Decision cost log: record each significant decision with the tokens it cost, for postmortem self-reflection",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "token-spend-tracking-per-epic",
+          "reason": "tokens per decision come from the ledger"
+        },
+        {
+          "type": "relates-to",
+          "epic": "token-spend-analysis-and-recommendations",
+          "reason": "rendered in the postmortem"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-06: log the decision-making process — that a specific decision was made and cost ~750,000 tokens — as self-reflection to find process improvements, not as raw spend. A verb to record a decision (what, why, alternatives considered, tokens spent reaching it, epic/phase) attached to the epic, rendered in the postmortem alongside the spend breakdown; likely built on the activity log. Off with the rest of the spend feature by default. Depends on the ledger.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-06T17:29:48.580Z",
+      "touchedAt": "2026-10-06T17:29:49.360Z",
+      "release": "0.52.0"
     }
   ],
   "detourStack": [],
@@ -12512,7 +12622,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1875,
+  "revision": 1882,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13061,6 +13171,11 @@
         ],
         "reviewer": "opus fresh-context, combined with Gate 1; Critical fixed a2bb4b2b"
       }
+    },
+    {
+      "id": "0.52.0",
+      "intent": "Token spend you can see: measure each epic's tokens by phase, role and model (off by default, on here), analyse where they went and what to change, guard against runaway and stuck loops, align model tiers, and log what decisions cost",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z",
