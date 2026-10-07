@@ -59,3 +59,72 @@ unitTest("an id holding regex metacharacters matches itself and nothing wider", 
   assert.equal(subjectNamesEpic("chore: v1.2 notes", "v1.2"), true);
   assert.equal(subjectNamesEpic("chore: v1x2 notes", "v1.2"), false);
 });
+
+// ── gh#213 — the suppression rules of the AUTO-DETOUR branch, as VALUES. The two lookups git would answer
+// (a commit's changed paths, whether it is still on a branch) are INJECTED, so no process and no git runs.
+
+const SHA = (n) => String(n).repeat(40).slice(0, 40);
+const suppressionState = () => ({
+  active: "e1",
+  epics: [
+    { id: "e1", attributedCommits: [SHA(1)] },
+    { id: "e2", attributedCommits: [SHA(2)] },
+  ],
+});
+const touching = (map) => ({ filesOf: (v) => map[v] ?? null, isLive: () => true });
+
+unitTest("suppression rule 1: a commit already attributed to the active epic, or to another, is recorded epic work", async () => {
+  const { isRecordedEpicWork } = await load();
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(1), "chore: x", ["a"], touching({})), true, "the active epic's own");
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(2), "chore: x", ["a"], touching({})), true, "another epic's is not this epic's detour either");
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: x", ["a"], touching({})), false, "unattributed, no other evidence");
+});
+
+unitTest("suppression rule 2: a subject naming the active epic's id as a whole token is recorded epic work; another epic's id is not", async () => {
+  const { isRecordedEpicWork } = await load();
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore(e1): tick", ["a"], touching({})), true);
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore(e2): tick", ["a"], touching({})), false, "names a different epic");
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: e10 ledger", ["a"], touching({})), false, "e1 is not a substring match");
+});
+
+unitTest("suppression rule 3: a commit of 2+ paths ALL already changed by the active epic's live commits is recorded epic work", async () => {
+  const { isRecordedEpicWork } = await load();
+  const git = touching({ [SHA(1)]: ["ledger.json", "manifest.json", "other.md"] });
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: x", ["ledger.json", "manifest.json"], git), true);
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: x", ["ledger.json", "new.json"], git), false, "one path is new: every, not some");
+});
+
+unitTest("suppression rule 3 has a floor: a ONE-file commit to a file the epic already touched stays flagged", async () => {
+  const { isRecordedEpicWork } = await load();
+  const git = touching({ [SHA(1)]: ["src/engine.mjs"] });
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "fix: one-file fix", ["src/engine.mjs"], git), false,
+    "a real one-file fix to the epic's own code must not be hidden from the detour trail");
+});
+
+unitTest("suppression rule 3 reads only LIVE attributed commits, and no evidence (git's null, an empty list, no sha) suppresses nothing", async () => {
+  const { isRecordedEpicWork } = await load();
+  const two = ["a", "b"];
+  const map = { [SHA(1)]: ["a", "b"] };
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: x", two, { filesOf: (v) => map[v], isLive: () => false }), false, "an amended-away commit is no evidence");
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: x", null, touching(map)), false);
+  assert.equal(isRecordedEpicWork(suppressionState(), SHA(3), "chore: x", [], touching(map)), false);
+  assert.equal(isRecordedEpicWork(suppressionState(), "", "chore: x", two, touching(map)), false, "the unverifiable rung has no sha");
+  assert.equal(isRecordedEpicWork({ ...suppressionState(), active: null }, SHA(3), "chore: x", two, touching(map)), false, "no active epic");
+});
+
+unitTest("a commit another epic already holds is not offered for attribution again; its holder is named", async () => {
+  const { attributionNudge } = await load();
+  const ctx = { active: false };
+  const short = (sha) => sha.slice(0, 7);   // shortSha asks git, which this rung never runs
+  const onlyHeld = attributionNudge(suppressionState(), ctx, [{ sha: SHA(2), subject: "chore: x", files: ["a.md"] }], { short });
+  assert.match(onlyHeld, /already attributed to `e2`/);
+  assert.match(onlyHeld, /not offered again/);
+  assert.doesNotMatch(onlyHeld, /--attribute-commit/, "no command that would put e2's work in e1's Gate 2 range");
+  const mixed = attributionNudge(suppressionState(), ctx, [
+    { sha: SHA(2), subject: "chore: held", files: ["a.md"] },
+    { sha: SHA(4), subject: "feat: fresh", files: ["b.md"] },
+  ], { short });
+  assert.match(mixed, new RegExp(`--attribute-commit ${SHA(4)}`), "the fresh commit is offered");
+  assert.doesNotMatch(mixed, new RegExp(`--attribute-commit ${SHA(2)}`), "the held one is not");
+  assert.match(mixed, /already attributed to `e2`/);
+});

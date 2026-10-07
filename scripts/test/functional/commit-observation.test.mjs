@@ -1053,10 +1053,13 @@ const attribute = (repo, id, ...shas) => {
 test("9.1 a chore commit touching only files the epic's attributed commits already touched is not an AUTO-DETOUR", () => {
   const repo = observationRepo();
   repo.observe();
-  const first = observedCommit(repo, { "data/manifest.json": "1" }, "chore(data): add the manifest");
+  const first = observedCommit(repo, { "data/manifest.json": "1", "data/ledger.json": "1" }, "chore(data): add the manifest and ledger");
   attribute(repo, "epic-a", first);
-  const second = observedCommit(repo, { "data/manifest.json": "2" }, "chore(data): complete the manifest");
+  const second = observedCommit(repo, { "data/manifest.json": "2", "data/ledger.json": "2" }, "chore(data): complete the manifest and ledger");
   assert.equal(rowsFor(repo, second).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 0, repo.detours());
+  // THE FLOOR: a ONE-file commit to a file the epic already touched can be a real one-file fix, so it is still flagged.
+  const oneFile = observedCommit(repo, { "data/manifest.json": "3" }, "fix(data): correct one manifest entry");
+  assert.equal(rowsFor(repo, oneFile).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 1, repo.detours());
   // CONTROL: the same shape on a file no attributed commit touched is still flagged.
   const stray = repo.commit({ "src/unrelated.txt": "1" }, "chore: unrelated tidy");
   const o = repo.observe("PostToolUse", "git commit");

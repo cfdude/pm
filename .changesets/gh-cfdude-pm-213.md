@@ -2,7 +2,10 @@
   plus small-diff shape also describes an epic whose deliverables are manifests and ledgers. A commit is now left
   out of the detour trail when the record ties it to the active epic: it is already attributed to an epic (the
   active one or another), its subject names the active epic's id, or every path it changed was already changed by
-  a commit attributed to the active epic. One shared file is not enough. (gh#213)
+  a commit attributed to the active epic. That last rule needs the commit to change two or more paths: one shared
+  file is not enough, and a one-file commit to a file the epic already touched is still logged, because it can be a real
+  one-file fix. A commit made while a detour is open is the detour's work and has no suppression at all: the
+  DETOUR-COMMIT branch deliberately logs it. (gh#213)
 * **A commit another epic already holds is not offered for attribution again.** The attribution paragraph names
   the holder (`<sha> is already attributed to <id> — not offered again`) instead of printing an
   `update-epic … --attribute-commit` line that would put one epic's work in another's Gate 2 range.

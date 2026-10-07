@@ -572,24 +572,28 @@ const CONTINUATION_LOOKBACK = 25;
  *   1. the commit is ALREADY attributed to an epic — the active one, or another (a commit another epic
  *      holds is not this epic's detour either);
  *   2. its subject names the active epic's id as a whole token;
- *   3. EVERY path it changed was already changed by a commit attributed to the active epic — the
- *      second edit to a manifest the epic is producing. `every`, not `some`: one shared file such as
- *      a changelog is common to real work and a genuine detour alike, and a false SUPPRESSION
- *      silently disables the trail, where a false row is visible and retractable.
+ *   3. the commit changes TWO OR MORE paths and EVERY one of them was already changed by a commit
+ *      attributed to the active epic — a second batch of edits to files the epic is producing. `every`,
+ *      not `some`: one shared file such as a changelog is common to real work and a genuine detour
+ *      alike. And the 2+ floor: a one-file commit to a file the epic already touched is exactly what a
+ *      real one-file fix to the epic's own code looks like, so suppressing it would hide a genuine
+ *      detour; a false SUPPRESSION silently disables the trail, where a false row is visible and
+ *      retractable. (A ledger edited one file at a time is flagged and retracted, or attributed by
+ *      rule 1 once the agent records it.)
  *  The first commit of such a stream, before anything is attributed, is still flagged: the engine
  *  has no evidence yet, and the message says how to undo the row. */
-function isRecordedEpicWork(state, sha, subject, files) {
+export function isRecordedEpicWork(state, sha, subject, files, { filesOf = changedFiles, isLive = isLiveCommit } = {}) {
   if (attributionHolders(state, sha).length) return true;
   const active = (state.epics || []).find(e => e.id === state.active);
   if (!active) return false;
   if (subjectNamesEpic(subject, active.id)) return true;
-  if (!sha || !Array.isArray(files) || !files.length || !Array.isArray(active.attributedCommits)) return false;
+  if (!sha || !Array.isArray(files) || files.length < 2 || !Array.isArray(active.attributedCommits)) return false;
   const touched = new Set();
   for (const v of active.attributedCommits.slice(-CONTINUATION_LOOKBACK)) {
     // A LIVE commit only: one an amend or rebase replaced is on no branch and is about to be withdrawn,
     // and the commit that replaced it is the very thing to be judged, not evidence for itself.
-    if (!isCommitNameShaped(v) || !isLiveCommit(v)) continue;
-    for (const f of changedFiles(v) || []) touched.add(f);
+    if (!isCommitNameShaped(v) || !isLive(v)) continue;
+    for (const f of filesOf(v) || []) touched.add(f);
   }
   return files.every(f => touched.has(f));
 }
@@ -637,7 +641,10 @@ export function subjectNamesEpic(subject, id) {
  *  and the statement that choosing is the agent's. Every command names every reported live commit,
  *  oldest first, as ONE invocation. NOISE BUDGET: one short paragraph per real commit, on a message
  *  that already prints; what it must never do is fire when no commit landed, or name a wrong sha. */
-function attributionNudge(state, ctx, commits) {
+/** The module's abbreviator under a second name, so `attributionNudge` can shadow `shortSha` locally with an injected one. */
+const gitShortSha_ = shortSha;
+export function attributionNudge(state, ctx, commits, { short } = {}) {
+  const shortSha = short || gitShortSha_;   // injectable so the unit rung runs no git; the interpolations below keep their judged text
   // Every sha is a full sha read from a reflog line (commit-watch.mjs parseReflog), so none can
   // be empty; the filter keeps an empty one from emitting a command that appends nothing.
   const everyCommit = (commits || []).filter(c => c && typeof c.sha === "string" && c.sha);
