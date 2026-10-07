@@ -150,7 +150,7 @@ test("2.3 unconsidered-outcomes over both parts: --story alone leaves the handof
   assert.ok(second, "recording the story alone is not the way past a union with a task still open");
   assert.ok(!second.remedy.some(l => /--story <n> --done/.test(l)), "and it no longer names the story remedy");
   const line = second.remedy.find(l => /--carried-to <epicId>/.test(l));
-  const filled = line.replace("<epicId>", "later").replace('"<which tasks moved>"', "task-2-moved").split(" ");
+  const filled = line.replace("<epicId>", "later").replace('"<which tasks moved>"', "task-2-moved").replace(/<--no-deferrals \| --deferral "<epicId>:<section>">/, "--no-deferrals").split(" ");
   assert.equal(filled[0], "update-epic");
   run(filled, { cwd });
   const after = unconsidered(cwd);

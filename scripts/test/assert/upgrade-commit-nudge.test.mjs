@@ -44,6 +44,20 @@ test("a second, idempotent upgrade with nothing left to commit still says nothin
   assert.doesNotMatch(second, NUDGE, "a message that always fires is one people stop reading");
 });
 
+test("outside a git repository nothing is tracked, so no untrack line is ever printed", () => {
+  // The functional file's untrack cases need a real index; this is the same rule from the side
+  // where git cannot answer — a brief.txt on disk is not a tracked brief.txt, and `init`, the
+  // helper's other caller, stays silent too.
+  const cwd = tmpRepo();
+  const initOut = runCombined(["init"], { cwd });
+  fs.writeFileSync(path.join(cwd, ".conductor", "brief.txt"), "brief\n");
+  const out = runCombined(["upgrade"], { cwd });
+  for (const o of [initOut, out]) {
+    assert.doesNotMatch(o, /UNTRACK PM'S SESSION FILES|git rm /, "no index, no untrack instruction");
+  }
+  assert.match(out, /upgraded \(\d+ migration\(s\)\)/, "non-vacuity: the upgrade really did run");
+});
+
 test("the nudge is never the reason an upgrade fails", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

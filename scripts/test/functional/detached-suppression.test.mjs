@@ -183,3 +183,15 @@ test("--steal does not announce a takeover that did not happen", () => {
   assert.match(JSON.parse(fs.readFileSync(at(cwd, "session-claim.json"), "utf8")).session,
     /held-by-other/, "and the other session's marker survives untouched");
 });
+
+test("sync --dry-run in a detached tree prints no discarded-write warning; a plain sync still does (the control)", () => {
+  // `--dry-run` writes nothing, so "a deploy discards what this command writes" would be false. The
+  // plain `sync` half is what makes the absence mean something: without it, a warning that never
+  // fired at all would pass.
+  const cwd = deployed();
+  const dry = runCombined(["sync", "--dry-run"], { cwd });
+  assert.doesNotMatch(dry, /DETACHED CHECKOUT/, "a dry run writes nothing, so it must not warn of a discarded write");
+  assert.match(dry, /sync --dry-run/, "and the verb itself still ran and reported");
+  const real = runCombined(["sync"], { cwd });
+  assert.match(real, /DETACHED CHECKOUT/, "control: a sync that CAN write still warns in a detached tree");
+});

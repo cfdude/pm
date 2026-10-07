@@ -3,6 +3,9 @@
 // the unit rung with every assertion unchanged.
 //
 // 5.3's ASSERTION TWIN of scripts/test/functional/conductor-14.test.mjs — same id, same subject.
+// (certification-record-redesign 3.2: the functional file now SPELLS its three 0.26.0 baseline file
+// names as literals rather than building `rules-0.26.0-${name}.txt`, so the functional subject's
+// named-literal rule admits the fixtures it reads. The assertions are unchanged.)
 //
 // THE FUNCTIONAL FILE'S SUBJECT is three things about a tracker: a description/notes are
 // independent fields on an epic, DIRECTION (inward vs outward) is what decides which procedure a

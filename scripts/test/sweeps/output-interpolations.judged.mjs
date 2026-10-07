@@ -404,6 +404,7 @@ x("git.mjs", "differsFromHead", {
 x("git.mjs", "resolveCommits", {
   "v": 1,
 }, "not-output", "a git argument — one line of the batch-check stdin payload, peeled to ^{commit}. It was SINK-FLOW inside the execFileSync `input` option until 4.2 moved the call to the injected gateway, which is why the judgment moves from the sink heuristic to here. A value reaching this point has already had whitespace and control characters filtered out above it, and the loop's own `unresolved` message escapes every value it names");
+j("subcommands.mjs", "reportSyncDryRun", ALL, "sink-flow", "the `sync --dry-run` report: every line is pushed onto L and written through L.map(escapeControls); the ids it names are escapeControls()-ed again at interpolation, and the counts are numbers");
 j("spec-sync.mjs", "specSyncDetail", ALL, "sink-flow", "an integrity finding's detail (handoff-demand-blind-spots D6): its only caller is the delivered-epic-spec-deltas-absent CHECKS entry, printed through formatIntegrity()'s L.map(escapeControls); header names are JSON-quoted and the root is shellQuote()d");
 x("spec-sync.mjs", "compareSpecSync", {
   "u.side": 1,
@@ -599,6 +600,16 @@ x("migrations.mjs", "upgrade", {
 x("migrations.mjs", "upgrade", {
   "l": 1,
 }, "escaped", "openspecCurrencyLines() returns its lines escaped (Gate 2 T-S2)");
+x("migrations.mjs", "upgrade", {
+  "u": 1,
+}, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
+x("subcommands.mjs", "init", {
+  "l": 1,
+}, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
+x("subcommands.mjs", "untrackInstruction", {
+  "e.replace(/\\/$/, \"\")": 1,
+  "specs": 1,
+}, "engine", "ENGINE_IGNORED entries (module constants) the index was found to track — trackedEngineIgnored() returns entries, never git's lines");
 x("rank.mjs", "reorder", {
   "msg": 1,
 }, "passthrough", "fail(): every caller escapes the values it quotes");
@@ -654,13 +665,25 @@ x("subcommands.mjs", "supersedeAmended", {
 }, "engine", "reflog object names and git short shas; the reason is `amended into <sha>`; commands through orNoRemedy/printedId; ids escaped");
 x("subcommands.mjs", "attributionNudge", {
   "asCode(cmd(e))": 1,
-  "asCode(cmd(epic))": 2,
+  "asCode(cmd(epic))": 3,
 }, "escaped", "cmd() is attributionNudge's local builder: orNoRemedy(() => a template of printedId(epic.id) and resolved commit names); asCode() only wraps it");
 x("subcommands.mjs", "attributionNudge", {
   "s": 1,
-  "exclusion": 3,
+  "exclusion": 4,
   "candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? \" (attributes no commits yet)\" : \"\")).join(\"\\n\")": 1,
 }, "engine", "full commit object names from the observation, engine exclusion prose, and commands through asCode/orNoRemedy/printedId");
+x("subcommands.mjs", "attributionNudge", {
+  "id": 4,
+}, "escaped", "the single candidate's id after escapeControls(epic.id) (hook-friction-0-51): bound once as `const id`, so the sweep cannot see the escape at each use");
+x("subcommands.mjs", "attributionNudge", {
+  "shortSha(c.sha)": 1,
+  "shown(bookkeeping)": 2,
+  "bookkeepingNote": 4,
+}, "engine", "git short shas of reflog-observed commits, joined by shown(), and the note composed from them and fixed prose (hook-friction-0-51)");
+x("subcommands.mjs", "isAttributionBookkeeping", {
+  "a[1]": 1,
+  "a[2]": 1,
+}, "not-output", "the two capture groups of the archived-change path, interpolated into a LOOKUP KEY for files.includes(); the function returns a boolean and prints nothing (hook-friction-0-51)");
 x("subcommands.mjs", "runNudge", {
   "shortSha(c.sha)": 1,
   "named.join(\", \")": 1,
@@ -680,9 +703,15 @@ x("subcommands.mjs", "sync", {
   "skipped": 1,
   "setAside": 1,
 }, "engine", "a literal artifact label and counts");
-x("subcommands.mjs", "sync", {
+x("archive-gate.mjs", "setAsideDetail", {
   "day": 1,
-}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day");
+}, "engine", "the first ten characters of a createdAt that Date.parse accepted — a YYYY-MM-DD registration day (moved with the set-aside line out of sync, so sync and integrity render it once)");
+x("subcommands.mjs", "sync", {
+  "setAsideDetail(e)": 1,
+}, "passthrough", "the set-aside line's tail, composed and swept where it is built (setAsideDetail: escaped epic id, an asCode() remedy, engine prose)");
+x("update-epic.mjs", "updateEpic", {
+  "undoneNote": 2,
+}, "passthrough", "the \"--status was NOT kept\" clause, composed just above from escapeControls(status) and literal text");
 x("subcommands.mjs", "sync", {
   "skipNote": 2,
 }, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");
@@ -768,3 +797,78 @@ x("purge-logs.mjs", "purgeLogs", {
 x("rules.mjs", "rulesBlockAmbiguousMessage", {
   "L.join(\"\\n\")": 1,
 }, "passthrough", "L is a local array of templates and literals only (err.markers mapped to a template), each value swept where it is built");
+
+// ── execution-profile-layered-settings (0.51.0): the profile verbs and their pure helpers
+j("execution-profile.mjs", "profileLines", ALL, "sink-flow", "every line is a raw string returned to a printer that joins them through lines.map(escapeControls): `profile` (profile-verbs.mjs), `rules --epic` and the brief. The values are closed-list literals, layer names (`lane:<lane>` is escapeControls()d where the source label is built) and ignored stored values, which are exactly what the printer escapes");
+x("execution-profile.mjs", "parseSetProfile", {
+  "role": 1,
+  "r": 1,
+  "u.role": 1,
+  "clash.replace(\":\", \" \")": 1,
+}, "engine", "field names built from the closed lists KNOWN_JOB_ROLES and `review`/`verbosity`/`model` — each parsed and validated earlier in the same function, so none is user text");
+x("execution-profile.mjs", "applyProfileOps", {
+  "ops.review": 1,
+  "ops.verbosity": 1,
+  "role": 1,
+  "pair.model": 1,
+  "pair.effort": 1,
+  "u.role": 2,
+}, "engine", "values that parseSetProfile already checked against their closed lists; the phrase is escapeControls()d again where set-profile prints it");
+x("execution-profile.mjs", "modelText", {
+  "pair.model": 1,
+  "pair.effort": 1,
+}, "passthrough", "text returned into profileLines (a sink-flow judgment); a stored, unvalidated pair is escaped by the printer that joins those lines");
+x("profile-verbs.mjs", "setProfile", {
+  "parsed.message": 1,
+  "where": 3,
+  "notes": 2,
+}, "escaped", "parsed.message is composed of escapeControls()d values and closed-list literals (execution-profile.mjs); `where` is a literal or names the lane through escapeControls; `notes` maps the already-unset field names through escapeControls");
+x("profile-verbs.mjs", "profile", {
+  "f.epic": 1,
+  "f.lane": 1,
+  "scope": 1,
+}, "sink-flow", "the scope label is the first line of the output, joined through lines.map(escapeControls); f.epic was just found in state.epics and f.lane in KNOWN_LANES");
+x("execution-profile.mjs", "parseEpicProfileFlags", {
+  "r.message": 1,
+  "v.message": 1,
+  "p.message": 1,
+}, "escaped", "the refusal text of checkReview/checkVerbosity/parseModelPair (this file): every offending value in it goes through escapeControls, the rest is a closed-list literal");
+x("execution-profile.mjs", "profileDeltas", {
+  "role": 1,
+}, "engine", "a job role from KNOWN_JOB_ROLES, a constants.mjs literal");
+x("add-epic.mjs", "addEpic", {
+  "profileFlags.message": 1,
+}, "escaped", "parseEpicProfileFlags' refusal text (execution-profile.mjs): offending values escapeControls()d, the rest closed-list literals");
+x("add-many.mjs", "addMany", {
+  "r.message": 1,
+  "v.message": 1,
+  "m.message": 1,
+}, "escaped", "the refusal text of checkReview/checkVerbosity/normalizeBatchModel (execution-profile.mjs): offending values escapeControls()d, the rest closed-list literals");
+x("update-epic.mjs", "updateEpic", {
+  "profileFlags.message": 1,
+  "r.message": 1,
+  "role": 2,
+}, "escaped", "parseEpicProfileFlags/checkRole refusal text (offending values escapeControls()d); `role` is the --clear-model value AFTER checkRole accepted it from KNOWN_JOB_ROLES");
+x("execution-profile.mjs", "laneLayerPhrase", {
+  "layer.review": 1,
+  "layer.verbosity": 1,
+  "role": 1,
+  "modelText(layer.model[role])": 1,
+}, "engine", "each value is emitted ONLY after its checkReview/checkVerbosity/checkModelEntry accepted it from a closed list (a stored invalid value is skipped), and the role is KNOWN_JOB_ROLES");
+x("execution-profile.mjs", "laneOverrideLines", {
+  "lane": 1,
+  "phrase": 1,
+}, "engine", "`lane` iterates KNOWN_LANES (a constants.mjs literal); `phrase` is laneLayerPhrase's validated closed-list text");
+x("execution-profile.mjs", "briefProfileLines", {
+  "r.source": 1,
+  "view.review.value": 1,
+  "src(view.review)": 1,
+  "view.verbosity.value": 1,
+  "src(view.verbosity)": 1,
+  "role": 1,
+  "modelText(r.value)": 1,
+  "src(r)": 1,
+}, "sink-flow", "the lines are pushed onto buildBrief's L, joined through L.map(escapeControls); every value is a resolved closed-list value and a layer label (`lane:<lane>` is escapeControls()d where the label is built)");
+x("rules.mjs", "profileScopeLines", {
+  "l": 2,
+}, "engine", "lines from profileBlockLines()/laneOverrideLines(): resolved closed-list values and layer labels only, the `ignored:` notes (the one place a raw stored value appears) filtered out");

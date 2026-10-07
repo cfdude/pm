@@ -23,6 +23,7 @@
 // unscheduled site fails before this triggered half ever runs.
 
 import "../fixtures/hermetic-git.mjs";
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

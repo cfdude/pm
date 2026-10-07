@@ -38,6 +38,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const SPECS = ["docs", "superpowers", "specs"];
 const specRel = (name) => [...SPECS, name].join("/");
@@ -238,7 +239,7 @@ test("gh-93: verify-specs writes nothing — state.json is byte-identical afterw
   assert.deepEqual(fs.readFileSync(sp), before, "read-only means the file is unchanged, not merely unrepaired");
 });
 test("gh-93: verify-specs is dispatched and named in the usage line", () => {
-  const usage = fs.readFileSync(new URL("../../conductor.mjs", import.meta.url), "utf8");
+  const usage = engineCode("scripts/conductor.mjs");   // CODE: the usage line, never a comment quoting it
   const line = usage.split("\n").find(l => l.includes("usage: conductor.mjs"));
   assert.ok(line.includes("verify-specs"), "a dispatched subcommand absent from the usage line is undiscoverable");
   const cwd = tmpRepo();

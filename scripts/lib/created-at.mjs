@@ -72,33 +72,56 @@ function shallowBoundaries() {
   } catch { return new Set(); }
 }
 
+/** THE EARLIEST commit in the pickaxe's `<sha> <iso date>` lines, by DATE, or `null`.
+ *
+ *  created-at-recovery-dates-too-late: the recovery used to take the FIRST line of the pickaxe's output
+ *  and call it the introducing commit. That is the first commit in git's TRAVERSAL order, which is not
+ *  the earliest one, and the query printed the COMMITTER date, which a rewrite (rebase, amend,
+ *  cherry-pick) moves later than the authoring. Measured in the fleet on knowledge-store: the pickaxe
+ *  returns ONE non-merge commit (b60abd4d) with and without --full-history, authored 06-30 and
+ *  committed 07-09 (rewritten), so the epic was stamped 07-09 and the archive date rule then
+ *  disagreed with the stamp. The query now prints the AUTHOR date (%aI), keeps --full-history
+ *  (harmless, and it stops a merge pruning a side branch), and this picks the minimum instant among
+ *  every match, so neither the traversal order nor a skewed date on one commit chooses.
+ *
+ *  A GRAFTED commit (a shallow boundary) that is itself the earliest match answers `null`: at a graft
+ *  point "introduced here" and "already existed" are indistinguishable, so absence is the honest answer.
+ *  Unparseable lines are ignored; no parseable line is `null`. Pure. */
+export function earliestIntroduction(output, grafted = new Set()) {
+  let best = null;
+  for (const line of String(output || "").split("\n")) {
+    const [sha, date] = line.trim().split(" ");
+    const t = Date.parse(date || "");
+    if (!sha || Number.isNaN(t)) continue;
+    if (!best || t < best.t) best = { sha, date, t };
+  }
+  if (!best || grafted.has(best.sha)) return null;
+  return best.date;
+}
+
 /** When `epicId` FIRST appeared in the tracked state file, as an ISO-8601 committer date, or
  *  `null` when this checkout holds no evidence.
  *
  *  `-S` is git's pickaxe over a FIXED string (not `-G`, which is a regex), so an id containing
- *  characters a regex would read specially is still matched literally. `--reverse` and then the
- *  FIRST line, rather than `-n 1`: git applies `-n` before reversing, so `-n 1 --reverse` returns
- *  the NEWEST commit — the opposite of the one being asked for.
+ *  characters a regex would read specially is still matched literally. Over FULL history, and the
+ *  earliest match BY DATE (earliestIntroduction) rather than the first line or `-n 1`: git applies
+ *  `-n` before reversing (so `-n 1 --reverse` returns the NEWEST commit), and its default history
+ *  simplification can prune the side branch that really introduced the id.
  *
  *  No `--all`. HEAD-only traversal is exactly what produces the per-checkout variation this verb
  *  exists to be re-runnable against: a checkout that cannot see the introducing commit must
  *  answer `null` today and recover it after it fetches, rather than reaching into refs its user
  *  has not merged.
  *
- *  `%cI` (committer date) matches commitDate()'s reasoning in git.mjs: a rebased or cherry-picked
- *  commit keeps an author date from before the rebase, and what is being recorded is when the
- *  registration as it stands came into existence.
+ *  `%aI` (AUTHOR date), deliberately NOT commitDate()'s `%cI` (git.mjs): a rebased, amended or
+ *  cherry-picked commit gets a later committer date, but what is recorded here is when the
+ *  registration was first authored, and that is the author date.
  *
  *  Local only — this reads the object database and contacts nothing. */
 export function introducedAt(epicId, grafted = shallowBoundaries()) {
   if (typeof epicId !== "string" || !epicId) return null;
   try {
-    const out = gitOps().logPickaxe(idNeedle(epicId), STATE_PATHSPEC);
-    const first = out.split("\n").map(l => l.trim()).filter(Boolean)[0];
-    if (!first) return null;
-    const [sha, date] = first.split(" ");
-    if (grafted.has(sha)) return null;
-    return date || null;
+    return earliestIntroduction(gitOps().logPickaxe(idNeedle(epicId), STATE_PATHSPEC), grafted);
   } catch {
     // No git, no repository, no commits yet. Every one of those is "no evidence", which is the
     // same answer as "the history does not reach it" and calls for the same response.

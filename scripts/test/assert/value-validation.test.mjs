@@ -30,6 +30,21 @@ test("add-many refuses a batch entry's out-of-vocabulary priority or non-date wa
   assert.equal(readState(cwd).epics.find(e => e.id === "ok").priority, "P1");
 });
 
+test("add-many refuses a batch entry's trailing-slash or directory planPath/specPath (gh#232), and creates nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "docs", "plans"), { recursive: true });
+  for (const bad of [{ planPath: "docs/plans/" }, { specPath: "docs/plans" }, { planPath: "docs/nope/" }]) {
+    const from = batch(cwd, [{ id: "ok", lane: "claude-code" }, { id: "bad", lane: "claude-code", ...bad }]);
+    const err = expectFail(() => run(["add-many", "--from", from], { cwd }));
+    assert.ok(err, `add-many refuses ${JSON.stringify(bad)}`);
+    assert.match(err.stderr, /epic 'bad': .*(ends in a slash|not a regular file)/);
+    assert.deepEqual(readState(cwd).epics.map(e => e.id), []);
+  }
+  run(["add-many", "--from", batch(cwd, [{ id: "ok", lane: "claude-code", planPath: "docs/plans/not-yet.md" }])], { cwd });
+  assert.equal(readState(cwd).epics[0].planPath, "docs/plans/not-yet.md");
+});
+
 // FILE RUNG because the fixture's first `set-tracker` writes CLAUDE.md, a file the store does not own.
 test("set-tracker refuses --remove on the PRIMARY tracker instead of merging or replacing", () => {
   // The primary branch has no remove handler: bare, --remove exited 0 having removed nothing, and

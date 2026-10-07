@@ -219,6 +219,25 @@ unitTest("a bare invocation with no subcommand prints usage and exits 0", () => 
 //    floor's derivation asserted NOT to enumerate the functional half or the sweep bucket. Between
 //    them, the source-level shape and the running hook are pinned from both sides, which is the
 //    division D5's placement rule produces rather than a gap in it.
+// 5. THE SEEDED HOOK RUNS (certification-record-redesign 2.4). From that commit a fixture's own hook
+//    runs the manifest-record drift, so G-I3 and 1.3 — which stage a functional and a sweeps marker —
+//    seed an agreeing entry (`seed:` → `seedAgreeingEntry()`, which calls drift's `indexManifest()`),
+//    and IX-j asserts WHICH buckets refuse its staged `zz-probe.mjs` (functional AND sweeps at L2).
+//    All three run the real hook, so they stay functional. The decision they exercise has its
+//    value-level half elsewhere: the freshness rule on the unit rung (`unit/drift-freshness`) and the
+//    interim subjects' path classes on the file rung (`assert/drift-script`, check 4).
+// 6. THE SHARED LEXER (certification-record-redesign 3.1). certification.mjs imports
+//    `scripts/test/js-lexer.mjs`, so every hook fixture copies it beside drift and certification
+//    (`runHookAgainstFixture`), and IX-k — which TRACKS the machinery — tracks it too, or the snapshot's
+//    drift fails at import and the commit is refused for the wrong reason.
+// 7. THE OBSERVED SUBJECT (certification-record-redesign 3.3). IX-j's `zz-probe.mjs` is imported,
+//    executed and named by nothing, so from L3 it is outside the functional subject: IX-j asserts a
+//    SWEEPS demand naming it and NO functional demand.
+// 8. THE TWO HOOKS (certification-record-redesign 4.3). Diff coupling left the pre-commit run for
+//    `.githooks/commit-msg`, and the functional file's 4.3 cases commit through BOTH real hooks with a
+//    real `git commit` (`hookedRepo()`), so they spawn and stay functional. Their value-level half is on
+//    this rung in `unit/drift-coupling` (the trailer parse, the exemption rule, the phases), and the
+//    hooks' TEXT is pinned on the file rung in `assert/conductor-09`.
 
 // ──────────────── the pre-commit hook's SHAPE ────────────────
 //

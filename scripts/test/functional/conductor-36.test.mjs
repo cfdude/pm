@@ -36,7 +36,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, expectFail, fixtureCommits } from "../fixtures/functional-harness.mjs";
+import { tmpRepo, run, readState, writeState, expectFail, fixtureCommits } from "../fixtures/functional-harness.mjs";
 import { fileURLToPath } from "node:url";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
@@ -366,13 +366,17 @@ test("I2: attributing and withdrawing the SAME sha in one call is refused", () =
 });
 
 test("I3: one withdrawal removes ONE occurrence, so the endpoint moves only when asked", () => {
-  // attributedCommits does not de-duplicate, so a sha can appear twice. Removing every
-  // occurrence for one request silently deleted two entries and moved the Gate 2 endpoint.
+  // A LEGACY array can hold a sha twice (gh#237: the verb now records a commit once, so the duplicate is
+  // SEEDED, as a record written by an earlier release holds it). Removing every occurrence for one
+  // request silently deleted two entries and moved the Gate 2 endpoint.
   const cwd = repoWithEpic();
   const [C, D] = fixtureCommits(cwd, ["C", "D"]);
-  for (const sha of [C, D, C]) {
+  for (const sha of [C, D]) {
     run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
   }
+  const seeded = readState(cwd);
+  seeded.epics.find(x => x.id === "t1").attributedCommits = [C, D, C];
+  writeState(cwd, seeded);
   run(["update-epic", "t1", "--withdraw-commit", C, "--withdrawal-reason", "one of them"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
   assert.equal(e.attributedCommits.filter(s => s === C).length, 1,

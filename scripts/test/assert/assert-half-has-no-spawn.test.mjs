@@ -26,9 +26,12 @@
 // fired on those would be weakened the first day, which is how the property it guards gets lost.
 //
 // COMMENTS ARE STRIPPED, because a guard that a comment can trip is a guard that gets weakened the
-// first time someone writes "this file must not spawnSync" in a header. THE STRIPPER IS NOT SOUND
-// against adversarial source and does not need to be: it reads this repository's own test files, and
-// a false POSITIVE here is a loud failure at the one moment a human is looking.
+// first time someone writes "this file must not spawnSync" in a header. The stripper is the shared
+// lexer-based one (`fixtures/source-code.mjs`). THE CHARACTER-LEVEL STRIPPER THIS FILE USED TO
+// CARRY was claimed to fail only toward a false POSITIVE, and that was wrong: with no regex state, a
+// regex literal holding a quote opened a "string" and every comment after it was kept verbatim — so
+// a commented-out shim import read as an install, a false NEGATIVE of the walk below
+// (guards-that-read-engine-source-drift-silently; the discrimination test pins that case).
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -37,6 +40,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 // INSTALLS the PATH shim as a side effect, and hands back the counter it writes to (G-I4).
 import { SHIM_DIR, gitSpawns } from "../fixtures/assert-git-shim.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,33 +49,6 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
  *  shape that lets the next exemption through. */
 const CHILD_PROCESS_MODULE = ["node", "child_process"].join(":");
 const SPAWN_CALLS = ["spawnSync", "spawn", "execFileSync", "execFile", "execSync", "exec"];
-
-/** Remove comments, keeping string and template contents. Deliberately simple: it tracks quotes and
- *  a line/block comment state, and it treats a regex literal's slashes as ordinary characters (a
- *  regex containing `//` would end the "comment" early and leave the text after it — which can only
- *  ever cause a false POSITIVE here, never a false negative). */
-export function stripComments(src) {
-  let out = "";
-  let i = 0;
-  while (i < src.length) {
-    const c = src[i];
-    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
-    if (c === "/" && src[i + 1] === "*") { i += 2; while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i++; i += 2; continue; }
-    if (c === '"' || c === "'" || c === "`") {
-      const q = c;
-      out += c; i++;
-      while (i < src.length) {
-        if (src[i] === "\\") { out += src[i] + (src[i + 1] ?? ""); i += 2; continue; }
-        out += src[i];
-        if (src[i] === q) { i++; break; }
-        i++;
-      }
-      continue;
-    }
-    out += c; i++;
-  }
-  return out;
-}
 
 /** The filesystem module, built the same way and for the same reason as the child-process one. */
 const FS_MODULE = ["node", "fs"].join(":");
@@ -104,7 +81,7 @@ export const UNIT_FS_WRITE_CALLS = FS_WRITE_CALLS;
  *  to BOTH rungs and only the filesystem half is unit-specific; two functions would have to
  *  duplicate the first half or call each other. */
 export function violations(name, src, rung = null) {
-  const code = stripComments(src);
+  const code = codeOnly(src, name);
   const found = [];
   if (code.includes(CHILD_PROCESS_MODULE)) {
     found.push(`${name} reaches ${CHILD_PROCESS_MODULE} — a child process in the assertion half`);
@@ -195,7 +172,7 @@ const SHIM_INSTALLERS = ["assert-git-shim", "assert-harness", "unit-harness"].ma
 /** True when `src` installs the git shim at import time: an `import` statement (side-effect or
  *  named, one line or several) whose specifier is the shim or one of the two harnesses. */
 export function installsShim(src) {
-  const code = stripComments(src);
+  const code = codeOnly(src);
   const escaped = SHIM_INSTALLERS.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
   return new RegExp(`^\\s*import\\s*(?:[^;]*?\\bfrom\\s*)?["'](?:${escaped})["']`, "m").test(code);
 }
@@ -230,7 +207,7 @@ export function fixtureInstallsShim(name, read, seen = new Set()) {
   if (name === SHIM_MODULE) return true;
   if (seen.has(name)) return false;
   seen.add(name);
-  const code = stripComments(read(name));
+  const code = codeOnly(read(name), name);
   for (const m of code.matchAll(/^\s*import\s*(?:[^;]*?\bfrom\s*)?["']\.\/([\w-]+)\.mjs["']/gm)) {
     if (fixtureInstallsShim(m[1], read, seen)) return true;
   }
@@ -281,6 +258,11 @@ test("2.1 the shim-install walk DISCRIMINATES — imports install it, a mention 
     "a comment naming the shim is NOT an install");
   assert.equal(installsShim(`import { x } from ${spec("helpers")};\n`), false,
     "an unrelated fixture does not install the shim");
+  // THE DESYNC (guards-that-read-engine-source-drift-silently): a regex literal holding a quote. A
+  // stripper with no regex state opens a "string" at that quote and keeps the block comment after it
+  // verbatim — so a commented-out import read as an INSTALL, a false NEGATIVE of this walk.
+  assert.equal(installsShim(`const q = /'/;\n/*\nimport ${spec(SHIM)};\n*/\n`), false,
+    "a commented-out import after a regex literal holding a quote is NOT an install");
 });
 
 test("5.2 the guard DISCRIMINATES — each shape it refuses is refused for the stated reason", () => {

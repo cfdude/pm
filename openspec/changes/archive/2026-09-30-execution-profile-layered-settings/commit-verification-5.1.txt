@@ -1,0 +1,57 @@
+Task-to-commit verification (5.1) — `git show --name-only <sha>` per task; every claimed file must appear in THAT commit.
+
+PASS  1.1  5838559f  scripts/lib/constants.mjs
+PASS  1.1  5838559f  scripts/test/unit/execution-profile-lists.test.mjs
+PASS  1.1  5838559f  openspec/changes/execution-profile-layered-settings/red-1.1.txt
+PASS  1.2  168e5bbb  scripts/lib/execution-profile.mjs
+PASS  1.2  168e5bbb  scripts/test/unit/execution-profile-parser.test.mjs
+PASS  1.2  168e5bbb  openspec/changes/execution-profile-layered-settings/red-1.2.txt
+PASS  1.3  0d9adb56  openspec/changes/execution-profile-layered-settings/call-site-sweep-1.3.txt
+PASS  2.1  6e709146  scripts/lib/execution-profile.mjs
+PASS  2.1  6e709146  scripts/test/unit/execution-profile-resolver.test.mjs
+PASS  2.2  6e709146  scripts/lib/rules.mjs
+PASS  2.2  6e709146  scripts/test/assert/conductor-05.test.mjs
+PASS  2.3  6e709146  scripts/test/unit/execution-profile-resolver.test.mjs
+PASS  2.3  6e709146  openspec/changes/execution-profile-layered-settings/red-2.x.txt
+PASS  3.1  8aa4b53a  scripts/lib/profile-verbs.mjs
+PASS  3.1  8aa4b53a  scripts/conductor.mjs
+PASS  3.1  8aa4b53a  scripts/lib/constants.mjs
+PASS  3.1  8aa4b53a  scripts/lib/verb-effects.mjs
+PASS  3.1  8aa4b53a  scripts/test/unit/set-profile.test.mjs
+PASS  3.1  8aa4b53a  scripts/test/assert/set-profile.test.mjs
+PASS  3.1  8aa4b53a  openspec/changes/execution-profile-layered-settings/red-3.1.txt
+PASS  3.2  8aa4b53a  scripts/lib/profile-verbs.mjs
+PASS  3.2  8aa4b53a  scripts/test/unit/set-profile.test.mjs
+PASS  3.3  8aa4b53a  scripts/lib/update-epic.mjs
+PASS  3.3  8aa4b53a  scripts/lib/add-epic.mjs
+PASS  3.3  8aa4b53a  scripts/lib/add-many.mjs
+PASS  3.3  8aa4b53a  scripts/lib/constants.mjs
+PASS  3.3  8aa4b53a  scripts/test/unit/epic-profile-layer.test.mjs
+PASS  3.3  8aa4b53a  openspec/changes/execution-profile-layered-settings/red-3.3.txt
+PASS  3.3  8aa4b53a  scripts/test/assert/conductor-05.test.mjs
+PASS  3.3  8aa4b53a  scripts/test/unit/nullable-clearing.test.mjs
+PASS  3.4  8aa4b53a  scripts/lib/activity-log.mjs
+PASS  3.4  8aa4b53a  scripts/lib/activity-report.mjs
+PASS  3.4  8aa4b53a  scripts/lib/execution-profile.mjs
+PASS  3.4  8aa4b53a  scripts/test/unit/epic-profile-layer.test.mjs
+PASS  3.5  8aa4b53a  commands/profile.md
+PASS  3.5  8aa4b53a  commands/review-mode.md
+PASS  3.5  8aa4b53a  commands/epic.md
+PASS  3.5  8aa4b53a  docs/parity-ledger.json
+PASS  4.1  4f56051e  scripts/lib/rules.mjs
+PASS  4.1  4f56051e  scripts/test/fixtures/rules-0.51.0-execution-profile.txt
+PASS  4.1  4f56051e  scripts/test/unit/execution-profile-emission.test.mjs
+PASS  4.1  4f56051e  scripts/test/fixtures/helpers.mjs
+PASS  4.1  4f56051e  scripts/test/unit/conductor-05.test.mjs
+PASS  4.2  4f56051e  scripts/conductor.mjs
+PASS  4.2  4f56051e  scripts/test/unit/execution-profile-emission.test.mjs
+PASS  4.3  4f56051e  scripts/test/assert/execution-profile-emission.test.mjs
+PASS  4.4  4f56051e  scripts/lib/briefing.mjs
+PASS  4.4  4f56051e  scripts/test/fixtures/render-parity-project-md.txt
+PASS  4.5  4f56051e  commands/init.md
+PASS  4.5  4f56051e  skills/conductor/SKILL.md
+PASS  4.5  4f56051e  openspec/changes/execution-profile-layered-settings/red-4.x.txt
+
+RESULT: all claimed files present in their commits
+
+Note: 1.x-4.x tasks were grouped into fewer commits than one-per-task because every scripts/lib edit forces both certify runs (~5 min each); commits: 5838559f (1.1) 0d9adb56 (1.3) 168e5bbb (1.2) 6e709146 (2.1-2.3) 8aa4b53a (3.1-3.5) 4f56051e (4.1-4.5).

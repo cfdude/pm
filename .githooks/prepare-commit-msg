@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# --- secret scanning ---
+# core.hooksPath sends git here instead of .git/hooks, bypassing the
+# `git secrets --prepare_commit_msg_hook` that ~/.git-templates installs at
+# clone time. This hook exists for that call alone. Keep it first.
+if command -v git-secrets >/dev/null 2>&1; then
+  git secrets --prepare_commit_msg_hook -- "$@" || exit 1
+fi
+# --- end secret scanning ---
+exit 0

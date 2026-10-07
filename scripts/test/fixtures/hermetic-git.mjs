@@ -21,10 +21,27 @@
 //
 // What this deliberately does NOT touch: `core.hooksPath`. Tests that exercise the real
 // `.githooks/pre-commit` install it into their fixture explicitly, and must keep working.
+//
+// AUTOMATIC MAINTENANCE IS OFF (emitted-invocations-copy-flake). A porcelain `git commit` ends by
+// running `git maintenance run --auto`, which DETACHES unless `maintenance.autoDetach` (falling back
+// to `gc.autoDetach`) says otherwise. The functional harness points GIT_CONFIG_GLOBAL at /dev/null
+// (fixtures/git-gateway-repo.mjs, 0.47.0), which hid the maintainer's `gc.autodetach=false`, and CI
+// never had one — so every fixture commit left a daemon that took and dropped
+// `objects/maintenance.lock` AFTER the commit returned. A fixture copied in that window failed:
+// `functional/emitted-invocations`' `remedyRepo()` hit ENOENT in `fs.cpSync` on about one functional
+// certify in three (the JS walk names the file: `lstat …/.git/objects/maintenance.lock`), and an
+// exit-time `removeAtExit()` walk can meet the same file. `maintenance.auto=false` stops the run;
+// `gc.auto=0` covers a git old enough to run `gc --auto` from commit instead. A test that wants
+// maintenance can pass `git -c maintenance.auto=true`: `-c` outranks this environment config
+// (measured), which itself outranks every config file.
 
 process.env.GIT_TEMPLATE_DIR = "";
-process.env.GIT_CONFIG_COUNT = "2";
+process.env.GIT_CONFIG_COUNT = "4";
 process.env.GIT_CONFIG_KEY_0 = "commit.gpgsign";
 process.env.GIT_CONFIG_VALUE_0 = "false";
 process.env.GIT_CONFIG_KEY_1 = "tag.gpgsign";
 process.env.GIT_CONFIG_VALUE_1 = "false";
+process.env.GIT_CONFIG_KEY_2 = "maintenance.auto";
+process.env.GIT_CONFIG_VALUE_2 = "false";
+process.env.GIT_CONFIG_KEY_3 = "gc.auto";
+process.env.GIT_CONFIG_VALUE_3 = "0";

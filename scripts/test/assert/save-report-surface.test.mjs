@@ -27,6 +27,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, runCombined } from "../fixtures/assert-harness.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const LIB = new URL("../../lib/", import.meta.url).pathname;
 // `scripts/` itself, for conductor.mjs — ONE LEVEL ABOVE the assertion half's own directory. It was
@@ -39,24 +40,11 @@ const SCRIPTS = new URL("../../", import.meta.url).pathname;
 /** `saveState` is DEFINED here; the rule is about its callers. */
 const SKIP = new Set(["state.mjs", "save-report.mjs"]);
 
-/** Strip block comments and line comments, preserving line count and column positions so a hit's
- *  line number still points at the real source. Deliberately naive about string literals: no
- *  saveState() call site in this engine sits inside one, and the assertion below on the number of
- *  sites found is what stops a stripper that has quietly started eating live code. */
-function stripComments(src) {
-  let out = "";
-  let inBlock = false, inLine = false, i = 0;
-  while (i < src.length) {
-    const c = src[i], d = src[i + 1];
-    if (src[i] === "\n") { inLine = false; out += "\n"; i++; continue; }
-    if (inBlock) { if (c === "*" && d === "/") { inBlock = false; out += "  "; i += 2; } else { out += " "; i++; } continue; }
-    if (inLine) { out += " "; i++; continue; }
-    if (c === "/" && d === "*") { inBlock = true; out += "  "; i += 2; continue; }
-    if (c === "/" && d === "/") { inLine = true; out += "  "; i += 2; continue; }
-    out += c; i++;
-  }
-  return out;
-}
+/** Comments blanked, line count and column positions preserved, so a hit's line number still points
+ *  at the real source — the shared lexer-based stripper (`fixtures/source-code.mjs`), which keeps
+ *  string and regex contents and refuses to answer from a misread. The hand-rolled stripper this
+ *  replaced had no string or regex state (guards-that-read-engine-source-drift-silently). */
+const stripComments = (src) => codeOnly(src);
 
 const EXEMPT = /^\s*\/\/\s*save-report:\s*exempt\s*—\s*(\S.*)$/;
 const CAPTURE = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*saveState\s*\($/;
@@ -84,6 +72,19 @@ function callSites(file, src) {
   }
   return sites;
 }
+
+/** Does `src` hand the capture `captured` to reportSave()? */
+function handsToReportSave(captured, src) {
+  return new RegExp(`reportSave\\(\\s*${captured}\\b`).test(codeOnly(src));
+}
+
+test("the reportSave hand-off is read from CODE — a comment naming it does not count", () => {
+  // Final review I2: this matched raw source, so `// … reportSave(saved) …` satisfied it.
+  const call = "report" + "Save(saved)";
+  assert.equal(handsToReportSave("saved", `const saved = x();\n// then ${call}\n`), false, "a line comment");
+  assert.equal(handsToReportSave("saved", `const saved = x(); /* ${call} */\n`), false, "a block comment");
+  assert.equal(handsToReportSave("saved", `const saved = x();\n${call};\n`), true, "a real call");
+});
 
 function shippedSites() {
   const files = [
@@ -122,7 +123,7 @@ test("every saveState call site either reports from the save's own answer or dec
       continue;
     }
     if (!s.captured) { offenders.push(`${s.file}:${s.line} discards saveState()'s return — ${s.text}`); continue; }
-    if (!new RegExp(`reportSave\\(\\s*${s.captured}\\b`).test(s.src)) {
+    if (!handsToReportSave(s.captured, s.src)) {
       offenders.push(`${s.file}:${s.line} captures the save as '${s.captured}' and never hands it to reportSave()`);
     }
   }

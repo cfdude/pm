@@ -32,7 +32,10 @@ test("set-review-mode sets the active mode and rejects an unknown mode", () => {
   assert.ok(expectFail(() => run(["set-review-mode", "--mode", "bogus"], { cwd })), "bad mode rejected");
   assert.ok(expectFail(() => run(["set-review-mode"], { cwd })), "missing --mode rejected");
 });
-test("update-epic --review-mode escalates above the repo-global dial but never de-escalates below it", () => {
+// execution-profile-layered-settings 3.3: the escalate-only guard is REMOVED. An epic's --review-mode
+// wins wherever it sits (spec scenario "An epic lowers review below the project"); an unknown mode is
+// still refused outright.
+test("update-epic --review-mode accepts a value above OR below the repo-global dial, and refuses an unknown one", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "a", "--title", "Security-sensitive epic", "--lane", "claude-code"], { cwd });
 
@@ -40,19 +43,19 @@ test("update-epic --review-mode escalates above the repo-global dial but never d
   run(["update-epic", "a", "--review-mode", "thorough"], { cwd });
   assert.equal(readState(cwd).epics.find(e => e.id === "a").reviewMode, "thorough");
 
-  // Now raise the repo dial to "thorough" and try to set the epic override to "standard" —
-  // that would de-escalate below the (now higher) global dial, so it must be rejected.
+  // Raise the repo dial to "thorough" and set the epic BELOW it: this used to be refused, and now
+  // succeeds, resolving to the epic's own value.
   run(["set-review-mode", "--mode", "thorough"], { cwd });
-  const err = expectFail(() => run(["update-epic", "a", "--review-mode", "standard"], { cwd }));
-  assert.ok(err, "expected rejection of a de-escalating override");
-  assert.match(String(err.stderr || err.message), /de-escalate|below/);
-  // State must be unchanged by the rejected attempt.
-  assert.equal(readState(cwd).epics.find(e => e.id === "a").reviewMode, "thorough");
+  run(["update-epic", "a", "--review-mode", "standard"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").reviewMode, "standard");
+  assert.match(run(["rules", "--epic", "a"], { cwd }), /Current mode: \*\*standard\*\*/);
 
   // An unknown mode is still rejected outright.
   assert.ok(expectFail(() => run(["update-epic", "a", "--review-mode", "bogus"], { cwd })), "bad mode rejected");
 });
-test("currentReviewMode(epicId) returns the higher of the repo-global dial and the epic's override", () => {
+// execution-profile-layered-settings 2.2: the effective mode is the most specific layer's, not the max —
+// see the spec scenario "An epic lowers review below the project" (unit/execution-profile-resolver).
+test("currentReviewMode(epicId) returns the epic's own override, else the repo-global dial", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "a", "--title", "Epic A", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "b", "--title", "Epic B", "--lane", "claude-code"], { cwd });
@@ -65,7 +68,7 @@ test("currentReviewMode(epicId) returns the higher of the repo-global dial and t
   assert.match(run(["rules", "--epic", "a"], { cwd }), /Current mode: \*\*thorough\*\*/);
   assert.match(run(["rules", "--epic", "b"], { cwd }), /Current mode: \*\*standard\*\*/);
 
-  // Raising the global dial past an epic's override makes the global dial win again.
+  // An epic with no override of its own follows the global dial wherever it moves.
   run(["set-review-mode", "--mode", "thorough"], { cwd });
   run(["set-review-mode", "--mode", "off"], { cwd });
   assert.match(run(["rules", "--epic", "b"], { cwd }), /Current mode: \*\*off\*\*/);

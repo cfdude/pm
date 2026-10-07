@@ -1,0 +1,108 @@
+✖ a model pair with an effort parses to the whole pair (0.716667ms)
+✖ haiku without an effort parses to a pair with no effort key (0.115958ms)
+✖ haiku with an effort is refused, naming haiku as a model that takes no effort (0.106041ms)
+✖ a non-haiku model without an effort is refused, naming the accepted efforts (0.101042ms)
+✖ an unknown role, model or effort is refused naming the offender and the accepted list (0.128875ms)
+✖ review and verbosity values are checked against their lists (0.100791ms)
+✖ the unset field grammar is review | verbosity | model | model:<role> (0.096666ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 0
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 137.6485
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a model pair with an effort parses to the whole pair (0.716667ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ haiku without an effort parses to a pair with no effort key (0.115958ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ haiku with an effort is refused, naming haiku as a model that takes no effort (0.106041ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a non-haiku model without an effort is refused, naming the accepted efforts (0.101042ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ an unknown role, model or effort is refused naming the offender and the accepted list (0.128875ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ review and verbosity values are checked against their lists (0.100791ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the unset field grammar is review | verbosity | model | model:<role> (0.096666ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/execution-profile-parser.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+      at moduleResolve (node:internal/modules/esm/resolve:846:10)
+      at defaultResolve (node:internal/modules/esm/resolve:973:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/execution-profile.mjs'
+  }

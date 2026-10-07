@@ -26,6 +26,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { GIT_OPERATIONS } from "../../lib/git-gateway.mjs";
 import { gitSpawns, otherSpawns, spawnerNames, spawnSites } from "../fixtures/spawn-derivation.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const LIB = path.join(ROOT, "scripts", "lib");
@@ -33,7 +34,8 @@ const GATEWAY = path.join(LIB, "git-gateway.mjs");
 const ENGINE = path.join(ROOT, "scripts", "conductor.mjs");
 
 const libFiles = () => fs.readdirSync(LIB).filter(f => f.endsWith(".mjs")).sort();
-const read = (p) => fs.readFileSync(p, "utf8");
+/** Engine CODE, every comment blanked — a comment naming a call or an import is not one. */
+const read = (p) => codeOnly(fs.readFileSync(p, "utf8"), p);
 
 /** Every engine source file a git call could hide in, same set the functional half derives. */
 function engineSources() {
@@ -129,4 +131,16 @@ test("gateway: the derivation DISCRIMINATES — every shape the old pattern miss
     "a non-git spawn is not a git spawn — it is the named omission the test above asserts");
   assert.deepEqual(spawnSites("const a = 1;"), [],
     "a source that never mentions child_process has no spawn sites, whatever it contains");
+});
+
+test("gateway twin: the callers reach git through gitOps() in CODE — a comment naming it is not a call", () => {
+  // The functional half's check, read as code (final re-review): commit-watch.mjs's call replaced by a
+  // comment naming it left the raw read GREEN.
+  for (const f of ["git.mjs", "created-at.mjs", "subcommands.mjs", "commit-watch.mjs", "worktree-hygiene.mjs",
+    "tool-currency.mjs", "constants.mjs"]) {
+    assert.match(read(path.join(LIB, f)), /gitOps\(\)/, `lib/${f} must reach git through the invocation's gateway`);
+  }
+  const call = "gi" + "tOps()";
+  assert.doesNotMatch(codeOnly(`return null; // was ${call}.commitWatchGit(args)\n`), /gitOps\(\)/,
+    "a comment naming the call is not the call");
 });

@@ -57,7 +57,8 @@
       "artifacts": [
         "commands/tracker.md",
         "commands/lane-routing.md",
-        "commands/review-mode.md"
+        "commands/review-mode.md",
+        "commands/profile.md"
       ],
       "platforms": { "claude-code": "slash commands writing settings into .conductor/state.json" }
     },
@@ -68,6 +69,11 @@
         "skills/cross-spec-review/SKILL.md"
       ],
       "platforms": { "claude-code": "slash command (/pm:cross-spec-review) driving the release-scope review, recorded via `record-cross-spec-review`" }
+    },
+    {
+      "id": "release-candidate-procedure",
+      "artifacts": ["skills/release-candidate/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block" }
     },
     {
       "id": "process-lessons",

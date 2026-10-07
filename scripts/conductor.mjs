@@ -27,7 +27,7 @@
  *                  AUTO-DETOUR entry when a small fix/chore commit's diff shape looks like an
  *                  unlogged minimal detour AND an epic is active (see
  *                  looksLikeUnloggedMinimalDetour)
- *   sync           add any new openspec changes to state.json as "untriaged"
+ *   sync           add any new openspec changes to state.json as "untriaged" (--dry-run previews; --only <id> selects)
  *   triage         INTAKE: the mechanical half of admitting an ask — a candidate set of
  *                  existing epics sharing distinctive vocabulary with it, the repo's lane
  *                  suggestion, and the backlog's shape. Emits `verdict: null`: whether two
@@ -87,7 +87,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
@@ -102,7 +102,7 @@ import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render, renderVerb } from "./lib/render.mjs";
-import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
+import { init, brief, snapshot, commitNudge, syncVerb, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
@@ -116,6 +116,7 @@ import { setTracker } from "./lib/tracker.mjs";
 import { setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
 import { triage } from "./lib/triage.mjs";
 import { setReviewMode } from "./lib/review-mode.mjs";
+import { setProfile, profile } from "./lib/profile-verbs.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { lessonAdvice } from "./lib/lessons.mjs";
 import { upgrade } from "./lib/migrations.mjs";
@@ -241,7 +242,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -341,7 +342,8 @@ function runInvocation(argv, io = {}) {
     // VERB_EFFECTS and the dispatch object so a new verb cannot arrive undeclared.
     // A verb whose whole write set is session bookkeeping writes NOTHING here, so there is no
     // discarded write to warn about — and one of them runs on every Bash tool call.
-    if (isDetachedTree() && !VERB_EFFECTS[cmd]?.detachedNoOp) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
+    const dryRun = VERB_EFFECTS[cmd]?.dryRunFlag && currentArgv().includes(VERB_EFFECTS[cmd].dryRunFlag);
+    if (isDetachedTree() && !VERB_EFFECTS[cmd]?.detachedNoOp && !dryRun) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
   }
 
   // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
@@ -410,7 +412,7 @@ function runInvocation(argv, io = {}) {
     brief,
     snapshot,
     "commit-nudge": commitNudge,
-    sync: () => sync(false),
+    sync: syncVerb,
     "log-detour": logDetour,
     "retract-detour": retractDetour,
     "push-detour": pushDetour,
@@ -434,6 +436,8 @@ function runInvocation(argv, io = {}) {
     "record-cross-spec-review": recordCrossSpecReview,
     "record-tracker-refresh": recordTrackerRefresh,
     "set-review-mode": setReviewMode,
+    "set-profile": setProfile,
+    profile,
     release,
     "set-gate-guard": setGateGuard,
     "gate-guard": gateGuardCheck,
@@ -461,7 +465,7 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
+      outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId)));
     },
     "write-rules": () => {
       // #152: `--platform` is read straight off argv by platformFlag(), which treats a valueless

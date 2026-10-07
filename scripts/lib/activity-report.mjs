@@ -120,11 +120,11 @@ const DETOUR_KINDS = {
  *  DETOURS, GATES and SETTINGS, and `--epic` still finds them. */
 const NOT_PICKUP_EVIDENCE = new Set([
   "detour-push", "detour-pop", "detour-drop", "detour-removed",
-  "reconcile-recorded", "epic-priority", "epic-autonomy", "review-mode",
+  "reconcile-recorded", "epic-priority", "epic-autonomy", "review-mode", "profile-setting",
 ]);
 
 /** The kinds the SETTINGS section lists: priority, autonomy and review-intensity changes. */
-const SETTINGS_KINDS = new Set(["epic-priority", "epic-autonomy", "review-mode"]);
+const SETTINGS_KINDS = new Set(["epic-priority", "epic-autonomy", "review-mode", "profile-setting"]);
 
 const HOUR = 3_600_000;
 const hrs = (ms) => `${(ms / HOUR).toFixed(1)}h`;
@@ -197,6 +197,7 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     }
     if (SETTINGS_KINDS.has(e.kind)) {
       const s = { kind: e.kind, epic: e.epic || null, from: e.from, to: e.to, at: e.at };
+      if (e.kind === "profile-setting") Object.assign(s, { layer: e.layer, field: e.field });
       if (e.kind === "epic-autonomy") Object.assign(s, { granted: e.granted, revoked: e.revoked, notified: e.notified });
       r.settings.push(s);
     }
@@ -298,12 +299,14 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   }
   L.push("");
 
-  L.push("SETTINGS — priority, autonomy and review-mode changes, in order");
+  L.push("SETTINGS — priority, autonomy, review-mode and profile changes, in order");
   if (!r.settings.length) L.push("  (none recorded in this window)");
   for (const s of r.settings) {
     if (s.kind === "epic-autonomy") {
       L.push(`  • ${s.at}  ${s.epic || "(repo)"}  autonomy ${s.from || "(unset)"} → ${s.to || "(unset)"}` +
         ` (+${s.granted} granted, ${s.revoked} revoked, ${s.notified} notified)`);
+    } else if (s.kind === "profile-setting") {
+      L.push(`  • ${s.at}  ${s.epic || "(repo)"}  ${s.layer} ${s.field} ${s.from || "(unset)"} → ${s.to || "(unset)"}`);
     } else {
       L.push(`  • ${s.at}  ${s.epic || "(repo)"}  ${s.kind === "epic-priority" ? "priority" : "review-mode"} ` +
         `${s.from || "(unset)"} → ${s.to || "(unset)"}`);

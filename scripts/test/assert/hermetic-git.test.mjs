@@ -39,6 +39,19 @@ test("every FUNCTIONAL test file that mentions git imports the hermetic module, 
     `./hermetic-git.mjs) first: ${offenders.join(", ")}`);
 });
 
+// emitted-invocations-copy-flake — the VALUE half of the functional file's trace2 check: the env config
+// every fixture git process inherits carries the keys that stop a porcelain commit from starting
+// automatic maintenance (a DETACHED daemon once the functional harness nulls the global config).
+test("the hermetic env config turns automatic maintenance and gc off, and keeps signing off", () => {
+  const count = Number(process.env.GIT_CONFIG_COUNT);
+  assert.ok(Number.isInteger(count) && count > 0, `GIT_CONFIG_COUNT is ${process.env.GIT_CONFIG_COUNT}`);
+  const pairs = {};
+  for (let i = 0; i < count; i++) pairs[process.env[`GIT_CONFIG_KEY_${i}`]] = process.env[`GIT_CONFIG_VALUE_${i}`];
+  assert.deepEqual(pairs, {
+    "commit.gpgsign": "false", "tag.gpgsign": "false", "maintenance.auto": "false", "gc.auto": "0",
+  });
+});
+
 test("5.7's narrowing is safe, because the property it gave up is enforced more strongly here", () => {
   // The pre-5.7 predicate refused any file under scripts/test/ that holds the quoted string "git"
   // without importing the hermetic module. Read honestly: NO assertion-half file matches that

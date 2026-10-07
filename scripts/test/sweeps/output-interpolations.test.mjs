@@ -3,6 +3,7 @@
 // output-interpolations.judged.mjs. Before this test existed the sweep lived in the change directory,
 // guarded nothing after the commit that ran it, and resolved its repository from a path that the
 // change's own archive would have broken.
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

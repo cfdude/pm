@@ -1,0 +1,18 @@
+# F2 RED — against 19dac317's writeManifestEntry(), with the F2 test added
+✖ F2 a filesystem that cannot link falls back to an EXCLUSIVE create: the entry is written whole, and an existing one is kept (2.692583ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 198.950959
+
+✖ failing tests:
+
+test at scripts/test/assert/drift-script.test.mjs:411:1
+✖ F2 a filesystem that cannot link falls back to an EXCLUSIVE create: the entry is written whole, and an existing one is kept (2.692583ms)
+  Error: ENOTSUP: link
+    code: 'ENOTSUP'
+  }

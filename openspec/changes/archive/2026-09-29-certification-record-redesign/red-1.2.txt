@@ -1,0 +1,89 @@
+# red-1.2 — node --test scripts/test/functional/certify-index.test.mjs, against the pre-GREEN tree (4c1e7e97: certify.mjs still runs over the checkout), 2026-09-29T00:56:52Z
+✖ 1.2 a partial stage is certified as its STAGED half, and a commit of exactly that index is fresh (611.793458ms)
+✖ 1.2 an edit, and a `git add` of it, made while the bucket runs are absent from the record (365.808417ms)
+✖ 1.2 a passing, a failing and a SIGTERM'd run leave the repository as they found it, and remove their run directory (1141.537416ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 62246.09125
+
+✖ failing tests:
+
+test at scripts/test/functional/certify-index.test.mjs:126:1
+✖ 1.2 a partial stage is certified as its STAGED half, and a commit of exactly that index is fresh (611.793458ms)
+  AssertionError [ERR_ASSERTION]: certify hashed the WORKING TREE: the record describes bytes the commit does not contain (#230)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/certify-index.test.mjs:142:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'dab9464ebb7ab945d94ed2e50a80aedae2a4a32ca88bb8e2bd82c459d8045c64',
+    expected: 'dab9464ebb7ab945d94ed2e50a80aedae2a4a32ca88bb8e2bd82c459d8045c64',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/certify-index.test.mjs:158:1
+✖ 1.2 an edit, and a `git add` of it, made while the bucket runs are absent from the record (365.808417ms)
+  AssertionError [ERR_ASSERTION]: the record must describe the index copy taken at the START of the run, not an edit made during it
+  + actual - expected
+  
+  + '95d91f11bd24f4952816f09473a5ddf95d8bc687aaa2ee912adf44473ac3bdb4'
+  - '476925a997574561eed5272ff9b3a39dec49053a76a77301e30193774b400d21'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/certify-index.test.mjs:167:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '95d91f11bd24f4952816f09473a5ddf95d8bc687aaa2ee912adf44473ac3bdb4',
+    expected: '476925a997574561eed5272ff9b3a39dec49053a76a77301e30193774b400d21',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/certify-index.test.mjs:172:1
+✖ 1.2 a passing, a failing and a SIGTERM'd run leave the repository as they found it, and remove their run directory (1141.537416ms)
+  AssertionError [ERR_ASSERTION]: mid-run, the run directory must exist in the TMPDIR it was handed — else the leftover check below is vacuous
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/certify-index.test.mjs:207:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit: 1
+
+# GREEN — same command after certify.mjs runs over the index copy in a shared clone (bucket run bounded at 60 min, #220):
+✔ 1.2 a partial stage is certified as its STAGED half, and a commit of exactly that index is fresh (1013.612041ms)
+✔ 1.2 an edit, and a `git add` of it, made while the bucket runs are absent from the record (404.820583ms)
+✔ 1.2 a passing, a failing and a SIGTERM'd run leave the repository as they found it, and remove their run directory (1233.457875ms)
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+# twin: unit/certify-index (1.2's cleanEnv test added) and assert/certify-count stay green:
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+
+# Certify functional by hand before this commit (B9) — staged exactly; the NEW runner, over the index copy:
+#   node scripts/test/certify.mjs functional   (279 s, load { 13.97 21.03 28.41 } -> { 16.77 20.85 26.46 })
+certify: functional half passed (1230/1230); recorded 8 module entries in <repo>/.git/pm-suite-certification.json
+# 1230 = 0.3(b)'s 1227 + this task's 3 new functional tests. No pm-certify-run.* left in TMPDIR; git worktree list unchanged.
+# (A first commit attempt was refused by assert/state-file-refuses-to-guess 5.1, #220: runBucket's wait on 'close' had no bound. Fixed with a 60-min kill-and-fail timer, then re-certified.)

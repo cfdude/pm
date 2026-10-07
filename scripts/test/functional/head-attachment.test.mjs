@@ -13,6 +13,7 @@
 // contradiction of this change's own spec scenario. Only status 1 is `detached`.
 
 import "../fixtures/hermetic-git.mjs";   // FIRST: fixture git must ignore the developer's global config
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

@@ -1,0 +1,85 @@
+# Gate 2 m4 — mutation of the guard 'm4 an UNTRACKED failing functional test…'
+# scratch: git archive 62899032 + this tree's certify.mjs, certification.mjs, functional/certify-index.test.mjs
+# mutation: certifyBucket() runs the bucket in the WORKING TREE (root) instead of the run tree exported from the index copy:
+215c215
+<   const result = await runBucket(run.tree, bucket, observed ? observed.env : {});
+---
+>   const result = await runBucket(root, bucket, observed ? observed.env : {});  // MUTATION m4: run the WORKING TREE
+
+## MUTATED — the guard must fail
+✖ m4 an UNTRACKED failing functional test in the working tree is neither run nor recorded (4188.115416ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5275.625583
+
+✖ failing tests:
+
+test at ../../../../../private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/gate2-fix/mut-m4/scripts/test/functional/certify-index.test.mjs:260:1
+✖ m4 an UNTRACKED failing functional test in the working tree is neither run nor recorded (4188.115416ms)
+  AssertionError [ERR_ASSERTION]: an untracked test must not run, so its failure cannot fail the run:
+  ✔ stub (0.360917ms)
+  ✖ untracked, failing (0.782792ms)
+  ℹ tests 2
+  ℹ suites 0
+  ℹ pass 1
+  ℹ fail 1
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 964.918
+  
+  ✖ failing tests:
+  
+  test at scripts/test/functional/untracked.test.mjs:2:1
+  ✖ untracked, failing (0.782792ms)
+    Error: the untracked test ran
+        at TestContext.<anonymous> (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RiyNFZ/scripts/test/functional/untracked.test.mjs:2:42)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  
+  certify: the functional half FAILED (status 1). Nothing recorded — a record is a claim about a pass.
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/gate2-fix/mut-m4/scripts/test/functional/certify-index.test.mjs:270:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+## REVERTED — the guard passes
+✔ m4 an UNTRACKED failing functional test in the working tree is neither run nor recorded (5171.01525ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6902.190792
+
+## In the tree
+✔ m4 an UNTRACKED failing functional test in the working tree is neither run nor recorded (4744.79475ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6082.5755

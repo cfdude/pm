@@ -1,0 +1,69 @@
+# F3 RED — against the F2 tree's writeManifestEntry() and certify, with the F3 tests added
+## assert/drift-script
+✖ m1/F3 an entry's CONTENT is never rewritten: a second run over identical content refreshes only ranAt, atomically (67.094167ms)
+✖ F3 a re-certified entry is RECENT to the pruner: it survives a later run's prune that its first ranAt would not (646.790416ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1522.013083
+
+✖ failing tests:
+
+test at scripts/test/assert/drift-script.test.mjs:395:1
+✖ m1/F3 an entry's CONTENT is never rewritten: a second run over identical content refreshes only ranAt, atomically (67.094167ms)
+  AssertionError [ERR_ASSERTION]: and that it refreshed the entry's ranAt
+  + actual - expected
+  
+  + undefined
+  - true
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/drift-script.test.mjs:415:1
+✖ F3 a re-certified entry is RECENT to the pruner: it survives a later run's prune that its first ranAt would not (646.790416ms)
+  AssertionError [ERR_ASSERTION]: the re-certified entry is among the newest
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+## unit/certify-index
+✖ F3 a pass over content already recorded says so: "already recorded", never "recorded" (1.357792ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1573.974125
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ F3 a pass over content already recorded says so: "already recorded", never "recorded" (1.357792ms)
+  AssertionError [ERR_ASSERTION]: certify.mjs exports no passLine()
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

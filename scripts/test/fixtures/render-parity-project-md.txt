@@ -33,6 +33,8 @@ CONDUCTOR STATE — where we are and what's next
 Progress is claimed completion — ticked checkboxes, not verified delivery.
 
 NOW: `alpha` (openspec, epic, P1) — ⚠ tasks.md missing
+  review: standard (default)
+  verbosity: quiet (default)
 
 NEXT UP (by priority, then lane):
   • `beta` (P2, superpowers, queued) — —

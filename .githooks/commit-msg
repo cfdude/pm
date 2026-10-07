@@ -1,0 +1,134 @@
+#!/bin/sh
+
+# --- secret scanning ---
+# core.hooksPath sends git here instead of .git/hooks, bypassing the
+# `git secrets --commit_msg_hook` that ~/.git-templates installs at clone time.
+# Without this call no commit message is scanned. Keep it first.
+if command -v git-secrets >/dev/null 2>&1; then
+  git secrets --commit_msg_hook -- "$@" || exit 1
+fi
+# --- end secret scanning ---
+# THE COMMIT-MSG HOOK: DIFF COUPLING, AND ONLY IT, after the secret scan above (certification-record-redesign D4, #227).
+#
+# A staged change to a functional file must carry its assertion twin in the same commit, UNLESS the
+# commit message declares, as a git trailer, that the change leaves what the file tests untouched:
+#
+#   Twin-Unchanged: <id> — <reason>
+#
+# Only this hook can read the message — `pre-commit` runs before the message exists — so the check
+# lives here and nowhere else: `.githooks/pre-commit` runs the drift script's OTHER three checks
+# (`--phase pre-commit`), and this hook runs the fourth (`--phase commit-msg`). Coupling is therefore
+# enforced in exactly one place. git, not the drift script, decides what is a trailer
+# (`git interpret-trailers --parse --no-divider`), so the check reads the declarations Gate 2's
+# `%(trailers:key=Twin-Unchanged)` audit reads. A merge (MERGE_HEAD present) is not judged: each
+# merged-in commit was judged, with its own declarations, when it was made.
+#
+# THE SAME DISCIPLINE AS PRE-COMMIT, line for line where it applies:
+#   * GIT_INDEX_FILE names the index THIS commit is made from — `.git/index` (relative) for a plain
+#     commit, `.git/index.lock` for `-a`, `.git/next-index-<pid>.lock` for `<path>`, the worktree's own
+#     index in a linked worktree (commit-msg-probe.log). It is captured and made absolute BEFORE the
+#     scrub, and handed back to the drift script alone.
+#   * `$1`, the message file, is relative to the directory git ran the hook in (`.git/COMMIT_EDITMSG`)
+#     — or absolute, in a linked worktree — so it is made absolute before the hook changes directory.
+#   * The drift script that judges the commit is the COMMIT's copy: the pre-commit hook's snapshot is
+#     gone by now, so this hook exports its own (`checkout-index -a`), and falls back to the working
+#     tree's drift.mjs only when the index holds none (a hook fixture that copies it in untracked).
+#   * Nothing the user owns is written; the snapshot is removed on exit, a signal included.
+INDEX_FILE=${GIT_INDEX_FILE:-}
+case "$INDEX_FILE" in "" | /*) ;; *) INDEX_FILE="$PWD/$INDEX_FILE" ;; esac
+MSG_FILE=${1:-}
+case "$MSG_FILE" in "" | /*) ;; *) MSG_FILE="$PWD/$MSG_FILE" ;; esac
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
+set -e
+if [ -z "$MSG_FILE" ]; then
+  echo "commit-msg: ABORT -- git handed this hook no message file, so no declaration can be read" >&2
+  exit 1
+fi
+cd "$(git rev-parse --show-toplevel)"
+ROOT=$PWD
+[ -n "$INDEX_FILE" ] || INDEX_FILE=$(git rev-parse --path-format=absolute --git-path index)
+
+SNAP=""
+cleanup() {
+  if [ -n "$SNAP" ]; then rm -rf "$SNAP"; fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+SNAP=$(mktemp -d "${TMPDIR:-/tmp}/pm-commitmsg-index.XXXXXX")
+if ! GIT_INDEX_FILE="$INDEX_FILE" git checkout-index -a --prefix="$SNAP/"; then
+  echo "commit-msg: ABORT -- could not export the index ($INDEX_FILE) to $SNAP to judge it" >&2
+  exit 1
+fi
+
+# IS THIS AN AMEND? (hook-friction-0-51, item 3.) An amend stages nothing of its own: git hands the hook an index
+# that already holds the amended commit, so measured against HEAD the staged set is empty and a
+# `Twin-Unchanged` trailer on a reworded amend was refused as "not staged". The drift script then judges the
+# amend against HEAD's PARENT. No hook argument or environment variable says so — measured with git 2.55:
+# prepare-commit-msg's source is `message` for `--amend -m`, exactly as for a plain `-m`, and
+# GIT_REFLOG_ACTION is empty — so the hook reads its parent's command line (`git commit ...`).
+#
+# `ps` joins argv with single spaces and drops the quoting, so the scan is a best-effort parse of that line:
+#   * `--amend` counts ANYWHERE in the argv, in any order with `-m`, and as any unambiguous long-option
+#     prefix (`--am`, `--ame`, `--amen`); git commit has no other option starting with "am".
+#   * The value of `-m` / `-F` / `-C` / `-c` / `-t` (and of `--message`, `--file`, ... given detached) is
+#     CONSUMED as a value, never read as a flag, and so is a value attached to a short option (`-mfoo`,
+#     `-amfoo`, `-m"fix --amend"` which `ps` shows as `-mfix --amend`).
+#   * A multi-word message is several tokens. Tokens straight after a message value that are words of the
+#     message file ($MSG_FILE) are part of that message and are skipped, so `-m "explain --amend"` is not an
+#     amend. The one miss: a REAL `--amend` that the message also contains word for word is not detected.
+# WHEN THE FALLBACK APPLIES (no `ps`, an unreadable line, or that one miss) the commit is judged as a plain
+# commit, against HEAD — exactly as every commit was before this check existed. That can REFUSE a legitimate
+# reworded amend (it stages nothing, so a Twin-Unchanged trailer reads as "not staged"; the fix is to retry
+# where `ps` works), and it can fail to see that an amend dropped a twin its commit had paired. It is not a
+# claim that the fallback only ever refuses.
+AMEND=""
+CMDLINE=$(ps -ww -o command= -p "$PPID" 2>/dev/null || true)
+MSGTEXT=" $(tr -s '[:space:]' ' ' < "$MSG_FILE" 2>/dev/null || true) "
+SKIP=0      # the next token is the VALUE of an option that takes one
+ISMSG=0     # that option is a message option, so the tokens after the value may still be message words
+INMSG=0     # the previous tokens were a message value: skip tokens that are words of the message
+set -f
+for word in $CMDLINE; do
+  if [ "$SKIP" = 1 ]; then SKIP=0; INMSG=$ISMSG; continue; fi
+  if [ "$INMSG" = 1 ]; then
+    case "$MSGTEXT" in *" $word "*) continue ;; esac
+    INMSG=0
+  fi
+  case "$word" in
+    --) break ;;
+    --am | --ame | --amen | --amend) AMEND="--amend"; break ;;
+    --m | --me | --mes | --mess | --messa | --messag | --message) SKIP=1; ISMSG=1 ;;
+    --message=* | --mess*=*) INMSG=1 ;;
+    --fil | --file | --reuse-message | --reedit-message | --template | --author | --date | --cleanup | --trailer | --fixup | --squash | --pathspec-from-file) SKIP=1; ISMSG=0 ;;
+    --*) ;;
+    -?*)
+      rest=${word#-}
+      while [ -n "$rest" ]; do
+        c=${rest%"${rest#?}"}
+        rest=${rest#?}
+        case "$c" in
+          m | F | C | c | t)
+            if [ -z "$rest" ]; then
+              SKIP=1
+              if [ "$c" = m ]; then ISMSG=1; else ISMSG=0; fi
+            elif [ "$c" = m ]; then INMSG=1
+            fi
+            break ;;
+          S | u) break ;;
+        esac
+      done ;;
+  esac
+done
+set +f
+
+DRIFT="$SNAP/scripts/test/drift.mjs"
+[ -f "$DRIFT" ] || DRIFT="$ROOT/scripts/test/drift.mjs"
+if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT" --phase commit-msg --message "$MSG_FILE" $AMEND; then
+  echo "commit-msg: ABORT -- the drift script refused this commit's diff coupling (see above)." >&2
+  echo "commit-msg: a functional file is staged without its twin, or a Twin-Unchanged declaration is refused." >&2
+  exit 1
+fi
+exit 0

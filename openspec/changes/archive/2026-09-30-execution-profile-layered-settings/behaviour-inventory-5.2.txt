@@ -1,0 +1,6 @@
+Behaviour-change inventory (5.2, design D6)
+Looked at: .conductor/state.json of this repo, at 4f56051e.
+  project reviewMode: standard
+  epics carrying their own reviewMode: none (0 of the epics)
+  epics whose reviewMode is BELOW state.reviewMode: none
+So no epic in this repo resolves differently after this change than before it. Nothing transformed.

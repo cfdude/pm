@@ -83,6 +83,13 @@ const ADD_EPIC_EXERCISE = {
     },
   },
   "add-story": { args: ["--add-story", "a milestone"], check: (e) => assert.equal(e.stories.at(-1).title, "a milestone") },
+  // The epic layer of the execution profile (execution-profile-layered-settings 3.3).
+  "review-mode": { args: ["--review-mode", "off"], check: (e) => assert.equal(e.reviewMode, "off") },
+  "verbosity": { args: ["--verbosity", "verbose"], check: (e) => assert.equal(e.verbosity, "verbose") },
+  "model": {
+    args: ["--model", "implement=opus:high", "--model", "test=haiku"],
+    check: (e) => assert.deepEqual(e.model, { implement: { model: "opus", effort: "high" }, test: { model: "haiku" } }),
+  },
 };
 
 unitTest("gh-136: every EPIC_FLAGS row registered on add-epic is HONOURED, not merely accepted", async () => {

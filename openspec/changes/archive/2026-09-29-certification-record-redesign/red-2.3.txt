@@ -1,0 +1,46 @@
+# red-2.3 — node --test scripts/test/assert/drift-script.test.mjs, against the pre-GREEN tree (659a2e55: the record directory has a writer and a reader but no record-level freshness check), 2026-09-29T01:53:33Z
+✖ 2.3 a common dir holding only pm-suite-certification.json yields ZERO entries (0.709ms)
+✖ 2.3 a fresh clone (no record directory) demands a run only when a subject path is staged (0.169875ms)
+✔ 2.3 writeManifestEntry() leaves the legacy file byte-identical (0.631166ms)
+ℹ fail 2
+ℹ pass 26
+ℹ tests 28
+
+✖ 2.3 a common dir holding only pm-suite-certification.json yields ZERO entries (0.709ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no freshnessRefusal(): the record directory is never consulted as a whole — demand, manifest and one keyed entry
+  + actual - expected
+exit: 1
+
+# The two ✖ cases are the RED: both go through freshnessRefusal(), the record-level check drift will call in 2.4.
+# The ✔ case ('leaves the legacy file byte-identical') passes against 2.2's writer the moment it exists — it is a
+# REGRESSION GUARD, verified by mutation below rather than claimed as a RED.
+
+# GREEN — same command after certification.mjs gained runForBucket() and freshnessRefusal() (demand →
+# manifest thunk → the ONE entry its key names, via readEntry()):
+✔ 2.3 a common dir holding only pm-suite-certification.json yields ZERO entries
+✔ 2.3 writeManifestEntry() leaves the legacy file byte-identical
+✔ 2.3 a fresh clone (no record directory) demands a run only when a subject path is staged
+ℹ tests 28
+ℹ pass 28
+ℹ fail 0
+# assertion half over the working tree (both rungs): 1553/1553.
+
+# MUTATION for the guard case — scratch copy (git clone --shared at 659a2e55 + this task's two files, in
+# <scratch>/mut23; the tree is never mutated). writeManifestEntry(), after its rename:
+#   +  // MUTATION (2.3): the new runner removes the superseded record.
+#   +  io.rmSync(path.join(commonDir, "pm-suite-certification.json"), { force: true });
+## MUTANT — node --test --test-name-pattern "2\.3" scripts/test/assert/drift-script.test.mjs
+✔ 2.3 a common dir holding only pm-suite-certification.json yields ZERO entries
+✔ 2.3 a fresh clone (no record directory) demands a run only when a subject path is staged
+✖ 2.3 writeManifestEntry() leaves the legacy file byte-identical
+  Error: ENOENT: no such file or directory, open '<tmp>/pm-cert-dir-ToDpEB/pm-suite-certification.json'
+ℹ tests 3 / pass 2 / fail 1
+## REVERTED (certification.mjs restored from the tree) — same command: tests 3 / pass 3 / fail 0
+
+# Certify functional by hand before this commit (Commit mechanics, B9) — staged exactly.
+# First run: 1230/1231, FAILED (300 s, load { 9.97 23.91 25.56 } -> { 16.50 28.28 28.09 }): the same
+#   functional/emitted-invocations "Layer B integrity:archived-with-zero-ticked-tasks" ENOENT on its template
+#   fixture's .git/objects inside fs.cpSync that 2.2's first run hit — intermittent, and on a path this change does
+#   not touch. Re-run, the index unchanged:
+#   node scripts/test/certify.mjs functional   (358 s, load { 9.77 24.24 26.59 } -> { 13.41 23.53 25.96 })
+certify: functional half passed (1231/1231); recorded 8 module entries in <repo>/.git/pm-suite-certification.json

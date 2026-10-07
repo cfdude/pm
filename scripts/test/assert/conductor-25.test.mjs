@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, readState, writeState, expectFail , injectConflictOnce} from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -129,7 +130,7 @@ test("gh-131: BOTH hook-write sites reach the shared policy — neither re-imple
     ["scripts/lib/subcommands.mjs", "commit-nudge"],
   ];
   for (const [rel, verb] of sites) {
-    const src = fs.readFileSync(path.join(REPO, rel), "utf8");
+    const src = engineCode(rel);
     assert.match(src, /saveHookHeal\(/,
       `${rel} must route its hook write through saveHookHeal() — an inline retry is a second ` +
       "copy of the policy, and the copy that is missing a retry is invisible to every other test");

@@ -160,6 +160,29 @@ export function epicSourceArtifacts(epic) {
   return out;
 }
 
+/** The OpenSpec change names the record's source artifacts point INTO, raw as written (the caller
+ *  normalizes with strippedChangeId(): the date-prefix rule lives in epic-progress.mjs, never here).
+ *
+ *  gh#200. An epic registered from a premise audit under one id, whose OpenSpec change was proposed
+ *  under another, has no field saying "my change is named X" — and the two archive-directory readers
+ *  (integrity's `archive-directory-has-no-epic`, sync's archive backfill) built their "held" set from
+ *  epic ids alone, so the first reported a delivered change as unheld forever and the second would
+ *  have registered a duplicate. The association already has a field: `--plan` / `--spec` name a file,
+ *  and a file under `openspec/changes/[archive/]<name>/` names that change. Reading it adds no key, no
+ *  flag and no migration; `update-epic <id> --spec openspec/changes/archive/<dir>/proposal.md` records
+ *  it and `--clear spec` is its inverse. Status- and lane-blind, like every reader of this table. */
+export function changeNamesClaimedByArtifacts(state) {
+  const out = new Set();
+  for (const e of (state && state.epics) || []) {
+    if (!e || typeof e !== "object") continue;
+    for (const { path: p } of epicSourceArtifacts(e)) {
+      const m = /^openspec\/changes\/(?:archive\/)?([^/]+)(?:\/|$)/.exec(p);
+      if (m && m[1] !== "archive") out.add(m[1]);
+    }
+  }
+  return out;
+}
+
 /** Clear every tombstone contradicted by the artifacts this epic now claims. Called from the
  *  ONE creation sink (pushEpic) and from `update-epic`, the only two ways an epic comes to
  *  claim an artifact. Returns the paths cleared. */

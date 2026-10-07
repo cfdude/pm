@@ -1,0 +1,119 @@
+# red-4.2 — couplingRefusals() takes exemptions; phaseChecks() (certification-record-redesign 4.2)
+# 2026-09-29T04:23:38Z, node v26.10.0, over the 4.1 tree (parseTwinExemptions() present, 4.2 absent)
+
+## RED — unit/drift-coupling.test.mjs, the 4.2 cases
+$ FORCE_COLOR=0 node --test --test-reporter=spec --test-name-pattern="^4\.2" scripts/test/unit/drift-coupling.test.mjs
+✖ 4.2 a declared, staged id passes without its twin (35.915084ms)
+✖ 4.2 a declared id whose functional file is NOT staged is refused, naming it — it exempts nothing (9.747708ms)
+✖ 4.2 a declaration with an EMPTY reason is refused, naming it — Gate 2 has nothing to judge (0.525167ms)
+✔ 4.2 an undeclared id is refused EXACTLY as before exemptions existed (0.343833ms)
+✖ 4.2 with isMerge, nothing is refused — a merge is not judged by the coupling check (193.803666ms)
+✖ 4.2 the phases: pre-commit runs enrolment, twins and freshness; commit-msg runs coupling; no phase runs all four (0.53775ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1615.221833
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 a declared, staged id passes without its twin (35.915084ms)
+  AssertionError [ERR_ASSERTION]: a Twin-Unchanged declaration with a reason exempts its staged functional file
+  + actual - expected
+  
+  + [
+  +   {
+  +     assertion: 'scripts/test/assert/alpha.test.mjs',
+  +     functional: 'scripts/test/functional/alpha.test.mjs',
+  +     id: 'alpha'
+  +   }
+  + ]
+  - []
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: 'alpha', functional: 'scripts/test/functional/alpha.test.mjs', assertion: 'scripts/test/assert/alpha.test.mjs' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 a declared id whose functional file is NOT staged is refused, naming it — it exempts nothing (9.747708ms)
+  AssertionError [ERR_ASSERTION]: a stale or mistyped declaration is a refusal naming the id and the file it claims
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     declaration: 'not-staged',
+  -     functional: 'scripts/test/functional/beta.test.mjs',
+  -     id: 'beta'
+  -   }
+  - ]
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { id: 'beta', declaration: 'not-staged', functional: 'scripts/test/functional/beta.test.mjs' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 a declaration with an EMPTY reason is refused, naming it — Gate 2 has nothing to judge (0.525167ms)
+  AssertionError [ERR_ASSERTION]: the empty reason must be refused by name: [{"id":"alpha","functional":"scripts/test/functional/alpha.test.mjs","assertion":"scripts/test/assert/alpha.test.mjs"}]
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 with isMerge, nothing is refused — a merge is not judged by the coupling check (193.803666ms)
+  AssertionError [ERR_ASSERTION]: neither an unpaired file nor a bad declaration is judged on a merge
+  + actual - expected
+  
+  + [
+  +   {
+  +     assertion: 'scripts/test/assert/alpha.test.mjs',
+  +     functional: 'scripts/test/functional/alpha.test.mjs',
+  +     id: 'alpha'
+  +   },
+  +   {
+  +     assertion: 'scripts/test/assert/beta.test.mjs',
+  +     functional: 'scripts/test/functional/beta.test.mjs',
+  +     id: 'beta'
+  +   }
+  + ]
+  - []
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: 'alpha', functional: 'scripts/test/functional/alpha.test.mjs', assertion: 'scripts/test/assert/alpha.test.mjs' }, { id: 'beta', functional: 'scripts/test/functional/beta.test.mjs', assertion: 'scripts/test/assert/beta.test.mjs' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.2 the phases: pre-commit runs enrolment, twins and freshness; commit-msg runs coupling; no phase runs all four (0.53775ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no phaseChecks(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -88,7 +88,10 @@ function nestedRepo(nested) {
   const gitRoot = tmpRepo();
   const git = (...args) => execFileSync("git", args, {
     cwd: gitRoot, encoding: "utf8",
-    env: { ...process.env, GIT_TEMPLATE_DIR: "", GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "commit.gpgsign", GIT_CONFIG_VALUE_0: "false" },
+    // process.env already carries fixtures/hermetic-git.mjs' template, signing and maintenance keys
+    // (through the functional harness). Re-declaring GIT_CONFIG_COUNT here once REPLACED that list and
+    // dropped `maintenance.auto=false`, so these porcelain commits left a detached maintenance daemon.
+    env: process.env,
   });
   git("init", "-q", "-b", "main");
   git("config", "user.email", "t@example.com");

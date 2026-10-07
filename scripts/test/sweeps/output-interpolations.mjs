@@ -76,75 +76,10 @@ export function sweptFiles(repo = REPO) {
 }
 
 // ─────────────── lexer ───────────────
-const KEYWORDS_BEFORE_REGEX = new Set(["return", "typeof", "case", "in", "of", "delete", "void", "throw", "new", "else", "do", "instanceof", "yield", "await"]);
-function lex(src) {
-  const contexts = [];                         // { tokens: [], start, parent } — root and one per ${…}
-  const root = { tokens: [], start: 0, kind: "root" };
-  contexts.push(root);
-  const stack = [{ mode: "code", ctx: root }];
-  const interps = [];                          // { start, end, ctx }
-  const templates = [];                        // { start, end, hasInterp }
-  let i = 0;
-  const top = () => stack[stack.length - 1];
-  const prevSig = (ctx) => ctx.tokens[ctx.tokens.length - 1];
-  while (i < src.length) {
-    const t = top();
-    const c = src[i];
-    if (t.mode === "template") {
-      if (c === "\\") { i += 2; continue; }
-      if (c === "`") { stack.pop(); const tpl = t.tpl; tpl.end = i + 1; top().ctx.tokens.push({ kind: "template", start: tpl.start, end: i + 1, tpl }); i++; continue; }
-      if (c === "$" && src[i + 1] === "{") {
-        t.tpl.hasInterp = true;
-        const ctx = { tokens: [], start: i + 2, kind: "interp" };
-        contexts.push(ctx);
-        stack.push({ mode: "interp", ctx, braces: 0 });
-        i += 2; continue;
-      }
-      i++; continue;
-    }
-    // code or interp
-    const ctx = t.ctx;
-    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
-    if (c === "/" && src[i + 1] === "*") { const e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
-    if (/\s/.test(c)) { i++; continue; }
-    if (c === "'" || c === '"') {
-      let j = i + 1;
-      while (j < src.length && src[j] !== c) { if (src[j] === "\\") j++; j++; }
-      ctx.tokens.push({ kind: "string", start: i, end: j + 1 }); i = j + 1; continue;
-    }
-    if (c === "`") { const tpl = { start: i, hasInterp: false }; templates.push(tpl); stack.push({ mode: "template", ctx, tpl }); i++; continue; }
-    if (c === "{") { if (t.mode === "interp") t.braces++; ctx.tokens.push({ kind: "punct", text: "{", start: i, end: i + 1 }); i++; continue; }
-    if (c === "}") {
-      if (t.mode === "interp" && t.braces === 0) { interps.push({ start: ctx.start, end: i, ctx }); stack.pop(); i++; continue; }
-      if (t.mode === "interp") t.braces--;
-      ctx.tokens.push({ kind: "punct", text: "}", start: i, end: i + 1 }); i++; continue;
-    }
-    if (c === "/") {
-      const p = prevSig(ctx);
-      const division = p && (p.kind === "number" || p.kind === "string" || p.kind === "template" || p.kind === "regex" ||
-        (p.kind === "ident" && !KEYWORDS_BEFORE_REGEX.has(p.text)) || (p.kind === "punct" && (p.text === ")" || p.text === "]" || p.text === "}")));
-      if (!division) {
-        let j = i + 1, inClass = false;
-        while (j < src.length) {
-          if (src[j] === "\\") { j += 2; continue; }
-          if (src[j] === "[") inClass = true; else if (src[j] === "]") inClass = false;
-          else if (src[j] === "/" && !inClass) break;
-          j++;
-        }
-        j++;
-        while (/[a-z]/.test(src[j] || "")) j++;
-        ctx.tokens.push({ kind: "regex", start: i, end: j }); i = j; continue;
-      }
-    }
-    if (/[A-Za-z_$]/.test(c)) { let j = i; while (/[\w$]/.test(src[j] || "")) j++; ctx.tokens.push({ kind: "ident", text: src.slice(i, j), start: i, end: j }); i = j; continue; }
-    if (/[0-9]/.test(c)) { let j = i; while (/[\w.]/.test(src[j] || "")) j++; ctx.tokens.push({ kind: "number", start: i, end: j }); i = j; continue; }
-    const three = src.slice(i, i + 3), two = src.slice(i, i + 2);
-    const op = ["===", "!==", "...", "**=", "&&=", "||=", "??="].includes(three) ? three
-      : ["=>", "==", "!=", "<=", ">=", "&&", "||", "??", "?.", "++", "--", "+=", "-=", "*=", "/="].includes(two) ? two : c;
-    ctx.tokens.push({ kind: "punct", text: op, start: i, end: i + op.length }); i += op.length;
-  }
-  return { contexts, interps, templates };
-}
+// The lexer is the test tree's ONE JavaScript lexer, shared with the functional subject's derivation and
+// the static NODE_OPTIONS guard (certification-record-redesign 3.1): `scripts/test/js-lexer.mjs`. Its
+// `comments` and `misparse` results are additive and ignored here, so every classification is unchanged.
+import { lex } from "../js-lexer.mjs";
 
 // ─────────────── `+` chains holding a string literal ───────────────
 // A template operand is STRUCTURE: its own `${…}` values are swept one by one where they sit.

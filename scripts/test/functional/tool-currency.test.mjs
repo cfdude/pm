@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { run, runCombined, tmpRepo } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 /** helpers.mjs's parseBrief() takes no env; this suite needs one on every call, so it composes
  *  run() directly rather than widening a helper every other suite shares. */
@@ -305,7 +306,7 @@ test("gh#128: no engine source runs `openspec` with anything but a read-only fla
   const offenders = [];
   for (const f of fs.readdirSync(libDir)) {
     if (!f.endsWith(".mjs")) continue;
-    const src = fs.readFileSync(path.join(libDir, f), "utf8");
+    const src = engineCode(`scripts/lib/${f}`);
     // Any exec* whose argv[0] is the openspec binary must pass exactly ["--version"].
     const re = /exec(?:File)?Sync\(\s*"openspec"\s*,\s*(\[[^\]]*\])/g;
     let m;

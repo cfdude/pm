@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const readState = (cwd) => JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
 const mkdirs = (cwd, ...rel) => { for (const r of rel) fs.mkdirSync(path.join(cwd, r), { recursive: true }); };
@@ -43,7 +44,7 @@ test("sync registers only ids add-epic accepts, names every skip, and counts the
 // scripts/test/unit/sync-registration-ids.test.mjs.
 
 test("add-epic, add-many and sync share ONE validator — no creation site tests the format itself", () => {
-  const lib = (f) => fs.readFileSync(new URL(`../../lib/${f}`, import.meta.url), "utf8");
+  const lib = (f) => engineCode(`scripts/lib/${f}`);
   for (const f of ["add-epic.mjs", "add-many.mjs", "subcommands.mjs"]) {
     assert.doesNotMatch(lib(f), /EPIC_ID_FORMAT\.test\(/, `${f} must call STORABLE_EPIC_ID, not test the regex itself`);
     assert.match(lib(f), /STORABLE_EPIC_ID\(/, `${f} calls the shared validator`);
@@ -123,7 +124,7 @@ test("every consumer of the resolver passes the RECORD, never the bare id", () =
   // a wrapper. Verified absent at the time of writing: `rg -n "isArchived\(|archivedChangeDir\(|
   // archivedTasksPath\(|changeSpecRoot\(" scripts/lib` lists every call, each passing a record.
   // The behavioural backstop is the add-auth test above, through sync, render and set-active.
-  const lib = (f) => fs.readFileSync(new URL(`../../lib/${f}`, import.meta.url), "utf8");
+  const lib = (f) => engineCode(`scripts/lib/${f}`);
   const bare = /\b(isArchived|archivedChangeDir|archivedTasksPath|changeSpecRoot)\(\s*(?:[\w$.]*\.id|[\w$.]*\[\s*["']id["']\s*\]|id|state\.active)\s*[,)]/;
   for (const probe of ["isArchived(t.id)", "isArchived(target.id)", 'isArchived(t["id"])', "archivedChangeDir(e.id, d)", "isArchived(id)", "isArchived(state.active)"]) {
     assert.match(probe, bare, `the scan catches ${probe}`);
@@ -132,7 +133,7 @@ test("every consumer of the resolver passes the RECORD, never the bare id", () =
     assert.doesNotMatch(probe, bare, `the scan passes ${probe}`);
   }
   for (const f of ["epic-progress.mjs", "active-pointer.mjs", "update-epic.mjs", "integrity.mjs", "spec-sync.mjs", "cross-spec-review.mjs", "subcommands.mjs"]) {
-    const lines = lib(f).split("\n").filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l));
+    const lines = lib(f).split("\n");   // lib() is engineCode: comments are already blanked
     const hits = lines.filter(l => bare.test(l));
     assert.deepEqual(hits, [], `${f} calls the resolver with a bare id`);
   }
@@ -181,5 +182,6 @@ test("the set-aside line also prints a runnable way to end the epic, for a direc
   assert.equal(r.status, 0, r.stderr);
   const line = r.stderr.split("\n").find(l => l.includes("set aside archive directory '2025-01-01-late-registered'")) || "";
   assert.match(line, /rename the directory if it is unrelated work/, line);
-  assert.match(line, /`update-epic late-registered --status archived --outcome <[a-z|]+> --reason "<why>" --no-deferrals`/, line);
+  assert.match(line, /`update-epic late-registered --status archived --outcome <[a-z|]+> --reason "<why>" <--no-deferrals \| --deferral "<epicId>:<section>">`/, line);
+  assert.doesNotMatch(line, /--reason "<why>" --no-deferrals/, "a bare --no-deferrals is a claim, not a default");
 });

@@ -1,0 +1,70 @@
+# red-3.1 — functionalSubject() over an injected index reader, and the shared lexer (certification-record-redesign 3.1)
+# 2026-09-29T02:40:26Z, node v26.10.0, HEAD 4cfcd32e
+
+## Call sites of the lexer BEFORE the move — `rg -n "\blex\(|KEYWORDS_BEFORE_REGEX" scripts`
+# (the new unit tests excluded; the definition at :79-80 and the twelve uses the task names)
+scripts/test/sweeps/output-interpolations.mjs:79:const KEYWORDS_BEFORE_REGEX = new Set(["return", "typeof", "case", "in", "of", "delete", "void", "throw", "new", "else", "do", "instanceof", "yield", "await"]);
+scripts/test/sweeps/output-interpolations.mjs:80:function lex(src) {
+scripts/test/sweeps/output-interpolations.mjs:125:        (p.kind === "ident" && !KEYWORDS_BEFORE_REGEX.has(p.text)) || (p.kind === "punct" && (p.text === ")" || p.text === "]" || p.text === "}")));
+scripts/test/sweeps/output-interpolations.mjs:296:  const toks = lex(e).contexts[0].tokens;
+scripts/test/sweeps/output-interpolations.mjs:315:  const stringy = ops.some(o => { const t = lex(o).contexts[0].tokens; return t.length === 1 && isStringy(t[0]); });
+scripts/test/sweeps/output-interpolations.mjs:316:  return stringy && ops.every(o => { const t = lex(o).contexts[0].tokens; return (t.length === 1 && isLiteral(t[0])) || escapedCall(o.trim(), names); });
+scripts/test/sweeps/output-interpolations.mjs:348:  const { contexts, templates, interps } = lex(src);
+scripts/test/sweeps/output-interpolations.mjs:372:  const toks = lex(src.slice(from)).contexts[0].tokens;
+scripts/test/sweeps/output-interpolations.mjs:423:  const toks = lex(rhs).contexts[0].tokens;
+scripts/test/sweeps/output-interpolations.mjs:450:  if (/^`[\s\S]*`$/.test(e) && lex(e).contexts[0].tokens.length === 1) return true;   // a template: structure
+scripts/test/sweeps/output-interpolations.mjs:456:  const plusToks = lex(e).contexts[0].tokens;
+scripts/test/sweeps/output-interpolations.mjs:464:  const { contexts } = lex(e);
+scripts/test/sweeps/output-interpolations.mjs:499:  const toks = lex(e).contexts[0].tokens;
+scripts/test/sweeps/output-interpolations.mjs:520:  const toks = lex(e).contexts[0].tokens;
+scripts/test/sweeps/output-interpolations.mjs:550:    const { contexts, interps } = lex(src);
+
+## RED — unit/certify-index.test.mjs against the pre-GREEN tree (no functionalSubject(), no js-lexer.mjs)
+$ FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/certify-index.test.mjs
+✖ 3.1 an engine module the half imports is IN though it makes no gateway call (the b4ffe164 shape) (0.406916ms)
+✖ 3.1 .githooks/pre-commit and hooks/hooks.json are IN when a closure test spells their names (0.087958ms)
+✖ 3.1 scripts/test/{assert,unit}/* are OUT unless executed, even when named (0.09425ms)
+✖ 3.1 the shipped roots are wholly IN when a closure file spells the root, the three root files by name (0.117708ms)
+✖ 3.1 the record — openspec/, .conductor/, CHANGELOG.md and the rest of docs/ — is OUT even when named (0.0905ms)
+✖ 3.1 a literal dynamic import and a bare side-effect import are followed; a non-relative specifier is not (0.072875ms)
+✖ 3.1 an EXECUTED assertion file is IN, with its imports (round 2 C1) (0.058709ms)
+✖ 3.1 a twin named only in a comment stays OUT, quoted or not; the same quoted path in CODE is IN (R4) (0.144ms)
+✖ 3.1 a regex holding a quote does not open a string: the comment after it executes nothing (conformance.test.mjs:470) (0.077625ms)
+✖ 3.1 a regex holding a backtick does not open a template (output-text-integrity.test.mjs:185) (0.06325ms)
+✖ 3.1 a string that meets an unescaped newline is REFUSED as a misparse, naming the file and line 1 (0.395833ms)
+✖ 3.1 lex() reports the comment ranges it skipped and each misparse, additively (0.218208ms)
+ℹ tests 18
+ℹ pass 6
+ℹ fail 12
+✖ 3.1 an engine module the half imports is IN though it makes no gateway call (the b4ffe164 shape) (0.406916ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no functionalSubject(): the functional subject is still how a module reaches git (#229), not what the half observes
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'scripts/test/js-lexer.mjs' imported from scripts/test/unit/certify-index.test.mjs
+
+## RED — the three lexer cases against a tokenizer with NO regex-literal state (the round-3 shape)
+# scratch: apply-L3/round3-tokenizer.mjs (strings, templates and comments only; EXEC match as functionalSubject's)
+conformance.test.mjs:470 + comment: round-3 tokenizer reads IN (assert/parity.test.mjs); refused: no (it records no misparse)
+output-text-integrity.test.mjs:185 + comment: round-3 tokenizer reads IN (assert/parity.test.mjs); refused: no (it records no misparse)
+unterminated string: round-3 tokenizer reads IN (assert/parity.test.mjs); refused: no (it records no misparse)
+# Under the shared lex(): the first two read OUT and the third THROWS naming line 1 (GREEN below).
+
+## The move is additive for the sweep — its --all classification of every interpolation, byte-identical
+# HEAD's output-interpolations.mjs (in a scratch tree over the same engine) vs the working tree's:
+$ cmp sweep-all-head.txt sweep-all-new.txt   # 1709 lines each
+IDENTICAL
+
+## functionalSubject() against the measurement the design's numbers come from
+# measure.mjs over HEAD~1..HEAD reports headSizes.widened 181; functionalSubject() over HEAD and over the index:
+HEAD subject 181 index subject 181
+
+## GREEN
+$ FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/certify-index.test.mjs
+ℹ tests 18
+ℹ pass 18
+ℹ fail 0
+
+## Both buckets certified over the STAGED commit (git diff --name-only -- scripts .githooks empty), before committing
+$ node scripts/test/certify.mjs sweeps       # exit 0, 23s, load {8.44 7.81 10.49} -> {9.14 8.02 10.50}
+certify: sweeps bucket passed (25/25); recorded 69 subject paths as e2d801902709c9837c38a847e43950f3c16072374162e05e3c4826c0e97ef07d.json in <repo>/.git/pm-suite-certification.d/sweeps
+$ node scripts/test/certify.mjs functional   # exit 0, 374s, load {9.14 8.02 10.50} -> {14.53 20.75 16.77}
+certify: functional half passed (1236/1236); recorded 90 subject paths as 88f85d968231f435a85968090e161892e0c61536f55d917f94dcd34e592b5d70.json in <repo>/.git/pm-suite-certification.d/functional
+# js-lexer.mjs is in BOTH interim subjects (MACHINERY; the sweeps class), and the sweep's own method moved.

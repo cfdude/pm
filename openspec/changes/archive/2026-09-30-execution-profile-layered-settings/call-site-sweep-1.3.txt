@@ -1,0 +1,45 @@
+Call-site sweep 1.3 — execution-profile-layered-settings
+Derived mechanically:
+  rg -n "currentReviewMode|globalReviewMode|REVIEW_MODE_RANK|KNOWN_REVIEW_MODES|reviewMode|executionProfile|laneProfiles|\.verbosity\b|autonomy\.notifications|epic\.model" scripts commands skills
+  (59 hits, tests included) plus  rg -n -i "escalat|de-escalat" scripts commands skills agents hooks README.md
+
+RULE: most-specific-wins per field (epic > lane > project > default); an epic value BELOW the project
+wins; `escalate only` is gone. Fields: review, verbosity, model.<role>.
+
+SITE                                             HOLDS?  DISPOSITION
+scripts/lib/rules.mjs:81 globalReviewMode         yes     stays: the project-layer reader (D2)
+scripts/lib/rules.mjs:91-99 currentReviewMode     yes     becomes an adapter over resolveProfile (2.2); max-rule deleted
+scripts/lib/rules.mjs:629 rulesBlock              yes     4.1: emits `## Execution profile`; still validates the review arg
+scripts/lib/rules.mjs:1092 writeRules             yes     project-layer only (block shows project + lane); refreshed by set-profile (4.3)
+scripts/conductor.mjs:464 `rules --epic`          yes     4.2: emits the epic's effective values with sources
+scripts/lib/update-epic.mjs:534-545 guard          REMOVED 3.3: de-escalation refusal deleted; value-list check stays
+scripts/lib/update-epic.mjs:864 assignment         yes     3.3: also model / verbosity / --clear-model
+scripts/lib/review-mode.mjs (set-review-mode)      yes     unchanged behaviour; writes the same record as set-profile --review
+scripts/lib/constants.mjs:666 EPIC_FLAGS row       yes     3.3: widened to add-epic/add-many/update-epic; clearNote rewritten
+scripts/lib/constants.mjs:1425-1428 lists/ranks    yes     KNOWN_REVIEW_MODES stays the single review list; REVIEW_MODE_RANK loses its
+                                                           only consumers (update-epic guard, currentReviewMode) and is removed with them
+scripts/lib/activity-log.mjs:335-353               yes     3.4: every profile field at every layer, not only reviewMode
+scripts/lib/briefing.mjs (brief)                   NEW     4.4: names the active epic's effective profile (no reviewMode read today)
+commands/review-mode.md:55,66,69,79-96             yes     3.5: "Per-epic override" rewritten; set-profile --unset review named as inverse
+commands/epic.md:276,587-589                       yes     3.5: flag table row and --clear review-mode note
+skills/conductor/SKILL.md:177-179,1309             yes     4.5: verb summary and schema entries
+README.md:69,718,752,857-858                       DEFERRED to task 7.1 (docs after Gate 2; this run stops before Gate 2)
+scripts/lib/subcommands.mjs:487 "escalated"        n/a     unrelated (an attribution sentence), not a profile site
+agents/*.md, SKILL.md:760,1226,1234 "escalate"     n/a     unrelated (child-agent STATUS: uncertain escalation), not a profile site
+tests: assert/conductor-05 (3 tests), unit/nullable-clearing, unit/conductor-33 (activity), functional/conductor-13,
+       functional/emitted-invocations 7.0, fixtures/state-pre-disposition-walk.json
+                                                   yes     the max-resolution / de-escalation-refusal tests are updated in 2.2/3.3 citing
+                                                           the spec scenario "An epic lowers review below the project"
+
+DATA references: none of the new fields holds another record's id. The lane KEY in laneProfiles names a
+lane (an engine constant, KNOWN_LANES), not a record; epic.model / epic.verbosity hold closed-list literals.
+So no dangling-reference removal path exists (remove-epic, archive and detour pop need no change).
+
+INVERSES (spec: "Every set has an inverse at every layer"):
+  set-profile --review/--model/--verbosity   -> set-profile --unset review | verbosity | model | model:<role>  (project and --lane)
+  update-epic --review-mode/--model/--verbosity -> update-epic --clear review-mode | verbosity | model, --clear-model <role>
+  set-review-mode --mode <m>                 -> NOT shipped separately: `set-profile --unset review` is its inverse; a second
+                                                spelling would be a second record path (design D4). Documented in commands/review-mode.md.
+  init recommendation                        -> NOT shipped: it is emitted text asking the user, never a write; the recorded answer
+                                                is a set-profile write and has the inverses above.
+  laneProfiles[<lane>] layer                 -> emptied lane layer is removed (indistinguishable from never configured).

@@ -162,7 +162,7 @@ jobs:
             exit 1
           }
           total=$(grep -m1 -E '^ℹ tests ' /tmp/assert.out | awk '{print $3}')
-          declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
+          declared=$(git ls-files -z 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs -0 grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "assertion half: ran ${total}, declared ${declared}"
           if [ -z "$total" ]; then
             echo "::error::the assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
@@ -200,7 +200,7 @@ jobs:
             exit 1
           }
           total=$(grep -m1 -E '^ℹ tests ' /tmp/assert-clock.out | awk '{print $3}')
-          declared=$(git ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
+          declared=$(git ls-files -z 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' | xargs -0 grep -c -E '^(test|unitTest)\(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "assertion half, clock +${PM_TEST_CLOCK_OFFSET_DAYS}d: ran ${total}, declared ${declared}"
           if [ -z "$total" ]; then
             echo "::error::the shifted-clock assertion half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
@@ -223,7 +223,7 @@ jobs:
             exit 1
           }
           total=$(grep -m1 -E '^ℹ tests ' /tmp/functional.out | awk '{print $3}')
-          declared=$(git ls-files 'scripts/test/functional/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
+          declared=$(git ls-files -z 'scripts/test/functional/*.test.mjs' | xargs -0 grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "functional half: ran ${total}, declared ${declared}"
           if [ -z "$total" ]; then
             echo "::error::the functional half's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1
@@ -246,7 +246,7 @@ jobs:
             exit 1
           }
           total=$(grep -m1 -E '^ℹ tests ' /tmp/sweeps.out | awk '{print $3}')
-          declared=$(git ls-files 'scripts/test/sweeps/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
+          declared=$(git ls-files -z 'scripts/test/sweeps/*.test.mjs' | xargs -0 grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "sweep bucket: ran ${total}, declared ${declared}"
           if [ -z "$total" ]; then
             echo "::error::the sweep bucket's count could not be read — no '^ℹ tests' line in the runner's output"; exit 1

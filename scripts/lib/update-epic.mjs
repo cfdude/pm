@@ -3,18 +3,18 @@
 // existing epic. One-directional dependencies only.
 
 import {
-  EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
+  EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES,
   CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
-import { globalReviewMode } from "./rules.mjs";
+import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
-import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
+import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues, sourceArtifactPathError } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, gateStaleness, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
-import { isArchived } from "./epic-progress.mjs";
+import { isArchived, SPEC_DELTAS_SCOPE, specDeltasScopeBase } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
@@ -291,7 +291,7 @@ export function updateEpic() {
   // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
     errStream().write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--spec-deltas-waived \"<why the archived deltas were deliberately not applied>\"] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
@@ -354,6 +354,9 @@ export function updateEpic() {
     die("conductor: --attribute-commit requires a commit sha\n");
   }
   let attributed = [];
+  // What THIS call appended, after the once-only rule at the write site (gh#237). `attributed` stays
+  // index-aligned with `attributedTyped`, which the withdraw/attribute contradiction check reads.
+  const attributedWritten = [];
   if (attributedTyped.length) {
     const { resolved, unresolved } = resolveCommits(attributedTyped);
     if (unresolved.length) { die(unresolvedCommitsMessage(unresolved, "--attribute-commit")); }
@@ -428,6 +431,11 @@ export function updateEpic() {
   // moved to requireFlagValues() above, which covers every flag rather than these two.
   const planPath = str(f.plan);
   const specPath = str(f.spec);
+  // gh#232: a directory or trailing-slash value is refused by name; both flags, same rule, add-epic's too.
+  for (const [flag, value] of [["plan", planPath], ["spec", specPath]]) {
+    const bad = value === undefined ? null : sourceArtifactPathError(flag, value);
+    if (bad) die(`conductor: ${escapeControls(bad)}\n`);
+  }
   // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
   // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
   // `[true]`; parseLinkFlags filters non-strings away and yields `[]`, which then REPLACED the
@@ -528,25 +536,37 @@ export function updateEpic() {
     if (hit) { die(`conductor: ${trackerKeyRefusal(hit, candidate)}\n`); }
   }
 
-  // --review-mode: a per-epic escalation-only override of the repo-global review-mode dial
-  // (set-review-mode). It must never be usable to quietly de-escalate below the global dial —
-  // that would let one epic silently weaken review rigor a human explicitly raised repo-wide.
-  const reviewMode = str(f["review-mode"]);
-  if (reviewMode !== undefined) {
-    if (!KNOWN_REVIEW_MODES.includes(reviewMode)) {
-      die(`conductor: --review-mode must be one of ${KNOWN_REVIEW_MODES.join("|")}\n`);
-    }
-    const global = globalReviewMode(state);
-    if (REVIEW_MODE_RANK[reviewMode] < REVIEW_MODE_RANK[global]) {
-      die(
-        `conductor: --review-mode '${escapeControls(reviewMode)}' would de-escalate below the repo-global dial ` +
-        `('${escapeControls(global)}') — an epic-level override may only escalate above the global dial, never below it\n`);
+  // The epic layer of the execution profile: --review-mode, --verbosity and the repeatable --model.
+  // --review-mode used to be ESCALATE-ONLY and refused a value below the repo dial; that guard is
+  // gone by decision (execution-profile-layered-settings D3). Nothing here compares against the
+  // project or lane layer: the epic's own value wins wherever it sits, and `profile --epic` names
+  // the layer and the value it overrides.
+  const profileFlags = parseEpicProfileFlags(f);
+  if (!profileFlags.ok) die(`conductor: ${profileFlags.message}\n`);
+  const { review: reviewMode, verbosity, model: modelPairs } = profileFlags;
+  // `--clear-model <role>`: the one-role inverse of `--model`. Validated with the same role list, and
+  // refused against a --model naming that role in the same call (set and unset of one field).
+  const clearModelRoles = [].concat(f["clear-model"] === undefined ? [] : f["clear-model"])
+    .filter(v => typeof v === "string");
+  for (const role of clearModelRoles) {
+    const r = checkRole(role);
+    if (!r.ok) die(`conductor: --clear-model: ${r.message}\n`);
+    if (modelPairs && modelPairs[role]) {
+      die(`conductor: --clear-model ${role} contradicts --model ${role}=… in the same invocation — set the role or unset it, not both. Nothing was written.\n`);
     }
   }
 
   // The valueless --description / --notes loop that stood here is requireFlagValues()' job now.
   const description = str(f.description);
   const note = str(f.notes);
+  // spec-sync-waive-for-skip-specs: the reason a delivered change's archived spec deltas were deliberately
+  // not applied. Blank is refused by requireFlagValues() above; `--clear spec-deltas-waived` is the inverse.
+  const specDeltasWaived = str(f["spec-deltas-waived"]);
+  // A waiver only means something to an epic the spec-deltas check reads. Anywhere else it would be a
+  // stored claim that no surface evaluates, so it is refused here, naming the scope.
+  if (specDeltasWaived !== undefined && !specDeltasScopeBase(snapshot)) {
+    die(`conductor: --spec-deltas-waived applies only to ${SPEC_DELTAS_SCOPE}; '${escapeControls(id)}' is not in that scope, so there is nothing to waive. Nothing was written.\n`);
+  }
 
   // --add-story "<title>" appends { title, done: false } to the epic's inline stories[]
   // (creating the array if this is its first inline story) -- closes the recurring
@@ -722,6 +742,21 @@ export function updateEpic() {
       `--correct-disposition "<why the recorded one was wrong>" alongside the corrected flags.\n`);
   }
 
+  // CONTRADICTORY ASSERTIONS (gh#233). `--no-deferrals` is the explicit claim that this change deferred
+  // NOTHING; `--deferral` and `--declined-deferral` each name something it deferred or declined. Given
+  // together, deferralAssertion() built one record holding both, and `deferrals: [...]` beside a
+  // "there are none" claim is a record that contradicts itself — recoverable only with
+  // `--correct-disposition`. Refused by name, before any write. Both siblings, not just the one the issue
+  // named: a declined deferral is still a deferral. `--deferral`'s section half is NOT validated beyond
+  // what it already is (gh#233's "section 'none'" aside is declined: the section is free text by design).
+  if (f["no-deferrals"] === true && (f.deferral !== undefined || f["declined-deferral"] !== undefined)) {
+    die(
+      `conductor: --no-deferrals claims this change deferred nothing, and ` +
+      `${escapeControls([f.deferral !== undefined && "--deferral", f["declined-deferral"] !== undefined && "--declined-deferral"]
+        .filter(Boolean).join(" and "))} names something it did — two contradictory assertions. ` +
+      "Pass --no-deferrals OR the deferral flag(s). Nothing was written.\n");
+  }
+
   const asserted = f.deferral !== undefined || f["declined-deferral"] !== undefined || f["no-deferrals"] === true
     ? deferralAssertion({
         deferrals: pairs(f.deferral, "epic", "section"),
@@ -862,14 +897,58 @@ export function updateEpic() {
   // `add-many`.
   if (suppliedLinks !== undefined) epic.links = mergeLinks(epic.links, suppliedLinks);
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
+  if (verbosity !== undefined) epic.verbosity = verbosity;
+  if (modelPairs !== undefined || clearModelRoles.length) applyEpicModel(epic, modelPairs, clearModelRoles);
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
-    epic.attributedCommits.push(...attributed);
+    // gh#237 — A COMMIT IS RECORDED ONCE. A verbatim duplicate carries no information and only inflates
+    // the counts Gate 2 reachability and integrity reason over; an agent retrying after a hook failure
+    // hits it routinely. So it is a NO-OP, not a refusal: exit 0, said on stderr, nothing written for it.
+    // Judged against the array AS THIS CALL LEAVES IT (a `--withdraw-commit X --attribute-commit X` pair
+    // is refused above; a sha withdrawn by an EARLIER call is absent from the array and so re-attributes
+    // normally), and within the call itself (`HEAD` and its full sha resolve to one name).
+    const held = new Set(epic.attributedCommits);
+    const skipped = [];
+    for (const sha of attributed) {
+      if (held.has(sha)) { if (!skipped.includes(sha)) skipped.push(sha); continue; }
+      held.add(sha);
+      attributedWritten.push(sha);
+    }
+    for (const sha of skipped) {
+      announcements.push(
+        `conductor: ${escapeControls(sha)} is already attributed to '${escapeControls(id)}' — recorded once, ` +
+        "nothing written for it.\n");
+    }
+    const gate2 = epic.gateReview && epic.gateReview.gate2;
+    const attributedBefore = epic.attributedCommits.slice();
+    epic.attributedCommits.push(...attributedWritten);
+    // gh#205 — attributing a commit AFTER a recorded Gate 2 can turn that verdict stale, and that is
+    // sometimes right (it changed the implementation) and sometimes the rule's own exclusion (lifecycle
+    // bookkeeping: the lessons task item 7 routes, the task-list tick, the archive move). The engine
+    // classifies no commit, so it says what happened and names both ways out instead of staling in silence.
+    // Fresh before, OR no coverage before (none-attributed / attribution-withdrawn): the first attribution
+    // after a passing Gate 2 can stale it just the same.
+    if (attributedWritten.length && gate2 && gate2.verdict === "pass" &&
+        ["fresh", "none-attributed", "attribution-withdrawn"].includes(
+          gateStaleness({ ...epic, attributedCommits: attributedBefore }, gate2).state)) {
+      const after = gateStaleness(epic, gate2);
+      if (after.state === "stale") {
+        announcements.push(
+          `conductor: attributing ${escapeControls(attributedWritten.join(", "))} moved '${escapeControls(id)}'s passing Gate 2 ` +
+          `(reviewed up to ${escapeControls(String(gate2.headSha))}) to STALE — it does not reach the ` +
+          `${after.uncovered.length ? after.uncovered.map(escapeControls).join(", ") : "attributed"} commit(s).\n` +
+          "  If the commit changes the implementation, re-record Gate 2 over the new range. If it only records " +
+          "lifecycle bookkeeping (lessons or feedback routed after the gate, a task-list tick, the archive move) it " +
+          "is NOT attributed: undo this with " +
+          `${asCode(orNoRemedy(() => `update-epic ${printedId(id)} --withdraw-commit ${escapeControls(attributedWritten[0])} --withdrawal-reason "<why>"`))}.\n`);
+      }
+    }
   }
   // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.
   if (description !== undefined) epic.description = description;
+  if (specDeltasWaived !== undefined) epic.specDeltasWaived = specDeltasWaived;
   if (note !== undefined) {
     if (!Array.isArray(epic.notes)) epic.notes = [];
     epic.notes.push(noteEntry(note));
@@ -1051,10 +1130,11 @@ export function updateEpic() {
   // The success message is printed only after the record on disk is READ BACK and confirmed to
   // hold what this invocation claims to have written. Everything above verifies its own write;
   // this verifies the COMMAND, after render() has had its turn at the file too.
-  if (attributed.length) {
+  if (attributedWritten.length) {
     // The RESOLVED names, which are what was written — comparing the typed strings would report a
-    // short hash stored in full as "NOT in state.json" and exit 1 on a write that landed.
-    const wrote = attributed;
+    // short hash stored in full as "NOT in state.json" and exit 1 on a write that landed. Only the
+    // ones THIS call appended: a duplicate was already there and nothing was written for it.
+    const wrote = attributedWritten;
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       die(
@@ -1101,9 +1181,25 @@ export function updateEpic() {
   // Routed through the SHARED reporter rather than kept as this verb's own if/else: the rule
   // binds the write surface, and a rule implemented once at the verb that introduced it is how
   // twenty siblings came to print success on a save that wrote nothing.
+  // A `--status` the write did not keep. render() above runs the drift heal, which re-archives any epic whose
+  // change directory is archived on disk — so `--status queued` on such an epic was written, then undone in the
+  // same call, and "updated" claimed a status that is not there. Read back from the file, like every other claim
+  // this command makes. The record is not wrong (the change IS archived), so this REPORTS rather than refuses: the
+  // other fields the call supplied did land, and refusing would drop them.
+  const statusUndone = status !== undefined && status !== "archived" && (() => {
+    const after = loadState().epics.find(e => e.id === id);
+    return !!after && after.status === "archived";
+  })();
+  const undoneNote = statusUndone
+    ? ` — but --status ${escapeControls(status)} was NOT kept: its change directory is archived on disk, so the ` +
+      "archive-drift heal restored `archived`. To reopen it, move the change back out of openspec/changes/archive/ " +
+      "first (or leave it archived)."
+    : "";
   reportSave(saved, {
-    changed: `conductor: updated '${escapeControls(id)}'`,
-    unchanged: `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
-      "already the value the record holds. Nothing was written.",
+    changed: `conductor: updated '${escapeControls(id)}'${undoneNote}`,
+    unchanged: statusUndone
+      ? `conductor: nothing changed on '${escapeControls(id)}'${undoneNote}`
+      : `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
+        "already the value the record holds. Nothing was written.",
   });
 }

@@ -1,0 +1,78 @@
+# Gate 2 fixes (certification-record-redesign, Gate 2 on f419b44e: 2 Important, 5 minor). finding -> sha -> test
+# Each commit's own sha cannot be written inside it; they were filled in by the closing docs(openspec) commit.
+G1 names git would quote: drift trackedTestFiles()/stagedFiles() and the hook's floor read NUL-delimited -> 35fb8dee ->
+   functional/drift-script "G1 …" (3), functional/conductor-09 "G1 the floor counts…", twins assert/drift-script "G1 every
+   name listing…" and assert/conductor-09's floor pins; red-G1.txt, name-read-sweep-G1.txt
+G2 a signal-killed child lost its reads: the observer appends each event (each NEW read included) as one JSON line
+   when it happens; parseObservation() drops a torn LAST line only and refuses any other corruption by file and
+   line -> 69c5aa53 -> functional/certify-index "G2 a child SIGTERMed…", unit/certify-index "G2 …" (3); red-G2.txt
+m1 writeManifestEntry() links the temp file into place (EEXIST keeps the existing entry byte for byte), never renames
+   over it -> 62899032 -> assert/drift-script "m1 an entry is NEVER rewritten…", 2.2 tests moved to link; red-m1.txt
+m2 certify turns an unreadable observation into a named refusal (file and line, no stack), recording nothing -> eb793815 ->
+   functional/certify-index "m2 a corrupt observation file…", unit/certify-index "m2 …"; red-m2.txt
+m3 functionalSubject() rule 4 admits a name that opens with a backtick (a template literal is a string literal) -> 7e8ef48d ->
+   unit/certify-index "m3 rule 4 admits a file named in a TEMPLATE literal…"; red-m3.txt (rules 5/6 reported, not changed)
+m4 guard: an untracked failing functional test in the working tree is neither run nor recorded -> 278dc9ec ->
+   functional/certify-index "m4 an UNTRACKED failing functional test…" (mutation: run the bucket in the working tree ->
+   fails), twin unit/certify-index "m4 the run tree is built from the index copy alone…"; mutation-m4.txt
+m5 docs: certify.mjs's header states the tracked-symlink limit (as .githooks/pre-commit does) and that a SIGKILL
+   cannot be cleaned up; CONTRIBUTING's "How certify runs" says INT/TERM/HUP are clean, a SIGKILLed certify can orphan
+   its bucket, and its run directory is pruned after 24 hours -> 3ac3ba1f -> docs only (no test)
+
+Found while fixing (not a Gate 2 finding; for the orchestrator): certify imports the WORKING TREE's certification.mjs
+and drift.mjs, so an unstaged edit to either makes certify record a manifest key the commit's drift (the snapshot's
+copy) does not compute. Seen once here (m2: an unstaged m3 edit gave 187 paths against drift's 186); it was caught before
+the commit (whose drift would have refused it as stale — loud, never a false pass) and re-certified from the staged copy.
+
+# Follow-up round (siblings of G1/m3, and the one-copy gap above).
+G1 sibling (item 1 call-site completeness): ci.yml's four floor counts read `git ls-files -z | xargs -0 grep -c`; a
+   quoted non-ASCII test name was dropped from `declared` (clone with né.test.mjs in unit/functional/sweeps: old
+   1588/1160/19, new 1589/1162/20 = node ground truth) -> 79a16b9e -> no test (CI YAML; verified by the local clone run)
+S1 functionalSubject() rules 5 (shipped roots) and 6 (root files) admit a backtick exactly as rule 4 does -> 78994f0b ->
+   unit/certify-index "S1 rules 5 and 6 admit…"; red-S1.txt; index subject 187 -> 187
+S2 the one-copy gap, fail closed: before building anything certify refuses (named, exit 1, nothing written) when
+   certify/certification/drift/js-lexer/fixtures/observe-reads differs between the working tree and the index ->
+   315b6ed4 -> functional/certify-index "S2 an UNSTAGED edit…", twin unit/certify-index "S2 the runner refuses…";
+   spec scenario "The runner refuses when its own code differs from the index", design D2; red-S2.txt
+
+# Gate 2 re-review (on a81d86bc: 1 Important, 5 minor).
+F1 a failed observation write failed OPEN (emit() swallowed it; the torn tail was dropped as a kill): the observer
+   holds a sentinel <pid>.<random>.ok from load and removes it on its first failed write, a normal exit is recorded,
+   and readObservations() refuses a file without its sentinel (and a sentinel without its file, and a torn tail after
+   an exit), accepting a torn last line only from a killed process; a process that cannot open its file while the run
+   directory exists throws at load -> 19dac317 -> functional/certify-index "F1 a child whose observation WRITE fails…"
+   (a real EFBIG under `ulimit -f 2`), twin unit/certify-index "F1 …" (2); spec "A failed observation write fails the
+   certification closed" + fifth limit, design D3 "The observation file, and the torn-tail rule"; red-F1.txt
+F2 writeManifestEntry() on linkSync ENOTSUP/EPERM/EXDEV falls back to an exclusive create ('wx'); EEXIST keeps the
+   first entry, a failed fallback write removes the file it created, any other link error is thrown -> 5d99ddb8 ->
+   assert/drift-script "F2 a filesystem that cannot link…" (injected io); design D1 "Writing"; red-F2.txt
+F3 re-certifying content already recorded refreshes the entry's ranAt (the existing entry with the new ranAt, temp
+   name then rename over; every other field kept), so the pruner ranks it as recent; certify prints "already recorded"
+   (passLine()) -> 1670c683 -> assert/drift-script "m1/F3 an entry's CONTENT is never rewritten…" (m1 test re-pointed) and
+   "F3 a re-certified entry is RECENT to the pruner…", unit/certify-index "F3 a pass over content already recorded…";
+   spec "Writing" + "safe by construction" wording, design D1 ranAt and "Writing"; red-F3.txt
+F4 docs: certify.mjs RUNNER_CODE says why fixtures/temp-dir.mjs is omitted (cleanup only, never touches the key) and
+   why fixtures/observe-reads.mjs is listed (conservative; the run tree's copy is what loads) -> db106af4 -> comment only (no test)
+F5 guard: assert/ci-workflow "F5 CI's four floor counts read the tracked names NUL-delimited…" (nulReadRefusals():
+   exactly four declared= lines, each with `git ls-files -z` and `xargs -0`) -> c325f71e -> mutation-F5.txt (removing -z
+   from the functional line fails it; reverted, it passes)
+
+# Gate 2 final minors (both lenses passed on a8c85575).
+W1 a wedged key: an unparseable <key>.json (a SIGKILL during the no-link 'wx' fallback) made certify print "left as
+   it is" and pass, drift throw an unnamed SyntaxError on every commit, and the pruner skip it forever. The write
+   path REPLACES it with this run's entry (temp name + rename; `replaced: true`, certify prints "recorded … (replacing
+   an entry that could not be parsed)"), readEntry() refuses it naming the file and the certify that replaces it,
+   pruneRecord() removes it once older than an hour (as a *.tmp; never `keep`); the "a key never keeps a half-written entry" docstring claim corrected -> 3158b475 ->
+   assert/drift-script "W1 a WEDGED key…" (injected io), unit/certify-index "F3 a pass…" (replaced line); spec
+   "Writing", design D1 "Writing" and "Pruning"; red-W1.txt
+W2 guards for spec clauses no test reached -> 3fcd3067 -> (a) functional/certify-index "W2a a normally exiting observed
+   child's file ENDS in an exit event…", (b) functional/certify-index "W2b an observer that cannot open its file…"
+   (the run "directory" is a regular file: ENOTDIR for every user, root included), (c) assert/drift-script "W2c the
+   ranAt refresh goes through a temp name and renameSync…" (injected io); mutation-W2.txt (drop the exit emit, `if
+   (false)` for the run-directory check, write straight to <key>.json: each fails its guard; reverted, each passes)
+W3 wording: design D1's heading and "Writing" bullet, D6 "Overwrite", and the spec's concurrent-worktrees bullet say
+   "an entry's content is never rewritten; only ranAt is refreshed, atomically" -> this commit (it also fills in the
+   W1/W2 shas above) -> docs only (no test)
+DECLINED: ftruncate on a failed fallback write — the case needs a full disk AND an unremovable file; it is the spec's
+   stated fifth limit.
+- Gate 2 scoped check (W1–W3) Minors: the no-link exclusive-create race stated as an exception in spec (worktree concurrency), CONTRIBUTING wording (atomic refresh; torn entries replaced or pruned) — docs commit, see git log.

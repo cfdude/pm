@@ -29,6 +29,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "../fixtures/functional-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -107,11 +108,15 @@ const VERB_BASELINE = {
     "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"],
   "remove-epic": () => ["remove-epic", "other"],
   render: () => ["render"],
+  // sync (#167): `--dry-run` and `--only` made it a flag-bearing verb. The baseline registers nothing on this fixture.
+  sync: () => ["sync"],
   rules: () => ["rules", "--epic", "e1"],
   "rules-target": () => ["rules-target", "--platform", "claude-code"],
   "set-autonomy": () => ["set-autonomy", "e1", "--level", "off"],
   "set-lane-routing": () => ["set-lane-routing", "--add", "cache:claude-code"],
   "set-review-mode": () => ["set-review-mode", "--mode", "standard"],
+  "set-profile": () => ["set-profile", "--review", "standard"],
+  profile: () => ["profile"],
   "set-tracker": () => ["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"],
   triage: () => ["triage", "a caching bug in the renderer", "--limit", "3"],
   "verify-specs": () => ["verify-specs", "--root", "docs/superpowers/specs"],
@@ -209,7 +214,7 @@ test("gh-152: every FLAG the engine reads off a parsed-flags object is declared 
   const undeclared = [];
   let regions = 0;
   for (const rel of files) {
-    const lines = fs.readFileSync(path.join(REPO, rel), "utf8").split("\n");
+    const lines = engineCode(rel).split("\n");   // CODE: a commented-out parseFlags() is no region
     for (let start = 0; start < lines.length; start++) {
       const m = /^(\s*)const (\w+) = parseFlags\(/.exec(lines[start]);
       if (!m) continue;
@@ -336,6 +341,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "render --diff-summary",
     "set-lane-routing --clear",
     "set-tracker --remove",
+    "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");
 });

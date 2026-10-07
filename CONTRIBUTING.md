@@ -50,9 +50,14 @@ prose reminder alone wasn't enough). One-time setup per clone:
 git config core.hooksPath .githooks
 ```
 
-After that, `git commit` runs `.githooks/pre-commit` automatically, which runs the DRIFT SCRIPT
-(`node scripts/test/drift.mjs`, four checks over the index — enrolment, twin coverage, diff
-coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
+`core.hooksPath` means git no longer runs `.git/hooks`, where a `git secrets --install` or a
+`~/.git-templates` puts the secret scanner, so `.githooks/pre-commit`, `.githooks/prepare-commit-msg`
+and `.githooks/commit-msg` each open by running `git secrets`' matching hook — when `git-secrets` is
+on PATH; a machine without it commits unscanned.
+
+After that, `git commit` runs two test hooks. `.githooks/pre-commit` runs the DRIFT SCRIPT's pre-commit
+phase (`node scripts/test/drift.mjs --phase pre-commit`: enrolment, twin coverage and record
+freshness, over the index) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
 invocation:
 `FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
 — and blocks the commit on any failure. **It tests the INDEX, not your working tree** (0.50.0): the
@@ -62,20 +67,48 @@ fixed copy you left unstaged, an untracked test file neither runs nor counts, an
 staged file is tested as its staged half. It honours the index git hands it, so `git commit -a`
 and `git commit <path>` are tested as what they commit. It never writes your working tree or your
 index, so an interrupted hook cannot lose work; the snapshot is removed on exit, Ctrl-C included.
-The drift script that runs first is the snapshot's own copy, and every set it judges (certified
-modules, test ids, conformance rows) is read from that index too. One known limit: a tracked
+The drift script that runs first is the snapshot's own copy, and every set it judges (the buckets'
+subjects, the test ids) is read from that index too. One known limit: a tracked
 symlink is exported as a symlink, so an absolute one still reads outside the index — this repository
 tracks none.
 To run the suite over your working tree instead, run the command above yourself. The reporter is forced and colour is off so the summary is
 the same bytes on every supported Node, and a count the hook cannot read, or a run of zero tests, is
-a refusal rather than a pass. The drift script refuses, naming the file: a tracked
+a refusal rather than a pass. The pre-commit phase refuses, naming the file: a tracked
 test file in NEITHER half
-(no test runs it — enrol it), a functional test with no assertion twin of the same id, a
-functional test or its twin changed without a fresh certification record, or a certified
-module whose staged content no longer matches the record. The functional half and the sweep
-bucket are triggered, not per-commit: CI runs them, and
-`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when
-you ran one locally. To satisfy a refusal, run the command it names.
+(no test runs it — enrol it), a functional test with no assertion twin of the same id, or a
+staged change to a triggered bucket's SUBJECT with no passing record entry whose manifest (mode
+and blob id of every subject path) equals that subject in the index — it names the bucket, the
+staged subject paths and the run that satisfies it. The functional half and the sweep bucket are
+triggered, not per-commit: CI runs them, and `node scripts/test/certify.mjs functional` / `… sweeps`
+is what records a passing run when you ran one locally. To satisfy a refusal, run the command it
+names — over what you staged (see "The order" below).
+
+**The commit-msg hook: diff coupling, and its one exemption.** `.githooks/commit-msg` runs the drift
+script's fourth check (`--phase commit-msg`), the only one that needs the message: a staged change to
+`scripts/test/functional/<id>.test.mjs` must carry its assertion twin (`scripts/test/assert/<id>.test.mjs`
+or `scripts/test/unit/<id>.test.mjs`) in the same commit. A change that leaves what the file tests
+untouched — a comment, a rename of a local, a moved helper — may say so instead, as a git trailer in the
+message's final paragraph:
+
+```text
+Twin-Unchanged: <id> — <reason>
+```
+
+The committer may declare it, with no pre-authorisation: it is audited instead, and the reason is
+what makes it reviewable. git decides what is a trailer (`git
+interpret-trailers`), so a `Twin-Unchanged:` line inside prose, below a `commit -v` scissors line, or
+followed by a `---` line and more text declares nothing. A declared id whose functional file is not
+staged, or a declaration with no reason, is refused. The accepting run prints every declaration, and
+Gate 2 audits every trailer in the reviewed range (`.claude/skills/pr-workflow/SKILL.md`): a trailer
+judged false is an Important finding. A merge commit is not judged; each merged-in commit was, with its
+own trailers. A bare `node scripts/test/drift.mjs` (no `--phase`) runs all four checks, with no
+exemptions unless you pass `--message <file>`.
+
+**The order.** Stage the commit exactly, run the certify the refusal names, then a PLAIN `git commit`.
+Certify copies the index and certifies that copy, so a certify run before your last `git add`, or over
+an unstaged edit, certifies content the commit does not hold. `git commit <path>` and `git commit -a`
+build their own temporary index, which certify never copied: after a partial stage such a commit is
+never fresh.
 
 ## The dev inner loop
 
@@ -129,6 +162,14 @@ supported Node that measured about half the wall clock of the single-process mod
 which 0.49.0 retired. On a small machine, or to leave cores free, throttle it with
 `--test-concurrency=<n>` (e.g. `node --test --test-concurrency=2 scripts/test/unit/*.test.mjs
 scripts/test/assert/*.test.mjs`).
+
+### Flaky tests
+
+- A test listed in `scripts/test/known-flakes.json` is not to be diagnosed. A run that fails is re-run ONCE,
+  on the failed files only; pass-on-retry is a pass and is printed as "known flake" (listed) or
+  "UNLISTED flake" (not listed). Report every UNLISTED flake you see: it needs an owning epic.
+- A test that fails twice is a real failure. Retries are logged to the gitignored `.test-flakes.log`.
+- A dispatched build, test or review agent reads `.claude/agent-startup.md` (the rules it must obey here) instead of `CLAUDE.md` and this file in full.
 
 ### Which rung does my new test belong in?
 
@@ -190,6 +231,68 @@ are the two TRIGGERED buckets. They do not run per commit: CI runs them, and
 `node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when you ran
 one locally. A drift-script refusal names the command to run.
 
+**What demands them.** Each bucket has a SUBJECT, derived from the index, never listed by hand. The
+sweeps subject is the engine source (`scripts/conductor.mjs`, `scripts/lib/`), the sweep files and the
+shared `scripts/test/js-lexer.mjs`. The functional subject is what the functional half OBSERVES: its
+import closure and the engine entry point's (static, dynamic and bare side-effect imports), the
+assertion files it executes, the
+files under `scripts/`, `.githooks/` or `hooks/` a closure file names as a literal, the shipped roots
+(`commands/`, `skills/`, `agents/`, `hooks/`, `.claude-plugin/`) a closure file spells, and `README.md`,
+`CLAUDE.md` and `docs/parity-ledger.json` when one names them. The repository's record — `openspec/`,
+`.conductor/`, `CHANGELOG.md`, the rest of `docs/` — is outside it by rule. A staged path in a subject,
+an addition, edit, mode change or deletion, demands that bucket.
+
+**How certify runs.** `certify.mjs` copies the index once, builds a `git clone --shared` of this
+repository whose own index is that copy, checks it out, and runs the bucket there — so an edit or a
+`git add` during a run of several minutes changes neither what ran nor what is recorded, and your
+working tree, index, stash and worktree list are never written. On a pass it writes ONE entry, the
+manifest of the bucket's subject in the copy, to
+`$(git rev-parse --git-common-dir)/pm-suite-certification.d/<bucket>/<key>.json`; a failed run writes
+nothing. The functional run also loads a run-time observer into every Node process it starts: a tracked
+file the half reads that the derivation missed fails the certification, naming the file (spell its name
+in the test that reads it), and so does a Node child started with a `NODE_OPTIONS` that drops the
+observer. The superseded single-file record `pm-suite-certification.json` is neither read nor removed.
+Ctrl-C, SIGTERM and SIGHUP are clean: certify kills the bucket and removes its run directory. A
+SIGKILLed certify cannot clean up — its bucket can keep running, orphaned (find it with
+`pgrep -fl pm-certify-run`), and its `pm-certify-run.*` directory under the OS temp directory stays until a
+later certify prunes it, once it is more than 24 hours old. One known limit, shared with the pre-commit snapshot: a
+tracked symlink is exported as a symlink, so an absolute one reads outside the index; this repository
+tracks none.
+
+### Adding an engine verb — the tables, and the seed step
+
+A verb is registered by hand in several tables that nothing derives from one another (gh#206).
+`scripts/test/assert/verb-registration.test.mjs` reads the dispatch table out of `scripts/conductor.mjs`
+and checks all of them in ONE run, naming every missing row, so you do not find them one suite run at a
+time. The rows:
+
+| table | file | what goes in it |
+| --- | --- | --- |
+| dispatch table, `USAGE` | `scripts/conductor.mjs` | the handler and the verb's name in the usage line |
+| `VERB_POSITIONALS` | `scripts/lib/constants.mjs` | how many positional arguments it reads |
+| flag surface | `scripts/lib/constants.mjs` | `VERB_FLAGS` / `EPIC_FLAGS` rows naming it, or `FLAGLESS_VERBS` |
+| `VERB_EFFECTS` | `scripts/lib/verb-effects.mjs` | `read-only` or `mutates`, and what it writes |
+| `DISPATCH_BASELINE` | `scripts/test/functional/verb-surface.test.mjs` | one working invocation |
+| `VERB_BASELINE` | `scripts/test/functional/conductor-31.test.mjs` | one working invocation, for a verb that declares `VERB_FLAGS` |
+
+**The seed step.** A `DISPATCH_BASELINE` entry runs in an empty, `init`ed repository. A verb that needs
+state no other verb can write gives its entry a `seed: (cwd) => { … }` hook: setup that is not a verb call
+(`retract-detour` seeds an automatic `detours.log` row, because no verb writes one in a repository without
+git). `pre: [[verb, args…]]` runs verbs first; `local` and `input` are the other optional keys. Every
+entry needs `args`. A flag-bearing verb also gets a command doc under `commands/`.
+
+### Parallel worktrees
+
+Certify and commit in each worktree on its own, with no lock. Every entry is its own file, named by
+the content it certifies, created and its content never rewritten (certifying content already recorded
+prints "already recorded" and refreshes only the entry's `ranAt`, atomically; an entry left
+half-written by a killed certify is replaced by the next certify of that content, or pruned after an
+hour), so two worktrees certifying at once cannot lose
+each other's entry, and an entry about another worktree's content neither passes nor refuses your
+commit. Parallel certifies are correct; they only cost CPU. `pm-suite.lock` (the pre-commit hook's
+lock around the assertion half) stays, to limit machine load, not for correctness. A hand-rolled
+`pm-certify.lock` around certify-and-commit is obsolete — delete it and any script that takes it.
+
 ### Temp directories — every fixture directory is removed, and a per-commit test holds it
 
 `tmpRepo()`, `fixtureCache()`, `fixturePluginRoot()`, `addHierarchyWorktree()` and the git-gateway
@@ -211,6 +314,52 @@ destructure, `fs.promises.mkdtemp(` — so an alias must be enrolled too; commen
 string or regex literals are not sites. Its stated limit: a name built at run time, or a directory a
 spawned process makes, is not seen. Before this rule (measured 2026-09-25) one assertion-half run left
 436 directories in the OS temp dir and one functional-half run left 1,517.
+
+### The real record — no test may write it
+
+Every process the suite starts, in all four homes and in the pre-commit hook's run over the index
+snapshot, loads `scripts/test/fixtures/record-isolation.mjs`. The fixture does three things:
+
+- It snapshots the protected records: every file under `.conductor/` by content hash, plus
+  `PROJECT.md`, `CLAUDE.md` and `.gitignore` (the root files the engine writes) by size, mtime and
+  inode — never read, because certify's observer refuses a read outside the functional subject. It
+  covers this repository, of `PM_TEST_PROTECTED_ROOT`, and of any
+  `CLAUDE_PROJECT_DIR` you inherited. The hook and certify set `PM_TEST_PROTECTED_ROOT` to the real
+  checkout, because they run the suite over a copy. `.DS_Store` and `*.lock` files are skipped, and
+  so is a live session's bookkeeping (`SESSION_BOOKKEEPING` in the fixture): `commit-observe.json*`,
+  `commit-watch.json`, `session-claim.json*`, `brief.txt`, `activity/` and `agent-logs/` under
+  `.conductor/`. Each is git-ignored by the engine and rewritten by a live session's hooks or agents
+  on every tool call; watched, they failed every file of the pre-commit run whenever any session was
+  active in the checkout. `state.json`, `render-stamp.json`, the logs, `feedback/` and the root files
+  stay watched, so a live session's write to one of those still fails a file.
+- It pins `CLAUDE_PROJECT_DIR` to an empty scratch directory.
+- At exit it fails the file when any protected file changed, naming each path with its mtime
+  against the process's start.
+
+**What is prevented, and what is only detected.** PREVENTED: an engine call that names no root and
+inherits the test process's environment, either through `...process.env` or in process outside
+`main()`. It resolves `CLAUDE_PROJECT_DIR || cwd` to the empty pin, even when the test's cwd is your
+checkout, so the engine refuses there ("run /pm:init first") instead of writing your record.
+DETECTED ONLY, after the fact, by the exit check: every other route. That covers a literal path, a
+path derived from `import.meta.url`, a child given `CLAUDE_PROJECT_DIR=<repo>`, a lib call inside
+`withRoot(REPO, …)`, and git run with the repository as its cwd. It also covers a child whose env was
+built by hand without `CLAUDE_PROJECT_DIR` (or had it deleted) and whose cwd is your checkout: its
+engine falls back to that cwd. NOT SEEN: a file outside the
+hashed set (the session bookkeeping above included), and a detached child that writes after the
+test process exits.
+
+**A test that reads this repository through a direct lib call names it.** Outside `main()`, the
+engine's root is the pin. So wrap the call in `withRoot(REPO, () => …)` from
+`scripts/test/fixtures/explicit-root.mjs`, and give git calls `cwd: REPO`. Never unset or re-point
+`process.env.CLAUDE_PROJECT_DIR` to make such a test pass.
+
+The record is reported but NOT restored: run `git diff` and remove what the test wrote. The exit
+check cannot tell which process wrote a file. The writer may be this file, one running alongside it,
+or another pm process (your session, a hook, another worktree). The mtime helps you tell which;
+re-running the file alone settles it. `assert/record-isolation.test.mjs` refuses a test file whose
+static imports never reach the fixture. It is loaded through `assert-git-shim.mjs` and `helpers.mjs`;
+any other file imports it directly. The guard exists because on 2026-09-21 a functional run leaked
+two epics and 554 `honcho-memories.log` lines into this repository's record, and nothing noticed.
 
 ### Dates — never hardcode one the engine compares against "now"
 

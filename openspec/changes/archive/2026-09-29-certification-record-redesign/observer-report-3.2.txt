@@ -1,0 +1,107 @@
+# observer-report-3.2 — the observer REPORT-ONLY over this repository's functional half (refusal not armed)
+# 2026-09-29T03:01:34.195Z, node v26.10.0, HEAD be100e04 (3.1), the 3.2 tree edits and observer STAGED
+# command: node <scratchpad>/apply-L3/report-only.mjs <this file>  (prepareRun() over the STAGED index; NODE_OPTIONS=--import <run>/tree/scripts/test/fixtures/observe-reads.mjs?dir=…&root=…)
+# run: exit 0, 545s, tests 1236, pass 1236, fail 0; 2326 observed processes
+# functionalSubject() over the run's index copy: 185 paths; tracked in the copy: 997
+
+## Observed tracked paths outside the subject that are the RECORD — excluded by rule (80)
+.conductor/state.json  — excluded by rule
+CHANGELOG.md  — excluded by rule
+docs/superpowers/plans/2026-07-14-epic-hierarchy-orchestration.md  — excluded by rule
+docs/superpowers/plans/2026-07-21-conductor-mjs-module-split.md  — excluded by rule
+docs/superpowers/plans/2026-07-26-edd-harness-agent-behavior-testing.md  — excluded by rule
+docs/superpowers/plans/2026-07-29-platform-aware-rules-block.md  — excluded by rule
+docs/superpowers/plans/2026-08-18-state-write-conflict-guard.md  — excluded by rule
+docs/superpowers/plans/2026-09-25-sync-registers-ids-add-epic-refuses.md  — excluded by rule
+docs/superpowers/plans/2026-09-25-tracker-item-dedup-bypassed-and-add-many-drops-input-silently.md  — excluded by rule
+openspec/changes/archive/2026-07-19-multi-tracker-primary-secondary-support/specs/tracker-sync/spec.md  — excluded by rule
+openspec/changes/archive/2026-07-19-multi-tracker-primary-secondary-support/tasks.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/integrity-day-one.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/specs/epic-annotation/spec.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/specs/epic-disposition/spec.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/specs/state-write-guard/spec.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/specs/tracker-sync/spec.md  — excluded by rule
+openspec/changes/archive/2026-08-25-conductor-tells-the-truth/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-08-record-answers-for-itself/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-08-record-answers-for-itself/specs/epic-annotation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-08-record-answers-for-itself/specs/epic-disposition/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-08-record-answers-for-itself/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-08-record-answers-for-itself/specs/state-write-guard/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-08-record-answers-for-itself/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-11-detached-head-is-not-a-workspace/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-11-detached-head-is-not-a-workspace/specs/state-write-guard/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-11-detached-head-is-not-a-workspace/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-14-archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-14-archive-gate-reads-what-it-writes/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-14-gate-verdict-withdrawal/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-14-gate-verdict-withdrawal/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-15-every-verb-refuses-what-it-does-not-read/specs/epic-annotation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-15-every-verb-refuses-what-it-does-not-read/specs/verb-surface/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-15-every-verb-refuses-what-it-does-not-read/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-15-state-file-refuses-to-guess/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-15-state-file-refuses-to-guess/specs/managed-rules-block/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-15-state-file-refuses-to-guess/specs/state-write-guard/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-15-state-file-refuses-to-guess/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-16-commit-nudge-reads-the-whole-move/specs/commit-observation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-16-commit-nudge-reads-the-whole-move/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-16-commit-nudge-reads-the-whole-move/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-16-commit-nudge-reads-the-whole-move/specs/state-write-guard/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-16-commit-nudge-reads-the-whole-move/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-16-gates-bind-to-verified-evidence/specs/epic-annotation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-16-gates-bind-to-verified-evidence/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-16-gates-bind-to-verified-evidence/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-17-emitted-commands-run-as-written/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-17-emitted-commands-run-as-written/specs/emitted-instructions/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-17-emitted-commands-run-as-written/specs/epic-disposition/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-17-emitted-commands-run-as-written/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-17-emitted-commands-run-as-written/specs/tracker-sync/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-17-emitted-commands-run-as-written/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-17-user-text-never-forges-output/specs/output-text-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-17-user-text-never-forges-output/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-18-operations-ship-their-inverses/specs/epic-autonomy/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-operations-ship-their-inverses/specs/epic-disposition/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-operations-ship-their-inverses/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-operations-ship-their-inverses/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-18-the-guard-covers-every-write-path/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-the-guard-covers-every-write-path/specs/managed-rules-block/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-the-guard-covers-every-write-path/specs/state-write-guard/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-the-guard-covers-every-write-path/specs/tracker-sync/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-18-the-guard-covers-every-write-path/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-21-functional-assertion-test-split/specs/engine-invocation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-21-functional-assertion-test-split/specs/suite-certification/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-21-functional-assertion-test-split/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-22-unit-rung-and-fixture-snapshots/specs/engine-invocation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-22-unit-rung-and-fixture-snapshots/specs/suite-certification/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-22-unit-rung-and-fixture-snapshots/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-24-node-support-policy/specs/engine-invocation/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-24-node-support-policy/specs/runtime-support/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-24-node-support-policy/specs/suite-certification/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-24-node-support-policy/tasks.md  — excluded by rule
+openspec/changes/archive/2026-09-25-handoff-demand-blind-spots/specs/conductor-record/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-25-handoff-demand-blind-spots/specs/emitted-instructions/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-25-handoff-demand-blind-spots/specs/epic-disposition/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-25-handoff-demand-blind-spots/specs/gate-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-25-handoff-demand-blind-spots/specs/output-text-integrity/spec.md  — excluded by rule
+openspec/changes/archive/2026-09-25-handoff-demand-blind-spots/tasks.md  — excluded by rule
+
+## Observed tracked paths outside the subject and NOT the record — derivation gaps (0)
+
+## Expected Node children that never arrived (0)
+
+## Reading
+# Derivation gaps: NONE. Unarrived Node children: NONE. The run passed 1236/1236 under the observer.
+# Every out-of-subject read is the RECORD, excluded by rule (spec: openspec/, .conductor/, CHANGELOG.md,
+# docs/ other than the parity ledger):
+#   openspec/changes/archive/…    71 files — conductor-15's archive walks (1335-1436), as the task expects;
+#   .conductor/state.json           the live-record reads (conductor-15:806, conductor-18:21), as expected;
+#   CHANGELOG.md                    conductor-37 and the engine (plugin-meta.mjs), as expected;
+#   docs/superpowers/plans/*.md     7 files — NOT named in the task's "at least" list. They are the live
+#                                   record's plan documents, reached by the engine through plansDir()
+#                                   (scripts/lib/constants.mjs:70) when a live-record test runs the integrity
+#                                   checks over the repository's real state.json, whose superpowers epics name
+#                                   them. docs/ is the record by the spec's own definition, so they are
+#                                   excluded by rule, not a derivation gap; no subject root is involved and
+#                                   the subject was not widened.
+# Nothing outside every subject root and the record (.claude/, .github/, PROJECT.md, …) was observed.

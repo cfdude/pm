@@ -87,6 +87,63 @@ test("a repo that git-ignores the conductor's output is never told to commit it"
   assert.match(out, /upgraded \(\d+ migration\(s\)\)/);
 });
 
+// ───────────── a session file the repo already COMMITTED (brief-txt-tracked-in-fleet-repos) ─────────────
+//
+// 14 of 24 pm-managed repos had committed `.conductor/brief.txt` before pm ignored it. An ignore line
+// does nothing for a tracked file, so upgrade prints the untrack command — and pm never runs it.
+
+const UNTRACK = /UNTRACK PM'S SESSION FILES/;
+
+test("a repo that committed the brief is told the exact git rm that untracks it, and the line works", () => {
+  const cwd = staleCommittedRepo();
+  // The fleet state: the brief committed, and a .gitignore that predates its entry.
+  const gi = path.join(cwd, ".gitignore");
+  fs.writeFileSync(gi, fs.readFileSync(gi, "utf8").split("\n").filter(l => l !== ".conductor/brief.txt").join("\n"));
+  fs.writeFileSync(path.join(cwd, ".conductor", "brief.txt"), "brief\n");
+  execFileSync("git", ["add", "-f", ".conductor/brief.txt", ".gitignore"], { cwd });
+  execFileSync("git", ["commit", "-q", "-m", "fleet state"], { cwd });
+
+  const out = runCombined(["upgrade"], { cwd });
+  assert.match(out, UNTRACK);
+  const rmLine = out.split("\n").find(l => l.trim().startsWith("git rm "));
+  assert.ok(rmLine, "a copy-pasteable git rm line, not a description");
+  assert.match(rmLine, /'\.conductor\/brief\.txt'/);
+  assert.doesNotMatch(rmLine, /activity|detours/, "only the entries the index really tracks are named");
+  // pm itself untracked nothing.
+  assert.match(execFileSync("git", ["ls-files", ".conductor/brief.txt"], { cwd, encoding: "utf8" }), /brief\.txt/);
+
+  // RUN the printed line exactly as a user would paste it.
+  execFileSync("/bin/sh", ["-c", rmLine.trim()], { cwd });
+  assert.equal(execFileSync("git", ["ls-files", ".conductor/brief.txt"], { cwd, encoding: "utf8" }), "",
+    "the printed command untracks it");
+  assert.ok(fs.existsSync(path.join(cwd, ".conductor", "brief.txt")), "--cached leaves the file on disk");
+  execFileSync("git", ["commit", "-q", "-m", "untrack"], { cwd });
+  assert.doesNotMatch(runCombined(["upgrade"], { cwd }), UNTRACK, "fixed once, never nagged again");
+});
+
+test("a quoted glob and the directory entry in the printed line are expanded by git against the index", () => {
+  const cwd = staleCommittedRepo();
+  const conductor = path.join(cwd, ".conductor");
+  fs.mkdirSync(path.join(conductor, "activity"), { recursive: true });
+  fs.writeFileSync(path.join(conductor, "activity", "seg-1.jsonl"), "{}\n");
+  fs.writeFileSync(path.join(conductor, "session-claim.json.tmp-1"), "{}\n");
+  execFileSync("git", ["add", "-f", ".conductor/activity/seg-1.jsonl", ".conductor/session-claim.json.tmp-1"], { cwd });
+  execFileSync("git", ["commit", "-q", "-m", "tracked by accident"], { cwd });
+
+  const out = runCombined(["upgrade"], { cwd });
+  const rmLine = out.split("\n").find(l => l.trim().startsWith("git rm "));
+  assert.match(rmLine, /'\.conductor\/session-claim\.json\*'/);
+  assert.match(rmLine, /'\.conductor\/activity'/);
+  execFileSync("/bin/sh", ["-c", rmLine.trim()], { cwd });
+  assert.equal(execFileSync("git", ["ls-files", ".conductor/activity", ".conductor/session-claim.json.tmp-1"],
+    { cwd, encoding: "utf8" }), "");
+});
+
+test("a repo with nothing of pm's session files tracked is never told to untrack anything", () => {
+  const cwd = staleCommittedRepo();
+  assert.doesNotMatch(runCombined(["upgrade"], { cwd }), UNTRACK);
+});
+
 test("outside a git repository there is nothing to compare against, and it stays silent", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

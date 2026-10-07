@@ -1,0 +1,16 @@
+Cross-spec review (task 0.2, required task item 5) — not applicable at L1.
+Recorded 2026-09-29T00:38:14Z at HEAD 48afa418.
+
+Release 0.51.0 holds ONE spec file, below the item's threshold of two (counted flat across the release):
+  openspec/changes/certification-record-redesign/specs/suite-certification/spec.md
+
+Evidence:
+  $ fd -t f spec.md openspec/changes --exclude archive      -> the one path above
+  $ node scripts/conductor.mjs release show 0.51.0           -> "cross-spec review: — (below the gate's threshold)"
+  (the engine has no `status` verb; `release show` is its read-only view of one release)
+
+Trigger to re-run (task 5.7): the moment any other 0.51.0 member adds a spec file —
+store-owns-claude-md-managed-block, gh-cfdude-pm-205, guards-that-read-engine-source-drift-silently,
+hook-fixtures-couple-to-every-hook-step — run the cross-spec-review skill over the release's whole spec
+set before either change's /opsx:apply, and record
+record-cross-spec-review 0.51.0 --verdict pass|fail --reviewer "<identity>".

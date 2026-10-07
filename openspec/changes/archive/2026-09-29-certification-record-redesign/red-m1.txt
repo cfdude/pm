@@ -1,0 +1,64 @@
+# Gate 2 m1 — an entry is created, never rewritten
+# node --test --test-reporter=spec --test-name-pattern '^m1 ' scripts/test/assert/drift-script.test.mjs
+
+## RED — writeManifestEntry() renaming over the existing entry (f419b44e..69c5aa53)
+✖ m1 an entry is NEVER rewritten: a second run over identical content leaves the first file's bytes untouched (33.926583ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1061.201292
+
+✖ failing tests:
+
+test at scripts/test/assert/drift-script.test.mjs:395:1
+✖ m1 an entry is NEVER rewritten: a second run over identical content leaves the first file's bytes untouched (33.926583ms)
+  AssertionError [ERR_ASSERTION]: the first run's entry is byte-identical after the second run
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/drift-script.test.mjs:405:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+## GREEN — link, EEXIST keeps the first file; the whole file, with the 2.2 tests moved from rename to link
+✔ 5.4/6.1: the repository's own suite passes all four checks (36.218666ms)
+✔ 5.4/6.1: the id is the file's place on disk, both directions of the walk (0.552791ms)
+✔ check 1 — a tracked test file in neither half and in no bucket is REFUSED, by name (0.425416ms)
+✔ check 2 — a functional id with no assertion twin is REFUSED, naming the id (0.439083ms)
+✔ check 3 — a staged change touching one half only is REFUSED, naming the id and the twin's path (0.3065ms)
+✔ check 4 — a staged subject change with no agreeing entry is REFUSED, naming the bucket, the paths and the run (9.818ms)
+✔ check 4 — FRESHNESS IS THE CONTENT, not the age and not the commit (44.51275ms)
+✔ check 4 — the sweeps bucket is a SECOND, disjoint demand, and the functional subject is what the half OBSERVES (3.3) (76.290333ms)
+✔ check 4 — an entry from another tree neither passes nor refuses (41.884667ms)
+✔ 3.3: the functional subject over this repository is DERIVED from what the half observes, not typed (707.047333ms)
+✔ 6.1/6.4: the drift script starts no engine, no runner and no fixture — it reads the index (0.635958ms)
+✔ G1 every name listing drift reads from git is NUL-delimited (-z), so a name git would quote is read as itself (0.521166ms)
+✔ G-M1 the refusal says WHICH BUCKET changed, which paths, and which run satisfies it (0.077208ms)
+✔ 2.2 writeManifestEntry() names the file by the manifest's sha256 and creates it through a unique temp name plus a link (46.201458ms)
+✔ m1 an entry is NEVER rewritten: a second run over identical content leaves the first file's bytes untouched (83.3835ms)
+✔ 2.2 two writers interleaved through an injected io both survive whole (Concurrent writers lose no entry) (90.846917ms)
+✔ 2.2 pruning keeps the newest 50 by ranAt, and never the entry just written (489.6995ms)
+✔ 2.2 pruning removes a *.tmp older than 1 hour and a pm-certify-run.* older than 24 hours, and keeps younger ones (176.526333ms)
+✔ 2.2 a manifest holding no test file of its bucket is refused, and nothing is written (23.19425ms)
+✔ 2.3 a common dir holding only pm-suite-certification.json yields ZERO entries (1.938958ms)
+✔ 2.3 writeManifestEntry() leaves the legacy file byte-identical (24.531125ms)
+✔ 2.3 a fresh clone (no record directory) demands a run only when a subject path is staged (56.660875ms)
+✔ 2.5 two worktrees' entries coexist in either write order, and each certifies only its own content (5.259458ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3068.84575

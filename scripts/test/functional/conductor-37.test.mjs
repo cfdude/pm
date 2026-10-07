@@ -45,6 +45,7 @@
 // EVERY ASSERTION HERE WAS MEASURED AT 0 VIOLATIONS ACROSS EVERY SHIPPED MARKDOWN FILE BEFORE
 // IT WAS ADOPTED. Candidates that scored above zero were rejected, and the rejections are
 // recorded at the bottom of this file so nobody re-proposes them.
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

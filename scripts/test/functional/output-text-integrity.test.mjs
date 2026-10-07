@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, fixtureCommits, fixtureGit, observationRepo, tmpRepo, projectMd, readState, writeState } from "../fixtures/functional-harness.mjs";
+import { codeOnly, engineCode } from "../fixtures/source-code.mjs";
 
 const lib = (name) => new URL(`../../lib/${name}`, import.meta.url).href;
 
@@ -181,7 +182,7 @@ test("2.3a A backslash before a pipe does not open a delimiter", () => {
 });
 
 test("2.4 source guard: every PROJECT.md data row goes through tableRow()", () => {
-  const src = fs.readFileSync(new URL("../../lib/render.mjs", import.meta.url), "utf8");
+  const src = engineCode("scripts/lib/render.mjs");
   const pushes = [...src.matchAll(/md\.push\(\s*(["'`])\|/g)];
   assert.ok(pushes.length > 0, "render.mjs still pushes its literal header and separator rows");
   for (const m of pushes) {
@@ -637,19 +638,25 @@ test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable build
   const builders = new Set();
   const decls = [];
   for (const f of files) {
-    const src = fs.readFileSync(new URL(f, libDir), "utf8");
+    const src = engineCode(`scripts/lib/${f}`);   // CODE: a comment naming a builder call is not one
     const heads = [...src.matchAll(/^(?:export\s+)?(?:async\s+)?(?:function\s+([\w$]+)|(?:const|let)\s+([\w$]+)\s*=)/gm)];
     heads.forEach((m, i) => decls.push({ name: m[1] || m[2], body: src.slice(m.index, i + 1 < heads.length ? heads[i + 1].index : src.length) }));
     for (const m of src.matchAll(/\bconst\s+([\w$]+)\s*=\s*\([^)]*\)\s*=>\s*orNoRemedy\(/g)) builders.add(m[1]);
   }
   const OWN = new Set(["orNoRemedy", "noRemedyMessage", "asCode", "NoRemedy", "NO_REMEDY_TEXTS"]);
   // A declaration is a builder if it produces the message itself, or calls a builder (to a fixpoint) —
-  // obligationRemedy() reaches it only through DELIVERED_OBLIGATIONS' remedy lambdas.
+  // obligationRemedy() reaches it only through DELIVERED_OBLIGATIONS' remedy lambdas — `entry.remedy(epic)`
+  // on an entry it FINDS in that table — so a declaration that reads a builder TABLE (an ALL_CAPS
+  // builder, called through its entries rather than by name) is one too. Until the source was read as
+  // CODE this was satisfied by a COMMENT: the JSDoc after obligationRemedy() names `archiveGate()`, and
+  // that prose was inside its declaration's slice (guards-that-read-engine-source-drift-silently).
+  const isTable = (b) => /^[A-Z][A-Z0-9_]*$/.test(b);
   for (let grew = true; grew;) {
     grew = false;
     for (const d of decls) {
       if (OWN.has(d.name) || builders.has(d.name)) continue;
-      if (/\borNoRemedy\(|\bnoRemedyMessage\(/.test(d.body) || [...builders].some(b => new RegExp(`\\b${b}\\(`).test(d.body))) {
+      if (/\borNoRemedy\(|\bnoRemedyMessage\(/.test(d.body) ||
+        [...builders].some(b => new RegExp(isTable(b) ? `\\b${b}\\b` : `\\b${b}\\(`).test(d.body))) {
         builders.add(d.name); grew = true;
       }
     }
@@ -658,7 +665,7 @@ test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable build
     `the derived population holds the known builders: ${[...builders].join(", ")}`);
   const offenders = [];
   for (const f of files) {
-    const lines = fs.readFileSync(new URL(f, libDir), "utf8").split("\n");
+    const lines = engineCode(`scripts/lib/${f}`).split("\n");
     lines.forEach((line, i) => {
       for (const b of builders) {
         const call = BS + BT + "$" + "{" + b + "(";
@@ -699,7 +706,7 @@ async function stdoutJsonBypasses(read = (rel) => fs.readFileSync(path.join(REPO
   const { sweptFiles, topLevelFunctions } = await import("../sweeps/output-interpolations.mjs");
   const offenders = [];
   for (const rel of sweptFiles()) {
-    const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+    const src = codeOnly(read(rel), rel);
     for (const fn of topLevelFunctions(src)) {
       const body = src.slice(fn.start, fn.end);
       // REPAIRED BY 0.47.0 (task 3.4), and the repair is the difference between a guard and a
@@ -791,7 +798,7 @@ test("5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own byte
   const libDir = new URL("../../lib/", import.meta.url);
   const callers = [];
   for (const f of ["../../conductor.mjs", ...fs.readdirSync(libDir).filter(n => n.endsWith(".mjs")).map(n => `../../lib/${n}`)]) {
-    const src = fs.readFileSync(new URL(f, import.meta.url), "utf8");
+    const src = engineCode(`scripts/${f.slice("../../".length)}`);   // CODE: a prose jsonText() is no caller
     for (const m of src.matchAll(/\bjsonText\(/g)) {
       let d = 0, top = [], i = m.index + m[0].length - 1, q = null;
       for (; i < src.length; i++) {
@@ -824,7 +831,7 @@ async function detourReaderFindings(read = (rel) => fs.readFileSync(path.join(RE
   const found = [], problems = [];
   const bodies = {};
   for (const rel of sweptFiles().filter(r => r.startsWith("scripts/lib/"))) {
-    const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+    const src = codeOnly(read(rel), rel);
     for (const fn of topLevelFunctions(src)) {
       const body = src.slice(fn.start, fn.end);
       if (fn.name !== "readDetourRows" && /\b(?:readDetourRows|visibleDetourRows)\(/.test(body)) {
@@ -1026,6 +1033,9 @@ recipe("add-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic"
 recipe("add-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("d"), ...planned, "--description", v]) });
 recipe("add-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("n"), ...planned, "--notes", v]) });
 recipe("add-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
+recipe("add-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("rm"), "--lane", "claude-code", "--review-mode", v]) });
+recipe("add-epic --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("vb"), "--lane", "claude-code", "--verbosity", v]) });
+recipe("add-epic --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("md"), "--lane", "claude-code", "--model", v]) });
 recipe("add-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   const id = fresh("as");
   ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code", "--add-story", v]);
@@ -1055,6 +1065,9 @@ recipe("add-many --title", { rendered: true, run: (c, v) => batch(c, { id: fresh
 recipe("add-many --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => batch(c, { id: fresh("ml"), lane: v }) });
 recipe("add-many --priority", { exempt: EXEMPT.vocab("priority"), run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
 recipe("add-many --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => batch(c, { id: fresh("ms"), lane: "claude-code", status: v }) });
+recipe("add-many --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => batch(c, { id: fresh("mrm"), lane: "claude-code", reviewMode: v }) });
+recipe("add-many --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => batch(c, { id: fresh("mvb"), lane: "claude-code", verbosity: v }) });
+recipe("add-many --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => batch(c, { id: fresh("mmd"), lane: "claude-code", model: [v] }) });
 recipe("add-many --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => batch(c, { id: fresh("mpa"), lane: "claude-code", parent: v }) });
 recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: v })) });
 recipe("add-many --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: "X-2", externalUrl: v })) });
@@ -1084,6 +1097,7 @@ for (const verb of ["brief", "commit-nudge", "gate-guard", "init", "lesson-advic
 // ── read verbs ──
 recipe("activity --since", { notRendered: "an unparseable --since filters nothing and is printed by no surface", run: (c, v) => pm(c.cwd, ["activity", "--since", v]) });
 recipe("activity --epic", { notRendered: "--epic only filters the events read; the report does not echo it", run: (c, v) => pm(c.cwd, ["activity", "--epic", v]) });
+recipe("sync --only", { exempt: "--only must name a candidate change, plan or archived change or an existing epic; anything else is refused, the value echoed escaped, and nothing is written", run: (c, v) => pm(c.cwd, ["sync", "--only", v]) });
 recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and anything else is refused", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
 recipe("rules --epic", { notRendered: "--epic selects the review mode the block states and is not echoed", run: (c, v) => pm(c.cwd, ["rules", "--epic", v]) });
@@ -1116,6 +1130,7 @@ recipe("update-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["update
 recipe("update-epic --clear", { exempt: "--clear must name a field this command can unset", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear", v]) });
 recipe("update-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--description", v]) });
 recipe("update-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--notes", v]) });
+recipe("update-epic --spec-deltas-waived", { notRendered: "the waiver's reason is stored and printed by no surface (the briefing lists the waived epic's id, never the reason; the clear's announcement does not echo it)", run: (c, v) => pm(c.cwd, ["update-epic", "sw", "--spec-deltas-waived", v]) });
 recipe("update-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
 recipe("update-epic --attribute-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--attribute-commit", v]) });
 recipe("update-epic --withdraw-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-commit", v, "--withdrawal-reason", "r"]) });
@@ -1133,6 +1148,9 @@ recipe("update-epic --declined-deferral", { notRendered: "a deferral assertion i
 recipe("update-epic --carried-to", { exempt: EXEMPT.knownEpic("carried-to"), run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
 recipe("update-epic --correct-disposition", { rendered: true, run: (c, v) => (ok(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "killed", "--reason", "r", "--no-deferrals"]), pm(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "abandoned", "--reason", "r2", "--correct-disposition", v, "--no-deferrals"])) });
 recipe("update-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--review-mode", v]) });
+recipe("update-epic --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--verbosity", v]) });
+recipe("update-epic --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--model", v]) });
+recipe("update-epic --clear-model", { exempt: EXEMPT.vocab("clear-model"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear-model", v]) });
 recipe("update-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
   ok(c.cwd, ["update-epic", "st", "--add-story", v]);
   return pm(c.cwd, ["update-epic", "st", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
@@ -1193,6 +1211,13 @@ recipe("set-autonomy --revoke-reason", { notRendered: "autonomy grants, context 
 recipe("set-lane-routing --add", { notRendered: "a lane-routing override is read by suggest-lane, whose output is JSON", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--add", `${v}:claude-code`]) });
 recipe("set-lane-routing --remove", { notRendered: "removing an override prints the count removed, not the match", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--remove", v]) });
 recipe("set-review-mode --mode", { exempt: EXEMPT.vocab("mode"), run: (c, v) => pm(c.cwd, ["set-review-mode", "--mode", v]) });
+recipe("set-profile --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["set-profile", "--lane", v, "--review", "off"]) });
+recipe("set-profile --review", { exempt: EXEMPT.vocab("review"), run: (c, v) => pm(c.cwd, ["set-profile", "--review", v]) });
+recipe("set-profile --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm(c.cwd, ["set-profile", "--model", v]) });
+recipe("set-profile --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["set-profile", "--verbosity", v]) });
+recipe("set-profile --unset", { exempt: EXEMPT.vocab("unset"), run: (c, v) => pm(c.cwd, ["set-profile", "--unset", v]) });
+recipe("profile --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["profile", "--lane", v]) });
+recipe("profile --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["profile", "--epic", v]) });
 recipe("set-tracker --role", { exempt: EXEMPT.vocab("role"), run: (c, v) => pm(c.cwd, ["set-tracker", "--role", v, "--system", "jira"]) });
 recipe("set-tracker --system", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--system", v, "--project", "ABC", "--direction", "inward"]) });
 recipe("set-tracker --repo", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--role", "secondary", "--system", "gitlab", "--repo", v]) });
@@ -1438,6 +1463,16 @@ test("7.2 the sweep: every governed input, one accumulated record, every surface
   ok(cwd, ["add-epic", "--id", "cs1", "--lane", "openspec"]);
   ok(cwd, ["release", "cs", "--intent", "cross-spec fixture", "--member", "cs1"]);
   ok(cwd, ["add-epic", "--id", "ue2", "--lane", "superpowers"]);
+  // `sw`: an epic IN the spec-deltas check's scope (delivered, openspec lane, archived), the only kind
+  // `update-epic --spec-deltas-waived` accepts.
+  ok(cwd, ["add-epic", "--id", "sw", "--lane", "openspec"]);
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "sw"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "sw", "proposal.md"), "# p\n");
+  legacyWrite(cwd, (s) => {
+    const e = s.epics.find(x => x.id === "sw");
+    e.status = "archived";
+    e.disposition = { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" };
+  });
   ok(cwd, ["add-epic", "--id", "tr", "--lane", "claude-code", "--external-id", "TR-1", "--external-url", "https://example.test/TR-1"]);
   ok(cwd, ["update-epic", "st", "--add-story", "a story"]);
   ok(cwd, ["claim", "cl2", "--session", "s2"]);

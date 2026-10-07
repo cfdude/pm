@@ -1,0 +1,10 @@
+What the work taught (5.6) — named by kind, evidence attached. Nothing was filed with a tracker (this run never pushes and calls no external system).
+
+TOOLING FRICTION (candidate /pm:feedback)
+1. The assertion twin the task asks for (3.2: "the twin asserts the same over the git double") cannot exist for the scenario as written: the git double answers from a FROZEN capture of one fixed repository (scripts/test/fixtures/git-gateway-capture.json), so it cannot model a candidate's commit graph or answer ancestry for a fix commit. unit/conductor-09 already names the same omission for --base-sha/--head-sha. The twin therefore pins the parts that need no graph (D2's no-release-level-verb claim, the per-member range refusal, the staleness shape branch read through `render`). Spec-vs-tooling gap worth a spec amendment: say what the twin can assert.
+2. `unitTest` cannot call lib functions that resolve commits (gateStaleness) directly: "1 REAL git invocation reached the shim" fails the file after every test passes. The message says to drive it through the harness, which means testing through `render`. Cost: one rewrite of a test file.
+3. Same certify cost as the sibling change: each scripts/lib edit needs both certifies (~5 min), so 6 tasks went into 2 commits.
+
+SPEC DEVIATION worth a note for the converged review: `release show` takes no flags and is a pure read, so the candidate line cannot know the review's `<base>..<head>`. "Candidate member" is therefore implemented as "release member, not archived, with at least one attributed commit". This equals the spec's set whenever members were built inside one candidate; it over-includes a member built in an earlier candidate that is not yet archived.
+
+PROCESS — none earned. PRACTICE — none.

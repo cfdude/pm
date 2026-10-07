@@ -197,10 +197,28 @@ refusal with line numbers, never a deletion.
 refusal names the reason and the git remedies (the full message is in `/pm:gate-guard`). Fix the
 file, then re-run. `--force` does not override it.
 
-`upgrade` also adds three `.gitignore` entries through the `ensureGitignore()` it already runs:
-`.conductor/state.json.lock*` (the state lock and its break file), `.conductor/state.json.tmp*` (a
-save's temp file, left only by a save killed mid-write) and `.conductor/session-claim.json*`
-(appended alongside the older exact `session-claim.json` entry, which is left in place, harmless).
+`upgrade` also back-fills `.gitignore` through the `ensureGitignore()` it already runs, adding any
+of pm's per-checkout files the file lacks: `.conductor/brief.txt` (the SessionStart/PreCompact
+brief), `.conductor/detours.log`, `.conductor/write-conflicts.log` and its rotated
+`.conductor/write-conflicts.log.prev`, `.conductor/write-conflicts.latch`, the Honcho outbox
+`.conductor/honcho-memories.log` (written explicitly, so a repo does not depend on a global `*.log`
+rule to keep it out of git), `.conductor/commit-watch.json`, `.conductor/commit-observe.json*`, `.conductor/session-claim.json*`
+(appended alongside any older exact `session-claim.json` entry, which is left in place, harmless),
+`.conductor/state.json.lock*`, `.conductor/state.json.tmp*` and `.conductor/activity/`. It never
+removes a line.
+
+An ignore line does nothing for a file git ALREADY tracks. When any of those paths is in the
+index (many repos committed `.conductor/brief.txt` before pm ignored it), `upgrade` prints an
+`⚠ UNTRACK PM'S SESSION FILES` block naming exactly the tracked entries:
+
+```
+git rm -r --cached --quiet -- '.conductor/brief.txt'
+git commit -m "chore(pm): stop tracking the conductor's session files"
+```
+
+Run it from the project root. `--cached` removes the files from git only; they stay on disk. pm
+never runs it itself. The block repeats on every `upgrade` until the files are untracked, and is
+silent wherever git cannot answer (no repository, or no index).
 
 ## What `0.27.0`'s migration does
 

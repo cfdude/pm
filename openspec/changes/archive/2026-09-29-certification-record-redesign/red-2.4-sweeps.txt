@@ -1,0 +1,12 @@
+# staged: scripts/test/sweeps/output-interpolations.mjs
+## PRE-SWITCH drift (f663cbdd): exit 0
+drift: ok — 3 tracked test files, 1 functional ids, 1 staged paths
+
+## SWITCHED drift (13a10ee3): exit 1
+drift: ABORT — the suite's two halves have drifted apart
+
+the sweeps bucket's subject changed (scripts/test/sweeps/output-interpolations.mjs), and no passing run over this content is recorded. Run `node scripts/test/certify.mjs sweeps` over the staged commit to certify the new content.
+
+drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+

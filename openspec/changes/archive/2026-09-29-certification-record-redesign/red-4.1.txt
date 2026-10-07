@@ -1,0 +1,151 @@
+# red-4.1 — parseTwinExemptions() over git interpret-trailers --parse --no-divider output (certification-record-redesign 4.1)
+# 2026-09-29T04:22:17Z, node v26.10.0, HEAD dd91380f
+
+## RED — unit/drift-coupling.test.mjs against the pre-GREEN tree (no parseTwinExemptions())
+$ FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/drift-coupling.test.mjs
+✖ 4.1 only Twin-Unchanged trailers are read; every other trailer git returned is ignored (1.136958ms)
+✖ 4.1 the key is matched as git's %(trailers:key=) matches it — without regard to case (0.120458ms)
+✖ 4.1 a hyphenated id is read whole: the id is the value's FIRST TOKEN, not what precedes the first '-' (0.080416ms)
+✖ 4.1 a reason that itself holds ' - ' is read whole: the split is the FIRST spaced separator after the id (0.08625ms)
+✖ 4.1 each of the three spaced separators splits: ' — ', ' -- ' and ' - ' (0.684584ms)
+✖ 4.1 no spaced separator after the first token: the id is that token and the reason is EMPTY (0.315459ms)
+✖ 4.1 an empty reason is KEPT as empty, so the coupling check can refuse it by name (0.173334ms)
+✖ 4.1 one declaration per trailer, in git's order; nothing parsed is nothing declared (0.077375ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 0
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 366.350834
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 only Twin-Unchanged trailers are read; every other trailer git returned is ignored (1.136958ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 the key is matched as git's %(trailers:key=) matches it — without regard to case (0.120458ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 a hyphenated id is read whole: the id is the value's FIRST TOKEN, not what precedes the first '-' (0.080416ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 a reason that itself holds ' - ' is read whole: the split is the FIRST spaced separator after the id (0.08625ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 each of the three spaced separators splits: ' — ', ' -- ' and ' - ' (0.684584ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 no spaced separator after the first token: the id is that token and the reason is EMPTY (0.315459ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 an empty reason is KEPT as empty, so the coupling check can refuse it by name (0.173334ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 one declaration per trailer, in git's order; nothing parsed is nothing declared (0.077375ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no parseTwinExemptions(): coupling with a declared exemption (design D4) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

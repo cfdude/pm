@@ -6,6 +6,224 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.51.0] — 2026-10-06
+
+Test infrastructure you can trust, and gate and record verbs that refuse what they should. The
+certification record that serialised parallel worktrees in 0.50.0 is redesigned, a guard now stops any
+test writing the real `.conductor` record, and the flaky and fragile test surfaces are fixed or
+quarantined (Theme A). The gate and record verbs refuse contradictory input, a Gate 1 verdict goes stale
+when a reviewed artifact changes, and `integrity` names four more kinds of drift (Theme B). A layered
+execution profile and a one-round release-candidate review arrive alongside them. 31 epics were members of
+this release: 30 shipped and one, `store-owns-claude-md-managed-block`, was deferred because no
+quiet-machine measurement was taken to justify it. Resolves #167, #198, #200, #201, #205, #206, #215,
+#216, #226, #227, #229, #230, #231, #232, #233 and #237. Run `/reload-plugins` after updating, then
+`/pm:upgrade` in each repo: the managed rules block changes (the planning-completeness paragraph, the
+execution profile and the release-candidate section) and `.gitignore` gains the session files below.
+There is no `state.json` schema change, so no migration runs: the newest `MIGRATIONS` entry is still
+0.44.0, and every field this release adds is optional.
+
+### Added
+
+* **An execution profile: review intensity, model and effort per job role, and report verbosity,
+  resolved most-specific-wins across four layers.** `set-profile` writes the project layer or, with
+  `--lane <lane>`, a lane's; an epic sets its own with `--review-mode`, `--model <role>=<model>[:<effort>]`
+  and `--verbosity` on `add-epic`, `update-epic` and `add-many`. Each field resolves on its own: epic,
+  then lane, then project, then the default (`review: standard`, `verbosity: quiet`, no model directive).
+  Models are `fable | opus | sonnet | haiku` with an effort (`haiku` takes none), for the roles
+  `implement | test | review`; `/pm:init` walks the user through it top-down and recommends `opus` at
+  `medium` for every role. `profile [--lane <lane> | --epic <id>]` reads the effective values back and
+  names the layer each came from. Every set has an inverse: `set-profile --unset …`, and on an epic
+  `--clear <field>` or `--clear-model <role>`. The engine records and emits the profile into the rules
+  block and the session brief; it never dispatches an agent or checks which model ran.
+* **`release show` prints a derived `candidate review:` line, and a `release-candidate` skill carries
+  the procedure.** One fresh-context review round over the merged candidate, a reviewer budget that is
+  a maximum, Critical-only reopening, and the same `baseSha..headSha` recorded as every member's Gate 2.
+  Nothing is stored: the line is derived from the candidate members' Gate 2 records and reads
+  `converged at <sha>` only when every member shares one base AND head, has a verdict, and none is a
+  `fail`; otherwise it lists each range, each member with no verdict and each failed member.
+* **A Gate 1 verdict goes stale when a reviewed artifact is amended (#198).** `record-gate-review
+  --gate 1 --artifact` now stores a sha-256 per readable artifact as `artifactDigests`, beside the
+  unchanged `artifacts` paths. Amending an artifact reads `⚠ stale` on `/pm:status` and the brief; an
+  unreadable one reads `⚠ unverifiable`. A verdict recorded before this release carries no digests and
+  renders exactly as before, never stale and never unverifiable. A live change's `tasks.md` is a progress
+  ledger that `/opsx:apply` ticks constantly, so it stays in the artifact list but is never digested.
+  The archive move is not an amendment, and staleness never blocks an archive.
+* **`sync --dry-run` previews a sync, and `sync --only <id>` imports selectively (#167).** `--dry-run`
+  prints what a real run would register (changes, plans, archived changes), flip and heal, flags the
+  one-time archive backfill when it would be one, and writes nothing: no `state.json`, no `PROJECT.md`,
+  no backfill marker. `--only <id>` (repeatable) limits registration to the named change, plan or
+  archived-change ids; an id that matches nothing is refused before anything is written, and a
+  selective run leaves the backfill marker unstamped so the next plain `sync` still announces it.
+  The two combine.
+* **`update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out
+  of the spec-deltas report.** The reason is the value, so it cannot be recorded blank. `integrity`'s
+  `delivered-epic-spec-deltas-absent` and the briefing's spec-sync block then stop naming the epic. It is
+  refused unless the epic is in the check's scope (a delivered, openspec-lane epic whose change is
+  archived), and the refusal names that scope. A waiver is never silent: the briefing and `render`'s output
+  print `SPEC DELTAS WAIVED (N)` with the epic ids. Inverse: `--clear spec-deltas-waived`.
+* **A release can record that it delivered: `release <id> --deliver`, and `--undeliver` to take it
+  back.** `integrity`'s `delivered-release-epic-left-open` reads the marker when it is there and reports
+  every open member not in the release's `deferred[]`, `active` or not. A release with no marker keeps the
+  member-derived reading; its finding now says it is inferred and prints `release <id> --deliver`. This
+  replaces the `--status active` workaround the check's earlier wording suggested. `release show` renders
+  the marker.
+* **An epic can claim its OpenSpec change by name.** `--plan` / `--spec` naming a file under
+  `openspec/changes/[archive/]<name>/` now holds that change for `integrity`'s
+  `archive-directory-has-no-epic` and for `sync`'s archive backfill, so a change proposed under a
+  different name than its premise epic is no longer reported as unheld, or registered a second time
+  (#200). `--clear spec` / `--clear plan` is the inverse.
+* **Four new `integrity` checks.** `tracker-item-held-by-two-epics` names two epics holding one tracker
+  item (the pre-0.50.0 duplicates), with `update-epic <one> --clear external-url` as the remedy (#231).
+  `archived-change-also-live` names a change present both live and under `archive/` with identical
+  content, the shape upstream `openspec archive` leaves because it copies a tree rather than moving it
+  (#215), with `git rm -r` of the live copy as the remedy. `late-failing-gate-review` reports a failing
+  verdict recorded after the merge as the real retrospective review it is, and
+  `gate-recorded-as-bookkeeping` no longer reports it (#201).
+  `archived-delivered-fails-delivered-obligation` names an archived `delivered` epic that no longer meets
+  what `delivered` requires by a path no gate sees: a Gate 2 flipped to fail after the archive, a stripped
+  `carriedTo`, or tasks changed on disk. `archive-directory-has-no-epic` also reports an archive directory
+  the 0.50.0 date rule set aside, in the same words `sync` uses.
+* **The emitted rules direct an agent to confirm an OpenSpec epic's planning is complete before treating
+  it as ready to apply.** One paragraph under "Re-read the source before an epic becomes the work": every
+  artifact the project's OpenSpec schema requires exists, and they agree. It states the obligation and
+  names no OpenSpec command. Run `/pm:upgrade` to refresh the managed block.
+* **Contributor tooling: flaky-test quarantine and a lean sub-agent bootstrap.** Nothing a plugin user runs
+  changes. A test failure is now re-run once, on the failed files only. A test listed in
+  `scripts/test/known-flakes.json` passes quietly and is printed as a "known flake"; a pass-on-retry that
+  is not listed passes loudly as an "UNLISTED flake" that needs an owning epic; a test that fails twice is
+  a real failure. Failures that cannot be tied to a file are never retried, so one file's flake cannot mask
+  another's failure. Each retry is appended to the git-ignored `.test-flakes.log`. Vitest and node's own
+  `--test-rerun-failures` were evaluated and not adopted (the reasons are in the epic's plan). Separately,
+  `.claude/agent-startup.md` replaces "read `CLAUDE.md` and `CONTRIBUTING.md` in full" in every dispatched
+  agent's brief. The recorded estimate is about 35.8K tokens before and 13.7K after, computed as bytes
+  divided by four and not measured in a live agent.
+
+### Changed
+
+* **An epic's `--review-mode` may now be BELOW the lane's or the repo's.** The old escalate-only
+  refusal is gone by decision; what replaces it is visibility: `profile --epic <id>` and `rules --epic`
+  name the layer each value came from and the higher value an epic lowers. `--clear review-mode` falls
+  back to the lane, then the repo dial.
+* **`update-epic --attribute-commit` records a commit once (#237).** A commit the epic already attributes,
+  or one given twice in a call (`HEAD` and its full sha included), is a no-op: exit 0, a line on stderr
+  naming it, nothing written. Retrying an attribution after a failed commit hook no longer inflates the
+  array that Gate 2 reachability and `integrity` reason over.
+* **The attribution array is read as a set, and nothing depends on its order (#216).** After a catch-up of
+  an earlier commit the array's last entry is an ancestor of the rest. The stale-Gate-2 remedy no longer
+  tells you to record `--head-sha <the last attributed commit>`: it names the attributed commit every
+  other one is an ancestor of, and the parent of the earliest attributed commit. `integrity`'s
+  bookkeeping arm dates "the merge commit" by the latest commit instead of the last element.
+* **Attributing a commit that turns a passing Gate 2 stale now says so (#205).** `--attribute-commit`
+  prints that the verdict moved to stale and names both ways out: re-record Gate 2 if the commit changed
+  the implementation, or `--withdraw-commit` if it was lifecycle bookkeeping (lessons routed after the
+  gate, the task-list tick). The ordering rule is in the attribution task item: commit such work before
+  recording Gate 2, and do not attribute it where you cannot.
+* **`update-epic` refuses contradictory deferral assertions and a directory as a plan.**
+  `--no-deferrals` together with `--deferral` or `--declined-deferral` is refused by name with nothing
+  written (#233). `--plan` / `--spec` on `update-epic` and `add-epic` refuse a trailing-slash value and a
+  path that exists and is not a regular file; a path that does not exist yet is still accepted (#232).
+  `add-many` entries' `planPath` / `specPath` get the same refusal.
+* **A printed archive invocation never carries a bare `--no-deferrals`.** `dispositionInvocation()`,
+  `deliveredArchiveInvocation()` and the superseded-epic remedy now print the placeholder
+  `<--no-deferrals | --deferral "<epicId>:<section>">`, because the bare flag is a claim the agent has not
+  made.
+* **`update-epic --status <non-archived>` no longer claims a status the heal undoes.** On an epic whose
+  change directory is archived on disk, the success line says the `--status` was not kept instead of
+  printing "updated" while `render` restores `archived`.
+* **`recover-created-at` dates an epic from the AUTHOR date of its earliest introducing commit.** It used
+  to print the committer date, which a rewrite (rebase, amend, cherry-pick) moves later than the
+  authoring: one epic was stamped 07-09 when its only introducing commit was authored 06-30. It keeps
+  full history and takes the earliest match by date. Dates already stamped are never overwritten; clear
+  one with `update-epic <id> --clear created-at` and re-run the verb.
+* **The attribution nudge no longer tells an agent to attribute bookkeeping, and no longer claims the
+  active epic owns a commit it cannot tie to it.** A commit whose changed paths are only `.conductor/**`,
+  `PROJECT.md` and/or a change moved under `openspec/changes/archive/` now gets "pm bookkeeping — needs no
+  attribution" instead of an `--attribute-commit` command. An archive move is recognised by pairing
+  `openspec/changes/<id>/<rest>` with `openspec/changes/archive/<date>-<id>/<rest>`, so an edit to a change
+  is still real work. When neither a commit's subject nor its paths name the single candidate epic, the
+  nudge says the engine cannot tell whether the commit is `<id>`'s work, instead of "record this commit
+  against its epic".
+* **Contributor tooling: the certification record is one file per passing run, named by what it
+  certified, so parallel worktrees certify with no lock (#226).** Nothing a plugin user runs changes.
+  `certify.mjs` used to rewrite one shared `pm-suite-certification.json`, and every commit resolved every
+  entry against its own tree, so a peer worktree's certification could refuse a commit it was not about,
+  and two certifies could lose each other's write. The record is now
+  `$(git rev-parse --git-common-dir)/pm-suite-certification.d/<bucket>/<key>.json`, created and never
+  rewritten. A commit is fresh only when one passing entry's manifest (the mode and blob id of every path
+  in the bucket's subject) equals that subject in the index, and a staged deletion of a subject path
+  demands a run too. Entries are pruned to the newest 50 per bucket. The old file is neither read nor
+  removed; its retirement is deferred to a later release.
+* **Contributor tooling: certify runs over the index, not the working tree (#230).** It copies the index
+  once, runs the bucket in a `git clone --shared` checked out from that copy, and records that copy's
+  manifest, so a partial stage is certified as its staged half and an edit made during a run of several
+  minutes never enters the record. It never writes the working tree, the index, the stash or the worktree
+  list, and removes its run directory on exit and on Ctrl-C.
+* **Contributor tooling: the functional half is demanded by what it observes (#229).** Its subject was
+  the engine modules that call the git gateway, so a change to a module the half imports but that never
+  reaches git (a refusal's wording in `archive-gate.mjs`) skipped it. The subject is now the half's import
+  closure, the assertion files it executes, the files it names, the shipped roots it walks, and
+  `README.md`, `CLAUDE.md` and `docs/parity-ledger.json` when named. Over the 0.50.0 build this moves the
+  functional demand from 15 of 126 commits to 70. A run-time observer loaded into every Node process the
+  half starts fails the certification, naming the file, when the half reads a tracked file the derivation
+  missed or starts a Node child whose `NODE_OPTIONS` drops the observer.
+* **Contributor tooling: diff coupling moved to a new `commit-msg` hook, with a declared and audited
+  exemption (#227).** A staged functional test still needs its assertion twin in the same commit, unless
+  the message carries a `Twin-Unchanged: <id> — <reason>` git trailer saying the change leaves what the
+  file tests untouched. git parses the trailer, and Gate 2 lists and judges every one in the reviewed range
+  (a numbered step in the `pr-workflow` skill). The pre-commit hook now runs enrolment, twin coverage and
+  freshness; a bare `node scripts/test/drift.mjs` still runs all four checks. A `git commit --amend`
+  judges the staged set against HEAD's parent, so a `Twin-Unchanged` declaration on a reworded message is
+  no longer refused as "not staged", and drift now names every stale bucket in one run, with the command
+  for each, instead of one per attempt.
+* **Contributor tooling: no test may write the developer's real `.conductor` record.** Every test bucket,
+  the hook's snapshot and certify's clone load `scripts/test/fixtures/record-isolation.mjs`, which pins
+  `CLAUDE_PROJECT_DIR` to an empty scratch directory and fails any test file that adds, changes or removes
+  a file under a protected `.conductor` (and fingerprints `PROJECT.md`, `CLAUDE.md` and `.gitignore`).
+  It never restores. A test that must read the live record names its root with `withRoot(REPO)`. The
+  evidence: on 2026-09-21 an `alpha/from-caller` epic and 554 `honcho-memories.log` lines leaked into the
+  real record. The prevention was proven by mutation.
+* **Contributor tooling: guards that read engine source can no longer be satisfied by a comment.** A guard
+  that matched `/archiveGate\(/` against the raw source of `lib/update-epic.mjs` stayed green with the
+  gate call deleted, because the file's own prose names the function. `scripts/test/fixtures/source-code.mjs`
+  (`codeOnly` / `engineCode`, built on `js-lexer`, failing closed) now backs every engine-source guard, all
+  hand-rolled comment strippers were migrated onto it, a lint flags positive assertions on raw engine
+  source, and a sweep pins the lexer's regex-after-paren blind spot absent from engine files. The plan
+  tabulates all 94 engine-source reads in `scripts/test`, each with a disposition.
+* **Contributor tooling: the hook and certify fixtures derive the machinery they copy from the hooks' own
+  code.** A fixture that copied the real pre-commit hook broke on every new hook step: adding the drift
+  step turned three unrelated tests red, all pointing at the hook. Adding a hook step no longer needs a
+  matching edit to a fixture builder. Adding an engine verb is also checked against every per-verb table in
+  one run (#206): a new assertion-half test names every missing row at once (usage line, positionals, flag
+  surface, effects row, both functional baselines), and `CONTRIBUTING.md` documents the tables and the
+  baseline `seed` hook.
+
+### Fixed
+
+* **`.conductor/brief.txt` is git-ignored, and a repo that already committed it is told how to stop.**
+  14 of 24 pm-managed repos on one machine had committed it, and every snapshot left a changed tracked
+  file. It is ignored now, as are `.conductor/write-conflicts.log.prev` and
+  `.conductor/honcho-memories.log`, which `init` and `/pm:upgrade` now write into `.gitignore` by name
+  instead of relying on a global `*.log` rule. Because an ignore line does nothing for a file already in
+  the index, `upgrade` (and `init`) print a warning block headed "untrack" with the exact
+  `git rm -r --cached` line and a commit line when any of them is still tracked. pm never runs it; the
+  files stay on disk. No `state.json` change and no migration.
+* **`delivered-release-epic-left-open` stops being a false alarm on a release that is still in flight.**
+  Archiving the last active member of a release read as the release being delivered and its queued
+  members as leftovers. The finding now says the reading is inferred, and `release <id> --deliver` (above)
+  records the fact.
+* **Contributor tooling: two flaky functional and unit tests were fixed at the root, not retried.** The
+  `emitted-invocations` `Layer B integrity:archived-with-zero-ticked-tasks` test failed with `ENOENT` while
+  copying the template repo's `.git/objects` (2 of 4 full runs on 2026-09-28). `hermetic-git`'s
+  `GIT_CONFIG_GLOBAL=/dev/null` had hidden `gc.autodetach=false`, so every fixture commit spawned a
+  detached `git maintenance` run whose lock raced the copy. The fixture environment now sets
+  `maintenance.auto=false` and `gc.auto=0`: 1 to 7 failures in 24 to 72 runs before, 0 in 168 after. The
+  `lesson-detect` budget tests failed intermittently under load because a benign regex's own 50 ms
+  watchdog fired while the test process was CPU-starved. `matchLessons()` now takes an injectable clock
+  and regex runner, the budget tests assert per-regex grants over a fake clock, and runaway detection is
+  checked by result. The hook still uses the real `vm` runner, unchanged.
+
+---
+
 ## [0.50.0] — 2026-09-25
 
 The per-commit gate now tests the commit itself: the index git hands it, `git commit -a` and

@@ -37,6 +37,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, fixtureCache, fixturePluginRoot } from "../fixtures/assert-harness.mjs";
 import { scheduledForRemoval } from "../fixtures/temp-dir.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 const TEST_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -82,14 +83,11 @@ function sources(dir = TEST_ROOT, rel = "") {
   return out.sort();
 }
 
-/** The source with comments blanked line by line: whole-line `//` and `*` comments, trailing `//`
- *  comments, and inline block comments. Line numbers are preserved. */
+/** The source's lines with every comment blanked — the shared lexer-based stripper, so a `//` inside
+ *  a string or regex is kept and a block comment spanning lines is blanked on every line it covers.
+ *  Line numbers are preserved. */
 function codeLines(src) {
-  return src.split("\n").map((text) => {
-    const t = text.trim();
-    if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return "";
-    return text.replace(/\/\*.*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/, "$1");
-  });
+  return codeOnly(src).split("\n");
 }
 
 /** Every site in one source: `{ line, text }`. Exported shape for the discrimination test. */

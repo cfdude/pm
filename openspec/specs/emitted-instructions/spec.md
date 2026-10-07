@@ -108,7 +108,7 @@ adding one is a visible change to the test.
 #### Scenario: A stale Gate 2 remedy clears the staleness, not just the command
 - **WHEN** archiving an openspec-lane epic as `delivered` is refused because its passing Gate 2 does
   not reach its attributed commits, and the printed remedy is run with `--base-sha` set to the parent
-  of the first attributed commit and `--head-sha` to the last attributed commit
+  of the earliest attributed commit and `--head-sha` to the attributed commit every other one is an ancestor of
 - **THEN** the remedy exits zero and the same archive then succeeds (today the printed form carries
   no range and exits 1; filled with an arbitrary range it exits 0 and the archive is still refused)
 

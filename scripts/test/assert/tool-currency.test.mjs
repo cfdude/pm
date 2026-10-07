@@ -19,6 +19,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, parseBrief } from "../fixtures/assert-harness.mjs";
 import { OPENSPEC_GENERATED_PATHS } from "../../lib/tool-currency.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 test("gh#128: no openspec/ directory means the check does not apply at all", () => {
   const cwd = tmpRepo();
@@ -48,7 +49,7 @@ test("gh#128: upgrade says nothing about OpenSpec when the project is current", 
 test("gh#128: no engine source runs `openspec` with anything but a read-only flag", () => {
   // The engine is an INSTRUCTION layer: it may READ what version a project has, and it must never
   // run the thing that changes it. The one spawn site is asserted here by its own text.
-  const src = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "lib", "tool-currency.mjs"), "utf8");
+  const src = engineCode("scripts/lib/tool-currency.mjs");
   // The pattern is ASSEMBLED FROM PARTS: 5.2's guard is a text scan over this directory, and a
   // file that spelled the call it looks for would be refused by the very guard it exists beside.
   const SPAWN_SITE = new RegExp("(?<![.\\w$])" + "exec" + "(FileSync|Sync)\\s*\\(");
@@ -67,7 +68,7 @@ test("gh#128: the generated-artifact set is declared once, as a list of pathspec
 test("gh#128: the nudge says pm's ENGINE will not run it, not that a human must", () => {
   // The one line in the emitted text that keeps the instruction layer honest: pm never calls an
   // external system, so the nudge must hand the command to the AGENT rather than promise to do it.
-  const src = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "lib", "tool-currency.mjs"), "utf8");
+  const src = engineCode("scripts/lib/tool-currency.mjs");
   assert.match(src, /YOU|you run|run it/i, "the emitted text names who runs the command");
 });
 

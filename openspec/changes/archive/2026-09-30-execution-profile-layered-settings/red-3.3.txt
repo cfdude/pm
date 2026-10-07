@@ -1,0 +1,240 @@
+✖ An epic override set at creation: add-epic --review-mode records it and nothing else changes (2.066625ms)
+✖ add-epic records model pairs and verbosity, and a refusal registers nothing (0.439209ms)
+✖ add-many accepts the same fields as batch keys, and one invalid value refuses the whole batch (1.125625ms)
+✖ An epic lowers review below the project: update-epic --review-mode below the dial succeeds (6.492417ms)
+✖ update-epic --model refusals write nothing (3.179917ms)
+✖ Setting one model role leaves the others; Clearing one epic model role keeps the rest (1.702542ms)
+✖ --clear-model refuses an unknown role, and a role set in the same call (1.430708ms)
+✖ --clear model, --clear verbosity and --clear review-mode each fall through to the next layer (1.932542ms)
+✖ a detour epic does not inherit the profile of the epic it paused, through the verbs (0.30225ms)
+✖ a lane model change produces one profile-setting event naming layer, field, from and to (0.632708ms)
+✖ profile-setting events cover the project, a lane's review and an epic's verbosity and model (0.475834ms)
+✔ an unrelated write logs no profile-setting event (0.115667ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 1
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 164.934542
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ An epic override set at creation: add-epic --review-mode records it and nothing else changes (2.066625ms)
+  Error: conductor: unknown flag --review-mode for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:19:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --review-mode for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ add-epic records model pairs and verbosity, and a refusal registers nothing (0.439209ms)
+  Error: conductor: unknown flag --model for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:28:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --model for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ add-many accepts the same fields as batch keys, and one invalid value refuses the whole batch (1.125625ms)
+  Error: conductor: add-many: epic 'a': unsupported key(s) reviewMode, verbosity, model (supported: id, title, lane, priority, status, parent, externalId, externalUrl, planPath, specPath, links, description, externalUpdatedAt, stories)
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:44:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: "conductor: add-many: epic 'a': unsupported key(s) reviewMode, verbosity, model (supported: id, title, lane, priority, status, parent, externalId, externalUrl, planPath, specPath, links, description, externalUpdatedAt, stories)\n"
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ An epic lowers review below the project: update-epic --review-mode below the dial succeeds (6.492417ms)
+  Error: conductor: --review-mode 'standard' would de-escalate below the repo-global dial ('thorough') — an epic-level override may only escalate above the global dial, never below it
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:61:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: "conductor: --review-mode 'standard' would de-escalate below the repo-global dial ('thorough') — an epic-level override may only escalate above the global dial, never below it\n"
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ update-epic --model refusals write nothing (3.179917ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /low\|medium\|high\|xhigh\|max\|ultracode/. Input:
+  
+  'conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force\n' +
+    'usage: conductor.mjs update-epic <id> [flags]\n' +
+    'Nothing was written.\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:76:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n',
+    expected: /low\|medium\|high\|xhigh\|max\|ultracode/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ Setting one model role leaves the others; Clearing one epic model role keeps the rest (1.702542ms)
+  Error: conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force
+  usage: conductor.mjs update-epic <id> [flags]
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:81:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ --clear-model refuses an unknown role, and a role set in the same call (1.430708ms)
+  Error: conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force
+  usage: conductor.mjs update-epic <id> [flags]
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:93:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ --clear model, --clear verbosity and --clear review-mode each fall through to the next layer (1.932542ms)
+  Error: conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force
+  usage: conductor.mjs update-epic <id> [flags]
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:102:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --model for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a detour epic does not inherit the profile of the epic it paused, through the verbs (0.30225ms)
+  Error: conductor: unknown flag --review-mode for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:113:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --review-mode for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ a lane model change produces one profile-setting event naming layer, field, from and to (0.632708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:128:10
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ profile-setting events cover the project, a lane's review and an epic's verbosity and model (0.475834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     null,
+  -     'lane:decision',
+  -     'review',
+  -     null,
+  -     'off'
+  -   ],
+  -   [
+  -     null,
+  -     'project',
+  -     'verbosity',
+  -     null,
+  -     'verbose'
+  -   ],
+  -   [
+  -     'e',
+  -     'epic',
+  -     'model.review',
+  -     null,
+  -     'haiku'
+  -   ],
+  -   [
+  -     'e',
+  -     'epic',
+  -     'verbosity',
+  -     null,
+  -     'quiet'
+  -   ]
+  - ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-profile-layer.test.mjs:142:10
+      at async TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ null, 'lane:decision', 'review', null, 'off' ], [ null, 'project', 'verbosity', null, 'verbose' ], [ 'e', 'epic', 'model.review', null, 'haiku' ], [ 'e', 'epic', 'verbosity', null, 'quiet' ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

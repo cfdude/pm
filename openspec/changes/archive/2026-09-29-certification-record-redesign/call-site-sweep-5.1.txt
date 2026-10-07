@@ -1,0 +1,200 @@
+# 5.1 Call-site completeness sweep (required task item 1), at 780b8378, 2026-09-29T05:17:05Z
+# Every list below is rg output pasted as produced; the rulings follow each list.
+
+## A. The RETIRED names — their callers today
+$ rg -n "certifiedModules\(|certifiedSet\(|recordRefusals\(|couplingRefusals\(|writeEntry\(|readRecord\(|RECORD_NAME|coversFor\(|conformanceRows\(|moduleEntry\(|triggerEntry\(|contentHash\(|stagedHash\(" scripts .githooks .github
+scripts/lib/state.mjs:80:  return storeOps().readRecord();
+scripts/lib/state.mjs:85:  const read = store.readRecord();
+scripts/lib/store.mjs:671:     *  its own operation rather than `readRecord().kind !== "absent"`. The difference is not cost:
+scripts/lib/store.mjs:680:    readRecord() {
+scripts/lib/store.mjs:700:      const read = this.readRecord();
+scripts/lib/store.mjs:715:        const peek = this.readRecord();
+scripts/lib/store.mjs:730:        const disk = this.readRecord();
+scripts/lib/store.mjs:972:      const read = readRecord();
+scripts/lib/store.mjs:979:      const disk = readRecord();
+scripts/lib/store.mjs:995:      // A COPY, for the reason readRecord() gives: the record belongs to the store, and the caller's
+scripts/test/functional/commit-observation.test.mjs:17:const anchorLine = (cwd) => Buffer.from(readRecord(cwd).anchor.lineBase64, "base64").toString("utf8");
+scripts/test/functional/commit-observation.test.mjs:142:  assert.ok(readRecord(repo.cwd).reported.includes(sha), "into the reported set");
+scripts/test/drift.mjs:222:    coupling: checks.has("coupling") ? couplingRefusals({ stagedFiles: staged, functional, assertion, exemptions, isMerge }) : [],
+scripts/test/certification.mjs:153:export function couplingRefusals({ stagedFiles, functional, assertion, exemptions = [], isMerge = false }) {
+scripts/test/certification.mjs:245: *       string literal, or as the last `/`-separated segment of one (the `coversFor()` basename
+scripts/test/assert/drift-script.test.mjs:62:  assert.deepEqual(couplingRefusals({ stagedFiles: [], functional: functionalIds(REPO), assertion: assertionIds(REPO) }), [],
+scripts/test/assert/drift-script.test.mjs:116:  const refused = couplingRefusals({
+scripts/test/assert/drift-script.test.mjs:126:  assert.deepEqual(couplingRefusals({
+scripts/test/assert/drift-script.test.mjs:133:  assert.deepEqual(couplingRefusals({
+scripts/test/unit/runtime-support.test.mjs:65:  engine.store.readRecord = (...args) => { seen.push(invocation.runtimeVersion?.()); return readRecord(...args); };
+scripts/test/unit/drift-coupling.test.mjs:86:// ───────────────────────────── 4.2 couplingRefusals() takes exemptions ─────────────────────────────
+scripts/test/unit/drift-coupling.test.mjs:122:  assert.deepEqual(couplingRefusals({ stagedFiles: staged, ...IDS }), expected, "no exemptions argument: today's refusal");
+scripts/test/unit/drift-coupling.test.mjs:123:  assert.deepEqual(couplingRefusals({ stagedFiles: staged, ...IDS, exemptions: [] }), expected, "an empty list: the same");
+scripts/test/unit/drift-coupling.test.mjs:124:  assert.deepEqual(couplingRefusals({ stagedFiles: staged, ...IDS, exemptions: [{ id: "beta", reason: "r" }] }), expected,
+scripts/test/assert/store-seam.test.mjs:178:  assert.equal(memoryStore(bad).readRecord().kind, "unreadable",
+scripts/test/assert/store-seam.test.mjs:180:  assert.equal(diskStore(ctx).readRecord().kind, "ok", "precondition: the disk record is well-shaped");
+scripts/test/assert/store-seam.test.mjs:183:  assert.equal(diskStore(ctx).readRecord().kind, "unreadable", "and so must the disk store's, on the same value");
+# Ruling. At c96240ab this matched drift.mjs, certify.mjs, assert/drift-script and functional/drift-script.
+# Today: NONE of certifiedModules/certifiedSet/recordRefusals/writeEntry(record)/RECORD_NAME/coversFor/
+# conformanceRows/moduleEntry/triggerEntry/contentHash/stagedHash has a caller. The remaining hits are
+#   * readRecord() in scripts/lib/{store,state}.mjs, assert/store-seam, unit/runtime-support and
+#     functional/commit-observation — the ENGINE's own state-record reader (and commit-observation's
+#     local helper), a homonym unrelated to the certification record;
+#   * certification.mjs:245 — a comment citing coversFor()'s basename rule as the origin of rule 3 of
+#     functionalSubject() (history, true as written);
+#   * couplingRefusals() — KEPT, with exemptions (4.2): its one production caller is drift.mjs checkAll()
+#     (:222), gated by phaseChecks(); its test callers are assert/drift-script and unit/drift-coupling.
+
+## B. The NEW mechanism — every caller outside tests
+$ rg -n "freshnessRefusal\(|bucketSubject\(|functionalSubject\(|indexManifest\(|headSubject\(|writeManifestEntry\(|readEntry\(|pruneRecord\(|seedAgreeingEntry\(|parseTwinExemptions\(|phaseChecks\(|bucketDemanded\(|demandedPaths\(" scripts .githooks .github --glob "!*.test.mjs"
+scripts/lib/subcommands.mjs:251:export function headSubject() {
+scripts/lib/subcommands.mjs:253:    return gitOps().headSubject();
+scripts/lib/subcommands.mjs:582:  const head = headSubject();
+scripts/lib/store.mjs:628: *  OBSERVES — its import closure, what it executes and what it names (`functionalSubject()` in
+scripts/test/fixtures/observe-reads.mjs:7:// WHY IT EXISTS. The functional subject is derived from source TEXT (`functionalSubject()`), and a test
+scripts/test/fixtures/helpers.mjs:318: *      hook will judge for each bucket named (`seedAgreeingEntry()`), so a fixture that stages a path in
+scripts/test/fixtures/helpers.mjs:356:  // (`functionalSubject()`) has no closure to hold anything — so every check the pre-commit phase runs passes on the fixture by
+scripts/test/fixtures/helpers.mjs:397:  for (const bucket of seed) seedAgreeingEntry(cwd, bucket, { indexFile: seedIndex });
+scripts/test/fixtures/helpers.mjs:404: *  drift's `indexManifest(cwd, bucket, { indexFile })` — the SAME function drift's freshness check and
+scripts/test/fixtures/helpers.mjs:405: *  certify call — and writes the manifest it returns with `writeManifestEntry()`. It parses no
+scripts/test/fixtures/helpers.mjs:410:export function seedAgreeingEntry(cwd, bucket, { indexFile } = {}) {
+scripts/test/fixtures/helpers.mjs:412:  const { manifest } = indexManifest(cwd, bucket, indexFile ? { indexFile } : {});
+scripts/test/fixtures/helpers.mjs:413:  return writeManifestEntry(commonDir, { bucket, manifest, counts: { tests: 1, pass: 1, fail: 0 }, engineSha: "seeded", worktree: "seeded" }).
+scripts/test/drift.mjs:31:// THE PHASES (D4, `phaseChecks()`): `--phase pre-commit` runs checks 1, 2 and 4; `--phase commit-msg
+scripts/test/drift.mjs:126: *  executes and names nothing, which is exactly how the observed subject (`functionalSubject()`) must
+scripts/test/drift.mjs:171: *  drift's freshness check, certify (with its index copy) and the fixture helper `seedAgreeingEntry()`,
+scripts/test/drift.mjs:174:export function indexManifest(root, bucket, { indexFile } = {}) {
+scripts/test/drift.mjs:176:  const derived = bucketSubject(bucket, { root, ...readers });
+scripts/test/drift.mjs:182:export function headSubject(root, bucket, { indexFile } = {}) {
+scripts/test/drift.mjs:183:  return bucketSubject(bucket, { root, ...headReaders(root, { indexFile }) });
+scripts/test/drift.mjs:188:/** The checks of one phase, as data (D4, `phaseChecks()`): all four with no `phase`. The lists are
+scripts/test/drift.mjs:193:  const checks = new Set(phaseChecks(phase));
+scripts/test/drift.mjs:214:      exemptions = parseTwinExemptions(gitRead(root, ["interpret-trailers", "--parse", "--no-divider", message]));
+scripts/test/drift.mjs:226:    record: checks.has("record") ? BUCKETS.map((bucket) => freshnessRefusal({
+scripts/test/drift.mjs:231:      subjectIndex: () => bucketSubject(bucket, { root, ...readers }),
+scripts/test/drift.mjs:232:      subjectHead: () => headSubject(root, bucket),
+scripts/test/drift.mjs:233:      manifest: () => indexManifest(root, bucket).manifest,
+scripts/test/certification.mjs:13:// drift.mjs — whose `indexManifest()` certify calls too — so the checks can be exercised in the
+scripts/test/certification.mjs:139: *  message declares `Twin-Unchanged: <id> — <reason>` (`parseTwinExemptions()`) — the committer's
+scripts/test/certification.mjs:186:export function phaseChecks(phase) {
+scripts/test/certification.mjs:206:export function parseTwinExemptions(parsedTrailers) {
+scripts/test/certification.mjs:256:export function functionalSubject({ root = REPO, readFile = readDefault, readdir = readdirDefault, paths = null } = {}) {
+scripts/test/certification.mjs:308: *  `cancelled`); `subject` is `functionalSubject()` over the run's index copy; `tracked` is that copy's
+scripts/test/certification.mjs:401:/** The shipped-surface roots rule 5 of `functionalSubject()` takes whole (design D3; `PARITY_ROOTS`). */
+scripts/test/certification.mjs:420: *    functional — `functionalSubject()`: what the functional half OBSERVES (its import closure, what it
+scripts/test/certification.mjs:429:export function bucketSubject(bucket, { root = REPO, readFile = readDefault, readdir = readdirDefault, paths = null } = {}) {
+scripts/test/certification.mjs:432:    out = functionalSubject({ root, readFile, readdir, paths });
+scripts/test/certification.mjs:453: *  `checkout-index` runs, and the manifest, which the runner reads through drift's `indexManifest()`
+scripts/test/certification.mjs:501:export function demandedPaths({ stagedPaths, indexPaths, subjectIndex, subjectHead }) {
+scripts/test/certification.mjs:517:/** Whether a staged set demands a bucket at all — `demandedPaths()` is non-empty. */
+scripts/test/certification.mjs:518:export function bucketDemanded(args) {
+scripts/test/certification.mjs:519:  return demandedPaths(args).length > 0;
+scripts/test/certification.mjs:540: *  its one caller is drift's `indexManifest()`. */
+scripts/test/certification.mjs:591:export function freshnessRefusal({ commonDir, bucket, stagedPaths, indexPaths, subjectIndex, subjectHead, manifest, io = fs }) {
+scripts/test/certification.mjs:592:  const changed = demandedPaths({ stagedPaths, indexPaths, subjectIndex, subjectHead });
+scripts/test/certification.mjs:594:  const f = recordFreshness({ bucket, indexManifest: manifest(), entryFor: (key) => readEntry(commonDir, bucket, key, io) });
+scripts/test/certification.mjs:623:export function writeManifestEntry(commonDir, { bucket, manifest, counts = null, engineSha = "unknown", worktree = null },
+scripts/test/certification.mjs:646:export function readEntry(commonDir, bucket, key, io = fs) {
+scripts/test/certification.mjs:661:export function pruneRecord(commonDir, bucket, { keep = null, max = 50, tmpDir = os.tmpdir(), io = fs, nowMs = Date.now() } = {}) {
+scripts/test/certify.mjs:25:// of this clone, never committed. The manifest is read through drift's `indexManifest()` over the
+scripts/test/certify.mjs:203: *  bucket's subject in the COPY, read through drift's `indexManifest()` (the function drift judges a
+scripts/test/certify.mjs:230:  const { manifest } = indexManifest(root, bucket, { indexFile: run.indexCopy });
+scripts/test/certify.mjs:231:  const { key, file } = writeManifestEntry(gitCommonDir, { bucket, manifest, counts: result.counts, engineSha, worktree });
+scripts/test/certify.mjs:232:  pruneRecord(gitCommonDir, bucket, { keep: key });
+scripts/test/certify.mjs:282: *  against `functionalSubject()` over the run's index copy. Returns the refusal text, or null. */
+scripts/test/certify.mjs:287:  const subject = functionalSubject({ root, ...readers });
+
+# (scripts/lib/subcommands.mjs headSubject() is the engine's HEAD-commit-subject helper, a homonym.)
+
+$ rg -l (same pattern) scripts --glob "*.test.mjs"
+scripts/test/assert/conductor-09.test.mjs
+scripts/test/assert/drift-script.test.mjs
+scripts/test/functional/certify-index.test.mjs
+scripts/test/functional/conductor-03.test.mjs
+scripts/test/functional/conductor-09.test.mjs
+scripts/test/functional/drift-script.test.mjs
+scripts/test/unit/certify-index.test.mjs
+scripts/test/unit/conductor-09.test.mjs
+scripts/test/unit/drift-coupling.test.mjs
+scripts/test/unit/drift-freshness.test.mjs
+
+# Ruling, per rule:
+#  FRESHNESS (one entry's WHOLE manifest over this index): computed in exactly one place,
+#    freshnessRefusal() (certification.mjs:591), whose only production caller is drift.mjs checkAll()
+#    (:226), run by .githooks/pre-commit (--phase pre-commit) and by a bare `node scripts/test/drift.mjs`.
+#    The manifest it compares is indexManifest() (drift.mjs:174), whose three callers are drift's freshness
+#    check (:233), certify.mjs (:230, over its index COPY) and fixtures/helpers.mjs seedAgreeingEntry()
+#    (:412). One computation, so the key written and the key looked up cannot diverge.
+#    DOES NOT HOLD in commit-msg: justified — commit-msg runs --phase commit-msg, which is coupling only
+#    (phaseChecks()); freshness was judged by pre-commit over the same index for plain/-a/<path> commits.
+#  SUBJECT DERIVATION: bucketSubject() (certification.mjs:429) is the one entry; functionalSubject()
+#    (:256) is reached only through it, except certify.mjs:287 (the observer comparison), which calls
+#    functionalSubject() directly over the SAME index-copy readers — the functional arm of bucketSubject()
+#    is that call (:432) plus an underSubjectRoot() filter that is a no-op on its output (every rule of
+#    functionalSubject() admits only paths under scripts/, .githooks/, hooks/, a shipped root or a root
+#    file), so the two cannot disagree. headSubject() (drift.mjs:182) is the HEAD-tree arm
+#    for deletions. Callers: drift (index + HEAD), certify (copy), seedAgreeingEntry (via indexManifest).
+#  EXEMPTION (Twin-Unchanged): parseTwinExemptions() has ONE caller, drift.mjs:214, only when the phase
+#    runs coupling and a --message is given; the message reaches drift only from .githooks/commit-msg:59.
+#    DOES NOT HOLD in pre-commit (no message exists yet) — justified, D4; a bare drift run with no
+#    --message applies no exemptions (M5), so it never reports FEWER refusals than the two hooks.
+#
+## C. Every reader of the record path, the hook's neighbours, CI, CONTRIBUTING
+$ rg -n "pm-suite-certification|git-common-dir|pm-certify|pm-suite.lock|pm-isolation-flag" scripts .githooks .github CONTRIBUTING.md CLAUDE.md README.md .claude docs/lessons --glob "!*.test.mjs"
+.githooks/pre-commit:89:# a main checkout `--git-common-dir` prints the RELATIVE `.git`, and a relative lock path would miss.
+.githooks/pre-commit:90:LOCKDIR="$(git rev-parse --path-format=absolute --git-common-dir)/pm-suite.lock"
+.githooks/pre-commit:169:# `pm-isolation-flag` beside the suite lock. The probe and the flag are gone; a clone that ran an
+.githooks/pre-commit:174:rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
+scripts/agent-log.sh:13:# --git-common-dir resolves to the MAIN .git from inside a worktree, so all agents converge here.
+scripts/agent-log.sh:14:root="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
+docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md:35:properties, not one. It is **machine-readable** (`$(git rev-parse --git-common-dir)/pm-suite-certification.json`
+scripts/test/certify.mjs:22:// THE RECORD IS A DIRECTORY UNDER `$(git rev-parse --git-common-dir)` (certification-record-redesign
+scripts/test/certify.mjs:23:// D1): `pm-suite-certification.d/<bucket>/<manifest key>.json`, one file per passing run, created and
+scripts/test/certify.mjs:28:// single-file record `pm-suite-certification.json` is neither written nor removed (D5).
+scripts/test/certify.mjs:39:// ran nor what is recorded. The run directory is `pm-certify-run.*` under the OS temp directory; it is
+scripts/test/certify.mjs:90:  const dir = removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-certify-run.")));
+scripts/test/certify.mjs:312:  const gitCommonDir = path.resolve(root, git(root, ["rev-parse", "--git-common-dir"]));
+scripts/test/certification.mjs:601:/** The record's directory, under `$(git rev-parse --git-common-dir)`: one sub-directory per bucket,
+scripts/test/certification.mjs:604:export const RECORD_DIR = "pm-suite-certification.d";
+scripts/test/certification.mjs:658: *  its temp name for milliseconds), and a `pm-certify-run.*` directory under `tmpDir` older than 24
+scripts/test/certification.mjs:683:    if (n.startsWith("pm-certify-run.") && olderThan(path.join(tmpDir, n), 24 * 3600 * 1000)) rm(path.join(tmpDir, n));
+scripts/test/drift.mjs:227:      commonDir: path.resolve(root, gitRead(root, ["rev-parse", "--git-common-dir"]).trim()),
+scripts/test/fixtures/helpers.mjs:316: *    * `setup(cwd)` — runs after `git init` and before the hook (1.5: a stale `pm-isolation-flag`).
+scripts/test/fixtures/helpers.mjs:411:  const commonDir = path.resolve(cwd, execFileSync("git", ["rev-parse", "--git-common-dir"], { cwd, encoding: "utf8" }).trim());
+scripts/test/fixtures/state-pre-disposition-walk.json:5271:          "text": "lane: openspec not <none routed> — the reporter offers four candidate signals (detached HEAD matching 
+.claude/skills/release-checklist/SKILL.md:89:     log="$(git rev-parse --path-format=absolute --git-common-dir)/pm-real-numbers/$(date -u +%Y-%m-%dT%H%M%SZ)-$$.txt"
+.claude/skills/release-checklist/SKILL.md:103:     # nothing in them is still owed a diagnosis: rm -rf "$(git rev-parse --git-common-dir)/pm-real-numbers"
+
+$ rg -n "certify|drift|functional|sweeps" .github/workflows/ci.yml   (abridged to the run steps)
+110:      # `total=$(node --test … 2>&1 | tee /tmp/x.out | grep -m1 … | awk …)`: the step's status was
+121:      # runner is `FORCE_COLOR=0 node --test --test-reporter=spec …`: the default reporter differs by
+133:        # certify runner, the shared machinery, the fixtures and the two harnesses are not tests and
+159:          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+197:          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs > /tmp/assert-clock.out 2>&1 || {
+220:          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/functional/*.test.mjs > /tmp/functional.out 2>&1 || {
+243:          FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+
+$ rg -n "certif|record|drift|coupling" CONTRIBUTING.md
+55:coupling, record freshness) and then the ASSERTION HALF — BOTH of its rungs, in ONE runner
+65:The drift script that runs first is the snapshot's own copy, and every set it judges (certified
+71:a refusal rather than a pass. The drift script refuses, naming the file: a tracked
+74:functional test or its twin changed without a fresh certification record, or a certified
+77:`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when
+190:`node scripts/test/certify.mjs functional` / `… sweeps` is what records a passing run when you ran
+# Ruling:
+#  * The record DIRECTORY (RECORD_DIR, certification.mjs:604) is written only by writeManifestEntry()
+#    (certify.mjs:231; seedAgreeingEntry() in fixtures, under a fixture's own .git), read only by
+#    readEntry() (from freshnessRefusal()), removed only by pruneRecord() (certify.mjs:232).
+#  * The superseded `pm-suite-certification.json`: no code reads or writes it (D5); the one remaining
+#    mention outside this change is docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md:35,
+#    which 5.9 rewrites.
+#  * .githooks/pre-commit:174 `rm -f .../pm-isolation-flag` — the record's NEIGHBOUR in the common dir,
+#    a different file; it does not touch pm-suite-certification.{json,d}. pre-commit:90 pm-suite.lock is
+#    the machine-load lock (D6), unchanged. scripts/agent-log.sh and release-checklist's pm-real-numbers
+#    use --git-common-dir for their own files — no record access.
+#  * The `pm-certify-run.*` run directories: made by certify.mjs:90 (removeAtExit), orphans pruned by
+#    pruneRecord() (:683) after 24 h.
+#  * CI (.github/workflows/ci.yml:220, :243) runs BOTH triggered buckets unconditionally and reads no
+#    record, runs no certify and no drift freshness against a record: JUSTIFIED — the freshness rule is a
+#    local convenience for skipping a run; CI never skips it (design Context, "CI").
+#  * CONTRIBUTING.md:54-78 and :188-191 still describe four checks in one pre-commit run and "certified
+#    modules" — stale against L2-L4; task 6.1 rewrites them (this sweep is what lists them).
+#  * The commit-msg hook: .githooks/commit-msg is installed only by core.hooksPath (CONTRIBUTING.md:50),
+#    the same way pre-commit is; nothing else installs or runs it. Finding routed in 5.9 (b): unlike
+#    pre-commit:7-9, it does not chain `git secrets --commit_msg_hook`, which core.hooksPath bypasses.

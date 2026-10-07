@@ -1,0 +1,30 @@
+# Gate 2 follow-up S1 — rules 5 and 6 admit a backtick as rule 4 does
+# node --test --test-reporter=spec --test-name-pattern '^S1 ' scripts/test/unit/certify-index.test.mjs
+
+## RED — the opening class ["'/] on rules 5 and 6 (79a16b9e)
+✖ S1 rules 5 and 6 admit a shipped root and a root file named in a TEMPLATE literal, as rule 4 does (1.449833ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120.14475
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ S1 rules 5 and 6 admit a shipped root and a root file named in a TEMPLATE literal, as rule 4 does (1.449833ms)
+  AssertionError [ERR_ASSERTION]: a shipped root named in a whole template literal admits the files under it
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/certify-index.test.mjs:481:10
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+
+## Rule 6 alone: a scratch copy with only rule 5 fixed still fails S1 (the README/ledger assertions)
+## GREEN: ✔ S1 …; functionalSubject() over this repository's index: 187 -> 187 (no tracked file today spells a root or root file only in a template literal)
+## certify functional over the staged commit: certify: functional half passed (1265/1265); recorded 187 subject paths as 210e8

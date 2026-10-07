@@ -1,0 +1,78 @@
+# red-3.2 — the run-time observer and the static NODE_OPTIONS guard (certification-record-redesign 3.2)
+# 2026-09-29T03:17:46Z, node v26.10.0, HEAD be100e04 (3.1)
+
+## RED, UNIT — unit/certify-index.test.mjs against be100e04's certification.mjs (a scratch export of HEAD's scripts/
+## with the new unit file dropped in): no nodeOptionsRefusals(), no observationRefusals()
+✖ 3.2 an expected Node child that neither arrived nor was cancelled is UNARRIVED; one that did either is not (0.0745ms)
+✖ 3.2 an observed tracked path outside the subject is MISSED; the record is excluded by rule; the observer is never reported (0.058ms)
+✖ 3.2 negatives: a comment showing the variable (future-clock.mjs:6), prose in a string, and comparisons (0.096875ms)
+✖ 3.2 only files under scripts/test/{functional,fixtures}/ are judged, and a misparse throws naming the file and line (0.050625ms)
+✖ 3.2 RED input: today's conformance.test.mjs:210 is refused, naming the file and line (0.505541ms)
+✖ 3.2 the object-key shape — bare, double-quoted, single-quoted, and a key overriding the spread — is refused unless it carries the inherited value (0.0675ms)
+✖ 3.2 the property-assignment shape — dotted, and subscripted with either quote — is refused unless it carries the inherited value (0.049541ms)
+✖ 3.2 the tokenizer's order: a `//` inside a string does not hide the key after it; a block comment does (0.045708ms)
+ℹ fail 8
+ℹ pass 18
+ℹ tests 26
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no nodeOptionsRefusals(): a test that REPLACES NODE_OPTIONS drops the observer from every Node process under it, and nothing refuses it
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no observationRefusals()
+# The RED input is today's conformance.test.mjs:210 line (`NODE_OPTIONS: \`--require ${…}\``), refused by the GREEN.
+
+## RED, FUNCTIONAL — the 3.2 cases of functional/certify-index against the UNARMED certify.mjs (the observer
+## and the pure functions built, certify not yet wired to them). The three that pass are the negatives
+## (nothing refuses before the GREEN either); each failing one fails for its stated reason:
+$ FORCE_COLOR=0 node --test --test-reporter=spec --test-name-pattern="^3\.2" scripts/test/functional/certify-index.test.mjs
+✖ 3.2 `node --version` expects no report; `node -e ""`, a child that exits at once, and two concurrent children all report (1918.164916ms)
+✔ 3.2 a read of the record (openspec/changes/archive/) is excluded by rule and does not refuse (1883.935ms)
+✖ 3.2 a tracked scripts/ file read through a path assembled at run time is refused, naming it, and no entry is written (2122.303917ms)
+✖ 3.2 the observer bypass: a direct Node child whose options are replaced at run time fails closed, naming the test file and argv (761.579541ms)
+✖ 3.2 the static guard: a test whose CODE replaces NODE_OPTIONS is refused before the bucket runs, naming the file and line (1090.4945ms)
+✔ 3.2 the token rule: a Node spawn that fails to start cancels its expectation and is not refused (598.072083ms)
+✖ 3.2 two Node children observed at once each leave their own observation, and both are read (1187.178834ms)
+✔ 3.2 with the derivation complete — the same read, its name spelled — certify writes its entry (1767.404375ms)
+ℹ fail 5
+ℹ pass 3
+ℹ tests 8
+#   static guard      → "the replacement must be refused" (certify ran the bucket and recorded it)
+#   observer bypass   → "an unobserved Node child must fail the certification closed" (it passed and recorded)
+#   built-path read   → "a read the derivation missed must fail the certification" (it passed and recorded)
+#   two children      → certify passed and recorded 8 subject paths: neither child's read was seen
+#   --version/-e/m9   → the fixture's own assertion failed: no observer loaded (globalThis[Symbol.for("pm.observe-reads")]
+#                       undefined), so the run-directory copy of the observer was never the one that ran
+#
+# The observer bypass is tested with a key the static guard CANNOT read (`env[["NODE","OPTIONS"].join("_")]`), because
+# the conformance.test.mjs:210 SHAPE (a literal object key) is refused by the static guard before the bucket runs,
+# naming the file and line — its own case above. The run-time detection is what catches a direct child the static
+# guard cannot see; each mechanism has its own case.
+
+## The two tree edits, made and staged BEFORE the report-only run
+# functional/conformance.test.mjs:210 → NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --require ${…}` (twin: unit/conformance)
+# functional/conductor-14.test.mjs:229 → BASELINES spells rules-0.26.0-{github-scoped,github-scopeless,jira-scoped}.txt
+#   (twin: unit/conductor-14). Verify — functionalSubject() over the staged index holds both files:
+#   scripts/test/fixtures/rules-0.26.0-github-scoped.txt
+#   scripts/test/fixtures/rules-0.26.0-github-scopeless.txt
+#   scripts/test/fixtures/rules-0.26.0-jira-scoped.txt
+
+## The report-only observer run: observer-report-3.2.txt (0 derivation gaps, 0 unarrived children, 1236/1236).
+
+## GREEN
+$ FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/certify-index.test.mjs
+ℹ tests 26
+ℹ pass 26
+ℹ fail 0
+$ FORCE_COLOR=0 node --test --test-reporter=spec --test-name-pattern="^3\.2" scripts/test/functional/certify-index.test.mjs
+ℹ tests 9
+ℹ pass 9
+ℹ fail 0
+
+## The certify over the STAGED commit is itself the real-tree check under the ARMED observer
+# First attempt (exit 1, 763s): the run passed 1245/1245 but was refused — "a Node child that never loaded the
+# observer: …/pm-certify-run.*/tree/scripts/test/functional/stub.test.mjs ran [node,"-e",…]". That child is the
+# observer-bypass FIXTURE's deliberate drop, inside a certify-index case's NESTED certify: the OUTER observer,
+# stacked in the fixture's test process, had raised an expectation too. Fix (observe-reads.mjs): instances loaded
+# in one process register in load order, and only the INNERMOST raises expectations — the inner run owns its
+# children and fails closed on its own, and that failure reaches the outer run as a failing test. This stacked
+# case is exercised by every certify of this repository (certify-index runs nested certifies under it).
+$ node scripts/test/certify.mjs functional   # exit 0, 688s, load {49.71 85.82 79.92} -> {44.32 82.82 83.03}
+certify: the observer saw 2347 Node processes; every tracked file they read is in the functional subject (185 paths), or the record (80, excluded by rule).
+certify: functional half passed (1245/1245); recorded 91 subject paths as 434db849631a863a2a9498be632ada76fe943b471c626845fd616b220aa51830.json in <repo>/.git/pm-suite-certification.d/functional

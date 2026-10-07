@@ -1,0 +1,51 @@
+# red-2.1 — node --test scripts/test/unit/drift-freshness.test.mjs, against the pre-GREEN tree (6136a3d9: certification.mjs exports none of the four functions), 2026-09-29T01:29:50Z
+✖ 2.1 an unchanged module needs no new run: a commit staging nothing in the subject demands nothing (1.328166ms)
+✖ 2.1 a changed module needs a new run however recent the record (0.142084ms)
+✖ 2.1 a stale record is not a silent pass: no record, another bucket's entry, or other content (0.4175ms)
+✖ 2.1 a certification split across two commits: the first split commit is NOT fresh against the run over both (0.12975ms)
+✖ 2.1 an entry agreeing on the staged paths only (a different unstaged subject file) is NOT fresh (0.105708ms)
+✖ 2.1 a mode-only change (100644 to 100755) is NOT fresh (0.0775ms)
+✖ 2.1 two runs are NOT combined into one pass (0.0775ms)
+✖ 2.1 a deleted functional test is demanded through subjectHead, and is not fresh (0.083167ms)
+✖ 2.1 a MODIFIED path in subjectHead but not in subjectIndex is NOT demanded through HEAD (m2) (0.099417ms)
+✖ 2.1 a staged set of only openspec/ and CHANGELOG.md paths demands nothing and calls neither subject thunk (m3) (0.100625ms)
+✖ 2.1 a removed conformance row is an edit to conformance.test.mjs, and demands a run (0.076958ms)
+✖ 2.1 an entry from another tree is ignored: it neither passes nor refuses (0.0615ms)
+✖ 2.1 subject ∩ index paths: a subject path the index does not hold is not in the manifest (0.060708ms)
+✖ 2.1 the key is a sha256 over `path NUL mode SP blob NUL`, independent of insertion order (0.0495ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 0
+ℹ fail 14
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 135.762791
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.1 an unchanged module needs no new run: a commit staging nothing in the subject demands nothing (1.328166ms)
+  AssertionError [ERR_ASSERTION]: certification.mjs exports no bucketDemanded(): freshness as equality with one entry's whole manifest (design D1) cannot be decided without it
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at fns (file://<repo>/scripts/test/unit/drift-freshness.test.mjs:28:12)
+      at demand (file://<repo>/scripts/test/unit/drift-freshness.test.mjs:56:20)
+      at file://<repo>/scripts/test/unit/drift-freshness.test.mjs:68:24
+  …(the other 13 fail with the same 'exports no …()' assertion)
+exit: 1
+
+# GREEN — same command after certification.mjs gained demandedPaths()/bucketDemanded(), manifestOf(),
+# parseStagedEntries(), manifestKey(), sameManifest() and recordFreshness():
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+# assertion half over the working tree (both rungs): 1545/1545.
+
+# Certify functional by hand before this commit (Commit mechanics, B9) — staged exactly, then:
+#   node scripts/test/certify.mjs functional   (300 s, load { 7.56 8.87 14.23 } -> { 14.95 14.69 15.60 })
+certify: functional half passed (1231/1231); recorded 8 module entries in <repo>/.git/pm-suite-certification.json
+# 1231 = 1.3's 1231 + 0 (this task adds no functional test).

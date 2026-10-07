@@ -20,9 +20,9 @@ import { STORABLE_EPIC_ID, asCode, escapeControls, jsonText, printedId, orNoReme
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
-import { dispositionInvocation } from "./archive-gate.mjs";
+import { setAsideDetail } from "./archive-gate.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, setAsideArchiveDirs, strippedChangeId } from "./epic-progress.mjs";
-import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
+import { changeNamesClaimedByArtifacts, claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { engineRoot, plansDir, anyInwardProcedureEmittable } from "./constants.mjs";
 import { platformFlag, resolveAndRecordPlatform, resolvePlatform } from "./platform.mjs";
@@ -41,47 +41,68 @@ import { die } from "./command-exit.mjs";
  *  to see it is configured not to.
  *
  *  state.json, render-stamp.json and PROJECT.md stay TRACKED: they are the state of record and
- *  the generated index, and both belong in git. */
+ *  the generated index, and both belong in git.
+ *
+ *  EXPORTED so the untrack instruction reads the SAME list the ignore file is written from: a
+ *  second copy would drift the first time an entry is added to one of them. */
+export const ENGINE_IGNORED = Object.freeze([
+  ".conductor/detours.log",
+  ".conductor/write-conflicts.log",
+  // Its ROTATION (store.rotate(), rotateWriteConflictsLog). No `*.log` rule matches `.log.prev`,
+  // so without this line it was an untracked file on every machine, the maintainer's included.
+  ".conductor/write-conflicts.log.prev",
+  // The Honcho outbox (`honcho-memory`, and every PUSH/POP line). Machine-local and append-only, so a
+  // tracked copy conflicts on every merge. It was never listed: it stayed untracked only where a
+  // GLOBAL `*.log` rule happened to cover it (the maintainer's ~/.gitignore_global does), and was a
+  // permanently untracked file everywhere else — #106 again. A repo that already tracks it is now told
+  // to untrack it (`untrackInstruction`), the same as for brief.txt.
+  ".conductor/honcho-memories.log",
+  // The brief the SessionStart `brief` and PreCompact `snapshot` hooks rewrite (briefPath). It was
+  // never here, so 14 of 24 pm-managed repos had COMMITTED it and every snapshot churned a tracked
+  // file (0.50.0 Gate 2). Derived from state.json, which stays tracked, so nothing is lost. A repo
+  // that already tracks it is told how to untrack it (untrackInstruction below) — an ignore line
+  // alone does nothing for a file already in the index.
+  ".conductor/brief.txt",
+  // The contention latch is engine-written too (write-conflicts.mjs). Left out, every
+  // pm-managed repo grows a permanently untracked file the moment writes contend — #106
+  // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
+  // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
+  ".conductor/write-conflicts.latch",
+  // The commit-nudge HEAD watermark (commit-watch.mjs). Engine-written on every Bash tool
+  // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
+  // a merge conflict per commit as well as #106's untracked-file complaint.
+  ".conductor/commit-watch.json",
+  // commit-nudge-reads-the-whole-move: the observation record that replaces the watermark above
+  // (commit-watch.mjs). A GLOB: its O_EXCL lock and the temp file of its rename start with its
+  // name, and a hook killed mid-write leaves either behind. The exact commit-watch.json line
+  // stays — 0.44.0 engines still write that file, and this function never removes a line.
+  ".conductor/commit-observe.json*",
+  // #84's repo-level quiescence marker (claims.mjs). Per-checkout and per-session by nature —
+  // it says "THIS session is mid-operation in THIS working tree" — so committing it would
+  // publish one machine's transient state to everybody, on top of #106's untracked-file
+  // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
+  // marker existed pick it up without a MIGRATIONS entry.
+  //
+  // A GLOB since state-file-refuses-to-guess: the marker is now written by temp file plus rename
+  // in the same directory (claims.mjs), and the temp name starts with the marker's own name.
+  // An existing exact `.conductor/session-claim.json` line is left in place — it is harmless, and
+  // this function never removes a line it manages.
+  ".conductor/session-claim.json*",
+  // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
+  // for the duration of one save, so a stray one must never show up as an untracked file.
+  ".conductor/state.json.lock*",
+  // The save's temp file (state.mjs). Removed on every failure the process survives; a save
+  // killed by a signal between its write and its rename still leaves one behind.
+  ".conductor/state.json.tmp*",
+  // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
+  // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
+  // engine-written, per-checkout, and useless to anyone but this working tree.
+  ".conductor/activity/",
+]);
+
+/** Append every ENGINE_IGNORED entry the repository's .gitignore lacks. Never removes a line. */
 export function ensureGitignore() {
-  const wanted = [
-    ".conductor/detours.log",
-    ".conductor/write-conflicts.log",
-    // The contention latch is engine-written too (write-conflicts.mjs). Left out, every
-    // pm-managed repo grows a permanently untracked file the moment writes contend — #106
-    // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
-    // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
-    ".conductor/write-conflicts.latch",
-    // The commit-nudge HEAD watermark (commit-watch.mjs). Engine-written on every Bash tool
-    // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
-    // a merge conflict per commit as well as #106's untracked-file complaint.
-    ".conductor/commit-watch.json",
-    // commit-nudge-reads-the-whole-move: the observation record that replaces the watermark above
-    // (commit-watch.mjs). A GLOB: its O_EXCL lock and the temp file of its rename start with its
-    // name, and a hook killed mid-write leaves either behind. The exact commit-watch.json line
-    // stays — 0.44.0 engines still write that file, and this function never removes a line.
-    ".conductor/commit-observe.json*",
-    // #84's repo-level quiescence marker (claims.mjs). Per-checkout and per-session by nature —
-    // it says "THIS session is mid-operation in THIS working tree" — so committing it would
-    // publish one machine's transient state to everybody, on top of #106's untracked-file
-    // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
-    // marker existed pick it up without a MIGRATIONS entry.
-    //
-    // A GLOB since state-file-refuses-to-guess: the marker is now written by temp file plus rename
-    // in the same directory (claims.mjs), and the temp name starts with the marker's own name.
-    // An existing exact `.conductor/session-claim.json` line is left in place — it is harmless, and
-    // this function never removes a line it manages.
-    ".conductor/session-claim.json*",
-    // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
-    // for the duration of one save, so a stray one must never show up as an untracked file.
-    ".conductor/state.json.lock*",
-    // The save's temp file (state.mjs). Removed on every failure the process survives; a save
-    // killed by a signal between its write and its rename still leaves one behind.
-    ".conductor/state.json.tmp*",
-    // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
-    // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
-    // engine-written, per-checkout, and useless to anyone but this working tree.
-    ".conductor/activity/",
-  ];
+  const wanted = ENGINE_IGNORED;
   const giPath = path.join(engineRoot(), ".gitignore");
   let existing = "";
   try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
@@ -90,6 +111,49 @@ export function ensureGitignore() {
   if (missing.length === 0) return;
   const prefix = existing && !existing.endsWith("\n") ? "\n" : "";
   fs.appendFileSync(giPath, `${prefix}${missing.join("\n")}\n`);
+}
+
+/** Does this ENGINE_IGNORED entry cover this root-relative path? An entry is exact, a `*` glob
+ *  (a prefix: every glob in the list ends in its one star) or a `/` directory. */
+const coversPath = (entry, file) =>
+  entry.endsWith("/") || entry.endsWith("*") ? file.startsWith(entry.replace(/\*$/, "")) : file === entry;
+
+/** The ENGINE_IGNORED entries the index STILL TRACKS — the fleet state the ignore line cannot fix.
+ *
+ *  An ignore rule only hides UNTRACKED files. A repository that committed `.conductor/brief.txt`
+ *  before pm ignored it (14 of 24 on the maintainer's machine) keeps recording every rewrite of it
+ *  however many times `ensureGitignore()` runs. Only `git rm --cached` ends that, and pm is an
+ *  instruction layer: it names the command, it never runs it.
+ *
+ *  ONE `ls-files` over the entries themselves, through the gateway operation tool-currency already
+ *  uses, and cwd-relative for the same reason (its note): a project nested in a larger repository
+ *  asks about its own files only. Answers ENTRIES, never ls-files' lines — the printed command
+ *  therefore holds nothing but this module's constants, `activity/` stays one pathspec rather
+ *  than one per segment, and git's quoting of an unusual name never reaches a shell line.
+ *  `[]` whenever git cannot answer (no repository, a throw): not being able to tell is silence. */
+export function trackedEngineIgnored() {
+  let out;
+  try { out = gitOps().lsFiles([...ENGINE_IGNORED]); } catch { return []; }
+  const files = String(out ?? "").split("\n").map(l => l.trim()).filter(Boolean);
+  return ENGINE_IGNORED.filter(entry => files.some(f => coversPath(entry, f)));
+}
+
+/** The copy-pasteable untrack instruction as lines, or `[]` when nothing needs it. Shared by BOTH
+ *  callers of ensureGitignore() — init and upgrade — so the two can never word it differently.
+ *  Each pathspec is single-quoted so the SHELL leaves a glob alone and git expands it against the
+ *  index; `-r` covers the directory entry. Its own commit line: correct whether or not the upgrade's
+ *  COMMIT block also fires, since a staged removal simply rides whichever commit comes first. */
+export function untrackInstruction() {
+  const tracked = trackedEngineIgnored();
+  if (!tracked.length) return [];
+  const specs = tracked.map(e => `'${e.replace(/\/$/, "")}'`).join(" ");
+  return [
+    `conductor: ⚠ UNTRACK PM'S SESSION FILES — .gitignore lists ${tracked.length} path` +
+      `${tracked.length === 1 ? "" : "s"} git still tracks, so every hook rewrite of them is a change to commit.`,
+    `   git rm -r --cached --quiet -- ${specs}`,
+    `   git commit -m "chore(pm): stop tracking the conductor's session files"`,
+    "   --cached removes them from git only; the files stay on disk. pm never runs this itself.",
+  ];
 }
 
 export function init() {
@@ -112,6 +176,7 @@ export function init() {
     errStream().write("conductor: created .conductor/state.json\n");
   }
   ensureGitignore();
+  for (const l of untrackInstruction()) errStream().write(l + "\n");
   sync(true);                 // pull in existing openspec changes + plans
   // save-report: exempt — a version stamp inside init(), which prints its own outcome line once
   // at the end; this write has no outcome line of its own to make true or false.
@@ -367,8 +432,10 @@ export function commitNudge() {
       // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung:
       // on the unverifiable rung nothing is known to have landed, and naming HEAD there would
       // assert a commit the repository never confirmed against an APPEND-ONLY array.
-      const files = commits.flatMap(c => changedFiles(c.sha) || []);
-      const attribution = attributionNudge(state, ctx, commits.map(c => c.sha), files);
+      // Per commit, NOT merged: bookkeeping is judged on each commit's own paths, and the hedge for a
+      // commit that does not name the active epic reads each commit's own subject.
+      const attribution = attributionNudge(state, ctx,
+        commits.map(c => ({ sha: c.sha, subject: c.subject, files: changedFiles(c.sha) })));
       runNudge(state, ctx, commits, attribution, event, dead, amendNote);
     } else {
       const subject = unverifiableSubject(cmd);
@@ -480,6 +547,40 @@ function attributionCandidates(state, ctx, files = []) {
   return [...out.filter(touches), ...out.filter(e => !touches(e))];
 }
 
+/** A change archived by `/opsx:archive`: `openspec/changes/archive/<YYYY-MM-DD>-<id>/<rest>`. */
+const ARCHIVED_CHANGE_PATH = /^openspec\/changes\/archive\/(?:\d{4}-\d{2}-\d{2}-)?([^/]+)\/(.+)$/;
+const LIVE_CHANGE_PATH = /^openspec\/changes\/(?!archive\/)([^/]+)\/(.+)$/;
+
+/** Does this commit's changed-path list hold ONLY pm bookkeeping — `.conductor/**`, `PROJECT.md`, and a
+ *  change MOVED under `openspec/changes/archive/`? Such a commit is lifecycle bookkeeping and is never
+ *  attributed (the nudge's own exclusion, which an agent obeying a bare command used to violate).
+ *
+ *  A MOVE is recognised by PAIRING NAMES, because the gateway's `diff-tree` runs with no rename detection
+ *  and so lists both halves: `openspec/changes/<id>/<rest>` removed and
+ *  `openspec/changes/archive/<date>-<id>/<rest>` added. A path under `openspec/changes/` with no partner is
+ *  an EDIT or a new change, which is real work, so it is not bookkeeping. Deliberately NOT
+ *  `isConductorOwnFiles()`, which detour logging uses and which must not widen. `false` for `null` (git
+ *  could not answer) and for an empty list: not being able to tell keeps the nudge. */
+export function isAttributionBookkeeping(files) {
+  if (!Array.isArray(files) || files.length === 0) return false;
+  const archived = files.map(f => ARCHIVED_CHANGE_PATH.exec(f)).filter(Boolean);
+  return files.every((f) => {
+    if (f === "PROJECT.md" || f.startsWith(".conductor/")) return true;
+    const a = ARCHIVED_CHANGE_PATH.exec(f);
+    if (a) return files.includes(`openspec/changes/${a[1]}/${a[2]}`);
+    const live = LIVE_CHANGE_PATH.exec(f);
+    return Boolean(live) && archived.some(m => m[1] === live[1] && m[2] === live[2]);
+  });
+}
+
+/** Does this commit subject name the epic by id — as a whole token, so `a` is not found in `data`? A
+ *  conventional scope (`feat(<id>): …`) and a prefix (`<id>: …`) both count. */
+export function subjectNamesEpic(subject, id) {
+  if (typeof subject !== "string" || typeof id !== "string" || !id) return false;
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^A-Za-z0-9_-])${esc}($|[^A-Za-z0-9_-])`, "i").test(subject);
+}
+
 /** gh#129 — the commit-TIME half of the attribution obligation, appended to the advisory the hook
  *  already emits on a real commit. The engine records NOTHING: attribution is append-only and its
  *  order decides the Gate 2 range, so it is the agent's write, made with a command it can run.
@@ -489,13 +590,35 @@ function attributionCandidates(state, ctx, files = []) {
  *  and the statement that choosing is the agent's. Every command names every reported live commit,
  *  oldest first, as ONE invocation. NOISE BUDGET: one short paragraph per real commit, on a message
  *  that already prints; what it must never do is fire when no commit landed, or name a wrong sha. */
-function attributionNudge(state, ctx, shas, files = []) {
-  // Every value is a full sha read from a reflog line (commit-watch.mjs parseReflog), so none can
+function attributionNudge(state, ctx, commits) {
+  // Every sha is a full sha read from a reflog line (commit-watch.mjs parseReflog), so none can
   // be empty; the filter keeps an empty one from emitting a command that appends nothing.
-  const list = (shas || []).filter(s => typeof s === "string" && s);
-  if (!list.length) return null;
+  const all = (commits || []).filter(c => c && typeof c.sha === "string" && c.sha);
+  if (!all.length) return null;
+  // NO CANDIDATE, NO LINE — decided BEFORE the bookkeeping split. A repo with no active epic (or one whose epic
+  // predates attributedCommits) has never been nudged about attribution, and a "needs no attribution" line for
+  // every re-render commit there would be exactly the noise this function's budget forbids.
+  if (!attributionCandidates(state, ctx, all.flatMap(c => c.files || [])).length) return null;
+  // BOOKKEEPING IS CLASSIFIED PER COMMIT, never on the merged file list: one real commit among
+  // three bookkeeping ones must still be named, and a bookkeeping one must never be attributed.
+  const real = all.filter(c => !isAttributionBookkeeping(c.files));
+  const bookkeeping = all.filter(c => !real.includes(c));
+  const shown = (cs) => cs.map(c => `\`${shortSha(c.sha)}\``).join(", ");
+  if (!real.length) {
+    return `ATTRIBUTION — ${shown(bookkeeping)} ${bookkeeping.length === 1 ? "is" : "are"} pm bookkeeping (only ` +
+      "`.conductor/` files, `PROJECT.md` and/or a change moved under `openspec/changes/archive/`) and needs no attribution.";
+  }
+  const list = real.map(c => c.sha);
+  const files = real.flatMap(c => c.files || []);
   const candidates = attributionCandidates(state, ctx, files);
   if (!candidates.length) return null;
+  const bookkeepingNote = bookkeeping.length
+    ? ` (${shown(bookkeeping)} ${bookkeeping.length === 1 ? "is" : "are"} bookkeeping and needs no attribution.)` : "";
+  // A candidate is TIED to these commits when one of them touched its own artifacts or named its id in
+  // its subject. Anything else is the engine guessing that the active epic owns work it merely happens
+  // to be active during, so the single-candidate sentence stops asserting it.
+  const tied = (epic) => real.some(c =>
+    (c.files || []).some(f => withinOwnArtifacts(f, ownArtifacts(epic))) || subjectNamesEpic(c.subject, epic.id));
   // The no-remedy message in place of the command for an id holding a control character (D4a).
   const cmd = (epic) => orNoRemedy(() => `update-epic ${printedId(epic.id)} ${list.map(s => `--attribute-commit ${s}`).join(" ")}`);
   // The exclusion travels WITH the commands, once: the archive move is the one commit obeying them
@@ -509,19 +632,29 @@ function attributionNudge(state, ctx, shas, files = []) {
     return "ATTRIBUTION — the engine recorded nothing; choosing is yours. Each of these epics could own " +
       "what landed (a candidate whose own files the commits touch is listed first):\n" +
       candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")).join("\n") +
-      `\n${exclusion}`;
+      `\n${exclusion}${bookkeepingNote}`;
   }
   const epic = candidates[0];
-  if (epic.attributedCommits.length === 0) {
-    return `ATTRIBUTION — \`${escapeControls(epic.id)}\` has attributed no commits yet: ` +
+  const id = escapeControls(epic.id);
+  const first = epic.attributedCommits.length === 0;
+  if (!tied(epic)) {
+    // Neither the subject nor the paths name this epic: it is a CANDIDATE only because it is the active
+    // one, and the engine says so rather than asserting ownership.
+    return `ATTRIBUTION — the engine cannot tell whether this commit is \`${id}\`'s work: its subject and paths do not ` +
+      `name it, and \`${id}\` is only the active epic. If this commit is \`${id}\`'s work, record it` +
+      (first ? ", after every commit of that epic's work that already landed, IN THE ORDER THEY LANDED (it has attributed none yet)" : "") +
+      ` — ${asCode(cmd(epic))}. If it is not, attribute nothing. ${exclusion}${bookkeepingNote}`;
+  }
+  if (first) {
+    return `ATTRIBUTION — \`${id}\` has attributed no commits yet: ` +
       "attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
       `${asCode(cmd(epic))}. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
       "entry, so a commit left unattributed is work that gate is never checked against. " +
-      `${exclusion}`;
+      `${exclusion}${bookkeepingNote}`;
   }
   return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
-    `${asCode(cmd(epic))}. ${exclusion}`;
+    `${asCode(cmd(epic))}. ${exclusion}${bookkeepingNote}`;
 }
 
 /** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no
@@ -723,16 +856,22 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
  *
  *  Returns the ids it registered, so the caller owns what is said about them.
  */
-export function backfillArchive(state, skipped = []) {
+export function backfillArchive(state, skipped = [], wanted = () => true) {
   // Identity is the DATE-PREFIX-STRIPPED id on both sides. An epic may itself carry a
   // date-prefixed id (this repository holds four such registrations), so comparing the stripped
   // archive id against the epic's literal id alone would miss it and register a duplicate —
   // making this path a third way to produce the duplicates `sync` is already filed for.
   const held = new Set();
   for (const e of state.epics) { held.add(e.id); held.add(strippedChangeId(e.id)); }
+  // An epic that names its change through `--plan` / `--spec` holds it too (gh#200): registering the
+  // archive directory a second time would be the duplicate that association exists to prevent.
+  for (const name of changeNamesClaimedByArtifacts(state)) held.add(strippedChangeId(name));
   const registered = [];
   for (const { id, dir } of archivedChanges()) {
-    if (held.has(id)) continue;
+    // `wanted` is `sync --only`'s selector and records that it SAW the id, held or not (so a held id
+    // is "already registered", not "matches nothing"). The default accepts everything and sees nothing.
+    const take = wanted(id);
+    if (held.has(id) || !take) continue;
     // The final registration step (design D4): an entry already held never reaches here. A name no
     // epic id can carry is reported by the caller, never stored.
     if (!STORABLE_EPIC_ID(id)) { skipped.push(dir); continue; }
@@ -768,27 +907,50 @@ export function backfillArchive(state, skipped = []) {
   return registered;
 }
 
-export function sync(quiet = false) {
+/** `sync [--dry-run] [--only <id>]…` — the verb entry. Parses the two flags and hands them to sync().
+ *  `--only` is repeatable and limits REGISTRATION to the named change, plan or archived-change ids;
+ *  `--dry-run` computes everything sync would do and writes nothing. */
+export function syncVerb() {
+  const flags = parseFlags(currentArgv().slice(3));
+  requireFlagValues("sync", flags);
+  const only = Array.isArray(flags.only) && flags.only.length ? new Set(flags.only) : null;
+  sync(false, { dryRun: flags["dry-run"] === true, only });
+}
+
+export function sync(quiet = false, { dryRun = false, only = null } = {}) {
   const state = loadState();
+  // `--only`'s selector. Every candidate id a registration site meets goes through it, which is what
+  // lets the run tell "this id is already registered" and "this id is a candidate" from "this id
+  // matches nothing" (refused below, before anything is written).
+  const seen = new Set();
+  const wanted = (id) => { if (only && only.has(id)) seen.add(id); return !only || only.has(id); };
+  // What a dry run reports instead of doing; the real run fills the same lists and ignores them.
+  const would = { flips: [], changes: [], plans: [], archives: [], healed: [] };
   const onDiskChanges = new Set(activeChangeIds());
+  const flipLines = [];
   for (const e of state.epics) {
     if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
       e.status = "untriaged";
-      if (!quiet) errStream().write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
+      would.flips.push(e.id);
+      // Held until the `--only` check below passes: a run that then dies "nothing was written" must
+      // not have printed a flip it did not make.
+      if (!quiet && !dryRun) flipLines.push(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
     }
   }
   const known = new Set(state.epics.map(e => e.id));
+  for (const id of known) wanted(id);
   let added = 0;
   // Every entry skipped for its NAME, counted into the final line: a sync that skipped something must
   // not read as a clean "synced" (sync-registers-ids-add-epic-refuses).
   let skipped = 0;
   for (const id of activeChangeIds()) {
+    if (!wanted(id)) continue;
     if (!known.has(id)) {
       // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
       // silent skip would read as a clean sync (design D4).
       if (!STORABLE_EPIC_ID(id)) { errStream().write(unstorableSkipLine("change", id)); skipped++; continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
-      known.add(id); added++;
+      known.add(id); added++; would.changes.push(id);
     }
   }
   // THE RESOLUTION LADDER (#64/#69). Dedup used to key on the plan's FILENAME-DERIVED id alone,
@@ -805,6 +967,7 @@ export function sync(quiet = false) {
   const ignored = syncIgnoredArtifacts(state);
   for (const fname of planFiles()) {
     const id = fname.replace(/\.md$/, "");
+    if (!wanted(id)) continue;
     const planPath = path.join("docs", "superpowers", "plans", fname);
     const norm = normalizeArtifactPath(planPath);
 
@@ -871,7 +1034,7 @@ export function sync(quiet = false) {
     }
     const title = firstHeading(path.join(plansDir(), fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
-    known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
+    known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++; would.plans.push(id);
   }
   // EXEMPTION NOTE: registering a historical archived change does NOT go through archiveGate().
   // Like the heal below and the two archived-at-creation paths, it supplies no disposition,
@@ -883,11 +1046,17 @@ export function sync(quiet = false) {
   // has been accounted for.
   const firstBackfill = !("archiveBackfilledAt" in state);
   const skippedArchives = [];
-  const backfilled = backfillArchive(state, skippedArchives);
+  const backfilled = backfillArchive(state, skippedArchives, wanted);
+  would.archives = backfilled;
   for (const dir of skippedArchives) errStream().write(unstorableSkipLine("archive directory", dir));
   skipped += skippedArchives.length;
-  if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
+  // A SELECTIVE run has not accounted for history, so it does not stamp the marker: the next full
+  // sync still announces the backfill it is. (A dry run never reaches a save, so the stamp is moot.)
+  if (firstBackfill && !only) state.archiveBackfilledAt = new Date().toISOString();
+  // Snapshot HERE, after the planned flip above and the registrations: only a status the HEAL changes is drift.
+  const statusBefore = new Map(state.epics.map(e => [e.id, e.status]));
   reconcileArchived(state);
+  would.healed = state.epics.filter(e => statusBefore.has(e.id) && statusBefore.get(e.id) !== e.status).map(e => e.id);
   // An archive directory that matches an epic by NAME but that the resolver's date rule set aside is
   // neither that epic's archive nor registered by the backfill (the name is held), so it would sit
   // unexplained. Said on EVERY run, quiet included, like the unstorable skips: it is the only report
@@ -895,20 +1064,19 @@ export function sync(quiet = false) {
   let setAside = 0;
   for (const e of state.epics) {
     for (const dir of setAsideArchiveDirs(e)) {
-      const day = typeof e.createdAt === "string" && !Number.isNaN(Date.parse(e.createdAt)) ? e.createdAt.slice(0, 10) : null;
-      errStream().write(day
-        ? `conductor: sync set aside archive directory '${escapeControls(dir)}' — it predates epic '${escapeControls(e.id)}' ` +
-          `(registered ${day}), so it is not that epic's archive and did not end it; rename the directory if it is unrelated work. ` +
-          // The other reading: the epic was registered AFTER its own change was archived. Then the
-          // operator ends it deliberately, with the archive gate's own invocation (never a bare
-          // `--status archived`, which the gate refuses).
-          `If it IS this epic's archive (registered after the change was archived), end the epic: ${asCode(dispositionInvocation(e))}\n`
-        : `conductor: sync set aside archive directory '${escapeControls(dir)}' — epic '${escapeControls(e.id)}' has no registration ` +
-          "date (`createdAt`) to compare it with, so a live epic is never ended by a bare name match; run " +
-          "`recover-created-at` to date it from git history, and the next sync decides by the date rule\n");
+      errStream().write(`conductor: sync set aside archive directory '${escapeControls(dir)}' — ${setAsideDetail(e)}\n`);
       setAside++;
     }
   }
+  // A `--only` id that is neither a candidate nor an existing epic is a typo or a stale id. Refused
+  // BEFORE the save, on a dry run too, so it never reads as a clean selective sync.
+  const unmatched = only ? [...only].filter(id => !seen.has(id)) : [];
+  if (unmatched.length) {
+    die(`conductor: sync --only named ${unmatched.map(id => `'${escapeControls(id)}'`).join(", ")}, which matches no ` +
+      "unregistered change, plan or archived change and no existing epic — nothing was written\n");
+  }
+  if (dryRun) { reportSyncDryRun(would, { firstBackfill, only, skipped }); return; }
+  for (const line of flipLines) errStream().write(line);
   const saved = saveState(state);
   // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
   // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
@@ -950,6 +1118,25 @@ export function sync(quiet = false) {
         "sources only; nothing was read from your tracker(s), and nothing should be\n");
     }
   }
+}
+
+/** The `sync --dry-run` answer: what a real run would register, flip and heal, on stdout, with the same
+ *  `conductor:` prefix the real run's lines carry. It is a READ — no `saveState`, no render, no marker. */
+function reportSyncDryRun(would, { firstBackfill, only, skipped }) {
+  const ids = (xs) => xs.map(escapeControls).join(", ");
+  const total = would.changes.length + would.plans.length + would.archives.length;
+  const L = [`conductor: sync --dry-run — ${total} epic(s) would be registered; nothing was written`];
+  if (would.changes.length) L.push(`  would register ${would.changes.length} change(s) as untriaged: ${ids(would.changes)}`);
+  if (would.plans.length) L.push(`  would register ${would.plans.length} plan(s) as untriaged: ${ids(would.plans)}`);
+  if (would.archives.length) {
+    L.push(`  would register ${would.archives.length} archived change(s) as archived: ${ids(would.archives)}`);
+    if (firstBackfill && !only) L.push("  this would be the one-time archive BACKFILL: it alters the epic counts and stamps archiveBackfilledAt");
+  }
+  if (would.flips.length) L.push(`  would flip planned -> untriaged: ${ids(would.flips)}`);
+  if (would.healed.length) L.push(`  would heal archive drift (status change): ${ids(would.healed)}`);
+  if (skipped) L.push(`  ${skipped} entr${skipped === 1 ? "y" : "ies"} skipped — named on stderr, none would be registered`);
+  if (!total && !would.flips.length && !would.healed.length) L.push("  nothing to register");
+  outStream().write(L.map(escapeControls).join("\n") + "\n");
 }
 
 export function logDetour() {

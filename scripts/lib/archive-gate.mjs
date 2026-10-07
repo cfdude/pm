@@ -1,6 +1,6 @@
 // scripts/lib/archive-gate.mjs
 // What the archive transition requires, per path. May import constants.mjs,
-// epic-progress.mjs, disposition.mjs and git.mjs — and nothing else, and nothing under those
+// epic-progress.mjs, disposition.mjs, git.mjs and gate-artifact-evidence.mjs — and nothing else, and nothing under those
 // imports back up. `update-epic.mjs` imports THIS module; the reverse never happens.
 //
 // Why a module rather than the inline refusal this replaces: the Gate 2 check lived at
@@ -17,6 +17,7 @@
 
 import { CONTROL_CHARACTER, asCode, escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, noRemedyMessage, orNoRemedy, printedId, withdrawnGate } from "./constants.mjs";
 import { commitsNotReachedBy, isCommitNameShaped, resolveCommits } from "./git.mjs";
+import { artifactStaleness } from "./gate-artifact-evidence.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
 
@@ -110,6 +111,19 @@ export function outstandingStories(epic) {
  */
 export function gateStaleness(epic, entry) {
   if (!entry || typeof entry.verdict !== "string") return { state: "none", uncovered: [] };
+  // gh#198 — A GATE 1 VERDICT'S EVIDENCE IS ARTIFACT CONTENT. An entry carrying `artifactDigests` reads
+  // stale when a reviewed artifact was amended and unverifiable when one cannot be checked, BEFORE the
+  // commit logic below, which knows nothing of artifacts. Fresh falls through only when the entry also
+  // carries a commit range (that range's reachability is still a question); an artifact-only verdict is
+  // answered here, so a fresh spec review no longer reads `unverifiable` for lacking a range it never had.
+  // Never consulted by the archive gate: staleGate2() reads the Gate 2 entry only, so a stale spec
+  // review blocks nothing — it is a rendering signal, as the issue asked.
+  if (Array.isArray(entry.artifactDigests)) {
+    const art = artifactStaleness(entry);
+    if (art.state === "stale") return { state: "stale", uncovered: [], artifactsChanged: art.changed };
+    if (art.state === "unverifiable") return { state: "unverifiable", uncovered: [] };
+    if (!gateHasEvidence(entry)) return { state: "fresh", uncovered: [] };
+  }
   const attributed = epic && epic.attributedCommits;
   if (!Array.isArray(attributed)) return { state: "unverifiable", uncovered: [] };
   // WITHDRAWN IS NOT THE SAME AS NEVER-ATTRIBUTED. Gate 2 found the bypass: an epic whose
@@ -247,12 +261,14 @@ export function gateRemedy(id, gate, { base = "<sha>", head = "<sha>" } = {}) {
  *                refused call was making;
  *    correction  add `--correct-disposition` (true only for an AGENT-recorded disposition, since
  *                the correction flag is refused against an engine stamp);
- *    deferrals   "bare" (the default, `--no-deferrals`), "asserted" (the epic already carries an
- *                assertion: print nothing) or "placeholder" (print DEFERRAL_PLACEHOLDER);
+ *    deferrals   "placeholder" (the DEFAULT: print DEFERRAL_PLACEHOLDER — a bare `--no-deferrals` is a
+ *                CLAIM about the change, so no printer puts it in the caller's mouth), "asserted" (the
+ *                epic already carries an assertion: print nothing) or "bare" (`--no-deferrals`; no
+ *                caller asks for it — kept only so an explicit request still has a spelling);
  *    carry       obligationArchiveFlags() for a record whose `delivered` would be refused on a
  *                checkbox source's open tasks — the refusal's invocation keeps offering `delivered`,
  *                so it must carry the handoff that makes `delivered` recordable (Gate 2 R-I1). */
-export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "bare", keepDelivered = false, carry = [] } = {}) {
+export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "placeholder", keepDelivered = false, carry = [] } = {}) {
   // A record no verb can rename gets the no-remedy message in place of the invocation (D4a).
   if (CONTROL_CHARACTER.test(String(epic.id))) return noRemedyMessage("epic", epic.id);
   const outcomes = keepDelivered || !blockedDelivered(epic).length
@@ -299,7 +315,7 @@ export function blockedDelivered(epic) {
  *  integrity's `delivered-release-epic-left-open` and `heal-archived-epic-passed-gate-2`, and by
  *  blockedDelivered() as a checkbox handoff's remedy, so the three cannot drift apart. */
 export function deliveredArchiveInvocation(epic, carry = []) {
-  return orNoRemedy(() => `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals`);
+  return orNoRemedy(() => `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} ${DEFERRAL_PLACEHOLDER}`);
 }
 
 /** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that
@@ -415,7 +431,7 @@ export const DELIVERED_OBLIGATIONS = [
       }
       return { items: [], detail: parts.join("; and ") };
     },
-    remedy: (epic) => [gateRemedy(epic.id, 2, { base: "<parent of the first attributed commit>", head: "<the last attributed commit>" })],
+    remedy: (epic) => [gateRemedy(epic.id, 2, { base: "<parent of the earliest attributed commit>", head: "<the attributed commit every other one is an ancestor of>" })],
   },
   {
     variant: "gate2-attribution-withdrawn", kind: "gate2",
@@ -721,4 +737,25 @@ export function archiveGate(epic, request = {}) {
     disposition: agentDisposition({ outcome, reason, carriedTo: request.carriedTo,
       corrects: correction !== undefined ? { prior: existing, reason: correction } : undefined }),
     deferralAssertion: request.deferralAssertion };
+}
+
+/** The tail of the line that names ONE archive directory the 0.50.0 date rule set aside for `epic` — an
+ *  archive directory that matches the epic by NAME but predates its registration, so the resolver
+ *  neither ended the epic by it nor registered it. Rendered ONCE for its two readers, `sync` (which
+ *  prefixes `conductor: sync set aside archive directory '<dir>' — `) and integrity's
+ *  `archive-directory-has-no-epic`, so the two cannot come to word one condition two ways.
+ *
+ *  The "end the epic" invocation is dispositionInvocation()'s, so it carries the deferral PLACEHOLDER and
+ *  never a bare `--no-deferrals`. */
+export function setAsideDetail(epic) {
+  const day = typeof epic.createdAt === "string" && !Number.isNaN(Date.parse(epic.createdAt)) ? epic.createdAt.slice(0, 10) : null;
+  return day
+    ? `it predates epic '${escapeControls(epic.id)}' (registered ${day}), so it is not that epic's archive and did not end it; ` +
+      "rename the directory if it is unrelated work. " +
+      // The other reading: the epic was registered AFTER its own change was archived. Then the
+      // operator ends it deliberately, with the archive gate's own invocation (never a bare
+      // `--status archived`, which the gate refuses).
+      `If it IS this epic's archive (registered after the change was archived), end the epic: ${asCode(dispositionInvocation(epic))}`
+    : `epic '${escapeControls(epic.id)}' has no registration date (\`createdAt\`) to compare it with, so a live epic is never ended by a bare name match; run ` +
+      "`recover-created-at` to date it from git history, and the next sync decides by the date rule";
 }

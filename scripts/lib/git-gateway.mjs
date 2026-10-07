@@ -134,9 +134,13 @@ export function realGit(context) {
       execFileSync("git", ["rev-parse", "--git-path", name],
         { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(),
 
-    // created-at.mjs:99 — the pickaxe over a fixed string, oldest first.
+    // created-at.mjs — the pickaxe over a fixed string, printing the AUTHOR date (%aI): a committer date
+    // moves when a commit is rewritten (rebase, amend, cherry-pick) and would stamp a registration later
+    // than it was authored (knowledge-store: b60abd4d, author 06-30, committer 07-09). --full-history is
+    // harmless and keeps a side-branch commit from being pruned behind a merge. The caller picks the
+    // earliest match by DATE (earliestIntroduction), not by position.
     logPickaxe: (needle, pathspec) =>
-      execFileSync("git", ["log", `-S${needle}`, "--reverse", "--format=%H %cI", "--", pathspec],
+      execFileSync("git", ["log", `-S${needle}`, "--full-history", "--reverse", "--format=%H %aI", "--", pathspec],
         { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }),
 
     // ── lib/subcommands.mjs, 4 sites ───────────────────────────────────────────────────────────
@@ -189,7 +193,8 @@ export function realGit(context) {
       execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: root(), stdio: "ignore" }),
 
     // ── lib/tool-currency.mjs, 1 site ──────────────────────────────────────────────────────────
-    // tool-currency.mjs:149 — the tracked files under a pathspec, relative to this directory.
+    // tool-currency.mjs:149 — the tracked files under a pathspec, relative to this directory. Also
+    // subcommands.mjs trackedEngineIgnored(), which asks the same question about ENGINE_IGNORED.
     lsFiles: (paths) =>
       execFileSync("git", ["ls-files", "--", ...paths],
         { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }),
@@ -227,7 +232,7 @@ export const GIT_OPERATIONS = [
   { name: "revListNotReached", command: "git rev-list <commits...> ^<head>", asks: "which of these are not reached by head" },
   { name: "isShallowRepository", command: "git rev-parse --is-shallow-repository", asks: "is this a shallow clone" },
   { name: "gitPath", command: "git rev-parse --git-path <name>", asks: "a git-internal path, relative to this directory" },
-  { name: "logPickaxe", command: "git log -S<needle> --reverse --format=%H %cI -- <pathspec>", asks: "when a fixed string first appeared in these paths" },
+  { name: "logPickaxe", command: "git log -S<needle> --full-history --reverse --format=%H %aI -- <pathspec>", asks: "when a fixed string first appeared in these paths (author date), across every branch" },
   { name: "diffTreeNames", command: "git diff-tree -z --no-commit-id --name-only -r --root <sha>", asks: "the names one commit changed" },
   { name: "showPrefix", command: "git -c core.quotePath=false rev-parse --show-prefix", asks: "this directory's prefix inside the git tree" },
   { name: "commitSubject", command: "git log -1 --format=%s <sha>", asks: "one commit's subject line" },

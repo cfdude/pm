@@ -94,3 +94,36 @@ unitTest("2.6/2.8: the verb is local-only and reads no network", () => {
   const engine = memoryEngine(emptyRecord());
   assert.doesNotThrow(() => engine(["recover-created-at"]));
 });
+
+// ─────────── created-at-recovery-dates-too-late: the earliest match wins, by DATE ───────────
+
+unitTest("2.1b: the introducing commit is the EARLIEST match by date, whatever order the pickaxe lists them in", async () => {
+  const { earliestIntroduction } = await import(new URL("../../lib/created-at.mjs", import.meta.url).href);
+  // The knowledge-store shape: the traversal-first line is the later (07-09) commit and the real
+  // introduction (06-30) comes after it, as a pruned-then-restored side branch does.
+  const out = [
+    "aaaaaaa 2026-07-09T10:00:00+00:00",
+    "bbbbbbb 2026-06-30T10:00:00+00:00",
+    "ccccccc 2026-07-01T10:00:00+00:00",
+  ].join("\n");
+  assert.equal(earliestIntroduction(out), "2026-06-30T10:00:00+00:00");
+  // Compared as INSTANTS, so a zone offset cannot reorder them: 23:00-05:00 on 06-30 is 04:00Z on 07-01.
+  assert.equal(earliestIntroduction("a 2026-07-01T00:30:00+00:00\nb 2026-06-30T23:00:00-05:00"), "2026-07-01T00:30:00+00:00");
+});
+
+unitTest("2.1b: a grafted earliest match, no output and unparseable lines are ABSENT, never a date", async () => {
+  const { earliestIntroduction } = await import(new URL("../../lib/created-at.mjs", import.meta.url).href);
+  const out = "graft1 2026-06-30T10:00:00+00:00\nlater2 2026-07-09T10:00:00+00:00";
+  assert.equal(earliestIntroduction(out, new Set(["graft1"])), null, "at a graft point 'introduced here' is indistinguishable from 'already existed'");
+  assert.equal(earliestIntroduction(out, new Set(["later2"])), "2026-06-30T10:00:00+00:00", "a later grafted match does not hide an earlier real one");
+  assert.equal(earliestIntroduction(""), null);
+  assert.equal(earliestIntroduction("no-date-here\n\n  \nsha notadate"), null);
+});
+
+unitTest("the recovery's pickaxe prints the AUTHOR date (%aI), never the committer date (a rewrite moves only the latter)", async () => {
+  const { GIT_OPERATIONS } = await import(new URL("../../lib/git-gateway.mjs", import.meta.url).href);
+  const op = GIT_OPERATIONS.find(o => o.name === "logPickaxe");
+  assert.ok(op, "the pickaxe is a named gateway operation");
+  assert.match(op.command, /--format=%H %aI/);
+  assert.doesNotMatch(op.command, /%cI/, "restoring the committer date re-introduces the knowledge-store stamp (authored 06-30, committed 07-09)");
+});

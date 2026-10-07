@@ -1,9 +1,12 @@
 ---
 description: Register any new OpenSpec proposals as epics in the conductor index
+argument-hint: "[--dry-run] [--only <id> ...]"
 allowed-tools: Bash, Read, Edit
 ---
 
-Pull any OpenSpec changes that aren't yet tracked into the conductor.
+Pull any OpenSpec changes that aren't yet tracked into the conductor. If the user passed `--dry-run` and/or
+`--only <id>` (`$ARGUMENTS`), append exactly those flags to the command below (`sync --dry-run`,
+`sync --only <id>`, or both); see "Previewing and selecting" below.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" sync
@@ -14,6 +17,23 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" sync
 New proposals are added with `status: "untriaged"` and `priority: "P?"`. Then help the user
 triage each: assign a priority, set its status (queued/later), and add any epic links
 (e.g. `depends-on`) to other epics. Finish with `/pm:status`.
+
+## Previewing and selecting — `--dry-run` and `--only`
+
+`sync` can register a lot at once (the first run after an upgrade backfills EVERY archived
+change on disk). Two flags make that reviewable (#167):
+
+- `sync --dry-run` prints what a real run would register (changes, plans, archived changes),
+  flip (`planned` to `untriaged`) and heal, and writes **nothing**: no `state.json`, no
+  `PROJECT.md`, no `archiveBackfilledAt` marker. Exit 0. It still refuses a bad `--only`.
+  It is a read, so it has no inverse to undo.
+- `sync --only <id> [--only <id> …]` limits **registration** to the named change, plan or
+  archived-change ids (an archived change is named by its id WITHOUT the date prefix). An id that
+  is already an epic is accepted and does nothing; an id that is neither a candidate nor an epic
+  is refused and nothing is written. A selective run does NOT stamp the backfill marker, so the
+  next plain `sync` still announces the backfill. The `planned` to `untriaged` flip and the
+  archive-drift heal are not registrations and still run. The two flags combine
+  (`sync --dry-run --only a`).
 
 ## Superpowers plans — what stops one being registered twice
 

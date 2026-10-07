@@ -82,39 +82,14 @@ test("28.1 the path filter is honoured — a different path is silence", () => {
   assert.equal(advice(cwd, { tool_name: "Edit", tool_input: { file_path: "/tmp/x.mjs" } }), "");
 });
 
-test("28.1 commandMatches fires on a Bash command, and commandLacks suppresses the safe form", () => {
-  const cwd = initRepo();
-  lesson(cwd, "git-commit-takes-the-whole-index", {
-    detect: '{"tool":"Bash","commandMatches":"^git commit","commandLacks":"--\\\\s"}',
-    rule: "Never run a bare `git commit` while another process may be staging.",
-  });
-  assert.match(advice(cwd, { tool_name: "Bash", tool_input: { command: "git commit -m 'x'" } }),
-    /bare `git commit`/);
-  // commandLacks is the suppression half: the explicit-pathspec form is the safe one.
-  assert.equal(advice(cwd, { tool_name: "Bash", tool_input: { command: "git commit -- a.mjs" } }), "");
-});
+// 28.1 (commandMatches fires, commandLacks suppresses the safe form) and 28.2 (only the command's
+// FIRST LINE is matched) live on the UNIT rung, in unit/lesson-detect-rules.test.mjs. Through the
+// hook their positive hits ran every regex under the real 50 ms wall-clock vm watchdog, which a
+// starved machine trips on a benign regex too (lesson-budget-tests-flake-under-load); there they
+// run with a budget that cannot bind. The hook's own wiring — the event reaches matchLessons and
+// a hit becomes advice — is 28.1's path-matcher test above, which no regex and no clock touch.
 
 // ─────────────────── 28.2: precision — the constraint, not the feature ───────────────────
-
-test("28.2 only the command's FIRST LINE is matched — a heredoc body is data, not a command", () => {
-  const cwd = initRepo();
-  // UNANCHORED on purpose. An anchored `^git commit` cannot tell the two implementations apart
-  // — without the `m` flag, `^` means start-of-string either way — so the anchored form proves
-  // nothing here, and a repo author writing a plain substring matcher is the realistic case.
-  lesson(cwd, "git-commit-takes-the-whole-index", {
-    detect: '{"tool":"Bash","commandMatches":"git commit"}',
-    rule: "Never run a bare `git commit` while another process may be staging.",
-  });
-  // Positive control: the same matcher must still fire on the command actually being run, or
-  // this test would pass against an advisor that matched nothing at all.
-  assert.match(advice(cwd, { tool_name: "Bash", tool_input: { command: "git commit -m 'x'" } }),
-    /bare `git commit`/);
-  // Observed live in this repo: writing a lesson whose own text named a git command fired that
-  // lesson's own matcher, twice. The command being RUN is line one; everything after is data.
-  const heredoc = "cat > /tmp/note.md <<'EOF'\ngit commit is the thing this note is about\nEOF";
-  assert.equal(advice(cwd, { tool_name: "Bash", tool_input: { command: heredoc } }), "",
-    "a matched phrase inside a heredoc body must not fire the matcher");
-});
 
 test("28.2 a lesson with no detect: matcher is retrieval-only and never fires", () => {
   const cwd = initRepo();

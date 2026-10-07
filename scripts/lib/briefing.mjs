@@ -10,13 +10,14 @@ import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./li
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
-import { specSyncFindings } from "./spec-sync.mjs";
+import { specSyncFindings, waivedSpecEpics } from "./spec-sync.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, asCode, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
 
 /** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
  *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
@@ -82,7 +83,15 @@ export function specSyncBlock(state, { readIndex } = {}) {
   } catch (e) {
     return [specSyncUnavailable(e), ""];
   }
-  if (!findings.length) return [];
+  // A WAIVER is visible: a waived epic whose deltas really are missing reads the same as a clean one
+  // unless something names it. One capped line, after any findings.
+  const waived = waivedSpecEpics((state && state.epics) || []);
+  const waivedLines = waived.length
+    ? [`SPEC DELTAS WAIVED (${waived.length}): ${waived.slice(0, 5).map(id => `\`${id}\``).join(", ")}` +
+       `${waived.length > 5 ? `, +${waived.length - 5} more` : ""} — deliberately not applied to the main specs, so no check reads ` +
+       "them; clearing a waiver (see the update-epic command doc) puts an epic back under the check"]
+    : [];
+  if (!findings.length) return waivedLines.length ? [...waivedLines, ""] : [];
   const CAP = 5;
   const word = { absent: "absent", present: "still present", unpaired: "unpaired RENAMED line" };
   const L = ["SPEC DELTAS ABSENT FROM THE MAIN SPECS (a delivered change's archived spec deltas the main " +
@@ -94,6 +103,7 @@ export function specSyncBlock(state, { readIndex } = {}) {
       headers.map(h => JSON.stringify(h)).join(", "));
   }
   if (findings.length > CAP) L.push(`  (+${findings.length - CAP} more — see \`integrity\`)`);
+  L.push(...waivedLines);
   L.push("");
   return L;
 }
@@ -156,6 +166,10 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
     // incurred it — a compaction is exactly when it would otherwise be lost, and it was incurred
     // at activation, which may have been many turns ago.
     if (active.trackerRefreshNeeded) L.push(briefRemedy("tracker-refresh-owed", active));
+    // The active epic's EFFECTIVE execution profile (execution-profile-layered-settings D5): one line
+    // per field with the layer it came from, plus a `model:` line only for a role that resolves to
+    // something other than the default. Read from the raw state record, like the resolver expects.
+    for (const l of briefProfileLines(resolveProfile(state, { epicId: active.id }))) L.push(`  ${l}`);
   } else if (activeEpic && activeEpic.status === "archived") {
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {

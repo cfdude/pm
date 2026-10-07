@@ -35,6 +35,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { invokeEngine, run, tmpRepo } from "../fixtures/assert-harness.mjs";
 import { memoryStore } from "../../lib/store.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, "..", "..", "..");
@@ -55,7 +56,7 @@ function fixtureRecord() {
 }
 
 test("1.8 the engine's own stamp pattern is still the one this file strips", () => {
-  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "render.mjs"), "utf8");
+  const src = engineCode("scripts/lib/render.mjs");
   assert.ok(src.includes("const STAMP_RE = /^> Last rendered: .*$/m;"),
     "the strip this file performs must be the ENGINE's own pattern; if render.mjs renamed or " +
     "reshaped it, this test has been comparing something the engine does not");

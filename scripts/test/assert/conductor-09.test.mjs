@@ -32,6 +32,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, expectFail, ENGINE } from "../fixtures/assert-harness.mjs";
+import { PHASES, phaseChecks } from "../certification.mjs";
+import { codeOnly } from "../fixtures/source-code.mjs";
 
 // ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
 
@@ -178,7 +180,8 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // RE-POINTED IN 0.50.0: the list is read from the index git HANDED the hook
   // (`GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files …`), because the hook now runs from inside
   // its index snapshot, and `.git/index` is stale under `commit -a` and `commit <path>`.
-  assert.match(hookText, /declared=\$\(GIT_INDEX_FILE="\$INDEX_FILE" git -C "\$ROOT" ls-files 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
+  // NUL-DELIMITED since Gate 2 G1 (`-z`): a C-quoted non-ASCII name was counted as zero tests.
+  assert.match(hookText, /declared=\$\(GIT_INDEX_FILE="\$INDEX_FILE" git -C "\$ROOT" ls-files -z 'scripts\/test\/unit\/\*\.test\.mjs' 'scripts\/test\/assert\/\*\.test\.mjs'/,
     ".githooks/pre-commit's floor does not enumerate the tracked files of the RUNG SET its runner " +
     "was given — and the set is a LIST now, so a floor still naming one rung would count a subset");
   assert.doesNotMatch(hookText, /declared=\$\(grep /,
@@ -201,8 +204,8 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // pins BOTH halves of "one implementation at a time, never two".
   // RE-POINTED IN 0.50.0: the hook runs the SNAPSHOT's drift.mjs (`node "$DRIFT"`, DRIFT set from $SNAP).
   assert.match(hookText, /^DRIFT="\$SNAP\/scripts\/test\/drift\.mjs"$[\s\S]*node "\$DRIFT" --root/m,
-    "the hook does not run the drift script, so nothing checks enrolment, the twin pairing, the " +
-    "diff coupling or the record's freshness on this commit");
+    "the hook does not run the drift script, so nothing checks enrolment, the twin pairing or the " +
+    "record's freshness on this commit (diff coupling is the commit-msg hook's, certification-record-redesign D4)");
   assert.doesNotMatch(hookText, /grep -v -E '\^scripts\/test\//,
     "the hook has taken the enrolment check back inline — the drift script owns it, and two " +
     "implementations of one rule is the shape 6.4 exists to remove");
@@ -240,7 +243,9 @@ test("IX the hook verifies the INDEX: captured before the scrub, exported with c
   // 3. THE RUNNER NEVER SEES THE INDEX VARIABLE — the leak the scrub exists to stop. (Its line is pinned
   //    by equality in the test above; this names the property.) The drift script does see it.
   assert.doesNotMatch(lines[RUNNER_AT], /GIT_INDEX_FILE/, "the test runner must never inherit GIT_INDEX_FILE");
-  const driftAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node "\$DRIFT" --root "\$ROOT"; then$/);
+  // `--phase pre-commit` since certification-record-redesign 4.3: enrolment, twins and freshness here,
+  // diff coupling in the commit-msg hook (pinned in the next test).
+  const driftAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node "\$DRIFT" --root "\$ROOT" --phase pre-commit; then$/);
   assert.ok(driftAt > 0,
     "the drift script reads the index too, so it must be handed the one this commit is made from");
   // AND IT IS THE COMMIT'S drift.mjs (branch review, minor 2): the snapshot is exported BEFORE drift
@@ -260,8 +265,10 @@ test("IX the hook verifies the INDEX: captured before the scrub, exported with c
   assert.deepEqual(unwrapped, [], "an IX fixture makes a temp dir that is not scheduled with removeAtExit()");
 
   // 4. `declared` COUNTS THE SNAPSHOT'S BYTES, never the working tree's copy of a partially staged file.
-  assert.ok(lines.some((l) => l.includes(`grep -cE '^(test|unitTest)\\(' "$SNAP/$f"`)),
-    "the floor's per-file count must read the snapshot's copy ($SNAP/$f)");
+  // Since Gate 2 G1 the NUL-delimited list reaches grep through `xargs -0`, run INSIDE the snapshot, so
+  // each relative name is the snapshot's file and never the working tree's.
+  assert.ok(lines.some((l) => l.includes(`| (cd "$SNAP" && xargs -0 grep -chE '^(test|unitTest)\\(' /dev/null)`)),
+    "the floor's per-file count must read the snapshot's copy (xargs -0 grep, run in $SNAP)");
 
   // 5. NOTHING THE USER OWNS IS WRITTEN, AND THE CLEANUP REACHES EVERYTHING IT CREATED.
   const text = lines.join("\n");
@@ -275,5 +282,100 @@ test("IX the hook verifies the INDEX: captured before the scrub, exported with c
   assert.match(text, /^  if \[ -n "\$SNAP" \]; then rm -rf "\$SNAP"; fi$/m, "the cleanup must remove the snapshot");
   for (const [sig, code] of [["INT", 130], ["TERM", 143], ["HUP", 129]]) {
     assert.match(text, new RegExp(`^trap 'exit ${code}' ${sig}$`, "m"), `${sig} must become an exit so the EXIT cleanup runs`);
+  }
+});
+
+const COMMIT_MSG_HOOK = path.join(path.dirname(HOOK), "commit-msg");
+
+test("4.3 .githooks/commit-msg runs the COMMIT's drift in the commit-msg phase, over the index and message git hands it", () => {
+  // THE SHAPE HALF of functional/conductor-09's 4.3 cases (certification-record-redesign D4): those
+  // commit through both real hooks; this pins the lines that make coupling the commit-msg hook's and
+  // only its, on the per-commit path, so a hook edit that loses the index, the message or the phase
+  // fails here first.
+  assert.ok(fs.existsSync(COMMIT_MSG_HOOK), ".githooks/commit-msg is missing: diff coupling has no hook to run in");
+  assert.ok(fs.statSync(COMMIT_MSG_HOOK).mode & 0o111, ".githooks/commit-msg is not executable");
+  const lines = fs.readFileSync(COMMIT_MSG_HOOK, "utf8").split("\n");
+  const at = (re) => lines.findIndex((l) => re.test(l));
+  // 1. The index and the message file are captured and made absolute BEFORE the scrub and the cd.
+  const captureAt = at(/^INDEX_FILE=\$\{GIT_INDEX_FILE:-\}$/);
+  const msgAt = at(/^MSG_FILE=\$\{1:-\}$/);
+  const unsetAt = at(/^unset [^\n]*\bGIT_INDEX_FILE\b/);
+  const cdAt = at(/^cd "\$\(git rev-parse --show-toplevel\)"$/);
+  assert.ok(captureAt >= 0 && captureAt < unsetAt, "GIT_INDEX_FILE must be captured BEFORE the hook unsets it");
+  assert.equal(at(/^case "\$INDEX_FILE" in "" \| \/\*\) ;; \*\) INDEX_FILE="\$PWD\/\$INDEX_FILE" ;; esac$/), captureAt + 1,
+    "a relative GIT_INDEX_FILE must be made absolute against the cwd git gave the hook");
+  assert.equal(at(/^case "\$MSG_FILE" in "" \| \/\*\) ;; \*\) MSG_FILE="\$PWD\/\$MSG_FILE" ;; esac$/), msgAt + 1,
+    "a relative message path (`.git/COMMIT_EDITMSG`) must be made absolute before the hook changes directory");
+  assert.ok(msgAt >= 0 && msgAt < cdAt && captureAt < cdAt, "both are captured before the cd");
+  // 2. Its own export, and the COMMIT's drift — the working tree's only when the index holds none.
+  const exportAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" git checkout-index -a --prefix="\$SNAP\/"; then$/);
+  assert.ok(exportAt > cdAt, "the hook must export the captured index: the pre-commit snapshot is gone by now");
+  assert.equal(at(/^DRIFT="\$SNAP\/scripts\/test\/drift\.mjs"$/) + 1, at(/^\[ -f "\$DRIFT" \] \|\| DRIFT="\$ROOT\/scripts\/test\/drift\.mjs"$/),
+    "DRIFT must be the snapshot's copy, with the working tree's used only when the index holds none");
+  // 3. The commit-msg phase, with the message, over the captured index.
+  const driftAt = at(/^if ! GIT_INDEX_FILE="\$INDEX_FILE" node "\$DRIFT" --root "\$ROOT" --phase commit-msg --message "\$MSG_FILE" \$AMEND; then$/);
+  assert.ok(driftAt > exportAt, "the hook must run the snapshot's drift in the commit-msg phase with the absolute message path");
+  // 4. The snapshot is removed on every exit, a signal included.
+  const text = lines.join("\n");
+  assert.match(text, /^  if \[ -n "\$SNAP" \]; then rm -rf "\$SNAP"; fi$/m, "the cleanup must remove the snapshot");
+  for (const [sig, code] of [["INT", 130], ["TERM", 143], ["HUP", 129]]) {
+    assert.match(text, new RegExp(`^trap 'exit ${code}' ${sig}$`, "m"), `${sig} must become an exit so the EXIT cleanup runs`);
+  }
+  // 5. And the pre-commit hook no longer claims the coupling check.
+  const pre = fs.readFileSync(HOOK, "utf8");
+  assert.doesNotMatch(pre, /checks enrolment, twin coverage, diff coupling/,
+    ".githooks/pre-commit still says it checks diff coupling — that check is the commit-msg hook's now");
+});
+
+test("AM .githooks/commit-msg tells drift when a commit is an amend, from its parent's command line and never from a message word", () => {
+  // THE SHAPE HALF of functional/conductor-09's AM cases (hook-friction-0-51, item 3). Those amend through
+  // both real hooks; this pins the lines that make the detection safe: it reads the PARENT's command line,
+  // consumes message values (and the message's own words) so a message that mentions --amend is not an amend, and hands drift
+  // an OPTIONAL flag — an older drift ignores nothing it was not given.
+  const text = fs.readFileSync(COMMIT_MSG_HOOK, "utf8");
+  assert.match(text, /^CMDLINE=\$\(ps -ww -o command= -p "\$PPID" 2>\/dev\/null \|\| true\)$/m, "the parent's command line is read, tolerating a missing ps");
+  assert.match(text, /^    --am \| --ame \| --amen \| --amend\) AMEND="--amend"; break ;;$/m, "--amend, and its unambiguous prefixes, set the flag");
+  assert.match(text, /^          m \| F \| C \| c \| t\)$/m,
+    "the value of a value-taking short option, detached or attached, is consumed and never scanned as a flag");
+  assert.match(text, /^    --m \| --me \| --mes \| --mess \| --messa \| --messag \| --message\) SKIP=1; ISMSG=1 ;;$/m,
+    "a detached --message value is consumed");
+  // CODE ONLY: a comment naming a shape must not satisfy a guard for it (raw-engine-source-match).
+  const drift = codeOnly(fs.readFileSync(path.join(path.dirname(ENGINE), "test", "drift.mjs"), "utf8"), "drift.mjs");
+  assert.match(drift, /process\.argv\.includes\("--amend"\)/, "drift's CLI reads the optional --amend flag");
+  assert.match(drift, /"diff", "--cached", "--name-only", "-z", "--no-renames", "HEAD\^"/, "an amend is measured against HEAD's parent");
+  assert.match(drift, /: gitRead\(root, \["ls-files", "-z"\]\)\)/, "a root commit has no parent: everything in the index is what it adds");
+});
+
+test("4.4 the phase table puts diff coupling in exactly one hook's phase, and it is commit-msg's", () => {
+  // THE VALUE HALF of functional/conductor-09's 4.4 guard (certification-record-redesign D4): that one
+  // commits through both real hooks and sees the refusal once, from commit-msg; this pins the table the
+  // drift script's `--phase` reads, so a phase edit that puts coupling back in pre-commit, or takes it
+  // out of commit-msg, fails on the per-commit path first.
+  const owners = Object.entries(PHASES).filter(([, checks]) => checks.includes("coupling")).map(([phase]) => phase);
+  assert.deepEqual(owners, ["commit-msg"], "coupling must run in exactly one hook, the one that can read the message");
+  assert.deepEqual([...PHASES["pre-commit"]].sort(), ["enrolment", "record", "twins"],
+    "the pre-commit phase runs the other three checks, and never coupling");
+  const all = Object.values(PHASES).flat().sort();
+  assert.deepEqual(all, [...new Set(all)].sort(), "no check runs in both hooks");
+  assert.deepEqual(all, [...phaseChecks(undefined)].sort(), "and between them the two hooks run every check a bare run does");
+});
+
+test("L5 5.9 each message hook opens with the guarded git-secrets block, as pre-commit does for its own case", () => {
+  // THE SHAPE HALF of functional/conductor-09's L5 5.9 cases: those commit through the real hooks with
+  // a `git-secrets` shim on PATH (and with none); this pins the block itself — first command of the
+  // hook, guarded by `command -v`, refusing the commit on the scanner's refusal — so an edit that drops
+  // or reorders it fails on the per-commit path first. `core.hooksPath` bypasses `.git/hooks`, so
+  // without these blocks commit-message secret scanning is off.
+  for (const [hook, mode] of [["pre-commit", "--pre_commit_hook"], ["commit-msg", "--commit_msg_hook"],
+    ["prepare-commit-msg", "--prepare_commit_msg_hook"]]) {
+    const file = path.join(path.dirname(HOOK), hook);
+    assert.ok(fs.existsSync(file), `.githooks/${hook} is missing`);
+    assert.ok(fs.statSync(file).mode & 0o111, `.githooks/${hook} is not executable`);
+    const commands = fs.readFileSync(file, "utf8").split("\n").filter((l) => l.trim() && !/^\s*#/.test(l));
+    assert.deepEqual(commands.slice(0, 3), [
+      "if command -v git-secrets >/dev/null 2>&1; then",
+      `  git secrets ${mode} -- "$@" || exit 1`,
+      "fi",
+    ], `.githooks/${hook} must open with the guarded git-secrets ${mode} block`);
   }
 });

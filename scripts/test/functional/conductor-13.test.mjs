@@ -5,6 +5,8 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles, fixtureCommits, archiveDay } from "../fixtures/functional-harness.mjs";
 import { AGENT_OUTCOMES } from "../../lib/archive-gate.mjs";
+import { withRoot } from "../fixtures/explicit-root.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -227,6 +229,7 @@ test("every add-many key the registry declares round-trips through a batch entry
       links: [], description: "why this epic exists",
       externalUpdatedAt: "2026-08-23T09:30:00Z",
       stories: ["a milestone", { title: "one already behind us", done: true }],
+      reviewMode: "thorough", verbosity: "verbose", model: ["implement=opus:medium", "test=haiku"],
     }],
   });
   run(["add-many", "--from", batch], { cwd });
@@ -302,9 +305,33 @@ const EXERCISE = {
     check: (e) => assert.ok(!("planPath" in e), "--clear plan left planPath on the record"),
   },
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
+  "--verbosity": { args: ["--verbosity", "verbose"], check: (e) => assert.equal(e.verbosity, "verbose") },
+  "--model": {
+    args: ["--model", "implement=opus:medium", "--model", "test=haiku"],
+    check: (e) => assert.deepEqual(e.model, { implement: { model: "opus", effort: "medium" }, test: { model: "haiku" } }),
+  },
+  // The one-role inverse of --model. `setup` is load-bearing for the reason --clear's is: a fresh
+  // epic carries no model, so without it this entry would pass against an implementation that did nothing.
+  "--clear-model": {
+    setup: ["--model", "implement=opus:medium", "--model", "test=haiku"],
+    args: ["--clear-model", "test"],
+    check: (e) => assert.deepEqual(e.model, { implement: { model: "opus", effort: "medium" } }),
+  },
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
   "--spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
+  // spec-sync-waive-for-skip-specs: the value IS the reason, stored verbatim; `--clear spec-deltas-waived` is its inverse.
+  // The flag is refused outside the check's scope (a delivered, openspec-lane epic with an archived change
+  // directory), so `prep` puts `subject` in it: the archive directory and the delivered record.
+  "--spec-deltas-waived": { prep: (cwd) => {
+    fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "subject"), { recursive: true });
+    fs.writeFileSync(path.join(cwd, "openspec", "changes", "archive", "subject", "proposal.md"), "# p\n");
+    const s = readState(cwd);
+    const e = s.epics.find(x => x.id === "subject");
+    e.lane = "openspec"; e.status = "archived";
+    e.disposition = { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" };
+    writeState(cwd, s);
+  }, args: ["--spec-deltas-waived", "folded into the main spec by hand"], check: (e) => assert.equal(e.specDeltasWaived, "folded into the main spec by hand") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
@@ -410,6 +437,7 @@ test("every DOCUMENTED update-epic flag is accepted and its value reads back fro
     const [first, second] = fixtureCommits(cwd, ["fixture", "fixture-2"]);
     const commits = { [COMMIT]: first, [COMMIT_2]: second };
     const sub = (argv) => argv.map(a => Object.hasOwn(commits, a) ? commits[a] : a);
+    if (spec.prep) spec.prep(cwd);
     for (const step of spec.pre || []) run(sub(step), { cwd });
     if (spec.setup) run(["update-epic", "subject", ...sub(spec.setup)], { cwd });
     const err = expectFail(() => run(["update-epic", "subject", ...sub(spec.args)], { cwd }));
@@ -521,10 +549,9 @@ test("no module under scripts/lib/ reads .outcome or .recordedBy off an epic", a
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
     if (name === "disposition.mjs") continue;
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);   // comments blanked: prose is not code
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;  // prose, not code
       // `f` is parseFlags()'s result — the CLI flags an invocation carried, not an epic. A
       // command reading its own `--outcome` flag is not a second reader of the record.
       if (/\bf\.\s*(outcome|recordedBy)\b/.test(line)) return;
@@ -597,12 +624,11 @@ const ARCHIVE_GATE = new URL("../../lib/archive-gate.mjs", import.meta.url).href
 test("update-epic holds no openspec-lane archive condition of its own", () => {
   // The co-occurrence is what matters, not the bare string: a line that tests the openspec
   // lane AND reads a gate verdict is the guard, wherever it is written.
-  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "update-epic.mjs"), "utf8");
+  const src = engineCode("scripts/lib/update-epic.mjs");
   const lines = src.split("\n");
   const offenders = [];
   lines.forEach((line, i) => {
     const t = line.trim();
-    if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
     if (!line.includes('"openspec"')) return;
     const window = lines.slice(Math.max(0, i - 3), i + 4).join("\n");
     if (/gate2|gateReview/.test(window)) offenders.push(`${i + 1}: ${t}`);
@@ -817,9 +843,8 @@ test("no module computes outstanding work for itself", () => {
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
     if (name === "epic-progress.mjs") continue;
-    fs.readFileSync(path.join(libDir, name), "utf8").split("\n").forEach((line, i) => {
+    engineCode(`scripts/lib/${name}`).split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       if (/\btotal\s*-\s*\w*\.?done\b|\.total\s*-\s*/.test(line)) offenders.push(`${name}:${i + 1}: ${t}`);
     });
   }
@@ -927,10 +952,9 @@ test("no module under scripts/lib/ decides openspec-lane membership with a stric
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       if (!/[!=]==\s*"openspec"/.test(line)) return;
       if (line.includes('|| "openspec"')) return;      // normalized inline — acceptable
       offenders.push(`${name}:${i + 1}: ${t}`);
@@ -1017,10 +1041,9 @@ test("no module under scripts/lib/ mines a sha or a range out of a verdict note"
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       // A PROPERTY read — `entry.note`, `gate2.note`. The detour log also carries a local
       // `note` variable it splits and trims (git.mjs, render.mjs's Recent-detours table), and
       // that has nothing to do with a gate verdict; scoping to the property access is what
@@ -1429,10 +1452,9 @@ test("no module under scripts/lib/ reads a change's artifacts to identify deferr
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
-      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
       if (!/defer/i.test(line)) return;
       if (/readFileSync|readdirSync|proposal|design\.md|tasks\.md/.test(line)) {
         offenders.push(`${name}:${i + 1}: ${t}`);
@@ -1880,7 +1902,7 @@ test("no module creates an epic except through pushEpic() — the sink the rule 
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(n => n.endsWith(".mjs"))) {
-    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    const src = engineCode(`scripts/lib/${name}`);
     const lines = src.split("\n");
     // state.mjs is the helper's HOME, not an exemption — a sixth creation path added there is
     // the likeliest place to put one, so the push is allowed on exactly the line inside
@@ -2037,13 +2059,16 @@ test("record-gate-review's allowlist is the shared registry's projection, not a 
 // exact defect class this release exists to end.
 test("16.3: a headSha naming the last attributed commit at another length reads FRESH", async () => {
   const { gateStaleness } = await import(ARCHIVE_GATE);
-  const short = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
-  const long = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  // THIS repository's HEAD, named explicitly: the test process's CLAUDE_PROJECT_DIR is pinned to empty
+  // scratch (test-isolation-guard), so neither the git call nor the gate's own ancestry check may lean
+  // on an ambient root.
+  const short = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim();
+  const long = execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim();
   assert.notEqual(short, long, "the fixture needs two spellings of ONE commit");
 
-  const state = gateStaleness(
+  const state = withRoot(REPO, () => gateStaleness(
     { id: "e", lane: "openspec", attributedCommits: [short] },
-    { verdict: "pass", baseSha: short, headSha: long, reviewedAt: "2026-08-25T00:00:00.000Z" });
+    { verdict: "pass", baseSha: short, headSha: long, reviewedAt: "2026-08-25T00:00:00.000Z" }));
 
   assert.equal(state.state, "fresh",
     `one commit spelled two ways must read fresh, not ${state.state} — a gate that refuses an ` +

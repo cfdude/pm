@@ -1,0 +1,91 @@
+# verify-3.3 — task 3.3's Verify lines, run over the STAGED 3.3 tree before committing, 2026-09-29T03:37:26Z
+
+$ rg -n "certifiedSet|certifiedModules" scripts
+scripts/lib/store.mjs:624: *  THE PARAGRAPH ABOVE DELIBERATELY DOES NOT SPELL THE GIT GATEWAY ACCESSOR'S CALL. `certifiedModules()`
+# one hit, scripts/lib/store.mjs's comment, which 3.4 rewrites
+
+# Drifted line numbers (task text as of c96240ab) corrected against today's tree:
+#   certifiedModules() was certification.mjs:166-176 (task :191-201); its ENGINE_ENTRY special case :174 (task :199).
+#   certify.mjs:36,120 no longer import it: 2.4 moved certify onto drift's indexManifest(), so the only
+#   importers left were bucketSubject() (certification.mjs) and assert/drift-script.test.mjs:41 (use at :230;
+#   the task's :281/:441 had collapsed to that one test at 2.4). MACHINERY retired with it: every file it named
+#   is in functionalSubject() over this index (the half imports drift/certification/js-lexer, and certify-index
+#   imports ../certify.mjs).
+#   drift.mjs's indexReaders() comment was :116-118 at c96240ab, :110-114 today.
+#   fixtures/helpers.mjs's 'derive an empty certified set' was :347, :355 today.
+
+# functionalSubject() over the staged index, and the retired interim subject over the same index:
+bucketSubject(functional) === functionalSubject(): true 185 paths; archive-gate.mjs in it: true
+
+# Re-runs the task names (seeded G-I3 and 1.3, IX-j asserting sweeps only, IX-k; X1's two-index case unedited):
+$ node --test --test-name-pattern="IX-j|IX-k|G-I3|1\.3" scripts/test/functional/conductor-09.test.mjs
+✔ G-I3 the hook does NOT run the functional half — a marker file there is never picked up (1955.502791ms)
+✔ 1.3 both rungs empty is REFUSED naming both rungs, and default discovery is never reached (1343.072625ms)
+✔ IX-j drift judges the STAGED engine: a module staged and deleted from disk still demands its buckets (898.532125ms)
+✔ IX-k the drift script that judges a commit is the COMMIT's copy — an unstaged edit to drift.mjs cannot pass it (1081.990375ms)
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+$ node --test scripts/test/functional/drift-script.test.mjs
+✔ G-I2 the record's freshness is taken over the STAGED bytes, not the worktree's (1043.819167ms)
+✔ G-I2 control: the same fixture with the worktree MATCHING the index is accepted (1327.241ms)
+✔ 2.4 a staged DELETION of a functional test demands the functional bucket (Gate 1 B2) (1116.371625ms)
+✔ 2.4 X1: indexManifest() reads ONE index — its listing, the bytes its subject is judged by, and its modes and blobs (340.338417ms)
+✔ 2.5 two worktrees certify different content and A's drift accepts A's commit (B certifies first) (6306.805292ms)
+✔ 2.5 two worktrees certify different content and A's drift accepts A's commit (A certifies first) (6486.05425ms)
+ℹ tests 6
+ℹ pass 6
+ℹ fail 0
+
+# The certify over the STAGED commit (the functional subject is now the observed one: 185 paths, was 91):
+$ node scripts/test/certify.mjs functional   # exit 0, 875s, load {94.49 109.80 96.89} -> {51.42 89.42 99.78}
+certify: the observer saw 2347 Node processes; every tracked file they read is in the functional subject (185 paths), or the record (80, excluded by rule).
+certify: functional half passed (1245/1245); recorded 185 subject paths as 92c565e2e1ab9e6f0e8fafc3e6a80890511430087543324ae7a2d93b8e1e159b.json in <repo>/.git/pm-suite-certification.d/functional
+
+# After the commit (762d564f): measure.mjs over HEAD~1..HEAD — the commit demanded the functional half
+$ node openspec/changes/certification-record-redesign/measure.mjs . HEAD~1 HEAD
+{
+ "range": "HEAD~1..HEAD",
+ "nonMergeCommits": 1,
+ "A_certified_today": 0,
+ "sweeps_engineSource_today": 0,
+ "B_importClosure": 1,
+ "B_closurePlusNamed": 1,
+ "B_widenedShippedSurface": 1,
+ "B_widenedPlusHeadDeletions": 1,
+ "commitsDeletingOrLeavingSubjectPath": 0,
+ "C_anyEngineModule": 0,
+ "C_plusFunctionalAndFixtureFiles": 1,
+ "functionalFileChanged": 1,
+ "engineCommitsMissedToday": 0,
+ "headSizes": {
+  "executedAssertion": 2,
+  "widened": 185,
+  "wideOnly": 37,
+  "closure": 136,
+  "observed": 150,
+  "engine": 65,
+  "certified": 8
+ },
+ "headNamedByLiteral": [
+  ".githooks/pre-commit",
+  "hooks/README.md",
+  "hooks/hooks.json",
+  "scripts/test/fixtures/assert-harness.mjs",
+  "scripts/test/fixtures/git-gateway-capture.json",
+  "scripts/test/fixtures/inject-state-conflict.cjs",
+  "scripts/test/fixtures/observe-reads.mjs",
+  "scripts/test/fixtures/rules-0.26.0-github-scoped.txt",
+  "scripts/test/fixtures/rules-0.26.0-github-scopeless.txt",
+  "scripts/test/fixtures/rules-0.26.0-jira-scoped.txt",
+  "scripts/test/fixtures/state-0.26.0.json",
+  "scripts/test/fixtures/state-legacy-gate-verdict.json",
+  "scripts/test/fixtures/state-pre-disposition-walk.json",
+  "scripts/test/sweeps/output-interpolations.test.mjs"
+ ],
+ "headExecutedAssertion": [
+  "scripts/test/assert/engine-resolution.test.mjs",
+  "scripts/test/assert/parity.test.mjs"
+ ]
+}
+# B_widenedShippedSurface 1 of 1: the switch commit is in the observed subject. A_certified_today 0: the retired gitOps( scan would NOT have demanded it.

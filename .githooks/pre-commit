@@ -45,8 +45,9 @@ ROOT=$PWD
 # ONE CLEANUP, AND IT RUNS ON A SIGNAL TOO. It removes only what this hook created: the output file,
 # the index snapshot (below) and the suite lock once it is held. INT/TERM/HUP are turned into an
 # `exit`, so the EXIT trap runs under every /bin/sh — a Ctrl-C mid-suite must not leave the lock for
-# the next commit to wait on. Nothing it removes is the user's: the working tree and the index are
-# never written by this hook, which is what makes an interrupted hook safe by construction.
+# the next commit to wait on. Nothing it removes is the user's: the index is never written by this hook,
+# and the working tree is written ONLY by the flake retry's gitignored ledger `.test-flakes.log` (appended
+# after a failed run, never by a passing one) — which is what keeps an interrupted hook safe by construction.
 tmpfile=$(mktemp)
 SNAP=""
 LOCK_HELD=""
@@ -123,18 +124,24 @@ fi
 # drift script arriving would otherwise be a commit in which a file is run by nothing; 6.4 retires
 # that copy as it hands the check over, so the hook stops carrying two versions of one rule.
 #
-# WHAT IT REFUSES, all four of them by NAME: a tracked test file in neither half and in no bucket;
-# a functional id with no assertion twin; a staged functional file without its twin in the same
-# staged diff; and a certified module whose STAGED content has no matching contentHash in the record
-# -- where the refusal NAMES the run that produces one (`node scripts/test/certify.mjs
-# functional|sweeps`) rather than starting it.
+# WHAT THIS PHASE REFUSES (`--phase pre-commit`), all three of them by NAME: a tracked test file in
+# neither half and in no bucket; a functional id with no assertion twin; and a staged change to a
+# bucket's subject with no passing entry whose manifest (mode and blob id per subject path) equals the
+# WHOLE subject in this index -- where the refusal NAMES the bucket, the staged subject paths and the
+# run that produces one (`node scripts/test/certify.mjs functional|sweeps`) rather than starting it.
+# The fourth rule, DIFF COUPLING (a staged functional file without its twin in the same staged diff),
+# is NOT judged here: it may be exempted by a `Twin-Unchanged: <id> — <reason>` trailer, and the
+# message does not exist yet, so it runs in `.githooks/commit-msg` (`--phase commit-msg`) and in no
+# other hook (certification-record-redesign D4).
 #
 # IT DOES NOT RUN THE FUNCTIONAL HALF, and that is a requirement rather than a choice (design D8):
 # the check must be produced by reading files and the index, with no engine process and no git
 # fixture started by it, and it runs BEFORE the suite -- so a check that demanded a record its own
 # later step would write would refuse one step too early to ever be satisfied. It starts no test
-# runner, no engine and no fixture: `git ls-files`, `git diff --cached`, `git show :path` and
-# `git rev-parse --git-common-dir` are the whole of its access, enforced at the call.
+# runner, no engine and no fixture: `git ls-files` (with `-s` for modes and blob ids), `git diff
+# --cached`, `git show` (`:path`, and `HEAD:path` for a staged deletion), `git ls-tree` (HEAD's tree),
+# `git rev-parse` and `git interpret-trailers` (the commit-msg phase's parse of the message) are the
+# whole of its access, enforced at the call.
 #
 # BEFORE THE SUITE, INSIDE THE LOCK: it reads the index, and the suite's own writes are irrelevant
 # to it, but a refusal should not make the developer wait ~75s for a suite that was never going to
@@ -152,9 +159,9 @@ fi
 # snapshot's copy always runs.
 DRIFT="$SNAP/scripts/test/drift.mjs"
 [ -f "$DRIFT" ] || DRIFT="$ROOT/scripts/test/drift.mjs"
-if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT"; then
+if ! GIT_INDEX_FILE="$INDEX_FILE" node "$DRIFT" --root "$ROOT" --phase pre-commit; then
   echo "pre-commit: ABORT -- the drift script refused this commit (see above)." >&2
-  echo "pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness." >&2
+  echo "pre-commit: it checks enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook." >&2
   exit 1
 fi
 
@@ -213,10 +220,48 @@ rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 # the working tree (or anywhere) and a test reading through it reads those bytes, not the index's.
 # This repository tracks no symlinks (`git ls-files -s | rg '^120000'` is empty), so nothing is lost
 # today; a tracked symlink added later is where this gate stops meaning "the index".
+#
+# NO TEST MAY WRITE THE DEVELOPER'S REAL RECORD (test-isolation-guard). Every test process loads
+# `scripts/test/fixtures/record-isolation.mjs`, which pins CLAUDE_PROJECT_DIR to scratch and fails the
+# file when a protected `.conductor/` changed. Its module-relative root HERE is the snapshot, a copy;
+# this names the real checkout, so the run over the copy still guards the record the developer owns.
+export PM_TEST_PROTECTED_ROOT="$ROOT"
 cd "$SNAP"
 if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs >"$tmpfile" 2>&1; then
+  SUITE_STATUS=0
+else
+  SUITE_STATUS=$?
+fi
+
+# ─────────── ONE TARGETED RETRY OF THE FAILED FILES (flaky-test-quarantine-and-targeted-rerun, 0.51.0) ───────────
+# A failed run is not re-run whole: scripts/test/flake-retry.mjs reads the failed test FILES out of the
+# spec output and runs ONLY those once more. A test that passes on the retry passes the commit; it is
+# printed as a "known flake" when scripts/test/known-flakes.json lists it and as an "UNLISTED flake" when it
+# does not. A test that fails twice, a status that is not a test failure (a signal), an unreadable count and a
+# failure that maps to no test file are all REAL failures and fall through to the failure branch unchanged.
+# The retry's ledger (`.test-flakes.log`, gitignored) is the ONE thing this hook writes into the working tree,
+# and only after a failure; $ROOT is where it goes, never the snapshot. The floor below still reads the FIRST
+# run's total: a retry never lowers what must have been declared.
+RECOVERED=""
+if [ "$SUITE_STATUS" -ne 0 ]; then
+  # The COMMIT's copy, as drift is; the working tree's only when the index holds none (a hook fixture).
+  FLAKE_RETRY="$SNAP/scripts/test/flake-retry.mjs"
+  [ -f "$FLAKE_RETRY" ] || FLAKE_RETRY="$ROOT/scripts/test/flake-retry.mjs"
+  if [ -f "$FLAKE_RETRY" ] && RECOVERED=$(FORCE_COLOR=0 node "$FLAKE_RETRY" hook --root "$ROOT" --cwd "$SNAP" \
+      --output "$tmpfile" --status "$SUITE_STATUS" --dirs scripts/test/unit,scripts/test/assert); then
+    :
+  else
+    RECOVERED=""
+  fi
+fi
+
+if [ "$SUITE_STATUS" -eq 0 ] || [ -n "$RECOVERED" ]; then
   total=$(grep -m1 -E '^ℹ tests ' "$tmpfile" | awk '{print $3}')
   passed=$(grep -m1 -E '^ℹ pass ' "$tmpfile" | awk '{print $3}')
+  if [ -n "$RECOVERED" ]; then
+    total=$(echo "$RECOVERED" | awk '{print $2}')
+    passed=$(echo "$RECOVERED" | awk '{print $3}')
+  fi
 
   # CHECK 1 -- A COUNT THAT CANNOT BE READ IS A REFUSAL (0.49.0, D4/D5). Until 0.49.0 an unparsed
   # summary still printed "tests passing" and exited 0 WITH THE FLOOR SKIPPED, so
@@ -267,8 +312,13 @@ if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs s
   # AND BOTH HALVES OF IT READ THE INDEX (0.50.0): the list from the index git handed this hook, and
   # each file's declarations from the SNAPSHOT's copy — never the working tree's, where a partially
   # staged file would be counted by its unstaged half.
-  declared=$(GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
-    | while IFS= read -r f; do grep -cE '^(test|unitTest)\(' "$SNAP/$f" || true; done | awk '{s+=$1} END {print s+0}')
+  #
+  # THE LIST IS NUL-DELIMITED (Gate 2 G1): without -z git C-quotes a name holding a non-ASCII byte, a
+  # quote, a tab or a newline, the per-file count finds no such file, and the file is declared as ZERO
+  # tests. /bin/sh cannot read a NUL-delimited list, so xargs -0 hands the names to grep: -c counts per
+  # file, -h drops the names, and /dev/null gives GNU and BSD xargs the same output on an empty list.
+  declared=$(GIT_INDEX_FILE="$INDEX_FILE" git -C "$ROOT" ls-files -z 'scripts/test/unit/*.test.mjs' 'scripts/test/assert/*.test.mjs' \
+    | (cd "$SNAP" && xargs -0 grep -chE '^(test|unitTest)\(' /dev/null) | awk '{s+=$1} END {print s+0}')
   # CHECK 2 -- THE FLOOR, compared BEFORE the empty-rung check (Gate 1 B6). A run that reports fewer
   # tests than are declared -- ZERO INCLUDED -- is a shortfall naming both counts: `total = 0` while the
   # index still declares tests is a COLLAPSED run, and it must never be reported as an empty rung.
@@ -289,10 +339,14 @@ if FORCE_COLOR=0 node --test --test-reporter=spec scripts/test/unit/*.test.mjs s
     exit 1
   fi
 
-  echo "pre-commit: ${passed}/${total} passing"
+  if [ -n "$RECOVERED" ]; then
+    echo "pre-commit: ${passed}/${total} passing AFTER a retry of the failed files -- see the flake lines above and .test-flakes.log"
+  else
+    echo "pre-commit: ${passed}/${total} passing"
+  fi
   exit 0
 else
-  status=$?
+  status=$SUITE_STATUS
   echo "pre-commit: tests FAILED -- full output follows" >&2
   cat "$tmpfile" >&2
   exit "$status"

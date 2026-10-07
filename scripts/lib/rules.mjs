@@ -22,12 +22,13 @@ function rethrowUnreadable(e) {
 import fs from "node:fs";
 import path from "node:path";
 import {
-  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
+  KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
+import { profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -83,21 +84,21 @@ export function globalReviewMode(state) {
   return KNOWN_REVIEW_MODES.includes(m) ? m : "standard";
 }
 
-/** The active review-mode dial. With no `epicId`, this is just the repo-global dial. With an
- *  `epicId`, returns the EFFECTIVE mode for that epic: the higher-ranked of the repo-global
- *  dial and the epic's own `reviewMode` override (if any) — an epic override can only escalate
- *  above the global dial, never silently de-escalate below it (enforced at write time in
- *  updateEpic(), not here; this is just "take the max" for read time). */
+/** The active review mode. With no `epicId`, the project layer (lane and epic layers do not apply).
+ *  With an `epicId`, that epic's EFFECTIVE mode, resolved most-specific-wins by resolveProfile()
+ *  (epic, then its lane, then the project, then `standard`) — an epic's value wins even where it is
+ *  LOWER than the project's. An adapter over the resolver, so every existing caller is untouched. */
 export function currentReviewMode(epicId) {
   try {
     const state = loadState();
-    const global = globalReviewMode(state);
-    if (!epicId) return global;
-    const epic = state.epics.find(e => e.id === epicId);
-    const override = epic && KNOWN_REVIEW_MODES.includes(epic.reviewMode) ? epic.reviewMode : null;
-    if (!override) return global;
-    return REVIEW_MODE_RANK[override] > REVIEW_MODE_RANK[global] ? override : global;
+    return resolveProfile(state, epicId ? { epicId } : {}).review.value;
   } catch (e) { rethrowUnreadable(e); return "standard"; }
+}
+
+/** The profile context `rulesBlock` renders: project scope with no `epicId`, else that epic's
+ *  effective values. Falls back to defaults like the other readers when state cannot be consulted. */
+export function currentProfileContext(epicId) {
+  try { return profileContext(loadState(), epicId); } catch (e) { rethrowUnreadable(e); return null; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -275,8 +276,8 @@ export const GATE_PROCEDURE_ITEMS = [
       "   in the order the commits landed, then keep attributing forward. Each value is resolved",
       "   when it is written and stored as its full object name — `HEAD` or a tag records the",
       "   commit it names at that moment, and a value that is not a commit in this clone is",
-      "   refused with nothing written. The array is append-only — the engine neither reorders nor",
-      "   de-duplicates it — and every attributed commit must be reached by a recorded Gate 2",
+      "   refused with nothing written. The array is append-only — the engine never reorders it and",
+      "   records each commit once (a repeat is a no-op) — and every attributed commit must be reached by a recorded Gate 2",
       "   `headSha` (equal to that head or an ancestor of it), whatever position it holds: one the reviewed",
       "   head does not reach reads as a stale verdict and refuses the archive.",
       "   ONE EXCLUSION, and it is not a judgment call: the commit that moves",
@@ -284,7 +285,11 @@ export const GATE_PROCEDURE_ITEMS = [
       "   change's artifacts rather than implementing its work, is lifecycle bookkeeping and",
       "   MUST NOT be attributed. That move lands after the reviewed range by construction, so",
       "   attributing it",
-      "   makes the epic's own Gate 2 stale at the instant the archive gate reads it.",
+      "   makes the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for",
+      "   the lifecycle commits a required task makes AFTER Gate 2 is recorded (the lessons item 7 routes,",
+      "   the task-list tick): commit them before recording Gate 2 where you can, and do not attribute",
+      "   them where you cannot — the engine says so when an attribution turns the verdict stale, and",
+      "   `--withdraw-commit` undoes it.",
     ],
   },
   {
@@ -626,7 +631,23 @@ const watermarkStep = (n) => [
   "   advance the watermark or sync erases the drift it exists to find.",
 ];
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
+/** The `## Execution profile` section's value lines: the project's (or one epic's) resolved values,
+ *  each with its source, then one line per lane override. `profile` is `profileContext()`'s answer;
+ *  absent (a caller that has no state), the defaults are shown. */
+function profileScopeLines(profile, mode) {
+  const ctx = profile || { scope: "project", view: resolveProfile({ reviewMode: mode }), lanes: [] };
+  const lines = [ctx.scope === "epic" ? `Effective values for epic \`${escapeControls(String(ctx.epicId))}\`:` : "Project values:"];
+  for (const l of profileBlockLines(ctx.view)) lines.push(`- ${l}`);
+  if (ctx.lanes.length) {
+    lines.push("", "Lane overrides:");
+    for (const l of ctx.lanes) lines.push(`- ${l}`);
+  } else {
+    lines.push("", "Lane overrides: none.");
+  }
+  return lines;
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -783,9 +804,26 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   from that log, not from memory), with an explicit \"are you OK with these?\" checkpoint, THEN",
     "   run tests. Leave room to iterate — including rewriting code — if the user is not satisfied.",
     "",
-    "## Review mode",
+    "## Execution profile",
     "",
-    "Review intensity is a bounded dial, not a free-form call each time — set via",
+    "How intensely to review, which model and effort each job role runs on, and how often you report.",
+    "Each field resolves independently, most specific first: the epic's own value, else its lane's,",
+    "else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).",
+    "Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own",
+    "through `add-epic`, `add-many` or `update-epic`; `profile` prints the effective values with the layer each came from",
+    "(pass its `--epic` flag for one epic). The engine records and emits the profile — it never",
+    "dispatches an agent or checks which model ran.",
+    "",
+    ...profileScopeLines(profile, mode),
+    "",
+    "**Before dispatching a job** (implementing, testing, reviewing), resolve the active epic's",
+    "profile and run that job's role on its `{model, effort}` where your platform lets you set them",
+    "per dispatch. Where it does not, say so rather than implying it was applied.",
+    "",
+    "**Verbosity:** `quiet` — one completion message per epic; `verbose` — a message at each phase",
+    "transition and gate.",
+    "",
+    "**Review mode.** Review intensity is a bounded dial, not a free-form call each time — set via",
     "`set-review-mode --mode <off|standard|thorough>` (default: `standard` if never set).",
     "",
     "| Mode | Reviewer budget | Trigger |",
@@ -795,6 +833,25 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "| `thorough` | two independent fresh-context reviewers per gate; adjudicate any disagreement yourself | schema/migration changes, security-sensitive work, or anything explicitly flagged high-stakes |",
     "",
     `Current mode: **${mode}**.`,
+    "",
+    "## Release candidate",
+    "",
+    "Building a release from several changes? Do not run a Gate 2 round per change: batch the work by",
+    "area, merge every worktree branch into ONE candidate branch (`rc/<releaseId>`), review that",
+    "candidate ONCE, and push once. The `release-candidate` skill carries the procedure — load it",
+    "before you start. Two rules to get right without it:",
+    "",
+    "- **The budget is the highest review among the candidate members.** The converged review runs at",
+    "  the highest effective `review` of the members not yet archived that have built work in the",
+    "  range (`thorough` two independent reviewers, `standard` one, `off` your own self-review), so one",
+    "  `thorough` member makes the whole candidate `thorough`.",
+    "- **One round; only a Critical reopens it.** An Important finding is fixed and re-tested, not",
+    "  re-reviewed; a Minor one is logged and never re-reviewed.",
+    "",
+    "Recording: attribute each fix commit to the member whose code it fixes, then record the verdict",
+    "with `record-gate-review` as Gate 2 for EACH candidate member at the SAME base and head, after",
+    "the last fix has merged. A verdict recorded before a fix is stale. `release show` reads whether the",
+    "members converged.",
     "",
     "## Feedback — don't let friction stay silent",
     "",
@@ -967,6 +1024,14 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "An outward-mirrored epic owes the same look as an inward-born one: a linked item accumulates",
     "third-party context regardless of which way it was born. Origin decides only whose ask wins",
     "when the item and a local spec disagree.",
+    // openspec-planning-completeness-instruction: the OBLIGATION, deliberately naming NO OpenSpec
+    // command. How to check belongs to the installed OpenSpec and moves with its version; baking one
+    // invocation into pm's rules is the version-specific coupling this rules block avoids elsewhere.
+    "An OpenSpec-lane epic owes one more check before it is treated as ready to apply: confirm its",
+    "planning is COMPLETE — every artifact your OpenSpec schema requires exists and they agree with one",
+    "another. If any is missing, or one contradicts another, finish the planning first; never start",
+    "building against a partial plan. This is an obligation and not a command: pm names no OpenSpec",
+    "invocation for it, because how to check belongs to the OpenSpec you have installed.",
   );
   lines.push(RULES_END, "");
   // THE LINE SINK (user-text-never-forges-output): each entry is one line of the block, so a stored
@@ -1089,7 +1154,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform);
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext());
   let next;
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and

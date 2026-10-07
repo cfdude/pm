@@ -49,6 +49,41 @@ unitTest("gh-137: an epic left non-terminal in a release whose parent delivered 
   assert.match(out, /left-open/);
 });
 
+unitTest("release-in-flight-rule-needs-decision: a release with NO marker keeps the member-derived reading, and says it is a guess", () => {
+  const engine = repoWith({
+    releases: [{ id: "1.0", intent: "x", deferred: [] }],
+    epics: [shipped("shipped"), epic("next-up", { release: "1.0", status: "queued" })] });
+  const out = engine(["integrity"]);
+  assert.equal(countLine(out, DELIVERED), 1, "the markerless rule did not change");
+  assert.match(out, /carries no delivery marker, so "delivered" was inferred from its members/);
+  assert.match(out, /`release 1\.0 --deliver`/, "the one command that replaces the guess with the fact");
+  assert.match(out, /mid-flight[^.]*--defer form/, "the markerless finding states the mid-flight way out");
+  assert.doesNotMatch(out, /--status active/, "the workaround wording added in the previous batch is gone");
+  const inFlight = repoWith({
+    releases: [{ id: "1.0", intent: "x", deferred: [] }],
+    epics: [shipped("shipped"), epic("next-up", { release: "1.0", status: "active" })] });
+  assert.equal(countLine(inFlight(["integrity"]), DELIVERED), 0, "the in-flight guard still silences a markerless release");
+});
+
+unitTest("release-in-flight-rule-needs-decision: a delivered MARKER is the answer — members and the in-flight guard are not consulted", () => {
+  const marked = { id: "1.0", intent: "x", deferred: [], delivered: { recordedAt: "2026-01-01T00:00:00Z" } };
+  // No member carries a delivered disposition, and one is active: the markerless reading would be silent twice over.
+  const out = repoWith({ releases: [marked],
+    epics: [epic("a", { release: "1.0", status: "queued" }), epic("b", { release: "1.0", status: "active" })] })(["integrity"]);
+  assert.equal(countLine(out, DELIVERED), 2, "both open members are reported, the active one included");
+  assert.match(out, /which is marked delivered/);
+  assert.match(out, /`release 1\.0 --undeliver`/);
+  assert.doesNotMatch(out, /no delivery marker/);
+  // The inverse: with the marker absent the same record is silent (no delivered member, an active one).
+  const bare = repoWith({ releases: [{ id: "1.0", intent: "x", deferred: [] }],
+    epics: [epic("a", { release: "1.0", status: "queued" }), epic("b", { release: "1.0", status: "active" })] });
+  assert.equal(countLine(bare(["integrity"]), DELIVERED), 0);
+  // The release's own deferred[] still excludes an epic cut on purpose, marker or not.
+  const cut = repoWith({ releases: [{ ...marked, deferred: [{ epic: "a", reason: "scope", recordedAt: "2026-01-01T00:00:00Z" }] }],
+    epics: [epic("a", { release: "1.0", status: "queued" })] });
+  assert.equal(countLine(cut(["integrity"]), DELIVERED), 0);
+});
+
 unitTest("gh-137: the release's own `deferred[]` excludes an epic cut on purpose", () => {
   const engine = repoWith({
     releases: [{ id: "1.0", intent: "x",

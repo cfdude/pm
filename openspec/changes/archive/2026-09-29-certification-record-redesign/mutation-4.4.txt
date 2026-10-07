@@ -1,0 +1,58 @@
+# mutation-4.4 — regression guard: coupling runs in exactly one place (certification-record-redesign 4.4)
+# 2026-09-29T05:02:58Z, node v26.10.0, git 2.55.0; guard = functional/conductor-09 '4.4 coupling is enforced in EXACTLY ONE place …'
+# Mutations applied to certification.mjs's PHASES in a SCRATCH COPY of scripts/ and .githooks/ (never the tree), each a counted
+# single-match substitution; the guard run with:
+#   node --test --test-name-pattern="^4\.4 coupling is enforced" scripts/test/functional/conductor-09.test.mjs
+
+## The L4 commit itself (0b2ad82c) was judged by BOTH hooks — its git commit output, in order:
+drift: ok — 217 tracked test files, 52 functional ids, 10 staged paths
+pre-commit: 1581/1581 passing
+drift: ok — 10 staged paths, 0 Twin-Unchanged declarations
+#   (1) pre-commit phase drift ok, (2) pre-commit's suite, (3) commit-msg phase drift ok — the new working-tree hook ran on the commit that adds it
+
+## The guard in the tree: green
+✔ 4.4 coupling is enforced in EXACTLY ONE place: pre-commit passes the unpaired file, and only commit-msg names the refusal (1012.658167ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+
+## Mutation 1 — PHASES["pre-commit"] gains "coupling" (re-enable check 3 in the pre-commit phase)
+# Fails on assertion (1) of the T2 pair — pre-commit's success line is never printed — NOT on a double report: git runs no
+# commit-msg after pre-commit exits non-zero, so the coupling line appears ONCE, from pre-commit.
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:1091:1
+✖ 4.4 coupling is enforced in EXACTLY ONE place: pre-commit passes the unpaired file, and only commit-msg names the refusal (727.996875ms)
+  AssertionError [ERR_ASSERTION]: one place: pre-commit's success line was not printed — the seed did not agree, or pre-commit refused: drift: ABORT — the suite's two halves have drifted apart
+  
+  these functional files are staged without their assertion twin in the same diff:
+    alpha — scripts/test/functional/alpha.test.mjs is staged, scripts/test/assert/alpha.test.mjs is not
+    (a change that leaves what the file tests untouched may declare it: a `Twin-Unchanged: <id> — <reason>` trailer)
+  
+  drift: the pre-commit checks are enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.
+  drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+  pre-commit: ABORT -- the drift script refused this commit (see above).
+  pre-commit: it checks enrolment, twin coverage and record freshness; diff coupling runs in the commit-msg hook.
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+
+## Mutation 2 — PHASES["commit-msg"] = [] (disable check 3 in commit-msg)
+# Fails because nothing refuses and the commit is made.
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:1091:1
+✖ 4.4 coupling is enforced in EXACTLY ONE place: pre-commit passes the unpaired file, and only commit-msg names the refusal (1336.6925ms)
+  AssertionError [ERR_ASSERTION]: one place: the commit must be refused: drift: ok — 3 tracked test files, 1 functional ids, 1 staged paths
+  pre-commit: 2/2 passing
+  drift: ok — 1 staged paths, 0 Twin-Unchanged declarations
+  [main 4614ecf] change alpha, no trailer
+   1 file changed, 1 insertion(+)
+
+## Reverted — the guard over the unmutated scratch copy
+(certification.mjs identical to the tree's)
+✔ 4.4 coupling is enforced in EXACTLY ONE place: pre-commit passes the unpaired file, and only commit-msg names the refusal (1161.570958ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0

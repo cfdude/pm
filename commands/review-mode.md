@@ -66,7 +66,7 @@ remedies (see `/pm:gate-guard`).
 Read the active mode from the rules block (or `state.reviewMode`) before starting a review pass,
 and size the reviewer budget accordingly — don't default back to ad-hoc judgment. This is a
 repo-level setting: it applies uniformly regardless of which epic is active, EXCEPT where a
-single epic has an escalation-only override (below).
+single epic (or lane) carries its own value (below).
 
 Then RECORD the verdict, whatever the lane. This dial is lane-agnostic — the table above names a
 Superpowers task review — and `record-gate-review` now accepts any lane to match, with each gate's
@@ -76,27 +76,42 @@ implementation review), so a review this dial asked for has somewhere to land as
 instead of prose. Recording one creates no archive obligation: the
 archive gate remains openspec-only. See `/pm:epic`'s "Record a gate verdict".
 
-## Per-epic override (escalate only, never de-escalate)
+## Per-epic override (any direction; most specific wins)
 
-A single epic can be forced to a stricter mode than the repo-global dial — e.g. a
-security-sensitive epic in an otherwise `standard` repo — without flipping the whole repo to
-`thorough`:
+A single epic can carry its own review mode, stricter OR looser than the repo-global dial — a
+security-sensitive epic in an otherwise `standard` repo, or a docs tweak in a `thorough` one:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> --review-mode thorough
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-epic --id <id> --lane claude-code --review-mode off
 ```
 
 Rules:
-- The override may only ESCALATE above the repo-global dial (`off` < `standard` < `thorough`).
-  An attempt to set an epic's `--review-mode` BELOW the current global dial is rejected outright
-  (non-zero exit, state unchanged) — an epic can never quietly weaken review rigor a human
-  explicitly raised repo-wide.
-- The effective mode for a given epic is `max(global dial, that epic's override)`. Query it with
-  `conductor.mjs rules --epic <id>` (look for "Current mode" in the emitted block), or read
-  `state.epics[].reviewMode` directly alongside `state.reviewMode`.
-- If the repo-global dial is later raised above a previously-set epic override, the global dial
-  wins again for that epic — the override never pins a *lower* effective mode than the current
-  global dial; it only ever adds a floor above it.
-- Clear an override with `update-epic <id> --clear review-mode`: the epic then follows the global
-  dial again. (Setting `--review-mode` equal to the global dial also makes it a no-op, but leaves
-  the override recorded.)
+- The effective mode for an epic is resolved most-specific-wins: **the epic's own value, else its
+  lane's (`set-profile --lane <lane> --review <m>`), else the repo-global dial, else `standard`.**
+  It is NOT the maximum of the layers: an epic set BELOW the dial resolves to its own lower value.
+  Earlier versions refused that ("escalate only"); that refusal is gone by decision. What replaces
+  it is visibility: `conductor.mjs profile --epic <id>` and `rules --epic <id>` name the layer each
+  value came from and, when an epic lowers a value, the higher value it overrides, and the activity
+  log records the change.
+- `--review-mode` is accepted by `add-epic`, `add-many` (as the batch key `reviewMode`) and
+  `update-epic`.
+- Query the effective value with `conductor.mjs rules --epic <id>` (look for "Current mode") or
+  `conductor.mjs profile --epic <id>`.
+- Clear an override with `update-epic <id> --clear review-mode`: the epic then follows its lane's
+  value, or the repo dial. Note that this may be higher OR lower than what the epic held.
+- The repo-wide dial has its inverse too: `set-review-mode` ships none of its own, and
+  `set-profile --unset review` is it (it removes the recorded dial, so the default `standard`
+  applies again).
+
+## When several changes are reviewed as one release candidate
+
+Building a release from several changes, the budget applies **per candidate, not per change**: the
+converged review runs at the HIGHEST effective `review` among the candidate members (the members that
+are not archived and have built work), so one `thorough` member makes the whole candidate `thorough`.
+When members resolve to different levels the procedure names each and recommends splitting the
+candidate by level. The whole procedure — batching, one integration branch, one capped review round,
+recording the same range as every member's Gate 2 — is the `release-candidate` skill.
+
+This dial is one field of the **execution profile**, which also carries the model and effort per
+job role and a verbosity level. See `/pm:profile`.

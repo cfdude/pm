@@ -108,7 +108,18 @@ does not reach the commits it cites, a gate recorded as bookkeeping rather than 
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
 that reads `outcome: unknown` while carrying a passing Gate 2, an epic sitting in a status the
 engine does not define, a dangling epic reference, an archive directory no epic corresponds to, a
-recorded commit sha this repository can no longer resolve, an epic still open in a release that
+recorded commit sha this repository can no longer resolve, two epics holding one tracker item
+(`tracker-item-held-by-two-epics`, the pre-0.50.0 duplicates the writers now refuse; it names both
+holders and `update-epic <one> --clear external-url`), a change present BOTH live and under
+`archive/` with identical content (`archived-change-also-live`: upstream `openspec archive` copied
+instead of moving, cfdude/pm#215; the remedy is `git rm -r` of the live copy, and a live change that
+differs from its archived namesake is a re-proposal and is not reported), a FAILING gate verdict
+recorded after the epic's merge (`late-failing-gate-review`: an audit of merged work is a real review,
+not bookkeeping, and `gate-recorded-as-bookkeeping` no longer reports it), an archived epic recorded
+`delivered` that no longer meets what `delivered` requires
+(`archived-delivered-fails-delivered-obligation`: a Gate 2 flipped to fail after the archive, the heal
+re-archiving a changed epic, a stripped `carriedTo`, tasks that changed on disk; epics whose Gate 2 is
+withdrawn or `ungated` are left to their own checks), an epic still open in a release that
 has already delivered, an epic another epic declares it supersedes that never ended, a `delivered`
 openspec epic whose archived spec deltas never reached the main specs
 (`delivered-epic-spec-deltas-absent`, below), and a
@@ -120,9 +131,11 @@ reports every check with its count, including the ones that found nothing, so a 
 measured nothing is visibly a check that ran.
 
 `delivered-release-epic-left-open` is the one that catches a release closing out. A release
-object carries no delivery marker, so "the release delivered" is read from its members — at
-least one carrying a `delivered` disposition, and none `active` or `paused`, so a staged release
-in flight stays silent. Anything left non-terminal that the release's own `deferred[]` does not
+carrying the **delivered marker** (`release <id> --deliver`, below) is delivered, full stop: every
+non-archived member not in its `deferred[]` is reported, `active` or not. A release with NO marker
+keeps the older member-derived reading — at least one member carrying a `delivered` disposition, and
+none `active` or `paused`, so a staged release in flight stays silent — and that finding says it is a
+guess and prints `release <id> --deliver` as the way to replace the guess with the fact. Anything left non-terminal that the release's own `deferred[]` does not
 name is reported: the record says neither that it shipped nor that it was cut. That is #137,
 where 0.27.0 shipped with all twenty of its member epics still `queued` and `next` then
 recommended two P0s that had shipped hours earlier. The finding offers two alternatives, each
@@ -148,7 +161,14 @@ The main spec is read from the **index**, not the working tree and not `HEAD`, i
 repository reads its own specs). The working tree would pass the exact loss this exists for —
 0.48.0's archive rewrote two main specs, the commit staged only `openspec/changes`, and a later hard
 reset discarded four ADDED requirements for two days. The index equals `HEAD` at rest and, between
-`git add` and `git commit`, is what the next commit will record. **The stated cost: from
+`git add` and `git commit`, is what the next commit will record. **A change deliberately archived with
+`--skip-specs` is waived, not fixed:** `update-epic <id> --spec-deltas-waived "<why>"` takes that epic
+out of this report (the reason is the value and cannot be blank), and `update-epic <id> --clear
+spec-deltas-waived` puts it back. The flag is refused for an epic outside the check's scope (a
+delivered, openspec-lane epic whose change is archived), and a waiver is never silent: the briefing and
+the `render` verb's output print `SPEC DELTAS WAIVED (N)` with the epic ids, so a waived epic whose
+deltas really are missing is distinguishable from a clean one. A waived epic's archived change still
+discharges other epics' obligations. **The stated cost: from
 `openspec archive` until `git add`, the index still holds the old main specs, so a CORRECT archive is
 reported in that window too** — stage `openspec/` whole and it clears. That window is why the
 condition is never written into `PROJECT.md` (a tracked file that would then change with staging
@@ -334,6 +354,22 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --defer <epicI
   an epic id cannot contain one, so the reason keeps every colon it carries. The separate
   `--reason` form still works; supplying BOTH is refused rather than resolved by last-wins.
 
+**Recording that a release shipped — `--deliver`, and its inverse `--undeliver`:**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --deliver
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --undeliver
+```
+
+- `--deliver` sets `release.delivered = {recordedAt}`. It is a marker, not a judgment, so no reason is
+  demanded. `integrity`'s `delivered-release-epic-left-open` reads it instead of guessing from the members.
+  Marking an already-marked release changes nothing.
+- `--undeliver` removes the marker (the release returns to the member-derived reading). It is refused
+  when there is no marker to remove, and `--deliver` together with `--undeliver` is refused. Nothing is
+  written in either refusal.
+- A release recorded before this existed has no marker, and nothing needs migrating: absent means "derive
+  it from the members", exactly as before.
+
 **Reading a release back — `release show`:**
 
 ```bash
@@ -341,11 +377,20 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release show 0.27.0   # one r
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release show          # every release, one line each
 ```
 
-It renders intent, target, the **derived** members, the deferrals with their reasons, the
+It renders intent, target, whether the release carries the **delivered marker**, the **derived** members, the deferrals with their reasons, the
 cross-spec verdict in the same wording every other surface uses, and any amendments. That derived
 half is the point: membership lives on the epic, so a reader who opened the release object saw
 `deferred[]` populated and members absent — which reads as "exclusions and no members", the
 opposite of the truth. It is a pure read: it saves nothing and re-renders nothing.
+
+It also prints a derived **`candidate review:`** line, computed from the CANDIDATE members' existing
+Gate 2 records with nothing stored (the `release-candidate` skill has the procedure). A candidate
+member is a release member that is not archived and has at least one attributed commit. The line reads
+`converged at <sha>` when every candidate member carries a passing Gate 2 verdict over one shared range
+(the same base AND the same head); otherwise `NOT converged`, listing each distinct range with its
+members, each member with no Gate 2 verdict (a withdrawn Gate 2, or one with no recorded head, counts
+as no verdict) and each member whose verdict is `fail`. A release with no candidate
+members prints no such line.
 
 `release show` takes at most one further positional; a second is refused before anything runs.
 `release show --force` is refused by the read form itself: `--force` passes the engine's
@@ -434,14 +479,18 @@ bullet reached 3/15.
    commits landed, then keep attributing forward. Each value is resolved when it is written and
    stored as its full object name — `HEAD` or a tag records the commit it names at that moment, and
    a value that is not a commit in this clone is refused with nothing written. The array is
-   append-only — the engine neither reorders nor de-duplicates it — and **every attributed commit
+   append-only — the engine never reorders it and records each commit once (a repeat is a no-op) — and **every attributed commit
    must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
    whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
    refuses the archive. **One exclusion:** the commit that moves
    `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
-   the epic's own Gate 2 stale at the instant the archive gate reads it.
+   the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for the
+   lifecycle commits a required task makes AFTER Gate 2 is recorded (the lessons item 7 routes, the
+   task-list tick): commit them before recording Gate 2 where you can, and do not attribute them
+   where you cannot — the engine says so when an attribution turns the verdict stale, and
+   `--withdraw-commit` undoes it.
 5. **Review a release's specs against each other.** Gate 1 and Gate 2 each take ONE CHANGE as
    their unit, so nothing above them asks whether a release's specs AGREE. Before `/opsx:apply`
    on any release holding **two or more spec files** — counted FLAT across its member changes, so

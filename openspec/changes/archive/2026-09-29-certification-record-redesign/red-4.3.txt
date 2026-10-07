@@ -1,0 +1,101 @@
+# red-4.3 — the two hooks: coupling in commit-msg with a declared exemption (certification-record-redesign 4.3)
+# 2026-09-29T04:29:29Z, node v26.10.0, git 2.55.0, over the 4.2 working tree (no .githooks/commit-msg, no --phase)
+
+## RED 1 — the new functional/conductor-09 4.3 cases against the pre-GREEN tree
+$ FORCE_COLOR=0 node --test --test-reporter=spec --test-name-pattern="^4\.3" scripts/test/functional/conductor-09.test.mjs
+✖ 4.3 plain commit: a functional file staged without its twin or a trailer is refused by commit-msg, and pre-commit never mentions coupling (28.804667ms)
+✖ 4.3 plain commit with a Twin-Unchanged trailer is accepted, and the exemption is printed as git's audit reads it (23.9975ms)
+✖ 4.3 `commit -a` is judged by its OWN index: the working-tree change it sweeps in is refused though .git/index stages nothing (29.102417ms)
+✖ 4.3 `commit <path>` is judged by its OWN index: the path alone is refused though .git/index pairs it with its twin (26.45475ms)
+✖ 4.3 a linked worktree's commit is judged by the worktree's index, not the main checkout's (24.429042ms)
+✖ 4.3 a declaration that exempts nothing staged, and one with no reason, are each refused by commit-msg naming the id (30.498208ms)
+✖ 4.3 a --no-ff merge of an exempted change is accepted; a squash of the same change without the trailer is refused (26.722458ms)
+✖ 4.3 the same --no-ff merge made IN A LINKED WORKTREE is accepted — MERGE_HEAD is found through --git-path (27.47025ms)
+✖ 4.3 trailer parsing is git's: subject-only, prose-paragraph and after-the-scissors declarations declare nothing; above the scissors does (24.941333ms)
+✖ 4.3 the `---` divider: before the trailer paragraph it is accepted, after it refused — and drift agrees with %(trailers) (49.701625ms)
+✖ 4.3 the working-tree fallback: the snapshot's drift judges when the index holds one, the working tree's when it holds none (24.392875ms)
+ℹ tests 11
+ℹ pass 0
+ℹ fail 11
+✖ failing tests:
+✖ 4.3 plain commit: a functional file staged without its twin or a trailer is refused by commit-msg, and pre-commit never mentions coupling (28.804667ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 plain commit with a Twin-Unchanged trailer is accepted, and the exemption is printed as git's audit reads it (23.9975ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 `commit -a` is judged by its OWN index: the working-tree change it sweeps in is refused though .git/index stages nothing (29.102417ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 `commit <path>` is judged by its OWN index: the path alone is refused though .git/index pairs it with its twin (26.45475ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 a linked worktree's commit is judged by the worktree's index, not the main checkout's (24.429042ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 a declaration that exempts nothing staged, and one with no reason, are each refused by commit-msg naming the id (30.498208ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 a --no-ff merge of an exempted change is accepted; a squash of the same change without the trailer is refused (26.722458ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 the same --no-ff merge made IN A LINKED WORKTREE is accepted — MERGE_HEAD is found through --git-path (27.47025ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 trailer parsing is git's: subject-only, prose-paragraph and after-the-scissors declarations declare nothing; above the scissors does (24.941333ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 the `---` divider: before the trailer paragraph it is accepted, after it refused — and drift agrees with %(trailers) (49.701625ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+✖ 4.3 the working-tree fallback: the snapshot's drift judges when the index holds one, the working tree's when it holds none (24.392875ms)
+  AssertionError [ERR_ASSERTION]: .githooks/commit-msg does not exist in this repository — a hooked fixture needs both hooks (design D4)
+
+## RED 2 — the same, in a scratch copy of the tree with a commit-msg STUB (exit 0), so the reason past the missing file shows:
+## the OLD pre-commit refuses coupling itself, so pre-commit's success line is never printed and commit-msg never judges
+$ (scratch copy of scripts/ and .githooks/, .githooks/commit-msg = "exit 0") node --test --test-name-pattern="^4\.3 plain commit:|^4\.3 a --no-ff merge of" scripts/test/functional/conductor-09.test.mjs
+✖ 4.3 plain commit: a functional file staged without its twin or a trailer is refused by commit-msg, and pre-commit never mentions coupling (746.680208ms)
+✖ 4.3 a --no-ff merge of an exempted change is accepted; a squash of the same change without the trailer is refused (516.06725ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1518.246708
+
+✖ failing tests:
+
+test at scripts/test/functional/conductor-09.test.mjs:912:1
+✖ 4.3 plain commit: a functional file staged without its twin or a trailer is refused by commit-msg, and pre-commit never mentions coupling (746.680208ms)
+  AssertionError [ERR_ASSERTION]: plain: pre-commit's success line was not printed — the seed did not agree, or pre-commit refused: drift: ABORT — the suite's two halves have drifted apart
+  
+  these functional files are staged without their assertion twin in the same diff:
+    alpha — scripts/test/functional/alpha.test.mjs is staged, scripts/test/assert/alpha.test.mjs is not
+  
+  drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+  drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+  pre-commit: ABORT -- the drift script refused this commit (see above).
+  pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness.
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/functional/conductor-09.test.mjs:984:1
+✖ 4.3 a --no-ff merge of an exempted change is accepted; a squash of the same change without the trailer is refused (516.06725ms)
+  AssertionError [ERR_ASSERTION]: feat: the commit must be accepted: drift: ABORT — the suite's two halves have drifted apart
+  
+  these functional files are staged without their assertion twin in the same diff:
+    alpha — scripts/test/functional/alpha.test.mjs is staged, scripts/test/assert/alpha.test.mjs is not
+  
+  drift: the checks are enrolment, twin coverage, diff coupling and record freshness.
+  drift: `node scripts/test/certify.mjs functional|sweeps` produces the record a freshness refusal names.
+  pre-commit: ABORT -- the drift script refused this commit (see above).
+  pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness.
+  
+  
+  1 !== 0
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

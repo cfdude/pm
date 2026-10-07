@@ -1,0 +1,89 @@
+# Gate 2 m2 — a corrupt observation file is a named refusal, not a stack trace
+
+## RED, FUNCTIONAL — against 62899032's certify.mjs
+# node --test --test-reporter=spec --test-name-pattern '^m2 ' scripts/test/functional/certify-index.test.mjs
+✖ m2 a corrupt observation file is a NAMED refusal — the file's path, no stack trace — and no entry is written (6911.963083ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8577.970208
+
+✖ failing tests:
+
+test at scripts/test/functional/certify-index.test.mjs:457:1
+✖ m2 a corrupt observation file is a NAMED refusal — the file's path, no stack trace — and no entry is written (6911.963083ms)
+  AssertionError [ERR_ASSERTION]: a refusal, not a stack trace:
+  certify: Error: certification: the observation file /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qP4YyD/pm-certify-run.uD4Opw/observe/damaged.jsonl is corrupt at line 1 ("not json") — only its last line may be torn, by a process killed mid-write; refusing to judge a run from a damaged observation
+      at file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:323:13
+      at Array.forEach (<anonymous>)
+      at parseObservation (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:319:24)
+      at file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:339:17
+      at Array.map (<anonymous>)
+      at readObservations (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:339:6)
+      at observationRefusal (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certify.mjs:284:24)
+      at certifyBucket (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certify.mjs:224:18)
+      at async main (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certify.mjs:314:12)
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/functional/certify-index.test.mjs:469:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'certify: Error: certification: the observation file /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qP4YyD/pm-certify-run.uD4Opw/observe/damaged.jsonl is corrupt at line 1 ("not json") — only its last line may be torn, by a process killed mid-write; refusing to judge a run from a damaged observation\n    at file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:323:13\n    at Array.forEach (<anonymous>)\n    at parseObservation (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:319:24)\n    at file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:339:17\n    at Array.map (<anonymous>)\n    at readObservations (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certification.mjs:339:6)\n    at observationRefusal (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certify.mjs:284:24)\n    at certifyBucket (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certify.mjs:224:18)\n    at async main (file:///private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-o4c1h4/scripts/test/certify.mjs:314:12)\n',
+    expected: /^\s+at /m,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+## RED, UNIT (the twin) — against 69c5aa53's certify.mjs (git archive + the new unit file)
+✖ m2 an observation that cannot be read is a NAMED refusal: the error's message (the file and line), and no stack (2.069ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1486.137125
+
+✖ failing tests:
+
+test at ../../../../../private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/gate2-fix/head/scripts/test/fixtures/unit-harness.mjs:127:3
+✖ m2 an observation that cannot be read is a NAMED refusal: the error's message (the file and line), and no stack (2.069ms)
+  AssertionError [ERR_ASSERTION]: certify.mjs exports no observationReadRefusal()
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/gate2-fix/head/scripts/test/unit/certify-index.test.mjs:452:10
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/gate2-fix/head/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+## GREEN — both
+✔ m2 a corrupt observation file is a NAMED refusal — the file's path, no stack trace — and no entry is written (5928.865875ms)
+✔ m2 an observation that cannot be read is a NAMED refusal: the error's message (the file and line), and no stack (1.003958ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7842.218542

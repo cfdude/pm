@@ -37,12 +37,14 @@
 // after the paren. Both are deliberate, neither is behind the GIT gateway, and both are asserted by
 // identity below so the exclusion cannot grow one call at a time.
 
+import "../fixtures/record-isolation.mjs";   // no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gitSpawns, otherSpawns, spawnerNames, spawnSites } from "../fixtures/spawn-derivation.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 
 const SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const GATEWAY = "scripts/lib/git-gateway.mjs";
@@ -55,7 +57,10 @@ function engineFiles() {
   return files.sort();
 }
 
-const sourceOf = (rel) => fs.readFileSync(path.join(SCRIPTS, "..", rel), "utf8");
+/** Engine CODE, every comment blanked (final re-review): `assert.match(sourceOf(rel), /gitOps\(\)/)`
+ *  read raw was satisfied by a comment naming the call. Every `rel` here is scripts/conductor.mjs or
+ *  scripts/lib/*.mjs. */
+const sourceOf = (rel) => engineCode(rel);
 
 /** The source of one operation in the gateway's returned object literal. The operations are separated
  * by blank lines; the extractor asserts its own anchor so a reformat fails loudly rather than

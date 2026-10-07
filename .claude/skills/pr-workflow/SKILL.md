@@ -24,9 +24,17 @@ existed and had to be untangled after the fact.
 2. **Tests green before committing.** `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`
    — both rungs of the assertion half, one runner invocation. The `.githooks/pre-commit` hook re-runs the drift script and this half on every commit and
    blocks on failure, but don't rely on the hook alone catching a break you already know about.
-   If the change touched anything the functional half certifies, run
-   `node scripts/test/certify.mjs functional` — the hook REFUSES a certified module's changed
-   content until that run exists, and it will not start it for you.
+   If the change stages a path in a triggered bucket's subject — for the functional half, anything
+   it OBSERVES: its import closure, the assertion files it executes, the files it names — stage the
+   commit exactly and run `node scripts/test/certify.mjs functional` (and/or `… sweeps`, as the
+   refusal names) before a plain `git commit`. The pre-commit hook REFUSES the commit until a passing
+   entry's manifest equals that subject in the index, and it will not start the run for you;
+   certify runs over a copy of the index, so certifying before the last `git add` certifies the
+   wrong content. The commit-msg hook then checks diff coupling: a staged
+   `scripts/test/functional/<id>.test.mjs` without its twin (`assert/` or `unit/<id>.test.mjs`) is
+   refused unless a `Twin-Unchanged: <id> — <reason>` trailer declares the change subject-free. The
+   trailer must be a git trailer — its own final paragraph of the message, above any `commit -v`
+   scissors line — and Gate 2 audits it (step 6).
 
 3. **Commit on `dev`, push, open the PR:**
    ```bash
@@ -71,7 +79,24 @@ existed and had to be untangled after the fact.
    head — after the branch is deleted the head oid is still on the PR record, but there is no
    reason to rely on that.
 
-6. **Record Gate 2 BEFORE the squash-merge, from the authoring clone.** Since 0.44.0
+6. **Audit every `Twin-Unchanged` trailer in the range BEFORE recording Gate 2.** This step binds
+   every epic, not only the one that introduced the trailer. The commit-msg hook lets a committer
+   declare that a functional test changed without its assertion twin because the change left what
+   the file tests untouched; nothing checks that claim at commit time, so Gate 2 does. List every
+   declaration in the reviewed range:
+   ```bash
+   git log --format='%H %(trailers:key=Twin-Unchanged)' BASE..HEAD
+   ```
+   For each line that carries a trailer, read that commit's diff of
+   `scripts/test/functional/<id>.test.mjs` and judge whether the change really left the file's
+   subject untouched — a comment, a rename, a moved helper — and did not change what it asserts,
+   what it runs or what it imports. A trailer judged false is an **Important** finding: fix it
+   before Gate 2 is recorded (a follow-up commit that edits the twin), and record that the audit
+   was done in the Gate 2 summary, with the count of trailers read. Gate 2 runs on `dev`, before
+   the squash-merge into `main` (step 8), so the squash dropping every commit's trailers is harmless:
+   the audit has already read them, from the commits that carry them.
+
+7. **Record Gate 2 BEFORE the squash-merge, from the authoring clone.** Since 0.44.0
    `record-gate-review --base-sha/--head-sha` (and `update-epic --attribute-commit`) resolve each
    value against THIS clone's object database and store the full object name; a value the clone
    does not hold is refused with nothing written. After the squash, the reviewed commits are
@@ -86,13 +111,13 @@ existed and had to be untangled after the fact.
    — and then record. Never substitute the squash commit's sha for the reviewed head: the
    pre-squash commits the epic attributed are not its ancestors, so the verdict reads stale.
 
-7. **Squash-merge once green** (never `--delete-branch` — `dev` is persistent, not a
+8. **Squash-merge once green** (never `--delete-branch` — `dev` is persistent, not a
    throwaway feature branch):
    ```bash
    gh pr merge <n> --repo cfdude/pm --squash --delete-branch=false
    ```
 
-8. **Sync both local branches to the new `main` tip, and re-verify tests post-merge**
+9. **Sync both local branches to the new `main` tip, and re-verify tests post-merge**
    (confirms the squash commit itself is sound, not just the pre-merge state):
    ```bash
    git checkout main && git fetch origin && git reset --hard origin/main
@@ -103,7 +128,7 @@ existed and had to be untangled after the fact.
    squash-merge, `dev`'s and `main`'s histories have diverged (the squash commit has no common
    ancestor with `dev`'s pre-squash commits), so a fast-forward fails with "diverging branches."
 
-9. **Verify every recorded sha is still reachable.** One command; it is the check the tag
+10. **Verify every recorded sha is still reachable.** One command; it is the check the tag
    exists to satisfy, and running it is how you find out the tag step was missed:
    ```bash
    python3 - <<'EOF'

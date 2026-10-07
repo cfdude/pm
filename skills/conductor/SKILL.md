@@ -139,7 +139,7 @@ and no other lane gains that obligation ·
 records the re-read a tracker-linked epic owes before specs are drawn for it, and advances that
 epic's freshness watermark in the same write (an epic with no external id re-reads its local
 plan/proposal instead — instruction only, nothing recorded)
-· `/pm:sync` register new proposals and plans ·
+· `/pm:sync` register new proposals and plans (`sync --dry-run` previews and writes nothing; `sync --only <id>`, repeatable, registers only the named change, plan or archived-change ids) ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`, repeatable `--add-story
 "<milestone>"` so a plan's milestones land in the SAME write) · `/pm:epic` → `add-many`
 (atomic bulk create, each entry taking a `stories` array) / `update-epic` (write-back, incl.
@@ -176,7 +176,10 @@ detours" table rotation (both change on nearly every render without meaning anyt
 changed) so deciding whether a PROJECT.md diff is safe to discard as noise is mechanical
 instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
-escalates a single epic above the repo dial · `set-lane-routing` / `suggest-lane` per-repo
+sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
+execution profile (review, model per job role, verbosity) at the project and lane layers — resolved
+most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
+epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
@@ -391,7 +394,7 @@ the `openspec` lane.
   `.conductor/state.json`, mirroring how `record-reconcile` writes the reconciler's verdict. Rejects
   (writes nothing) if the epic id is unknown, `--gate` isn't `1`/`2`, `--verdict` isn't
   `pass`/`fail`, or a pass arrives without its gate's evidence (both shas for Gate 2, an
-  `--artifact` for Gate 1). **The
+  `--artifact` for Gate 1). Gate 1 stores a sha-256 per readable artifact: amending a reviewed artifact reads `⚠ stale`, an unreadable one `⚠ unverifiable`, and a live change's `tasks.md` is never digested. **The
   epic's LANE is not a rejection reason.** It used to be, which left pm telling every lane to run
   reviews while it could record the verdict for exactly one of them — `set-review-mode` is
   lane-agnostic and its own table names "a Superpowers task review". The consequences were the
@@ -534,14 +537,18 @@ bullet reached 3/15.
    commits landed, then keep attributing forward. Each value is resolved when it is written and
    stored as its full object name — `HEAD` or a tag records the commit it names at that moment, and
    a value that is not a commit in this clone is refused with nothing written. The array is
-   append-only — the engine neither reorders nor de-duplicates it — and **every attributed commit
+   append-only — the engine never reorders it and records each commit once (a repeat is a no-op) — and **every attributed commit
    must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
    whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
    refuses the archive. **One exclusion:** the commit that moves
    `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
-   the epic's own Gate 2 stale at the instant the archive gate reads it.
+   the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for the
+   lifecycle commits a required task makes AFTER Gate 2 is recorded (the lessons item 7 routes, the
+   task-list tick): commit them before recording Gate 2 where you can, and do not attribute them
+   where you cannot — the engine says so when an attribution turns the verdict stale, and
+   `--withdraw-commit` undoes it.
 
 5. **Review a release's specs against each other.** Gate 1 and Gate 2 each take ONE CHANGE as
    their unit, so nothing above them asks whether a release's specs AGREE. Before `/opsx:apply`
@@ -821,13 +828,13 @@ it waits on.
 - Want to know what the index is HIDING? `integrity` — a read-only audit reporting records that
   cannot be true (an archived epic with nothing ticked, one change under two lanes, a verdict
   that does not reach the commits it cites, an archive directory with no epic, an epic in a status
-  the engine does not define — `epic-in-undefined-status`). It reports every
+  the engine does not define — `epic-in-undefined-status`; also `tracker-item-held-by-two-epics`, `archived-change-also-live`, `late-failing-gate-review` and `archived-delivered-fails-delivered-obligation`). It reports every
   check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
   finding's remediation is a command you run.
 - An epic registered before pm carried a clock has NO registration date, and absence there means
   UNKNOWN — never today's date and never another field's. `recover-created-at` sweeps every such
   epic and takes its `createdAt` from the commit that first introduced that id into
-  `.conductor/state.json`, reading local history only. Where this checkout holds no such evidence —
+  `.conductor/state.json` (dated by author date, not committer date), reading local history only. Where this checkout holds no such evidence —
   no git, an untracked state file, a shallow graft, an id older than the history you have fetched —
   the date is LEFT ABSENT rather than invented, and the verb is RE-RUNNABLE precisely so a checkout
   that later fetches more history recovers what it could not see before. It never overwrites a date
@@ -1307,6 +1314,13 @@ pmVersion     : "<semver>" — release that last touched this repo (set by init/
 tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
                 opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
+executionProfile? : { model?: {implement?|test?|review?: {model, effort?}}, verbosity?: "quiet"|"verbose" } —
+                the PROJECT layer of the execution profile (the project `review` is `reviewMode` above,
+                reused rather than moved). `model` ∈ fable|opus|sonnet|haiku, `effort` ∈
+                low|medium|high|xhigh|max|ultracode; haiku takes no effort, every other model requires
+                one. Set/unset via `set-profile`; read via `profile`. Absent resolves to today's behaviour.
+laneProfiles? : { "<lane>": { review?, model?, verbosity? } } — the LANE layer, same value shapes; an
+                emptied lane is removed. Set via `set-profile --lane <lane>`.
 gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate the reconcile-owed
                 check (that blocks unconditionally whenever reconcileNeeded is true). What it
                 does gate is the TRACKER REFRESH check, which blocks only while it is on.
@@ -1316,7 +1330,7 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
 createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
                 through — at the moment the epic is registered. ABSENT means UNKNOWN, never
                 today and never another field's value; `recover-created-at` backfills it from

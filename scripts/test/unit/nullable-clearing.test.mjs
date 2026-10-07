@@ -58,13 +58,14 @@ const stateBytes = (engine) => engine.store.read("state.json").text;
 const epicOf = (engine, id = "subject") => readState(engine).epics.find(e => e.id === id);
 
 /** How to SET each nullable field, so the sweep can clear something that is actually there.
- *  A value table is unavoidable — `--parent` needs a real epic id, `--review-mode` a legal mode
- *  that does not de-escalate below the repo dial — but the ENUMERATION driving it is the
+ *  A value table is unavoidable — `--parent` needs a real epic id, `--review-mode` a legal mode — but the ENUMERATION driving it is the
  *  registry, so a nullable row with no entry here is a hard failure naming the flag rather than
  *  a silent skip. */
 const SET_VALUE = {
   parent: "other",
   "review-mode": "thorough",
+  verbosity: "verbose",
+  model: "implement=opus:medium",
   "external-updated-at": "2026-08-23T09:30:00Z",
   plan: "docs/superpowers/plans/p.md",
   spec: "docs/superpowers/specs/d.md",
@@ -80,7 +81,15 @@ unitTest("every EPIC_FLAGS row declared nullable is reachable by `update-epic --
     `the registry yielded only ${rows.length} nullable rows — the projection is broken, not the registry`);
 
   for (const row of rows) {
-    const engine = repo();
+    let engine = repo();
+    // `--spec-deltas-waived` is refused outside the spec-deltas check's scope, which needs an archive
+    // DIRECTORY the unit rung cannot hold; the clear does not check scope, so that one field is seeded
+    // into the record (the setting form's own refusal is tested on the file rung, assert/theme-b3).
+    if (row.flag === "spec-deltas-waived") {
+      const seeded = readState(engine);
+      seeded.epics.find(e => e.id === "subject").specDeltasWaived = "folded into the main spec by hand";
+      engine = memoryEngine(seeded);
+    }
     // SETTING FIRST IS LOAD-BEARING. A freshly created epic already lacks every one of these
     // fields, so a clear asserted against a fresh epic passes against an implementation that
     // does nothing at all — the trap conductor-13's `--clear-links` row documents.
@@ -90,7 +99,7 @@ unitTest("every EPIC_FLAGS row declared nullable is reachable by `update-epic --
     // so the precondition this step exists to create is already true. It is ASSERTED rather than
     // assumed, on the same line, so a field that stopped being stamped fails here instead of
     // making the clear below vacuous.
-    if (!row.engineWritten) engine(["update-epic", "subject", ...setArgs(row.flag)]);
+    if (!row.engineWritten && row.flag !== "spec-deltas-waived") engine(["update-epic", "subject", ...setArgs(row.flag)]);
     assert.ok(row.key in epicOf(engine),
       `the fixture must actually set ${row.key} before the clear proves anything`);
 

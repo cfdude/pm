@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { die } from "./command-exit.mjs";
-import { newStory, parentError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
+import { newStory, parentError, sourceArtifactPathError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -15,6 +15,7 @@ import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 import { currentArgv } from "./invocation.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
+import { checkReview, checkVerbosity, normalizeBatchModel } from "./execution-profile.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -123,11 +124,33 @@ export function addMany() {
     // own validation (`stories` immediately above, `links` in the copy loop). Naming them is
     // deliberate — a future array-valued key not listed here is caught by this rule rather than
     // silently dropped, which is the direction the mistake should fail in.
+    // The epic-layer profile keys (execution-profile-layered-settings): `reviewMode` and `verbosity`
+    // are strings like any other and fall through to the rule below; `model` is array- or
+    // object-valued, so it is exempt from the string rule BY NAME and validated here, before any
+    // epic is constructed.
+    if (e.reviewMode !== undefined) {
+      const r = typeof e.reviewMode === "string" ? checkReview(e.reviewMode) : { ok: false, message: "reviewMode must be a string" };
+      if (!r.ok) refuse(`epic '${escapeControls(id)}': ${r.message}`);
+    }
+    if (e.verbosity !== undefined) {
+      const v = typeof e.verbosity === "string" ? checkVerbosity(e.verbosity) : { ok: false, message: "verbosity must be a string" };
+      if (!v.ok) refuse(`epic '${escapeControls(id)}': ${v.message}`);
+    }
+    if (e.model !== undefined) {
+      const m = normalizeBatchModel(e.model);
+      if (!m.ok) refuse(`epic '${escapeControls(id)}': ${m.message}`);
+      e.model = m.model;
+    }
     for (const k of Object.keys(e)) {
-      if (!allowedKeys.includes(k) || k === "links" || k === "stories") continue;
+      if (!allowedKeys.includes(k) || k === "links" || k === "stories" || k === "model") continue;
       if (typeof e[k] !== "string" || !e[k].trim()) {
         refuse(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
       }
+    }
+    // gh#232 — the same refusal add-epic / update-epic apply, from the one shared helper.
+    for (const [key, flag] of [["planPath", "plan"], ["specPath", "spec"]]) {
+      const bad = e[key] === undefined ? null : sourceArtifactPathError(flag, e[key]);
+      if (bad) refuse(`epic '${escapeControls(id)}': ${escapeControls(bad)}`);
     }
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) refuse(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
@@ -203,6 +226,7 @@ export function addMany() {
         epic.stories = v.map(s => (typeof s === "string" ? newStory(s) : newStory(s.title, s.done)));
         continue;
       }
+      if (key === "model") { epic.model = v; continue; }   // normalised in the validation pass
       if (typeof v === "string") epic[key] = v;
     }
     // The second archived-at-creation path, carrying its OWN token so a rule applied to one

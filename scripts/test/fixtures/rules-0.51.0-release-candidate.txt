@@ -1,0 +1,19 @@
+## Release candidate
+
+Building a release from several changes? Do not run a Gate 2 round per change: batch the work by
+area, merge every worktree branch into ONE candidate branch (`rc/<releaseId>`), review that
+candidate ONCE, and push once. The `release-candidate` skill carries the procedure — load it
+before you start. Two rules to get right without it:
+
+- **The budget is the highest review among the candidate members.** The converged review runs at
+  the highest effective `review` of the members not yet archived that have built work in the
+  range (`thorough` two independent reviewers, `standard` one, `off` your own self-review), so one
+  `thorough` member makes the whole candidate `thorough`.
+- **One round; only a Critical reopens it.** An Important finding is fixed and re-tested, not
+  re-reviewed; a Minor one is logged and never re-reviewed.
+
+Recording: attribute each fix commit to the member whose code it fixes, then record the verdict
+with `record-gate-review` as Gate 2 for EACH candidate member at the SAME base and head, after
+the last fix has merged. A verdict recorded before a fix is stale. `release show` reads whether the
+members converged.
+

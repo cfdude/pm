@@ -1,6 +1,7 @@
 // Shared scaffolding for the split conductor test suite. Extracted verbatim from the former
 // single-file scripts/conductor.test.mjs -- see docs/superpowers/plans for why it was split.
 import "./hermetic-git.mjs";   // FIRST: every fixture git call must ignore the developer's global config
+import "./record-isolation.mjs";   // and no test may write the developer's real .conductor record
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -22,6 +23,11 @@ export { EMPTY_CACHE };
 // exits — 0.49.0's one mechanism (`temp-dir.mjs`), not a second one. Unscheduled, `tmpRepo()` alone
 // left ~1,850 directories in the OS temp dir per full run (both halves).
 import { removeAtExit } from "./temp-dir.mjs";
+// certification-record-redesign 2.4 (design D7, "Hook-fixture tests under the new gate"): the seed's
+// manifest comes from drift's OWN entry point, so a seeded entry's key is drift's key by construction.
+import { indexManifest } from "../drift.mjs";
+import { writeManifestEntry } from "../certification.mjs";
+import { HOOKS_DIR, copyInto, hookMachinery, hookNames } from "./hook-machinery.mjs";
 // The half's `run`, registered by whichever harness module the importing test used. Helpers that
 // drive the engine themselves (parseBrief, setupHierarchy, nudgeAndReadLog) go through it, so they
 // are in-process with the same gateway the calling test got and not a second, spawned route.
@@ -310,9 +316,12 @@ export function nudgeAndReadLog(cwd, command) {
  *    * `withFixture: false` — omit the default `scripts/test/assert/fixture.test.mjs`, so the rungs
  *      hold only what `extraFiles` puts there (1.3: both rungs hold only `.keep`);
  *    * `setup(cwd)` — runs after `git init` and before the hook (1.5: a stale `pm-isolation-flag`).
+ *    * `seed: ["functional"|"sweeps", …]` — after `setup`, writes an entry agreeing with the index the
+ *      hook will judge for each bucket named (`seedAgreeingEntry()`), so a fixture that stages a path in
+ *      a bucket's subject is not refused for freshness (certification-record-redesign 2.4, R2).
  *  The result carries `cwd`, so a caller can inspect the fixture after the hook ran. */
 export function runHookAgainstFixture(testFileBody, {
-  extraFiles = {}, env: envOverlay = {}, pathPrepend = null, withFixture = true, setup = null,
+  extraFiles = {}, env: envOverlay = {}, pathPrepend = null, withFixture = true, setup = null, seed = [],
 } = {}) {
   const cwd = tmpRepo();
   execFileSync("git", ["init", "-q"], { cwd });
@@ -338,23 +347,20 @@ export function runHookAgainstFixture(testFileBody, {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, content);
   }
-  fs.mkdirSync(path.join(cwd, ".githooks"), { recursive: true });
-  // THE DRIFT STEP (6.4) runs the REAL script, not a stub. The hook invokes
-  // `node scripts/test/drift.mjs` before the suite, so a fixture holding a hook but not the script
-  // would abort for a reason that has nothing to do with what these fixtures test — and stubbing it
-  // would mean the hook's own wiring is never exercised. The script and its shared machinery are
-  // copied in, and the minimal tree it reads is created: an EMPTY `scripts/lib/` and an empty
-  // `conductor.mjs` derive an empty certified set, and the two empty buckets derive no functional
-  // ids — so all four checks pass on the fixture by construction, which is what lets the floor and
-  // the quiet/failure behaviour below be observed through the real hook.
-  const repoRoot = path.join(path.dirname(ENGINE), "..");
-  for (const rel of ["scripts/test/drift.mjs", "scripts/test/certification.mjs"]) {
-    fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
-  }
-  fs.writeFileSync(path.join(cwd, "scripts", "conductor.mjs"), "");
-  for (const d of ["scripts/lib", "scripts/test/functional", "scripts/test/sweeps"]) {
-    fs.mkdirSync(path.join(cwd, d), { recursive: true });
-  }
+  // EVERY STEP THE HOOK RUNS runs the REAL script, not a stub — the drift script since 6.4 — so a fixture
+  // holding a hook but not its scripts would abort for a reason that has nothing to do with what these
+  // fixtures test. WHICH scripts is DERIVED, never typed (hook-fixtures-couple-to-every-hook-step):
+  // `hookMachinery()` reads them from the hooks' own code and walks their imports, so a new hook step
+  // or a new import inside drift is copied here with no edit. They are copied UNTRACKED: the hooks read
+  // the INDEX, where an untracked file does not exist, so drift sees no engine source, no functional
+  // id and no functional subject, and every check its pre-commit phase runs passes on the fixture by
+  // construction — which is what lets the floor and the quiet/failure behaviour below be observed
+  // through the real hook. (No empty `scripts/lib/` or untracked `conductor.mjs`: since drift reads the
+  // index, an untracked empty one is the same as none, and the hook never needed them.)
+  copyInto(cwd, hookMachinery());
+  // The two bucket directories are the fixture's LAYOUT, not the hook's need: callers write a
+  // functional file into `scripts/test/functional/` from `setup` (IX-i) and expect it to exist.
+  for (const d of ["scripts/test/functional", "scripts/test/sweeps"]) fs.mkdirSync(path.join(cwd, d), { recursive: true });
   // THE FIXTURE MUST BE TRACKED, and this is new with the re-pointed floor. `declared` is now
   // enumerated with `git ls-files`, which answers for the INDEX — a file written but never added is
   // invisible to it, the floor would compare a real count against 0, and every assertion written
@@ -367,9 +373,8 @@ export function runHookAgainstFixture(testFileBody, {
   // A fixture could not express that while only one path was addable.
   const tracked = [...(withFixture ? ["scripts/test/assert/fixture.test.mjs"] : []), ...Object.keys(extraFiles)];
   if (tracked.length) execFileSync("git", ["add", "--", ...tracked], { cwd });
-  const realHookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
-  const hookDestPath = path.join(cwd, ".githooks", "pre-commit");
-  fs.copyFileSync(realHookPath, hookDestPath);
+  const hookDestPath = path.join(cwd, HOOKS_DIR, "pre-commit");
+  copyInto(cwd, [`${HOOKS_DIR}/pre-commit`]);
   fs.chmodSync(hookDestPath, 0o755);
   // Strip NODE_TEST_CONTEXT/NODE_TEST_WORKER_ID: node --test sets these on itself, and if
   // inherited by the hook's own nested `node --test` invocation, node treats it as an
@@ -380,8 +385,96 @@ export function runHookAgainstFixture(testFileBody, {
   delete env.NODE_TEST_WORKER_ID;
   if (pathPrepend) env.PATH = `${pathPrepend}${path.delimiter}${env.PATH || ""}`;
   if (setup) setup(cwd);
+  // THE SEED IS TAKEN OVER THE INDEX THE HOOK IS HANDED: the overlay's GIT_INDEX_FILE when a case sets
+  // one (absolute against the fixture, as the hook makes it), else `.git/index`.
+  const seedIndex = envOverlay.GIT_INDEX_FILE ? path.resolve(cwd, envOverlay.GIT_INDEX_FILE) : undefined;
+  for (const bucket of seed) seedAgreeingEntry(cwd, bucket, { indexFile: seedIndex });
   const r = spawnSync("sh", [hookDestPath], { cwd, encoding: "utf8", env });
   return Object.assign(r, { cwd });
+}
+
+/** AN ENTRY THAT AGREES WITH AN INDEX, for a hook fixture whose commit stages a bucket's subject
+ *  (certification-record-redesign 2.4; design D7, "Hook-fixture tests under the new gate"). It calls
+ *  drift's `indexManifest(cwd, bucket, { indexFile })` — the SAME function drift's freshness check and
+ *  certify call — and writes the manifest it returns with `writeManifestEntry()`. It parses no
+ *  `ls-files -s` output and derives no subject of its own, so the seeded key is the key drift computes
+ *  for that index, for the same drift.mjs bytes. What that does NOT cover is a DIFFERENT drift: the hook
+ *  runs the fixture's copy, which is this repository's bytes except where a test replaces it on
+ *  purpose. `indexFile` is absolute; omitted, the fixture's own `.git/index`. Returns the key. */
+export function seedAgreeingEntry(cwd, bucket, { indexFile } = {}) {
+  const commonDir = path.resolve(cwd, execFileSync("git", ["rev-parse", "--git-common-dir"], { cwd, encoding: "utf8" }).trim());
+  const { manifest } = indexManifest(cwd, bucket, indexFile ? { indexFile } : {});
+  return writeManifestEntry(commonDir, { bucket, manifest, counts: { tests: 1, pass: 1, fail: 0 }, engineSha: "seeded", worktree: "seeded" }).key;
+}
+
+/** A FIXTURE REPOSITORY WHOSE COMMITS GO THROUGH BOTH REAL HOOKS (certification-record-redesign 4.3/4.4,
+ *  design D4). `runHookAgainstFixture` runs `pre-commit` by hand with no message, so it cannot reach
+ *  the commit-msg phase, the four commit forms or a merge — here git itself runs the hooks, on a real
+ *  `git commit`, with the index and the message file it hands them.
+ *
+ *  The baseline commit holds a passing assertion-half file, one functional id (`alpha`) with its twin,
+ *  and — with `trackMachinery` (the default, as in this repository) — every script the hooks run and
+ *  what it reaches (`hookMachinery()`: drift, certification, js-lexer, …), so both hooks run the
+ *  SNAPSHOT's drift and a linked worktree's checkout holds it too. With `trackMachinery: false` they are
+ *  copied in UNTRACKED, the `runHookAgainstFixture` shape, and each hook falls back to the working tree's
+ *  drift.mjs. The hooks are every executable file in this repository's `.githooks/` (`hookNames()`),
+ *  copied in untracked, and installed by an ABSOLUTE `core.hooksPath` — as this repository's own is — so a linked
+ *  worktree runs them too. The baseline is committed BEFORE `core.hooksPath` is set: no hook is
+ *  installed yet, so none runs and none is bypassed. */
+export function hookedRepo({ trackMachinery = true } = {}) {
+  const cwd = tmpRepo();
+  const git = (...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  git("init", "-q", "-b", "main");
+  git("config", "user.email", "test@example.com");
+  git("config", "user.name", "Test");
+  git("config", "commit.gpgsign", "false");
+  const write = (rel, text) => {
+    fs.mkdirSync(path.dirname(path.join(cwd, rel)), { recursive: true });
+    fs.writeFileSync(path.join(cwd, rel), text);
+  };
+  const header = 'import { test } from "node:test";\nimport assert from "node:assert/strict";\n';
+  write("scripts/test/assert/fixture.test.mjs", `${header}test("hooked fixture", () => { assert.ok(true); });\n`);
+  write("scripts/test/functional/alpha.test.mjs", `${header}test("alpha, functional", () => { assert.ok(true); });\n`);
+  write("scripts/test/assert/alpha.test.mjs", `${header}test("alpha, its twin", () => { assert.ok(true); });\n`);
+  // DERIVED, NEVER TYPED (hook-fixtures-couple-to-every-hook-step): every executable hook in this
+  // repository's `.githooks/` (`hookNames()`), and every script those hooks run with what it reaches
+  // (`hookMachinery()`) — so a new hook file or hook step is carried here with no edit.
+  const machinery = copyInto(cwd, hookMachinery());
+  for (const hook of hookNames()) {
+    copyInto(cwd, [`${HOOKS_DIR}/${hook}`]);
+    fs.chmodSync(path.join(cwd, HOOKS_DIR, hook), 0o755);
+  }
+  git("add", "--", "scripts/test/assert/fixture.test.mjs", "scripts/test/functional/alpha.test.mjs",
+    "scripts/test/assert/alpha.test.mjs", ...(trackMachinery ? machinery : []));
+  git("commit", "-q", "-m", "baseline");
+  git("config", "core.hooksPath", path.join(cwd, ".githooks"));
+  return cwd;
+}
+
+/** `git <args>` in a hooked fixture, as a developer would type it, so git runs the hooks. The node
+ *  test-runner markers are stripped (as `runHookAgainstFixture` does), or the pre-commit hook's own
+ *  `node --test` short-circuits as a child worker. stdout and stderr are ONE ordered stream — they
+ *  share a file descriptor — so a caller can tell which hook printed what, and in what order. */
+let hookedLogDir = null;
+let hookedLogSeq = 0;
+export function hookedGit(cwd, args, { env: overlay = {} } = {}) {
+  const env = { ...process.env, ...overlay };
+  for (const k of ["NODE_TEST_CONTEXT", "NODE_TEST_WORKER_ID", "GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"]) {
+    if (!(k in overlay)) delete env[k];
+  }
+  // Not under `cwd/.git`: in a linked worktree `.git` is a FILE. One scheduled directory per process.
+  hookedLogDir ??= removeAtExit(fs.mkdtempSync(path.join(os.tmpdir(), "pm-hooked-log-")));
+  const log = path.join(hookedLogDir, `${++hookedLogSeq}.log`);
+  const fd = fs.openSync(log, "w");
+  let r;
+  try {
+    r = spawnSync("git", args, { cwd, env, stdio: ["ignore", fd, fd] });
+  } finally {
+    fs.closeSync(fd);
+  }
+  const out = fs.readFileSync(log, "utf8");
+  fs.rmSync(log, { force: true });
+  return { status: r.status, out };
 }
 
 // ────────────── multi-tracker-primary-secondary-support: secondaryTrackers[] ──────────────
@@ -418,6 +511,13 @@ export const ALWAYS_ON_HEADINGS = [
   "## The gate procedure — required task items",
   "## Intake — triage an ask against the whole backlog BEFORE registering it",
   "## Reporting — pm owns what is recorded and what is said; you own how you say it",
+  // execution-profile-layered-settings: `## Execution profile` REPLACED `## Review mode` (the reviewer
+  // table and the `Current mode:` line moved inside it). Neither is a sync section, so each side of a
+  // comparison drops whichever one it carries — the 0.26.0 fixtures the old, the engine the new.
+  "## Execution profile",
+  "## Review mode",
+  // converged-release-candidate-review: an always-on pointer to the release-candidate skill.
+  "## Release candidate",
 ];
 export const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 

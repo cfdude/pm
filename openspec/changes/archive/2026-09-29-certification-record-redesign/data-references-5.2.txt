@@ -1,0 +1,39 @@
+# 5.2 Data references (required task item 1) — for every field that holds another record's id: who
+# WRITES it, who READS it, who REMOVES it. Taken 2026-09-29 at fb23ba3c; old-record lines are cited at
+# c96240ab (`git show c96240ab:scripts/test/certification.mjs`), since 2.4 (13a10ee3) deleted them.
+
+## RETIRED — the single-file record's references (pm-suite-certification.json)
+
+| field | pointed at | written | read | removed |
+|---|---|---|---|---|
+| entry id (the JSON key: a module path such as `scripts/lib/rank.mjs`, or `engine-source`) | a tracked module / the sweep trigger | `writeEntry()` (c96240ab certification.mjs:346), from `moduleEntry()`/`triggerEntry()` via certify | `recordRefusals()` (:396), per staged certified id | NEVER — `writeEntry()` only set keys; a renamed or deleted module left its entry behind for ever |
+| `covers[]` | functional / sweep test ids (by basename mention, `coversFor()` :252) | `moduleEntry()` :298, `triggerEntry()` :316, persisted by `writeEntry()` | `recordRefusals()` :449-455, for EVERY entry whether or not its module was staged — the `dangling-covers` refusal | NEVER — and that is #226's second failure mode: worktree B's entry named a test only B had, so worktree A's drift resolved B's `covers` against A's tree and refused A's commit |
+| `conformanceRows[]` (conductor.mjs's entry only) | ROW ids in functional/conformance.test.mjs | `moduleEntry()` :304 via `conformanceRows()` :277 | `recordRefusals()` :460-477 | NEVER |
+
+All of it retired in 2.4 (13a10ee3): `rg -n "coversFor|conformanceRows|moduleEntry|triggerEntry|recordRefusals|RECORD_NAME" scripts`
+returns no code today (call-site-sweep-5.1.txt, section A). The file itself is neither read nor removed (D5);
+its removal is the deferred epic registered by 8.2.
+
+## ADDED — the manifest record (pm-suite-certification.d/<bucket>/<key>.json)
+
+| field | what it holds | a reference to another RECORD? | written | read | removed |
+|---|---|---|---|---|---|
+| file name `<key>` | `manifestKey(manifest)`, sha256 over `path NUL mode SP blob NUL` | no — a content address of this entry's own manifest | `writeManifestEntry()` (certification.mjs:623), from certify.mjs:231 and fixtures seedAgreeingEntry() | `readEntry()` :646, from `freshnessRefusal()` :594 | `pruneRecord()` :661 (newest 50 kept, the just-written one always) |
+| `manifest{path: {mode, blob}}` | paths and git blob ids | NO — content, not a pointer at another record. A blob id names bytes; an entry whose paths no longer exist simply never equals any index's manifest, so it can only fail to satisfy a demand (the loud direction), never refuse anything | as above | `recordFreshness()` via `sameManifest()` | with its entry, by pruning only |
+| `engineSha` | HEAD commit at certify time | a commit id, INFORMATIONAL: `rg -n engineSha scripts/test --glob '!*.test.mjs'` finds only its writers (certify.mjs:193-199,227,231; helpers.mjs:413) — no reader gates on it | certify | nothing | with its entry |
+| `worktree` | the certifying worktree's path | informational, same rg: written only | certify | nothing | with its entry |
+
+Nothing in any entry is resolved against the current tree, so no entry can dangle and no entry can refuse
+a commit it is not about ("An entry from another tree neither passes nor refuses").
+
+## THE TRAILER — `Twin-Unchanged: <id> — <reason>`
+
+- Names a functional test id. WRITTEN by the committer, in the commit message only.
+- READ by `.githooks/commit-msg` → `drift.mjs --phase commit-msg --message` → `parseTwinExemptions()`
+  (certification.mjs:206, over `git interpret-trailers --parse --no-divider`), and by Gate 2's audit
+  (`git log --format='%H %(trailers:key=Twin-Unchanged)' BASE..HEAD`, pr-workflow step 6 from 6.6).
+- STORED nowhere pm owns: no state.json field, no record file. It lives in the commit object, so it is
+  removed only by rewriting the commit (amend before push) — or, after the squash into main, by the
+  squash itself, which is why Gate 2 runs on `dev` first (design D4).
+- A declared id that is not staged is refused (`not-staged`), so the trailer cannot point at nothing
+  at the moment it is accepted.

@@ -101,7 +101,7 @@ export function release() {
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     errStream().write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"]\n");
+    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"] [--deliver | --undeliver]\n");
     die("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
@@ -194,6 +194,17 @@ export function release() {
         `conductor: '${escapeControls(one.epic)}' cannot be both --${one.flag} and --${others[0].flag} of ` +
         `'${escapeControls(id)}' in one invocation — say which one it is. Nothing was written.\n`);
     }
+  }
+
+  // THE DELIVERY MARKER and its inverse. One or the other per invocation: both is a contradiction, and
+  // removing a marker that is not there is refused rather than reported as done (the --undefer rule).
+  const deliver = f.deliver !== undefined;
+  const undeliver = f.undeliver !== undefined;
+  if (deliver && undeliver) {
+    die(`conductor: --deliver and --undeliver cannot both be given for '${escapeControls(id)}' — say which. Nothing was written.\n`);
+  }
+  if (undeliver && !rel.delivered) {
+    die(`conductor: '${escapeControls(id)}' carries no delivered marker — there is nothing to remove. Nothing was written.\n`);
   }
 
   if (deferred) {
@@ -338,6 +349,16 @@ export function release() {
       `(the exclusion read: ${escapeControls(was && was.reason)}). It is NOT a member: say so with --member.\n`);
   }
 
+  if (deliver && !rel.delivered) {
+    // A marker, not a judgment: no reason is demanded. `recordedAt` is when the fact was recorded, nothing more.
+    rel.delivered = { recordedAt: new Date().toISOString() };
+    errStream().write(`conductor: release '${escapeControls(id)}' is now marked delivered — \`integrity\` reads that marker, not its members\n`);
+  }
+  if (undeliver) {
+    delete rel.delivered;
+    errStream().write(`conductor: release '${escapeControls(id)}' is no longer marked delivered — \`integrity\` reads its members again\n`);
+  }
+
   const saved = saveState(state);
   render();
   reportSave(saved, {
@@ -348,6 +369,39 @@ export function release() {
 }
 
 // ─────────────────── the READ form (gh#178) ───────────────────
+
+/** The CANDIDATE review's convergence, DERIVED from existing Gate 2 records — nothing is stored
+ *  (converged-release-candidate-review D3). A candidate member is a release member that is NOT
+ *  archived and HAS BUILT WORK, meaning at least one attributed commit. `release show` takes no flags
+ *  and is a pure read, so the review's `<base>..<head>` range is not an input here; "built work in
+ *  the range" is therefore read as "has an attributed commit", which is the same set whenever the
+ *  release's members were built inside the one candidate. Returns `null` with no candidate members.
+ *
+ *  Converged means ONE shared range (the same baseSha AND headSha) across every candidate member, no
+ *  member without a verdict, and no member whose verdict is `fail`.
+ *
+ *  A member has a verdict when its `gateReview.gate2` carries a string `headSha`; a withdrawn Gate 2
+ *  leaves no `gate2` entry (the verdict moved to `withdrawnGateReviews`), and a legacy entry with no
+ *  head cannot be compared, so both read as no verdict. */
+export function candidateReview(epics, releaseId) {
+  const members = releaseMembers(epics, releaseId)
+    .filter(e => e.status !== "archived" && Array.isArray(e.attributedCommits) && e.attributedCommits.length > 0);
+  if (!members.length) return null;
+  const heads = new Map();
+  const missing = [];
+  const failed = [];
+  for (const e of members) {
+    const g = e.gateReview && e.gateReview.gate2;
+    if (!g || typeof g.headSha !== "string" || !g.headSha) { missing.push(e.id); continue; }
+    // A range is base AND head: two members reviewed at one head over different bases reviewed
+    // different code, so the key carries both (a legacy entry with no base keys on the head alone).
+    const range = typeof g.baseSha === "string" && g.baseSha ? `${escapeControls(g.baseSha)}..${escapeControls(g.headSha)}` : g.headSha;
+    if (!heads.has(range)) heads.set(range, []);
+    heads.get(range).push(e.id);
+    if (g.verdict === "fail") failed.push(e.id);
+  }
+  return { count: members.length, heads, missing, failed, converged: !missing.length && !failed.length && heads.size === 1 };
+}
 
 /** `release show [<id>]` — render a release back, or list them all.
  *
@@ -416,6 +470,9 @@ export function releaseShow(rest) {
   const amendments = Array.isArray(rel.amendments) ? rel.amendments : [];
   const out = [`conductor: release \`${rel.id}\`${rel.intent ? ` — ${rel.intent}` : ""}`];
   out.push(`  target: ${rel.target || "—"}`);
+  out.push(rel.delivered
+    ? `  delivered: yes — marked${rel.delivered.recordedAt ? ` ${rel.delivered.recordedAt}` : ""} (\`integrity\` reads this marker)`
+    : "  delivered: — (no marker: integrity derives it from the members; this verb's --deliver flag records it)");
   out.push(`  members (${members.length}) — derived from \`epic.release\`, never stored on the release:`);
   if (!members.length) out.push("    (none)");
   for (const e of members) {
@@ -438,6 +495,22 @@ export function releaseShow(rest) {
   // separator, on precisely the warning gh#126 shipped to make unmissable.
   const cross = crossSpecLine(state, epics, id);
   out.push(cross ? `  ${cross.replace(/^ · /, "")}` : "  cross-spec review: — (below the gate's threshold)");
+  // The converged release-candidate review, derived from the candidate members' Gate 2 records
+  // (converged-release-candidate-review D3). No line at all when the release has no candidate members.
+  const candidate = candidateReview(epics, id);
+  if (candidate) {
+    const who = (ids) => ids.map(m => `\`${escapeControls(m)}\``).join(", ");
+    if (candidate.converged) {
+      const [range, ids] = [...candidate.heads.entries()][0];
+      const head = range.slice(range.lastIndexOf(".") + 1);
+      out.push(`  candidate review: converged at \`${head}\` (${ids.length} member${ids.length === 1 ? "" : "s"}: ${who(ids)})`);
+    } else {
+      out.push("  candidate review: NOT converged —");
+      for (const [head, ids] of candidate.heads) out.push(`    • ${head} — ${who(ids)}`);
+      if (candidate.missing.length) out.push(`    • no Gate 2 verdict — ${who(candidate.missing)}`);
+      if (candidate.failed.length) out.push(`    • failed: ${who(candidate.failed)}`);
+    }
+  }
   if (amendments.length) {
     out.push(`  amendments (${amendments.length}):`);
     for (const a of amendments) {

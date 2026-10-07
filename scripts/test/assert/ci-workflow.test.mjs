@@ -149,6 +149,33 @@ test("G-C1 CI: every bucket step can go red on a failing suite", () => {
     "the only place the functional half and the sweep bucket run at all (6.5)");
 });
 
+/** Every floor-count line (`declared=$(git ls-files …`) of the workflow that does not read the tracked names
+ *  NUL-delimited. Pure — so a mutated workflow can be fed to it. */
+export function nulReadRefusals(src) {
+  const lines = src.split("\n").map((l) => l.trim()).filter((l) => /^declared=\$\(git ls-files\b/.test(l));
+  const found = [];
+  if (lines.length !== 4) found.push(`expected the four floor-count lines, found ${lines.length}`);
+  for (const l of lines) {
+    if (!/git ls-files -z /.test(l)) found.push(`not NUL-delimited (git ls-files without -z): ${l}`);
+    if (!/\| xargs -0 /.test(l)) found.push(`not NUL-split (xargs without -0): ${l}`);
+  }
+  return found;
+}
+
+test("F5 CI's four floor counts read the tracked names NUL-delimited (git ls-files -z | xargs -0)", () => {
+  // Gate 2 re-review F5, pinning 79a16b9e (G1's sibling): without -z git QUOTES a name holding a non-ASCII byte,
+  // a quote, a tab or a newline, and xargs then counts no file by that name, so `declared` is short and the
+  // floor under-counts the tests it exists to count. Measured: a clone with né.test.mjs in unit/functional/sweeps
+  // declared 1588/1160/19 instead of 1589/1162/20.
+  const src = fs.readFileSync(WORKFLOW, "utf8");
+  assert.deepEqual(nulReadRefusals(src), [], "every floor-count line must read NUL-delimited names");
+  const first = src.split("\n").find((l) => /declared=\$\(git ls-files -z/.test(l));
+  assert.match(nulReadRefusals(src.replace(first, first.replace("ls-files -z ", "ls-files "))).join(" | "), /without -z/,
+    "the guard discriminates: a line without -z is refused");
+  assert.match(nulReadRefusals(src.replace(first, first.replace("xargs -0 ", "xargs "))).join(" | "), /without -0/,
+    "and a line without -0 is refused");
+});
+
 test("G-C1 CI: the guard DISCRIMINATES — the shape that shipped is refused, for the stated reason", () => {
   // The OLD step, copied from the shape this change replaced (the three live steps were identical
   // but for the bucket name). It must be refused, and refused for the pipeline reason — a guard

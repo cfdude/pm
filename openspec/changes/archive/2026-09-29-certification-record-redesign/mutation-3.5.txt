@@ -1,0 +1,20 @@
+# mutation-3.5 — the #229 regression guard (functional/certify-index "3.5 …"), 2026-09-29T03:56:29Z
+# Scratch: a `git clone --shared` of this repository checked out at 762d564f (3.3), the working tree's
+# functional/certify-index.test.mjs copied in. Never the tree.
+
+## Control — unmutated scratch copy
+$ node --test --test-name-pattern="^3\.5" scripts/test/functional/certify-index.test.mjs
+✔ 3.5 b4ffe164's change to an imported, gateway-free module demands the functional half over the real index
+ℹ pass 1 / fail 0
+
+## Mutation — bucketSubject("functional") restored to the retired L2 derivation (the gitOps( scan of
+## scripts/lib/ minus git-gateway/invocation, the entry point if it calls gitOps(, the functional/fixtures
+## path classes and the four machinery files) in the scratch copy's certification.mjs
+$ node --test --test-name-pattern="^3\.5" scripts/test/functional/certify-index.test.mjs
+✖ 3.5 b4ffe164's change to an imported, gateway-free module demands the functional half over the real index (2690.204875ms)
+AssertionError [ERR_ASSERTION]: b4ffe164's change demanded nothing: the functional subject misses a module the half imports (#229)
+ℹ pass 0 / fail 1
+# Neither archive-gate.mjs nor store.mjs calls gitOps(, so b4ffe164 demanded NOTHING — #229 exactly.
+
+## Reverted (git checkout of the scratch copy's certification.mjs)
+✔ 3.5 … — pass 1 / fail 0

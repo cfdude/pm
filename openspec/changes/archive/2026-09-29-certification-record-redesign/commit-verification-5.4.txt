@@ -1,0 +1,437 @@
+# 5.4 Verify against the commit (required task item 2), 2026-09-29T05:21:03Z, produced by
+#   /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-L5/verify54.sh  (for each task: `git show --stat --format= <sha>`, then every file the task
+#   claims — its code, its tests, its evidence file, tasks.md for the tick, and each functional test's
+#   twin (assert/ or unit/, or a Twin-Unchanged trailer from L4 on) — matched against
+#   `git show --name-only --format= <sha>`, i.e. the COMMIT, never the working tree).
+# Result: 20 of 20 task commits PASS (1.1-4.4, 5.1-5.3); one claimed file (3.3's certify.mjs) is absent and justified.
+# Tasks 5.4 onward (this file's own commit and later) are verified the same way as each commit lands and
+# are appended in 7.1's commit.
+
+## 1.1  4c1e7e97 test(test): the certify run plan is a value — indexRunPlan() reads one index copy (1.1)
+$ git show --stat --format= 4c1e7e97
+   openspec/changes/certification-record-redesign/red-1.1.txt | 117 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   2 +-
+   scripts/test/certification.mjs                             |  37 +++++++++++++++++++++++++++++++++++++
+   scripts/test/unit/certify-index.test.mjs                   | 104 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   4 files changed, 259 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/unit/certify-index.test.mjs
+  claim ok   openspec/changes/certification-record-redesign/red-1.1.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 1.2  2f93c776 feat(test): certify runs the bucket over a copy of the index, in a shared clone (1.2)
+$ git show --stat --format= 2f93c776
+   openspec/changes/certification-record-redesign/red-1.2.txt |  89 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   2 +-
+   scripts/test/certification.mjs                             |   4 +--
+   scripts/test/certify.mjs                                   | 226 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++------------------------
+   scripts/test/functional/certify-index.test.mjs             | 226 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/unit/certify-index.test.mjs                   |  22 +++++++++++++
+   6 files changed, 525 insertions(+), 44 deletions(-)
+  claim ok   scripts/test/certify.mjs
+  claim ok   scripts/test/functional/certify-index.test.mjs
+  claim ok   twin of certify-index: scripts/test/unit/certify-index.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/red-1.2.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 1.3  6136a3d9 test(test): guard — the files a bare export breaks pass in certify's shared clone (1.3)
+$ git show --stat --format= 6136a3d9
+   openspec/changes/certification-record-redesign/mutation-1.3.txt | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md         |  2 +-
+   scripts/test/certify.mjs                                        |  5 +++--
+   scripts/test/functional/certify-index.test.mjs                  | 42 ++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/unit/certify-index.test.mjs                        | 15 +++++++++++++++
+   5 files changed, 109 insertions(+), 3 deletions(-)
+  claim ok   scripts/test/functional/certify-index.test.mjs
+  claim ok   twin of certify-index: scripts/test/unit/certify-index.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/mutation-1.3.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 2.1  7f3d2d28 feat(test): freshness is equality with ONE entry's whole manifest — pure functions (2.1)
+$ git show --stat --format= 7f3d2d28
+   openspec/changes/certification-record-redesign/red-2.1.txt |  51 +++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   2 +-
+   scripts/test/certification.mjs                             |  98 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/unit/drift-freshness.test.mjs                 | 198 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   4 files changed, 348 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/unit/drift-freshness.test.mjs
+  claim ok   openspec/changes/certification-record-redesign/red-2.1.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 2.2  659a2e55 feat(test): the manifest record directory — writer, reader, pruner (2.2)
+$ git show --stat --format= 659a2e55
+   openspec/changes/certification-record-redesign/red-2.2.txt |  51 +++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   2 +-
+   scripts/test/assert/drift-script.test.mjs                  | 144 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/certification.mjs                             |  90 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   4 files changed, 286 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/assert/drift-script.test.mjs
+  claim ok   openspec/changes/certification-record-redesign/red-2.2.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 2.3  f663cbdd feat(test): the record directory as a whole — freshnessRefusal(), and the formats coexist (2.3)
+$ git show --stat --format= f663cbdd
+   openspec/changes/certification-record-redesign/red-2.3.txt | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |  2 +-
+   scripts/test/assert/drift-script.test.mjs                  | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/certification.mjs                             | 18 ++++++++++++++++++
+   4 files changed, 126 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/assert/drift-script.test.mjs
+  claim ok   openspec/changes/certification-record-redesign/red-2.3.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 2.4  13a10ee3 feat(test): the switch — freshness is one content-keyed manifest entry over the index (2.4)
+$ git show --stat --format= 13a10ee3
+   .githooks/pre-commit                                            |  10 +--
+   openspec/changes/certification-record-redesign/evidence-2.4.txt |  78 ++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/red-2.4.txt      |  47 +++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md         |   2 +-
+   openspec/changes/certification-record-redesign/verify-2.4.txt   |  52 ++++++++++++++++
+   scripts/test/assert/drift-script.test.mjs                       | 426 ++++++++++++++++++++++++++++++++++++++------------------------------------------------------------------------------------------
+   scripts/test/certification.mjs                                  | 376 ++++++++++++++++-------------------------------------------------------------------------------------------------
+   scripts/test/certify.mjs                                        | 144 ++++++++++++++-----------------------------
+   scripts/test/drift.mjs                                          | 147 ++++++++++++++++++++++++++------------------
+   scripts/test/fixtures/helpers.mjs                               |  27 ++++++++-
+   scripts/test/functional/certify-index.test.mjs                  |  53 ++++++++++------
+   scripts/test/functional/conductor-09.test.mjs                   |  24 ++++++--
+   scripts/test/functional/drift-script.test.mjs                   | 164 ++++++++++++++++++++++++++++++++-----------------
+   scripts/test/unit/certify-index.test.mjs                        |  20 +++---
+   scripts/test/unit/conductor-09.test.mjs                         |   7 +++
+   15 files changed, 699 insertions(+), 878 deletions(-)
+  claim ok   scripts/test/drift.mjs
+  claim ok   scripts/test/certify.mjs
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/assert/drift-script.test.mjs
+  claim ok   scripts/test/functional/drift-script.test.mjs
+  claim ok   twin of drift-script: scripts/test/assert/drift-script.test.mjs 
+  claim ok   scripts/test/unit/certify-index.test.mjs
+  claim ok   scripts/test/fixtures/helpers.mjs
+  claim ok   scripts/test/functional/conductor-09.test.mjs
+  claim ok   twin of conductor-09: scripts/test/unit/conductor-09.test.mjs 
+  claim ok   .githooks/pre-commit
+  claim ok   openspec/changes/certification-record-redesign/red-2.4.txt
+  claim ok   openspec/changes/certification-record-redesign/evidence-2.4.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 2.5  4cfcd32e test(test): guard — two worktrees certify different content and neither refuses the other (2.5)
+$ git show --stat --format= 4cfcd32e
+   openspec/changes/certification-record-redesign/mutation-2.5.txt | 37 +++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md         |  2 +-
+   scripts/test/assert/drift-script.test.mjs                       | 22 ++++++++++++++++++++++
+   scripts/test/functional/drift-script.test.mjs                   | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   4 files changed, 155 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/functional/drift-script.test.mjs
+  claim ok   twin of drift-script: scripts/test/assert/drift-script.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/mutation-2.5.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 3.1  be100e04 feat(test): functionalSubject() over an index reader, and one shared lexer (3.1)
+$ git show --stat --format= be100e04
+   openspec/changes/certification-record-redesign/red-2.4-sweeps.txt |  12 +++++++++
+   openspec/changes/certification-record-redesign/red-3.1.txt        |  70 +++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md           |   2 +-
+   scripts/test/assert/drift-script.test.mjs                         |   3 +++
+   scripts/test/certification.mjs                                    |  85 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/fixtures/helpers.mjs                                 |   4 ++-
+   scripts/test/functional/certify-index.test.mjs                    |  27 +++++++++++++++++++-
+   scripts/test/functional/conductor-09.test.mjs                     |   3 +++
+   scripts/test/functional/drift-script.test.mjs                     |   2 +-
+   scripts/test/js-lexer.mjs                                         | 133 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/sweeps/output-interpolations.mjs                     |  73 +++--------------------------------------------------
+   scripts/test/unit/certify-index.test.mjs                          | 174 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/unit/conductor-09.test.mjs                           |   4 +++
+   13 files changed, 519 insertions(+), 73 deletions(-)
+  claim ok   scripts/test/js-lexer.mjs
+  claim ok   scripts/test/sweeps/output-interpolations.mjs
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/unit/certify-index.test.mjs
+  claim ok   scripts/test/functional/certify-index.test.mjs
+  claim ok   twin of certify-index: scripts/test/unit/certify-index.test.mjs 
+  claim ok   scripts/test/fixtures/helpers.mjs
+  claim ok   scripts/test/functional/conductor-09.test.mjs
+  claim ok   twin of conductor-09: scripts/test/unit/conductor-09.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/red-3.1.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 3.2  d1e0eb8f feat(test): the run-time observer and the static NODE_OPTIONS guard (3.2)
+$ git show --stat --format= d1e0eb8f
+   openspec/changes/certification-record-redesign/observer-report-3.2.txt | 107 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/red-3.2.txt             |  78 ++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                |   2 +-
+   scripts/test/assert/drift-script.test.mjs                              |   2 ++
+   scripts/test/certification.mjs                                         | 107 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+   scripts/test/certify.mjs                                               |  89 +++++++++++++++++++++++++++++++++++++++++----
+   scripts/test/fixtures/observe-reads.mjs                                | 240 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/functional/certify-index.test.mjs                         | 160 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+   scripts/test/functional/conductor-14.test.mjs                          |  14 ++++++--
+   scripts/test/functional/conformance.test.mjs                           |   5 ++-
+   scripts/test/functional/drift-script.test.mjs                          |   2 +-
+   scripts/test/unit/certify-index.test.mjs                               |  88 +++++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/unit/conductor-14.test.mjs                                |   3 ++
+   scripts/test/unit/conformance.test.mjs                                 |   3 ++
+   14 files changed, 886 insertions(+), 14 deletions(-)
+  claim ok   scripts/test/fixtures/observe-reads.mjs
+  claim ok   scripts/test/certify.mjs
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/unit/certify-index.test.mjs
+  claim ok   scripts/test/functional/certify-index.test.mjs
+  claim ok   twin of certify-index: scripts/test/unit/certify-index.test.mjs 
+  claim ok   scripts/test/functional/conformance.test.mjs
+  claim ok   twin of conformance: scripts/test/unit/conformance.test.mjs 
+  claim ok   scripts/test/functional/conductor-14.test.mjs
+  claim ok   twin of conductor-14: scripts/test/unit/conductor-14.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/red-3.2.txt
+  claim ok   openspec/changes/certification-record-redesign/observer-report-3.2.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 3.3  762d564f feat(test): the switch — the functional subject is what the half observes (3.3)
+$ git show --stat --format= 762d564f
+   openspec/changes/certification-record-redesign/tasks.md       |  2 +-
+   openspec/changes/certification-record-redesign/verify-3.3.txt | 43 +++++++++++++++++++++++++++++++++++++++++++
+   scripts/test/assert/drift-script.test.mjs                     | 80 +++++++++++++++++++++++++++++++++++++++++++++++---------------------------------
+   scripts/test/certification.mjs                                | 52 ++++++++++++----------------------------------------
+   scripts/test/drift.mjs                                        |  7 ++++---
+   scripts/test/fixtures/helpers.mjs                             |  8 +++++---
+   scripts/test/functional/certify-index.test.mjs                |  4 +++-
+   scripts/test/functional/conductor-09.test.mjs                 | 13 +++++++------
+   scripts/test/functional/drift-script.test.mjs                 | 11 +++++++----
+   scripts/test/unit/certify-index.test.mjs                      |  2 ++
+   scripts/test/unit/conductor-09.test.mjs                       |  3 +++
+   11 files changed, 134 insertions(+), 91 deletions(-)
+  claim ok   scripts/test/drift.mjs
+  NOT IN THIS COMMIT scripts/test/certify.mjs — JUSTIFIED, not a staging miss: 3.3's text ("drift.mjs and
+    certify.mjs use functionalSubject()") was written before 2.4 moved certify onto drift's indexManifest().
+    From 2.4 certify's manifest is indexManifest() -> bucketSubject(), so 3.3's edit of bucketSubject() in
+    certification.mjs (in this commit) moved certify with it; certify.mjs already imported functionalSubject()
+    for the observer since 3.2 (d1e0eb8f). Evidence: `git show 762d564f:scripts/test/certify.mjs` :230
+    indexManifest(root, bucket, { indexFile: run.indexCopy }), :287 functionalSubject(); the commit message's
+    first paragraph states it; verify-3.3.txt records it.
+  claim ok   scripts/test/certification.mjs
+  claim ok   scripts/test/assert/drift-script.test.mjs
+  claim ok   scripts/test/fixtures/helpers.mjs
+  claim ok   scripts/test/functional/conductor-09.test.mjs
+  claim ok   twin of conductor-09: scripts/test/unit/conductor-09.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS (every claimed file present, or its absence justified above)
+
+## 3.4  fe328b52 docs(test): store.mjs's gitOps( comment — the scan it guarded against is retired (3.4)
+$ git show --stat --format= fe328b52
+   openspec/changes/certification-record-redesign/tasks.md       |  2 +-
+   openspec/changes/certification-record-redesign/verify-3.3.txt | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+   scripts/lib/store.mjs                                         | 14 ++++++--------
+   3 files changed, 55 insertions(+), 9 deletions(-)
+  claim ok   scripts/lib/store.mjs
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 3.5  dd91380f test(test): guard — b4ffe164's change demands the functional half over the real index (3.5)
+$ git show --stat --format= dd91380f
+   openspec/changes/certification-record-redesign/mutation-3.5.txt | 20 ++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md         |  2 +-
+   scripts/test/functional/certify-index.test.mjs                  | 34 ++++++++++++++++++++++++++++++++++
+   scripts/test/unit/certify-index.test.mjs                        |  2 ++
+   4 files changed, 57 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/functional/certify-index.test.mjs
+  claim ok   twin of certify-index: scripts/test/unit/certify-index.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/mutation-3.5.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 4.1  bb4cd4c2 test(test): parseTwinExemptions() reads git's parse of the Twin-Unchanged trailers (4.1)
+$ git show --stat --format= bb4cd4c2
+   openspec/changes/certification-record-redesign/red-4.1.txt | 151 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   9 +++++---
+   scripts/test/certification.mjs                             |  26 +++++++++++++++++++++++
+   scripts/test/unit/drift-coupling.test.mjs                  |  84 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   4 files changed, 267 insertions(+), 3 deletions(-)
+  claim ok   scripts/test/certification.mjs
+  claim ok   openspec/changes/certification-record-redesign/red-4.1.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 4.2  5c1940ae test(test): couplingRefusals() takes exemptions and isMerge; phaseChecks() (4.2)
+$ git show --stat --format= 5c1940ae
+   openspec/changes/certification-record-redesign/red-4.2.txt | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   2 +-
+   scripts/test/certification.mjs                             |  48 +++++++++++++++++++++++++++++++++++++++++++-----
+   scripts/test/unit/drift-coupling.test.mjs                  |  64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   4 files changed, 227 insertions(+), 6 deletions(-)
+  claim ok   scripts/test/certification.mjs
+  claim ok   openspec/changes/certification-record-redesign/red-4.2.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 4.3  0b2ad82c feat(test): diff coupling moves to a new commit-msg hook, with a declared exemption (4.3, L4)
+$ git show --stat --format= 0b2ad82c
+   .githooks/commit-msg                                       |  64 ++++++++++++++++++++++++++++++
+   .githooks/pre-commit                                       |  24 +++++++-----
+   openspec/changes/certification-record-redesign/red-4.3.txt | 101 ++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md    |   2 +-
+   scripts/test/assert/conductor-09.test.mjs                  |  50 ++++++++++++++++++++++--
+   scripts/test/assert/drift-script.test.mjs                  |   5 ++-
+   scripts/test/drift.mjs                                     | 118 ++++++++++++++++++++++++++++++++++++++++++--------------
+   scripts/test/fixtures/helpers.mjs                          |  75 ++++++++++++++++++++++++++++++++++-
+   scripts/test/functional/conductor-09.test.mjs              | 283 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+   scripts/test/unit/conductor-09.test.mjs                    |   5 +++
+   10 files changed, 680 insertions(+), 47 deletions(-)
+  claim ok   .githooks/commit-msg
+  claim ok   .githooks/pre-commit
+  claim ok   scripts/test/drift.mjs
+  claim ok   scripts/test/assert/drift-script.test.mjs
+  claim ok   scripts/test/assert/conductor-09.test.mjs
+  claim ok   scripts/test/functional/conductor-09.test.mjs
+  claim ok   twin of conductor-09: scripts/test/assert/conductor-09.test.mjs scripts/test/unit/conductor-09.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/red-4.3.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 4.4  780b8378 test(test): guard — diff coupling is enforced in exactly one place (4.4)
+$ git show --stat --format= 780b8378
+   openspec/changes/certification-record-redesign/mutation-4.4.txt | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md         |  2 +-
+   scripts/test/assert/conductor-09.test.mjs                       | 15 +++++++++++++++
+   scripts/test/functional/conductor-09.test.mjs                   | 18 ++++++++++++++++++
+   4 files changed, 92 insertions(+), 1 deletion(-)
+  claim ok   scripts/test/functional/conductor-09.test.mjs
+  claim ok   twin of conductor-09: scripts/test/assert/conductor-09.test.mjs 
+  claim ok   openspec/changes/certification-record-redesign/mutation-4.4.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.1  fb23ba3c docs(openspec): call-site completeness sweep for the redesigned record (5.1)
+$ git show --stat --format= fb23ba3c
+   openspec/changes/certification-record-redesign/call-site-sweep-5.1.txt | 200 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                |  16 ++++++----
+   2 files changed, 210 insertions(+), 6 deletions(-)
+  claim ok   openspec/changes/certification-record-redesign/call-site-sweep-5.1.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.2  60488813 docs(openspec): data references of the old and new record, and the trailer (5.2)
+$ git show --stat --format= 60488813
+   openspec/changes/certification-record-redesign/data-references-5.2.txt | 39 +++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                |  5 ++++-
+   2 files changed, 43 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/data-references-5.2.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.3  dfbf7185 docs(openspec): every operation the redesign adds, with its inverse (5.3)
+$ git show --stat --format= dfbf7185
+   openspec/changes/certification-record-redesign/inverses-5.3.txt | 18 ++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md         |  4 +++-
+   2 files changed, 21 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/inverses-5.3.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 4.3's .githooks/commit-msg mode, in the commit and at HEAD
+$ git ls-tree 0b2ad82c .githooks/commit-msg ; git ls-files -s .githooks/commit-msg
+  100755 blob 5f86012e53510e3e3b4a01a064d2d708202fce01	.githooks/commit-msg
+  100755 5f86012e53510e3e3b4a01a064d2d708202fce01 0	.githooks/commit-msg
+
+# ── L5 commits, appended in 7.1's commit (same method) ──
+
+## 5.4  932f6f31 docs(openspec): every task commit verified against the commit, not the tree (5.4)
+$ git show --stat --format= 932f6f31
+   openspec/changes/certification-record-redesign/commit-verification-5.4.txt | 343 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                    |   5 +-
+   2 files changed, 347 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/commit-verification-5.4.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.5  9a155f3b docs(openspec): lifecycle bookkeeping is declared on exactly 8.2 and 8.3 (5.5)
+$ git show --stat --format= 9a155f3b
+   openspec/changes/certification-record-redesign/tasks.md | 5 ++++-
+   1 file changed, 4 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.8  eb14a5f5 docs(openspec): 8.2 names every non-goal; its disposition prepared, not run (5.8)
+$ git show --stat --format= eb14a5f5
+   openspec/changes/certification-record-redesign/disposition-5.8.txt | 34 ++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md            |  4 +++-
+   2 files changed, 37 insertions(+), 1 deletion(-)
+  claim ok   openspec/changes/certification-record-redesign/disposition-5.8.txt
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 5.9  55e48689 docs(lessons): route what the redesign taught; its two lessons now name the mechanism (5.9)
+$ git show --stat --format= 55e48689
+   docs/lessons/README.md                                                 |  4 ++--
+   docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md          | 18 ++++++++++--------
+   docs/lessons/an-uncertified-module-change-skips-the-functional-half.md | 15 ++++++++++++---
+   openspec/changes/certification-record-redesign/routing-5.9.txt         | 67 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md                |  7 ++++++-
+   5 files changed, 97 insertions(+), 14 deletions(-)
+  claim ok   openspec/changes/certification-record-redesign/routing-5.9.txt
+  claim ok   docs/lessons/an-uncertified-module-change-skips-the-functional-half.md
+  claim ok   docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md
+  claim ok   docs/lessons/README.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.1  c647fb03 docs(contributing): two hooks, the observed subject, certify over the index, parallel worktrees (6.1)
+$ git show --stat --format= c647fb03
+   CONTRIBUTING.md                                         | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++------------
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   2 files changed, 76 insertions(+), 13 deletions(-)
+  claim ok   CONTRIBUTING.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.2  afdb3b64 docs(claude-md): the Tests bullet names both hook phases and the observed subject (6.2)
+$ git show --stat --format= afdb3b64
+   CLAUDE.md                                               | 17 ++++++++++++-----
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   2 files changed, 17 insertions(+), 6 deletions(-)
+  claim ok   CLAUDE.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.3  ddd1618f docs(changesets): certification-record-redesign — contributor tooling only (6.3)
+$ git show --stat --format= ddd1618f
+   .changesets/certification-record-redesign.md            | 32 ++++++++++++++++++++++++++++++++
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   2 files changed, 37 insertions(+), 1 deletion(-)
+  claim ok   .changesets/certification-record-redesign.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.5  f4d36eed docs(skills): pr-workflow step 2 — the observed subject and the commit-msg phase (6.5)
+$ git show --stat --format= f4d36eed
+   .claude/skills/pr-workflow/SKILL.md                     | 14 +++++++++++---
+   openspec/changes/certification-record-redesign/tasks.md |  4 +++-
+   2 files changed, 14 insertions(+), 4 deletions(-)
+  claim ok   .claude/skills/pr-workflow/SKILL.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+
+## 6.6  7f78e9c9 docs(skills): pr-workflow step 6 — Gate 2 audits every Twin-Unchanged trailer (6.6)
+$ git show --stat --format= 7f78e9c9
+   .claude/skills/pr-workflow/SKILL.md                     | 25 +++++++++++++++++++++----
+   .claude/skills/release-checklist/SKILL.md               |  2 +-
+   docs/lessons/README.md                                  |  2 +-
+   docs/lessons/squash-merge-orphans-the-evidence.md       |  2 +-
+   openspec/changes/certification-record-redesign/tasks.md |  6 +++++-
+   5 files changed, 29 insertions(+), 8 deletions(-)
+  claim ok   .claude/skills/pr-workflow/SKILL.md
+  claim ok   .claude/skills/release-checklist/SKILL.md
+  claim ok   docs/lessons/squash-merge-orphans-the-evidence.md
+  claim ok   docs/lessons/README.md
+  claim ok   openspec/changes/certification-record-redesign/tasks.md
+  VERDICT: PASS
+

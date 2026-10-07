@@ -1,0 +1,19 @@
+# F5 mutation — scratch clone of 19dac317 (/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/gate2-fix3/mut-F5) with the F5 guard; never the tree
+## 1. unmutated
+✔ F5 CI's four floor counts read the tracked names NUL-delimited (git ls-files -z | xargs -0) (6.121542ms)
+ℹ pass 1
+ℹ fail 0
+## 2. mutated: -z removed from the functional floor line
+ .github/workflows/ci.yml                 |  2 +-
+ scripts/test/assert/ci-workflow.test.mjs | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+), 1 deletion(-)
+✖ F5 CI's four floor counts read the tracked names NUL-delimited (git ls-files -z | xargs -0) (47.259083ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ F5 CI's four floor counts read the tracked names NUL-delimited (git ls-files -z | xargs -0) (47.259083ms)
+  +   "not NUL-delimited (git ls-files without -z): declared=$(git ls-files 'scripts/test/functional/*.test.mjs' | xargs -0 grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')"
+## 3. reverted
+✔ F5 CI's four floor counts read the tracked names NUL-delimited (git ls-files -z | xargs -0) (10.400916ms)
+ℹ pass 1
+ℹ fail 0

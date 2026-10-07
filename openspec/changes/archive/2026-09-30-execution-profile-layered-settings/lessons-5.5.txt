@@ -1,0 +1,12 @@
+What the work taught (5.5) — named by kind, evidence attached. Nothing here was filed with a tracker (this run never pushes and calls no external system); it is recorded for the closeout.
+
+TOOLING FRICTION (candidate /pm:feedback)
+1. Every edit to a scripts/lib file (or constants.mjs) refuses the commit until BOTH `certify functional` (about 4 min 20 s, 1280 tests) and `certify sweeps` (about 22 s) are re-run over the exact staged index; the record is keyed on content, so any later edit, even one line, invalidates it. Evidence: 4 full functional certifies were spent on one change, two of them re-runs caused by a follow-up edit after certifying (a one-word sweep escape; a duplicate import). "One commit per task" therefore costs about 5 minutes per commit; this change grouped its 15 tasks into 6 commits for that reason.
+2. `certify` runs over a COPY OF THE INDEX, so running it before `git add` of the latest edit certifies stale content, and a syntax error staged into the index fails 49 files in 400 ms with the cause on the first file only. A cheap pre-check (`node --test` of the assertion half) before certifying would have caught it; consider a `certify --preflight` that runs the assertion half first.
+3. A brand-new lib module that nothing imports yet is in the SWEEPS subject only; once imported by the engine it joins the functional subject. So the certify cost of a task depends on whether an import edge exists, which is invisible from the task list.
+4. A deliberate change to PROJECT.md/brief text needs the "never regenerated" pre-seam capture scripts/test/fixtures/render-parity-project-md.txt hand-patched. No verb exists for it; the file's own comment forbids regenerating.
+5. Functional test files that only enumerate the registry (conductor-13, conductor-31, output-text-integrity, verb-surface) each demand a `Twin-Unchanged:` trailer (4 in one commit) although their assertion twins hold no matching table.
+
+PROCESS (docs/lessons candidate) — none earned. The two rework loops above are covered by item 2.
+
+PRACTICE — none.
