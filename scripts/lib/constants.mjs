@@ -711,7 +711,10 @@ export const EPIC_FLAGS = [
   { flag: "add-story", key: "stories", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
     requires: "a non-empty title",
     setOnly: "a story ENDS by carrying `--wont-do \"<reason>\"`, and the row survives — deleting it destroys the record that the work was ever projected, which is the history an archived epic's reader needs" },
-  { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
+  // `placeholder` states the index base where `--help` is read (gh#176): `stories[]` in state.json is a
+  // 0-indexed array, `--story` is 1-indexed, and reading positions off the file is the trap.
+  { flag: "story", key: null, commands: ["update-epic"], write: "custom",
+    placeholder: "n, 1-indexed (NOT the 0-indexed stories[] position in state.json)" },
   { flag: "done", key: null, commands: ["update-epic"], write: "custom", valueless: true },
   // The story-level TERMINAL DISPOSITION. `--story <n> --wont-do "<reason>"` keeps the row and
   // records why it will never be done, which is the only honest key to the archive gate's

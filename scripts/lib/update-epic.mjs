@@ -584,11 +584,24 @@ export function updateEpic() {
   // pre-existing handoff refusal, whose other remedy — the `<!-- pm:lifecycle -->` marker —
   // cannot be applied to an inline story at all, there being no task source to write it in.
   const wontDo = f["wont-do"];
-  let storyIndex, storyMutation;
+  let storyIndex, storyMutation, storyNote = "";
+  // gh#176: the STORY-scoped correction. `--correct-disposition "<why>"` beside `--story <n>` reopens a story
+  // whose recorded state (done, or a wont-do) was written against the wrong index. Same shape as the epic-level
+  // one: the prior state is KEPT (`stories[n-1].corrections[]`, append-only), never overwritten or deleted.
+  let storyCorrection;
+  if (f.story !== undefined && f["correct-disposition"] !== undefined) {
+    storyCorrection = str(f["correct-disposition"]);
+    if (storyCorrection === undefined) {
+      die("conductor: --correct-disposition requires a reason saying why the recorded state was wrong — it is kept on the record beside the one it supersedes\n");
+    }
+    if (f.status === "archived") {
+      die("conductor: --story <n> --correct-disposition corrects a STORY; it cannot be combined with --status archived, which would read the same flag as the epic's correction. Correct the story first, then archive. Nothing was written.\n");
+    }
+  }
   if (f.story !== undefined) {
     const asked = [f.done === true ? "done" : null, wontDo !== undefined ? "wont-do" : null].filter(Boolean);
-    if (asked.length === 0) {
-      die("conductor: --story <n> requires a mutation — --done (it shipped) or --wont-do \"<reason>\" (it will not be done, and why)\n");
+    if (asked.length === 0 && storyCorrection === undefined) {
+      die("conductor: --story <n> requires a mutation — --done (it shipped) or --wont-do \"<reason>\" (it will not be done, and why), or --correct-disposition \"<why>\" to undo a wrong one\n");
     }
     if (asked.length > 1) {
       die("conductor: --done and --wont-do are mutually exclusive — a story either shipped or it did not\n");
@@ -612,13 +625,20 @@ export function updateEpic() {
     // somebody's decision and this verb does not silently destroy it. Correcting a mistaken
     // story disposition is deliberately not something this command does.
     const target = stories[storyIndex];
-    if (isStoryDisposed(target)) {
+    // Echoed on success so an off-by-one is visible the moment it happens (gh#176).
+    storyNote = ` — story ${n} (1-indexed): "${escapeControls(target.title)}"`;
+    if (storyCorrection !== undefined) {
+      if (!target.done && !isStoryDisposed(target)) {
+        die(`conductor: story ${n} of '${escapeControls(id)}' (${escapeControls(target.title)}) records neither done nor a disposition — there is nothing to correct. Nothing was written.\n`);
+      }
+    } else if (isStoryDisposed(target)) {
       die(
         `conductor: story ${n} of '${escapeControls(id)}' already carries a recorded disposition ` +
         `('${escapeControls(target.disposition.state)}': ${escapeControls(target.disposition.reason)}). Replacing it would ` +
-        "destroy a judgment somebody made.\n");
+        "destroy a judgment somebody made. If it was recorded against the wrong story, " +
+        `--story ${n} --correct-disposition "<why it was wrong>" reopens it and keeps the original beside the correction.\n`);
     }
-    if (storyMutation === "wont-do" && target.done) {
+    if (storyCorrection === undefined && storyMutation === "wont-do" && target.done) {
       die(`conductor: story ${n} of '${escapeControls(id)}' is already done — work that shipped cannot be dropped\n`);
     }
   } else if (f.done === true) {
@@ -772,8 +792,8 @@ export function updateEpic() {
   //   2. UNREACHABLE — the whole disposition block below sits inside `status === "archived"`,
   //      so `--correct-disposition` alone parses, writes nothing, exits 0 and prints "updated".
   //      Diagnosed by name rather than dropped.
-  const correction = str(f["correct-disposition"]);
-  if (f["correct-disposition"] !== undefined) {
+  const correction = f.story === undefined ? str(f["correct-disposition"]) : undefined;
+  if (f["correct-disposition"] !== undefined && f.story === undefined) {
     if (correction === undefined) {
       die(
         "conductor: --correct-disposition requires a reason saying why the recorded disposition " +
@@ -961,8 +981,17 @@ export function updateEpic() {
     // The ROW SURVIVES in both branches. Deletion is never the answer to "this will not be
     // done": removing it destroys the record that the work was ever projected, which is exactly
     // the history an archived epic's reader needs.
-    if (storyMutation === "done") epic.stories[storyIndex].done = true;
-    else epic.stories[storyIndex].disposition = storyDisposition({ state: "wont-do", reason: wontDo });
+    const row = epic.stories[storyIndex];
+    if (storyCorrection !== undefined) {
+      // The prior state moves, verbatim, under `corrections[]` (append-only: a second correction keeps the first).
+      const prior = row.done ? { done: true } : { disposition: row.disposition };
+      if (!Array.isArray(row.corrections)) row.corrections = [];
+      row.corrections.push({ prior, reason: storyCorrection, correctedAt: new Date().toISOString() });
+      row.done = false;
+      delete row.disposition;
+    }
+    if (storyMutation === "done") row.done = true;
+    else if (storyMutation === "wont-do") row.disposition =storyDisposition({ state: "wont-do", reason: wontDo });
   }
 
   // The unsets. AFTER every field write above, and it costs nothing that they cannot collide:
@@ -1196,7 +1225,7 @@ export function updateEpic() {
       "first (or leave it archived)."
     : "";
   reportSave(saved, {
-    changed: `conductor: updated '${escapeControls(id)}'${undoneNote}`,
+    changed: `conductor: updated '${escapeControls(id)}'${storyNote}${undoneNote}`,
     unchanged: statusUndone
       ? `conductor: nothing changed on '${escapeControls(id)}'${undoneNote}`
       : `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
