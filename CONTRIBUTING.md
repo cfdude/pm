@@ -163,6 +163,14 @@ which 0.49.0 retired. On a small machine, or to leave cores free, throttle it wi
 `--test-concurrency=<n>` (e.g. `node --test --test-concurrency=2 scripts/test/unit/*.test.mjs
 scripts/test/assert/*.test.mjs`).
 
+### Flaky tests
+
+- A test listed in `scripts/test/known-flakes.json` is not to be diagnosed. A run that fails is re-run ONCE,
+  on the failed files only; pass-on-retry is a pass and is printed as "known flake" (listed) or
+  "UNLISTED flake" (not listed). Report every UNLISTED flake you see: it needs an owning epic.
+- A test that fails twice is a real failure. Retries are logged to the gitignored `.test-flakes.log`.
+- A dispatched build, test or review agent reads `.claude/agent-startup.md` (the rules it must obey here) instead of `CLAUDE.md` and this file in full.
+
 ### Which rung does my new test belong in?
 
 **By what the test OBSERVES, never by how fast it is.** The assertion half has two rungs, and a

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "release-0-51-0-cut",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -12288,7 +12288,7 @@
       "id": "release-0-51-0-cut",
       "title": "Cut pm 0.51.0: version bump, CHANGELOG section, Mintlify sync (execution profile + review-mode page and epic flag reference; release-candidate page and release show reference; /pm:upgrade untrack block), Changelog page and Real Numbers, release PR into main, fleet pass",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12311,7 +12311,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T02:51:50.830Z",
-      "touchedAt": "2026-10-01T06:09:20.756Z",
+      "touchedAt": "2026-10-07T00:02:13.214Z",
       "startedAt": "2026-10-01T06:08:24.532Z"
     },
     {
@@ -12689,6 +12689,26 @@
       "createdAt": "2026-10-06T19:57:50.197Z",
       "touchedAt": "2026-10-06T19:58:03.743Z",
       "release": "0.52.0"
+    },
+    {
+      "id": "openspec-1-14-workflows-evaluation",
+      "title": "Evaluate OpenSpec 1.14 workflows (new, continue, ff, bulk-archive, verify, onboard) against pm: where they overlap its gates, sync and archive handling, and what pm should instruct or leave alone",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-10-07T00:23:56.798Z",
+      "touchedAt": "2026-10-07T00:23:57.544Z",
+      "notes": [
+        {
+          "at": "2026-10-07T00:23:57.541Z",
+          "actor": "agent",
+          "text": "lane: openspec not unrouted — triage returned no lane; evaluation can change rules-block/gate behavior. Local install now has all 12 workflows (profile custom). First step: read what verify does vs Gate 2, bulk-archive vs pm archive gate, ff/new/continue vs openspec-propose + sync. Source: screenshot from other machine showed 'openspec update' 1.14.0->1.14.1 and 6 extra workflows. Generated .claude/skills + .claude/commands/opsx files for the 6 new workflows are untracked, deliberately kept out of the 0.51.0 commit."
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -12699,7 +12719,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1895,
+  "revision": 1898,
   "reviewMode": "standard",
   "releases": [
     {
