@@ -549,6 +549,51 @@ function attributionCandidates(state, ctx, files = []) {
   return [...out.filter(touches), ...out.filter(e => !touches(e))];
 }
 
+/** The ids of every epic whose `attributedCommits` already holds this commit (gh#213, and the inverse
+ *  filed on it: another epic's commits offered for the active one). Attribution is recorded as full
+ *  names, but a hand-typed abbreviation is matched too, as update-epic's own checks do. `[]` for a
+ *  commit with no sha (the unverifiable rung). */
+function attributionHolders(state, sha) {
+  if (typeof sha !== "string" || !sha) return [];
+  const s = sha.toLowerCase();
+  return (state.epics || []).filter(e => Array.isArray(e.attributedCommits) && e.attributedCommits.some(v =>
+    typeof v === "string" && (v.toLowerCase() === s || (isCommitNameShaped(v) && s.startsWith(v.toLowerCase()))))).map(e => e.id);
+}
+
+/** How many of the active epic's most recent attributed commits are read to learn which paths its
+ *  work has already touched — one `git diff-tree` each, and only for a commit the shape heuristic
+ *  already flags. */
+const CONTINUATION_LOOKBACK = 25;
+
+/** Is this commit, flagged by the diff-shape heuristic as a detour, in fact work the RECORD ties to the
+ *  active epic? The shape heuristic reads a `chore(...)`/`fix(...)` prefix and a small diff, which is
+ *  also exactly what an epic whose deliverables are manifests and ledgers produces on purpose (#213).
+ *  Three pieces of evidence, none of them a prefix or a size:
+ *   1. the commit is ALREADY attributed to an epic — the active one, or another (a commit another epic
+ *      holds is not this epic's detour either);
+ *   2. its subject names the active epic's id as a whole token;
+ *   3. EVERY path it changed was already changed by a commit attributed to the active epic — the
+ *      second edit to a manifest the epic is producing. `every`, not `some`: one shared file such as
+ *      a changelog is common to real work and a genuine detour alike, and a false SUPPRESSION
+ *      silently disables the trail, where a false row is visible and retractable.
+ *  The first commit of such a stream, before anything is attributed, is still flagged: the engine
+ *  has no evidence yet, and the message says how to undo the row. */
+function isRecordedEpicWork(state, sha, subject, files) {
+  if (attributionHolders(state, sha).length) return true;
+  const active = (state.epics || []).find(e => e.id === state.active);
+  if (!active) return false;
+  if (subjectNamesEpic(subject, active.id)) return true;
+  if (!sha || !Array.isArray(files) || !files.length || !Array.isArray(active.attributedCommits)) return false;
+  const touched = new Set();
+  for (const v of active.attributedCommits.slice(-CONTINUATION_LOOKBACK)) {
+    // A LIVE commit only: one an amend or rebase replaced is on no branch and is about to be withdrawn,
+    // and the commit that replaced it is the very thing to be judged, not evidence for itself.
+    if (!isCommitNameShaped(v) || !isLiveCommit(v)) continue;
+    for (const f of changedFiles(v) || []) touched.add(f);
+  }
+  return files.every(f => touched.has(f));
+}
+
 /** A change archived by `/opsx:archive`: `openspec/changes/archive/<YYYY-MM-DD>-<id>/<rest>`. */
 const ARCHIVED_CHANGE_PATH = /^openspec\/changes\/archive\/(?:\d{4}-\d{2}-\d{2}-)?([^/]+)\/(.+)$/;
 const LIVE_CHANGE_PATH = /^openspec\/changes\/(?!archive\/)([^/]+)\/(.+)$/;
@@ -595,20 +640,30 @@ export function subjectNamesEpic(subject, id) {
 function attributionNudge(state, ctx, commits) {
   // Every sha is a full sha read from a reflog line (commit-watch.mjs parseReflog), so none can
   // be empty; the filter keeps an empty one from emitting a command that appends nothing.
-  const all = (commits || []).filter(c => c && typeof c.sha === "string" && c.sha);
-  if (!all.length) return null;
+  const everyCommit = (commits || []).filter(c => c && typeof c.sha === "string" && c.sha);
+  if (!everyCommit.length) return null;
   // NO CANDIDATE, NO LINE — decided BEFORE the bookkeeping split. A repo with no active epic (or one whose epic
   // predates attributedCommits) has never been nudged about attribution, and a "needs no attribution" line for
   // every re-render commit there would be exactly the noise this function's budget forbids.
-  if (!attributionCandidates(state, ctx, all.flatMap(c => c.files || [])).length) return null;
+  if (!attributionCandidates(state, ctx, everyCommit.flatMap(c => c.files || [])).length) return null;
+  const shown = (cs) => cs.map(c => `\`${shortSha(c.sha)}\``).join(", ");
+  // A commit some epic ALREADY holds is never proposed again, and its holder is named instead: the
+  // engine knows whose it is, and obeying a command that attributed it to a second epic would put one
+  // epic's work in another's Gate 2 range (the inverse of #213, filed on it).
+  const held = everyCommit.filter(c => attributionHolders(state, c.sha).length);
+  const all = everyCommit.filter(c => !held.includes(c));
+  const heldNote = held.length
+    ? ` ${held.map(c => `\`${shortSha(c.sha)}\` is already attributed to ${attributionHolders(state, c.sha).map(i => `\`${escapeControls(i)}\``).join(", ")}`).join("; ")} — not offered again.`
+    : "";
+  if (!all.length) return `ATTRIBUTION —${heldNote}`;
   // BOOKKEEPING IS CLASSIFIED PER COMMIT, never on the merged file list: one real commit among
   // three bookkeeping ones must still be named, and a bookkeeping one must never be attributed.
   const real = all.filter(c => !isAttributionBookkeeping(c.files));
   const bookkeeping = all.filter(c => !real.includes(c));
-  const shown = (cs) => cs.map(c => `\`${shortSha(c.sha)}\``).join(", ");
   if (!real.length) {
     return `ATTRIBUTION — ${shown(bookkeeping)} ${bookkeeping.length === 1 ? "is" : "are"} pm bookkeeping (only ` +
-      "`.conductor/` files, `PROJECT.md` and/or a change moved under `openspec/changes/archive/`) and needs no attribution.";
+      "`.conductor/` files, `PROJECT.md` and/or a change moved under `openspec/changes/archive/`) and needs no attribution." +
+      heldNote;
   }
   const list = real.map(c => c.sha);
   const files = real.flatMap(c => c.files || []);
@@ -616,6 +671,7 @@ function attributionNudge(state, ctx, commits) {
   if (!candidates.length) return null;
   const bookkeepingNote = bookkeeping.length
     ? ` (${shown(bookkeeping)} ${bookkeeping.length === 1 ? "is" : "are"} bookkeeping and needs no attribution.)` : "";
+  const trailer = bookkeepingNote + heldNote;
   // A candidate is TIED to these commits when one of them touched its own artifacts or named its id in
   // its subject. Anything else is the engine guessing that the active epic owns work it merely happens
   // to be active during, so the single-candidate sentence stops asserting it.
@@ -634,7 +690,7 @@ function attributionNudge(state, ctx, commits) {
     return "ATTRIBUTION — the engine recorded nothing; choosing is yours. Each of these epics could own " +
       "what landed (a candidate whose own files the commits touch is listed first):\n" +
       candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")).join("\n") +
-      `\n${exclusion}${bookkeepingNote}`;
+      `\n${exclusion}${trailer}`;
   }
   const epic = candidates[0];
   const id = escapeControls(epic.id);
@@ -645,7 +701,7 @@ function attributionNudge(state, ctx, commits) {
     return `ATTRIBUTION — the engine cannot tell whether this commit is \`${id}\`'s work: its subject and paths do not ` +
       `name it, and \`${id}\` is only the active epic. If this commit is \`${id}\`'s work, record it` +
       (first ? ", after every commit of that epic's work that already landed, IN THE ORDER THEY LANDED (it has attributed none yet)" : "") +
-      ` — ${asCode(cmd(epic))}. If it is not, attribute nothing. ${exclusion}${bookkeepingNote}`;
+      ` — ${asCode(cmd(epic))}. If it is not, attribute nothing. ${exclusion}${trailer}`;
   }
   if (first) {
     return `ATTRIBUTION — \`${id}\` has attributed no commits yet: ` +
@@ -653,10 +709,10 @@ function attributionNudge(state, ctx, commits) {
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
       `${asCode(cmd(epic))}. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
       "entry, so a commit left unattributed is work that gate is never checked against. " +
-      `${exclusion}${bookkeepingNote}`;
+      `${exclusion}${trailer}`;
   }
   return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
-    `${asCode(cmd(epic))}. ${exclusion}${bookkeepingNote}`;
+    `${asCode(cmd(epic))}. ${exclusion}${trailer}`;
 }
 
 /** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no
@@ -758,7 +814,8 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       detourLogged = (!isConductorOwnFiles(files) && !confinedToPaused(files)
         && logRow("DETOUR-COMMIT", ctx.detourId, subject, sha)) || detourLogged;
     } else if (looksLikeUnloggedMinimalDetour(subject, state.active, files,
-      ownArtifacts((state.epics || []).find(e => e.id === state.active)))) {
+      ownArtifacts((state.epics || []).find(e => e.id === state.active)))
+      && !isRecordedEpicWork(state, sha, subject, files)) {
       // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
       // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
       // remember — the whole point of this heuristic.
@@ -826,7 +883,11 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
     : autoLogged
     ? `${detected}. Diff shape (small, fix/chore-prefixed, unrelated to the active ` +
       "epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` " +
-      "as an AUTO-DETOUR entry." + retractPointer
+      "as an AUTO-DETOUR entry." + retractPointer +
+      // The attribution paragraph below names commits as the active epic's candidates; for a commit
+      // named in both, the two are ALTERNATIVES, and saying so is what stops an agent doing both (#213).
+      (attribution ? " A commit both auto-logged here and offered for attribution below is one or the other: if it " +
+        "is the epic's own work, attribute it AND retract its row; if it is a detour, attribute nothing." : "")
     : `${detected}. If this was a MINIMAL detour, run \`/pm:detour --minimal "<what>"\` ` +
       "to record it. Otherwise record an epic's status or story change with `update-epic` " +
       "(`--status`, `--story <n> --done`).")

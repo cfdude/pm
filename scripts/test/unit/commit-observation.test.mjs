@@ -106,6 +106,11 @@ unitTest("8.4 one retraction names every epic whose rows it covers, once each", 
   assert.equal(last[3], "epic-a,epic-z");
 });
 
+unitTest("9.0 looksLikeUnloggedMinimalDetour still flags a bare chore commit (the #213 guards live at the call site)", async () => {
+  const { looksLikeUnloggedMinimalDetour } = await import("../../lib/subcommands.mjs");
+  assert.equal(looksLikeUnloggedMinimalDetour("chore(data): add a manifest", "epic-a", ["data/manifest.json"], []), true);
+});
+
 unitTest("6.1 a commit touching the active epic's change directory is not an AUTO-DETOUR", () => {
   const engine = memoryEngine({ version: 1, active: "feat-x", detourStack: [], epics: [
     { id: "feat-x", title: "feat-x", priority: "P1", status: "in-progress", role: "epic",

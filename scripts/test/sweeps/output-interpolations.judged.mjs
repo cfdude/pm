@@ -679,10 +679,13 @@ x("subcommands.mjs", "attributionNudge", {
   "id": 4,
 }, "escaped", "the single candidate's id after escapeControls(epic.id) (hook-friction-0-51): bound once as `const id`, so the sweep cannot see the escape at each use");
 x("subcommands.mjs", "attributionNudge", {
-  "shortSha(c.sha)": 1,
+  "shortSha(c.sha)": 2,
   "shown(bookkeeping)": 2,
-  "bookkeepingNote": 4,
-}, "engine", "git short shas of reflog-observed commits, joined by shown(), and the note composed from them and fixed prose (hook-friction-0-51)");
+  "trailer": 4,
+  "heldNote": 2,
+  "attributionHolders(state, c.sha).map(i => `\\`${escapeControls(i)}\\``).join(\", \")": 1,
+  "held.map(c => `\\`${shortSha(c.sha)}\\` is already attributed to ${attributionHolders(state, c.sha).map(i => `\\`${escapeControls(i)}\\``).join(\", \")}`).join(\"; \")": 1,
+}, "engine", "git short shas of reflog-observed commits, joined by shown(), and the notes composed from them and fixed prose (hook-friction-0-51); the holder ids of an already-attributed commit pass through escapeControls (gh#213)");
 x("subcommands.mjs", "isAttributionBookkeeping", {
   "a[1]": 1,
   "a[2]": 1,

@@ -1042,3 +1042,62 @@ test("8.5 pruned rows whose shas are prefixes of each other retract together, an
   assert.match(r.stderr, new RegExp(`rows with sha ${base.slice(0, 7)} were retracted together with ${base.slice(0, 9)}`));
   assert.deepEqual(detourTableRows(repo), [], "both are hidden");
 });
+
+// ─────────────── 9. #213 — an epic's own small chore commits are not detours ───────────────
+
+const attribute = (repo, id, ...shas) => {
+  const r = engineRun(repo.cwd, ["update-epic", id, ...shas.flatMap((s) => ["--attribute-commit", s])]);
+  assert.equal(r.status, 0, r.stderr);
+};
+
+test("9.1 a chore commit touching only files the epic's attributed commits already touched is not an AUTO-DETOUR", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const first = observedCommit(repo, { "data/manifest.json": "1" }, "chore(data): add the manifest");
+  attribute(repo, "epic-a", first);
+  const second = observedCommit(repo, { "data/manifest.json": "2" }, "chore(data): complete the manifest");
+  assert.equal(rowsFor(repo, second).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 0, repo.detours());
+  // CONTROL: the same shape on a file no attributed commit touched is still flagged.
+  const stray = repo.commit({ "src/unrelated.txt": "1" }, "chore: unrelated tidy");
+  const o = repo.observe("PostToolUse", "git commit");
+  assert.equal(rowsFor(repo, stray).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 1, o.stdout);
+});
+
+test("9.2 one shared file is not enough: a commit touching a new file too is still flagged", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const first = observedCommit(repo, { "data/manifest.json": "1" }, "chore(data): add the manifest");
+  attribute(repo, "epic-a", first);
+  const mixed = observedCommit(repo, { "data/manifest.json": "2", "src/other.txt": "1" }, "chore: manifest plus a tidy");
+  assert.equal(rowsFor(repo, mixed).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 1, repo.detours());
+});
+
+test("9.3 a commit whose subject names the active epic's id is not an AUTO-DETOUR", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = observedCommit(repo, { "src/named.txt": "1" }, "chore: epic-a ledger entry");
+  assert.equal(rowsFor(repo, sha).length, 0, repo.detours());
+});
+
+test("9.4 a commit another epic already holds is neither logged as a detour nor offered for attribution; its holder is named", () => {
+  const repo = observationRepo();
+  engineRun(repo.cwd, ["add-epic", "--id", "epic-b", "--lane", "claude-code"]);
+  repo.observe();
+  const sha = repo.commit({ "src/b-work.txt": "1" }, "chore: epic-b closeout");
+  attribute(repo, "epic-b", sha);
+  const o = repo.observe("PostToolUse", "git commit");
+  assert.equal(o.status, 0, o.stderr);
+  assert.equal(rowsFor(repo, sha).length, 0, repo.detours());
+  assert.deepEqual(attributionCommands(o.context), [], `not offered for epic-a: ${o.context}`);
+  assert.match(o.context, new RegExp(`${short(repo, sha)}\` is already attributed to \`epic-b\` — not offered again`));
+});
+
+test("9.5 an auto-logged commit that is also offered for attribution is called one-or-the-other, not both", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = repo.commit({ "src/stray.txt": "1" }, "chore: possibly a detour");
+  const o = repo.observe("PostToolUse", "git commit");
+  assert.equal(rowsFor(repo, sha).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 1, o.stdout);
+  assert.match(o.context, /one or the other: if it is the epic's own work, attribute it AND retract its row/);
+  assert.deepEqual(attributionCommands(o.context), ["epic-a"], "the attribution paragraph is still there");
+});
