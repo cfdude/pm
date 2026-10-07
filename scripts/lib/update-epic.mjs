@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES,
-  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
+  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, isOpenspecLane, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
@@ -15,6 +15,7 @@ import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, gateStaleness, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived, SPEC_DELTAS_SCOPE, specDeltasScopeBase } from "./epic-progress.mjs";
+import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
@@ -291,7 +292,7 @@ export function updateEpic() {
   // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
     errStream().write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--story <n> --correct-disposition \"<why the recorded one was wrong>\"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--spec-deltas-waived \"<why the archived deltas were deliberately not applied>\"] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--story <n> --correct-disposition \"<why the recorded one was wrong>\"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--spec-deltas-waived \"<why the archived deltas were deliberately not applied>\"] [--gate1-waived \"<why Gate 1 does not apply before activating>\"] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
@@ -407,6 +408,21 @@ export function updateEpic() {
   const status = str(f.status);
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     die(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`);
+  }
+  // The Gate 1 activation guard (openspec-gate1-guard-on-apply). Only a TRANSITION to active: an epic already
+  // active is not entering anything (a `--notes` on it must not re-litigate). The waiver is read from THIS call
+  // first, so `--status active --gate1-waived "<why>"` is one call; `--clear gate1-waived` in the same call
+  // removes the stored one before the check.
+  const gate1WaivedFlag = str(f["gate1-waived"]);
+  if (gate1WaivedFlag !== undefined && !isOpenspecLane(epic)) {
+    die(`conductor: --gate1-waived applies only to an openspec-lane epic; '${escapeControls(id)}' is not one, so there is no Gate 1 to waive. Nothing was written.\n`);
+  }
+  if (status === "active" && snapshot.status !== "active") {
+    const clearsWaiver = [].concat(f.clear === undefined ? [] : f.clear).includes("gate1-waived");
+    const candidate = { ...snapshot,
+      gate1Waived: gate1WaivedFlag !== undefined ? gate1WaivedFlag : (clearsWaiver ? undefined : snapshot.gate1Waived) };
+    const refusal = gate1ActivationRefusal(candidate);
+    if (refusal) die(`conductor: ${refusal}\n`);
   }
   // The same vocabulary and timestamp checks add-epic and add-many make, from the same helpers.
   if (str(f.priority) !== undefined && priorityValueError(str(f.priority))) {
@@ -969,6 +985,7 @@ export function updateEpic() {
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.
   if (description !== undefined) epic.description = description;
   if (specDeltasWaived !== undefined) epic.specDeltasWaived = specDeltasWaived;
+  if (gate1WaivedFlag !== undefined) epic.gate1Waived = gate1WaivedFlag;
   if (note !== undefined) {
     if (!Array.isArray(epic.notes)) epic.notes = [];
     epic.notes.push(noteEntry(note));

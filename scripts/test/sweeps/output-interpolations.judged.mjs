@@ -881,3 +881,19 @@ x("execution-profile.mjs", "briefProfileLines", {
 x("rules.mjs", "profileScopeLines", {
   "l": 2,
 }, "engine", "lines from profileBlockLines()/laneOverrideLines(): resolved closed-list values and layer labels only, the `ignored:` notes (the one place a raw stored value appears) filtered out");
+x("gate1-guard.mjs", "gate1ActivationRefusal", {
+  "gap": 1,
+  "head": 2,
+}, "passthrough", "gate1ActivationGap()'s reason: a closed set of literal sentences, the one stored value in it (a verdict name) escapeControls()d where the reason is built; `head` is that reason inside one literal sentence");
+x("gate1-guard.mjs", "gate1ActivationNotice", {
+  "gap": 1,
+}, "passthrough", "gate1ActivationGap()'s reason, as for gate1ActivationRefusal: literal sentences with the one stored value escaped where it is built");
+x("update-epic.mjs", "updateEpic", {
+  "refusal": 1,
+}, "passthrough", "gate1ActivationRefusal()'s text: every id in it goes through escapeControls/printedId/asCode where it is built");
+x("active-pointer.mjs", "setActive", {
+  "refusal": 1,
+}, "passthrough", "gate1ActivationRefusal()'s text: every id in it goes through escapeControls/printedId/asCode where it is built");
+x("add-epic.mjs", "addEpic", {
+  "gate1Refusal": 1,
+}, "passthrough", "gate1ActivationRefusal()'s text: every id in it goes through escapeControls/printedId/asCode where it is built");

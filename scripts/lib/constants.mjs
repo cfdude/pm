@@ -469,6 +469,13 @@ export const EPIC_FLAGS = [
   { flag: "spec-deltas-waived", key: "specDeltasWaived", commands: ["update-epic"], nullable: true,
     requires: REASON_REQUIRES,
     clearNote: "`delivered-epic-spec-deltas-absent` reports this epic again if its archived spec deltas are absent from the main specs. Re-record with --spec-deltas-waived \"<why>\"" },
+  // openspec-gate1-guard-on-apply. The ONE record that an openspec-lane epic was activated WITHOUT a passing Gate 1
+  // on purpose (see gate1-guard.mjs). The value IS the reason, so a waiver cannot be recorded without one.
+  // Nullable: `--clear gate1-waived` is the inverse and puts the epic back under the activation guard.
+  // update-epic only — a waiver judges a transition, so a creation surface (which refuses instead) has none.
+  { flag: "gate1-waived", key: "gate1Waived", commands: ["update-epic"], nullable: true,
+    requires: REASON_REQUIRES,
+    clearNote: "the activation guard refuses this epic again if its change is on disk with no passing Gate 1. Re-record with --gate1-waived \"<why>\"" },
   { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append",
     setOnly: "an APPEND-ONLY trail — each entry records what was said and when, so removing one would edit history rather than clear a value" },
   // The tracker's OWN updated timestamp as of the last time the agent read that item's content

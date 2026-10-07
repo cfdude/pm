@@ -28,6 +28,7 @@
 // One-directional dependencies only. Honcho memory is FORMATTED and LOGGED here and never sent:
 // the engine is an instruction layer and never opens a network connection (see conductor.mjs).
 
+import { gate1ActivationNotice } from "./gate1-guard.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -167,6 +168,8 @@ export function pushDetour() {
   linkOnce(paused, "may-invalidate", detourId, reason, { arm: reconcileOnResume });
   linkOnce(detour, "resolves-blocker-for", id, reason);
   activate(state, detourId);
+  const gate1Notice = gate1ActivationNotice(detour);
+  if (gate1Notice) errStream().write(gate1Notice);
 
   const saved = saveState(state, { verb: "push-detour" });
   render();
@@ -247,6 +250,8 @@ export function popDetour() {
   if (frame.reconcileOnResume) epic.reconcileNeeded = true;
   const previousActive = state.active;
   activate(state, pausedEpic);
+  const gate1Notice = gate1ActivationNotice(epic);
+  if (gate1Notice) errStream().write(gate1Notice);
 
   const saved = saveState(state, { verb: "pop-detour" });
   // NOT exempt: the pointer moves off the DETOUR, and a detour can itself owe a reconcile.

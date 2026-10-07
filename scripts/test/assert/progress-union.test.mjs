@@ -71,7 +71,7 @@ test("2.1 an openspec epic that is not archived, with stories and no tasks.md an
 /** An openspec-lane epic with a passing Gate 2 (no attribution array: `unverifiable`, which the gate
  *  does not refuse), so the handoff is the only obligation in play. */
 function gatedEpic(cwd, id, extra = {}) {
-  run(["add-epic", "--id", id, "--lane", "openspec", "--status", "active"], { cwd });
+  run(["add-epic", "--id", id, "--lane", "openspec", "--status", "queued"], { cwd });
   const st = readState(cwd);
   const e = st.epics.find(x => x.id === id);
   e.gateReview = { gate2: { verdict: "pass", reviewer: "r", reviewedAt: "2026-09-25T00:00:00.000Z" } };

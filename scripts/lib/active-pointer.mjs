@@ -8,6 +8,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { ownedDetours } from "./links.mjs";
+import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream } from "./invocation.mjs";
@@ -100,6 +101,11 @@ export function setActive() {
   if (!t) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
   if (t.status === "archived" || isArchived(t)) {
     die(`conductor: epic '${escapeControls(id)}' is archived — cannot make it active\n`);
+  }
+  // Gate 1 activation guard: only a TRANSITION (an epic already active is not entering anything).
+  if (t.status !== "active") {
+    const refusal = gate1ActivationRefusal(t);
+    if (refusal) { die(`conductor: ${refusal}\n`); }
   }
   const previous = state.active;
   activate(state, id);

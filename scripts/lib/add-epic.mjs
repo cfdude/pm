@@ -5,6 +5,7 @@
 // parentError are general-purpose and imported by most other lib modules; they live
 // here because that's where the "add-epic" comment section originally put them.
 
+import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
@@ -496,6 +497,11 @@ export function addEpic() {
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (externalUrl !== undefined) epic.externalUrl = externalUrl;
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
+  // Gate 1 activation guard (openspec-gate1-guard-on-apply): a CREATION at active is a transition into active too.
+  if (epic.status === "active") {
+    const gate1Refusal = gate1ActivationRefusal(epic, { creating: true });
+    if (gate1Refusal) { die(`conductor: ${gate1Refusal}\n`); }
+  }
   const previousActive = state.active;
   pushEpic(state, epic);
   // keep .active in sync on creation. `freshlyRead` when this very command carried the item's

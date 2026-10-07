@@ -332,6 +332,13 @@ const EXERCISE = {
     e.disposition = { outcome: "delivered", recordedAt: "2026-09-25T00:00:00.000Z" };
     writeState(cwd, s);
   }, args: ["--spec-deltas-waived", "folded into the main spec by hand"], check: (e) => assert.equal(e.specDeltasWaived, "folded into the main spec by hand") },
+  // openspec-gate1-guard-on-apply: the value IS the reason, stored verbatim; refused on a non-openspec epic, so `prep`
+  // makes `subject` openspec-lane. `--clear gate1-waived` is its inverse.
+  "--gate1-waived": { prep: (cwd) => {
+    const s = readState(cwd);
+    s.epics.find(x => x.id === "subject").lane = "openspec";
+    writeState(cwd, s);
+  }, args: ["--gate1-waived", "doc-only change, no spec to review"], check: (e) => assert.equal(e.gate1Waived, "doc-only change, no spec to review") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
@@ -860,7 +867,7 @@ test("all three surfaces present checkbox progress as CLAIMED completion, in one
   const cwd = tmpRepo();
   run(["init"], { cwd });
   withTasks(cwd, "ctt", ["- [x] 1 done", "- [x] 2 done"]);
-  run(["add-epic", "--id", "ctt", "--lane", "openspec", "--status", "active"], { cwd });
+  run(["add-epic", "--id", "ctt", "--lane", "openspec", "--status", "queued"], { cwd });
   run(["render"], { cwd });
 
   assert.ok(projectMd(cwd).includes(CLAIMED_COMPLETION_NOTE),
