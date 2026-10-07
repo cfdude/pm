@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "release-0-51-0-cut",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -12288,7 +12288,7 @@
       "id": "release-0-51-0-cut",
       "title": "Cut pm 0.51.0: version bump, CHANGELOG section, Mintlify sync (execution profile + review-mode page and epic flag reference; release-candidate page and release show reference; /pm:upgrade untrack block), Changelog page and Real Numbers, release PR into main, fleet pass",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12309,10 +12309,25 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "aa157e04f2279863e075268f7b9523ba9ee7fe03",
+        "72f2027f2cc8f7dc34190a76cd4745ff718f39f7",
+        "824eeb4c07bc4def93aa671b7ad99286b6d5451e"
+      ],
       "createdAt": "2026-10-01T02:51:50.830Z",
-      "touchedAt": "2026-10-07T00:02:13.214Z",
-      "startedAt": "2026-10-01T06:08:24.532Z"
+      "touchedAt": "2026-10-07T01:12:34.053Z",
+      "startedAt": "2026-10-01T06:08:24.532Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-07T01:12:34.050Z",
+        "reason": "0.51.0 shipped: PR #240 squash-merged as af14c617, docs PR cfdude/pm-docs#58 merged and verified live, release marked delivered"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-07T01:12:34.049Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-07T01:12:34.050Z"
     },
     {
       "id": "flake-owner-certify-index-sigterm",
@@ -12719,7 +12734,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1899,
+  "revision": 1904,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13273,6 +13288,9 @@
           }
         ],
         "reviewer": "opus fresh-context, combined with Gate 1; Critical fixed a2bb4b2b"
+      },
+      "delivered": {
+        "recordedAt": "2026-10-07T01:12:16.163Z"
       }
     },
     {
