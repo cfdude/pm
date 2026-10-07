@@ -621,6 +621,33 @@ test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (n
   assert.match(r.stderr, /unknown flag --bogus for gate-guard/);
 });
 
+test("REGRESSION GUARD: brief, snapshot and a dormant commit-nudge drain a large hook payload (no EPIPE)", async () => {
+  // Same async spawn + stdin.end() shape as the gate-guard guard above, for the verbs that never
+  // read the payload (brief, snapshot) or return before they do (commit-nudge in a repo without pm).
+  // The payload is 1 MiB: well past any pipe buffer, so an unread writer must see EPIPE.
+  const payload = JSON.stringify({ hook_event_name: "SessionStart", transcript: "y".repeat(1024 * 1024) });
+  const feed = (verb, cwd) => new Promise((resolve) => {
+    const child = spawn("node", [ENGINE, verb], {
+      cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+    });
+    let writeError = null;
+    child.stdout.resume();
+    child.stderr.resume();
+    child.stdin.on("error", (e) => { writeError = e; });
+    const timer = setTimeout(() => child.kill("SIGKILL"), 30000);
+    child.on("close", (status, signal) => { clearTimeout(timer); resolve({ status, signal, writeError }); });
+    child.stdin.end(payload);
+  });
+  for (const [label, makeRepo] of [["with pm", initialized], ["without pm", gitRepoWithoutPm]]) {
+    for (const verb of ["brief", "snapshot", "commit-nudge"]) {
+      const r = await feed(verb, makeRepo());
+      assert.equal(r.signal, null, `${verb} (${label}) did not finish within 30 s`);
+      assert.equal(r.writeError, null, `${verb} (${label}): the writer saw ${r.writeError && r.writeError.code}`);
+      assert.equal(r.status, 0, `${verb} (${label}) exited ${r.status}`);
+    }
+  }
+});
+
 // ═══════════════ 2.3 — --force reaches the verbs that carried their own allowlists ═══════════════
 
 test("--force is not refused on a mutating verb that validates its own flags", () => {

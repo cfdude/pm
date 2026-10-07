@@ -61,6 +61,10 @@ export const OBSERVE_LOCK_STALE_MS = 10_000;
  *  a hook was killed must not stop observation forever. Far above any observation measured. */
 export const OBSERVE_LOCK_LIVE_MAX_MS = 600_000;
 export const REPORTED_BOUND = 500;
+/** The most commits ONE observation reports. Measured on 0.45.0: 200 commits since the anchor took
+ *  8 s and printed 24 KB of hook context. The surplus is not dropped: the anchor stops at the last
+ *  commit reported, so the next run starts there. Must stay well below REPORTED_BOUND. */
+export const OBSERVE_WALK_CAP = 50;
 
 /** Reflog actions that mean a commit OBJECT was created at HEAD: `commit`, `commit (initial)`,
  *  `commit (amend)`, `commit (merge)`, `commit (cherry-pick)`. `revert:`, clean `merge …:`, clean
@@ -100,11 +104,18 @@ export function readObserveRecord(root = engineRoot()) {
 /** The anchor for a reflog buffer as it is now: its byte size and its last line's BYTES, base64.
  *  Never decoded: the comparison in locateAnchor() is byte for byte, whatever the encoding. */
 export function anchorOf(buf) {
-  let end = buf.length;
+  // COMPLETE lines only. A writer appending as we read leaves a partial last line (no newline yet);
+  // anchoring on it would never be found again once the line is finished, and the next run would
+  // read "anchor lost". The partial tail is simply not part of the anchor, so it is read next time.
+  const whole = completeEnd(buf);
+  let end = whole;
   while (end > 0 && buf[end - 1] === 0x0a) end--;
   const nl = end > 0 ? buf.lastIndexOf(0x0a, end - 1) : -1;
-  return { size: buf.length, lineBase64: buf.subarray(nl + 1, end).toString("base64") };
+  return { size: whole, lineBase64: buf.subarray(nl + 1, end).toString("base64") };
 }
+
+/** Byte offset just past the last newline: the end of the COMPLETE lines. 0 when there is none. */
+const completeEnd = (buf) => buf.lastIndexOf(0x0a) + 1;
 
 /** The anchored line's bytes. */
 const anchorLineBytes = (anchor) => Buffer.from(anchor.lineBase64, "base64");
@@ -205,7 +216,9 @@ function acquireLock(root, { waitMs = OBSERVE_LOCK_WAIT_MS } = {}) {
  *    verdict     "landed" | "no-commit" | "unverifiable"
  *    reason      why, for the unverifiable rung (no-git | no-reflog | no-anchor | anchor-lost)
  *    candidates  [{old, sha, action}] — `commit…` entries since the anchor not yet reported,
- *                oldest first (empty unless landed)
+ *                oldest first, at most OBSERVE_WALK_CAP (empty unless landed)
+ *    remaining   how many further unreported commits lie past the cap; the anchor stops at the last
+ *                one reported, so the next run reports them
  *    finish(shas) write the new anchor plus `shas` into the reported set, then release
  *    release()   release without writing (idempotent; finish calls it)
  *
@@ -225,8 +238,8 @@ export function beginObservation({ root = engineRoot() } = {}) {
     }
   };
 
-  const handle = (verdict, reason, { candidates = [], nextAnchor = null, record }) => ({
-    verdict, reason, candidates,
+  const handle = (verdict, reason, { candidates = [], nextAnchor = null, record, remaining = 0 }) => ({
+    verdict, reason, candidates, remaining,
     release,
     finish(shas = []) {
       try {
@@ -261,9 +274,23 @@ export function beginObservation({ root = engineRoot() } = {}) {
     const at = locateAnchor(buf, record.anchor);
     if (at < 0) return handle("unverifiable", "anchor-lost", { record, nextAnchor });
     const seen = new Set(record.reported);
-    const candidates = parseReflog(buf.subarray(at).toString("utf8"))
-      .filter(e => COMMIT_ACTION.test(e.action) && !seen.has(e.sha));
-    return handle(candidates.length ? "landed" : "no-commit", null, { record, nextAnchor, candidates });
+    // Walk COMPLETE lines only, one at a time, so the cut for OBSERVE_WALK_CAP lands on a line
+    // boundary and the anchor can be set exactly there.
+    const whole = completeEnd(buf);
+    const candidates = [];
+    let remaining = 0;
+    let cutEnd = -1;
+    for (let pos = at; pos < whole;) {
+      const nl = buf.indexOf(0x0a, pos);
+      const lineEnd = nl + 1;
+      const [entry] = parseReflog(buf.subarray(pos, nl).toString("utf8"));
+      pos = lineEnd;
+      if (!entry || !COMMIT_ACTION.test(entry.action) || seen.has(entry.sha)) continue;
+      if (candidates.length < OBSERVE_WALK_CAP) { candidates.push(entry); cutEnd = lineEnd; } else remaining++;
+    }
+    // Over the cap: the anchor stops at the last commit reported, so the surplus is read next run.
+    const cutAnchor = remaining > 0 ? anchorOf(buf.subarray(0, cutEnd)) : nextAnchor;
+    return handle(candidates.length ? "landed" : "no-commit", null, { record, nextAnchor: cutAnchor, candidates, remaining });
   } catch (e) {
     release();
     throw e;

@@ -44,3 +44,14 @@ unitTest("An id given as a flag is diagnosed as the positional", () => {
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /update-epic e1 --priority P1/, "the diagnosis rewrites the line the caller meant");
 });
+
+unitTest("brief and snapshot drain the hook payload they never read (the unit half of the EPIPE guard)", () => {
+  // The invocation's input is coerced with String(), so a value whose toString() counts is a spy on
+  // "was the payload read". The real pipe-buffer EPIPE is the functional twin's: it needs a process.
+  for (const verb of ["brief", "snapshot"]) {
+    let reads = 0;
+    const input = { toString() { reads += 1; return ""; } };
+    initialized()([verb], { input });
+    assert.equal(reads, 1, `${verb} must drain the payload exactly once`);
+  }
+});
