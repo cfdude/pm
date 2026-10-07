@@ -68,18 +68,85 @@ export const OPENSPEC_GENERATED_PATHS = [".claude/skills/openspec-*", ".claude/c
  *  see this file's header. The timeout matters: this runs on the SessionStart hook, and a child
  *  that hangs there hangs every session start. */
 export function installedOpenspecVersion() {
+  const r = installedOpenspec();
+  return r.version === undefined ? null : r.version;
+}
+
+/** The OpenSpec package's published name — the package.json a resolved `openspec` binary sits in. */
+const OPENSPEC_PACKAGE = "@fission-ai/openspec";
+/** How long the spawn FALLBACK waits. Was 3000, which a loaded machine exceeded (60 concurrent
+ *  `--version` spawns peaked at 3973 ms, 51 of 60 over 3 s — gh#196). The file read below is the
+ *  primary path and never waits; this only bounds the rare case it cannot answer. */
+const SPAWN_TIMEOUT_MS = 15000;
+const spawnTimeoutMs = () => {
+  const n = Number(currentEnv().PM_OPENSPEC_SPAWN_TIMEOUT_MS);   // test seam, same family as PM_OPENSPEC_VERSION
+  return Number.isFinite(n) && n > 0 ? n : SPAWN_TIMEOUT_MS;
+};
+// Per process, keyed by the binary it was asked of: every render re-asks, and an answer that can land on
+// either side of a timeout is exactly what made the drift line flap (gh#196).
+const spawnAnswers = new Map();
+
+/** The first executable named `openspec` on `PATH`, or `null`. A READ — no spawn. */
+function openspecOnPath() {
+  for (const dir of String(currentEnv().PATH || "").split(path.delimiter)) {
+    if (!dir) continue;
+    const candidate = path.join(dir, "openspec");
+    try { fs.accessSync(candidate, fs.constants.X_OK); if (fs.statSync(candidate).isFile()) return candidate; }
+    catch { /* not here */ }
+  }
+  return null;
+}
+
+/** The version from the package.json beside the resolved binary: follow the symlink, then walk up to the
+ *  `@fission-ai/openspec` package. `null` where the layout is not that (a wrapper script, a shim). */
+function versionFromPackage(binary) {
+  let dir;
+  try { dir = path.dirname(fs.realpathSync(binary)); } catch { return null; }
+  for (let i = 0; i < 5; i++, dir = path.dirname(dir)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+      if (pkg && pkg.name === OPENSPEC_PACKAGE) {
+        const m = String(pkg.version).match(SEMVER);
+        return m ? m[1] : null;
+      }
+    } catch { /* keep walking */ }
+    if (path.dirname(dir) === dir) break;
+  }
+  return null;
+}
+
+/** The three-way answer behind `installedOpenspecVersion()`:
+ *    `{ version }`  — read.
+ *    `{ absent }`   — no `openspec` on PATH: nothing to compare against, and silence is right.
+ *    `{ unknown }`  — the CLI IS on PATH and its version could not be read (a slow or failing
+ *                     `--version`). NOT "current" and NOT "absent": it is reported as unknown (gh#196), because
+ *                     reporting nothing made the drift line appear and disappear between renders of a
+ *                     committed file.
+ *  `PM_OPENSPEC_VERSION=unknown` forces the unknown branch (test seam). */
+export function installedOpenspec() {
   const override = currentEnv().PM_OPENSPEC_VERSION;
   if (override !== undefined) {
+    if (String(override).trim().toLowerCase() === "unknown") return { unknown: true };
     const m = String(override).match(SEMVER);
-    return m ? m[1] : null;
+    return m ? { version: m[1] } : { absent: true };
   }
-  try {
-    const out = execFileSync("openspec", ["--version"], {
-      cwd: engineRoot(), encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"],
-    });
-    const m = String(out).match(SEMVER);
-    return m ? m[1] : null;
-  } catch { return null; }
+  const binary = openspecOnPath();
+  if (binary === null) return { absent: true };
+  const fromFile = versionFromPackage(binary);
+  if (fromFile !== null) return { version: fromFile };
+  if (!spawnAnswers.has(binary)) {
+    let answer;
+    try {
+      const out = execFileSync("openspec", ["--version"], {
+        cwd: engineRoot(), encoding: "utf8", timeout: spawnTimeoutMs(), stdio: ["ignore", "pipe", "ignore"],
+        env: currentEnv(),
+      });
+      const m = String(out).match(SEMVER);
+      answer = m ? { version: m[1] } : { unknown: true };
+    } catch { answer = { unknown: true }; }
+    spawnAnswers.set(binary, answer);
+  }
+  return spawnAnswers.get(binary);
 }
 
 /** The `generatedBy` stamp in a generated file's YAML frontmatter, or null.
@@ -172,8 +239,12 @@ export function openspecCurrency() {
   if (!fs.existsSync(openspecDir())) return null;      // not initialized — a different message
   const project = projectOpenspecVersion();
   if (project === null) return null;                  // cannot tell
-  const installed = installedOpenspecVersion();
-  if (installed === null) return null;                // cannot tell
+  const found = installedOpenspec();
+  if (found.absent) return null;                      // no CLI at all — nothing to compare against
+  // PRESENT BUT UNREADABLE is a finding, not silence (gh#196): "cannot tell" and "current" must not render alike
+  // when the CLI exists, or the line flaps in and out of a committed PROJECT.md with the machine's load.
+  if (found.unknown) return { project, unknown: true };
+  const installed = found.version;
   if (cmpVer(project, installed) >= 0) return null;   // current, or ahead
   return { project, installed, changes: activeChangeIds(), tracked: generatedArtifactsTracked() };
 }
@@ -194,6 +265,14 @@ export function openspecCurrency() {
 export function openspecCurrencyLines() {
   const c = openspecCurrency();
   if (!c) return [];
+  if (c.unknown) {
+    // One fixed line: no timing, no load figure, nothing that differs between two renders of the same state.
+    const U = [];
+    U.push(`⚠ OpenSpec drift UNKNOWN — this project's generated instruction files are ${c.project}, but the ` +
+      "installed CLI is on PATH and its version could not be read. Run `openspec --version` yourself and compare; " +
+      "if it is newer, `openspec update` (pm's engine never runs it for you).");
+    return U.map(escapeControls);
+  }
   const L = [];
   L.push(`⚠ OpenSpec drift — this project's generated instruction files are ${c.project}, ` +
     `the installed CLI is ${c.installed}. Run \`openspec update\` yourself; pm's engine never runs it ` +
