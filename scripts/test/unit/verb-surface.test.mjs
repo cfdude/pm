@@ -55,3 +55,14 @@ unitTest("brief and snapshot drain the hook payload they never read (the unit ha
     assert.equal(reads, 1, `${verb} must drain the payload exactly once`);
   }
 });
+
+unitTest("every hook verb drains the payload in a repository without pm, where it returns before reading it", () => {
+  // The dormant early return of gate-guard and lesson-advice sat ahead of their drain (the sibling of
+  // f7dcbdac's brief/snapshot/commit-nudge fix). The same String()-coercing spy counts reads.
+  for (const verb of ["brief", "snapshot", "commit-nudge", "gate-guard", "lesson-advice"]) {
+    let reads = 0;
+    const input = { toString() { reads += 1; return ""; } };
+    memoryEngine()([verb, "--platform", "claude-code"], { input });
+    assert.equal(reads, 1, `${verb} (no pm) must drain the payload exactly once`);
+  }
+});

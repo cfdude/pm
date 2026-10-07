@@ -621,7 +621,7 @@ test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (n
   assert.match(r.stderr, /unknown flag --bogus for gate-guard/);
 });
 
-test("REGRESSION GUARD: brief, snapshot and a dormant commit-nudge drain a large hook payload (no EPIPE)", async () => {
+test("REGRESSION GUARD: brief, snapshot, commit-nudge, gate-guard and lesson-advice drain a large hook payload (no EPIPE)", async () => {
   // Same async spawn + stdin.end() shape as the gate-guard guard above, for the verbs that never
   // read the payload (brief, snapshot) or return before they do (commit-nudge in a repo without pm).
   // The payload is 1 MiB: well past any pipe buffer, so an unread writer must see EPIPE.
@@ -639,7 +639,7 @@ test("REGRESSION GUARD: brief, snapshot and a dormant commit-nudge drain a large
     child.stdin.end(payload);
   });
   for (const [label, makeRepo] of [["with pm", initialized], ["without pm", gitRepoWithoutPm]]) {
-    for (const verb of ["brief", "snapshot", "commit-nudge"]) {
+    for (const verb of ["brief", "snapshot", "commit-nudge", "gate-guard", "lesson-advice"]) {
       const r = await feed(verb, makeRepo());
       assert.equal(r.signal, null, `${verb} (${label}) did not finish within 30 s`);
       assert.equal(r.writeError, null, `${verb} (${label}): the writer saw ${r.writeError && r.writeError.code}`);
