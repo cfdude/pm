@@ -12724,6 +12724,29 @@
           "text": "lane: openspec not unrouted — triage returned no lane; evaluation can change rules-block/gate behavior. Local install now has all 12 workflows (profile custom). First step: read what verify does vs Gate 2, bulk-archive vs pm archive gate, ff/new/continue vs openspec-propose + sync. Source: screenshot from other machine showed 'openspec update' 1.14.0->1.14.1 and 6 extra workflows. Generated .claude/skills + .claude/commands/opsx files for the 6 new workflows are untracked, deliberately kept out of the 0.51.0 commit."
         }
       ]
+    },
+    {
+      "id": "gh-cfdude-pm-239",
+      "title": "log-detour stamps HEAD after a failed commit, and the MINIMAL row can never be retracted",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "239",
+      "externalUrl": "https://github.com/cfdude/pm/issues/239",
+      "externalUpdatedAt": "2026-09-30T07:01:00Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-07T07:12:35.191Z",
+      "touchedAt": "2026-10-07T07:12:35.907Z",
+      "notes": [
+        {
+          "at": "2026-10-07T07:12:35.903Z",
+          "actor": "agent",
+          "text": "lane: superpowers not unrouted — suggest-lane returned none; a hook/log-detour behavior fix touching retraction semantics, not a sub-2h tweak"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -12734,7 +12757,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1905,
+  "revision": 1907,
   "reviewMode": "standard",
   "releases": [
     {
