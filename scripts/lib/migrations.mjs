@@ -18,6 +18,7 @@ import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
 import { die } from "./command-exit.mjs";
+import { optInLines } from "./opt-ins.mjs";
 import { errStream, outStream } from "./invocation.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
@@ -254,6 +255,10 @@ export function upgrade() {
     outStream().write(
       `What's new in pm (since ${escapeControls(stamped)}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
   }
+
+  // gh#210 — the half of the adoption review the delta above cannot cover: opt-ins THIS repo has
+  // never turned on, from an earlier release or this one. Printed on every run, delta or none.
+  for (const l of optInLines(state)) outStream().write(l + "\n");
 
   // gh#128 — "is this repo current with pm?" is the question this verb exists to answer, and it
   // is exactly the question nothing asks about the OpenSpec CLI. Same emitter as the brief, so
