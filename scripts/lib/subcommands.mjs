@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { currentArgv, errStream, gitOps, invocation, outStream, runtimeVersion } from "./invocation.mjs";
 import { supportFloorLine } from "./runtime-support.mjs";
-import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
+import { defaultState, drainHookPayload, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
@@ -194,6 +194,7 @@ export function init() {
 }
 
 export function brief() {
+  drainHookPayload();                    // FIRST, before any early return: the SessionStart payload is on stdin
   if (!isInitialized()) return;          // DORMANT until /pm:init
   requirePlatformFlag("brief");
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
@@ -213,6 +214,7 @@ export function brief() {
 }
 
 export function snapshot() {
+  drainHookPayload();                    // FIRST, before any early return: the PreCompact payload is on stdin
   if (!isInitialized()) return;          // DORMANT until /pm:init
   requirePlatformFlag("snapshot");
   // BEFORE render(): an unreadable state file refuses here, so nothing is rendered and no snapshot
@@ -380,7 +382,7 @@ export function looksLikeUnloggedMinimalDetour(subject, activeEpicId, files = he
 const POST_CALL_EVENTS = new Set(["PostToolUse", "PostToolUseFailure"]);
 
 export function commitNudge() {
-  if (!isInitialized()) return;          // DORMANT until /pm:init
+  if (!isInitialized()) { drainHookPayload(); return; }          // DORMANT until /pm:init
   // gh#175: DORMANT in a detached tree too, and suppressing the observation record alone would
   // have been worse than doing nothing: with no anchor ever recorded every invocation reads
   // `unverifiable` and falls through to unverifiableSubject() — the PRE-OBSERVATION text heuristic,
@@ -388,7 +390,7 @@ export function commitNudge() {
   // reinstated permanently in exactly the tree where noise is least wanted, and it reaches
   // reconcileArchived() and a state.json write on the way. Suppressing the RECORD requires
   // suppressing the REACTION.
-  if (isDetachedTree()) return;
+  if (isDetachedTree()) { drainHookPayload(); return; }
   const raw = readStdin();
   // After the drain, so a refused hook line does not leave the writer holding a pipe. In a detached
   // tree this verb is dormant (above) and so is this --platform VALUE refusal — but not the
