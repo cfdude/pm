@@ -47,6 +47,22 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    reason and the command that would enable it — do not enable anything yourself. If nothing in
    the delta is opt-in or relevant, say so briefly rather than silently skipping the review.
 
+   **Then review the opt-ins this repo has never adopted — the half the delta cannot cover.** The
+   delta only names what a release ADDED, so an opt-in skipped at an earlier release is invisible
+   to it forever. On every run, delta or none, the command also prints a line from the engine's own
+   registry (`scripts/lib/opt-ins.mjs`) reading this repo's `state.json`:
+
+   ```text
+   conductor: opt-ins — reviewMode: thorough · activityLog: on
+   conductor:   NOT SET: laneRouting (0 overrides) — suggest-lane and triage return null for every ask → set-lane-routing --add "<match>:<lane>"  e.g. --add "migration:openspec"
+   conductor:   NOT SET: advisory claim — no session owns any epic → claim <epic-id>
+   ```
+
+   Each `NOT SET` line names the command that adopts it. Judge each against this repo, as in the
+   delta review: recommend the ones that fit in one line with a reason, do not enable anything
+   yourself, and say so briefly when none fit (a repo with no issue tracker legitimately leaves
+   `tracker` unset). The engine only reads local state; it contacts nothing.
+
 3. **Tracker awareness (optional; only if not already set).** If `.conductor/state.json` has no
    `tracker` block AND there is a *real* signal that work is actively managed in an issue tracker
    (a connected/in-use tracker MCP, issue-key conventions, or an explicit note), *offer* it as a

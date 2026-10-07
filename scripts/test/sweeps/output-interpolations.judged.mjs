@@ -601,8 +601,13 @@ x("migrations.mjs", "upgrade", {
   "delta.map(s => s.body).join(\"\\n\\n\")": 1,
 }, "engine", "sections of the shipped CHANGELOG.md");
 x("migrations.mjs", "upgrade", {
-  "l": 1,
-}, "escaped", "openspecCurrencyLines() returns its lines escaped (Gate 2 T-S2)");
+  "l": 2,
+}, "escaped", "openspecCurrencyLines() returns its lines escaped (Gate 2 T-S2); optInLines() (gh#210) builds its lines from OPT_INS registry literals and state values it passes through escapeControls");
+x("opt-ins.mjs", "optInLines", {
+  "summary": 1,
+  "o.missing": 1,
+  "o.command": 1,
+}, "engine", "OPT_INS registry literals, and describe() output whose every state-derived value (reviewMode, tracker.system) goes through escapeControls inside the registry row; the override count is a number");
 x("migrations.mjs", "upgrade", {
   "u": 1,
 }, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
