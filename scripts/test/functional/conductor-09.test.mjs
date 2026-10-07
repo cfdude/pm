@@ -1254,8 +1254,10 @@ test("L5 5.9 a machine with no git-secrets still commits through all three hooks
   const cwd = hookedRepo();
   gsStage(cwd, "absent");
   const PATH = gsPathWithout();
-  assert.equal(spawnSync("sh", ["-c", "command -v git-secrets"], { env: { ...process.env, PATH } }).status, 1,
-    "fixture: the built PATH must resolve no git-secrets");
+  // Any non-zero status means "not found": bash and zsh exit 1, dash (Ubuntu's sh) exits 127.
+  const probe = spawnSync("sh", ["-c", "command -v git-secrets"], { env: { ...process.env, PATH }, encoding: "utf8" });
+  assert.ok(probe.status !== 0 && probe.stdout === "",
+    `fixture: the built PATH must resolve no git-secrets (status ${probe.status}, resolved ${JSON.stringify(probe.stdout)})`);
   const head = hkHead(cwd);
   const r = hookedGit(cwd, ["commit", "-m", "no scanner installed"], { env: { PATH } });
   assert.equal(r.status, 0, `the commit must be accepted: ${r.out}`);

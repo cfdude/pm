@@ -42,17 +42,24 @@ function stepAt(steps, what, pred) {
 
 const isGit = (sub) => (s) => s.op === "git" && s.args.includes(sub);
 
-unitTest("1.1 the plan copies the index, clones shared, sets HEAD and exports, in that order", () => {
+unitTest("1.1 the plan copies the index, clones shared, mirrors the source's refs, sets HEAD and exports, in that order", () => {
   const p = plan();
   const { steps } = p;
   const copy = stepAt(steps, "index copy", (s) => s.op === "copy" && s.from === INPUT.indexFile);
   const clone = stepAt(steps, "clone", isGit("clone"));
+  const refs = stepAt(steps, "ref mirror", isGit("fetch"));
   const head = stepAt(steps, "update-ref", isGit("update-ref"));
   const copyIn = stepAt(steps, "copy into the clone", (s) => s.op === "copy" && s.from === p.copy);
   const exportAt = stepAt(steps, "checkout-index", isGit("checkout-index"));
-  assert.deepEqual([copy, clone, head, copyIn, exportAt], [...[copy, clone, head, copyIn, exportAt]].sort((a, b) => a - b),
+  assert.deepEqual([copy, clone, refs, head, copyIn, exportAt], [...[copy, clone, refs, head, copyIn, exportAt]].sort((a, b) => a - b),
     "the steps are out of order: the index is copied FIRST, and the export runs LAST, over the copy");
-  assert.equal(steps.length, 5, `the plan has steps nobody asked for: ${JSON.stringify(steps)}`);
+  assert.equal(steps.length, 6, `the plan has steps nobody asked for: ${JSON.stringify(steps)}`);
+  // EVERY source ref, under a namespace of the clone's own: `alternates` lends the clone every object, so
+  // without the source's refs a commit reachable in the source reads as reachable from NO ref here
+  // (CI run 37552989369: a detached checkout with no local branch, 9.14 red in the run directory only).
+  assert.deepEqual(steps[refs].args,
+    ["-C", p.tree, "fetch", "-q", "--no-tags", "--no-write-fetch-head", INPUT.commonDir, "+refs/*:refs/certify-source/*"],
+    "the clone mirrors every ref of the common dir, so which ref reaches a commit answers as it does in the source");
   // THE MANIFEST LEFT THE PLAN AT 2.4 (Gate 1 round 4, T2): it is read through drift's ONE entry point,
   // `indexManifest(root, bucket, { indexFile: <the copy> })`, so no second parser of `ls-files -s`
   // exists here. `p.copy` is what the runner hands it.

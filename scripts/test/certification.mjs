@@ -541,6 +541,16 @@ export function bucketSubject(bucket, { root = REPO, readFile = readDefault, rea
  *  and touches no stash. HEAD is set explicitly, detached, because `clone` would otherwise take the
  *  common repository's default branch rather than this worktree's HEAD; an unborn HEAD sets none.
  *
+ *  WHY EVERY SOURCE REF IS MIRRORED INTO THE CLONE (`refs/certify-source/*`). `alternates` hands the
+ *  clone EVERY object the source holds, but `clone` brings across only the source's local branches (as
+ *  `origin/*`) and its tags. Where the source keeps its history on other refs — a CI checkout is a
+ *  detached HEAD with no local branch, its history on `refs/remotes/origin/*` — the clone holds commits
+ *  that NO ref of its own reaches: the "orphaned" shape `recorded-sha-the-repository-cannot-resolve`
+ *  reports, and one a real clone cannot produce. Measured: CI run 37552989369, where 9.14 passed in the
+ *  checkout and failed in this run directory on two attributed 0.51.0 commits. A local fetch of
+ *  objects the clone already borrows transfers nothing; it only makes the clone's ref graph the
+ *  source's, so a test that asks "which ref reaches this commit" answers here as it does in the source.
+ *
  *  A step is `{ op: "copy", from, to }` or `{ op: "git", args, env? }`, where `env` holds only what
  *  the step adds to the environment. The caller executes them in order. */
 export function indexRunPlan({ indexFile, commonDir, headSha, tmp }) {
@@ -552,6 +562,7 @@ export function indexRunPlan({ indexFile, commonDir, headSha, tmp }) {
     steps: [
       { op: "copy", from: indexFile, to: copy },
       { op: "git", args: ["clone", "--shared", "--no-checkout", "-q", commonDir, tree] },
+      { op: "git", args: ["-C", tree, "fetch", "-q", "--no-tags", "--no-write-fetch-head", commonDir, "+refs/*:refs/certify-source/*"] },
       ...(headSha ? [{ op: "git", args: ["-C", tree, "update-ref", "--no-deref", "HEAD", headSha] }] : []),
       { op: "copy", from: copy, to: path.join(tree, ".git", "index") },
       { op: "git", args: ["-C", tree, "checkout-index", "-a", "-f"] },
