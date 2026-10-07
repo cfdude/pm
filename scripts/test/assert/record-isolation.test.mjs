@@ -293,10 +293,13 @@ test("describeLeaks names the root and every path, and says what a false positiv
   const root = scratch("pm-record-isolation-describe-");
   fs.mkdirSync(path.join(root, ".conductor"));
   fs.writeFileSync(path.join(root, ".conductor", "state.json"), "{}");
+  // The start is derived from the file's own mtime, not Date.now(): the clock-shift preload moves
+  // Date.now() but not the filesystem, so a Date.now()-based start reads "before" under +400 days.
+  const startedMs = fs.statSync(path.join(root, ".conductor", "state.json")).mtimeMs - 60_000;
   const text = describeLeaks([{ root, leaks: [
     { path: ".conductor/state.json", change: "changed" },
     { path: ".conductor/gone.log", change: "removed" },
-  ] }], Date.now() - 60_000);
+  ] }], startedMs);
   assert.ok(text.includes(`${path.join(root, ".conductor", "state.json")} (changed; mtime `), text);
   assert.match(text, /s after this process started\)/, "the mtime is read against the process's start");
   assert.ok(text.includes(`${path.join(root, ".conductor", "gone.log")} (removed; no mtime`), text);

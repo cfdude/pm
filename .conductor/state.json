@@ -5515,7 +5515,7 @@
       "lane": "external",
       "links": [],
       "reconcileNeeded": false,
-      "description": "TruffleHog 3.96.0 (pinned in cfdude/.github security-trivy.yml, SHA-pinned from this repo's .github/workflows/security.yml) flags test_-prefixed pytest names as a verified Lob key; 3.97.0 corrects the detector. Worked around by renaming two test functions. Fix needs a bump to >=3.97.0 (+ new sha256) in cfdude/.github, then re-pin security.yml here. VERIFIED 2026-10-06: cfdude/.github main still installs 3.96.0, so it is NOT fixed yet (an earlier claim that it was fixed elsewhere was unverified and wrong). It is a SHARED workflow every consuming repo uses: announce it as an out-of-repo write; verify against the real string test_a_runner_without_stderr_still_works, not a synthetic one.",
+      "description": "TruffleHog 3.96.0 (pinned in cfdude/.github security-trivy.yml, SHA-pinned from this repo's .github/workflows/security.yml) flags test_-prefixed pytest names as a verified Lob key; 3.97.0 corrects the detector. Worked around by renaming two test functions. Fix needs a bump to >=3.97.0 (+ new sha256) in cfdude/.github, then re-pin security.yml here. VERIFIED 2026-10-06: cfdude/.github main still installs 3.96.0, so it is NOT fixed yet (an earlier claim that it was fixed elsewhere was unverified and wrong). It is a SHARED workflow every consuming repo uses: announce it as an out-of-repo write; verify against the real string the test named in the 0.39.0 rename (a long test_-prefixed function), not a synthetic one.",
       "externalId": "172",
       "externalUrl": "https://github.com/cfdude/pm/issues/172",
       "externalUpdatedAt": "2026-09-05T09:41:51Z",
@@ -5528,7 +5528,7 @@
           "text": "2026-10-06 Rob asked to consider this as a 0.52.0 bug fix. Lane kept; the build step is in cfdude/.github, then re-pin here."
         }
       ],
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-07T00:37:09.550Z",
       "release": "0.52.0"
     },
     {
@@ -12719,7 +12719,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1898,
+  "revision": 1899,
   "reviewMode": "standard",
   "releases": [
     {
