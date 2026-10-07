@@ -26,6 +26,7 @@ import { changeNamesClaimedByArtifacts } from "./source-artifacts.mjs";
 import { trackerKeyFlag, trackerKeyHolder } from "./tracker-dedup.mjs";
 import { CONTROL_CHARACTER, KNOWN_STATUSES, archiveDir, changesDir, asCode, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
 import { AGENT_OUTCOMES, DEFERRAL_PLACEHOLDER, setAsideDetail, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
+import { artifactStaleness } from "./gate-artifact-evidence.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, isEngineStamped, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -347,6 +348,32 @@ export const CHECKS = [
             : "recorded as delivered with a passing Gate 2 but attributed no commits — record " +
               `the range that shipped with: ${orNoRemedy(() => `\`update-epic ${printedId(e.id)} --attribute-commit <sha>\``)}` });
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "gate-1-verdict-stale",
+    title: "an epic whose Gate 1 (spec review) verdict reads stale — a reviewed artifact was amended after the review",
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        const entry = e.gateReview && e.gateReview.gate1;
+        if (!entry) continue;
+        // THE artifact predicate gateStaleness() itself answers a Gate 1 with (artifactStaleness over the entry's
+        // digests), never a second one. gateStaleness() is NOT asked directly: for an entry that also carries a
+        // commit range it goes on to compare that range with the attributed commits, which is a Gate 2 question
+        // (a Gate 1 recorded before implementation is expected not to reach later commits) and would report six
+        // archived epics on this repository's own record. Only "stale" is a finding: "unverifiable" (a legacy
+        // verdict with no digests, an unreadable artifact) is a different claim the marking already makes.
+        // REPORTED, never refused: Gate 1 gates code, and an amended spec is often the review's own fix.
+        const staleness = artifactStaleness(entry);
+        if (staleness.state !== "stale") continue;
+        const changed = staleness.changed;
+        out.push({ epic: e.id, detail:
+          "its Gate 1 verdict no longer covers what it reviewed" +
+          (changed.length ? `: ${changed.map(p => escapeControls(JSON.stringify(String(p)))).join(", ")} changed since the review` : "") +
+          `. If the change is substantive, re-review and re-record it: ${orNoRemedy(() => asCode(gateRemedy(e.id, 1)))}` });
       }
       return out;
     },

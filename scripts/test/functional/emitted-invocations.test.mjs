@@ -1128,6 +1128,21 @@ const INTEGRITY_BUILDERS = {
     produce: integrityProducer("gate-recorded-as-bookkeeping"),
     reported: blockHas(),
   },
+  // integrity-reports-stale-gate-1: a Gate 1 whose reviewed artifact was amended afterwards. The one printed
+  // remedy is the Gate 1 re-record, which refreshes the digests, so the finding clears.
+  "gate-1-verdict-stale": {
+    setup() {
+      const repo = remedyRepo();
+      repo.ok(["add-epic", "--id", "sg", "--lane", "openspec", "--title", "sg"]);
+      const art = repo.file("openspec/changes/sg/proposal.md", "# sg as reviewed\n");
+      repo.ok(["record-gate-review", "sg", "--gate", "1", "--verdict", "pass", "--artifact", art]);
+      repo.file("openspec/changes/sg/proposal.md", "# sg amended after the review\n");
+      return { repo, epicId: "sg", art };
+    },
+    produce: integrityProducer("gate-1-verdict-stale"),
+    reported: blockHas(),
+    meaning: (fx) => ({ artifact: fx.art }),
+  },
   "change-registered-under-two-lanes": {
     prints: "none",
     setup() {

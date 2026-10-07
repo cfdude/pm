@@ -115,7 +115,10 @@ holders and `update-epic <one> --clear external-url`), a change present BOTH liv
 instead of moving, cfdude/pm#215; the remedy is `git rm -r` of the live copy, and a live change that
 differs from its archived namesake is a re-proposal and is not reported), a FAILING gate verdict
 recorded after the epic's merge (`late-failing-gate-review`: an audit of merged work is a real review,
-not bookkeeping, and `gate-recorded-as-bookkeeping` no longer reports it), an archived epic recorded
+not bookkeeping, and `gate-recorded-as-bookkeeping` no longer reports it), an epic whose Gate 1
+verdict reads stale (`gate-1-verdict-stale`: a reviewed spec artifact was amended after the review —
+the artifact-digest staleness behind the gate table's `⚠ stale`, listing the changed files and `record-gate-review <id> --gate 1
+…` to re-record; reported, never refused), an archived epic recorded
 `delivered` that no longer meets what `delivered` requires
 (`archived-delivered-fails-delivered-obligation`: a Gate 2 flipped to fail after the archive, the heal
 re-archiving a changed epic, a stripped `carriedTo`, tasks that changed on disk; epics whose Gate 2 is
