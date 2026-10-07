@@ -712,6 +712,9 @@ x("subcommands.mjs", "sync", {
 x("update-epic.mjs", "updateEpic", {
   "undoneNote": 2,
 }, "passthrough", "the \"--status was NOT kept\" clause, composed just above from escapeControls(status) and literal text");
+x("update-epic.mjs", "updateEpic", {
+  "storyNote": 1,
+}, "passthrough", "the \"story n (1-indexed): title\" echo (gh#176), composed where the story is resolved from the integer-validated index and escapeControls(title)");
 x("subcommands.mjs", "sync", {
   "skipNote": 2,
 }, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");
@@ -761,7 +764,7 @@ x("update-epic.mjs", "updateEpic", {
   "r.key": 1,
   "contradictory.join(\", --clear \")": 1,
   "contradictory.join(\", --\")": 1,
-  "n": 2,
+  "n": 5,
   "colons": 1,
   "k": 1,
   "gate": 1,

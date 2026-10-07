@@ -285,6 +285,11 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--add-story "<title>"` | `stories` | **repeatable**; appends `{title, done: false}` |
 | `--story <n> --done` | `stories[n-1].done` | 1-indexed |
 | `--story <n> --wont-do "<reason>"` | `stories[n-1].disposition` | 1-indexed; the reason is REQUIRED |
+| `--story <n> --correct-disposition "<why it was wrong>"` | `stories[n-1].corrections[]` | 1-indexed; reopens a story whose `done` or wont-do was recorded against the wrong index, keeping the original. May carry `--done` or `--wont-do` to apply the right mutation in the same call |
+
+**`stories[]` in `state.json` is a 0-indexed array; `--story <n>` is 1-indexed.** Reading a position
+off the file and passing it unchanged lands one story early (gh#176). A successful `--story` write
+echoes the story it landed on, so an off-by-one is visible at once.
 
 `--description` and `--notes` are DISTINCT and neither substitutes for the other: a description
 says why the epic exists and what would make it worth revisiting; notes are a trail of what
@@ -659,7 +664,10 @@ update-epic deploy-pipeline --story 3 --wont-do "old worker was decommissioned b
 
 The reason is required — a terminal state with no recorded why reproduces the original problem
 one level down. A disposed story is refused a second disposition and cannot be ticked `--done`
-afterwards; a story already `--done` cannot be dropped.
+afterwards; a story already `--done` cannot be dropped. A disposition written against the wrong
+story is undone with `update-epic <id> --story <n> --correct-disposition "<why it was wrong>"`: the
+story reopens, and the prior `done` or disposition is kept under `stories[n-1].corrections[]` with
+the reason and a timestamp (append-only; a story with nothing recorded has nothing to correct).
 
 A disposed story leaves **both** sides of the progress ratio, exactly as a `<!-- pm:lifecycle -->`
 task does: `3/3 stories · 2 disposed`, never `5/5` (which would claim completion for work nobody
