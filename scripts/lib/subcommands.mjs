@@ -5,8 +5,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { currentArgv, errStream, gitOps, invocation, outStream, runtimeVersion } from "./invocation.mjs";
-import { supportFloorLine } from "./runtime-support.mjs";
+import { currentArgv, errStream, gitOps, invocation, outStream } from "./invocation.mjs";
+import { sessionStartContext } from "./session-cost-report.mjs";
 import { defaultState, drainHookPayload, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
@@ -201,13 +201,11 @@ export function brief() {
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
   // specSync: true — the SessionStart briefing carries the spec-sync block (handoff-demand-blind-spots
   // D6), from the same specSyncFindings() `integrity` reads.
-  const brief = buildBrief(loadState(), { consume: true, specSync: true });
-  // 0.49.0 (runtime-support) — ONE line, and only here: below the support floor, prepended at the top
-  // for the reason briefing.mjs gives its currency lines. NOT in buildBrief(), which PROJECT.md (a
-  // tracked file) and the PreCompact snapshot also embed — one machine's Node must never land in
-  // either. The version is the invocation's, never `process.version` read here.
-  const floorLine = supportFloorLine(runtimeVersion());
-  const context = floorLine ? [floorLine, brief].join("\n") : brief;
+  // The context is CAPPED (session-cost.mjs BRIEF_BYTE_CAP): over the cap it is cut with a visible
+  // marker, never silently. The 0.49.0 floor line is assembled inside sessionStartContext(), still only
+  // for this verb and never in buildBrief(), which PROJECT.md and the PreCompact snapshot also embed.
+  // PROJECT.md and brief.txt carry the uncapped text, so the cut loses nothing.
+  const context = sessionStartContext(loadState(), { consume: true, specSync: true }).text;
   outStream().write(jsonText({
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
   }));

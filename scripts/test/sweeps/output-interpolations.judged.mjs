@@ -881,3 +881,41 @@ x("execution-profile.mjs", "briefProfileLines", {
 x("rules.mjs", "profileScopeLines", {
   "l": 2,
 }, "engine", "lines from profileBlockLines()/laneOverrideLines(): resolved closed-list values and layer labels only, the `ignored:` notes (the one place a raw stored value appears) filtered out");
+
+// ── rules-block-session-cost: session-cost.mjs (pure) and its two printing call sites
+x("session-cost.mjs", "capBrief", {
+  "originalBytes": 1,
+  "cap": 1,
+}, "engine", "byte counts: the brief's measured size and the BRIEF_BYTE_CAP constant (or the caller's integer cap)");
+x("session-cost.mjs", "capBrief", {
+  "tail": 2,
+  "head": 1,
+  "head ? head + \"\\n\\n\" : \"\"": 1,
+  "marker": 1,
+}, "passthrough", "slices of the brief text, whose lines were swept at buildBrief's L.map(escapeControls) before they reached here; the marker is a literal with two integers");
+x("session-cost.mjs", "sessionCostLines", {
+  "file": 2,
+}, "engine", "the basename of the rules file the platform's own precedence chain resolves (CLAUDE.md, AGENTS.md, HERMES.md) — engine vocabulary; both call sites also join the lines through escapeControls");
+x("session-cost.mjs", "sessionCostLines", {
+  "block.bytes": 1,
+  "block.tokens": 1,
+  "brief.bytes": 2,
+  "brief.originalBytes": 1,
+  "estimateTokens(brief.bytes)": 2,
+  "cap": 2,
+}, "engine", "byte and token counts computed by session-cost.mjs");
+x("session-cost.mjs", "sectionTableLines", {
+  "String(s.bytes).padStart(7)": 1,
+  "pct": 1,
+  "measured.bytes": 1,
+  "measured.tokens": 1,
+}, "engine", "byte counts, a one-decimal percentage and a token estimate");
+x("session-cost.mjs", "sectionTableLines", {
+  "s.heading": 1,
+}, "passthrough", "a heading line of the generated rules block, which rulesBlock() already joined through lines.map(escapeControls) (a tracker repo can appear in one)");
+x("conductor.mjs", "runInvocation", {
+  "sectionTableLines(measureRulesBlock(block)).join(\"\\n\")": 1,
+}, "passthrough", "`rules --sections`: the table's headings come from the block rulesBlock() already swept, the rest are counts");
+x("render.mjs", "renderVerb", {
+  "sessionCostReport(state, resolvePlatform({}, state)).map(escapeControls).join(\"\\n\")": 1,
+}, "escaped", "the two cost lines, each through escapeControls before the join");
