@@ -438,7 +438,7 @@ export function commitNudge() {
       // commit that does not name the active epic reads each commit's own subject.
       const attribution = attributionNudge(state, ctx,
         commits.map(c => ({ sha: c.sha, subject: c.subject, files: changedFiles(c.sha) })));
-      runNudge(state, ctx, commits, attribution, event, dead, amendNote);
+      runNudge(state, ctx, commits, attribution, event, dead, amendNote, obs.remaining || 0);
     } else {
       const subject = unverifiableSubject(cmd);
       // null: the unverifiable rung, and the old heuristic said no.
@@ -486,7 +486,7 @@ function supersedeAmended(state, candidates) {
     const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
     const open = rows.filter(r => COMMIT_DERIVED_KINDS.has(r.kind) && rowMatches(r.sha, replaced) &&
       !retracted.some(x => rowShasOverlap(x, r.sha)));
-    const retractedNow = open.length > 0 && appendRetraction(open[0].sha, open[0].epic, reason);
+    const retractedNow = open.length > 0 && appendRetraction(open[0].sha, open.map(r => r.epic), reason);
 
     const commands = [];
     const refused = [];
@@ -722,7 +722,7 @@ function unverifiableSubject(cmd) {
 /** Log the commit, self-heal an archived active pointer, re-render, and emit the advisory.
  *  Reached only once a commit is believed to have landed — by observation, or by the fallback
  *  heuristic above. */
-function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse", dead = [], amendNote = "") {
+function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse", dead = [], amendNote = "", more = 0) {
   // DETERMINISTIC: if we are inside a detour, record each commit in the trail. Each commit is
   // judged on ITS OWN subject and changed paths, and its row carries its own sha; `sha: null` is
   // the unverifiable rung, which knows no commit and keeps HEAD's reading.
@@ -830,7 +830,10 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
     : `${detected}. If this was a MINIMAL detour, run \`/pm:detour --minimal "<what>"\` ` +
       "to record it. Otherwise record an epic's status or story change with `update-epic` " +
       "(`--status`, `--story <n> --done`).")
-    + (commits.length && deadSentence ? `\n\n${deadSentence}` : "");
+    + (commits.length && deadSentence ? `\n\n${deadSentence}` : "")
+    // Past the walk cap the surplus is NOT dropped: the anchor stopped at the last commit named above.
+    + (more > 0 ? `\n\n${more} further commit${more === 1 ? "" : "s"} landed since the last observation and ` +
+      "will be reported on the next hook run." : "");
   // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
   // above are about the DETOUR record and are decided by different inputs, so splicing the two
   // obligations into one sentence would make each harder to act on than either alone.
@@ -1233,12 +1236,21 @@ export function retractDetour() {
     refuse(`'${escapeControls(sha)}' is already retracted — the row stays in the log and is already hidden from PROJECT.md`);
   }
   if (!full && !derived.some(r => r.sha === label)) label = derived[0].sha;
-  if (!appendRetraction(label, derived[0].epic, reason)) {
+  if (!appendRetraction(label, derived.map(r => r.epic), reason)) {
     die("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
   }
   render();
+  // Two stored shas where one begins with the other, for a commit that resolves to nothing, cannot be
+  // told apart from the text: one commit abbreviated at two lengths, or two commits sharing a prefix.
+  // The one RETRACTED row hides both, which is the accepted cost (Decision 11) — said, not silent.
+  const shas = [...new Set(derived.map(r => r.sha))];
+  const together = full ? [] : shas.filter(s => s !== label);
   errStream().write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
-    "kept in .conductor/detours.log, hidden from PROJECT.md\n");
+    "kept in .conductor/detours.log, hidden from PROJECT.md\n" +
+    (together.length
+      ? `conductor: note — rows with sha ${together.map(escapeControls).join(", ")} were retracted together with ${label}: ` +
+        "the commits no longer exist, so the log text cannot say whether they are one commit or two.\n"
+      : ""));
 }
 
 // PER CALL, NOT AT MODULE LOAD. This was `const HONCHO_MEMORIES_LOG = path.join(conductorDir(),

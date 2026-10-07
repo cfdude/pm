@@ -569,8 +569,11 @@ x("subcommands.mjs", "ownArtifacts", {
 }, "not-output", "an artifact path compared against changed files");
 x("subcommands.mjs", "retractDetour", {
   "commits.join(\", \")": 1,
-  "label": 2,
+  "label": 3,
 }, "engine", "detours.log row shas, filtered to hexadecimal by rowShasOverlap(), or git's short sha");
+x("subcommands.mjs", "runNudge", {
+  "more": 1,
+}, "engine", "an integer: the count of unreported commits past the walk cap, from commit-watch.mjs's counter");
 x("subcommands.mjs", "retractDetour", {
   "msg": 1,
 }, "passthrough", "refuse(): every caller escapes the values it quotes");

@@ -136,9 +136,13 @@ export function visibleDetourRows(rows = readDetourRows()) {
  *  detached tree like the row it retracts (gh#175); returns whether it was written. */
 export function appendRetraction(sha, epic, reason) {
   if (isDetachedTree()) return false;
+  // `epic` is one id or the ids of EVERY row the retraction covers: a commit can hold rows under two
+  // epics (a detour's DETOUR-COMMIT and the paused parent's AUTO-DETOUR), and naming only the first
+  // understated what was retracted. Distinct, in the order met, comma-joined.
+  const epics = [...new Set([].concat(epic === undefined ? [] : epic).map(e => escapeControls(e || "-")))];
   // One line per row whatever the values hold: whitespace collapses, then every remaining control
   // character (NEL, a legacy epic id's newline) is escaped (user-text-never-forges-output 8.1).
-  const line = [new Date().toISOString(), sha, "RETRACTED", escapeControls(epic || "-"), escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
+  const line = [new Date().toISOString(), sha, "RETRACTED", epics.join(",") || "-", escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
   // THE APPEND IS THE STORE'S (0.48.0 task 1.4). The mkdir that preceded it is gone with the move:
   // the interface's append creates what it needs, so a caller can no longer be the one that forgot.
   storeOps().append(ARTIFACT.DETOURS_LOG, line + "\n");

@@ -81,6 +81,31 @@ unitTest("4.4 help, undeclared flags and an unanswerable tree write nothing", ()
   assert.equal(detourLog(engine), "");
 });
 
+unitTest("8.2 the anchor of a reflog whose last line is still being written is its last COMPLETE line", async () => {
+  const { anchorOf, locateAnchor } = await import("../../lib/commit-watch.mjs");
+  const L1 = Buffer.from("a".repeat(40) + " " + "b".repeat(40) + " T <t@e.x> 1 +0000\tcommit: one\n");
+  const partial = Buffer.from("b".repeat(40) + " " + "c".repeat(40) + " T <t@e.x> 2 +0000\tcom");
+  const anchor = anchorOf(Buffer.concat([L1, partial]));
+  assert.equal(anchor.size, L1.length, "the partial tail is outside the anchored size");
+  assert.equal(Buffer.from(anchor.lineBase64, "base64").toString("utf8"), L1.toString("utf8").trimEnd());
+  // The writer finishes the line: the anchor is still found, and what follows it is the new entry.
+  const done = Buffer.concat([L1, partial, Buffer.from("mit: two\n")]);
+  assert.equal(locateAnchor(done, anchor), L1.length);
+  // Nothing but a partial line: the anchor is the start of the file, not that line.
+  assert.deepEqual(anchorOf(partial), { size: 0, lineBase64: "" });
+});
+
+unitTest("8.4 one retraction names every epic whose rows it covers, once each", () => {
+  const engine = memoryEngine(emptyRecord());
+  const sha = "abcdef0123456789abcdef0123456789abcdef01";
+  const row = (epic, kind) => ["2026-09-01T00:00:00.000Z", sha.slice(0, 7), kind, epic, "n"].join("\t") + "\n";
+  engine.store.append("detours.log", row("epic-a", "AUTO-DETOUR") + row("epic-z", "DETOUR-COMMIT") + row("epic-a", "DETOUR-COMMIT"));
+  engine(["retract-detour", sha, "--reason", "wrong"]);
+  const last = detourLog(engine).trim().split("\n").at(-1).split("\t");
+  assert.equal(last[2], "RETRACTED");
+  assert.equal(last[3], "epic-a,epic-z");
+});
+
 unitTest("6.1 a commit touching the active epic's change directory is not an AUTO-DETOUR", () => {
   const engine = memoryEngine({ version: 1, active: "feat-x", detourStack: [], epics: [
     { id: "feat-x", title: "feat-x", priority: "P1", status: "in-progress", role: "epic",

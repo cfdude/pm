@@ -970,3 +970,75 @@ test("7.3 REGRESSION GUARD: one active epic prints one command; an epic with no 
     assert.deepEqual(attributionCommands(o.context), [], "nor does the archive move");
   }
 });
+
+// ─────────────── 8. commit-observation-gate2-minors (0.45.0 Gate 2, deferred) ───────────────
+
+test("8.1 more commits than the walk cap: the first run names the cap, says how many remain, and the next run reports them", async () => {
+  const { OBSERVE_WALK_CAP } = await import("../../lib/commit-watch.mjs");
+  const repo = observationRepo();
+  repo.observe();
+  const total = OBSERVE_WALK_CAP + 7;
+  const shas = [];
+  for (let i = 0; i < total; i++) shas.push(repo.commit({ [`src/cap-${i}.txt`]: "1" }, `feat: cap ${i}`));
+  const first = repo.observe("PostToolUse", "git commit");
+  assert.equal(first.status, 0, first.stderr);
+  const named = (ctx) => shas.filter((s) => ctx.includes(short(repo, s)));
+  assert.equal(named(first.context).length, OBSERVE_WALK_CAP, "exactly the cap, oldest first");
+  assert.ok(named(first.context).every((s, i) => s === shas[i]), "the OLDEST are the ones reported");
+  assert.match(first.context, /7 further commits landed since the last observation and will be reported on the next hook run/);
+  const second = repo.observe("PostToolUse", "ls");
+  assert.deepEqual(named(second.context), shas.slice(OBSERVE_WALK_CAP), "the surplus is reported next run, none twice");
+  assert.doesNotMatch(second.context, /further commit/);
+  assert.equal(repo.observe("PostToolUse", "ls").context, "", "and then nothing is left");
+});
+
+test("8.2 a partial last reflog line is never the anchor: finishing the line later loses nothing", () => {
+  const repo = observationRepo();
+  const reflog = path.join(repo.gitRoot, ".git", "logs", "HEAD");
+  repo.observe();
+  // A writer caught mid-append: the next line's first bytes are on disk, its newline is not.
+  const partial = "0".repeat(40) + " " + "1".repeat(40) + " T <t@e.x> 1 +0000\tcom";
+  fs.appendFileSync(reflog, partial);
+  assert.equal(repo.observe("PostToolUse", "ls").status, 0);
+  const anchored = Buffer.from(readRecord(repo.cwd).anchor.lineBase64, "base64").toString("utf8");
+  assert.ok(!anchored.endsWith("\tcom"), `the anchor is a COMPLETE line, not ${JSON.stringify(anchored)}`);
+  // The writer finishes (git itself wrote the real line; ours is replaced by a real commit).
+  fs.writeFileSync(reflog, fs.readFileSync(reflog).subarray(0, fs.readFileSync(reflog).length - partial.length));
+  const sha = repo.commit({ "src/after-partial.txt": "1" }, "feat: after the partial line");
+  const o = repo.observe("PostToolUse", "git commit");
+  assert.ok(o.context.includes(short(repo, sha)), `reported on the observed rung: ${JSON.stringify(o.stdout)}`);
+});
+
+test("8.3 a detached tree: finish() writes no observation record, and leaves none behind", async () => {
+  const { beginObservation } = await import("../../lib/commit-watch.mjs");
+  const repo = observationRepo();
+  repo.git("checkout", "-q", "--detach");
+  const obs = beginObservation({ root: repo.cwd });
+  assert.notEqual(obs.verdict, "skipped");
+  obs.finish(["a".repeat(40)]);
+  assert.equal(fs.existsSync(OBSERVE_RECORD(repo.cwd)), false, "no record in a tree nobody is working in");
+  assert.equal(fs.existsSync(OBSERVE_RECORD(repo.cwd) + ".lock"), false, "and the lock was released");
+});
+
+test("8.4 a retraction row names EVERY epic whose rows it covers", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = autoLogged(repo, "src/two-epics.txt", "chore: seen by two epics");
+  const row = rowsFor(repo, sha)[0].split("\t");
+  fs.appendFileSync(logPath(repo), ["2026-09-01T00:00:00.000Z", row[1], "DETOUR-COMMIT", "epic-z", "same commit, other epic"].join("\t") + "\n");
+  const r = engineRun(repo.cwd, ["retract-detour", sha, "--reason", "wrong twice"]);
+  assert.equal(r.status, 0, r.stderr);
+  const last = logRows(repo).at(-1);
+  assert.equal(last[2], "RETRACTED");
+  assert.equal(last[3], "epic-a,epic-z", "both epics, in the order met");
+});
+
+test("8.5 pruned rows whose shas are prefixes of each other retract together, and the retraction says so", () => {
+  const repo = observationRepo();
+  const base = "abcdef0123456789abcdef0123456789abcdef01";
+  writeRows(repo, [[base.slice(0, 7), "AUTO-DETOUR", "epic-a", "short"], [base.slice(0, 9), "AUTO-DETOUR", "epic-a", "longer"]]);
+  const r = engineRun(repo.cwd, ["retract-detour", base.slice(0, 9), "--reason", "pruned"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, new RegExp(`rows with sha ${base.slice(0, 7)} were retracted together with ${base.slice(0, 9)}`));
+  assert.deepEqual(detourTableRows(repo), [], "both are hidden");
+});
