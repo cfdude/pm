@@ -52,7 +52,10 @@ The proposal (`proposal.md`, "Why") covers the motivation. This section covers o
   - `unit/spend-attribution.test.mjs:64-71` uses `plan` as the role that "is not a job role
     today". The sibling spec's scenario at
     `token-spend-tracking-per-epic/specs/spend-ledger/spec.md:396-399` does the same.
-  - `assert/execution-profile-emission.test.mjs:46-51` pins the old `/pm:init` wording.
+  - `unit/execution-profile-resolver.test.mjs:67` asserts the per-role default is `{value: null}`.
+  - `unit/set-profile.test.mjs:164` asserts `model implement: no directive (default)`.
+  - `assert/execution-profile-emission.test.mjs:46-51` pins the old `/pm:init` wording. That one
+    only turns red when `commands/init.md` changes (task 3.1), not at this commit.
 
   So the constant change, the resolver default, the rules lines, the fixture regeneration and those
   test amendments must land in ONE commit. Any split leaves an intermediate commit red, and the

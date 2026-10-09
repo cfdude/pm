@@ -128,7 +128,9 @@ before staging.
       - Verify: `git show --stat <sha>` lists:
         - both fixtures;
         - `constants.mjs`, `execution-profile.mjs` and `rules.mjs`;
-        - the amended tests;
+        - the amended tests, including `unit/execution-profile-resolver.test.mjs` and
+          `unit/set-profile.test.mjs` (both assert the old no-directive default and go red at
+          this commit);
         - the sibling spec.
 
 ## 2. Defaults are never stored
