@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, expectFail, writeState } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, expectFail, writeState, invokeEngine } from "../fixtures/assert-harness.mjs";
 
 const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
@@ -103,4 +103,36 @@ test("G2-M1 `on` over an unparseable enabledAt stamps a fresh one without needin
   writeState(cwd, s);
   run(["set-spend-tracking", "on"], { cwd });
   assert.ok(Number.isFinite(Date.parse(JSON.parse(stateBytes(cwd)).spendTracking.enabledAt)));
+});
+
+/** Make `.conductor/spend` a FILE, so no timeline entry can be appended under it. */
+function blockTimeline(cwd) {
+  const spend = path.join(cwd, ".conductor", "spend");
+  fs.rmSync(spend, { recursive: true, force: true });
+  fs.writeFileSync(spend, "in the way");
+}
+
+test("G2-M2 a lost `off` timeline entry is a visible warning that names the consequence, and the switch still flips", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-spend-tracking", "on"], { cwd });
+  blockTimeline(cwd);
+  const r = invokeEngine(["set-spend-tracking", "off"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, /WARNING — spend tracking is now off, but its timeline entry could not be written/);
+  assert.match(r.stderr, /credited to the epic that was active/);
+  assert.equal(JSON.parse(stateBytes(cwd)).spendTracking.enabled, false);
+});
+
+test("G2-M2 a lost `on` timeline entry warns too, and a written one stays silent", () => {
+  const quiet = tmpRepo();
+  run(["init"], { cwd: quiet });
+  const ok = invokeEngine(["set-spend-tracking", "on"], { cwd: quiet });
+  assert.doesNotMatch(ok.stderr, /WARNING/);
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  blockTimeline(cwd);
+  const r = invokeEngine(["set-spend-tracking", "on"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, /WARNING — spend tracking is now on, but its timeline entry could not be written/);
 });

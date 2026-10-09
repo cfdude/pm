@@ -25,6 +25,7 @@ import { ARTIFACT, storeOps } from "./store.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { die } from "./command-exit.mjs";
+import { errStream } from "./invocation.mjs";
 import { escapeControls } from "./constants.mjs";
 import { writeRules } from "./rules.mjs";
 import { resolvePlatform } from "./platform.mjs";
@@ -38,10 +39,22 @@ export const TIMELINE = `${ARTIFACT.SPEND_PREFIX}timeline.jsonl`;
 // because every spend caller reaches for this module.
 export { spendEnabled };
 
-/** Append one timeline entry. Never throws: observability must not break the run it observes. */
+/** Append one timeline entry. Never throws: observability must not break the run it observes. Returns
+ *  whether the entry was written, so the one caller that cannot afford to lose it can say so. */
 export function appendTimeline(entry) {
-  try { storeOps().append(TIMELINE, JSON.stringify(entry) + "\n"); } catch { /* never fail the observed run */ }
+  try { storeOps().append(TIMELINE, JSON.stringify(entry) + "\n"); return true; } catch { return false; /* never fail the observed run */ }
 }
+
+// A lost `off` entry is the dangerous one: the timeline then has no off interval, so the ledger credits
+// the off period's spend to whichever epic was active. A lost `on` entry only leaves the window open
+// late. Both are said out loud, on stderr, with the consequence.
+const TIMELINE_LOST = {
+  off: "conductor: WARNING — spend tracking is now off, but its timeline entry could not be written (.conductor/spend/timeline.jsonl). " +
+    "Until this is fixed, spend made while tracking is off may be credited to the epic that was active. " +
+    "Check that .conductor/spend/ is writable, then run set-spend-tracking on and off again.\n",
+  on: "conductor: WARNING — spend tracking is now on, but its timeline entry could not be written (.conductor/spend/timeline.jsonl). " +
+    "Orchestrator spend before the next set-active may read as before-timeline. Check that .conductor/spend/ is writable.\n",
+};
 
 /** The dispatch tail's one call (conductor.mjs). `beforeActive` is `state.active` at entry; `after` is
  *  the record at exit. Appends `{at, active}` when the pointer moved while tracking is on — from the
@@ -93,9 +106,10 @@ export function setSpendTracking() {
   const saved = saveState(state);
   if (!saved.unchanged) {
     // ONLY on a real change: a repeat writes nothing, to the record or to the timeline.
-    appendTimeline(arg === "on"
+    const wrote = appendTimeline(arg === "on"
       ? { at: new Date().toISOString(), tracking: "on", active: state.active || null }
       : { at: new Date().toISOString(), tracking: "off" });
+    if (!wrote) errStream().write(TIMELINE_LOST[arg]);
   }
   // Refresh CLAUDE.md so the agent sees the dispatch-marker instruction while tracking is on, and stops
   // seeing it the moment it is off. After the save, so the block is rendered from the NEW state.
