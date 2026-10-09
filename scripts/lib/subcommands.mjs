@@ -98,6 +98,11 @@ export const ENGINE_IGNORED = Object.freeze([
   // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
   // engine-written, per-checkout, and useless to anyone but this working tree.
   ".conductor/activity/",
+  // #106 + token-spend-tracking-per-epic: the spend ledger (rows, cursor, markers, timeline, lock).
+  // Derived from Claude Code's own transcripts, machine-local and large, so it must never be
+  // committed. The directory, not a file list, for the activity log's reason: it is written in the
+  // MAIN working tree and its contents are the engine's to name.
+  ".conductor/spend/",
 ]);
 
 /** Append every ENGINE_IGNORED entry the repository's .gitignore lacks. Never removes a line. */

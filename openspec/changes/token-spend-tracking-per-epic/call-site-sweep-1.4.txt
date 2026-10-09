@@ -1,0 +1,108 @@
+CALL-SITE COMPLETENESS SWEEP — token-spend-tracking-per-epic (task 1.4 / required item 1)
+Derived mechanically on 2026-10-09 from the worktree at the base f04d572e plus this change:
+
+  rg -n "OPT_INS|ENGINE_IGNORED|KNOWN_JOB_ROLES|KNOWN_MODELS|state\.active\b|activityEnabled|conductorDir|detachedNoOp|rulesBlock\(|FLAGLESS_VERBS" scripts commands skills
+  rg -n "fs\.(writeFileSync|appendFileSync|mkdirSync|rmSync|renameSync|unlinkSync)" scripts/lib   (every raw write site)
+  rg -l "KNOWN_JOB_ROLES" scripts commands skills
+
+== 1. Callers of what this change introduces or modifies ==
+
+OPT_INS (scripts/lib/opt-ins.mjs)
+  - readers: optInLines() only (rg shows no other consumer). The new `spendTracking` row is appended
+    LAST so a concurrent edit to the registry merges as a pure addition. The registry test
+    (scripts/test/assert/opt-ins.test.mjs) asserts the row's verb is dispatched and
+    commands/spend.md exists; scripts/test/unit/opt-ins.test.mjs's "everything adopted" fixture was
+    extended with spendTracking.  HOLDS. No omission.
+
+ENGINE_IGNORED (scripts/lib/subcommands.mjs)
+  - readers: ensureGitignore() (init + upgrade both call it), trackedEngineIgnored() (upgrade warns
+    when the index still tracks an entry), coversPath(). The new `.conductor/spend/` entry is a
+    directory entry, which coversPath() already handles (entry.endsWith("/")). HOLDS at all three.
+  - this repository's own .gitignore carries the line (the dogfood tree would otherwise show the
+    ledger as untracked).
+
+FLAGLESS_VERBS / VERB_POSITIONALS / VERB_FLAGS (scripts/lib/constants.mjs) and USAGE (conductor.mjs)
+  - consumers: argv-surface.mjs (pre-dispatch check), help.mjs (verb help), conductor-25/31,
+    verb-registration.test.mjs (names every missing row). `set-spend-tracking` is in FLAGLESS_VERBS
+    with a VERB_POSITIONALS row; `spend` (group 4) is in VERB_FLAGS with a P0 row. Both are in USAGE,
+    VERB_EFFECTS and the functional DISPATCH_BASELINE. HOLDS.
+
+KNOWN_JOB_ROLES — readers: scripts/lib/execution-profile.mjs (model-per-role resolution) and
+  constants.mjs (the declaration). The ledger adds NO second role list: a marker's `role` is validated
+  against KNOWN_JOB_ROLES at READ time (spend-attribution.mjs takes the list as a parameter whose
+  default is the constant), so a role added to the list is accepted without a ledger change.
+
+KNOWN_MODELS — readers: execution-profile.mjs. The ledger's tier mapping (spend-reader.mjs) reads the
+  same constant: the first KNOWN_MODELS token contained in the model id, else `other`.
+
+KNOWN_SPEND_PHASES — one declaration (constants.mjs); readers are spend-attribution.mjs (validation)
+  and rules.mjs (the marker instruction renders the list). No second list.
+
+rulesBlock( — callers: rules.mjs writeRules() and conductor.mjs `rules`. Both now pass the spend flag
+  from state; a caller that passes nothing gets the OFF rendering (no section, no bytes).  HOLDS.
+
+detachedNoOp (verb-effects.mjs) — read by conductor.mjs's detached-tree warning gate. The ledger's
+  verbs are NOT detachedNoOp: `set-spend-tracking` writes state.json (a tracked record write the
+  warning exists to announce); `spend` writes only under the main tree's .conductor/spend/, which is
+  suppressed in a detached MAIN tree and says so in its own output, so a generic "discarded write"
+  warning would be false for it.  JUSTIFIED OMISSION.
+
+activityEnabled — one caller, conductor.mjs's dispatch snapshot. The snapshot gate widens to
+  `activityEnabled || spendEnabled`; the activity diff itself stays gated on activityEnabled so a
+  repo with spend on and activity off writes no activity event.  HOLDS.
+
+conductorDir / the `.conductor/` write sites — see section 3.
+
+== 2. Writers of state.active (the timeline's trigger) ==
+
+  scripts/lib/active-pointer.mjs:50   setActive          scripts/lib/active-pointer.mjs:130  clearActive
+  scripts/lib/update-epic.mjs:1164    archive clears the pointer
+  scripts/lib/epic-progress.mjs:249   self-heal on a finished active epic (hook path: commit-nudge)
+  scripts/lib/links.mjs:370           remove-epic clears a dangling pointer
+  scripts/lib/detour-stack.mjs:251    push/pop (previousActive)    scripts/lib/add-epic.mjs:505, add-many.mjs:251  (first epic becomes active)
+
+  Every one runs INSIDE one main() dispatch, hooks included (the hook verbs are dispatched verbs).
+  The timeline is appended at the dispatch chokepoint by comparing state.active before and after
+  the whole invocation, so none of the six is instrumented by hand and a seventh writer added later
+  is covered with no edit.  HOLDS at every site, by construction.
+
+== 3. Every .conductor/ write site vs the conductor-record detached-HEAD table ==
+
+  Raw writes outside store.mjs (rg above): subcommands.mjs (.gitignore), rules.mjs (CLAUDE.md),
+  commit-watch.mjs (commit-observe.json + lock), activity-log.mjs (pruneToCap). All four were already
+  in the table or the store-ownership allowlist. NEW this change, all classified in the
+  conductor-record MODIFIED delta (two rows) and in the store-ownership allowlist:
+    spend/timeline.jsonl   — written through the STORE (ARTIFACT spend/ prefix), only from the main tree,
+                             suppressed when the main tree's HEAD is detached.
+    spend/rows.jsonl, cursor.json, markers.json, ingest.lock — raw fs in spend-ledger.mjs (an O_EXCL
+                             lock and byte-offset reads are filesystem primitives; the directory belongs to the MAIN
+                             tree, not the invocation root the store resolves under); suppressed when the main
+                             tree's HEAD is detached.
+  No other .conductor/ path is written by this change.
+
+== 4. Data references ==
+
+  A marker's `epic` holds an epic id.
+    written : ingest, into markers.json (raw token, whether valid or not)
+    read    : read-time attribution (spend-attribution.mjs attribute())
+    removed : `spend --clear --yes` removes markers.json. remove-epic does NOT strip it, and needs no
+              path: attribution is computed at READ time, so rows of a removed epic report as reason
+              `unknown-epic` and rows.jsonl is never rewritten (pinned by the unit test "A row whose epic
+              was removed reports as unknown").
+  The timeline's `active` holds an epic id with the same lifecycle: read-time only; a removed epic reads
+  as `unknown-epic`. `--clear --timeline --yes` is the only deletion and says what it forgets.
+
+== 5. Inverses (design D8) ==
+
+  set-spend-tracking on        -> set-spend-tracking off                     SHIPPED (off deletes nothing, appends a tracking:off entry)
+  ingest (rows, markers, cursor)-> spend --clear --yes                       SHIPPED (plan printed without --yes)
+  rows lost / corrupt           -> spend --rebuild --yes                     SHIPPED (keeps rows whose source is gone; refused while off)
+  timeline append               -> spend --clear --timeline --yes            SHIPPED (never implicit; says what it forgets)
+  rules-block section           -> set-spend-tracking off re-renders without it  SHIPPED
+  ENGINE_IGNORED line           -> NONE SHIPPED. Justified: ensureGitignore() never removes a line (its
+                                   own contract), a stray ignore line is harmless, and the activity log's
+                                   `.conductor/activity/` entry made the same decision.
+  record-spend (platform-neutral fallback) -> NOT SHIPPED (design D9): no ported platform needs it, and
+                                   the rule that stops a manual figure double-counting adapter rows is only
+                                   testable against a real second platform. Recorded as a declined deferral
+                                   at archive (task 10.2). With no write, there is no inverse owed.

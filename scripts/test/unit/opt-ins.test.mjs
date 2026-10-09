@@ -24,7 +24,7 @@ unitTest("gh#210: laneRouting with zero overrides reads as NOT SET and says what
 
 unitTest("gh#210: adopted opt-ins move to the summary line and out of the NOT SET list", () => {
   const state = {
-    reviewMode: "thorough", activityLog: { enabled: true },
+    reviewMode: "thorough", activityLog: { enabled: true }, spendTracking: { enabled: true },
     tracker: { system: "github-issues" },
     laneRouting: { overrides: [{ match: "migration", lane: "openspec" }] },
     epics: [],

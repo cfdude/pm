@@ -953,13 +953,13 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend"], valueless: true },
   // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
   // filters a log. What they agree on — that a value is required — is all the row carries.
-  { flag: "since", commands: ["activity"], requires: "an ISO-8601 timestamp" },
-  { flag: "epic", commands: ["activity"], requires: "an epic id" },
+  { flag: "since", commands: ["activity", "spend"], requires: "an ISO-8601 timestamp" },
+  { flag: "epic", commands: ["activity", "spend"], requires: "an epic id" },
   // purge-logs. Its own `--keep`/`--over`/`--older-than` checks stay and run AFTER this rule,
   // on the precedent `triage --limit` set: neither is subsumed, because a value that is present
   // and unparseable is a different mistake from a value that is absent.
@@ -968,7 +968,16 @@ export const VERB_FLAGS = [
   { flag: "over", commands: ["purge-logs"], requires: "a size like 500K, 10M or 1G" },
   { flag: "older-than", commands: ["purge-logs"], requires: "a non-negative number of days" },
   { flag: "dry-run", commands: ["purge-logs"], valueless: true },
-  { flag: "yes", commands: ["purge-logs"], valueless: true },
+  { flag: "yes", commands: ["purge-logs", "spend"], valueless: true },
+  // token-spend-tracking-per-epic's `spend`. `--json`, `--since`, `--epic` and `--yes` are the rows
+  // above (same meaning on each verb); these five are its own. `--until` is the half-open upper bound
+  // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
+  // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
+  { flag: "until", commands: ["spend"], requires: "an ISO-8601 timestamp" },
+  { flag: "no-ingest", commands: ["spend"], valueless: true },
+  { flag: "clear", commands: ["spend"], valueless: true },
+  { flag: "rebuild", commands: ["spend"], valueless: true },
+  { flag: "timeline", commands: ["spend"], valueless: true },
   // THE argv-level row (see the header above). On a mutating verb whose writes never reach the
   // guarded state write (`honcho-memory`, `purge-logs`) it is accepted and does nothing — the one
   // accepted-but-unread flag, stated rather than hidden: the alternative is a second, undeclared list
@@ -1035,7 +1044,7 @@ export const VERB_POSITIONALS = {
   init: P0, render: P0, brief: P0, snapshot: P0, "commit-nudge": P0, sync: P0,
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
   "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
-  activity: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
+  activity: P0, spend: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
   integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
@@ -1048,6 +1057,7 @@ export const VERB_POSITIONALS = {
   "retract-detour": { min: 1, max: 1, form: "<sha>", idFirst: false, freeText: false },
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
@@ -1073,6 +1083,8 @@ export const FLAGLESS_VERBS = [
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
   "set-activity-log",
+  // token-spend-tracking-per-epic's switch: the POSITIONAL `on|off`, same shape as the toggle above.
+  "set-spend-tracking",
   // The registration-date recovery takes no arguments at all: it sweeps every epic that has
   // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
   "recover-created-at",
@@ -1486,6 +1498,10 @@ export const KNOWN_MODELS = ["fable", "opus", "sonnet", "haiku"];
 export const KNOWN_EFFORTS = ["low", "medium", "high", "xhigh", "max", "ultracode"];
 export const MODELS_WITHOUT_EFFORT = ["haiku"];
 export const KNOWN_JOB_ROLES = ["implement", "test", "review"];
+/** The spend ledger's PHASE vocabulary (token-spend-tracking-per-epic), declared once. It is a separate
+ *  closed list from KNOWN_JOB_ROLES on purpose: a role says what an agent IS (it picks a model), a phase
+ *  says where in an epic's life the tokens went. A "gate retry" is `phase=review` with `round>1`. */
+export const KNOWN_SPEND_PHASES = ["plan", "build", "review", "docs", "release"];
 export const KNOWN_VERBOSITY_LEVELS = ["quiet", "verbose"];
 export const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 export const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);

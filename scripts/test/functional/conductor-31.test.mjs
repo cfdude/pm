@@ -86,6 +86,7 @@ const VERB_BASELINE = {
   // until the branches met; `purge-logs` needs a selector to get past its own refusal, and
   // `--keep 5` matches nothing on a repo with no logs, so the baseline removes nothing.
   activity: () => ["activity"],
+  spend: () => ["spend"],
   owners: () => ["owners"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
@@ -332,9 +333,11 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // confirmation — so exempting them states a truth rather than buying a green suite. The
     // word in this assertion's message is SILENTLY: the list is closed, not frozen, and
     // widening it is a line in a diff somebody has to justify.
-    "owners/activity --json",
+    // token-spend-tracking-per-epic: `spend` shares --json/--yes and adds four booleans — `--clear` and
+    // `--rebuild` (the ledger's two inverses), `--timeline` (qualifies --clear) and `--no-ingest`.
+    "owners/activity/spend --json",
     "purge-logs --dry-run",
-    "purge-logs --yes",
+    "purge-logs/spend --yes",
     "push-detour --no-reconcile",
     "push-detour --reconcile",
     "remove-epic --cascade",
@@ -342,6 +345,10 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "rules --sections",
     "set-lane-routing --clear",
     "set-tracker --remove",
+    "spend --clear",
+    "spend --no-ingest",
+    "spend --rebuild",
+    "spend --timeline",
     "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");

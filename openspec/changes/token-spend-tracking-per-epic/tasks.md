@@ -78,10 +78,10 @@ These rules bind every section below.
 
 ## 1. Constants, the switch and the ignore line
 
-- [ ] 1.1 TDD (UNIT): add `KNOWN_SPEND_PHASES = ["plan","build","review","docs","release"]` to
+- [x] 1.1 TDD (UNIT): add `KNOWN_SPEND_PHASES = ["plan","build","review","docs","release"]` to
       `scripts/lib/constants.mjs`, as one declaration. RED: a test that imports it and asserts the exact
       list from the spec. Verify: `rg -n "KNOWN_SPEND_PHASES\s*=" scripts` returns exactly one line.
-- [ ] 1.2 TDD (UNIT, plus FILE for byte-identity): add the `set-spend-tracking on|off` verb in a new
+- [x] 1.2 TDD (UNIT, plus FILE for byte-identity): add the `set-spend-tracking on|off` verb in a new
       `scripts/lib/spend-tracking.mjs`.
       - Cover every scenario of "Spend tracking is a project opt-in, off by default":
         - the first `on` sets `enabledAt`
@@ -100,10 +100,10 @@ These rules bind every section below.
 
       Verify: `node scripts/conductor.mjs set-spend-tracking --help`,
       `node --test scripts/test/unit/opt-ins.test.mjs scripts/test/assert/opt-ins.test.mjs scripts/test/parity.test.mjs`.
-- [ ] 1.3 TDD (FILE): add `.conductor/spend/` to `ENGINE_IGNORED` in `scripts/lib/subcommands.mjs`,
+- [x] 1.3 TDD (FILE): add `.conductor/spend/` to `ENGINE_IGNORED` in `scripts/lib/subcommands.mjs`,
       with a comment citing #106 and this change. Cover "upgrade backfills the ignore line". Verify:
       the test's temp repo `.gitignore` holds the line after `upgrade`.
-- [ ] 1.4 **Call-site completeness sweep, including inverses and data references** (required item 1).
+- [x] 1.4 **Call-site completeness sweep, including inverses and data references** (required item 1).
       - **Callers.** Derive every caller mechanically with
         `rg -n "OPT_INS|ENGINE_IGNORED|KNOWN_JOB_ROLES|KNOWN_MODELS|state\.active\b|activityEnabled|conductorDir|detachedNoOp|rulesBlock\(|FLAGLESS_VERBS" scripts commands skills`,
         including tests. For each site, say whether the new switch, phase list, timeline rule or
@@ -126,7 +126,7 @@ These rules bind every section below.
 
 ## 2. The transcript reader and the ledger
 
-- [ ] 2.1 TDD (UNIT): `transcriptDirs(mainRoot, env, listDir)` and the main-tree resolution for the
+- [x] 2.1 TDD (UNIT): `transcriptDirs(mainRoot, env, listDir)` and the main-tree resolution for the
       spend directory (design D3/D4).
       - They are pure over an injected directory lister, and over the git double in
         `scripts/test/fixtures/`.
@@ -138,7 +138,7 @@ These rules bind every section below.
           resolve to the main tree
         - "spend in a linked worktree reads the main tree's state" and "The switch is refused outside
           the main working tree" (FILE, in 4.2 and 1.2 respectively, over a linked-worktree fixture)
-- [ ] 2.2 TDD (UNIT): `parseEntry(line, source)` and `foldRows(rows)` (design D5). Cover:
+- [x] 2.2 TDD (UNIT): `parseEntry(line, source)` and `foldRows(rows)` (design D5). Cover:
       - "Streamed duplicates count once" and "A zero-usage partial entry does not win"
       - the output-drops-after-`stop_reason` shape
       - "Tools spread over several entries are all kept"
@@ -147,9 +147,9 @@ These rules bind every section below.
       - "Sub-agent sources are sub-agent actors": the subagents file, `isSidechain`, and the
         worktree directory, where `agentId` comes from the directory name
       - the tier mapping
-- [ ] 2.3 TDD (UNIT): the stored-row allowlist, including `source`, and the stored-marker shape. Build
+- [x] 2.3 TDD (UNIT): the stored-row allowlist, including `source`, and the stored-marker shape. Build
       both from explicit field lists, and assert that `Object.keys` equals the spec lists exactly.
-- [ ] 2.4 TDD (FILE): incremental ingest over the fixture tree under a temp `CLAUDE_CONFIG_DIR`.
+- [x] 2.4 TDD (FILE): incremental ingest over the fixture tree under a temp `CLAUDE_CONFIG_DIR`.
       - Cover every scenario of "Ingest is incremental and idempotent":
         - a re-run adds nothing
         - a partial trailing line waits
@@ -160,16 +160,16 @@ These rules bind every section below.
         - "Transcripts are never modified": bytes and mtime are equal
         - "No transcript directory is not an error"
         - "The marker survives incremental ingest": `markers.json` is captured on the first run
-- [ ] 2.5 TDD (FILE): the privacy sentinel. Put `SENTINEL-7f3a` into prompts, responses, tool inputs,
+- [x] 2.5 TDD (FILE): the privacy sentinel. Put `SENTINEL-7f3a` into prompts, responses, tool inputs,
       tool outputs and the meta `description`. Verify: no file under the fixture's
       `.conductor/spend/` contains it.
-- [ ] 2.6 Network boundary: confirm that `scripts/test/assert/conductor-35.test.mjs` (the existing
+- [x] 2.6 Network boundary: confirm that `scripts/test/assert/conductor-35.test.mjs` (the existing
       network-import scan) covers every module this change adds. Extend its file list only if it
       does not. Verify: run that test, and name the new modules it scanned in the commit message.
 
 ## 3. Attribution and the timeline
 
-- [ ] 3.1 TDD (UNIT): marker parsing and read-time attribution (design D6), as a pure
+- [x] 3.1 TDD (UNIT): marker parsing and read-time attribution (design D6), as a pure
       `attribute(rows, markers, timeline, state)`.
       - Cover every scenario of "The dispatch marker is captured…", "Attribution is computed at read
         time…" and "Actor, role and phase are separate closed vocabularies":
@@ -184,13 +184,13 @@ These rules bind every section below.
         - only the FIRST matching line of the FIRST user entry is used
       - "A role added to the job-role list is accepted without a ledger change": inject an extended
         list.
-- [ ] 3.2 TDD (UNIT): window and off-interval attribution over an in-memory timeline. Cover:
+- [x] 3.2 TDD (UNIT): window and off-interval attribution over an in-memory timeline. Cover:
       - the window hit
       - `before-timeline`
       - `no-active-epic`
       - "Spend made while tracking was off is not credited to an epic": `tracking-off` beats a marker
       - "An unmarked sub-agent is unattributed, even inside a window"
-- [ ] 3.3 TDD (FILE): the timeline append at the dispatch chokepoint (design D7).
+- [x] 3.3 TDD (FILE): the timeline append at the dispatch chokepoint (design D7).
       - Widen the snapshot gate at `conductor.mjs:370` onwards to
         `activityEnabled || spendTracking.enabled`.
       - Cover every scenario of "The engine records an active-epic timeline while tracking is on":
@@ -202,14 +202,14 @@ These rules bind every section below.
       - Also cover "Off keeps the ledger" (the `tracking:"off"` entry) and "A linked worktree records
         no timeline".
       - Declare `detachedNoOp` in `verb-effects.mjs` for the spend writes.
-- [ ] 3.4 TDD (FILE): the hot-path guarantee ("No hook reads a transcript…"). Call the SessionStart,
+- [x] 3.4 TDD (FILE): the hot-path guarantee ("No hook reads a transcript…"). Call the SessionStart,
       PreCompact and PreToolUse hook entry points in-process through `main(argv, io)`, with tracking
       off and with tracking on. Use an fs-call counter on the `scripts/test/fixtures/fs-work-counter.mjs`
       pattern that records every path touched. (`observe-reads.mjs` is certify's own observer and
       cannot see untracked paths.) Verify:
       - off: no path under the fixture `CLAUDE_CONFIG_DIR` or `.conductor/spend/` is touched
       - on: no transcript is opened and no ledger file is read
-- [ ] 3.5 TDD (FILE): the `conductor-record` delta, "Spend data is not written in a detached tree".
+- [x] 3.5 TDD (FILE): the `conductor-record` delta, "Spend data is not written in a detached tree".
       Detach HEAD in a fixture repo through the git double, then run `set-active` and `spend` with
       tracking on. Verify:
       - both verbs complete
@@ -222,7 +222,7 @@ These rules bind every section below.
 
 ## 4. The `spend` verb and its inverses
 
-- [ ] 4.1 TDD (UNIT): report aggregation over folded, attributed rows. Cover:
+- [x] 4.1 TDD (UNIT): report aggregation over folded, attributed rows. Cover:
       - "The JSON shape serves the dependent epics", every key named in the scenario: per-agent
         totals, `byRound`, and input, cacheCreation, cacheRead and output kept separate
       - the unattributed total by reason, printed when it is 0
@@ -231,7 +231,7 @@ These rules bind every section below.
       - the cost line and `cost.computed: false`
       - "An unknown epic is refused" (and no ingest)
       - "A row whose epic was removed reports as unknown"
-- [ ] 4.2 TDD (FILE): the `spend` end-to-end over the fixture tree. Cover:
+- [x] 4.2 TDD (FILE): the `spend` end-to-end over the fixture tree. Cover:
       - ingest, then report
       - `--no-ingest`
       - "spend while off reports without ingesting"
@@ -245,7 +245,7 @@ These rules bind every section below.
       - `verb-effects.mjs`: `spend` writes only under `.conductor/spend/` and never `state.json`
 
       Verify: `node scripts/conductor.mjs spend --help` lists exactly those flags.
-- [ ] 4.3 TDD (FILE): the inverses (design D8). Cover every scenario of "Every ledger write has an
+- [x] 4.3 TDD (FILE): the inverses (design D8). Cover every scenario of "Every ledger write has an
       inverse":
       - clear without `--yes` changes nothing
       - clear keeps the timeline
@@ -254,7 +254,7 @@ These rules bind every section below.
       - "Rebuild keeps what it cannot re-derive"
       - "Rebuild while off is refused"
       - "Conflicting operations are refused"
-- [ ] 4.4 Extend `commands/spend.md` in the same commit as 4.2. It covers:
+- [x] 4.4 Extend `commands/spend.md` in the same commit as 4.2. It covers:
       - the `spend` flags and every inverse
       - the attribution precedence, the marker format and the closed lists
       - what is NOT measured: Claude Code background calls, spend before `enabledAt`, and spend while
@@ -269,7 +269,7 @@ These rules bind every section below.
 
 ## 5. Emission
 
-- [ ] 5.1 TDD (UNIT): `rulesBlock` emits `## Spend tracking` only while tracking is on (design D10),
+- [x] 5.1 TDD (UNIT): `rulesBlock` emits `## Spend tracking` only while tracking is on (design D10),
       with the marker format and the role and phase lists rendered from the constants. Cover "On emits
       the section" and "Off emits nothing".
       - Add a tracking-on render to the `emitted-instructions` rules-block population, so the marker
@@ -279,16 +279,16 @@ These rules bind every section below.
       - Stage exactly, run `node scripts/test/certify.mjs functional`, then commit plainly.
       - Rebase point: this is the same insertion point as `execution-profile-planning-and-light-roles`.
         Whichever lands second rebases.
-- [ ] 5.2 TDD (FILE): "Toggling refreshes CLAUDE.md". After `set-spend-tracking on`, the managed block
+- [x] 5.2 TDD (FILE): "Toggling refreshes CLAUDE.md". After `set-spend-tracking on`, the managed block
       on disk carries the section. After `off`, it does not.
-- [ ] 5.3 `skills/conductor/SKILL.md`: the verb summary (`set-spend-tracking`, `spend`) and the state
+- [x] 5.3 `skills/conductor/SKILL.md`: the verb summary (`set-spend-tracking`, `spend`) and the state
       schema entry for `spendTracking`. Add the changeset fragment
       `.changesets/token-spend-tracking-per-epic.md`. Verify: `node scripts/conductor.mjs changesets`
       lists it.
 
 ## 6. Dogfood
 
-- [ ] 6.1 Integration: the full assertion half passes
+- [x] 6.1 Integration: the full assertion half passes
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`), plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record its peak
       memory.
@@ -300,12 +300,12 @@ These rules bind every section below.
 
 ## 7. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.4. Verify that
+- [x] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.4. Verify that
       `call-site-sweep-1.4.txt` exists and names every inverse.
-- [ ] 7.2 **Verify each task against its commit** (item 2). For every task above, run
+- [x] 7.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in THAT
       commit. Save the result as `commit-verification-7.2.txt`.
-- [ ] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
+- [x] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
       lines. Verify: `rg -n "pm:lifecycle" openspec/changes/token-spend-tracking-per-epic/tasks.md`
       lists both.
 - [ ] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do

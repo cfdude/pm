@@ -108,7 +108,10 @@ export function invokeEngine(args, { cwd, env = {}, input, git, store, nodeVersi
  *  double is built PER CALL: the no-repository world has no roots to declare, and building it fresh
  *  keeps a test from seeing a previous test's answers. */
 export function makeHarness({ fake }) {
-  const invoke = (args, opts = {}) => invokeEngine(args, { ...opts, git: fake ? fakeGit({ noRepository: true }) : undefined });
+  // `opts.git`, when a test supplies one, WINS over the half's default double: a scenario about a linked
+  // worktree or a detached HEAD cannot be answered by the no-repository world, and the functional half
+  // (which passes nothing) must not be handed a double it did not ask for.
+  const invoke = (args, opts = {}) => invokeEngine(args, { ...opts, git: opts.git ?? (fake ? fakeGit({ noRepository: true }) : undefined) });
 
   function run(args, opts = {}) {
     const r = invoke(args, opts);

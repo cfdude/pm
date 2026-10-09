@@ -158,6 +158,55 @@ x("conductor.mjs", "runInvocation", {
 x("activity-log.mjs", "setActivityLog", {
   "arg": 2,
 }, "engine", "arg is validated on|off before this line (activityDir() is escaped: it sits under CLAUDE_PROJECT_DIR, a governed value, Gate 2 W-I1)");
+// ── token-spend-tracking-per-epic ─────────────────────────────────────────────────────────────────
+// [group 3] the switch and the timeline
+x("spend-tracking.mjs", "setSpendTracking", {
+  "arg": 4,
+}, "engine", "arg is validated on|off before these lines (token-spend-tracking-per-epic; the same shape as setActivityLog above); the main tree's path in the refusals is escaped");
+x("spend-tracking.mjs", "TIMELINE", {
+  "ARTIFACT.SPEND_PREFIX": 1,
+}, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");
+x("spend-tracking.mjs", "appendTimeline", {
+  "JSON.stringify(entry)": 1,
+}, "not-output", "the timeline's file BODY — one JSON object per line, handed to the store");
+// [group 2] the ledger's files and the transcript reader
+x("spend-ledger.mjs", "writeAtomic", {
+  "file": 1,
+  "process.pid": 1,
+  "Date.now()": 1,
+}, "not-output", "a temp file NAME handed to fs, renamed over the ledger file");
+x("spend-ledger.mjs", "ingestLocked", {
+  "folded.map((r) => JSON.stringify(storedRow(r))).join(\"\\n\")": 1,
+  "JSON.stringify(markers)": 1,
+  "JSON.stringify(cursor)": 1,
+}, "not-output", "the ledger files' BODIES (rows.jsonl, markers.json, cursor.json), written with fs and never printed");
+x("spend-ledger.mjs", "rebuild", {
+  "JSON.stringify(keptMarkers)": 1,
+}, "not-output", "markers.json's body, written with fs and never printed");
+x("spend-reader.mjs", "transcriptDirs", {
+  "encoded": 1,
+}, "not-output", "a directory-name PREFIX matched against a listing, never printed");
+// [group 4] the report and the verb
+j("spend-report.mjs", "parts", ALL, "sink-flow", "called only inside renderReport's lines.push(...), which returns lines.map(escapeControls)");
+j("spend-report.mjs", "dim", ALL, "sink-flow", "called only inside renderReport's lines.push(...), which returns lines.map(escapeControls)");
+x("spend-command.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any stored or typed value where it is built");
+x("spend-command.mjs", "iso", {
+  "flag": 1,
+}, "engine", "the registry's flag name (since / until); the typed value is escaped");
+x("spend-command.mjs", "bytes", {
+  "n.toLocaleString(\"en-US\")": 1,
+}, "engine", "a byte count");
+x("spend-command.mjs", "spend", {
+  "reportFlags.join(\", --\")": 1,
+}, "engine", "registry flag names");
+x("spend-command.mjs", "spend", {
+  "renderReport(report, { ingestLines: ingestLines(ingestInfo, ledger, tree, enabled) }).join(\"\\n\")": 1,
+}, "escaped", "renderReport() returns its lines through lines.map(escapeControls)");
+x("spend-command.mjs", "spend", {
+  "jsonText(report, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
 x("activity-log.mjs", "segmentName", {
   "at.toISOString().replace(/[:.]/g, \"-\")": 1,
 }, "not-output", "a segment file name");
@@ -943,3 +992,5 @@ x("conductor.mjs", "runInvocation", {
 x("render.mjs", "renderVerb", {
   "sessionCostReport(state, resolvePlatform({}, state)).map(escapeControls).join(\"\\n\")": 1,
 }, "escaped", "the two cost lines, each through escapeControls before the join");
+// token-spend-tracking-per-epic: the rules-block section
+j("rules.mjs", "spendTrackingLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (the role and phase lists are engine vocabulary)");

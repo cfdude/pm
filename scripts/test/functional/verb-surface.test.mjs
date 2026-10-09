@@ -450,7 +450,9 @@ const DISPATCH_BASELINE = {
   unclaim: { pre: [["claim", "e1", "--session", "s"]], args: ["unclaim", "e1", "--session", "s"] },
   owners: { args: ["owners"] },
   activity: { args: ["activity"] },
+  spend: { args: ["spend"] },
   "set-activity-log": { args: ["set-activity-log", "on"] },
+  "set-spend-tracking": { args: ["set-spend-tracking", "on"] },
   "purge-logs": { args: ["purge-logs", "--keep", "5"] },
   "verify-worktrees": { args: ["verify-worktrees"] },
   // Declared `expectsFailure` in VERB_EFFECTS: its job is to fail on drift. A copied fixture's
@@ -688,7 +690,7 @@ const POSITIONAL_COUNTS = {
   "log-detour": 1, "retract-detour": 1, "push-detour": 1, "drop-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
-  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1,
+  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1,
 };
 for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;
 

@@ -888,6 +888,13 @@ it waits on.
   is what a hand-edit looks like from the record's side. Off by default; it records nothing
   retroactively, so turning it on says nothing about yesterday. `purge-logs` is the manual
   cleanup — it removes nothing without a selector, and nothing without `--yes`.
+- Want to know which epic, phase, role and model the tokens went to? `set-spend-tracking on` is an
+  opt-in, off by default; `spend` ingests Claude Code's own transcripts (read-only, local) and reports
+  per-epic totals by actor, role, phase, gate round and model tier, with the unattributed spend and a
+  coverage share always shown. While it is on, begin every sub-agent dispatch prompt with
+  `pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]` (the rules block says so), or the tokens
+  land in the unattributed bucket. Every write has an inverse: `spend --clear --yes`,
+  `spend --rebuild --yes`, `spend --clear --timeline --yes`. It computes no cost. See `commands/spend.md`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —
@@ -1330,6 +1337,10 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
+spendTracking? : { enabled, enabledAt } — opt-in token-spend ledger switch. Absent reads as off.
+                `enabledAt` is the time of the FIRST `on` and never moves (it bounds an ingest's
+                look-back). Set via `set-spend-tracking on|off`; read with `spend`. Added field, no
+                migration. While on, the rules block carries a `## Spend tracking` section.
 epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
 createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
                 through — at the moment the epic is registered. ABSENT means UNKNOWN, never

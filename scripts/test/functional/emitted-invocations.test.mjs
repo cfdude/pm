@@ -552,6 +552,9 @@ export async function renderedRulesBlocks() {
       const label = `rules[${platform} · ${tracker ? `${tracker.system}/${tracker.direction}/${tracker.repo || tracker.projectKey || "scope-less"}` : "none"} · ${secondaries.map(s => s.system).join("+") || "no secondary"}]`;
       out.push({ label, text: rulesBlock(tracker, "standard", secondaries, platform) });
     }
+    // token-spend-tracking-per-epic: the tracking-ON render, so the dispatch-marker instruction is
+    // checked like every other shipped instruction. Off is the matrix above (the default argument).
+    out.push({ label: `rules[${platform} · spend tracking on]`, text: rulesBlock(null, "standard", [], platform, null, true) });
   }
   return out;
 }

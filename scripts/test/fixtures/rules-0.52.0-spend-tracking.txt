@@ -1,0 +1,17 @@
+## Spend tracking
+
+Spend tracking is on. `spend` builds a per-epic token ledger from Claude Code's own transcripts; a
+sub-agent's tokens are credited to an epic ONLY if you say which one. Begin EVERY sub-agent
+dispatch prompt with one line, on a line of its own and in exactly this form (the text between the
+backticks, written without them, since the line must start with `pm-spend:`):
+
+`pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]`
+
+- `epic` — the id of the epic the work serves.
+- `role` — one of `implement`, `test`, `review` (the job roles the execution profile uses).
+- `phase` — one of `plan`, `build`, `review`, `docs`, `release`.
+- `round` — optional, a positive integer, 1 when omitted. A review gate's retry is `phase=review`
+  with `round` above 1.
+
+A dispatch without the marker is counted as unattributed.
+

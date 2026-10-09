@@ -11,6 +11,7 @@ evals/.pytest_cache/
 .conductor/commit-watch.json
 .conductor/session-claim.json
 .conductor/activity/
+.conductor/spend/
 .conductor/session-claim.json*
 .conductor/state.json.lock*
 .conductor/state.json.tmp*
