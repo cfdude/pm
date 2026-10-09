@@ -37,8 +37,16 @@ export const SKIP_UNREADABLE = "unreadable-transcript";
 /** A lock older than this is broken, as the state lock's stale rule does. */
 export const LOCK_STALE_MS = 10 * 60 * 1000;
 
-/** How many bytes one read takes. Transcripts reach tens of MB; this bounds memory, not correctness. */
+/** How many bytes one read takes. Transcripts reach tens of MB; a read is this size whatever the file's. */
 const CHUNK_BYTES = 1024 * 1024;
+
+/** The longest line that is parsed. A longer one is dropped and counted: without a cap, a single line
+ *  with no newline (a corrupt or runaway transcript) is carried whole, and memory grows with it. */
+export const MAX_LINE_BYTES = 16 * 1024 * 1024;
+
+/** Skip reasons, printed with the rest under `skipped entries`. */
+export const SKIP_OVERLONG = "over-long-line";
+export const SKIP_NOT_FILE = "not-a-regular-file";
 
 const at = (mainRoot, name) => path.join(spendDir(mainRoot), LEDGER_FILES[name]);
 
@@ -91,6 +99,10 @@ export function discoverFiles(mainRoot, env, home, fsx = fs) {
   const lister = (root) => { try { return fsx.readdirSync(root); } catch { return []; } };
   const found = transcriptDirs(mainRoot, env, lister, home);
   const files = [];
+  // Entries that look like part of the tree but are not a plain file or directory (a symlink, a
+  // directory named `x.jsonl`, a socket). They are never followed: a link could point outside the
+  // transcript tree, or at a file already counted. The same rule at every level, and counted.
+  let nonFiles = 0;
   let projectDirFound = false;
   for (const [i, d] of found.dirs.entries()) {
     let entries;
@@ -98,19 +110,28 @@ export function discoverFiles(mainRoot, env, home, fsx = fs) {
     if (i === 0) projectDirFound = true;
     for (const e of [...entries].sort((a, b) => (a.name < b.name ? -1 : 1))) {
       const abs = path.join(d.dir, e.name);
-      if (e.isFile() && e.name.endsWith(".jsonl")) { files.push({ abs, rel: path.relative(found.root, abs) }); continue; }
+      if (e.isSymbolicLink()) { nonFiles++; continue; }
+      if (e.name.endsWith(".jsonl")) {
+        if (e.isFile()) files.push({ abs, rel: path.relative(found.root, abs) });
+        else nonFiles++;
+        continue;
+      }
       if (!e.isDirectory()) continue;
+      const subDir = path.join(abs, "subagents");
       let subs = [];
-      try { subs = fsx.readdirSync(path.join(abs, "subagents")); } catch { continue; }
-      for (const s of [...subs].sort()) {
-        if (/^agent-.+\.jsonl$/.test(s)) {
-          const sub = path.join(abs, "subagents", s);
-          files.push({ abs: sub, rel: path.relative(found.root, sub) });
-        }
+      try {
+        if (fsx.lstatSync(subDir).isSymbolicLink()) { nonFiles++; continue; }
+        subs = fsx.readdirSync(subDir, { withFileTypes: true });
+      } catch { continue; }
+      for (const s of [...subs].sort((a, b) => (a.name < b.name ? -1 : 1))) {
+        if (!/^agent-.+\.jsonl$/.test(s.name)) continue;
+        if (!s.isFile()) { nonFiles++; continue; }
+        const sub = path.join(subDir, s.name);
+        files.push({ abs: sub, rel: path.relative(found.root, sub) });
       }
     }
   }
-  return { files, projectDir: found.dirs[0].dir, projectDirFound, root: found.root };
+  return { files, nonFiles, projectDir: found.dirs[0].dir, projectDirFound, root: found.root };
 }
 
 // ───────────────────────────── ingest ─────────────────────────────
@@ -118,21 +139,40 @@ export function discoverFiles(mainRoot, env, home, fsx = fs) {
 /** Read the complete lines of `abs` past `startOffset`, handing each to `onLine`. Returns the byte
  *  offset consumed (always on a line boundary) and the size read up to. A trailing line with no
  *  newline yet is NOT consumed: it is the partial write of a session still running. */
-function readLines(abs, startOffset, onLine, fsx) {
+function readLines(abs, startOffset, onLine, fsx, { maxLineBytes = MAX_LINE_BYTES, onSkip = () => {} } = {}) {
   const fd = fsx.openSync(abs, "r");
   try {
     const size = fsx.fstatSync(fd).size;
     const buf = Buffer.alloc(CHUNK_BYTES);
-    let pos = startOffset, consumed = startOffset, carry = Buffer.alloc(0);
+    let pos = startOffset, consumed = startOffset, carry = Buffer.alloc(0), dropping = false;
     while (pos < size) {
       const n = fsx.readSync(fd, buf, 0, Math.min(CHUNK_BYTES, size - pos), pos);
       if (n <= 0) break;
+      const base = pos;
       pos += n;
-      const data = carry.length ? Buffer.concat([carry, buf.subarray(0, n)]) : Buffer.from(buf.subarray(0, n));
+      const chunk = buf.subarray(0, n);
+      let data;
+      if (dropping) {
+        // Inside a line already over the cap: discard until its newline. Not consumed until then, so an
+        // unterminated one (a session still writing) is looked at again, and counted again, next run.
+        const end = chunk.indexOf(0x0a);
+        if (end === -1) continue;
+        dropping = false;
+        consumed = base + end + 1;
+        data = Buffer.from(chunk.subarray(end + 1));
+      } else {
+        data = carry.length ? Buffer.concat([carry, chunk]) : Buffer.from(chunk);
+      }
       let start = 0, nl;
-      while ((nl = data.indexOf(0x0a, start)) !== -1) { onLine(data.toString("utf8", start, nl)); start = nl + 1; }
+      while ((nl = data.indexOf(0x0a, start)) !== -1) {
+        if (nl - start > maxLineBytes) onSkip(SKIP_OVERLONG);
+        else onLine(data.toString("utf8", start, nl));
+        start = nl + 1;
+      }
       consumed += start;
       carry = data.subarray(start);
+      // The carry is the only thing that grows with a line's length, so this is what bounds memory.
+      if (carry.length > maxLineBytes) { onSkip(SKIP_OVERLONG); carry = Buffer.alloc(0); dropping = true; }
     }
     return { consumed, size };
   } finally {
@@ -144,14 +184,14 @@ function readLines(abs, startOffset, onLine, fsx) {
  *  `seed` is `rebuild`'s: the cursor, markers and rows to START from, held in memory. With a seed the
  *  three files are written ONLY here, at the end and each atomically, so a throw anywhere before then
  *  leaves the previous ledger exactly as it was. */
-function ingestLocked({ mainRoot, env, home, enabledAtMs }, fsx, seed = null) {
+function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LINE_BYTES }, fsx, seed = null) {
   const cursor = seed ? seed.cursor : readJson(at(mainRoot, "cursor"), {}, fsx);
   const markers = seed ? seed.markers : readJson(at(mainRoot, "markers"), {}, fsx);
   const found = discoverFiles(mainRoot, env, home, fsx);
   const result = {
     ran: true, busy: false, projectDir: found.projectDir, projectDirFound: found.projectDirFound,
     files: { seen: found.files.length, read: 0, unchanged: 0, skippedBeforeEnabled: 0 },
-    rowsAdded: 0, rowsBeforeEnabled: 0, skipped: {}, failedRels: [],
+    rowsAdded: 0, rowsBeforeEnabled: 0, skipped: found.nonFiles ? { [SKIP_NOT_FILE]: found.nonFiles } : {}, failedRels: [],
   };
   const collected = [];
   let markersChanged = false;
@@ -190,7 +230,7 @@ function ingestLocked({ mainRoot, env, home, enabledAtMs }, fsx, seed = null) {
           userSeen = true;
           if (r.marker) { markers[info.agentId] = storedMarker(r.marker); markersChanged = true; }
         }
-      }, fsx));
+      }, fsx, { maxLineBytes, onSkip: (reason) => { result.skipped[reason] = (result.skipped[reason] || 0) + 1; } }));
     } catch {
       // One unreadable transcript (EACCES, EISDIR, deleted since the stat) must not cost the others.
       // Its cursor entry is left exactly as it was, so the next ingest tries it again from where it was.

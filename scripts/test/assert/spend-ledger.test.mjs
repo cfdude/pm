@@ -263,7 +263,7 @@ const withFs = (overrides) => new Proxy(fs, {
 const SKIP = "unreadable-transcript";
 const norm = (s) => s.replace(/pm-test-[A-Za-z0-9]+/, "R");   // the project dir name carries the tmp repo path
 
-test("G2-I1 an unreadable file (EACCES) and a directory named like a transcript (EISDIR) are skipped, counted, and the rest is ingested", () => {
+test("G2-I1 an unreadable file (EACCES) and a directory named like a transcript is skipped (the first at the read, the second at discovery), counted, and the rest is ingested", () => {
   const clean = scene();
   ingest(clean.opts);
   const baseline = sumBy(readLedger(clean.repo).rows, (x) => norm(x.source));
@@ -276,7 +276,8 @@ test("G2-I1 an unreadable file (EACCES) and a directory named like a transcript 
   try {
     const r = ingest(opts);
     assert.equal(r.ran, true);
-    assert.equal(r.skipped[SKIP], 2, "both bad files are counted under one named reason");
+    assert.equal(r.skipped[SKIP], 1, "the unreadable file is counted under its named reason");
+    assert.equal(r.skipped["not-a-regular-file"], 1, "the directory is counted under its own");
     const got = sumBy(readLedger(repo).rows, (x) => norm(x.source));
     const want = Object.fromEntries(Object.entries(baseline).filter(([src]) => !src.includes("UNMARKED")));
     assert.deepEqual(got, want, "every readable file's rows were written");
@@ -286,7 +287,8 @@ test("G2-I1 an unreadable file (EACCES) and a directory named like a transcript 
     assert.equal(relOf(cfg, paths.main) in c, true);
   } finally { fs.chmodSync(paths.unmarked, 0o644); }
   const again = ingest(opts);
-  assert.equal(again.skipped[SKIP], 1, "only the directory is still bad");
+  assert.equal(again.skipped[SKIP], undefined, "the file became readable");
+  assert.equal(again.skipped["not-a-regular-file"], 1, "the directory is still not a file");
   assert.deepEqual(sumBy(readLedger(repo).rows, (x) => norm(x.source)), baseline, "the file became readable and was ingested in full");
 });
 
@@ -342,4 +344,68 @@ test("G2-I1 a throw inside rebuild leaves the previous ledger byte-identical, wi
   const failing = withFs({ renameSync: () => () => { throw new Error("disk full"); } });
   assert.throws(() => rebuild(opts, failing), /disk full/);
   assert.deepEqual(ledgerBytes(repo), before, "rows, cursor and markers are exactly as they were");
+});
+
+// ───────────────────────────── a line has a length cap; links are never followed ─────────────────────────────
+
+const assistantLine = (id, output) => JSON.stringify({
+  type: "assistant", timestamp: "2026-10-09T10:05:00.000Z", sessionId: "sessA",
+  message: { id, model: "claude-opus-4-7", content: [], usage: { input_tokens: 1, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, output_tokens: output } },
+}) + "\n";
+
+test("G2-M4 an over-long line is dropped and counted, the lines after it are still read, and the cursor passes it", () => {
+  const { repo, cfg, paths, opts } = scene();
+  ingest(opts);
+  // 3.5 MB with no newline spans several 1 MB reads: the carry must not grow with it.
+  fs.appendFileSync(paths.main, "x".repeat(3_500_000) + "\n" + assistantLine("after-long", 7));
+  fs.utimesSync(paths.main, FRESH, FRESH);
+  const r = ingest({ ...opts, maxLineBytes: 1_500_000 });
+  assert.equal(r.skipped["over-long-line"], 1, "counted once, under a named reason");
+  assert.equal(r.rowsAdded, 1);
+  assert.equal(readLedger(repo).rows.find((x) => x.messageId === "after-long").output, 7);
+  assert.equal(cursorOf(repo)[relOf(cfg, paths.main)].offset, fs.statSync(paths.main).size, "everything was consumed");
+});
+
+test("G2-M4 a complete line longer than the cap is dropped too, whatever the chunking", () => {
+  const { repo, paths, opts } = scene();
+  ingest(opts);
+  fs.appendFileSync(paths.main, assistantLine("big", 1).replace('"content":[]', `"content":["${"y".repeat(5000)}"]`) + assistantLine("small", 3));
+  fs.utimesSync(paths.main, FRESH, FRESH);
+  const r = ingest({ ...opts, maxLineBytes: 1000 });
+  assert.equal(r.skipped["over-long-line"], 1);
+  const ids = readLedger(repo).rows.map((x) => x.messageId);
+  assert.ok(ids.includes("small") && !ids.includes("big"));
+});
+
+test("G2-M4 an over-long line still being written is not consumed: the cursor stays at its start", () => {
+  const { cfg, repo, paths, opts } = scene();
+  ingest(opts);
+  const startSize = fs.statSync(paths.main).size;
+  fs.appendFileSync(paths.main, "z".repeat(2_500_000));            // no newline yet
+  fs.utimesSync(paths.main, FRESH, FRESH);
+  const r = ingest({ ...opts, maxLineBytes: 1_000_000 });
+  assert.equal(r.skipped["over-long-line"], 1);
+  assert.equal(cursorOf(repo)[relOf(cfg, paths.main)].offset, startSize);
+  fs.appendFileSync(paths.main, "\n" + assistantLine("later", 5));
+  fs.utimesSync(paths.main, FRESH, FRESH);
+  ingest({ ...opts, maxLineBytes: 1_000_000 });
+  assert.equal(readLedger(repo).rows.find((x) => x.messageId === "later").output, 5);
+});
+
+test("G2-M4 symlinks and non-files are skipped the same way at every level, counted, and never followed", () => {
+  const { repo, paths, opts } = scene();
+  const projDir = path.dirname(paths.main);
+  const subDir = path.dirname(paths.marked);
+  fs.symlinkSync(paths.main, path.join(projDir, "link.jsonl"));                    // top-level .jsonl link
+  fs.symlinkSync(paths.unmarked, path.join(subDir, "agent-LINK.jsonl"));           // subagent link
+  fs.symlinkSync(path.join(projDir, "sessA"), path.join(projDir, "sessB"));        // a linked session directory
+  fs.mkdirSync(path.join(projDir, "sessC"));
+  fs.symlinkSync(subDir, path.join(projDir, "sessC", "subagents"));                // a linked subagents directory
+  fs.mkdirSync(path.join(projDir, "dir.jsonl"));                                   // a directory named like a transcript
+  const r = ingest(opts);
+  assert.equal(r.files.seen, 5, "the same five real transcripts, none twice");
+  assert.equal(r.skipped["not-a-regular-file"], 5);
+  const clean = scene();
+  ingest(clean.opts);
+  assert.equal(readLedger(repo).rows.length, readLedger(clean.repo).rows.length);
 });
