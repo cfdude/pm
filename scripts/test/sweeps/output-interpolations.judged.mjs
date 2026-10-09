@@ -24,7 +24,7 @@ const x = (f, fn, exprs, cls, why) => {
 
 // ── line-sink flow, and the first judgments of each sink's neighbours
 j("briefing.mjs", "specSyncBlock", ALL, "sink-flow", "the spec-sync block's lines (handoff-demand-blind-spots D6): its only consumers are buildBrief's L (joined through L.map(escapeControls)) and renderVerb(), which joins them through lines.map(escapeControls); header names are JSON-quoted");
-j("briefing.mjs", "buildBrief", ALL, "sink-flow", "every line is pushed onto L, joined through L.map(escapeControls) at buildBrief's return");
+j("briefing.mjs", "buildBriefParts", ALL, "sink-flow", "every line is pushed onto L and escaped by escapeControls where `plain` and `parts` are assembled at buildBriefParts return");
 j("briefing.mjs", "BRIEF_REMEDIES", ALL, "sink-flow", "each render() result is pushed onto buildBrief's L (briefRemedy) or its trackerLines, which join L's sink; ids in commands go through printedId/asCode");
 j("render.mjs", "render", ALL, "sink-flow", "every PROJECT.md line is pushed onto md, joined through md.map(escapeControls); cells additionally through tableRow's escapeTableCell");
 x("render.mjs", "tableRow", {
@@ -905,26 +905,28 @@ x("add-epic.mjs", "addEpic", {
 
 
 // ── rules-block-session-cost: session-cost.mjs (pure) and its two printing call sites
-x("session-cost.mjs", "capBrief", {
-  "originalBytes": 1,
-  "cap": 1,
-}, "engine", "byte counts: the brief's measured size and the BRIEF_BYTE_CAP constant (or the caller's integer cap)");
-x("session-cost.mjs", "capBrief", {
-  "tail": 2,
-  "head": 1,
-  "head ? head + \"\\n\\n\" : \"\"": 1,
-  "marker": 1,
-}, "passthrough", "slices of the brief text, whose lines were swept at buildBrief's L.map(escapeControls) before they reached here; the marker is a literal with two integers");
+x("session-cost.mjs", "fitBrief", {
+  "originalBytes": 2,
+  "originalBytes - cap": 1,
+  "cap": 2,
+  "where": 2,
+}, "engine", "byte counts (the brief's measured size, the BRIEF_BYTE_CAP constant or the caller's integer cap) and a module literal naming the PROJECT.md section that holds the full text");
+x("session-cost.mjs", "fitBrief", {
+  "prefix": 1,
+}, "passthrough", "the runtime-support floor line, composed and escaped by supportFloorLine() where it is built");
+x("session-cost.mjs", "trimLine", {
+  "chars.slice(0, max - 1).join(\"\")": 1,
+}, "passthrough", "a slice of a line that was escaped at buildBriefParts's return; trimming on code points cannot introduce a control character");
 x("session-cost.mjs", "sessionCostLines", {
   "file": 2,
 }, "engine", "the basename of the rules file the platform's own precedence chain resolves (CLAUDE.md, AGENTS.md, HERMES.md) — engine vocabulary; both call sites also join the lines through escapeControls");
 x("session-cost.mjs", "sessionCostLines", {
   "block.bytes": 1,
   "block.tokens": 1,
-  "brief.bytes": 2,
-  "brief.originalBytes": 1,
-  "estimateTokens(brief.bytes)": 2,
-  "cap": 2,
+  "brief.bytes": 3,
+  "brief.originalBytes": 2,
+  "estimateTokens(brief.bytes)": 3,
+  "cap": 3,
 }, "engine", "byte and token counts computed by session-cost.mjs");
 x("session-cost.mjs", "sectionTableLines", {
   "String(s.bytes).padStart(7)": 1,

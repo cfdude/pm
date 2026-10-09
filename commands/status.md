@@ -76,9 +76,11 @@ forever and would now demand a handoff at archive time.
 `render` ends with two lines on stdout (not under `--diff-summary`): the first, starting "conductor: rules
 block", gives the managed block as it sits on disk in bytes and estimated tokens; the second, starting
 "conductor: SessionStart brief", gives what the SessionStart hook will send. Tokens are bytes/4, an estimate. The block is paid by every session and every dispatched agent. The
-brief is capped at 16384 bytes: over it, the hook sends the head, a `[pm brief truncated: ...]` marker and the
-closing reminders, and this line says `N of M bytes sent ... truncated`. The full brief is in PROJECT.md's
-"Briefing" section, which is never capped. Report both lines when you summarize. `rules --sections` prints
+brief is capped at 16384 bytes: over it, the hook shortens its long lists (RELEASES, DISPOSITIONS, GATE
+REVIEWS, HANDOFFS, EPIC LINKS), each ending in a `(+N more — see PROJECT.md ...)` line, adds a
+`[pm brief: ...]` marker, and keeps every warning and obligation block whole; this line says `N of M bytes
+sent ... long lists shortened`. If the warnings and obligations alone exceed the cap they are sent anyway and
+this line says `OVER`. The full brief is in PROJECT.md's "Briefing" section, which is never capped. Report both lines when you summarize. `rules --sections` prints
 the block's per-section sizes, ranked, for deciding what is worth its bytes.
 
 ## Is this PROJECT.md diff worth reading — `render --diff-summary`

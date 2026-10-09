@@ -27,36 +27,76 @@ function fatRepo() {
   return cwd;
 }
 
-test("a small repo's SessionStart brief is sent whole, with no truncation marker", () => {
+/** A repo whose LISTS are far over the cap: 40 releases carrying 3 KB of free text each, and an archived
+ *  epic stamped `ungated`, which the brief reports in its UNGATED ARCHIVES obligation block. The old
+ *  tail-cut sent the head of RELEASES and nothing after it, so the obligation was the part dropped. */
+function fatListsRepo() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const s = readState(cwd);
+  s.epics.push({ id: "shipped-ungated", title: "x", priority: "P1", status: "archived", role: "epic", lane: "openspec",
+    gateReview: { gate2: { verdict: "ungated" } }, disposition: { outcome: "delivered", recordedAt: "2026-01-01T00:00:00.000Z", reason: "r" } });
+  s.releases = Array.from({ length: 40 }, (_, i) => ({ id: `1.${i}.0`, intent: `intent ${i} ` + "word ".repeat(600), deferred: [] }));
+  writeState(cwd, s);
+  return cwd;
+}
+
+test("a small repo's SessionStart brief is sent whole, with no marker", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const out = context(cwd);
-  assert.doesNotMatch(out, /pm brief truncated/);
+  assert.doesNotMatch(out, /pm brief:/);
   assert.match(out, /CONDUCTOR STATE/);
 });
 
-test("an over-cap brief is cut to the cap, marked, and still ends with the standing reminders", () => {
-  const cwd = fatRepo();
+test("an over-cap brief shortens its LISTS, keeps the obligation blocks whole and in front, and ends with the standing reminders", () => {
+  const cwd = fatListsRepo();
   const out = context(cwd);
   assert.ok(bytes(out) <= 16384, `sent ${bytes(out)} bytes`);
-  assert.match(out, /\[pm brief truncated: \d+ bytes over the 16384-byte cap/);
-  assert.match(out, /CONDUCTOR STATE/, "the head survives");
+  assert.match(out, /UNGATED ARCHIVES/, "the obligation block survives");
+  assert.match(out, /`shipped-ungated`/);
+  assert.ok(out.indexOf("UNGATED ARCHIVES") < out.indexOf("RELEASES:"), "obligations come before the lists");
+  assert.match(out, /`1\.39\.0`/, "the most recent release is kept");
+  assert.doesNotMatch(out, /`1\.0\.0`/);
+  assert.match(out, /\(\+37 older releases — see PROJECT\.md "Releases"\)/);
+  const m = /\[pm brief: (\d+) bytes uncapped, (\d+) over the 16384-byte cap/.exec(out);
+  assert.ok(m, "the marker is present");
+  assert.equal(Number(m[2]), Number(m[1]) - 16384, "bytes over the cap is total minus cap");
   assert.match(out, /RULES \(pm\): classify detours/, "the closing reminder survives");
 });
 
-test("PROJECT.md keeps the UNcapped brief, so the marker's pointer is true", () => {
+test("every pointer the bounded brief prints is true: PROJECT.md holds the full RELEASES list and the Briefing section", () => {
+  const cwd = fatListsRepo();
+  run(["render"], { cwd });
+  const md = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  assert.match(md, /^## Releases$/m);
+  assert.match(md, /^## Briefing/m);
+  assert.doesNotMatch(md, /pm brief:/, "PROJECT.md embeds the plain brief, never the bounded one");
+  assert.ok(md.includes("`1.0.0`") && md.includes("`1.39.0`"), "every release is still in PROJECT.md");
+});
+
+test("obligations alone over the cap are emitted whole, over the cap, and the brief says so", () => {
+  const cwd = fatRepo();
+  const out = context(cwd);
+  assert.ok(bytes(out) > 16384, "300 dependency warnings are never cut");
+  assert.equal(out.split("\n").filter(l => l.includes("waits-on-base-")).length >= 300, true, "every warning line is there");
+  assert.match(out, /obligation blocks alone exceed it\. They are never cut/);
+  assert.match(runCombined(["render"], { cwd }), /SessionStart brief: \d+ of \d+ bytes sent \(~\d+ tokens\), OVER the 16384-byte cap/);
+});
+
+test("PROJECT.md keeps the UNcapped brief, so the pointers are true", () => {
   const cwd = fatRepo();
   run(["render"], { cwd });
   const md = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
-  assert.doesNotMatch(md, /pm brief truncated/);
+  assert.doesNotMatch(md, /pm brief:/);
   assert.ok(md.split("\n").filter(l => l.includes("waits-on-base-")).length > 200, "every warning line is still there");
 });
 
-test("render prints the two cost lines, truncated when the brief is over the cap", () => {
-  const cwd = fatRepo();
+test("render prints the two cost lines, saying the lists were shortened when the brief is over the cap", () => {
+  const cwd = fatListsRepo();
   const out = runCombined(["render"], { cwd });
   assert.match(out, /conductor: rules block \(CLAUDE\.md\): \d+ bytes, ~\d+ tokens \(bytes\/4\)/);
-  assert.match(out, /conductor: SessionStart brief: \d+ of \d+ bytes sent \(~\d+ tokens\), truncated at the 16384-byte cap/);
+  assert.match(out, /conductor: SessionStart brief: \d+ of \d+ bytes sent \(~\d+ tokens\), long lists shortened to fit the 16384-byte cap/);
 });
 
 test("render's cost lines are not printed under --diff-summary, whose stdout is one machine-read line", () => {

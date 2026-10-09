@@ -4,24 +4,24 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { buildBrief } from "./briefing.mjs";
+import { buildBriefParts } from "./briefing.mjs";
 import { engineRoot } from "./constants.mjs";
 import { runtimeVersion } from "./invocation.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { supportFloorLine } from "./runtime-support.mjs";
-import { BRIEF_BYTE_CAP, capBrief, measureRulesBlock, onDiskRulesBlock, sessionCostLines } from "./session-cost.mjs";
+import { BRIEF_BYTE_CAP, fitBrief, measureRulesBlock, onDiskRulesBlock, sessionCostLines } from "./session-cost.mjs";
 
 /** The additionalContext a SessionStart hook sends, CAPPED. The one place it is assembled: `brief` sends
  *  it and `upgrade` / `render` measure it, so the number they print is the number a session pays.
- *  Returns capBrief()'s result. `consume` and `specSync` are buildBrief()'s, passed straight through. */
+ *  Returns fitBrief()'s result. `consume` and `specSync` are buildBriefParts()'s, passed straight through. */
 export function sessionStartContext(state, { consume = false, specSync = true } = {}) {
-  const brief = buildBrief(state, { consume, specSync });
+  const { plain, parts } = buildBriefParts(state, { consume, specSync });
   // 0.49.0 (runtime-support) — ONE line, and only here: below the support floor, prepended at the top
   // for the reason briefing.mjs gives its currency lines. NOT in buildBrief(), which PROJECT.md (a
   // tracked file) and the PreCompact snapshot also embed — one machine's Node must never land in
   // either. The version is the invocation's, never `process.version` read here.
   const floorLine = supportFloorLine(runtimeVersion());
-  return capBrief(floorLine ? [floorLine, brief].join("\n") : brief, BRIEF_BYTE_CAP);
+  return fitBrief(parts, { plain, cap: BRIEF_BYTE_CAP, prefix: floorLine || "" });
 }
 
 /** The managed block's measurement as it sits in the platform's rules file, or null (no file, no block,

@@ -27,7 +27,7 @@ unitTest("gh#210: adopted opt-ins move to the summary line and out of the NOT SE
     reviewMode: "thorough", activityLog: { enabled: true },
     tracker: { system: "github-issues" },
     laneRouting: { overrides: [{ match: "migration", lane: "openspec" }] },
-    epics: [{ id: "a", status: "active", claim: { session: "s", claimedAt: new Date().toISOString(), ttlMinutes: 60 } }],
+    epics: [],
   };
   const lines = optInLines(state);
   assert.equal(lines.length, 1, "everything adopted: the summary line alone, never silence");
@@ -35,14 +35,11 @@ unitTest("gh#210: adopted opt-ins move to the summary line and out of the NOT SE
   assert.match(lines[0], /activityLog: on/);
   assert.match(lines[0], /tracker: github-issues/);
   assert.match(lines[0], /laneRouting: 1 override/);
-  assert.match(lines[0], /claim: held/);
 });
 
-unitTest("gh#210: an expired claim and a claim on an archived epic do not count as adopted", () => {
-  const old = { session: "s", claimedAt: "2020-01-01T00:00:00.000Z", ttlMinutes: 60 };
-  const live = { session: "s", claimedAt: new Date().toISOString(), ttlMinutes: 60 };
-  assert.ok(optInLines({ epics: [{ id: "a", status: "active", claim: old }] }).some(l => l.includes("NOT SET: advisory claim")));
-  assert.ok(optInLines({ epics: [{ id: "a", status: "archived", claim: live }] }).some(l => l.includes("NOT SET: advisory claim")));
+unitTest("gh#210: a claim is an epic's temporary hold, not a repo setting, so it is never listed as NOT SET", () => {
+  assert.ok(!OPT_INS.some(o => o.id === "claim"));
+  assert.ok(!optInLines({ epics: [] }).join("\n").includes("claim"));
 });
 
 unitTest("gh#210: a tracker name with control characters is escaped in the summary", () => {

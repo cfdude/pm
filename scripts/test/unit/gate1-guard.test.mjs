@@ -37,3 +37,14 @@ unitTest("gate1ActivationRefusal names the SAME remedy gateRemedy prints, plus t
   assert.doesNotMatch(c, /--gate1-waived/);
   assert.equal(gate1ActivationRefusal(epic({ gate1Waived: "x" }), { changeIds: on }), null);
 });
+
+unitTest("gate1ActivationGap resolves the epic's change through its --spec / --plan link, not its id alone (gh#200)", async () => {
+  const { gate1ActivationGap } = await import(GUARD);
+  const renamed = (over = {}) => epic({ specPath: "openspec/changes/other-name/proposal.md", ...over });
+  assert.match(gate1ActivationGap(renamed(), ["other-name"]), /no Gate 1/, "the change dir has a different name than the id");
+  assert.match(gate1ActivationGap(epic({ planPath: "openspec/changes/other-name/tasks.md" }), ["other-name"]), /no Gate 1/, "--plan resolves it too");
+  assert.equal(gate1ActivationGap(renamed(), ["unrelated"]), null, "a link to a change that is not on disk is pre-propose");
+  assert.equal(gate1ActivationGap(renamed({ gate1Waived: "doc-only" }), ["other-name"]), null);
+  assert.equal(gate1ActivationGap(renamed({ gateReview: { gate1: { verdict: "pass" } } }), ["other-name"]), null);
+  assert.equal(gate1ActivationGap(renamed({ lane: "superpowers" }), ["other-name"]), null);
+});

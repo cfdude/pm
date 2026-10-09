@@ -68,62 +68,101 @@ unitTest("onDiskRulesBlock lifts exactly the marked lines out of a file and is n
   assert.equal(onDiskRulesBlock(`${BLOCK}${BLOCK}`), null, "an ambiguous arrangement is not measured, never guessed at");
 });
 
-const para = (tag, n) => `${tag} ${"x".repeat(n)}`;
-const longBrief = () => [
-  "HEAD line one", "HEAD line two", "",
-  ...Array.from({ length: 200 }, (_, i) => para(`middle-${i}`, 60)), "",
-  "LIFECYCLE reminder", "",
-  "RULES reminder", "",
-  "Manage with /pm:status",
-].join("\n");
+const OB = (tag) => `OBLIGATION ${tag}`;
+const list = (heading, n, { width = 60, boundedCap = 5, fromEnd = false, where = "PROJECT.md" } = {}) => ({
+  heading, boundedCap, fromEnd,
+  items: Array.from({ length: n }, (_, i) => [`  - ${heading}-${i} ${"x".repeat(width)}`]),
+  more: (k) => `  (+${k} more - see ${where})`,
+});
+const partsOf = (lists, { obligation = 3, tailLines = ["RULES reminder"] } = {}) => [
+  "HEAD line", "",
+  ...Array.from({ length: obligation }, (_, i) => OB(i)), "",
+  { lists },
+  ...tailLines,
+];
+/** The plain text a caller would hold: obligations, then every list in full. */
+const plainOf = (parts) => parts.flatMap(x => typeof x === "string" ? [x]
+  : x.lists.flatMap(l => [l.heading, ...l.items.flat(), ""])).join("\n");
 
-unitTest("a brief at or under the cap passes through byte-for-byte and is not marked truncated", async () => {
-  const { capBrief } = await load();
-  const text = "short brief\n";
-  assert.deepEqual(capBrief(text, 1000), { text, truncated: false, bytes: bytes(text), originalBytes: bytes(text) });
-  assert.equal(capBrief(text, bytes(text)).truncated, false, "exactly at the cap is under it");
+unitTest("a brief at or under the cap is sent as the plain text, byte for byte, and not marked", async () => {
+  const { fitBrief } = await load();
+  const parts = partsOf([list("A", 2)]);
+  const plain = plainOf(parts);
+  const r = fitBrief(parts, { plain, cap: 100000 });
+  assert.deepEqual(r, { text: plain, truncated: false, overCap: false, bytes: bytes(plain), originalBytes: bytes(plain) });
+  assert.equal(fitBrief(parts, { plain, cap: bytes(plain) }).truncated, false, "exactly at the cap is under it");
 });
 
-unitTest("an over-cap brief is cut on a line boundary, within the cap, with a visible marker naming where the rest lives", async () => {
-  const { capBrief } = await load();
-  const input = longBrief();
-  const r = capBrief(input, 4096);
+unitTest("over the cap, lists are bounded with a visible overflow line and every obligation line survives", async () => {
+  const { fitBrief } = await load();
+  const parts = partsOf([list("RELEASES", 40, { fromEnd: true, boundedCap: 3, where: 'PROJECT.md "Releases"' }), list("LINKS", 40)]);
+  const plain = plainOf(parts);
+  const r = fitBrief(parts, { plain, cap: 2000 });
   assert.equal(r.truncated, true);
-  assert.ok(bytes(r.text) <= 4096, `capped output is ${bytes(r.text)} bytes`);
+  assert.equal(r.overCap, false);
+  assert.ok(bytes(r.text) <= 2000, `sent ${bytes(r.text)}`);
   assert.equal(r.bytes, bytes(r.text));
-  assert.equal(r.originalBytes, bytes(input));
-  assert.match(r.text, /^HEAD line one\nHEAD line two\n/, "the head survives");
-  assert.match(r.text, /\[pm brief truncated: \d+ bytes over the 4096-byte cap/);
-  assert.match(r.text, /PROJECT\.md/, "the marker names where the full text is");
-  assert.match(r.text, /\/pm:status/);
-  for (const line of r.text.split("\n").filter(l => l.startsWith("middle-"))) assert.match(line, /^middle-\d+ x{60}$/, "no line is cut mid-way");
+  assert.equal(r.originalBytes, bytes(plain));
+  for (let i = 0; i < 3; i++) assert.ok(r.text.includes(OB(i)), "an obligation line was cut");
+  assert.match(r.text, /RELEASES-39 /, "the MOST RECENT releases are the ones kept");
+  assert.doesNotMatch(r.text, /RELEASES-0 /);
+  assert.match(r.text, /\(\+37 more - see PROJECT\.md "Releases"\)/, "the overflow line names where the rest is and how many");
+  assert.match(r.text, /RULES reminder$/, "the closing instructions are last and intact");
 });
 
-unitTest("the closing reminder paragraphs are kept after the marker, so the standing rules are never the part dropped", async () => {
-  const { capBrief } = await load();
-  const r = capBrief(longBrief(), 4096);
-  const markerAt = r.text.indexOf("[pm brief truncated");
-  assert.ok(markerAt > 0);
-  const after = r.text.slice(markerAt);
-  assert.match(after, /LIFECYCLE reminder/);
-  assert.match(after, /RULES reminder/);
-  assert.match(after, /Manage with \/pm:status\n$/);
+unitTest("the marker's arithmetic is total minus cap, and its pointer is the one PROJECT.md section that holds the text", async () => {
+  const { fitBrief } = await load();
+  const parts = partsOf([list("A", 60)]);
+  const plain = plainOf(parts);
+  const r = fitBrief(parts, { plain, cap: 1500 });
+  const m = /\[pm brief: (\d+) bytes uncapped, (\d+) over the 1500-byte cap/.exec(r.text);
+  assert.ok(m, r.text);
+  assert.equal(Number(m[1]), bytes(plain));
+  assert.equal(Number(m[2]), bytes(plain) - 1500, "bytes over the cap is total minus cap, not the total");
+  assert.match(r.text, /PROJECT\.md "Briefing"/);
 });
 
-unitTest("a tail too large to keep is dropped rather than blowing the cap", async () => {
-  const { capBrief } = await load();
-  const input = ["head", "", "a".repeat(5000), "", "b".repeat(5000), "", "c".repeat(5000)].join("\n");
-  const r = capBrief(input, 1024);
-  assert.ok(bytes(r.text) <= 1024);
-  assert.match(r.text, /\[pm brief truncated/);
+unitTest("when the total is still over the cap the biggest list is trimmed further, never an obligation block", async () => {
+  const { fitBrief } = await load();
+  const parts = partsOf([list("BIG", 5, { width: 400, boundedCap: 5 }), list("SMALL", 5, { width: 10, boundedCap: 5 })], { obligation: 2 });
+  const plain = plainOf(parts);
+  const loose = fitBrief(parts, { plain, cap: 1500 });
+  const tight = fitBrief(parts, { plain, cap: 900 });
+  assert.ok(bytes(tight.text) < bytes(loose.text));
+  assert.ok(bytes(tight.text) <= 900, `sent ${bytes(tight.text)}`);
+  assert.ok(tight.text.includes(OB(0)) && tight.text.includes(OB(1)));
+  assert.match(tight.text, /SMALL-0 /, "the small list is untouched while the big one gives way");
 });
 
-unitTest("a single line longer than the budget is cut on a character boundary, never mid-codepoint", async () => {
-  const { capBrief } = await load();
-  const r = capBrief("—".repeat(5000), 1024);
-  assert.ok(bytes(r.text) <= 1024);
-  assert.ok(!r.text.includes("�"), "no replacement character from a split codepoint");
-  assert.match(r.text, /\[pm brief truncated/);
+unitTest("obligations alone over the cap are emitted whole and the brief says so", async () => {
+  const { fitBrief } = await load();
+  const parts = partsOf([list("A", 10)], { obligation: 80 });
+  const plain = plainOf(parts);
+  const r = fitBrief(parts, { plain, cap: 600 });
+  assert.equal(r.overCap, true);
+  assert.ok(bytes(r.text) > 600, "over the cap, deliberately");
+  for (let i = 0; i < 80; i++) assert.ok(r.text.includes(OB(i)), `obligation ${i} was cut`);
+  assert.match(r.text, /obligation blocks alone exceed it\. They are never cut/);
+  assert.match(r.text, /A\n\s+\(\+10 more/, "the list is down to its heading and overflow line");
+});
+
+unitTest("a list item longer than BRIEF_ITEM_MAX is trimmed on a character boundary with an ellipsis", async () => {
+  const { fitBrief, BRIEF_ITEM_MAX } = await load();
+  const parts = partsOf([{ heading: "L:", boundedCap: 5, fromEnd: false, items: [["  - " + "—".repeat(2000)]], more: () => "" }]);
+  const r = fitBrief(parts, { plain: plainOf(parts), cap: 1200 });
+  const line = r.text.split("\n").find(l => l.startsWith("  - "));
+  assert.equal([...line].length, BRIEF_ITEM_MAX);
+  assert.ok(line.endsWith("…"));
+  assert.ok(!r.text.includes("�"));
+});
+
+unitTest("a prefix line (the runtime-support floor) leads the brief and counts against the cap", async () => {
+  const { fitBrief } = await load();
+  const parts = partsOf([list("A", 4)]);
+  const plain = plainOf(parts);
+  const r = fitBrief(parts, { plain, cap: 100000, prefix: "FLOOR line" });
+  assert.ok(r.text.startsWith("FLOOR line\n"));
+  assert.equal(r.originalBytes, bytes("FLOOR line\n" + plain));
 });
 
 unitTest("the cap is a named constant, large enough for the head of a real brief and far below a fleet-worst one", async () => {
@@ -135,11 +174,11 @@ unitTest("session cost lines: one line for the block, one for the brief, each sa
   const { sessionCostLines } = await load();
   const lines = sessionCostLines({
     file: "CLAUDE.md", block: { bytes: 40087, tokens: 10022 },
-    brief: { originalBytes: 78276, bytes: 16384, truncated: true }, cap: 16384,
+    brief: { originalBytes: 78276, bytes: 8242, truncated: true, overCap: false }, cap: 16384,
   });
   assert.equal(lines.length, 2);
   assert.match(lines[0], /rules block \(CLAUDE\.md\): 40087 bytes, ~10022 tokens/);
-  assert.match(lines[1], /SessionStart brief: 16384 of 78276 bytes sent \(~4096 tokens\), truncated at the 16384-byte cap/);
+  assert.match(lines[1], /SessionStart brief: 8242 of 78276 bytes sent \(~2061 tokens\), long lists shortened to fit the 16384-byte cap.*every warning and obligation block is whole/);
   const ok = sessionCostLines({
     file: "AGENTS.md", block: { bytes: 100, tokens: 25 },
     brief: { originalBytes: 800, bytes: 800, truncated: false }, cap: 16384,

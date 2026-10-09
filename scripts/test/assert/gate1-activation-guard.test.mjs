@@ -125,3 +125,68 @@ test("push-detour WARNS about an unreviewed openspec detour instead of refusing 
   assert.equal(push.status, 0, push.stderr);
   assert.match(push.stderr, /warning — 'feat' is now active but it has no Gate 1/);
 });
+
+test("an epic whose change directory has a DIFFERENT name (linked by --spec) is refused too (gh#200)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  mkdirs(cwd, "openspec/changes/other-name");
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "other-name", "proposal.md"), "# p\n");
+  assert.equal(invokeEngine(["add-epic", "--id", "feat", "--lane", "openspec", "--status", "queued"], { cwd }).status, 0);
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  // Linked in the SAME call: judged against the link the call is setting.
+  let r = invokeEngine(["update-epic", "feat", "--spec", "openspec/changes/other-name/proposal.md", "--status", "active"], { cwd });
+  assert.equal(r.status, 1, r.stderr);
+  assert.match(r.stderr, /cannot make openspec-lane epic 'feat' active/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "nothing was written");
+  // Linked already: the stored link is read by set-active too.
+  assert.equal(invokeEngine(["update-epic", "feat", "--spec", "openspec/changes/other-name/proposal.md"], { cwd }).status, 0);
+  r = invokeEngine(["set-active", "feat"], { cwd });
+  assert.equal(r.status, 1, r.stderr);
+  assert.match(r.stderr, /no Gate 1/);
+  // --clear spec is the inverse: the epic is pre-propose again.
+  assert.equal(invokeEngine(["update-epic", "feat", "--clear", "spec", "--status", "active"], { cwd }).status, 0);
+});
+
+test("add-many and add-epic refuse a creation at active whose --spec names an on-disk change under another name (gh#200)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  mkdirs(cwd, "openspec/changes/other-name");
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "other-name", "proposal.md"), "# p\n");
+  const spec = "openspec/changes/other-name/proposal.md";
+  const one = invokeEngine(["add-epic", "--id", "feat", "--lane", "openspec", "--status", "active", "--spec", spec], { cwd });
+  assert.equal(one.status, 1, one.stderr);
+  assert.match(one.stderr, /cannot make openspec-lane epic 'feat' active/);
+  const batch = path.join(cwd, "batch.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [{ id: "feat2", title: "t", lane: "openspec", status: "active", specPath: spec }] }));
+  const many = invokeEngine(["add-many", "--from", batch], { cwd });
+  assert.equal(many.status, 1, many.stderr);
+  assert.match(many.stderr, /cannot make openspec-lane epic 'feat2' active/);
+});
+
+test("update-epic judges the activation guard against the lane the call SETS, not the lane being left", () => {
+  // superpowers -> openspec in the same call as --status active: the change is on disk, so Gate 1 is owed.
+  const sp = repoWith({ lane: "superpowers" });
+  const refused = invokeEngine(["update-epic", "feat", "--lane", "openspec", "--status", "active"], { cwd: sp });
+  assert.equal(refused.status, 1, refused.stderr);
+  assert.match(refused.stderr, /cannot make openspec-lane epic 'feat' active/);
+  assert.equal(epicOf(sp, "feat").lane, "superpowers", "nothing was written");
+  assert.equal(epicOf(sp, "feat").status, "queued");
+  // ...and the waiver in that same call is accepted, because the call makes the epic an openspec one.
+  const waived = invokeEngine(["update-epic", "feat", "--lane", "openspec", "--status", "active", "--gate1-waived", "doc-only"], { cwd: sp });
+  assert.equal(waived.status, 0, waived.stderr);
+  assert.equal(epicOf(sp, "feat").lane, "openspec");
+  assert.equal(epicOf(sp, "feat").gate1Waived, "doc-only");
+  // --gate1-waived alone with --lane openspec is not refused as "not an openspec-lane epic".
+  const sp2 = repoWith({ lane: "superpowers" });
+  const only = invokeEngine(["update-epic", "feat", "--lane", "openspec", "--gate1-waived", "why"], { cwd: sp2 });
+  assert.equal(only.status, 0, only.stderr);
+  assert.equal(epicOf(sp2, "feat").gate1Waived, "why");
+  // The inverse direction: leaving openspec in the same call is judged as the lane it becomes.
+  const os = repoWith();
+  const left = invokeEngine(["update-epic", "feat", "--lane", "superpowers", "--status", "active"], { cwd: os });
+  assert.equal(left.status, 0, left.stderr);
+  assert.equal(epicOf(os, "feat").lane, "superpowers");
+  // ...and a waiver in a call that moves the epic OUT of openspec is refused: it has no Gate 1 to waive.
+  const os2 = repoWith();
+  const bad = invokeEngine(["update-epic", "feat", "--lane", "superpowers", "--gate1-waived", "why"], { cwd: os2 });
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /--gate1-waived applies only to an openspec-lane epic/);
+});

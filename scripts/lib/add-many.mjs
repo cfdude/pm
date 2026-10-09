@@ -164,7 +164,7 @@ export function addMany() {
     }
     // Gate 1 activation guard (openspec-gate1-guard-on-apply): refuses the WHOLE batch, like every other check here.
     if (status === "active") {
-      const gate1Refusal = gate1ActivationRefusal({ id, lane: e.lane }, { creating: true });
+      const gate1Refusal = gate1ActivationRefusal({ id, lane: e.lane, planPath: e.planPath, specPath: e.specPath }, { creating: true });
       if (gate1Refusal) refuse(gate1Refusal);
     }
     batchIds.add(id);
