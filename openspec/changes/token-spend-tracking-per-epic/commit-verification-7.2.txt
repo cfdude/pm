@@ -1,0 +1,79 @@
+=== 2ccb078b feat(spend): the opt-in switch, the vocabulary, the ignore line and the call-site sweep
+
+ .gitignore                                         |   1 +
+ README.md                                          |  15 +++
+ commands/spend.md                                  |  21 ++++
+ docs/parity-ledger.json                            |   5 +
+ .../call-site-sweep-1.4.txt                        | 108 +++++++++++++++++++
+ .../token-spend-tracking-per-epic/red-1.1-1.3.txt  | 115 +++++++++++++++++++++
+ .../changes/token-spend-tracking-per-epic/tasks.md |  12 +--
+ scripts/conductor.mjs                              |   4 +-
+ scripts/lib/constants.mjs                          |   7 ++
+ scripts/lib/opt-ins.mjs                            |   7 ++
+ scripts/lib/spend-tracking.mjs                     |  44 ++++++++
+ scripts/lib/subcommands.mjs                        |   5 +
+ scripts/lib/verb-effects.mjs                       |   1 +
+ scripts/test/assert/spend-tracking.test.mjs        |  53 ++++++++++
+ scripts/test/functional/verb-surface.test.mjs      |   3 +-
+ .../test/sweeps/output-interpolations.judged.mjs   |   3 +
+ scripts/test/unit/opt-ins.test.mjs                 |   2 +-
+ scripts/test/unit/spend-tracking.test.mjs          |  60 +++++++++++
+ skills/conductor/SKILL.md                          |   2 +
+ 19 files changed, 459 insertions(+), 9 deletions(-)
+=== 164f239d feat(spend): the transcript reader, the ledger, read-time attribution, the timeline and the spend verb
+
+ README.md                                          |  26 +-
+ commands/spend.md                                  | 134 +++++-
+ .../token-spend-tracking-per-epic/red-2.1-2.6.txt  |  85 ++++
+ .../token-spend-tracking-per-epic/red-3.1-3.5.txt  |  60 +++
+ .../token-spend-tracking-per-epic/red-4.1-4.4.txt  | 504 +++++++++++++++++++++
+ .../changes/token-spend-tracking-per-epic/tasks.md |  30 +-
+ scripts/conductor.mjs                              |  35 +-
+ scripts/lib/constants.mjs                          |  19 +-
+ scripts/lib/spend-attribution.mjs                  | 106 +++++
+ scripts/lib/spend-command.mjs                      | 173 +++++++
+ scripts/lib/spend-ledger.mjs                       | 298 ++++++++++++
+ scripts/lib/spend-reader.mjs                       | 211 +++++++++
+ scripts/lib/spend-report.mjs                       | 141 ++++++
+ scripts/lib/spend-switch.mjs                       |  13 +
+ scripts/lib/spend-tracking.mjs                     |  68 ++-
+ scripts/lib/spend-tree.mjs                         |  71 +++
+ scripts/lib/store.mjs                              |   6 +
+ scripts/lib/verb-effects.mjs                       |   7 +-
+ scripts/test/assert/spend-ledger.test.mjs          | 250 ++++++++++
+ scripts/test/assert/spend-timeline.test.mjs        | 262 +++++++++++
+ scripts/test/assert/spend-verb.test.mjs            | 368 +++++++++++++++
+ scripts/test/assert/store-ownership.test.mjs       |   7 +
+ scripts/test/fixtures/fs-path-recorder.mjs         |  49 ++
+ scripts/test/fixtures/harness.mjs                  |   5 +-
+ scripts/test/fixtures/spend-transcripts.mjs        | 135 ++++++
+ scripts/test/functional/conductor-31.test.mjs      |  11 +-
+ .../test/functional/output-text-integrity.test.mjs |   3 +
+ scripts/test/functional/spend-tree.test.mjs        | 110 +++++
+ scripts/test/functional/verb-surface.test.mjs      |   1 +
+ .../test/sweeps/output-interpolations.judged.mjs   |  50 +-
+ scripts/test/unit/spend-attribution.test.mjs       | 163 +++++++
+ scripts/test/unit/spend-reader.test.mjs            | 211 +++++++++
+ scripts/test/unit/spend-report.test.mjs            | 132 ++++++
+ scripts/test/unit/spend-tree.test.mjs              |  50 ++
+ skills/conductor/SKILL.md                          |  11 +-
+ 35 files changed, 3750 insertions(+), 55 deletions(-)
+=== 5fa66bd9 feat(spend): the rules-block marker section, the CLAUDE.md refresh on toggle and the changeset
+
+ .changesets/token-spend-tracking-per-epic.md       |  14 +
+ .../token-spend-tracking-per-epic/red-5.1-5.2.txt  | 478 +++++++++++++++++++++
+ .../changes/token-spend-tracking-per-epic/tasks.md |   6 +-
+ scripts/conductor.mjs                              |   4 +-
+ scripts/lib/rules.mjs                              |  42 +-
+ scripts/lib/spend-tracking.mjs                     |   8 +-
+ scripts/lib/verb-effects.mjs                       |   2 +-
+ scripts/test/assert/spend-rules-emission.test.mjs  |  65 +++
+ scripts/test/assert/spend-tracking.test.mjs        |  26 +-
+ .../test/fixtures/rules-0.52.0-spend-tracking.txt  |  17 +
+ .../test/functional/emitted-invocations.test.mjs   |   3 +
+ .../test/sweeps/output-interpolations.judged.mjs   |   2 +
+ scripts/test/unit/spend-rules.test.mjs             |  55 +++
+ scripts/test/unit/spend-tracking.test.mjs          |  27 +-
+ 14 files changed, 715 insertions(+), 34 deletions(-)
+
+TASK -> COMMIT (7.2): 1.x -> 2ccb078b; 2.x/3.x/4.x -> 164f239d; 5.x -> 5fa66bd9. Every file each task claims appears in that commit's stat above (checked by name).

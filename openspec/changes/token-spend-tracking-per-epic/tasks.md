@@ -288,7 +288,7 @@ These rules bind every section below.
 
 ## 6. Dogfood
 
-- [ ] 6.1 Integration: the full assertion half passes
+- [x] 6.1 Integration: the full assertion half passes
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`), plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record its peak
       memory.
@@ -302,7 +302,7 @@ These rules bind every section below.
 
 - [x] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.4. Verify that
       `call-site-sweep-1.4.txt` exists and names every inverse.
-- [ ] 7.2 **Verify each task against its commit** (item 2). For every task above, run
+- [x] 7.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in THAT
       commit. Save the result as `commit-verification-7.2.txt`.
 - [x] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
