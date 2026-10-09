@@ -15,6 +15,7 @@ import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore, untrackInstruction } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { sessionCostReport } from "./session-cost-report.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
 import { die } from "./command-exit.mjs";
@@ -269,6 +270,11 @@ export function upgrade() {
   // never-replayed transformation may not have.
   const openspecLines = openspecCurrencyLines();
   for (const l of openspecLines) errStream().write(l + "\n");
+
+  // rules-block-session-cost — what this repo's pm now costs every session: the managed block just
+  // written and the SessionStart brief it will send (capped). A READ, like the line above: measured
+  // from what is on disk and in state, nothing recorded. Not a migration for the same reason.
+  for (const l of sessionCostReport(state, resolvePlatform({}, state))) errStream().write(escapeControls(l) + "\n");
 
   // COMMIT WHAT THIS JUST REWROTE. Every path below is one THIS function wrote a moment ago:
   // state.json (migrations + the version stamp), the platform's rules file (NOT always

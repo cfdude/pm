@@ -102,6 +102,7 @@ import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render, renderVerb } from "./lib/render.mjs";
+import { measureRulesBlock, sectionTableLines } from "./lib/session-cost.mjs";
 import { init, brief, snapshot, commitNudge, syncVerb, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
@@ -465,7 +466,11 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId)));
+      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId));
+      // `--sections`: instead of the block, the ranked per-section sizes of the block that WOULD be written
+      // (rules-block-session-cost). Read-only like the verb itself.
+      if (f.sections) outStream().write(sectionTableLines(measureRulesBlock(block)).join("\n") + "\n");
+      else outStream().write(block);
     },
     "write-rules": () => {
       // #152: `--platform` is read straight off argv by platformFlag(), which treats a valueless

@@ -920,6 +920,8 @@ export const VERB_FLAGS = [
   // FLAGLESS_VERBS, where it would have been a false claim.
   { flag: "diff-summary", commands: ["render"], valueless: true },
   { flag: "epic", commands: ["rules"] },
+  // rules-block-session-cost: print the ranked per-section sizes of the block instead of the block.
+  { flag: "sections", commands: ["rules"], valueless: true },
   // `init` and the five HOOK verbs join the three that read it (every-verb-refuses-what-it-does-not-read
   // D6): hooks/hooks.json passes `--platform claude-code` to every hook, so declaring it anywhere
   // less than all of them would make the check refuse pm's own hook lines. Each validates it before

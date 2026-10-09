@@ -71,6 +71,16 @@ or `0/0 · N lifecycle` where every task is excluded. The archive task always qu
 cannot be ticked before the thing that ticks it, so it used to render as outstanding work
 forever and would now demand a handoff at archive time.
 
+## What pm costs every session — the two `conductor:` lines at the end of `render`
+
+`render` ends with two lines on stdout (not under `--diff-summary`): the first, starting "conductor: rules
+block", gives the managed block as it sits on disk in bytes and estimated tokens; the second, starting
+"conductor: SessionStart brief", gives what the SessionStart hook will send. Tokens are bytes/4, an estimate. The block is paid by every session and every dispatched agent. The
+brief is capped at 16384 bytes: over it, the hook sends the head, a `[pm brief truncated: ...]` marker and the
+closing reminders, and this line says `N of M bytes sent ... truncated`. The full brief is in PROJECT.md's
+"Briefing" section, which is never capped. Report both lines when you summarize. `rules --sections` prints
+the block's per-section sizes, ranked, for deciding what is worth its bytes.
+
 ## Is this PROJECT.md diff worth reading — `render --diff-summary`
 
 ```bash

@@ -35,6 +35,10 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    If `${CLAUDE_PLUGIN_ROOT}` is empty:
    `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" upgrade`
 
+   The run also prints two `conductor:` lines saying what this repo's pm now costs every session: the
+   managed rules block (bytes, estimated tokens) and the SessionStart brief (capped at 16384 bytes; a
+   truncated one is said to be). Relay them in one line; they are information, not a task.
+
 2. **Review the changelog delta and recommend adoption.** The command prints "What's new in pm
    (since \<old\>)" — the `### Added` headlines for every version between the repo's old and new
    `pmVersion`. Don't just display these and move on: read each one, judge whether it describes an
@@ -132,7 +136,7 @@ standalone — `/pm:init` and `/pm:upgrade` are how it is reached. Three verbs s
 |---|---|---|
 | `write-rules` | writes or refreshes the managed block in the target file | **yes** |
 | `rules-target` | prints the absolute path of the file that block belongs in | no |
-| `rules` | prints the block to stdout, writing nothing (`--epic <id>` renders it at that epic's review mode) | no |
+| `rules` | prints the block to stdout, writing nothing (`--epic <id>` renders it at that epic's review mode; `--sections` prints its per-section sizes, ranked, instead) | no |
 
 `--platform <claude-code|hermes|codex>` **declares** which host agent this invocation is running
 under. Declared, never detected: pm is only ever invoked by a host agent through a hook whose

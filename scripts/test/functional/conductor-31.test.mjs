@@ -339,6 +339,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "push-detour --reconcile",
     "remove-epic --cascade",
     "render --diff-summary",
+    "rules --sections",
     "set-lane-routing --clear",
     "set-tracker --remove",
     "sync --dry-run",
