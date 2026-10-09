@@ -7,25 +7,30 @@
 //
 // THE REGISTRY BELOW IS THE LIST. `upgrade` prints from it and nothing else; a new opt-in is one
 // row here, and `scripts/test/unit/opt-ins.test.mjs` fails if a row names a verb or command doc
-// that does not exist. LEAF module: imports constants.mjs and claim-shape.mjs only.
+// that does not exist. LEAF module: imports constants.mjs only.
 //
 // ARCHITECTURAL LAW: this is a READ of `state.json` that EMITS INSTRUCTIONS. It enables nothing,
 // opens no connection, calls no tracker. A repo that declines an opt-in loses nothing — the lines
 // are information, printed every run, never a refusal and never a gate.
 
 import { escapeControls } from "./constants.mjs";
-import { isLiveClaim } from "./claim-shape.mjs";
 
 /** One row per opt-in. `isSet(state)` is the adoption test; `describe(state)` renders the adopted
  *  value; `missing` is what an unadopted repo is losing, in a clause; `command` is the adopting
- *  invocation; `verb`/`doc` name the engine verb and `commands/<doc>.md` the test pins to reality. */
+ *  invocation as PRINTED and `example` the same invocation as a runnable argv (placeholders filled),
+ *  which `assert/opt-ins.test.mjs` runs against the engine so a printed command cannot drift from
+ *  the flags the verb reads (0.51: two rows printed bare positionals the engine refused). The claim
+ *  row is deliberately NOT here: a claim is an epic's temporary advisory hold, not a repo setting,
+ *  so "NOT SET" was true of every repo on every upgrade and told it nothing.
+ *  `verb`/`doc` name the engine verb and `commands/<doc>.md` the test pins to reality. */
 export const OPT_INS = [
   {
     id: "reviewMode", verb: "set-review-mode", doc: "review-mode",
     isSet: (s) => typeof s.reviewMode === "string" && s.reviewMode !== "",
     describe: (s) => `reviewMode: ${escapeControls(s.reviewMode)}`,
     missing: "reviewMode — every gate reviews at the default (standard), never tuned to this repo's risk",
-    command: "set-review-mode off|standard|thorough",
+    command: "set-review-mode --mode off|standard|thorough",
+    example: ["set-review-mode", "--mode", "standard"],
   },
   {
     id: "laneRouting", verb: "set-lane-routing", doc: "lane-routing",
@@ -33,6 +38,7 @@ export const OPT_INS = [
     describe: (s) => `laneRouting: ${s.laneRouting.overrides.length} override(s)`,
     missing: "laneRouting (0 overrides) — suggest-lane and triage return null for every ask",
     command: "set-lane-routing --add \"<match>:<lane>\"  e.g. --add \"migration:openspec\"",
+    example: ["set-lane-routing", "--add", "migration:openspec"],
   },
   {
     id: "activityLog", verb: "set-activity-log", doc: "activity",
@@ -40,20 +46,15 @@ export const OPT_INS = [
     describe: () => "activityLog: on",
     missing: "activityLog — nothing records how the project got to its present state",
     command: "set-activity-log on",
+    example: ["set-activity-log", "on"],
   },
   {
     id: "tracker", verb: "set-tracker", doc: "tracker",
     isSet: (s) => !!(s.tracker && s.tracker.system),
     describe: (s) => `tracker: ${escapeControls(s.tracker.system)}`,
     missing: "tracker — no external issue tracker is mirrored (only worth it if work is managed in one)",
-    command: "set-tracker <system> (see /pm:tracker)",
-  },
-  {
-    id: "claim", verb: "claim", doc: "claim",
-    isSet: (s) => (s.epics || []).some(e => e.status !== "archived" && e.claim && isLiveClaim(e.claim)),
-    describe: () => "claim: held",
-    missing: "advisory claim — no session owns any epic",
-    command: "claim <epic-id>",
+    command: "set-tracker --system <system> (see /pm:tracker)",
+    example: ["set-tracker", "--system", "github-issues"],
   },
 ];
 

@@ -59,7 +59,6 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    ```text
    conductor: opt-ins — reviewMode: thorough · activityLog: on
    conductor:   NOT SET: laneRouting (0 overrides) — suggest-lane and triage return null for every ask → set-lane-routing --add "<match>:<lane>"  e.g. --add "migration:openspec"
-   conductor:   NOT SET: advisory claim — no session owns any epic → claim <epic-id>
    ```
 
    Each `NOT SET` line names the command that adopts it. Judge each against this repo, as in the
