@@ -16,14 +16,17 @@ import { rulesBlockArrangement } from "./rules.mjs";
 /** The hard cap on the SessionStart brief, in UTF-8 bytes (about 4K tokens). The brief is the one
  *  per-session payload that GROWS with a repository's history: on pm's own repo it was 78,276 bytes,
  *  of which RELEASES, DISPOSITIONS, GATE REVIEWS, HANDOFFS and EPIC LINKS were all but the first
- *  ~1.7 KB. PROJECT.md embeds the same text uncapped, so nothing is lost by cutting it here. */
+ *  ~1.7 KB. PROJECT.md embeds the same text uncapped, so nothing is lost by bounding it here.
+ *
+ *  THE CAP BINDS THE LISTS, NOT THE BRIEF'S TEXT. A tail-cut at a byte offset (the first design) ate
+ *  whatever sat past the offset: with RELEASES alone near 14 KB, the UNGATED / WITHDRAWN ARCHIVES
+ *  blocks, the spec-sync block and TRACKER SYNC, all obligations, were the part dropped. fitBrief()
+ *  shortens only the lists buildBriefParts() marks shortenable and leaves every other block whole. */
 export const BRIEF_BYTE_CAP = 16384;
 
-/** The closing paragraphs of the brief (lifecycle-marker reminder, the one-paragraph RULES reminder,
- *  the "Manage with" line) are the standing instructions; a cut that ate them would drop the part of
- *  the brief an agent most needs. They are kept after the marker, up to this many bytes. */
-const TAIL_PARAGRAPHS = 3;
-const TAIL_MAX_BYTES = 2048;
+/** A shortenable list's item lines are trimmed to this many characters (a release or disposition row
+ *  can carry a multi-KB free-text reason); the overflow line and the PROJECT.md pointer are not. */
+export const BRIEF_ITEM_MAX = 240;
 
 export const byteSize = (text) => Buffer.byteLength(text, "utf8");
 export const estimateTokens = (bytes) => Math.ceil(bytes / 4);
@@ -69,54 +72,88 @@ export function onDiskRulesBlock(fileText) {
   return a.lines.slice(a.i, a.j + 1).join("");
 }
 
-function cutToBytes(text, maxBytes) {
-  if (maxBytes <= 0) return "";
-  const lines = text.split(/(?<=\n)/);
-  let out = "";
-  for (const line of lines) {
-    if (byteSize(out) + byteSize(line) > maxBytes) break;
-    out += line;
-  }
-  if (out) return out;
-  // Not even one whole line fits: cut inside it, on a character boundary.
-  let cut = Buffer.from(text, "utf8").subarray(0, maxBytes).toString("utf8");
-  while (cut.endsWith("�")) cut = cut.slice(0, -1);
-  return cut;
-}
+const trimLine = (line, max) => {
+  const chars = [...line];
+  return chars.length <= max ? line : chars.slice(0, max - 1).join("") + "…";
+};
 
-/** Cap the SessionStart brief at `cap` bytes. Never silent: a cut brief carries a marker line that says
- *  how much was over and where the full text lives. Over the cap, the output is the head (whole lines),
- *  the marker, then the closing paragraphs. `{text, truncated, bytes, originalBytes}`. */
-export function capBrief(text, cap = BRIEF_BYTE_CAP) {
-  const originalBytes = byteSize(text);
-  if (originalBytes <= cap) return { text, truncated: false, bytes: originalBytes, originalBytes };
+/** Fit the SessionStart brief to `cap` bytes by shortening LISTS, never by cutting text.
+ *
+ *  `parts` is buildBriefParts()'s: escaped strings (every obligation, warning and standing
+ *  instruction) with one `{lists}` slot. `plain` is the same brief with every list in full. A brief
+ *  at or under the cap is returned as `plain`, byte for byte. Over it, each list starts at its own
+ *  cap (most recent releases, first five of the others, every item line trimmed to BRIEF_ITEM_MAX
+ *  characters) with a visible `(+N more — see <where it lives>)` line; if the total is still over,
+ *  the list contributing the most bytes loses one more item, repeatedly, down to its heading and
+ *  overflow line. Only when every list is at that floor and the brief is still over does it stay
+ *  over: the remaining text is obligations, which are never cut, and the marker says so.
+ *
+ *  `prefix` is one line placed first (the runtime-support floor), counted in the total.
+ *  Returns `{text, truncated, overCap, bytes, originalBytes}`; `truncated` means some list was
+ *  shortened, `overCap` means obligations alone exceed the cap. */
+export function fitBrief(parts, { plain, cap = BRIEF_BYTE_CAP, prefix = "" } = {}) {
+  const lead = prefix ? prefix + "\n" : "";
+  const original = lead + plain;
+  const originalBytes = byteSize(original);
+  if (originalBytes <= cap) return { text: original, truncated: false, overCap: false, bytes: originalBytes, originalBytes };
 
-  const marker =
-    `[pm brief truncated: ${originalBytes} bytes over the ${cap}-byte cap; the middle is omitted. ` +
-    `Full text: run \`/pm:status\` and read the "Briefing" section of PROJECT.md]`;
-  const paragraphs = text.replace(/\n+$/, "").split("\n\n");
-  let tail = paragraphs.length > TAIL_PARAGRAPHS ? paragraphs.slice(-TAIL_PARAGRAPHS).join("\n\n") : "";
-  if (byteSize(tail) > TAIL_MAX_BYTES) tail = "";
-  const tailPart = tail ? `\n\n${tail}\n` : "\n";
-  let budget = cap - byteSize(marker) - byteSize(tailPart) - 1;
-  if (budget < 0 && tail) {
-    tail = "";
-    budget = cap - byteSize(marker) - 2;
+  const where = `Full text: PROJECT.md "Briefing"`;
+  const trimMarker = `[pm brief: ${originalBytes} bytes uncapped, ${originalBytes - cap} over the ${cap}-byte cap. ` +
+    `The lists above were shortened (each says what it omits and where it lives); every warning and ` +
+    `obligation block is whole. ${where}]`;
+  const overMarker = `[pm brief: ${originalBytes} bytes uncapped, over the ${cap}-byte cap, and the warnings and ` +
+    `obligation blocks alone exceed it. They are never cut, so this brief is sent over the cap; the ` +
+    `lists were shortened as far as they go. ${where}]`;
+
+  const slot = parts.find(x => x && typeof x === "object" && Array.isArray(x.lists));
+  const lists = slot ? slot.lists : [];
+  const counts = lists.map(l => Math.min(l.items.length, l.boundedCap));
+  const renderList = (l, n) => {
+    const shown = l.fromEnd ? l.items.slice(l.items.length - n) : l.items.slice(0, n);
+    const out = [l.heading];
+    for (const item of shown) for (const line of item) out.push(trimLine(line, BRIEF_ITEM_MAX));
+    if (l.items.length > n) out.push(l.more(l.items.length - n));
+    out.push("");
+    return out;
+  };
+  const build = (marker) => {
+    const lines = [];
+    for (const x of parts) {
+      if (typeof x === "string") lines.push(x);
+      else if (x === slot) {
+        lists.forEach((l, i) => lines.push(...renderList(l, counts[i])));
+        lines.push(marker, "");
+      }
+    }
+    return lead + lines.join("\n");
+  };
+  const sizeOf = (i) => byteSize(renderList(lists[i], counts[i]).join("\n"));
+  let text = build(trimMarker);
+  while (byteSize(text) > cap) {
+    let pick = -1;
+    for (let i = 0; i < lists.length; i++) {
+      if (counts[i] > 0 && (pick === -1 || sizeOf(i) > sizeOf(pick))) pick = i;
+    }
+    if (pick === -1) break;
+    counts[pick] -= 1;
+    text = build(trimMarker);
   }
-  const head = cutToBytes(text, budget).replace(/\n+$/, "");
-  const out = `${head ? head + "\n\n" : ""}${marker}${tail ? `\n\n${tail}\n` : "\n"}`;
-  return { text: out, truncated: true, bytes: byteSize(out), originalBytes };
+  const overCap = byteSize(text) > cap;
+  if (overCap) text = build(overMarker);
+  return { text, truncated: true, overCap, bytes: byteSize(text), originalBytes };
 }
 
 /** The two report lines, one per cost. `block` is `{bytes, tokens}` or null (no block found); `brief` is
- *  capBrief()'s result. Printed by `upgrade` and by the `render` verb (/pm:status). */
+ *  fitBrief()'s result. Printed by `upgrade` and by the `render` verb (/pm:status). */
 export function sessionCostLines({ file, block, brief, cap }) {
   const first = block
     ? `conductor: rules block (${file}): ${block.bytes} bytes, ~${block.tokens} tokens (bytes/4) — paid by every session and every dispatched agent`
     : `conductor: rules block (${file}): none found`;
-  const second = brief.truncated
-    ? `conductor: SessionStart brief: ${brief.bytes} of ${brief.originalBytes} bytes sent (~${estimateTokens(brief.bytes)} tokens), truncated at the ${cap}-byte cap — full text in PROJECT.md`
-    : `conductor: SessionStart brief: ${brief.bytes} bytes (~${estimateTokens(brief.bytes)} tokens), under the ${cap}-byte cap`;
+  const second = brief.overCap
+    ? `conductor: SessionStart brief: ${brief.bytes} of ${brief.originalBytes} bytes sent (~${estimateTokens(brief.bytes)} tokens), OVER the ${cap}-byte cap — its warnings and obligation blocks alone exceed it and are never cut; the lists were shortened as far as they go`
+    : brief.truncated
+    ? `conductor: SessionStart brief: ${brief.bytes} of ${brief.originalBytes} bytes sent (~${estimateTokens(brief.bytes)} tokens), long lists shortened to fit the ${cap}-byte cap (each names where the rest is); every warning and obligation block is whole — full text in PROJECT.md`
+    :`conductor: SessionStart brief: ${brief.bytes} bytes (~${estimateTokens(brief.bytes)} tokens), under the ${cap}-byte cap`;
   return [first, second];
 }
 

@@ -10,13 +10,25 @@ bytes/4, an estimate. Epic: `rules-block-session-cost`.
 | --- | --- | --- | --- |
 | Managed rules block in CLAUDE.md | 40,087 | ~10,022 | every session, every dispatched agent |
 | SessionStart brief, before the cap | 78,275 | ~19,569 | every session start (not agents) |
-| SessionStart brief, after the 16,384-byte cap | 16,034 | ~4,009 | every session start |
+| SessionStart brief, after the 16,384-byte cap (first design: tail-cut) | 16,034 | ~4,009 | every session start |
+| SessionStart brief, after the cap (per-list bounds) | 8,242 | ~2,061 | every session start |
 
 The brief is the one that grows with a repository's history. On pm's own repo, RELEASES, DISPOSITIONS,
 GATE REVIEWS, HANDOFFS and EPIC LINKS are all but the first ~1.7 KB of it. This repo is the extreme case;
-a young repo's brief is a few KB and the cap never fires. The cap keeps the head, a visible marker, and the
-last three paragraphs (lifecycle-marker reminder, the RULES reminder, the "Manage with" line). PROJECT.md
-embeds the full text, which is where the marker points.
+a young repo's brief is a few KB and the cap never fires.
+
+The cap bounds LISTS, not the text. The first design cut the brief at a byte offset, which ate whatever sat
+past it: RELEASES alone is ~14 KB here, so the UNGATED / WITHDRAWN ARCHIVES blocks, the spec-sync block,
+HANDOFFS and TRACKER SYNC (obligations and warnings) were the part dropped, and the marker's "full text in
+PROJECT.md" was false for the spec-sync block, which is deliberately never embedded there. Now the brief is
+sent whole when it fits. Over the cap, only the shortenable lists are bounded and moved after every
+obligation block: RELEASES (the 3 most recent, reviewer free text dropped), DISPOSITIONS, GATE REVIEWS,
+HANDOFFS and EPIC LINKS (the first 5 each), every item line trimmed to 240 characters, each list ending in a
+`(+N more — see PROJECT.md "<section>")` line that names where the rest is. If the total is still over, the
+largest list loses items until it fits. If the obligation blocks alone exceed the cap they are sent anyway
+and the marker says so. The marker's "N over the cap" is total minus cap. PROJECT.md's "Briefing" section
+embeds the plain, unbounded text. Out of scope and unchanged: the PreCompact snapshot
+(`.conductor/brief.txt`) is still the plain uncapped brief.
 
 ## The rules block, ranked
 
@@ -63,7 +75,7 @@ engine can emit the text at that moment instead of relying on the agent to remem
 
 ## What this pass does and does not do
 
-Does: measures both costs, reports them in `/pm:upgrade` and `/pm:status` output, caps the brief at 16,384
-bytes with a visible marker, and prints the ranked table with `rules --sections`.
+Does: measures both costs, reports them in `/pm:upgrade` and `/pm:status` output, bounds the brief's lists to
+fit 16,384 bytes with a visible marker and never cuts an obligation block, and prints the ranked table with `rules --sections`.
 
 Does not: change a byte of the rules block.
