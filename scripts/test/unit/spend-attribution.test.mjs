@@ -64,11 +64,11 @@ unitTest("3.1 A row whose epic was removed reports as unknown: the input rows ar
 
 unitTest("3.1 A role added to the job-role list is accepted without a ledger change", () => {
   const row = sub("s", 5, "A");
-  const markers = { A: mk("e1", "plan", "plan") };
-  assert.equal(attribute([row], markers, [], state("e1"))[0].reason, "invalid-marker", "plan is not a job role today");
-  const extended = attribute([row], markers, [], state("e1"), { roles: [...KNOWN_JOB_ROLES, "plan"] })[0];
-  assert.deepEqual([extended.epic, extended.role, extended.attribution], ["e1", "plan", "marker"]);
-  assert.equal(resolveMarker(mk("e1", "plan", "plan"), { epicIds: new Set(["e1"]), roles: [...KNOWN_JOB_ROLES, "plan"] }).ok, true);
+  const markers = { A: mk("e1", "deploy", "plan") };
+  assert.equal(attribute([row], markers, [], state("e1"))[0].reason, "invalid-marker", "deploy is not a job role today");
+  const extended = attribute([row], markers, [], state("e1"), { roles: [...KNOWN_JOB_ROLES, "deploy"] })[0];
+  assert.deepEqual([extended.epic, extended.role, extended.attribution], ["e1", "deploy", "marker"]);
+  assert.equal(resolveMarker(mk("e1", "deploy", "plan"), { epicIds: new Set(["e1"]), roles: [...KNOWN_JOB_ROLES, "deploy"] }).ok, true);
 });
 
 unitTest("3.1 the default lists are the declared constants, not a second copy", () => {

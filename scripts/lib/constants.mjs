@@ -385,6 +385,22 @@ export const REASON_REQUIRES = "a non-empty reason";
  *  re-derived from position by every reader. */
 export const EPIC_DEDUP_KEYS = { primary: "externalUrl", fallback: "externalId" };
 
+/** THE JOB ROLES (execution-profile-planning-and-light-roles D1), declared ONCE and early in the file
+ *  because the epic-flag table below renders its help text from this list when the module evaluates.
+ *  Lifecycle order is print order. The spend ledger's `role` vocabulary is this same list. */
+export const KNOWN_JOB_ROLES = ["plan", "implement", "test", "review", "mechanical", "rudimentary"];
+/** The built-in default `{model, effort}` per job role (D2): the last layer of resolution, applied at
+ *  READ time and NEVER written to state, so a stored value is always something someone chose. A model
+ *  without an effort is invalid (haiku takes none). Frozen, and one key per role. */
+export const DEFAULT_ROLE_MODELS = Object.freeze({
+  plan: Object.freeze({ model: "opus", effort: "high" }),
+  implement: Object.freeze({ model: "sonnet", effort: "medium" }),
+  test: Object.freeze({ model: "sonnet", effort: "low" }),
+  review: Object.freeze({ model: "opus", effort: "high" }),
+  mechanical: Object.freeze({ model: "sonnet", effort: "low" }),
+  rudimentary: Object.freeze({ model: "haiku" }),
+});
+
 export const EPIC_FLAGS = [
   { flag: "id", key: "id", commands: ["add-epic", "add-many"] },
   { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"],
@@ -698,11 +714,11 @@ export const EPIC_FLAGS = [
     clearNote: "this epic stops carrying its own verbosity and falls back to its lane's, then the project's — the `profile` verb with --epic shows where it now comes from. Re-set it with --verbosity <level>" },
   { flag: "model", key: "model", commands: ["add-epic", "add-many", "update-epic"], repeats: true, nullable: true,
     placeholder: "role=model[:effort]",
-    clearNote: "this epic stops carrying its own model for EVERY role and each falls back to its lane's, then the project's — the `profile` verb with --epic shows where each now comes from. To drop one role only, use --clear-model <role>. Re-set with --model <role>=<model>[:<effort>]" },
+    clearNote: "this epic stops carrying its own model for EVERY role and each falls back to its lane's, then the project's, then its built-in default — the `profile` verb with --epic shows where each now comes from. To drop one role only, use --clear-model <role>. Re-set with --model <role>=<model>[:<effort>]" },
   // The one-role inverse of `--model`. `key` is null: the write lands inside `epic.model`, so the
   // command owns it, exactly as `--wont-do` owns its write into a story.
   { flag: "clear-model", key: null, commands: ["update-epic"], repeats: true, write: "custom",
-    requires: "a job role (implement|test|review)", placeholder: "implement|test|review" },
+    requires: `a job role (${KNOWN_JOB_ROLES.join("|")})`, placeholder: KNOWN_JOB_ROLES.join("|") },
   // Stories, and the ONE registry edit that makes a plan land with its milestones (#95).
   // `add-epic` and `add-many` join `update-epic` here rather than growing a second literal:
   // `epicFlagsFor("add-epic")` builds add-epic's allowlist and `epicBatchKeys()` builds
@@ -1497,7 +1513,6 @@ export const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
 export const KNOWN_MODELS = ["fable", "opus", "sonnet", "haiku"];
 export const KNOWN_EFFORTS = ["low", "medium", "high", "xhigh", "max", "ultracode"];
 export const MODELS_WITHOUT_EFFORT = ["haiku"];
-export const KNOWN_JOB_ROLES = ["implement", "test", "review"];
 /** The spend ledger's PHASE vocabulary (token-spend-tracking-per-epic), declared once. It is a separate
  *  closed list from KNOWN_JOB_ROLES on purpose: a role says what an agent IS (it picks a model), a phase
  *  says where in an epic's life the tokens went. A "gate retry" is `phase=review` with `round>1`. */

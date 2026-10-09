@@ -9,7 +9,7 @@ import path from "node:path";
 import { tmpRepo, run, readState, claudeMd } from "../fixtures/assert-harness.mjs";
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
-const FIXTURE = fs.readFileSync(path.join(HERE, "..", "fixtures", "rules-0.51.0-execution-profile.txt"), "utf8");
+const FIXTURE = fs.readFileSync(path.join(HERE, "..", "fixtures", "rules-0.52.0-execution-profile.txt"), "utf8");
 const LIB = new URL("../../lib/", import.meta.url).href;
 
 test("4.1: the rules block's Execution profile section is byte-pinned by the current-version fixture", async () => {
@@ -20,7 +20,7 @@ test("4.1: the rules block's Execution profile section is byte-pinned by the cur
     laneProfiles: { "claude-code": { review: "standard", model: { test: { model: "haiku" } } }, decision: { review: "off" } }, epics: [] };
   const block = rulesBlock(null, "thorough", [], "claude-code", profileContext(state));
   const section = block.slice(block.indexOf("## Execution profile"), block.indexOf("## Release candidate"));
-  assert.equal(section, FIXTURE, "regenerate scripts/test/fixtures/rules-0.51.0-execution-profile.txt deliberately if this changes");
+  assert.equal(section, FIXTURE, "regenerate scripts/test/fixtures/rules-0.52.0-execution-profile.txt deliberately if this changes");
 });
 
 test("4.3: set-profile refreshes the block on disk with the new project value; an epic-layer write does not rewrite it", () => {

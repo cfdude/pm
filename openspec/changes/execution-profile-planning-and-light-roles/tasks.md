@@ -75,7 +75,7 @@ before staging.
 - Then certify `functional` and `sweeps` over that index.
 - Then make one plain commit.
 
-- [ ] 1.1 TDD (UNIT), the constants. `KNOWN_JOB_ROLES` becomes
+- [x] 1.1 TDD (UNIT), the constants. `KNOWN_JOB_ROLES` becomes
       `["plan","implement","test","review","mechanical","rudimentary"]`, and `DEFAULT_ROLE_MODELS` is
       added beside it (design D1, D2).
       - Test:
@@ -89,12 +89,15 @@ before staging.
         `openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md:396-399` the same
         way, and tell the orchestrator. It is another change's artifact, and its Gate records may
         need re-recording.
+        NOT DONE in the 1.x commit: editing it turns the sibling's recorded Gate 1 stale, and the
+        functional record check (conductor-15 9.14) refuses an unexplained stale verdict. The orchestrator
+        applies the one-scenario edit (`plan` -> `deploy`) and re-records the sibling's Gate 1.
       - Render the `clear-model` flag row's `requires`/`placeholder` from `KNOWN_JOB_ROLES`, resolving
         the declaration-order TDZ.
       - End the `--clear model` note at the built-in default (design D5). Covers "The role-taking
         flag's help names every role", the six-role refusal for `--model deploy=…`, and "Clearing
         every epic model role falls through to the defaults".
-- [ ] 1.2 TDD (UNIT), resolution. The resolver's per-role default becomes `DEFAULT_ROLE_MODELS[role]`,
+- [x] 1.2 TDD (UNIT), resolution. The resolver's per-role default becomes `DEFAULT_ROLE_MODELS[role]`,
       with source `default`. Cover these scenarios:
       - "A fresh repository resolves every role to its default"
       - "A layer's pair replaces the default whole"
@@ -108,7 +111,7 @@ before staging.
 
       Update any test that indexes profile lines by position. Find them with
       `rg -n "model implement|model test|model review|no directive" scripts/test`.
-- [ ] 1.3 TDD (UNIT), emission. In `rules.mjs`, make three changes:
+- [x] 1.3 TDD (UNIT), emission. In `rules.mjs`, make three changes:
       - render the "Before dispatching a job" role list from the constant;
       - render every role's default pair inline in the resolution sentence from
         `DEFAULT_ROLE_MODELS` (design D5);
@@ -116,7 +119,7 @@ before staging.
 
       Covers "The rules block shows every role's default", "The resolution order names every
       default, even for an overridden role", and "rules --epic emits the effective value".
-- [ ] 1.4 TDD (FILE), the fixtures.
+- [x] 1.4 TDD (FILE), the fixtures.
       - Pin the section against a new current-version fixture,
         `scripts/test/fixtures/rules-0.52.0-execution-profile.txt`, and repoint
         `assert/execution-profile-emission.test.mjs` at it.

@@ -12,7 +12,7 @@ unitTest("the execution profile's closed lists are exactly the spec's", async ()
   assert.deepEqual(c.KNOWN_MODELS, ["fable", "opus", "sonnet", "haiku"]);
   assert.deepEqual(c.KNOWN_EFFORTS, ["low", "medium", "high", "xhigh", "max", "ultracode"]);
   assert.deepEqual(c.MODELS_WITHOUT_EFFORT, ["haiku"]);
-  assert.deepEqual(c.KNOWN_JOB_ROLES, ["implement", "test", "review"]);
+  assert.deepEqual(c.KNOWN_JOB_ROLES, ["plan", "implement", "test", "review", "mechanical", "rudimentary"]);
   assert.deepEqual(c.KNOWN_VERBOSITY_LEVELS, ["quiet", "verbose"]);
 });
 

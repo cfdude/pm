@@ -60,11 +60,12 @@ unitTest("model resolves per role, each from its own layer", async () => {
 
 unitTest("nothing set resolves to today's behaviour over a 0.50.0-shaped state", async () => {
   const { resolveProfile } = await load();
+  const c = await import(new URL("../../lib/constants.mjs", import.meta.url).href);
   const s = state({ pmVersion: "0.50.0", reviewMode: undefined }, [epic("e")]);
   const p = resolveProfile(s, { epicId: "e" });
   assert.deepEqual(p.review, { value: "standard", source: "default" });
   assert.deepEqual(p.verbosity, { value: "quiet", source: "default" });
-  for (const r of ["implement", "test", "review"]) assert.deepEqual(p.model[r], { value: null, source: "default" });
+  for (const r of c.KNOWN_JOB_ROLES) assert.deepEqual(p.model[r], { value: { ...c.DEFAULT_ROLE_MODELS[r] }, source: "default" }, r);
 });
 
 unitTest("a stored invalid value falls through and is named as ignored", async () => {

@@ -22,14 +22,14 @@ function rethrowUnreadable(e) {
 import fs from "node:fs";
 import path from "node:path";
 import {
-  KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
+  DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
   KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
-import { profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
+import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
@@ -700,6 +700,10 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   // /pm:upgrade running here — which is exactly the skew case the sentence existed to warn about.
   // `/pm:changelog` COMPUTES the answer instead of snapshotting it, so the warning points there
   // and asserts no number of its own.
+  // The built-in default pair of EVERY role, rendered from the one table (execution-profile-planning-and-
+  // light-roles D5): the value lines below show RESOLVED pairs, which hide the default of any role a layer
+  // overrides, so this sentence is the one place the floor is always visible.
+  const roleDefaults = KNOWN_JOB_ROLES.map((r) => `${r} ${modelText(DEFAULT_ROLE_MODELS[r])}`).join(", ");
   const lines = [
     RULES_BEGIN,
     "## PM Conductor — operating rules",
@@ -845,7 +849,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     "How intensely to review, which model and effort each job role runs on, and how often you report.",
     "Each field resolves independently, most specific first: the epic's own value, else its lane's,",
-    "else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).",
+    `else the project's, else the built-in default (review \`standard\`, verbosity \`quiet\`, and per model role: ${roleDefaults}).`,
     "Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own",
     "through `add-epic`, `add-many` or `update-epic`; `profile` prints the effective values with the layer each came from",
     "(pass its `--epic` flag for one epic). The engine records and emits the profile — it never",
@@ -853,9 +857,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...profileScopeLines(profile, mode),
     "",
-    "**Before dispatching a job** (implementing, testing, reviewing), resolve the active epic's",
+    `**Before dispatching a job** (${KNOWN_JOB_ROLES.join(", ")}), resolve the active epic's`,
     "profile and run that job's role on its `{model, effort}` where your platform lets you set them",
     "per dispatch. Where it does not, say so rather than implying it was applied.",
+    "",
+    "**One-shot build.** To have a top-tier model build an epic straight off its finished plan, set",
+    "`--model implement=fable:<effort>` on that epic: an override of `implement`, not a separate role.",
     "",
     "**Verbosity:** `quiet` — one completion message per epic; `verbose` — a message at each phase",
     "transition and gate.",
