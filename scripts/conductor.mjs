@@ -87,7 +87,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, currentSpendTracking, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
@@ -476,7 +476,7 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId));
+      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking());
       // `--sections`: instead of the block, the ranked per-section sizes of the block that WOULD be written
       // (rules-block-session-cost). Read-only like the verb itself.
       if (f.sections) outStream().write(sectionTableLines(measureRulesBlock(block)).join("\n") + "\n");

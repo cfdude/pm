@@ -990,3 +990,5 @@ x("conductor.mjs", "runInvocation", {
 x("render.mjs", "renderVerb", {
   "sessionCostReport(state, resolvePlatform({}, state)).map(escapeControls).join(\"\\n\")": 1,
 }, "escaped", "the two cost lines, each through escapeControls before the join");
+// token-spend-tracking-per-epic: the rules-block section
+j("rules.mjs", "spendTrackingLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (the role and phase lists are engine vocabulary)");

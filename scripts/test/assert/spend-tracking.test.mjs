@@ -6,9 +6,33 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, expectFail } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, expectFail } from "../fixtures/assert-harness.mjs";
 
 const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+
+test("1.2 `on` stores {enabled, enabledAt}; a re-enable keeps the FIRST enabledAt", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-spend-tracking", "on"], { cwd });
+  const first = JSON.parse(stateBytes(cwd)).spendTracking;
+  assert.equal(first.enabled, true);
+  assert.match(first.enabledAt, /^\d{4}-\d\d-\d\dT[\d:.]+Z$/);
+  run(["set-spend-tracking", "off"], { cwd });
+  assert.equal(JSON.parse(stateBytes(cwd)).spendTracking.enabled, false);
+  assert.equal(JSON.parse(stateBytes(cwd)).spendTracking.enabledAt, first.enabledAt, "off keeps enabledAt");
+  run(["set-spend-tracking", "on"], { cwd });
+  assert.deepEqual(JSON.parse(stateBytes(cwd)).spendTracking, { enabled: true, enabledAt: first.enabledAt });
+});
+
+test("1.2 a repeated setting says so", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-spend-tracking", "on"], { cwd });
+  assert.match(runCombined(["set-spend-tracking", "on"], { cwd }), /spend tracking was already on/);
+  const off = tmpRepo();
+  run(["init"], { cwd: off });
+  assert.match(runCombined(["set-spend-tracking", "off"], { cwd: off }), /spend tracking was already off/);
+});
 
 test("1.2 `set-spend-tracking maybe` leaves state.json byte-identical", () => {
   const cwd = tmpRepo();

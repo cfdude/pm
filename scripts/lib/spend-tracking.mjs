@@ -26,6 +26,8 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { die } from "./command-exit.mjs";
 import { escapeControls } from "./constants.mjs";
+import { writeRules } from "./rules.mjs";
+import { resolvePlatform } from "./platform.mjs";
 import { mainTreeDetached, resolveMainTree } from "./spend-tree.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 
@@ -93,10 +95,14 @@ export function setSpendTracking() {
       ? { at: new Date().toISOString(), tracking: "on", active: state.active || null }
       : { at: new Date().toISOString(), tracking: "off" });
   }
+  // Refresh CLAUDE.md so the agent sees the dispatch-marker instruction while tracking is on, and stops
+  // seeing it the moment it is off. After the save, so the block is rendered from the NEW state.
+  writeRules(resolvePlatform({}, state));
   reportSave(saved, {
     changed: `conductor: spend tracking ${arg}${arg === "on"
       ? " — the ledger is built by `spend` from Claude Code's own transcripts (git-ignored under .conductor/spend/)."
       : " — nothing further is read. What was already recorded is kept."}`,
-    unchanged: `conductor: spend tracking was already ${arg} — ${STATE_UNCHANGED}`,
+    // NAMES THE STATE FILE, not the invocation: the rules block was re-rendered either way.
+    unchanged: `conductor: spend tracking was already ${arg} — ${STATE_UNCHANGED} (the rules block was re-rendered)`,
   });
 }

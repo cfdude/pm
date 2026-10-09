@@ -1,7 +1,8 @@
 // scripts/test/unit/spend-tracking.test.mjs
 // token-spend-tracking-per-epic, group 1 — the vocabulary and the switch. UNIT rung: every
-// observable here is a VALUE (a constant, a refusal, what `state` holds, the `upgrade` opt-in
-// lines), obtained over an in-memory store.
+// observable here is a VALUE (a constant, a refusal, the `upgrade` opt-in lines), obtained over an
+// in-memory store. What `state` holds AFTER a toggle is on the FILE rung (assert/spend-tracking.test.mjs):
+// the toggle refreshes CLAUDE.md, a repository file, as `set-review-mode` does.
 
 import assert from "node:assert/strict";
 import { emptyRecord, expectFail, memoryEngine, unitTest } from "../fixtures/unit-harness.mjs";
@@ -20,28 +21,6 @@ unitTest("1.2 a fresh record has tracking off: the field is absent and upgrade n
     "conductor:   NOT SET: spendTracking — no record of which epic, phase, role or model spent tokens → set-spend-tracking on"),
   `the exact NOT SET line is emitted; got ${JSON.stringify(lines)}`);
   assert.ok(OPT_INS.some((o) => o.id === "spendTracking" && o.verb === "set-spend-tracking" && o.doc === "spend"));
-});
-
-unitTest("1.2 `on` stores {enabled, enabledAt}; a re-enable keeps the FIRST enabledAt", () => {
-  const engine = memoryEngine(emptyRecord());
-  engine(["set-spend-tracking", "on"]);
-  const first = engine.store.record().spendTracking;
-  assert.equal(first.enabled, true);
-  assert.match(first.enabledAt, /^\d{4}-\d\d-\d\dT[\d:.]+Z$/);
-  engine(["set-spend-tracking", "off"]);
-  assert.equal(engine.store.record().spendTracking.enabled, false);
-  assert.equal(engine.store.record().spendTracking.enabledAt, first.enabledAt, "off keeps enabledAt");
-  engine(["set-spend-tracking", "on"]);
-  assert.deepEqual(engine.store.record().spendTracking, { enabled: true, enabledAt: first.enabledAt });
-});
-
-unitTest("1.2 a repeated setting says so and writes nothing", () => {
-  const engine = memoryEngine(emptyRecord());
-  engine(["set-spend-tracking", "on"]);
-  const before = engine.store.record().revision;
-  const out = engine.combined(["set-spend-tracking", "on"]);
-  assert.match(out, /spend tracking was already on/);
-  assert.equal(engine.store.record().revision, before, "no state write");
 });
 
 unitTest("1.2 an unknown argument is refused, naming on|off, and the record is unchanged", () => {

@@ -269,7 +269,7 @@ These rules bind every section below.
 
 ## 5. Emission
 
-- [ ] 5.1 TDD (UNIT): `rulesBlock` emits `## Spend tracking` only while tracking is on (design D10),
+- [x] 5.1 TDD (UNIT): `rulesBlock` emits `## Spend tracking` only while tracking is on (design D10),
       with the marker format and the role and phase lists rendered from the constants. Cover "On emits
       the section" and "Off emits nothing".
       - Add a tracking-on render to the `emitted-instructions` rules-block population, so the marker
@@ -279,9 +279,9 @@ These rules bind every section below.
       - Stage exactly, run `node scripts/test/certify.mjs functional`, then commit plainly.
       - Rebase point: this is the same insertion point as `execution-profile-planning-and-light-roles`.
         Whichever lands second rebases.
-- [ ] 5.2 TDD (FILE): "Toggling refreshes CLAUDE.md". After `set-spend-tracking on`, the managed block
+- [x] 5.2 TDD (FILE): "Toggling refreshes CLAUDE.md". After `set-spend-tracking on`, the managed block
       on disk carries the section. After `off`, it does not.
-- [ ] 5.3 `skills/conductor/SKILL.md`: the verb summary (`set-spend-tracking`, `spend`) and the state
+- [x] 5.3 `skills/conductor/SKILL.md`: the verb summary (`set-spend-tracking`, `spend`) and the state
       schema entry for `spendTracking`. Add the changeset fragment
       `.changesets/token-spend-tracking-per-epic.md`. Verify: `node scripts/conductor.mjs changesets`
       lists it.

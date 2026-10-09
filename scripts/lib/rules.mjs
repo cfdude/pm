@@ -22,6 +22,7 @@ function rethrowUnreadable(e) {
 import fs from "node:fs";
 import path from "node:path";
 import {
+  KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
   KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
@@ -29,6 +30,7 @@ import {
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
 import { profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
+import { spendEnabled } from "./spend-switch.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -99,6 +101,13 @@ export function currentReviewMode(epicId) {
  *  effective values. Falls back to defaults like the other readers when state cannot be consulted. */
 export function currentProfileContext(epicId) {
   try { return profileContext(loadState(), epicId); } catch (e) { rethrowUnreadable(e); return null; }
+}
+
+/** Is spend tracking on in this repo? The rules block emits its `## Spend tracking` section only
+ *  while it is. Falls back to OFF like the other readers when state cannot be consulted, and rethrows
+ *  an unreadable file for the same reason they do. */
+export function currentSpendTracking() {
+  try { return spendEnabled(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -647,7 +656,35 @@ function profileScopeLines(profile, mode) {
   return lines;
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null) {
+/** The `## Spend tracking` section (token-spend-tracking-per-epic D10), emitted ONLY while tracking is
+ *  on. It is the whole reason attribution costs an agent one line per dispatch and no tool call: the
+ *  marker is what lets a sub-agent's tokens be credited to an epic. The role and phase lists are
+ *  rendered from the constants, never typed here, so a role added to KNOWN_JOB_ROLES appears at once.
+ *  The marker line sits in a code span so the instruction checker treats it like every other shipped
+ *  invocation. Off, this returns nothing: a user who never opts in pays zero rules-block bytes. */
+function spendTrackingLines() {
+  return [
+    "## Spend tracking",
+    "",
+    "Spend tracking is on. `spend` builds a per-epic token ledger from Claude Code's own transcripts; a",
+    "sub-agent's tokens are credited to an epic ONLY if you say which one. Begin EVERY sub-agent",
+    "dispatch prompt with one line, on a line of its own and in exactly this form (the text between the",
+    "backticks, written without them, since the line must start with `pm-spend:`):",
+    "",
+    "`pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]`",
+    "",
+    `- \`epic\` — the id of the epic the work serves.`,
+    `- \`role\` — one of ${KNOWN_JOB_ROLES.map((r) => `\`${r}\``).join(", ")} (the job roles the execution profile uses).`,
+    `- \`phase\` — one of ${KNOWN_SPEND_PHASES.map((p) => `\`${p}\``).join(", ")}.`,
+    "- `round` — optional, a positive integer, 1 when omitted. A review gate's retry is `phase=review`",
+    "  with `round` above 1.",
+    "",
+    "A dispatch without the marker is counted as unattributed.",
+    "",
+  ];
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -834,6 +871,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     `Current mode: **${mode}**.`,
     "",
+    ...(spend ? spendTrackingLines() : []),
     "## Release candidate",
     "",
     "Building a release from several changes? Do not run a Gate 2 round per change: batch the work by",
@@ -1154,7 +1192,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking());
   let next;
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and
