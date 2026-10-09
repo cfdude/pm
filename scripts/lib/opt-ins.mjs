@@ -62,6 +62,7 @@ export const OPT_INS = [
     describe: () => "spendTracking: on",
     missing: "spendTracking — no record of which epic, phase, role or model spent tokens",
     command: "set-spend-tracking on",
+    example: ["set-spend-tracking", "on"],
   },
 ];
 

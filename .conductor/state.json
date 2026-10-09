@@ -3054,10 +3054,12 @@
           "text": "lane: superpowers not claude-code — a new guard on /opsx:apply; under-processing costs the record (intake rule 4)"
         }
       ],
-      "touchedAt": "2026-10-09T18:08:39.043Z",
+      "touchedAt": "2026-10-09T19:23:16.626Z",
       "release": "0.52.0",
       "attributedCommits": [
-        "02e53b683567005f8a01185a72f7ff3580973f09"
+        "02e53b683567005f8a01185a72f7ff3580973f09",
+        "fc36b3c21c95cc0110b405b190393a5e0bc9ac8f",
+        "ce592206e1b1c697f9aada716b5e871241f6007f"
       ]
     },
     {
@@ -11760,10 +11762,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/210",
       "externalUpdatedAt": "2026-09-18T17:37:17Z",
       "attributedCommits": [
-        "cc3a53fc7eba9ac15e5e4427e07712ce0e221070"
+        "cc3a53fc7eba9ac15e5e4427e07712ce0e221070",
+        "45ad537edf14725ea1d5684360174b7c9c122ea2"
       ],
       "createdAt": "2026-09-28T17:11:10.612Z",
-      "touchedAt": "2026-10-09T18:08:40.623Z",
+      "touchedAt": "2026-10-09T19:23:09.512Z",
       "release": "0.52.0"
     },
     {
@@ -12483,10 +12486,14 @@
       ],
       "attributedCommits": [
         "d889fa400baed754a9b7bc784e6b6bfd9a175fbf",
-        "8b49f0015e9f3c61505dcd64685c439413daed27"
+        "8b49f0015e9f3c61505dcd64685c439413daed27",
+        "2ccb078be5d0352e25ea69f283937da8998c2289",
+        "164f239d579bc3cde8aafb2e85e81d27225631c3",
+        "5fa66bd9d6a0697967a7d458d1b42edc00d57fa7",
+        "82b39de2b23b759fd98ad2b1d51e38a1cd72b45b"
       ],
       "createdAt": "2026-10-01T07:33:57.581Z",
-      "touchedAt": "2026-10-09T18:37:32.169Z",
+      "touchedAt": "2026-10-09T20:53:10.056Z",
       "release": "0.52.0",
       "gateReview": {
         "gate1": {
@@ -12787,10 +12794,11 @@
       "reconcileNeeded": false,
       "description": "Found by the 0.52.0 backlog assessment 2026-10-06: the managed rules block in CLAUDE.md is 40,087 bytes (lines 111-624), roughly 10K tokens by bytes/4, paid by EVERY session and every dispatched agent, and no epic measures or caps it. A per-epic ledger never sees it. Measure per-repo size, decide what can move to on-demand skills (a task item beats a prose bullet for adoption, so keep the required items), cap the brief, and report block size in upgrade/status. Must not drop any required task item (14/14 vs 3/15 adoption evidence).",
       "attributedCommits": [
-        "213b0e65a1817a2530cef7966c3fa843f6619414"
+        "213b0e65a1817a2530cef7966c3fa843f6619414",
+        "63f3089b0656fe15f8ded8bcbb622e78a33f17a7"
       ],
       "createdAt": "2026-10-06T19:57:50.197Z",
-      "touchedAt": "2026-10-09T18:08:41.374Z",
+      "touchedAt": "2026-10-09T19:23:12.534Z",
       "release": "0.52.0"
     },
     {
@@ -12845,7 +12853,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1925,
+  "revision": 1933,
   "reviewMode": "standard",
   "releases": [
     {
