@@ -26,7 +26,7 @@ outside a closed list.
 | `state.mjs` | `state.json.lock` | NO — see below |
 | `state.mjs` | `state.json.lock.break` | NO — see below |
 | `spend-tracking.mjs` dispatch append and `set-spend-tracking` toggle entry | `spend/timeline.jsonl` | YES — which epic the main working tree's session had active, a record of work in progress; written only from the main working tree, and suppressed when its HEAD is detached. `set-spend-tracking` is REFUSED there rather than flipping `state.json` without its entry, which would credit off-period spend to an epic |
-| `spend-tracking.mjs` ingest, `spend --rebuild`, `spend --clear` | `spend/rows.jsonl`, `spend/cursor.json`, `spend/markers.json`, `spend/ingest.lock` | YES — derived spend data, kept in the MAIN working tree; suppressed when the main working tree's HEAD is detached (the tree being written to), and `spend` then reports from what exists and says it did not ingest |
+| `spend-ledger.mjs` ingest, `spend --rebuild`, `spend --clear` | `spend/rows.jsonl`, `spend/cursor.json`, `spend/markers.json`, `spend/ingest.lock` | YES — derived spend data, kept in the MAIN working tree; suppressed when the main working tree's HEAD is detached (the tree being written to), and `spend` then reports from what exists and says it did not ingest |
 
 **`write-conflicts.log` and its latch are NOT suppressed.** They record that two writers collided,
 which is a fact about the repository rather than about a session, and the latch is consumed by
