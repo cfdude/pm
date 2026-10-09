@@ -156,6 +156,25 @@ linked worktree's spend is sub-agent spend, attributed by marker.
 - **WHEN** tracking is on and `set-active e1` runs in a linked worktree
 - **THEN** no timeline entry is appended
 
+### Requirement: Detachment is tested on the main working tree, and the switch is refused there
+
+Every detachment test in this capability SHALL ask about the MAIN working tree's HEAD, the tree the
+spend directory is written to (`conductor-record`, "A detached HEAD suppresses session-bookkeeping
+writes"). `set-spend-tracking` SHALL be refused while that HEAD is detached, so the switch never
+changes in `state.json` without its timeline entry.
+
+#### Scenario: The switch is refused while the main working tree is detached
+
+- **WHEN** the main working tree's HEAD is detached and `set-spend-tracking off` runs there
+- **THEN** the verb exits non-zero, naming the detached HEAD
+- **AND** `state.json` and `timeline.jsonl` are byte-identical to before
+
+#### Scenario: A detached linked worktree does not stop ingest
+
+- **WHEN** tracking is on, the main working tree is on a branch, and `spend` runs in a linked
+  worktree whose HEAD is detached
+- **THEN** `spend` ingests into the main working tree's `.conductor/spend/`
+
 ### Requirement: Transcripts are read-only and the ledger never reaches the network
 
 The engine SHALL NOT write to any transcript file, open a network connection, or invoke a model while
@@ -387,7 +406,8 @@ A sub-agent row SHALL NOT be window-attributed.
 ### Requirement: The engine records an active-epic timeline while tracking is on
 
 While tracking is on, an invocation rooted in the main working tree that changes `state.active`
-SHALL append `{at, active}` to `timeline.jsonl`. `set-spend-tracking on` SHALL append
+SHALL append `{at, active}` to `timeline.jsonl`, unless the main working tree's HEAD is detached
+(the append is then suppressed, per `conductor-record`). `set-spend-tracking on` SHALL append
 `{at, tracking: "on", active}`. The append reads no ledger file, and its failure SHALL NOT fail the
 invocation.
 
@@ -444,7 +464,7 @@ block.
 ### Requirement: spend reports per-epic totals, shows the unattributed spend, and computes no cost
 
 `spend [--epic <id>] [--since <iso>] [--until <iso>] [--json] [--no-ingest]` SHALL ingest (unless
-`--no-ingest` is given, tracking is off, or HEAD is detached), then report from the folded,
+`--no-ingest` is given, tracking is off, or the main working tree's HEAD is detached), then report from the folded,
 read-time-attributed ledger:
 
 - per-epic totals, split by actor, role, phase, round and tier, with each sub-agent's own totals

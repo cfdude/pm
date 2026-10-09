@@ -216,6 +216,10 @@ These rules bind every section below.
       - nothing under `.conductor/spend/` changes
       - `spend` says it did not ingest
 
+      Also cover the `spend-ledger` requirement "Detachment is tested on the main working tree, and
+      the switch is refused there": `set-spend-tracking` refused in a detached main tree, and a
+      detached linked worktree still ingesting into the main tree's ledger.
+
 ## 4. The `spend` verb and its inverses
 
 - [ ] 4.1 TDD (UNIT): report aggregation over folded, attributed rows. Cover:
