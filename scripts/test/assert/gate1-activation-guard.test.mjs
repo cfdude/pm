@@ -125,3 +125,38 @@ test("push-detour WARNS about an unreviewed openspec detour instead of refusing 
   assert.equal(push.status, 0, push.stderr);
   assert.match(push.stderr, /warning — 'feat' is now active but it has no Gate 1/);
 });
+
+test("an epic whose change directory has a DIFFERENT name (linked by --spec) is refused too (gh#200)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  mkdirs(cwd, "openspec/changes/other-name");
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "other-name", "proposal.md"), "# p\n");
+  assert.equal(invokeEngine(["add-epic", "--id", "feat", "--lane", "openspec", "--status", "queued"], { cwd }).status, 0);
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  // Linked in the SAME call: judged against the link the call is setting.
+  let r = invokeEngine(["update-epic", "feat", "--spec", "openspec/changes/other-name/proposal.md", "--status", "active"], { cwd });
+  assert.equal(r.status, 1, r.stderr);
+  assert.match(r.stderr, /cannot make openspec-lane epic 'feat' active/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "nothing was written");
+  // Linked already: the stored link is read by set-active too.
+  assert.equal(invokeEngine(["update-epic", "feat", "--spec", "openspec/changes/other-name/proposal.md"], { cwd }).status, 0);
+  r = invokeEngine(["set-active", "feat"], { cwd });
+  assert.equal(r.status, 1, r.stderr);
+  assert.match(r.stderr, /no Gate 1/);
+  // --clear spec is the inverse: the epic is pre-propose again.
+  assert.equal(invokeEngine(["update-epic", "feat", "--clear", "spec", "--status", "active"], { cwd }).status, 0);
+});
+
+test("add-many and add-epic refuse a creation at active whose --spec names an on-disk change under another name (gh#200)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  mkdirs(cwd, "openspec/changes/other-name");
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "other-name", "proposal.md"), "# p\n");
+  const spec = "openspec/changes/other-name/proposal.md";
+  const one = invokeEngine(["add-epic", "--id", "feat", "--lane", "openspec", "--status", "active", "--spec", spec], { cwd });
+  assert.equal(one.status, 1, one.stderr);
+  assert.match(one.stderr, /cannot make openspec-lane epic 'feat' active/);
+  const batch = path.join(cwd, "batch.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [{ id: "feat2", title: "t", lane: "openspec", status: "active", specPath: spec }] }));
+  const many = invokeEngine(["add-many", "--from", batch], { cwd });
+  assert.equal(many.status, 1, many.stderr);
+  assert.match(many.stderr, /cannot make openspec-lane epic 'feat2' active/);
+});

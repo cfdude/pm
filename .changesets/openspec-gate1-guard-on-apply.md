@@ -5,4 +5,8 @@
   withdrawn; the refusal names `record-gate-review <id> --gate 1 …` and the waiver. An epic with no change on disk
   (pre-propose), one already active, and a stale-but-passing Gate 1 are not refused; `push-detour` / `pop-detour`
   warn instead. New `update-epic <id> --status active --gate1-waived "<why>"` (reason required, openspec-lane
-  only) waives it in one call; `--clear gate1-waived` is the inverse.
+  only) waives it in one call; `--clear gate1-waived` is the inverse. The guard finds the epic's change by its id
+  OR by the change directory its `--plan` / `--spec` points into (the gh#200 case: an epic registered under one id
+  whose change was proposed under another), including a link set in the same call as `--status active`; before,
+  such an epic was read as pre-propose and never refused. `add-epic`, `add-many`, `update-epic` and `set-active`
+  all read it.

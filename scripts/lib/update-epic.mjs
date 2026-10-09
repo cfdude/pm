@@ -419,8 +419,13 @@ export function updateEpic() {
   }
   if (status === "active" && snapshot.status !== "active") {
     const clearsWaiver = [].concat(f.clear === undefined ? [] : f.clear).includes("gate1-waived");
+    // The artifact paths too: `--spec openspec/changes/<name>/… --status active` names the epic's change in
+    // THIS call (gh#200), and `--clear spec|plan` removes the link before the check.
+    const clears = [].concat(f.clear === undefined ? [] : f.clear);
     const candidate = { ...snapshot,
-      gate1Waived: gate1WaivedFlag !== undefined ? gate1WaivedFlag : (clearsWaiver ? undefined : snapshot.gate1Waived) };
+      gate1Waived: gate1WaivedFlag !== undefined ? gate1WaivedFlag : (clearsWaiver ? undefined : snapshot.gate1Waived),
+      planPath: str(f.plan) !== undefined ? str(f.plan) : (clears.includes("plan") ? undefined : snapshot.planPath),
+      specPath: str(f.spec) !== undefined ? str(f.spec) : (clears.includes("spec") ? undefined : snapshot.specPath) };
     const refusal = gate1ActivationRefusal(candidate);
     if (refusal) die(`conductor: ${refusal}\n`);
   }

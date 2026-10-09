@@ -11,6 +11,7 @@
 
 import { isOpenspecLane, orNoRemedy, printedId, escapeControls, asCode, withdrawnGate } from "./constants.mjs";
 import { activeChangeIds } from "./epic-progress.mjs";
+import { changeNamesClaimedByArtifacts } from "./source-artifacts.mjs";
 import { gateRemedy } from "./archive-gate.mjs";
 
 /** The recorded waiver reason (trimmed), or `null`: only a non-blank string counts. */
@@ -23,7 +24,11 @@ export function gate1Waiver(epic) {
  *  waiver. `changeIds` is injectable so a test needs no disk. Returns the unmet reason or `null`. */
 export function gate1ActivationGap(epic, changeIds = activeChangeIds()) {
   if (!epic || !isOpenspecLane(epic)) return null;
-  if (!changeIds.includes(epic.id)) return null;
+  // The epic's change is named by its id OR by the change directory its `--plan` / `--spec` points into
+  // (gh#200: an epic registered under one id whose change was proposed under another). Matching the id
+  // alone treated such an epic as pre-propose and never refused it.
+  const names = [epic.id, ...changeNamesClaimedByArtifacts({ epics: [epic] })];
+  if (!names.some(n => changeIds.includes(n))) return null;
   if (gate1Waiver(epic)) return null;
   const g1 = epic.gateReview && epic.gateReview.gate1;
   if (g1 && g1.verdict === "pass") return null;
