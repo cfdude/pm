@@ -129,6 +129,7 @@ import { claim, unclaim, owners } from "./lib/claims.mjs";
 import { activityEnabled, appendEvents, diffEvents, setActivityLog } from "./lib/activity-log.mjs";
 import { activity } from "./lib/activity-report.mjs";
 import { purgeLogs } from "./lib/purge-logs.mjs";
+import { setSpendTracking } from "./lib/spend-tracking.mjs";
 import { isInitialized } from "./lib/state.mjs";
 import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
@@ -243,7 +244,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -452,6 +453,7 @@ function runInvocation(argv, io = {}) {
     owners,
     activity,
     "set-activity-log": setActivityLog,
+    "set-spend-tracking": setSpendTracking,
     "purge-logs": purgeLogs,
     "recover-created-at": recoverCreatedAt,
     "unconsidered-outcomes": unconsideredOutcomesReport,

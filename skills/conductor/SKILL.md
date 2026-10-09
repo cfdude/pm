@@ -888,6 +888,8 @@ it waits on.
   is what a hand-edit looks like from the record's side. Off by default; it records nothing
   retroactively, so turning it on says nothing about yesterday. `purge-logs` is the manual
   cleanup — it removes nothing without a selector, and nothing without `--yes`.
+- Want to know which epic, phase, role and model the tokens went to? `set-spend-tracking on` is an
+  opt-in, off by default; see `commands/spend.md`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —

@@ -1283,6 +1283,21 @@ prints the plan and removes nothing.
 </details>
 
 <details>
+<summary><code>set-spend-tracking</code> / <code>spend</code> — Which epic, phase, role and model did the tokens go to?</summary>
+
+An **opt-in, off-by-default** record of token spend, built read-only from Claude Code's own
+transcript files. Nothing is read until you opt in.
+
+```bash
+node scripts/conductor.mjs set-spend-tracking on|off
+```
+
+`enabledAt` is written on the first `on` and never moves; `init` and `upgrade` never turn it on,
+and `upgrade` lists it as `NOT SET` until you do. See `commands/spend.md`.
+
+</details>
+
+<details>
 <summary><code>recover-created-at</code> — Where did the dates go for epics older than the clock?</summary>
 
 Every epic registered from 0.40.0 on carries `createdAt`, stamped at `pushEpic()` — the single

@@ -55,6 +55,13 @@ export const OPT_INS = [
     missing: "advisory claim — no session owns any epic",
     command: "claim <epic-id>",
   },
+  {
+    id: "spendTracking", verb: "set-spend-tracking", doc: "spend",
+    isSet: (s) => !!(s.spendTracking && s.spendTracking.enabled === true),
+    describe: () => "spendTracking: on",
+    missing: "spendTracking — no record of which epic, phase, role or model spent tokens",
+    command: "set-spend-tracking on",
+  },
 ];
 
 /** The lines `upgrade` prints, from `state` alone. One summary line of what IS adopted, then one

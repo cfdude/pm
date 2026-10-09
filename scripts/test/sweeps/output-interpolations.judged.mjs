@@ -158,6 +158,9 @@ x("conductor.mjs", "runInvocation", {
 x("activity-log.mjs", "setActivityLog", {
   "arg": 2,
 }, "engine", "arg is validated on|off before this line (activityDir() is escaped: it sits under CLAUDE_PROJECT_DIR, a governed value, Gate 2 W-I1)");
+x("spend-tracking.mjs", "setSpendTracking", {
+  "arg": 2,
+}, "engine", "arg is validated on|off before these lines (token-spend-tracking-per-epic; the same shape as setActivityLog above)");
 x("activity-log.mjs", "segmentName", {
   "at.toISOString().replace(/[:.]/g, \"-\")": 1,
 }, "not-output", "a segment file name");

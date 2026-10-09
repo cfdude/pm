@@ -111,6 +111,11 @@
       "platforms": { "claude-code": "slash command wrapping set-activity-log / activity / purge-logs — an opt-in append-only record of conductor state transitions, plus the reader that answers for it" }
     },
     {
+      "id": "spend-ledger",
+      "artifacts": ["commands/spend.md"],
+      "platforms": { "claude-code": "slash command wrapping set-spend-tracking / spend — an opt-in, local, read-only per-epic token ledger built from Claude Code's own transcript files" }
+    },
+    {
       "id": "session-lifecycle-hooks",
       "artifacts": ["hooks/hooks.json", "hooks/README.md"],
       "platforms": { "claude-code": "SessionStart / PreCompact / PostToolUse / PostToolUseFailure hooks in hooks.json, each passing --platform claude-code" }

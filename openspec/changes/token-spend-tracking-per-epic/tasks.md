@@ -78,10 +78,10 @@ These rules bind every section below.
 
 ## 1. Constants, the switch and the ignore line
 
-- [ ] 1.1 TDD (UNIT): add `KNOWN_SPEND_PHASES = ["plan","build","review","docs","release"]` to
+- [x] 1.1 TDD (UNIT): add `KNOWN_SPEND_PHASES = ["plan","build","review","docs","release"]` to
       `scripts/lib/constants.mjs`, as one declaration. RED: a test that imports it and asserts the exact
       list from the spec. Verify: `rg -n "KNOWN_SPEND_PHASES\s*=" scripts` returns exactly one line.
-- [ ] 1.2 TDD (UNIT, plus FILE for byte-identity): add the `set-spend-tracking on|off` verb in a new
+- [x] 1.2 TDD (UNIT, plus FILE for byte-identity): add the `set-spend-tracking on|off` verb in a new
       `scripts/lib/spend-tracking.mjs`.
       - Cover every scenario of "Spend tracking is a project opt-in, off by default":
         - the first `on` sets `enabledAt`
@@ -100,10 +100,10 @@ These rules bind every section below.
 
       Verify: `node scripts/conductor.mjs set-spend-tracking --help`,
       `node --test scripts/test/unit/opt-ins.test.mjs scripts/test/assert/opt-ins.test.mjs scripts/test/parity.test.mjs`.
-- [ ] 1.3 TDD (FILE): add `.conductor/spend/` to `ENGINE_IGNORED` in `scripts/lib/subcommands.mjs`,
+- [x] 1.3 TDD (FILE): add `.conductor/spend/` to `ENGINE_IGNORED` in `scripts/lib/subcommands.mjs`,
       with a comment citing #106 and this change. Cover "upgrade backfills the ignore line". Verify:
       the test's temp repo `.gitignore` holds the line after `upgrade`.
-- [ ] 1.4 **Call-site completeness sweep, including inverses and data references** (required item 1).
+- [x] 1.4 **Call-site completeness sweep, including inverses and data references** (required item 1).
       - **Callers.** Derive every caller mechanically with
         `rg -n "OPT_INS|ENGINE_IGNORED|KNOWN_JOB_ROLES|KNOWN_MODELS|state\.active\b|activityEnabled|conductorDir|detachedNoOp|rulesBlock\(|FLAGLESS_VERBS" scripts commands skills`,
         including tests. For each site, say whether the new switch, phase list, timeline rule or
@@ -300,12 +300,12 @@ These rules bind every section below.
 
 ## 7. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.4. Verify that
+- [x] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.4. Verify that
       `call-site-sweep-1.4.txt` exists and names every inverse.
 - [ ] 7.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in THAT
       commit. Save the result as `commit-verification-7.2.txt`.
-- [ ] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
+- [x] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
       lines. Verify: `rg -n "pm:lifecycle" openspec/changes/token-spend-tracking-per-epic/tasks.md`
       lists both.
 - [ ] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do

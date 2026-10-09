@@ -124,6 +124,7 @@ export const VERB_EFFECTS = {
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
   "record-tracker-refresh": { effect: "mutates", writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
   "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
+  "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch)" },
   // DESTRUCTIVE by nature, which is why it removes nothing without both a selector and --yes.
   "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
   claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },

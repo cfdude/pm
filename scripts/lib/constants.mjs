@@ -1048,6 +1048,7 @@ export const VERB_POSITIONALS = {
   "retract-detour": { min: 1, max: 1, form: "<sha>", idFirst: false, freeText: false },
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
@@ -1073,6 +1074,8 @@ export const FLAGLESS_VERBS = [
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
   "set-activity-log",
+  // token-spend-tracking-per-epic's switch: the POSITIONAL `on|off`, same shape as the toggle above.
+  "set-spend-tracking",
   // The registration-date recovery takes no arguments at all: it sweeps every epic that has
   // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
   "recover-created-at",
@@ -1486,6 +1489,10 @@ export const KNOWN_MODELS = ["fable", "opus", "sonnet", "haiku"];
 export const KNOWN_EFFORTS = ["low", "medium", "high", "xhigh", "max", "ultracode"];
 export const MODELS_WITHOUT_EFFORT = ["haiku"];
 export const KNOWN_JOB_ROLES = ["implement", "test", "review"];
+/** The spend ledger's PHASE vocabulary (token-spend-tracking-per-epic), declared once. It is a separate
+ *  closed list from KNOWN_JOB_ROLES on purpose: a role says what an agent IS (it picks a model), a phase
+ *  says where in an epic's life the tokens went. A "gate retry" is `phase=review` with `round>1`. */
+export const KNOWN_SPEND_PHASES = ["plan", "build", "review", "docs", "release"];
 export const KNOWN_VERBOSITY_LEVELS = ["quiet", "verbose"];
 export const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 export const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
