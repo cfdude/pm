@@ -16,14 +16,15 @@ Rob's handoff (2026-10-09): the stuck-loop half comes first, and it needs a gate
 
 - **A gate-round counter, always recorded.**
   - `record-gate-review` keeps a per-gate tally on the epic: the consecutive-fail streak, the lifetime
-    fails and passes, and the time of the last verdict.
+    fails and passes, the time of the last verdict, and the time of the last pass.
   - A `pass` ends the streak. A withdrawal changes nothing, because the rounds still happened.
   - The counter costs one additive field on an existing write, and needs no opt-in.
   - Epics recorded before this release start at zero. State cannot reconstruct their rounds, and the
     report says so.
 - **A stuck-loop signal, with a second source when tracking is on.**
   - The rounds signal is the larger of two counts: the highest recorded fail streak, and (with spend
-    tracking on) the highest `round` a `phase=review` dispatch marker carried for the epic, minus one.
+    tracking on) the number of distinct `round` values the epic's `phase=review` dispatch markers
+    carried since its latest recorded pass, minus one.
   - The second source catches rounds that nobody recorded as a failed verdict, which is how 0.51.0's
     loop went unseen.
 - **A per-epic token ceiling, read from the spend ledger.** The ceiling warns at a configurable share and

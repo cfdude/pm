@@ -39,8 +39,21 @@ What the engine has today, and why it is not enough:
 
 ### D1. Count consecutive FAILED rounds, not recorded rounds
 
-`epic.gateRounds.gate<N> = {fails, passes, failStreak, lastVerdictAt}`, written inside
-`recordGateReview()` in the same `saveState` as the verdict.
+`epic.gateRounds.gate<N> = {fails, passes, failStreak, lastVerdictAt, lastPassAt?}`, written inside
+`recordGateReview()` in the same `saveState` as the verdict. That is the field's ONLY writer.
+
+- **Why `lastPassAt` is its own field.** The ledger-side reset (D2) and override liveness (D6) both
+  need "when was the latest pass". `gateReview` cannot answer it: the writer keeps one superseded
+  entry (`gate-review-writeback.mjs:180-184`), so pass, fail, fail on one gate loses the pass, and an
+  override would read live after it had been spent (confirmation-review Critical). A pass sets
+  `lastPassAt` to its `reviewedAt`; a fail leaves it. The epic's pass anchor is the latest one across
+  gates.
+- **A withdrawn pass still anchors.** Withdraw writes nothing to `gateRounds`, as for every other
+  field here. Clearing the anchor on withdraw would add a second writer, and falling back to the
+  previous pass needs a history one field does not hold. Neither choice is safe in every direction:
+  not anchoring would revive an override the pass spent; anchoring keeps the ledger side reset. The
+  simplest, single-writer rule wins, and `spend-guard` reports a withdrawn latest verdict and what it
+  still anchors.
 
 - **Why the streak, not the total.** This repo re-records passing verdicts routinely: "re-record Gate 2
   after docs, never withdraw", and the release candidate records Gate 2 for every member at one head.
@@ -54,10 +67,11 @@ What the engine has today, and why it is not enough:
 - **Rejected: a separate `record-round` verb.** It is one more thing the agent must remember, on
   exactly the path where it already forgot to record the fails.
 
-### D2. The rounds signal is max(recorded fail streak, ledger review rounds since the last pass − 1)
+### D2. The rounds signal is max(recorded fail streak, distinct ledger review rounds since the pass anchor − 1)
 
 - The ledger side counts the DISTINCT `round` values on the epic's attributed `phase=review` rows
-  timestamped after its latest recorded `pass` (any gate), minus one. Four review rounds with no pass
+  timestamped after its pass anchor (the latest `gateRounds.gate<N>.lastPassAt`, D1), minus one. With
+  no anchor (no pass recorded by this release) every attributed review row counts. Four review rounds with no pass
   means three did not converge, which is comparable to a fail streak.
 - **Why "since the last pass".** The marker carries no gate. Without a reset, Gate 1 taking three
   rounds and then passing would leave the epic tripped through Gate 2 forever, which is the same
@@ -111,7 +125,10 @@ The shared helper is exported rather than copied, so the two cascades cannot for
 The tally, limits and overrides are read from the `state.json` of the tree the verb runs in. That is
 the file `record-gate-review`, `set-spend-guard` and `override-spend-guard` write there, and the file
 the brief reads. Only the tracking switch and the ledger come from the main working tree, as `spend`
-reads them (`spend-command.mjs` `mainState`, exported for this). Reading guard state from the main
+reads them. `spend-command.mjs`'s `mainState()` refuses (exit 1) when a linked worktree's main-tree
+`state.json` is absent or unreadable, so it is split: a non-refusing reader returns the state or a
+reason, `spend` keeps its refusing wrapper on top unchanged, and `spend-guard` uses the reader and
+reports tracking `unknown` and the ledger `not-read` on a reason (D5). Reading guard state from the main
 tree made the four surfaces disagree inside a linked worktree, whose committed `state.json` is a stale
 copy (Gate 1 Critical). In this repo the orchestrator records in the main tree, so both agree there.
 
@@ -131,10 +148,15 @@ copy (Gate 1 Critical). In this repo the orchestrator records in the main tree, 
   tell "stuck" from "wrong arguments". It is declared as a named constant beside
   `CONFLICT_EXIT_CODE` in `constants.mjs`. Exit 2 is also Claude Code's hook "block" code, so
   `commands/spend-guard.md` says never to wire `spend-guard` into a hook.
-- **A ledger that cannot be read is not a refusal.** An unreadable `enabledAt`, a held `ingest.lock` or
-  a detached main HEAD makes `spend` refuse with exit 1. A per-dispatch check that exits 1 would read
-  as "wrong arguments" and the loop would continue, so `spend-guard` reports the ledger side
-  `not-read` with the reason and still applies the recorded-verdict check and the 0/2 rule.
+- **A stale ledger is still read.** A held `ingest.lock` or a detached main HEAD does NOT make `spend`
+  refuse: it skips ingest and reports from the existing ledger (`spend-command.mjs:93-99`). The guard
+  does the same, computes both ledger-fed signals from what exists (they can trip), and says the
+  counts may be stale and why.
+- **A ledger that cannot be read is not a refusal.** `spend` exits 1 only for an unreadable
+  `enabledAt` (and, from a linked worktree, an unreadable main-tree `state.json`, D5a). A per-dispatch
+  check that exits 1 would read as "wrong arguments" and the loop would continue, so `spend-guard`
+  reports the ledger side and token signal `not-read` with the reason, and still applies the
+  recorded-verdict check and the 0/2 rule. The same holds when the ledger read itself fails.
 - **The brief sees only part of the signal.** The ledger is never read on a hook path, so the brief can
   miss a ledger-only trip. The rules section's per-dispatch `spend-guard` call covers that. The
   limitation is stated in `commands/spend-guard.md`.
@@ -153,6 +175,8 @@ copy (Gate 1 Critical). In this repo the orchestrator records in the main tree, 
   another ceiling's worth of tokens.
 - **A later pass spends a rounds override.** A pass resets the streak the baseline was measured
   against; a surviving baseline would let twice the limit in fails pass unseen (Gate 1 finding).
+  "Later" is read from the pass anchor (`lastPassAt`, D1) against the override's `at`, never from
+  `gateReview`, which forgets a pass after two more verdicts on that gate.
 - **The override cannot be a same-tier retry in disguise.** `--escalated-to` must rank at or above the
   computed target (D7). When the target is `user`, or a live model override already exists for that
   signal, only `user` is accepted, so trip, override, trip cannot repeat without a person. No
@@ -172,7 +196,12 @@ copy (Gate 1 Critical). In this repo the orchestrator records in the main tree, 
 - Rounds escalate from the epic's resolved `review` model. Tokens escalate from its resolved
   `implement` model, which does most of the spending. If `execution-profile-planning-and-light-roles`
   adds roles, the mapping stays signal → role.
-- `fable`, or no configured model, gives `user`. The block always also names `the user` as valid.
+- The step-up starts from the RESOLVED model whatever its source layer. With
+  `execution-profile-planning-and-light-roles`, every role has a built-in default (`review` is opus
+  (high)), so an unset `review` escalates to `fable`, and the block names the source `default`.
+- Only `fable`, or a resolved model that is not in the ladder (including none at all), gives `user`.
+  The not-in-ladder case also covers a build that lands before the sibling's default table, so the
+  build order between the two changes is safe. The block always also names `the user` as valid.
 - **The engine checks the claim's rank, not the run.** It cannot know which model the agent actually
   ran (`execution-profile`: "never checks which model ran"), so `--escalated-to` is a recorded claim.
   It still refuses a claim below the target, because a same-tier claim is the loop this guard stops.
@@ -181,7 +210,7 @@ copy (Gate 1 Critical). In this repo the orchestrator records in the main tree, 
 
 | Write | Inverse | Note |
 |---|---|---|
-| `gateRounds` update on a verdict | none shipped | It is a record of events. A pass ends the streak, and an override is the operational "continue". A reset verb would erase the evidence the guard reads. |
+| `gateRounds` update on a verdict (including `lastPassAt`) | none shipped | It is a record of events. A pass ends the streak, and an override is the operational "continue". A reset verb would erase the evidence the guard reads. |
 | `set-spend-guard` field at any layer | `--unset <field>` at that layer | `all` clears a layer. |
 | `override-spend-guard` | `--revoke --reason` | The entry is kept. |
 | `OPT_INS` row / rules-block section | `--unset` of the last limit removes the section | A limit is `maxFailedRounds` or `tokenCeiling` on the project, a lane, or a non-archived epic. `warnAt` alone is not one. |
@@ -192,8 +221,11 @@ copy (Gate 1 Critical). In this repo the orchestrator records in the main tree, 
   also surfaces on `record-gate-review` and in the brief, without the agent asking. Only the ledger-only
   half depends on the per-dispatch call.
 - **[Risk] Markers carry the wrong round** (for example, a resumed session restarts at 1). → The signal
-  takes the max over the epic's rows, so a restart cannot lower it. A wrongly high round trips early,
-  which is the safe direction, and an override clears it.
+  counts DISTINCT round values since the pass anchor, so a restart that reuses numbers adds nothing and
+  cannot lower the count, but it also fails to raise it: rounds re-marked 1, 2 after a restart read as
+  the rounds already seen. That under-counts, and the recorded-verdict side and the rules section's
+  exact marker form are the mitigation. Extra distinct values trip early, which is the safe direction,
+  and an override clears it.
 - **[Trade-off] `spend-guard` with tracking on runs an ingest**, and on a long-lived repo the first one
   can be slow. → `--no-ingest` reads the ledger as it stands, and the report says it did not ingest.
 - **[Risk] A release-candidate merge commit's review is window-attributed** to the active epic

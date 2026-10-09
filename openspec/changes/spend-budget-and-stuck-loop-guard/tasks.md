@@ -67,14 +67,20 @@ These rules bind every section below.
 ## 1. The gate-round counter (stuck-loop half)
 
 - [ ] 1.1 TDD (UNIT): in `recordGateReview()`, update `epic.gateRounds.gate<N>` (`fails`, `passes`,
-      `failStreak`, `lastVerdictAt` = the entry's `reviewedAt`) in the same `saveState` as the verdict.
-      Cover every scenario of the spec's "keeps a per-gate round tally" requirement, including a
-      refused invocation making no write on the in-memory store.
+      `failStreak`, `lastVerdictAt` = the entry's `reviewedAt`, and on a `pass` only, `lastPassAt` =
+      the entry's `reviewedAt`) in the same `saveState` as the verdict. Cover every scenario of the
+      spec's "keeps a per-gate round tally" requirement, including:
+      - `lastPassAt` absent after fails only
+      - pass, fail, fail on one gate keeps `lastPassAt` though `gateReview` has dropped the pass
+      - the pass anchor is the latest `lastPassAt` across gates (export the helper; 3.1, 3.5 and 4.2
+        read it, never `gateReview`)
+      - a refused invocation making no write on the in-memory store
 - [ ] 1.2 TDD (UNIT): the "Only a recorded verdict moves the tally" requirement.
       - `update-epic --withdraw-gate-review` and the archive-drift heal (`epic-progress.mjs`, the
         `ungated` Gate 2 write) leave `gateRounds` unchanged.
-      - An epic with no `gateRounds` reads zero.
-      - A withdrawn pass is flagged by `spend-guard`, not undone (asserted in 3.4).
+      - An epic with no `gateRounds` reads zero with no pass anchor.
+      - A withdrawn pass is flagged by `spend-guard`, not undone, and its `lastPassAt` still anchors
+        (asserted in 3.4).
 - [ ] 1.3 **Call-site sweep for the tally** (required item 1).
       - Run `rg -n "gateReview(\.|\[)gate|gateReview\s*=" scripts/` and list every writer of a gate
         entry.
@@ -108,12 +114,18 @@ These rules bind every section below.
       tally, the resolved limit and the live overrides, taking the ledger side as an optional input
       that 4.2 supplies. Cover:
       - "Recorded fails decide when they are higher" and the tracking-off degradation text
-      - the trip scenarios, including "A pass after an override spends the override"
+      - the trip scenarios, including "A pass after an override spends the override" and "Fails after
+        the pass on the same gate do not revive the override" (liveness read from the pass anchor)
 
       The ledger-side scenarios belong to 4.2.
 - [ ] 3.2 TDD (UNIT): the escalation target (design D7). Declare the model rank once, beside
-      `KNOWN_MODELS`, and the STOP exit code as a named constant beside `CONFLICT_EXIT_CODE`. Cover
-      sonnet→opus, opus→fable, fable→user and unset→user.
+      `KNOWN_MODELS`, and the STOP exit code as a named constant beside `CONFLICT_EXIT_CODE`. The
+      function takes the resolved `{model, source}` whatever the source. Cover:
+      - sonnet → opus
+      - opus with source `default` → fable, and the block names the source
+      - fable → user
+      - no model, or a model not in the ladder → user (pure-function input, so it is testable before
+        and after the sibling's default table lands)
 - [ ] 3.3 TDD (UNIT): the STOP block text. It must contain:
       - the epic
       - the tripped signal with its count and limit
@@ -128,9 +140,15 @@ These rules bind every section below.
       - Cover the exit codes 0, 1 and 2, the JSON shape, the unknown epic, and the withdrawn-pass
         notice.
       - Guard state comes from the invoking tree; the tracking switch and ledger from the main tree
-        (design D5a). Export `mainState` from `spend-command.mjs` for this.
-      - Cover the "ledger cannot be read" requirement: a held lock, an unreadable `enabledAt` and a
-        detached main HEAD each report `not-read` and keep the 0/2 rule.
+        (design D5a). Split `spend-command.mjs`'s `mainState()` into a non-refusing reader that
+        returns `{state}` or `{reason}`, with `spend`'s refusing wrapper on top (its behaviour and
+        tests unchanged); `spend-guard` imports the reader, never `mainState()`.
+      - Cover the "ingest cannot run" requirement: a held lock, a detached main HEAD and `--no-ingest`
+        each read the existing ledger, say it may be stale, and can trip on the ledger alone (exit 2).
+        The ledger-side numbers come from 4.2; until then assert the stale note and the 0/2 rule.
+      - Cover the "ledger truly cannot be read" requirement: an unreadable `enabledAt`, an unreadable
+        main-tree `state.json` from a linked worktree (tracking `unknown`, never "tracking is off")
+        and a failing ledger read each report `not-read` and keep the 0/2 rule, never exit 1.
       - `commands/spend-guard.md` says never to wire the verb into a hook (exit 2 is the hook block
         code).
       - FILE: with tracking off, no spend-directory or transcript path is opened. Prove it with the
@@ -157,7 +175,8 @@ These rules bind every section below.
       - FILE: a fixture ledger under a temp `CLAUDE_CONFIG_DIR` gives the expected totals, and
         `--no-ingest` performs no ingest.
 - [ ] 4.2 TDD (UNIT): the ledger side of the rounds signal: the distinct `round` values on attributed
-      `phase=review` rows after the latest recorded pass, minus one, floored at 0. Cover "Unrecorded
+      `phase=review` rows after the pass anchor (1.1's helper), minus one, floored at 0; every row
+      when there is no anchor. Cover "Unrecorded
       review rounds are still counted", "A recorded pass ends the ledger side too", and a marker
       naming an unknown epic or an invalid phase contributing nothing.
 
@@ -174,6 +193,9 @@ These rules bind every section below.
       - FILE (observe-reads): the SessionStart, PreCompact and PreToolUse hooks open no spend or
         transcript path, with tracking on and with no limit configured.
 - [ ] 5.3 TDD (UNIT + FILE): the `## Spend guard` rules section.
+      - It sits immediately after the `## Spend tracking` slot in `rulesBlock()`
+        (`...(spend ? spendTrackingLines() : [])`, `token-spend-tracking-per-epic` task 5.1), in the
+        same position when tracking is off. Name this ordering in the 0.2 chokepoint review.
       - It is emitted only while a limit is configured (a `warnAt`-only layer and an archived epic's
         layer do not count), the same condition as the `OPT_INS` row in 5.4.
       - It contains `spend-guard <epic>`, exit 2 as STOP, the autonomy sentence, `override-spend-guard`
@@ -254,7 +276,7 @@ These rules bind every section below.
 - [ ] 10.2 <!-- pm:lifecycle --> **Disposition.**
       `update-epic spend-budget-and-stuck-loop-guard --status archived --outcome delivered --reason "<why>"`
       with the deferral assertions:
-      - `--declined-deferral "per-epic failing-certify detection::a certify run is bound to the index, not to an epic"`
+      - `--declined-deferral "per-epic failing-certify detection:a certify run is bound to the index, not to an epic"`
       - `--deferral "token-spend-analysis-and-recommendations:design Open Questions (phase=build fix-round signal)"`,
         or a `--declined-deferral` if that epic does not take it
 

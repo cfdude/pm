@@ -11,10 +11,11 @@ escalation target. The agent or the user acts on it; pm never dispatches or kill
 ### Requirement: record-gate-review keeps a per-gate round tally on the epic
 
 Every accepted `record-gate-review` SHALL update `epic.gateRounds.gate<N>` in the same write as the
-verdict: `fails`, `passes`, `failStreak` and `lastVerdictAt`.
+verdict: `fails`, `passes`, `failStreak`, `lastVerdictAt` and `lastPassAt`.
 
-- A `fail` adds one to `fails` and to `failStreak`.
-- A `pass` adds one to `passes` and sets `failStreak` to 0.
+- A `fail` adds one to `fails` and to `failStreak`, and leaves `lastPassAt` as it was.
+- A `pass` adds one to `passes`, sets `failStreak` to 0, and sets `lastPassAt` to that verdict's
+  `reviewedAt`.
 - A refused invocation SHALL change nothing.
 
 The tally is recorded whether or not any guard limit is configured.
@@ -22,12 +23,13 @@ The tally is recorded whether or not any guard limit is configured.
 #### Scenario: Consecutive fails build a streak
 
 - **WHEN** `record-gate-review E --gate 1 --verdict fail` is accepted three times in a row
-- **THEN** `epic.gateRounds.gate1` is `{fails: 3, passes: 0, failStreak: 3, lastVerdictAt: <the third verdict's reviewedAt>}`
+- **THEN** `epic.gateRounds.gate1` is `{fails: 3, passes: 0, failStreak: 3, lastVerdictAt: <the third verdict's reviewedAt>}`, with no `lastPassAt` key
 
 #### Scenario: A pass ends the streak and keeps the lifetime counts
 
 - **WHEN** gate 2 has `failStreak: 2` and `record-gate-review E --gate 2 --verdict pass --base-sha a --head-sha b` is accepted
 - **THEN** `epic.gateRounds.gate2.failStreak` is 0, `fails` is still 2 and `passes` is 1
+- **AND** `gate2.lastPassAt` equals that verdict's `reviewedAt`
 
 #### Scenario: The two gates are counted apart
 
@@ -39,14 +41,31 @@ The tally is recorded whether or not any guard limit is configured.
 - **WHEN** `record-gate-review E --gate 2 --verdict pass` is refused for missing `--base-sha`
 - **THEN** no state write is made
 
+### Requirement: The pass anchor is the latest lastPassAt across the epic's gates
+
+The epic's pass anchor SHALL be the latest `gateRounds.gate<N>.lastPassAt` across its gates, or none
+when no gate has one. `lastPassAt` is absent until the gate's first `pass` recorded by this release.
+The rounds signal and override liveness SHALL read the anchor, never `gateReview`, whose writer keeps
+one superseded entry and so forgets a pass after two more verdicts on that gate.
+
+#### Scenario: Later fails on the same gate keep the pass anchor
+
+- **WHEN** gate 1 records `pass`, then `fail`, then `fail`
+- **THEN** `gate1.lastPassAt` is still the pass's `reviewedAt`, though `gateReview.gate1` now holds only the second fail and its superseded first fail
+
+#### Scenario: The anchor spans gates
+
+- **WHEN** gate 1's `lastPassAt` is T1 and gate 2's is a later T2
+- **THEN** the epic's pass anchor is T2
+
 ### Requirement: Only a recorded verdict moves the tally
 
 No write path other than an accepted `record-gate-review` SHALL change `epic.gateRounds`.
 
 - `update-epic --withdraw-gate-review` leaves it unchanged: the round still happened. A withdrawn
-  `pass` does not restore the streak it ended, and `spend-guard` says so.
+  `pass` keeps its `lastPassAt`, so it still anchors, and the streak it ended is not restored.
 - The archive-drift heal's `ungated` Gate 2 write leaves it unchanged: no review took place.
-- An epic with no `gateRounds` reads as zero. Nothing backfills it from `gateReview`.
+- An epic with no `gateRounds` reads as zero with no anchor. Nothing backfills it.
 
 #### Scenario: Withdrawing a verdict does not un-count the round
 
@@ -56,14 +75,15 @@ No write path other than an accepted `record-gate-review` SHALL change `epic.gat
 #### Scenario: A withdrawn pass is flagged, not un-done
 
 - **WHEN** gate 1's last verdict was a `pass` that ended a streak of 3, and that pass is withdrawn
-- **THEN** `gate1.failStreak` stays 0
-- **AND** `spend-guard E` reports that gate 1's latest verdict is withdrawn and the streak it ended is not restored
+- **THEN** `gate1.failStreak` stays 0 and `gate1.lastPassAt` still holds that pass's `reviewedAt`
+- **AND** `spend-guard E` reports that gate 1's latest verdict is withdrawn, that the streak it ended is not restored, and that it still anchors the ledger side and override liveness
 
 #### Scenario: An epic recorded before this release starts at zero
 
 - **WHEN** an epic carries `gateReview.gate1` with a `superseded` entry and no `gateRounds`
-- **THEN** `spend-guard` reports its recorded fail streak as 0
+- **THEN** `spend-guard` reports its recorded fail streak as 0 and no pass anchor
 - **AND** it says the count starts from the first verdict recorded by this release
+- **AND** with tracking on, its ledger side counts every attributed `phase=review` row in the ledger, because no pass bounds it
 
 ### Requirement: Guard limits are configured at three layers and resolved most specific first
 
@@ -128,8 +148,9 @@ field that is not set SHALL exit 0, print that nothing changed, and leave `state
 
 An epic's rounds count SHALL be the larger of two values. One is the highest `failStreak` across its
 gates. The other, used only while tracking is on, is the number of distinct `round` values on its
-attributed `phase=review` ledger rows timestamped after its latest recorded `pass` (any gate), minus
-one, floored at 0. The guard SHALL report both values and which one decided.
+attributed `phase=review` ledger rows timestamped after its pass anchor (the latest
+`gateRounds.gate<N>.lastPassAt`, any gate; every row when there is none), minus one, floored at 0.
+The guard SHALL report both values and which one decided.
 
 #### Scenario: Unrecorded review rounds are still counted
 
@@ -143,7 +164,7 @@ one, floored at 0. The guard SHALL report both values and which one decided.
 
 #### Scenario: Recorded fails decide when they are higher
 
-- **WHEN** `gate2.failStreak` is 3 and E's highest ledger review round is 2
+- **WHEN** `gate2.failStreak` is 3 and E's ledger side is 2 (three distinct review rounds since the pass anchor)
 - **THEN** E's rounds count is 3, attributed to gate 2's recorded verdicts
 
 #### Scenario: Tracking off degrades to recorded verdicts and says so
@@ -156,8 +177,8 @@ one, floored at 0. The guard SHALL report both values and which one decided.
 
 When `maxFailedRounds` resolves for an epic, the rounds signal SHALL be tripped while the rounds count,
 minus the baseline of the latest live `rounds` override, is at or above that limit. A `rounds` override
-is live only if it is unrevoked and no `pass` was recorded after it; otherwise the baseline is 0. With
-no `maxFailedRounds` the signal never trips.
+is live only if it is unrevoked and the epic's pass anchor is absent or not later than the override's
+`at`; otherwise the baseline is 0. With no `maxFailedRounds` the signal never trips.
 
 #### Scenario: The limit is reached
 
@@ -168,6 +189,12 @@ no `maxFailedRounds` the signal never trips.
 
 - **WHEN** a rounds override was recorded at baseline 3, then a `pass` was recorded, then 3 fails follow under limit 3
 - **THEN** the override is not live, the baseline is 0, and the signal is tripped
+
+#### Scenario: Fails after the pass on the same gate do not revive the override
+
+- **WHEN** E resolves `maxFailedRounds 2`, a rounds override was recorded at baseline 2, then gate 1 records `pass`, then gate 1 records `fail` twice
+- **THEN** `gate1.lastPassAt` is later than the override's `at`, so the override is not live and the baseline is 0
+- **AND** the rounds count is 2 and the signal is tripped
 
 #### Scenario: No limit means no trip
 
@@ -255,17 +282,42 @@ as `spend` does, unless `--no-ingest` is given. It writes nothing to `state.json
 - **THEN** it resolves limits, tallies and overrides from the `state.json` of the tree it runs in, the same file `record-gate-review`, `set-spend-guard` and `override-spend-guard` write there
 - **AND** it takes the tracking switch and the ledger from the main working tree, as `spend` does
 
-### Requirement: When the ledger cannot be read, spend-guard still applies the recorded-verdict check
+### Requirement: When ingest cannot run, spend-guard reads the existing ledger and says it may be stale
 
-If ingest or the ledger read cannot run, `spend-guard` SHALL report the ledger side and the token
-signal as `not-read` with the reason, still compute the rounds signal from recorded verdicts, and exit
-by the same 0/2 rule. This covers an unreadable `enabledAt`, a held `ingest.lock`, and a detached main
-HEAD. It SHALL NOT exit 1 for these.
+When tracking is on but ingest does not run, `spend-guard` SHALL read the ledger as it stands, as
+`spend` does (`spend-command.mjs`: a held `ingest.lock` or a detached main HEAD reports from the
+existing ledger). This covers a held `ingest.lock`, a detached main HEAD and `--no-ingest`. The ledger
+side and the token signal SHALL be computed from that ledger and MAY trip. The report SHALL say the
+ledger was not refreshed, give the reason, and say the counts may be stale.
 
-#### Scenario: An ingest lock is held
+#### Scenario: An ingest lock is held and the ledger alone trips
 
-- **WHEN** another ingest holds `ingest.lock` and E's `gate1.failStreak` is at its limit
-- **THEN** `spend-guard E` reports the ledger side `not-read: an ingest is in progress` and exits 2
+- **WHEN** another ingest holds `ingest.lock`, E has no recorded verdict, E resolves `maxFailedRounds 2`, and the existing ledger holds E's `phase=review` rows with rounds 1 to 3
+- **THEN** `spend-guard E` reports the ledger side as 2 with a note that it did not ingest because an ingest was already in progress, and that counts may be stale
+- **AND** it prints the STOP block and exits 2
+
+#### Scenario: A detached main HEAD
+
+- **WHEN** tracking is on and the main working tree's HEAD is detached
+- **THEN** `spend-guard E` reads the existing ledger, computes both signals from it, and says it did not ingest because HEAD is detached
+
+### Requirement: When the ledger truly cannot be read, spend-guard still applies the recorded-verdict check
+
+`spend-guard` SHALL report the ledger side and the token signal `not-read` with the reason, still
+compute the rounds signal from recorded verdicts, and exit by the 0/2 rule, never 1, when:
+
+- tracking is on and `state.spendTracking.enabledAt` is unreadable
+- from a linked worktree, the main tree's `state.json` is absent or unreadable (tracking `unknown`)
+- the ledger read itself fails
+
+The main-tree read SHALL NOT refuse. In the main tree, its own unreadable `state.json` still exits 1.
+
+#### Scenario: The main tree's record is unreadable from a linked worktree
+
+- **WHEN** `spend-guard E` runs in a linked worktree whose main tree's `state.json` is unreadable, and E's `gate1.failStreak` is at its limit
+- **THEN** it reports tracking as unknown, never as off, and the ledger side and token signal `not-read`, naming the main tree's `state.json`
+- **AND** `--json` gives `tracking: "unknown"`
+- **AND** it prints the STOP block and exits 2, not 1
 
 #### Scenario: An unreadable enabledAt
 
@@ -293,9 +345,10 @@ stop that epic-level autonomy does not bypass.
 ### Requirement: The escalation target is one model tier above the role that failed, else the user
 
 The target SHALL be the next model above the resolved model of the role tied to the signal: `review`
-for rounds, `implement` for tokens. The order is `haiku < sonnet < opus < fable`. The target SHALL be
-`user` when that model is `fable`, or when the role resolves no model. Either way, the user stays a
-valid target.
+for rounds, `implement` for tokens, in the order `haiku < sonnet < opus < fable`. The resolved model
+counts whatever its source layer, `default` included, and the block names the source. The target
+SHALL be `user` only when that model is `fable` or is not in the ladder (or absent). The user always
+stays a valid target.
 
 #### Scenario: Sonnet escalates to Opus
 
@@ -307,10 +360,15 @@ valid target.
 - **WHEN** E's `review` role resolves `fable:high`
 - **THEN** the escalation target is `user`
 
-#### Scenario: No configured model escalates to the user
+#### Scenario: A default-sourced model escalates like a configured one
 
-- **WHEN** no layer sets a `review` model
-- **THEN** the escalation target is `user`, and the block says no model was configured to step up from
+- **WHEN** no layer sets a `review` model, so it resolves `opus (high) (default)`
+- **THEN** the escalation target is `fable`, and the block names the review model as `opus (default)`
+
+#### Scenario: A model outside the ladder escalates to the user
+
+- **WHEN** the resolver returns no `review` model, or one that is not in `haiku < sonnet < opus < fable`
+- **THEN** the escalation target is `user`, and the block says there was no ranked model to step up from
 
 ### Requirement: A failed verdict is always recorded, then the STOP is printed
 
@@ -364,20 +422,21 @@ text.
 
 ### Requirement: The rules block carries a Spend guard section only while a limit is configured
 
-While a limit is configured (see the opt-in requirement), the rules block SHALL carry a
-`## Spend guard` section. It tells the agent to:
+While a limit is configured (opt-in requirement), the rules block SHALL carry a `## Spend guard`
+section after the `## Spend tracking` slot, telling the agent to:
 
 - run `spend-guard <epic>` before every review or fix dispatch
-- treat exit 2 as a STOP autonomy does not bypass, and escalate, never retry at the same tier
+- treat exit 2 as a STOP autonomy does not bypass, and escalate
 - record the decision with `override-spend-guard`, which no autonomy grant covers
 - mark review dispatches `phase=review round=<n>`
 
-With no limit configured, it SHALL carry no such section.
+With no limit, there is no such section.
 
 #### Scenario: A configured limit adds the section
 
 - **WHEN** `set-spend-guard --max-failed-rounds 2` runs
 - **THEN** the managed `CLAUDE.md` rules block contains `## Spend guard` with the literal `spend-guard <epic>` command
+- **AND** the section follows `## Spend tracking` when tracking is on, and takes that position when it is off
 
 #### Scenario: Unsetting the last limit removes it
 
