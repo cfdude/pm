@@ -3054,8 +3054,11 @@
           "text": "lane: superpowers not claude-code — a new guard on /opsx:apply; under-processing costs the record (intake rule 4)"
         }
       ],
-      "touchedAt": "2026-10-06T19:58:03.743Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-09T18:08:39.043Z",
+      "release": "0.52.0",
+      "attributedCommits": [
+        "02e53b683567005f8a01185a72f7ff3580973f09"
+      ]
     },
     {
       "id": "openspec-planning-completeness-instruction",
@@ -5519,7 +5522,9 @@
       "externalId": "172",
       "externalUrl": "https://github.com/cfdude/pm/issues/172",
       "externalUpdatedAt": "2026-09-05T09:41:51Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "250c574b211b5219b1d96f2ff6e45f54e6bc9fbf"
+      ],
       "createdAt": "2026-09-08T17:55:42-07:00",
       "notes": [
         {
@@ -5528,7 +5533,7 @@
           "text": "2026-10-06 Rob asked to consider this as a 0.52.0 bug fix. Lane kept; the build step is in cfdude/.github, then re-pin here."
         }
       ],
-      "touchedAt": "2026-10-07T00:37:09.550Z",
+      "touchedAt": "2026-10-07T16:13:02.988Z",
       "release": "0.52.0"
     },
     {
@@ -6449,9 +6454,12 @@
       "externalId": "176",
       "externalUrl": "https://github.com/cfdude/pm/issues/176",
       "externalUpdatedAt": "2026-09-08T17:49:40Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "538e8a3fc462498bc5700744c7d6caffc23a1862",
+        "aa66c49c98608d527bbd57acf15a72e50aea9eff"
+      ],
       "createdAt": "2026-09-09T00:20:59.267Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-07T18:00:28.202Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:30.522Z",
@@ -7132,9 +7140,11 @@
       "externalId": "196",
       "externalUrl": "https://github.com/cfdude/pm/issues/196",
       "externalUpdatedAt": "2026-09-14T18:17:01Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c25858ebad7dd3f3485510b0150f1031ba94f477"
+      ],
       "createdAt": "2026-09-14T18:18:17.982Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-07T16:13:01.486Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:20.116Z",
@@ -10049,9 +10059,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "992157ab112c9cfeb1aab82fc0a618a29e9fa7a8"
+      ],
       "createdAt": "2026-09-17T05:13:42.425Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-07T16:12:56.012Z",
       "notes": [
         {
           "at": "2026-09-17T05:13:42.890Z",
@@ -11110,9 +11122,12 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f7dcbdacf9e04f20d4938a32cb69af1a0075ace0",
+        "5877ccbabc7e91eea2160f679e2979f782d5726b"
+      ],
       "createdAt": "2026-09-25T21:57:39.453Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-07T18:00:26.703Z",
       "release": "0.52.0"
     },
     {
@@ -11708,9 +11723,12 @@
       "externalId": "213",
       "externalUrl": "https://github.com/cfdude/pm/issues/213",
       "externalUpdatedAt": "2026-09-23T19:40:15Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "23a2b0b1866b65c077bf9599ab210b2c173734cf",
+        "93f420955060f8a16bfe3437dc49af57cde12436"
+      ],
       "createdAt": "2026-09-28T17:11:08.328Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-07T18:00:27.461Z",
       "release": "0.52.0"
     },
     {
@@ -11741,9 +11759,11 @@
       "externalId": "210",
       "externalUrl": "https://github.com/cfdude/pm/issues/210",
       "externalUpdatedAt": "2026-09-18T17:37:17Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cc3a53fc7eba9ac15e5e4427e07712ce0e221070"
+      ],
       "createdAt": "2026-09-28T17:11:10.612Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-09T18:08:40.623Z",
       "release": "0.52.0"
     },
     {
@@ -12461,10 +12481,74 @@
           "text": "2026-10-06 Rob asked for this in 0.51.0; recommendation taken instead: split into a themed 0.52.0 release (5 epics) so 0.51.0 ships now — adding it would force a new Gate 1 + cross-spec review + a second converged review on a finished 24-epic release, delaying the fixes that already cut process cost. This epic is the foundation the other four build on."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "d889fa400baed754a9b7bc784e6b6bfd9a175fbf",
+        "8b49f0015e9f3c61505dcd64685c439413daed27"
+      ],
       "createdAt": "2026-10-01T07:33:57.581Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-09T18:37:32.169Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T18:37:31.239Z",
+          "artifacts": [
+            "openspec/changes/token-spend-tracking-per-epic/design.md",
+            "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+            "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+            "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+            "openspec/changes/token-spend-tracking-per-epic/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/design.md",
+              "sha256": "44050d6bb93cedd925af09a393d12e60f553a1efbf087b0b9f2af519e7945dc2"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+              "sha256": "87c5fbbebcee7a73218931c67ffe88467603e3055b028fc637590d7eb2d564bd"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+              "sha256": "81fbc4e868887b816acc18e5fe5d3d76777a05e1e27ccfb0be7def51fae2ecc2"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+              "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+            }
+          ],
+          "reviewer": "opus fresh-context (Gate 1 + cross-spec 0.52.0 BLOCK fixes 8b49f001)",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-09T18:32:06.723Z",
+            "artifacts": [
+              "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+              "openspec/changes/token-spend-tracking-per-epic/design.md",
+              "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+              "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+                "sha256": "87c5fbbebcee7a73218931c67ffe88467603e3055b028fc637590d7eb2d564bd"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/design.md",
+                "sha256": "44050d6bb93cedd925af09a393d12e60f553a1efbf087b0b9f2af519e7945dc2"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+                "sha256": "bfc8b34aa7931822d7475fa707136745bd6887bb39d585226780461f69166157"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+                "sha256": "6b17c94b39f16770053a54cdd5cdb0c2a01fc904b6ddfb0155ec088c8285aa90"
+              }
+            ],
+            "reviewer": "opus fresh-context, 1 round + 1 verification pass (Critical reopened): 1 Critical + 10 Important fixed, then 1 Important (main-tree state) + 2 Minor fixed"
+          }
+        }
+      }
     },
     {
       "id": "integrity-reports-legacy-duplicate-attributions",
@@ -12500,9 +12584,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "0f90cdbdf249d8f5daab70ba204d676a9b47683f"
+      ],
       "createdAt": "2026-10-01T23:10:17.077Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-09T18:08:39.841Z",
       "notes": [
         {
           "at": "2026-10-06T19:57:49.395Z",
@@ -12700,9 +12786,11 @@
       ],
       "reconcileNeeded": false,
       "description": "Found by the 0.52.0 backlog assessment 2026-10-06: the managed rules block in CLAUDE.md is 40,087 bytes (lines 111-624), roughly 10K tokens by bytes/4, paid by EVERY session and every dispatched agent, and no epic measures or caps it. A per-epic ledger never sees it. Measure per-repo size, decide what can move to on-demand skills (a task item beats a prose bullet for adoption, so keep the required items), cap the brief, and report block size in upgrade/status. Must not drop any required task item (14/14 vs 3/15 adoption evidence).",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "213b0e65a1817a2530cef7966c3fa843f6619414"
+      ],
       "createdAt": "2026-10-06T19:57:50.197Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-09T18:08:41.374Z",
       "release": "0.52.0"
     },
     {
@@ -12757,7 +12845,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1907,
+  "revision": 1925,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13334,7 +13422,22 @@
           "to": "0.53.0",
           "at": "2026-10-06T19:58:04.525Z"
         }
-      ]
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-10-09T18:37:09.154Z",
+        "specs": [
+          {
+            "key": "token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+            "sha256": "81fbc4e868887b816acc18e5fe5d3d76777a05e1e27ccfb0be7def51fae2ecc2"
+          },
+          {
+            "key": "token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+            "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+          }
+        ],
+        "reviewer": "opus fresh-context"
+      }
     },
     {
       "id": "0.53.0",
