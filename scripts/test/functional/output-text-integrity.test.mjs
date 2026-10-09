@@ -1097,6 +1097,9 @@ for (const verb of ["brief", "commit-nudge", "gate-guard", "init", "lesson-advic
 // ── read verbs ──
 recipe("activity --since", { notRendered: "an unparseable --since filters nothing and is printed by no surface", run: (c, v) => pm(c.cwd, ["activity", "--since", v]) });
 recipe("activity --epic", { notRendered: "--epic only filters the events read; the report does not echo it", run: (c, v) => pm(c.cwd, ["activity", "--epic", v]) });
+recipe("spend --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["spend", "--since", v]) });
+recipe("spend --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => pm(c.cwd, ["spend", "--until", v]) });
+recipe("spend --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["spend", "--epic", v]) });
 recipe("sync --only", { exempt: "--only must name a candidate change, plan or archived change or an existing epic; anything else is refused, the value echoed escaped, and nothing is written", run: (c, v) => pm(c.cwd, ["sync", "--only", v]) });
 recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and anything else is refused", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });

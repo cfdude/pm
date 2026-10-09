@@ -93,6 +93,12 @@ export const ARTIFACT = Object.freeze({
    *  is `activity/<segment-name>` and the store treats the whole string as one artifact name, so a
    *  memory store holds segments under the same keys a disk store holds them at. */
   ACTIVITY_PREFIX: "activity/",
+  /** The PREFIX of the spend ledger's artifacts, for the same reason as the activity prefix: the
+   *  store treats `spend/timeline.jsonl` as one artifact name. ONLY the timeline goes through the
+   *  store — it is written from the main working tree alone, so the invocation's root IS the ledger's.
+   *  The rest of the ledger (rows, cursor, markers, the ingest lock) is raw `fs` in spend-ledger.mjs,
+   *  named in store-ownership.test.mjs with its reason. */
+  SPEND_PREFIX: "spend/",
 });
 
 /** The one artifact that lives at the repository ROOT rather than under `.conductor/`. Named here

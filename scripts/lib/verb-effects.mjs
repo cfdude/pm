@@ -124,7 +124,12 @@ export const VERB_EFFECTS = {
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
   "record-tracker-refresh": { effect: "mutates", writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
   "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
-  "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch)" },
+  "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch), and the main working tree's .conductor/spend/timeline.jsonl" },
+  // `detachedNoOp`: `spend` writes ONLY into the MAIN working tree's git-ignored .conductor/spend/ and
+  // never state.json, and it asks about the main tree's HEAD itself (suppressing its ingest and saying
+  // so). The generic "discarded write" warning is about THIS root's tracked record, which `spend`
+  // never touches, so printing it from a detached linked worktree would be false.
+  spend: { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree (rows, cursor, markers, ingest lock; with --clear/--rebuild also removes or rewrites them, with --clear --timeline the timeline) — never state.json and never a transcript" },
   // DESTRUCTIVE by nature, which is why it removes nothing without both a selector and --yes.
   "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
   claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },

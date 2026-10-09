@@ -450,6 +450,7 @@ const DISPATCH_BASELINE = {
   unclaim: { pre: [["claim", "e1", "--session", "s"]], args: ["unclaim", "e1", "--session", "s"] },
   owners: { args: ["owners"] },
   activity: { args: ["activity"] },
+  spend: { args: ["spend"] },
   "set-activity-log": { args: ["set-activity-log", "on"] },
   "set-spend-tracking": { args: ["set-spend-tracking", "on"] },
   "purge-logs": { args: ["purge-logs", "--keep", "5"] },

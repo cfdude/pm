@@ -1286,14 +1286,36 @@ prints the plan and removes nothing.
 <summary><code>set-spend-tracking</code> / <code>spend</code> — Which epic, phase, role and model did the tokens go to?</summary>
 
 An **opt-in, off-by-default** record of token spend, built read-only from Claude Code's own
-transcript files. Nothing is read until you opt in.
+transcript files. Nothing is read until you opt in, and then only by `spend`: no hook reads a
+transcript, and a repo with tracking off pays nothing new on any hot path.
 
 ```bash
 node scripts/conductor.mjs set-spend-tracking on|off
+node scripts/conductor.mjs spend [--epic <id>] [--since <iso>] [--until <iso>] [--json] [--no-ingest]
+node scripts/conductor.mjs spend --clear [--timeline] [--yes]
+node scripts/conductor.mjs spend --rebuild [--yes]
 ```
 
 `enabledAt` is written on the first `on` and never moves; `init` and `upgrade` never turn it on,
-and `upgrade` lists it as `NOT SET` until you do. See `commands/spend.md`.
+and `upgrade` lists it as `NOT SET` until you do. `spend` ingests incrementally, then reports
+per-epic totals split by actor, role, phase, gate round and model tier. The ledger stores counts and
+identifiers only, never prompt or response text, and lives in the main working tree's git-ignored
+`.conductor/spend/`.
+
+**Attribution** is computed when the ledger is read: a sub-agent by a `pm-spend: epic=<id> role=<role>
+phase=<phase> [round=<n>]` line that the rules block asks you to begin each dispatch prompt with
+(emitted only while tracking is on); orchestrator spend by an active-epic timeline the engine records;
+everything else lands in an **unattributed** bucket, by reason, that the report always prints, with a
+coverage share. Spend made while tracking was off is never credited to an epic.
+
+**Every write has an inverse**, and each prints its plan without `--yes`: `set-spend-tracking off`,
+`spend --clear`, `spend --rebuild` (which keeps rows whose transcript Claude Code has since pruned) and
+`spend --clear --timeline`.
+
+**Not measured:** Claude Code's background calls, spend before `enabledAt` or while tracking was off,
+and (in a release candidate) the orchestrator's spend is attributed to whichever epic is active. No
+cost is computed: pm ships no price table, and Claude Code's own cost figures are notional under
+subscription auth. See `commands/spend.md`.
 
 </details>
 
