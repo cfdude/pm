@@ -414,7 +414,10 @@ export function updateEpic() {
   // first, so `--status active --gate1-waived "<why>"` is one call; `--clear gate1-waived` in the same call
   // removes the stored one before the check.
   const gate1WaivedFlag = str(f["gate1-waived"]);
-  if (gate1WaivedFlag !== undefined && !isOpenspecLane(epic)) {
+  // Judged against the lane THIS call sets (`--lane openspec --gate1-waived …` on an epic in another lane
+  // is the call that makes it an openspec epic), not the lane it is leaving.
+  const effectiveLane = str(f.lane) !== undefined ? str(f.lane) : epic.lane;
+  if (gate1WaivedFlag !== undefined && !isOpenspecLane({ lane: effectiveLane })) {
     die(`conductor: --gate1-waived applies only to an openspec-lane epic; '${escapeControls(id)}' is not one, so there is no Gate 1 to waive. Nothing was written.\n`);
   }
   if (status === "active" && snapshot.status !== "active") {
@@ -422,7 +425,7 @@ export function updateEpic() {
     // The artifact paths too: `--spec openspec/changes/<name>/… --status active` names the epic's change in
     // THIS call (gh#200), and `--clear spec|plan` removes the link before the check.
     const clears = [].concat(f.clear === undefined ? [] : f.clear);
-    const candidate = { ...snapshot,
+    const candidate = { ...snapshot, lane: effectiveLane,
       gate1Waived: gate1WaivedFlag !== undefined ? gate1WaivedFlag : (clearsWaiver ? undefined : snapshot.gate1Waived),
       planPath: str(f.plan) !== undefined ? str(f.plan) : (clears.includes("plan") ? undefined : snapshot.planPath),
       specPath: str(f.spec) !== undefined ? str(f.spec) : (clears.includes("spec") ? undefined : snapshot.specPath) };

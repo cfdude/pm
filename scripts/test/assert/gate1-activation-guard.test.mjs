@@ -160,3 +160,33 @@ test("add-many and add-epic refuse a creation at active whose --spec names an on
   assert.equal(many.status, 1, many.stderr);
   assert.match(many.stderr, /cannot make openspec-lane epic 'feat2' active/);
 });
+
+test("update-epic judges the activation guard against the lane the call SETS, not the lane being left", () => {
+  // superpowers -> openspec in the same call as --status active: the change is on disk, so Gate 1 is owed.
+  const sp = repoWith({ lane: "superpowers" });
+  const refused = invokeEngine(["update-epic", "feat", "--lane", "openspec", "--status", "active"], { cwd: sp });
+  assert.equal(refused.status, 1, refused.stderr);
+  assert.match(refused.stderr, /cannot make openspec-lane epic 'feat' active/);
+  assert.equal(epicOf(sp, "feat").lane, "superpowers", "nothing was written");
+  assert.equal(epicOf(sp, "feat").status, "queued");
+  // ...and the waiver in that same call is accepted, because the call makes the epic an openspec one.
+  const waived = invokeEngine(["update-epic", "feat", "--lane", "openspec", "--status", "active", "--gate1-waived", "doc-only"], { cwd: sp });
+  assert.equal(waived.status, 0, waived.stderr);
+  assert.equal(epicOf(sp, "feat").lane, "openspec");
+  assert.equal(epicOf(sp, "feat").gate1Waived, "doc-only");
+  // --gate1-waived alone with --lane openspec is not refused as "not an openspec-lane epic".
+  const sp2 = repoWith({ lane: "superpowers" });
+  const only = invokeEngine(["update-epic", "feat", "--lane", "openspec", "--gate1-waived", "why"], { cwd: sp2 });
+  assert.equal(only.status, 0, only.stderr);
+  assert.equal(epicOf(sp2, "feat").gate1Waived, "why");
+  // The inverse direction: leaving openspec in the same call is judged as the lane it becomes.
+  const os = repoWith();
+  const left = invokeEngine(["update-epic", "feat", "--lane", "superpowers", "--status", "active"], { cwd: os });
+  assert.equal(left.status, 0, left.stderr);
+  assert.equal(epicOf(os, "feat").lane, "superpowers");
+  // ...and a waiver in a call that moves the epic OUT of openspec is refused: it has no Gate 1 to waive.
+  const os2 = repoWith();
+  const bad = invokeEngine(["update-epic", "feat", "--lane", "superpowers", "--gate1-waived", "why"], { cwd: os2 });
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /--gate1-waived applies only to an openspec-lane epic/);
+});

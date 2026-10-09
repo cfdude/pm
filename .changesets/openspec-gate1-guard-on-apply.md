@@ -9,4 +9,6 @@
   OR by the change directory its `--plan` / `--spec` points into (the gh#200 case: an epic registered under one id
   whose change was proposed under another), including a link set in the same call as `--status active`; before,
   such an epic was read as pre-propose and never refused. `add-epic`, `add-many`, `update-epic` and `set-active`
-  all read it.
+  all read it. `update-epic` also judges the guard, and `--gate1-waived`'s openspec-only check, against the lane the
+  call SETS: `--lane openspec --status active` on an epic in another lane is now refused (or waived in the same call),
+  where it used to be judged against the lane being left.
