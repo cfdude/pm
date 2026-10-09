@@ -83,10 +83,12 @@ export function setSpendTracking() {
     reportSave({ unchanged: true }, { unchanged: `conductor: spend tracking was already off — ${STATE_UNCHANGED}` });
     return;
   }
-  const prev = state.spendTracking || {};
-  const enabledAt = typeof prev.enabledAt === "string" && prev.enabledAt
-    ? prev.enabledAt
-    : (arg === "on" ? new Date().toISOString() : undefined);
+  const { enabledAt: prevAt, ...prev } = state.spendTracking || {};
+  // A parseable `enabledAt` is kept for good. An unparseable one (hand-edited, truncated) is not a
+  // start `spend` can bound an ingest by: it refuses and says to run off, then on. So `on` stamps a
+  // fresh one over it and `off` drops it, which makes that remedy work.
+  const keep = typeof prevAt === "string" && Number.isFinite(Date.parse(prevAt));
+  const enabledAt = keep ? prevAt : (arg === "on" ? new Date().toISOString() : undefined);
   state.spendTracking = { ...prev, enabled: arg === "on", ...(enabledAt ? { enabledAt } : {}) };
   const saved = saveState(state);
   if (!saved.unchanged) {

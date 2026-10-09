@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, expectFail } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, expectFail, writeState } from "../fixtures/assert-harness.mjs";
 
 const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
@@ -74,4 +74,33 @@ test("1.3 init writes the .conductor/spend/ ignore line", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   assert.ok(fs.readFileSync(path.join(cwd, ".gitignore"), "utf8").split("\n").map((l) => l.trim()).includes(".conductor/spend/"));
+});
+
+test("G2-M1 an unparseable enabledAt: `spend` refuses, and the remedy it names (off, then on) clears the refusal", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-spend-tracking", "on"], { cwd });
+  const s = JSON.parse(stateBytes(cwd));
+  s.spendTracking.enabledAt = "not-a-date";
+  writeState(cwd, s);
+  const env = { CLAUDE_CONFIG_DIR: tmpRepo(), HOME: "/no/such/home" };
+  expectFail(() => run(["spend", "--no-ingest"], { cwd, env }));
+  run(["set-spend-tracking", "off"], { cwd });
+  assert.equal(JSON.parse(stateBytes(cwd)).spendTracking.enabledAt, undefined, "off drops a value no ingest could use");
+  run(["set-spend-tracking", "on"], { cwd });
+  const fresh = JSON.parse(stateBytes(cwd)).spendTracking.enabledAt;
+  assert.ok(Number.isFinite(Date.parse(fresh)), "on stamped a fresh start");
+  run(["spend", "--no-ingest"], { cwd, env });
+});
+
+test("G2-M1 `on` over an unparseable enabledAt stamps a fresh one without needing an `off` first", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-spend-tracking", "on"], { cwd });
+  const s = JSON.parse(stateBytes(cwd));
+  s.spendTracking.enabled = false;
+  s.spendTracking.enabledAt = "garbage";
+  writeState(cwd, s);
+  run(["set-spend-tracking", "on"], { cwd });
+  assert.ok(Number.isFinite(Date.parse(JSON.parse(stateBytes(cwd)).spendTracking.enabledAt)));
 });
