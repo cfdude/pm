@@ -31,6 +31,9 @@ export const LEDGER_FILES = Object.freeze({
   rows: "rows.jsonl", cursor: "cursor.json", markers: "markers.json", timeline: "timeline.jsonl", lock: "ingest.lock",
 });
 
+/** The skip reason an unreadable transcript is counted under (the report prints it with the rest). */
+export const SKIP_UNREADABLE = "unreadable-transcript";
+
 /** A lock older than this is broken, as the state lock's stale rule does. */
 export const LOCK_STALE_MS = 10 * 60 * 1000;
 
@@ -48,8 +51,13 @@ function readJson(file, fallback, fsx) {
 function writeAtomic(file, text, fsx) {
   const tmp = `${file}.tmp-${process.pid}-${Date.now()}`;
   fsx.mkdirSync(path.dirname(file), { recursive: true });
-  fsx.writeFileSync(tmp, text);
-  fsx.renameSync(tmp, file);
+  try {
+    fsx.writeFileSync(tmp, text);
+    fsx.renameSync(tmp, file);
+  } catch (e) {
+    try { fsx.rmSync(tmp, { force: true }); } catch { /* best effort: leave no half-file behind */ }
+    throw e;
+  }
 }
 
 /** Take the ingest lock, or return null when a live one is held. Breaks a stale one once. */
@@ -132,15 +140,18 @@ function readLines(abs, startOffset, onLine, fsx) {
   }
 }
 
-/** Ingest without taking the lock: the body `ingest` and `rebuild` share once each holds it. */
-function ingestLocked({ mainRoot, env, home, enabledAtMs }, fsx) {
-  const cursor = readJson(at(mainRoot, "cursor"), {}, fsx);
-  const markers = readJson(at(mainRoot, "markers"), {}, fsx);
+/** Ingest without taking the lock: the body `ingest` and `rebuild` share once each holds it.
+ *  `seed` is `rebuild`'s: the cursor, markers and rows to START from, held in memory. With a seed the
+ *  three files are written ONLY here, at the end and each atomically, so a throw anywhere before then
+ *  leaves the previous ledger exactly as it was. */
+function ingestLocked({ mainRoot, env, home, enabledAtMs }, fsx, seed = null) {
+  const cursor = seed ? seed.cursor : readJson(at(mainRoot, "cursor"), {}, fsx);
+  const markers = seed ? seed.markers : readJson(at(mainRoot, "markers"), {}, fsx);
   const found = discoverFiles(mainRoot, env, home, fsx);
   const result = {
     ran: true, busy: false, projectDir: found.projectDir, projectDirFound: found.projectDirFound,
     files: { seen: found.files.length, read: 0, unchanged: 0, skippedBeforeEnabled: 0 },
-    rowsAdded: 0, rowsBeforeEnabled: 0, skipped: {},
+    rowsAdded: 0, rowsBeforeEnabled: 0, skipped: {}, failedRels: [],
   };
   const collected = [];
   let markersChanged = false;
@@ -159,31 +170,56 @@ function ingestLocked({ mainRoot, env, home, enabledAtMs }, fsx) {
     const startOffset = resume ? c.offset : 0;
     let userSeen = resume ? !!c.userSeen : false;
     if (!resume && info.kind === "subagent" && markers[info.agentId]) { delete markers[info.agentId]; markersChanged = true; }
+    const fileRows = [];
     const accept = (row) => {
       if (Date.parse(row.at) < enabledAtMs) result.rowsBeforeEnabled++;
-      else collected.push(row);
+      else fileRows.push(row);
     };
-    const { consumed, size } = readLines(f.abs, startOffset, (line) => {
-      const needsUser = info.kind === "subagent" && !userSeen;
-      // Cheap pre-filter: only an assistant entry can be a row, and a sub-agent's first user entry is
-      // the one other line worth parsing. Everything else (tool results, attachments) is skipped
-      // unparsed — the bulk of a transcript's bytes.
-      if (!needsUser && !line.includes("assistant")) return;
-      const r = parseEntry(line, info);
-      if (r.row) accept(r.row);
-      else if (r.skip) result.skipped[r.skip] = (result.skipped[r.skip] || 0) + 1;
-      else if (r.user && needsUser) {
-        userSeen = true;
-        if (r.marker) { markers[info.agentId] = storedMarker(r.marker); markersChanged = true; }
-      }
-    }, fsx);
+    let consumed, size;
+    try {
+      ({ consumed, size } = readLines(f.abs, startOffset, (line) => {
+        const needsUser = info.kind === "subagent" && !userSeen;
+        // Cheap pre-filter: only an assistant entry can be a row, and a sub-agent's first user entry is
+        // the one other line worth parsing. Everything else (tool results, attachments) is skipped
+        // unparsed — the bulk of a transcript's bytes.
+        if (!needsUser && !line.includes("assistant")) return;
+        const r = parseEntry(line, info);
+        if (r.row) accept(r.row);
+        else if (r.skip) result.skipped[r.skip] = (result.skipped[r.skip] || 0) + 1;
+        else if (r.user && needsUser) {
+          userSeen = true;
+          if (r.marker) { markers[info.agentId] = storedMarker(r.marker); markersChanged = true; }
+        }
+      }, fsx));
+    } catch {
+      // One unreadable transcript (EACCES, EISDIR, deleted since the stat) must not cost the others.
+      // Its cursor entry is left exactly as it was, so the next ingest tries it again from where it was.
+      result.skipped[SKIP_UNREADABLE] = (result.skipped[SKIP_UNREADABLE] || 0) + 1;
+      result.failedRels.push(f.rel);
+      continue;
+    }
+    collected.push(...fileRows);
     result.files.read++;
     cursor[f.rel] = { offset: consumed, size, dev: st.dev, ino: st.ino, userSeen };
   }
   const folded = foldRows(collected);
   result.rowsAdded = folded.length;
   fsx.mkdirSync(spendDir(mainRoot), { recursive: true });
-  if (folded.length) fsx.appendFileSync(at(mainRoot, "rows"), folded.map((r) => JSON.stringify(storedRow(r))).join("\n") + "\n");
+  const newText = folded.map((r) => JSON.stringify(storedRow(r))).join("\n") + (folded.length ? "\n" : "");
+  if (seed) {
+    // A transcript that could not be read keeps the rows (and the marker) the ledger already holds for
+    // it: dropping them would turn "unreadable right now" into lost history.
+    const failed = new Set(result.failedRels);
+    const failedAgents = new Set([...failed].map((rel) => sourceInfo(rel)).filter((i) => i.kind === "subagent").map((i) => i.agentId));
+    for (const id of failedAgents) if (seed.priorMarkers[id]) markers[id] = seed.priorMarkers[id];
+    const carried = seed.priorRows.filter((r) => failed.has(r.source));
+    const rowsText = [...seed.keptRows, ...carried].map((r) => JSON.stringify(storedRow(r))).join("\n");
+    writeAtomic(at(mainRoot, "rows"), rowsText + (rowsText ? "\n" : "") + newText, fsx);
+    writeAtomic(at(mainRoot, "markers"), JSON.stringify(markers) + "\n", fsx);
+    writeAtomic(at(mainRoot, "cursor"), JSON.stringify(cursor) + "\n", fsx);
+    return result;
+  }
+  if (newText) fsx.appendFileSync(at(mainRoot, "rows"), newText);
   if (markersChanged) writeAtomic(at(mainRoot, "markers"), JSON.stringify(markers) + "\n", fsx);
   // The cursor is the LAST write: a crash before it re-reads lines whose rows are already appended,
   // and the fold by message id makes that harmless.
@@ -274,8 +310,10 @@ export function rebuildPlan({ mainRoot, env, home }, fsx = fs) {
 }
 
 /** Re-derive the rows from the transcripts still on disk, keeping every row and marker whose source
- *  is gone, and the timeline. The cursor is reset FIRST, so a crash anywhere afterwards re-ingests from
- *  the start and the fold absorbs the duplicates. */
+ *  is gone, and the timeline. NOTHING is written until the ingest has finished: the new cursor, markers
+ *  and rows are built in memory and swapped in at the end (rows, then markers, then cursor, each
+ *  atomically), so a throw cannot lose rows for transcripts that are still on disk. A crash between the
+ *  swaps leaves a stale cursor at worst, which re-reads lines the fold by message id absorbs. */
 export function rebuild(opts, fsx = fs) {
   const { mainRoot } = opts;
   fsx.mkdirSync(spendDir(mainRoot), { recursive: true });
@@ -289,10 +327,7 @@ export function rebuild(opts, fsx = fs) {
     const { rawRows, markers } = readLedger(mainRoot, fsx);
     const keptRaw = rawRows.filter((r) => !live.has(r.source));
     const keptMarkers = Object.fromEntries(Object.entries(markers).filter(([agentId]) => !liveAgents.has(agentId)));
-    writeAtomic(at(mainRoot, "cursor"), "{}\n", fsx);
-    writeAtomic(at(mainRoot, "markers"), JSON.stringify(keptMarkers) + "\n", fsx);
-    writeAtomic(at(mainRoot, "rows"), keptRaw.map((r) => JSON.stringify(storedRow(r))).join("\n") + (keptRaw.length ? "\n" : ""), fsx);
-    const result = ingestLocked(opts, fsx);
+    const result = ingestLocked(opts, fsx, { cursor: {}, markers: keptMarkers, keptRows: keptRaw, priorRows: rawRows, priorMarkers: markers });
     return { ...result, keptRows: foldRows(keptRaw).length };
   } finally { releaseLock(fd, lockPath, fsx); }
 }

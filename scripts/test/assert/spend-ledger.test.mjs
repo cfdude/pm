@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo } from "../fixtures/assert-harness.mjs";
 import { EXPECTED, SENTINEL, buildTranscriptTree, walk } from "../fixtures/spend-transcripts.mjs";
-import { LOCK_STALE_MS, ingest, readLedger } from "../../lib/spend-ledger.mjs";
+import { LOCK_STALE_MS, ingest, readLedger, rebuild } from "../../lib/spend-ledger.mjs";
 import { rowTotal, sourceInfo } from "../../lib/spend-reader.mjs";
 import { spendDir } from "../../lib/spend-tree.mjs";
 
@@ -247,4 +247,99 @@ test("2.5 the stored rows hold exactly the allowlisted fields", () => {
       "input", "cacheCreation", "cacheRead", "output", "thinking", "tools",
     ]);
   }
+});
+
+// ───────────────────────────── an unreadable transcript costs only itself ─────────────────────────────
+
+const relOf = (cfg, abs) => path.relative(path.join(cfg, "projects"), abs);
+const cursorOf = (repo) => JSON.parse(fs.readFileSync(path.join(spendDir(repo), "cursor.json"), "utf8"));
+const withFs = (overrides) => new Proxy(fs, {
+  get(target, prop) {
+    if (prop in overrides) return overrides[prop](target);
+    const v = target[prop];
+    return typeof v === "function" ? v.bind(target) : v;
+  },
+});
+const SKIP = "unreadable-transcript";
+const norm = (s) => s.replace(/pm-test-[A-Za-z0-9]+/, "R");   // the project dir name carries the tmp repo path
+
+test("G2-I1 an unreadable file (EACCES) and a directory named like a transcript (EISDIR) are skipped, counted, and the rest is ingested", () => {
+  const clean = scene();
+  ingest(clean.opts);
+  const baseline = sumBy(readLedger(clean.repo).rows, (x) => norm(x.source));
+
+  const { repo, cfg, paths, opts } = scene();
+  fs.chmodSync(paths.unmarked, 0o000);
+  const dirName = path.join(path.dirname(paths.marked), "agent-DIR.jsonl");
+  fs.mkdirSync(dirName);
+  fs.utimesSync(dirName, FRESH, FRESH);
+  try {
+    const r = ingest(opts);
+    assert.equal(r.ran, true);
+    assert.equal(r.skipped[SKIP], 2, "both bad files are counted under one named reason");
+    const got = sumBy(readLedger(repo).rows, (x) => norm(x.source));
+    const want = Object.fromEntries(Object.entries(baseline).filter(([src]) => !src.includes("UNMARKED")));
+    assert.deepEqual(got, want, "every readable file's rows were written");
+    const c = cursorOf(repo);
+    assert.equal(relOf(cfg, paths.unmarked) in c, false, "the unreadable file has no cursor entry");
+    assert.equal(relOf(cfg, dirName) in c, false);
+    assert.equal(relOf(cfg, paths.main) in c, true);
+  } finally { fs.chmodSync(paths.unmarked, 0o644); }
+  const again = ingest(opts);
+  assert.equal(again.skipped[SKIP], 1, "only the directory is still bad");
+  assert.deepEqual(sumBy(readLedger(repo).rows, (x) => norm(x.source)), baseline, "the file became readable and was ingested in full");
+});
+
+test("G2-I1 a bad file's existing cursor entry is left untouched", () => {
+  const { repo, cfg, paths, opts } = scene();
+  ingest(opts);
+  const before = cursorOf(repo)[relOf(cfg, paths.unmarked)];
+  assert.ok(before, "the file was ingested first");
+  fs.appendFileSync(paths.unmarked, "\n");                 // size changes so it is not 'unchanged'
+  fs.utimesSync(paths.unmarked, FRESH, FRESH);
+  fs.chmodSync(paths.unmarked, 0o000);
+  try {
+    const r = ingest(opts);
+    assert.equal(r.skipped[SKIP], 1);
+    assert.deepEqual(cursorOf(repo)[relOf(cfg, paths.unmarked)], before);
+  } finally { fs.chmodSync(paths.unmarked, 0o644); }
+});
+
+test("G2-I1 a transcript deleted between the stat and the open (ENOENT) is skipped and counted", () => {
+  const { repo, cfg, paths, opts } = scene();
+  const gone = withFs({
+    openSync: (t) => (p, ...rest) => {
+      if (String(p) === paths.marked) { const e = new Error("ENOENT: gone"); e.code = "ENOENT"; throw e; }
+      return t.openSync(p, ...rest);
+    },
+  });
+  const r = ingest(opts, gone);
+  assert.equal(r.skipped[SKIP], 1);
+  assert.equal(r.files.read, 4);
+  const rows = readLedger(repo).rows;
+  assert.ok(rows.length > 0);
+  assert.equal(rows.some((x) => x.source === relOf(cfg, paths.marked)), false);
+});
+
+test("G2-I1 rebuild keeps the rows and markers of a live transcript it cannot read", () => {
+  const { repo, paths, opts } = scene();
+  ingest(opts);
+  const before = sumBy(readLedger(repo).rows, (x) => x.source);
+  const markersBefore = readLedger(repo).markers;
+  fs.chmodSync(paths.marked, 0o000);
+  try {
+    const r = rebuild(opts);
+    assert.equal(r.skipped[SKIP], 1);
+    assert.deepEqual(sumBy(readLedger(repo).rows, (x) => x.source), before, "no source lost rows");
+    assert.deepEqual(readLedger(repo).markers, markersBefore, "no marker lost");
+  } finally { fs.chmodSync(paths.marked, 0o644); }
+});
+
+test("G2-I1 a throw inside rebuild leaves the previous ledger byte-identical, with no temp files", () => {
+  const { repo, opts } = scene();
+  ingest(opts);
+  const before = ledgerBytes(repo);
+  const failing = withFs({ renameSync: () => () => { throw new Error("disk full"); } });
+  assert.throws(() => rebuild(opts, failing), /disk full/);
+  assert.deepEqual(ledgerBytes(repo), before, "rows, cursor and markers are exactly as they were");
 });

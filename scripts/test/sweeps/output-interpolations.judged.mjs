@@ -176,13 +176,9 @@ x("spend-ledger.mjs", "writeAtomic", {
   "Date.now()": 1,
 }, "not-output", "a temp file NAME handed to fs, renamed over the ledger file");
 x("spend-ledger.mjs", "ingestLocked", {
-  "folded.map((r) => JSON.stringify(storedRow(r))).join(\"\\n\")": 1,
-  "JSON.stringify(markers)": 1,
-  "JSON.stringify(cursor)": 1,
+  "JSON.stringify(markers)": 2,
+  "JSON.stringify(cursor)": 2,
 }, "not-output", "the ledger files' BODIES (rows.jsonl, markers.json, cursor.json), written with fs and never printed");
-x("spend-ledger.mjs", "rebuild", {
-  "JSON.stringify(keptMarkers)": 1,
-}, "not-output", "markers.json's body, written with fs and never printed");
 x("spend-reader.mjs", "transcriptDirs", {
   "encoded": 1,
 }, "not-output", "a directory-name PREFIX matched against a listing, never printed");
