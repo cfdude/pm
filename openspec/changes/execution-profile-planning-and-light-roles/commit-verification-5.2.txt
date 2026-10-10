@@ -1,0 +1,22 @@
+Verify each task against its commit (task 5.2). `git show --stat <sha>` read for each.
+
+aeed6728 feat(execution-profile): six job roles and a built-in default model pair per role
+  Tasks 1.1-1.4. Present in the commit: scripts/lib/constants.mjs, execution-profile.mjs, rules.mjs;
+  unit/execution-profile-defaults.test.mjs (new), execution-profile-lists, execution-profile-resolver,
+  set-profile, spend-attribution, epic-profile-layer (amended; the last one asserted the parent's
+  `haiku` could not appear in a detour's profile, but `rudimentary` now defaults to haiku);
+  assert/execution-profile-emission.test.mjs (repointed); fixtures rules-0.52.0-execution-profile.txt
+  (new) and rules-0.52.0-spend-tracking.txt (regenerated); red-1.txt; tasks.md.
+  rules-0.51.0-execution-profile.txt is deliberately unchanged (historical record).
+  ABSENT, deliberately: openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md
+  (task 1.1's sibling-spec edit). Editing it stales that change's recorded Gate 1 and conductor-15
+  9.14 refuses an unexplained stale verdict (certify failed on it once). The one-scenario edit
+  (`plan` -> `deploy`) is left to the orchestrator together with the Gate 1 re-record; a patch is
+  not stored in the tree.
+5c8c39bd docs(execution-profile): document the six roles and defaults; ...
+  Tasks 2.1, 2.2, 3.1, 3.2, 3.3, 4.2, 5.1. Present: commands/profile.md, init.md, epic.md, spend.md,
+  README.md, skills/conductor/SKILL.md, .changesets/execution-profile-planning-and-light-roles.md,
+  assert/execution-profile-emission.test.mjs (4.5 rewritten, 2.1 and 3.2 added),
+  call-site-sweep-5.1.txt, tasks.md.
+Task 4.1: full assertion half 2063/2063; certify sweeps 25/25; certify functional 1349/1349
+  (after the sibling-spec edit was withheld). Task 5.3: pm:lifecycle is on tasks 8.2 and 8.3.

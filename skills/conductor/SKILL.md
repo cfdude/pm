@@ -177,7 +177,7 @@ changed) so deciding whether a PROJECT.md diff is safe to discard as noise is me
 instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
 sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
-execution profile (review, model per job role, verbosity) at the project and lane layers — resolved
+execution profile (review, model per job role — `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary`, each with a built-in default pair that is never stored — and verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
 epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
@@ -1321,11 +1321,11 @@ pmVersion     : "<semver>" — release that last touched this repo (set by init/
 tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
                 opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
-executionProfile? : { model?: {implement?|test?|review?: {model, effort?}}, verbosity?: "quiet"|"verbose" } —
+executionProfile? : { model?: {plan?|implement?|test?|review?|mechanical?|rudimentary?: {model, effort?}}, verbosity?: "quiet"|"verbose" } —
                 the PROJECT layer of the execution profile (the project `review` is `reviewMode` above,
                 reused rather than moved). `model` ∈ fable|opus|sonnet|haiku, `effort` ∈
                 low|medium|high|xhigh|max|ultracode; haiku takes no effort, every other model requires
-                one. Set/unset via `set-profile`; read via `profile`. Absent resolves to today's behaviour.
+                one. Set/unset via `set-profile`; read via `profile`. Absent resolves to each role's built-in default (never written here).
 laneProfiles? : { "<lane>": { review?, model?, verbosity? } } — the LANE layer, same value shapes; an
                 emptied lane is removed. Set via `set-profile --lane <lane>`.
 gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate the reconcile-owed

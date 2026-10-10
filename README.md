@@ -869,12 +869,15 @@ layer it came from).
 
 The execution profile says how intensely to review, which model and effort each job role runs on, and
 how often you report. Three fields: `review` (`off|standard|thorough`), `model` (per role
-`implement|test|review`, a `{model, effort}` pair; `model` is `fable|opus|sonnet|haiku`, and every
-model except `haiku` takes an effort) and `verbosity` (`quiet|verbose`). `/pm:init` asks about it and
-recommends `opus` at `medium` effort for every role.
+`plan|implement|test|review|mechanical|rudimentary`, a `{model, effort}` pair; `model` is `fable|opus|sonnet|haiku`, and every
+model except `haiku` takes an effort) and `verbosity` (`quiet|verbose`). Each role has a built-in default pair, applied when nothing sets it and never
+stored: `plan` `opus` (`high`), `implement` `sonnet` (`medium`), `test` `sonnet` (`low`), `review`
+`opus` (`high`), `mechanical` `sonnet` (`low`), `rudimentary` `haiku`. `/pm:init` recommends accepting them
+(it records nothing). To have a top-tier model build one epic straight off its finished plan, set
+`--model implement=fable:<effort>` on that epic.
 
 Each field resolves on its own, most specific first: **epic, then lane, then project, then the
-default** (`review: standard`, `verbosity: quiet`, no model directive). Set the project or a lane
+default** (`review: standard`, `verbosity: quiet`, and each model role's default pair). Set the project or a lane
 with `set-profile [--lane <lane>] --review … --model <role>=<model>[:<effort>] --verbosity …`; an epic
 sets its own with `add-epic` / `update-epic` (`--review-mode`, `--model`, `--verbosity`) or
 `add-many`. An epic may lower a value as well as raise it. Every set has an inverse:

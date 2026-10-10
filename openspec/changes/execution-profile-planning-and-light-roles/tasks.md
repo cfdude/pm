@@ -75,7 +75,7 @@ before staging.
 - Then certify `functional` and `sweeps` over that index.
 - Then make one plain commit.
 
-- [ ] 1.1 TDD (UNIT), the constants. `KNOWN_JOB_ROLES` becomes
+- [x] 1.1 TDD (UNIT), the constants. `KNOWN_JOB_ROLES` becomes
       `["plan","implement","test","review","mechanical","rudimentary"]`, and `DEFAULT_ROLE_MODELS` is
       added beside it (design D1, D2).
       - Test:
@@ -89,12 +89,15 @@ before staging.
         `openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md:396-399` the same
         way, and tell the orchestrator. It is another change's artifact, and its Gate records may
         need re-recording.
+        NOT DONE in the 1.x commit: editing it turns the sibling's recorded Gate 1 stale, and the
+        functional record check (conductor-15 9.14) refuses an unexplained stale verdict. The orchestrator
+        applies the one-scenario edit (`plan` -> `deploy`) and re-records the sibling's Gate 1.
       - Render the `clear-model` flag row's `requires`/`placeholder` from `KNOWN_JOB_ROLES`, resolving
         the declaration-order TDZ.
       - End the `--clear model` note at the built-in default (design D5). Covers "The role-taking
         flag's help names every role", the six-role refusal for `--model deploy=…`, and "Clearing
         every epic model role falls through to the defaults".
-- [ ] 1.2 TDD (UNIT), resolution. The resolver's per-role default becomes `DEFAULT_ROLE_MODELS[role]`,
+- [x] 1.2 TDD (UNIT), resolution. The resolver's per-role default becomes `DEFAULT_ROLE_MODELS[role]`,
       with source `default`. Cover these scenarios:
       - "A fresh repository resolves every role to its default"
       - "A layer's pair replaces the default whole"
@@ -108,7 +111,7 @@ before staging.
 
       Update any test that indexes profile lines by position. Find them with
       `rg -n "model implement|model test|model review|no directive" scripts/test`.
-- [ ] 1.3 TDD (UNIT), emission. In `rules.mjs`, make three changes:
+- [x] 1.3 TDD (UNIT), emission. In `rules.mjs`, make three changes:
       - render the "Before dispatching a job" role list from the constant;
       - render every role's default pair inline in the resolution sentence from
         `DEFAULT_ROLE_MODELS` (design D5);
@@ -116,7 +119,7 @@ before staging.
 
       Covers "The rules block shows every role's default", "The resolution order names every
       default, even for an overridden role", and "rules --epic emits the effective value".
-- [ ] 1.4 TDD (FILE), the fixtures.
+- [x] 1.4 TDD (FILE), the fixtures.
       - Pin the section against a new current-version fixture,
         `scripts/test/fixtures/rules-0.52.0-execution-profile.txt`, and repoint
         `assert/execution-profile-emission.test.mjs` at it.
@@ -135,15 +138,15 @@ before staging.
 
 ## 2. Defaults are never stored
 
-- [ ] 2.1 TDD (FILE): "No verb writes a default". Run `init`, then `upgrade`, on a temp repo. Then
+- [x] 2.1 TDD (FILE): "No verb writes a default". Run `init`, then `upgrade`, on a temp repo. Then
       the `state.json` bytes hold no `model` key at any layer. Verify: the assert test passes.
-- [ ] 2.2 Measure the rules-block growth with the `session-cost` report, before and after (design D6).
+- [x] 2.2 Measure the rules-block growth with the `session-cost` report, before and after (design D6).
       Record the byte delta in the 2.1 commit message. Verify: the brief's byte count is unchanged,
       and the report stays under `BRIEF_BYTE_CAP`.
 
 ## 3. Docs that ship with the plugin
 
-- [ ] 3.1 Update the docs and test 4.5 in ONE commit:
+- [x] 3.1 Update the docs and test 4.5 in ONE commit:
       - `commands/profile.md`: the field table's role list with a one-line meaning per role, the
         default table, and the one-shot override.
       - `commands/init.md` step 4: recommend accepting the defaults (record nothing), and show
@@ -156,7 +159,7 @@ before staging.
       Every refused example keeps its refusal-class marker. Verify:
       `node --test scripts/test/assert/parity.test.mjs`, the emission test, and the
       emitted-instructions twin pass.
-- [ ] 3.2 TDD (FILE), a doc-drift test (design D5). It asserts:
+- [x] 3.2 TDD (FILE), a doc-drift test (design D5). It asserts:
       - every role in `KNOWN_JOB_ROLES` appears in `commands/profile.md`, `commands/init.md`,
         `commands/epic.md` and `commands/spend.md`;
       - every role's default pair, rendered by `modelText`, appears in `commands/profile.md` and
@@ -164,24 +167,24 @@ before staging.
 
       Verify: the test fails when one role or one default is altered in a doc, and passes as
       shipped.
-- [ ] 3.3 Update `skills/conductor/SKILL.md` (the profile summary) and add the changeset fragment
+- [x] 3.3 Update `skills/conductor/SKILL.md` (the profile summary) and add the changeset fragment
       `.changesets/execution-profile-planning-and-light-roles.md`. The fragment must carry the
       BREAKING note on emitted instructions. Verify: `node scripts/conductor.mjs changesets` lists
       it.
 
 ## 4. Integration
 
-- [ ] 4.1 Run the full assertion half
+- [x] 4.1 Run the full assertion half
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`) plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record peak memory
       (`/usr/bin/time -l`).
-- [ ] 4.2 Dogfood: in this repo, `node scripts/conductor.mjs profile` shows six roles. This repo's
+- [x] 4.2 Dogfood: in this repo, `node scripts/conductor.mjs profile` shows six roles. This repo's
       three set roles show `(project)` and `plan`/`mechanical`/`rudimentary` show `(default)`.
       `rules` emits the same.
 
 ## 5. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 5.1 **Call-site completeness sweep** (item 1). Save the result as
+- [x] 5.1 **Call-site completeness sweep** (item 1). Save the result as
       `call-site-sweep-5.1.txt` in this directory.
       - **Callers.** Derive the callers mechanically, with
         `rg -n -e 'KNOWN_JOB_ROLES|DEFAULT_ROLE_MODELS|resolveProfile\(|no model directive|no directive' -e 'implement\|test\|review' -e 'implement\\\|test' -e 'implement \| test \| review' -e "lane's, then the project's" scripts commands skills README.md`.
@@ -196,10 +199,10 @@ before staging.
         - `--clear model`.
       - **Omitted inverses.** "no directive" for a role is a justified omitted inverse (design
         Risks), and so is the absent default writer.
-- [ ] 5.2 **Verify each task against its commit** (item 2). For every task above, run
+- [x] 5.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in
       THAT commit. Save the result as `commit-verification-5.2.txt`.
-- [ ] 5.3 **Lifecycle marker** (item 3). Tasks 8.2 and 8.3 carry `<!-- pm:lifecycle -->` on their
+- [x] 5.3 **Lifecycle marker** (item 3). Tasks 8.2 and 8.3 carry `<!-- pm:lifecycle -->` on their
       task lines. Verify:
       `rg -n "pm:lifecycle" openspec/changes/execution-profile-planning-and-light-roles/tasks.md`
       lists both.

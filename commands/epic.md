@@ -280,7 +280,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--declined-deferral "<what>::<why not>"` | `deferralAssertion` | **repeatable**; `::` separates, and a lone `:` still works |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none". Refused together with `--deferral` or `--declined-deferral` — "there are none" and "here is one" contradict, and nothing is written |
 | `--review-mode <m>` | `reviewMode` | the epic's own review value, above OR below the lane's and the repo's (most specific wins; see `/pm:profile`). Also accepted by `add-epic` and `add-many` (batch key `reviewMode`) |
-| `--model <role>=<model>[:<effort>]` | `model` | **repeatable**; the epic's model and effort for one job role (`implement\|test\|review`). `haiku` takes no effort; every other model requires one. Setting one role leaves the others. Also on `add-epic` and `add-many` (batch key `model`: an array of the same strings, or a `{role: "model:effort"}` object) |
+| `--model <role>=<model>[:<effort>]` | `model` | **repeatable**; the epic's model and effort for one job role (`plan\|implement\|test\|review\|mechanical\|rudimentary`). `haiku` takes no effort; every other model requires one. Setting one role leaves the others. Also on `add-epic` and `add-many` (batch key `model`: an array of the same strings, or a `{role: "model:effort"}` object) |
 | `--clear-model <role>` | `model` | **repeatable**; removes one role's pair (`--clear model` removes every role) |
 | `--verbosity <quiet\|verbose>` | `verbosity` | the epic's own report frequency. Also on `add-epic` and `add-many` |
 | `--add-story "<title>"` | `stories` | **repeatable**; appends `{title, done: false}` |
