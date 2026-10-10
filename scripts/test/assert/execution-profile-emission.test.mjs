@@ -65,18 +65,91 @@ test("2.1: no verb writes a default: init, then upgrade, then profile leave no m
   assert.doesNotMatch(raw, /"effort"/, "no default pair was serialised anywhere");
 });
 
-test("3.2: the command docs name every job role, and profile.md and init.md carry every default pair", async () => {
+// 3.2 — doc drift. Every doc that STATES the role list or the default pairs is checked against
+// KNOWN_JOB_ROLES and DEFAULT_ROLE_MODELS with strings GENERATED from them and matched EXACTLY, so
+// deleting one role from a list, or changing one role's default, fails the doc that states it. A bare
+// `includes("plan")` could not: `plan` appears 20 times in epic.md, and `opus (high)` / `sonnet (low)`
+// are each shared by two roles. Markdown noise (backticks, `\|` escapes, line wraps) is normalised on
+// both sides before comparing.
+const norm = (t) => t.replaceAll("`", "").replaceAll("\\", "").replace(/\s+/g, " ");
+const ROOT = path.join(HERE, "..", "..", "..");
+const escRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// where each doc states the roles (`lists`: how, as a join of the generated role names) and the default
+// pairs (`pairs`: "table" = a `| role | what it does | pair |` row, "prose" = `role pair` adjacent).
+const DOC_CLAIMS = [
+  { file: "commands/profile.md", lists: [(r) => r.join(" | ")], pairs: "table" },
+  { file: "commands/init.md", lists: [(r) => r.join(", ")], pairs: "prose" },
+  { file: "commands/epic.md", lists: [(r) => r.join("|")] },
+  { file: "commands/spend.md", lists: [(r) => r.join(", ")] },
+  { file: "skills/conductor/SKILL.md", lists: [(r) => r.join(", "), (r) => r.map((x) => `${x}?`).join("|")] },
+  { file: "README.md", lists: [(r) => r.join("|")], pairs: "prose" },
+];
+
+export async function docDriftFailures(read) {
   const { KNOWN_JOB_ROLES, DEFAULT_ROLE_MODELS } = await import(LIB + "constants.mjs");
   const { modelText } = await import(LIB + "execution-profile.mjs");
-  const doc = (n) => fs.readFileSync(path.join(HERE, "..", "..", "..", "commands", n), "utf8");
-  for (const n of ["profile.md", "init.md", "epic.md", "spend.md"]) {
-    for (const role of KNOWN_JOB_ROLES) assert.ok(doc(n).includes(role), `${n} names role ${role}`);
-  }
-  for (const n of ["profile.md", "init.md"]) {
-    const text = doc(n).replaceAll("`", "");
+  const out = [];
+  for (const { file, lists, pairs } of DOC_CLAIMS) {
+    const text = norm(read(file));
+    for (const list of lists) {
+      const want = list([...KNOWN_JOB_ROLES]);
+      if (!text.includes(want)) out.push(`${file} does not state the role list '${want}'`);
+    }
+    if (!pairs) continue;
     for (const role of KNOWN_JOB_ROLES) {
       const pair = modelText(DEFAULT_ROLE_MODELS[role]);
-      assert.ok(text.includes(pair), `${n} carries the default pair '${pair}' of ${role}`);
+      const re = pairs === "table"
+        ? new RegExp(`\\| ${escRe(role)} \\| [^|]* \\| ${escRe(pair)} \\|`)
+        : new RegExp(`(^|[ ,(])${escRe(role)} ${escRe(pair)}([ ,.;)]|$)`);
+      if (!re.test(text)) out.push(`${file} does not give ${role} its default '${pair}' (${pairs} form)`);
     }
   }
+  return out;
+}
+
+test("3.2: every doc that states the roles or defaults states exactly KNOWN_JOB_ROLES and DEFAULT_ROLE_MODELS", async () => {
+  const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
+  assert.deepEqual(await docDriftFailures(read), []);
+});
+
+test("3.2: the drift check FAILS when one role is dropped from a list or one default is changed", async () => {
+  const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
+  const mutate = (file, from, to) => (f) => {
+    const t = read(f);
+    if (f !== file) return t;
+    assert.ok(t.includes(from), `${file} holds the text this mutation targets: ${from}`);
+    return t.replace(from, to);
+  };
+  // (a) delete `plan` from the epic.md role list
+  const a = await docDriftFailures(mutate("commands/epic.md", "plan\\|implement\\|test", "implement\\|test"));
+  assert.ok(a.some((m) => m.startsWith("commands/epic.md does not state the role list")), a.join("\n"));
+  // (b) change plan's default in profile.md
+  const b = await docDriftFailures(mutate("commands/profile.md", "| `plan` | proposals, specs, designs and implementation plans | `opus` (`high`) |",
+    "| `plan` | proposals, specs, designs and implementation plans | `opus` (`low`) |"));
+  assert.ok(b.some((m) => m.startsWith("commands/profile.md does not give plan its default")), b.join("\n"));
+  // (c) change one of two roles that SHARE a pair: a bare pair-includes could not see it
+  const c = await docDriftFailures(mutate("commands/init.md", "`mechanical` `sonnet` (`low`)", "`mechanical` `sonnet` (`medium`)"));
+  assert.ok(c.some((m) => m.includes("mechanical")), c.join("\n"));
+});
+
+test("1.2: the real verbs unset a role at project, lane and epic, and the profile reads the default again", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "e", "--title", "E", "--lane", "claude-code"], { cwd });
+  run(["set-profile", "--model", "plan=sonnet:high"], { cwd });
+  run(["set-profile", "--lane", "claude-code", "--model", "mechanical=haiku"], { cwd });
+  run(["update-epic", "e", "--model", "rudimentary=sonnet:low"], { cwd });
+  const set = run(["profile", "--epic", "e"], { cwd });
+  assert.match(set, /model plan: sonnet \(high\) \(project\)/);
+  assert.match(set, /model mechanical: haiku \(lane:claude-code\)/);
+  assert.match(set, /model rudimentary: sonnet \(low\) \(epic\)/);
+  run(["set-profile", "--unset", "model:plan"], { cwd });
+  run(["set-profile", "--lane", "claude-code", "--unset", "model"], { cwd });
+  run(["update-epic", "e", "--clear-model", "rudimentary"], { cwd });
+  const after = run(["profile", "--epic", "e"], { cwd });
+  assert.match(after, /model plan: opus \(high\) \(default\)/);
+  assert.match(after, /model mechanical: sonnet \(low\) \(default\)/);
+  assert.match(after, /model rudimentary: haiku \(default\)/);
+  const s = readState(cwd);
+  assert.ok(!s.executionProfile && !s.laneProfiles && !("model" in s.epics[0]), "every layer is gone from state.json");
 });

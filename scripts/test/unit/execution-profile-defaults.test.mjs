@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { emptyRecord, expectFail, memoryEngine, unitTest } from "../fixtures/unit-harness.mjs";
 import { DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES } from "../../lib/constants.mjs";
-import { checkPair, modelText, profileContext, resolveProfile, briefProfileLines } from "../../lib/execution-profile.mjs";
+import { applyProfileOps, checkPair, modelText, parseSetProfile, profileContext, resolveProfile, briefProfileLines } from "../../lib/execution-profile.mjs";
 import { rulesBlock } from "../../lib/rules.mjs";
 
 const ROLES = ["plan", "implement", "test", "review", "mechanical", "rudimentary"];
@@ -75,16 +75,66 @@ unitTest("1.2 the resolved default is a copy: mutating it never reaches the tabl
   assert.notEqual(p.model.plan.value, DEFAULT_ROLE_MODELS.plan);
 });
 
-unitTest("1.2 a new role is accepted at every layer (parse level)", async () => {
-  const { parseSetProfile } = await import(new URL("../../lib/execution-profile.mjs", import.meta.url).href);
-  const r = parseSetProfile({ model: ["plan=fable:high", "mechanical=haiku", "rudimentary=sonnet:low"] },
-    ["openspec", "superpowers", "claude-code", "decision", "external"]);
-  assert.equal(r.ok, true);
+// RUNG NOTE: a successful `set-profile` rewrites CLAUDE.md's managed block, which the unit rung's
+// guard refuses (see set-profile.test.mjs). The project and lane layers therefore go through the
+// verb's own parse + apply pair (parseSetProfile -> applyProfileOps, exactly what the verb runs);
+// the epic layer goes through the real `update-epic` verb. The verb end to end is in
+// assert/execution-profile-emission.test.mjs.
+const LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
+const setProfile = (st, flags) => {
+  const r = parseSetProfile(flags, LANES);
+  assert.ok(r.ok, r.message);
+  return applyProfileOps(st, r.ops);
+};
+
+unitTest("1.2 a new role is accepted at every layer: written at project, lane and epic, stored and resolved", () => {
+  const st = state({}, [epic("e")]);
+  setProfile(st, { model: ["plan=fable:high"] });
+  setProfile(st, { lane: "claude-code", model: ["mechanical=haiku"] });
+  const engine = memoryEngine(st);
+  engine(["update-epic", "e", "--model", "rudimentary=sonnet:low"]);
+  const rec = engine.store.record();
+  assert.deepEqual(rec.executionProfile.model, { plan: { model: "fable", effort: "high" } });
+  assert.deepEqual(rec.laneProfiles["claude-code"].model, { mechanical: { model: "haiku" } });
+  assert.deepEqual(rec.epics[0].model, { rudimentary: { model: "sonnet", effort: "low" } });
+  const p = resolveProfile(rec, { epicId: "e" });
+  assert.deepEqual(p.model.plan, { value: { model: "fable", effort: "high" }, source: "project" });
+  assert.deepEqual(p.model.mechanical, { value: { model: "haiku" }, source: "lane:claude-code" });
+  assert.deepEqual(p.model.rudimentary, { value: { model: "sonnet", effort: "low" }, source: "epic" });
+  for (const r of ["implement", "test", "review"]) assert.equal(p.model[r].source, "default", r);
 });
 
-unitTest("1.2 unsetting a role restores its default", () => {
-  const engine = memoryEngine(state({ executionProfile: { model: { plan: { model: "sonnet", effort: "high" } } } }));
-  assert.match(engine(["profile"]), /model plan: sonnet \(high\) \(project\)/);
+unitTest("1.2 unsetting a role restores its default, at project, lane and epic", () => {
+  const resolved = (st, role) => resolveProfile(st, { epicId: "e" }).model[role];
+  const isDefault = (st, role) => assert.deepEqual(resolved(st, role), { value: DEFAULT_ROLE_MODELS[role], source: "default" }, role);
+
+  // project layer: set-profile --unset model:<role>
+  const proj = state({}, [epic("e")]);
+  setProfile(proj, { model: ["plan=sonnet:high"] });
+  assert.deepEqual(resolved(proj, "plan"), { value: { model: "sonnet", effort: "high" }, source: "project" });
+  setProfile(proj, { unset: "model:plan" });
+  isDefault(proj, "plan");
+  assert.equal(proj.executionProfile, undefined, "the emptied project layer is removed");
+
+  // lane layer: set-profile --lane <lane> --unset model:<role>, then --unset model
+  const lane = state({}, [epic("e")]);
+  setProfile(lane, { lane: "claude-code", model: ["mechanical=haiku", "rudimentary=sonnet:low"] });
+  assert.equal(resolved(lane, "mechanical").source, "lane:claude-code");
+  setProfile(lane, { lane: "claude-code", unset: "model:mechanical" });
+  isDefault(lane, "mechanical");
+  assert.equal(resolved(lane, "rudimentary").source, "lane:claude-code", "the sibling role is untouched");
+  setProfile(lane, { lane: "claude-code", unset: "model" });
+  for (const r of KNOWN_JOB_ROLES) isDefault(lane, r);
+
+  // epic layer: update-epic --clear-model <role>, then --clear model
+  const ep = memoryEngine(state({}, [epic("e")]));
+  ep(["update-epic", "e", "--model", "rudimentary=sonnet:low"]);
+  assert.equal(resolved(ep.store.record(), "rudimentary").source, "epic");
+  ep(["update-epic", "e", "--clear-model", "rudimentary"]);
+  isDefault(ep.store.record(), "rudimentary");
+  ep(["update-epic", "e", "--model", "plan=fable:high", "--model", "test=haiku"]);
+  ep(["update-epic", "e", "--clear", "model"]);
+  for (const r of KNOWN_JOB_ROLES) isDefault(ep.store.record(), r);
 });
 
 unitTest("1.1 the refusal for an unknown role names all six; --clear-model help names all six", () => {
@@ -100,6 +150,8 @@ unitTest("1.1 --clear model's note ends at the built-in default", () => {
   const r = engine.result(["update-epic", "e", "--clear", "model"]);
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout + r.stderr, /then its built-in default/);
+  const p = resolveProfile(engine.store.record(), { epicId: "e" });
+  for (const role of KNOWN_JOB_ROLES) assert.deepEqual(p.model[role], { value: DEFAULT_ROLE_MODELS[role], source: "default" }, role);
 });
 
 unitTest("1.3 the rules block shows every role's default and names all six at dispatch", () => {
