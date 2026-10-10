@@ -12499,12 +12499,12 @@
         "2677e2f2b3f4133afd9c4c3934f33740f648e77c"
       ],
       "createdAt": "2026-10-01T07:33:57.581Z",
-      "touchedAt": "2026-10-09T22:27:13.868Z",
+      "touchedAt": "2026-10-10T00:21:25.596Z",
       "release": "0.52.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-10-09T22:27:13.847Z",
+          "reviewedAt": "2026-10-10T00:21:25.588Z",
           "artifacts": [
             "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
             "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
@@ -12562,21 +12562,36 @@
             },
             {
               "path": "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
-              "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+              "sha256": "29816ea7f7cda44e714f87d88ff8059cd4c5888b39c5f40e4b3973a03713cb7b"
             }
           ],
-          "reviewer": "opus fresh-context (spec file-name correction 2677e2f2 after Gate 2)",
+          "reviewer": "opus fresh-context (example-role wording only, 79d2ffa9)",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-10-09T18:37:31.239Z",
+            "reviewedAt": "2026-10-09T22:27:13.847Z",
             "artifacts": [
+              "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
+              "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
               "openspec/changes/token-spend-tracking-per-epic/design.md",
               "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+              "openspec/changes/token-spend-tracking-per-epic/red-1.1-1.3.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-2.1-2.6.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-3.1-3.5.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-4.1-4.4.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-5.1-5.2.txt",
               "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
               "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
               "openspec/changes/token-spend-tracking-per-epic/tasks.md"
             ],
             "artifactDigests": [
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
+                "sha256": "83a1825d37bab2e154fb88b46c490c9b3b19cc206656975a3b2c93400bcdba34"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
+                "sha256": "4fb5aaa9c19b51fc794ab4b4b4493bc86df3b451bd23f53cd3d7659f62051d6f"
+              },
               {
                 "path": "openspec/changes/token-spend-tracking-per-epic/design.md",
                 "sha256": "44050d6bb93cedd925af09a393d12e60f553a1efbf087b0b9f2af519e7945dc2"
@@ -12586,16 +12601,43 @@
                 "sha256": "87c5fbbebcee7a73218931c67ffe88467603e3055b028fc637590d7eb2d564bd"
               },
               {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-1.1-1.3.txt",
+                "sha256": "4db1ac52829a037bc5f42f59e0db656712f7499dd88c8348aa40ba861f5133fd"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-2.1-2.6.txt",
+                "sha256": "62d3638cce0ff8d5f96f4e0fe74786b465cdc79d40b2b5978e055736abcddddd"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-3.1-3.5.txt",
+                "sha256": "852cf85bcbc37421598a5ecc5d5d21192e1b9281a5884008001230e2e09bc1a3"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-4.1-4.4.txt",
+                "sha256": "6a6206af4de1534b2a338be2e71d32071b9aa5219e1578eaabd1caf3d05561f2"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-5.1-5.2.txt",
+                "sha256": "f7ad90272fb543cbaa8ff5ef10eca261d0181e1c8d4c629a2e105819387ad1cc"
+              },
+              {
                 "path": "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
-                "sha256": "81fbc4e868887b816acc18e5fe5d3d76777a05e1e27ccfb0be7def51fae2ecc2"
+                "sha256": "e091459aca16741cdbb8118f7e1a93e3a9033bcc1f2539cb1d5be616e73d4568"
               },
               {
                 "path": "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
                 "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
               }
             ],
-            "reviewer": "opus fresh-context (Gate 1 + cross-spec 0.52.0 BLOCK fixes 8b49f001)"
+            "reviewer": "opus fresh-context (spec file-name correction 2677e2f2 after Gate 2)"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T22:57:19.909Z",
+          "baseSha": "97d15765a35efb1925abd6d58e72f1dde49ec6a1",
+          "headSha": "038eea419634b27e9303a5a0b47eade932f7127c",
+          "reviewer": "opus fresh-context (Important fixed 57d56c54..2677e2f2, not re-reviewed per one-round rule)"
         }
       }
     },
@@ -12762,10 +12804,40 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-06: a test fails repeatedly, loops back through Gate 1 and Gate 2, fails again, and burns millions of tokens without fixing the problem. Guard: (1) per-epic token ceiling, soft warn then stop-and-ask (set in the profile layers); (2) stuck-loop detector — the same test/finding failing across N review or fix rounds, or a sub-agent past a spend threshold with no green test, stops the autonomous run; (3) escalation protocol: hand the failure to a higher model with the failure evidence ('what is wrong and how do we resolve it') or to the user, rather than another same-tier retry. Instruction-layer: the engine emits the stop rule and the check verb; the interactive agent acts. Interacts with epic-level autonomy's stop conditions. Depends on the ledger from token-spend-tracking-per-epic.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f9de945a51e0a12d2b0ef29f5af632b35633dd51",
+        "038eea419634b27e9303a5a0b47eade932f7127c"
+      ],
       "createdAt": "2026-10-06T17:29:47.026Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-09T22:57:18.683Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T22:57:18.675Z",
+          "artifacts": [
+            "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+              "sha256": "69e3f9751cb9e8d52697531d3e61bc97776e09273c8a554bd642e7b0e750a151"
+            },
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+              "sha256": "00dd787c1451bd42917d02f2a6c1445fc41705f0bc6350c789836ceab86528bd"
+            },
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+              "sha256": "25fa4687b0bf9799f03ab7335eb9dff28857538952c211e9993713370ad1f990"
+            }
+          ],
+          "reviewer": "opus fresh-context (round 1 fail 1C/5I fixed; confirmation fail 1C/3I fixed 038eea41; narrow re-verify pass)"
+        }
+      }
     },
     {
       "id": "execution-profile-planning-and-light-roles",
@@ -12788,10 +12860,52 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-06: clear alignment on model tiers — planning on an Opus-class model, execution on Sonnet by default (unless a one-shot model such as Fable builds directly off a finished plan), rudimentary/simple tasks on Haiku. The profile today has roles implement/test/review only (0.51.0). Add a 'plan' role and a 'mechanical' role (and a documented one-shot mode), recommended defaults, and let the spend analysis flag a tier mismatch. Extends execution-profile-layered-settings (archived, 0.51.0); closed role/value lists live in the profile's constants.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "d719cefe9aaa14c28d03d5a9d5a4668fdb889e43",
+        "3fd2910eaeacba2b9ad09328e55d1d8534b9d579",
+        "aeed6728f5e3bbb8127c45981d9e7d4c03737062",
+        "5c8c39bdc016a4a97c7bb86b6e4301b8f3950377",
+        "cfeada94406e92eb9694dd2b743c73968cc2e0c2",
+        "79d2ffa9f2e5f5f362b3c038ff36b59a0dce3e1b",
+        "e5101f4dbd7c0f5ab4bdb6158cb3a9b5c2795202"
+      ],
       "createdAt": "2026-10-06T17:29:47.792Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-10T00:28:23.525Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T22:48:04.748Z",
+          "artifacts": [
+            "openspec/changes/execution-profile-planning-and-light-roles/design.md",
+            "openspec/changes/execution-profile-planning-and-light-roles/proposal.md",
+            "openspec/changes/execution-profile-planning-and-light-roles/specs/execution-profile/spec.md",
+            "openspec/changes/execution-profile-planning-and-light-roles/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/execution-profile-planning-and-light-roles/design.md",
+              "sha256": "2519fa67af28a6f5118f7ae73193d03b9231ebe877fb3c43a5db8def16b9fbdb"
+            },
+            {
+              "path": "openspec/changes/execution-profile-planning-and-light-roles/proposal.md",
+              "sha256": "768b0afba605ac2fa78cbf92233203e4707321eb306619fc3af8047233e6f333"
+            },
+            {
+              "path": "openspec/changes/execution-profile-planning-and-light-roles/specs/execution-profile/spec.md",
+              "sha256": "6b1d56d8490d906662cbd4e17f56d8f0849020c37cd38e25983a7c3b686ca5b7"
+            }
+          ],
+          "reviewer": "opus fresh-context (round 1 fail 3C/4I fixed; confirmation round pass)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-10T00:28:23.455Z",
+          "baseSha": "3fd2910eaeacba2b9ad09328e55d1d8534b9d579",
+          "headSha": "e5101f4dbd7c0f5ab4bdb6158cb3a9b5c2795202",
+          "reviewer": "opus fresh-context (3 Important test gaps fixed e5101f4d, not re-reviewed per one-round rule)"
+        }
+      }
     },
     {
       "id": "decision-cost-log",
@@ -12895,7 +13009,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1941,
+  "revision": 1955,
   "reviewMode": "standard",
   "releases": [
     {
