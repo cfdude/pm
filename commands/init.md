@@ -73,18 +73,21 @@ Initialize the `pm` conductor for the current project.
    mirror. Default to tracker-unaware.
 
 4. **Ask for the project's execution profile, and record the answer.** The profile says how
-   intensely to review, which model and effort each job role (`implement`, `test`, `review`) runs
+   intensely to review, which model and effort each job role (`plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary`) runs
    on, and how often you report (see `/pm:profile`). `init` writes NO model on its own — ASK the
    user, and record what they choose with `set-profile`:
-   - **Recommend `opus` with `medium` effort for every role.** Offer the cheaper option as an
-     alternative: `sonnet` for `implement` and `haiku` for `test` (`haiku` takes no effort; every
-     other model needs one).
+   - **Recommend ACCEPTING the built-in defaults, which records nothing:** `plan` `opus` (`high`),
+     `implement` `sonnet` (`medium`), `test` `sonnet` (`low`), `review` `opus` (`high`),
+     `mechanical` `sonnet` (`low`), `rudimentary` `haiku` (`haiku` takes no effort; every other
+     model needs one).
+   - To have a top-tier model build one epic straight off its finished plan, that epic sets
+     `--model implement=fable:<effort>` (an override of `implement`, not a separate role).
    - Offer **lane overrides** at the same point (for example a lower `review` for the
      `claude-code` lane), and record them with `set-profile --lane <lane>`.
-   - If the user declines, record nothing: every field then resolves to its default.
+   - If the user wants different tiers, record only what they choose, for example:
 
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-profile --model implement=opus:medium --model test=opus:medium --model review=opus:medium
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-profile --model implement=opus:medium --model rudimentary=sonnet:low
    ```
 
 5. Show the result with `/pm:status`.

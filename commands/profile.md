@@ -14,14 +14,35 @@ platform supports it (and say so where it does not).
 | Field | Values |
 |---|---|
 | `review` | `off \| standard \| thorough` — the reviewer budget (see `/pm:review-mode`) |
-| `model` | per job role (`implement \| test \| review`) a pair `{model, effort}`. `model` is `fable \| opus \| sonnet \| haiku` (each means that family's latest release; `fable` is the top tier). `effort` is `low \| medium \| high \| xhigh \| max \| ultracode`. **`haiku` takes no effort; every other model requires one.** |
+| `model` | per job role (`plan \| implement \| test \| review \| mechanical \| rudimentary`, see below) a pair `{model, effort}`. `model` is `fable \| opus \| sonnet \| haiku` (each means that family's latest release; `fable` is the top tier). `effort` is `low \| medium \| high \| xhigh \| max \| ultracode`. **`haiku` takes no effort; every other model requires one.** |
 | `verbosity` | `quiet` (one completion message per epic) `\| verbose` (a message at each phase transition and gate) |
+
+## The six job roles and their defaults
+
+Each role has a built-in default `{model, effort}`, applied when no layer sets that role. A default
+is applied when the profile is READ and is never written to `state.json`, so a stored value is always
+something someone chose, and `profile` reports a default as source `default`.
+
+| Role | What it does | Default |
+|---|---|---|
+| `plan` | proposals, specs, designs and implementation plans | `opus` (`high`) |
+| `implement` | builds the work | `sonnet` (`medium`) |
+| `test` | writes and runs tests | `sonnet` (`low`) |
+| `review` | gate and code reviews | `opus` (`high`) |
+| `mechanical` | fully specified rote edits: renames, fixture regeneration, doc sync, changeset fragments | `sonnet` (`low`) |
+| `rudimentary` | trivial lookups, listings, summaries and formatting | `haiku` |
+
+**A one-shot build** (a top-tier model builds an epic straight off its finished plan) is not a role.
+It is an epic-layer override of `implement`: `update-epic <id> --model implement=fable:<effort>`.
+
+There is no value that means "no directive" for a role: clearing or unsetting a role falls back to
+its default.
 
 ## Where it is resolved from
 
 Each field resolves independently, most specific first: the **epic's own value**, else its
 **lane's**, else the **project's**, else the built-in default (`review: standard`, `verbosity:
-quiet`, no model directive). `model` resolves per role, and the `{model, effort}` pair is taken
+quiet`, and each model role's default pair above). `model` resolves per role, and the `{model, effort}` pair is taken
 whole from the first layer that sets that role. An epic's `review` wins even where it is LOWER than
 the lane's or the project's. A stored value outside its list is ignored (and named by `profile`).
 A detour epic resolves from its own record and inherits nothing from the epic it paused.
@@ -73,7 +94,7 @@ Unsetting a field that is not set succeeds, writes nothing and says it was alrea
 `set-review-mode` ships no inverse of its own: `set-profile --unset review` is its inverse.
 At the epic layer: `update-epic <id> --clear review-mode`, `--clear verbosity`, `--clear model` (every
 role) and `--clear-model <role>` (repeatable, one role); each field then falls through to the lane,
-then the project.
+then the project, then the built-in default.
 
 ## Read it, with sources
 

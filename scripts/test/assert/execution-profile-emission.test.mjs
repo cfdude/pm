@@ -39,14 +39,44 @@ test("4.3: set-profile refreshes the block on disk with the new project value; a
   assert.equal(Buffer.compare(fs.readFileSync(path.join(cwd, "CLAUDE.md")), before), 0, "an epic-layer write leaves CLAUDE.md byte-identical");
 });
 
-test("4.5: init writes no model on its own, and its instructions ask the user with the recommended default", () => {
+test("4.5: init writes no model on its own, and its instructions recommend accepting the defaults", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   const s = readState(cwd);
   assert.ok(!s.executionProfile, "a fresh init's state holds no executionProfile");
   assert.ok(!s.laneProfiles);
   const doc = fs.readFileSync(path.join(HERE, "..", "..", "..", "commands", "init.md"), "utf8");
   assert.match(doc, /ASK\s+the\s+user/);
-  assert.match(doc, /Recommend `opus` with `medium` effort for every role/);
-  assert.match(doc, /`sonnet` for `implement` and `haiku` for `test`/);
+  assert.match(doc, /Recommend ACCEPTING the built-in defaults, which records nothing/);
+  assert.match(doc, /--model implement=fable:<effort>/);
   assert.match(doc, /set-profile/);
+});
+
+test("2.1: no verb writes a default: init, then upgrade, then profile leave no model entry at any layer", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "e", "--title", "E", "--lane", "claude-code"], { cwd });
+  run(["upgrade"], { cwd });
+  run(["profile"], { cwd });
+  run(["profile", "--epic", "e"], { cwd });
+  const raw = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const s = JSON.parse(raw);
+  assert.ok(!s.executionProfile || !("model" in s.executionProfile), "no project-layer model");
+  assert.ok(!s.laneProfiles, "no lane layer");
+  for (const e of s.epics) assert.ok(!("model" in e), `epic ${e.id} holds no model`);
+  assert.doesNotMatch(raw, /"effort"/, "no default pair was serialised anywhere");
+});
+
+test("3.2: the command docs name every job role, and profile.md and init.md carry every default pair", async () => {
+  const { KNOWN_JOB_ROLES, DEFAULT_ROLE_MODELS } = await import(LIB + "constants.mjs");
+  const { modelText } = await import(LIB + "execution-profile.mjs");
+  const doc = (n) => fs.readFileSync(path.join(HERE, "..", "..", "..", "commands", n), "utf8");
+  for (const n of ["profile.md", "init.md", "epic.md", "spend.md"]) {
+    for (const role of KNOWN_JOB_ROLES) assert.ok(doc(n).includes(role), `${n} names role ${role}`);
+  }
+  for (const n of ["profile.md", "init.md"]) {
+    const text = doc(n).replaceAll("`", "");
+    for (const role of KNOWN_JOB_ROLES) {
+      const pair = modelText(DEFAULT_ROLE_MODELS[role]);
+      assert.ok(text.includes(pair), `${n} carries the default pair '${pair}' of ${role}`);
+    }
+  }
 });

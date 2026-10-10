@@ -1,0 +1,53 @@
+Call-site completeness sweep (tasks 5.1) — execution-profile-planning-and-light-roles
+Derived mechanically (run against the tree at the commit that follows the 1.x commit):
+
+  rg -n -e 'KNOWN_JOB_ROLES|DEFAULT_ROLE_MODELS|resolveProfile\(|no model directive|no directive' \
+        -e 'implement\|test\|review' -e 'implement\\\|test' -e 'implement \| test \| review' \
+        -e "lane's, then the project's" scripts commands skills README.md --glob '!scripts/test/**'
+  -> 43 hits, classified below.
+
+1. WHERE THE SIX-ROLE LIST REACHES (all read the constant; none types a list)
+   - scripts/lib/constants.mjs: KNOWN_JOB_ROLES / DEFAULT_ROLE_MODELS declared once (moved above the
+     EPIC_FLAGS table, which evaluates `clear-model`'s requires/placeholder at module load: the TDZ
+     the design D5 named). The `--clear model` note ends at "then its built-in default".
+   - scripts/lib/execution-profile.mjs: checkRole, parseModelPair refusal, parseUnsetField refusal,
+     resolveProfile (default := {...DEFAULT_ROLE_MODELS[role]}), applyProfileOps, profileLines,
+     briefProfileLines (silent on source `default`), profileDeltas, laneLayerPhrase.
+   - scripts/lib/rules.mjs: dispatch line, resolution sentence (all six defaults, via modelText),
+     one-shot sentence, spendTrackingLines (already rendered from the constant).
+   - scripts/lib/spend-attribution.mjs: resolveMarker / attribute default `roles` to the constant.
+     The ledger's role values are exactly KNOWN_JOB_ROLES (unit test spend-attribution 3.1 plus
+     spend-rules).
+   - scripts/lib/profile-verbs.mjs, briefing.mjs, rules.mjs:96/647: callers of resolveProfile; all
+     take the new default through the resolver, no edit needed.
+   - commands/profile.md, init.md, epic.md, spend.md and README.md cannot import the constant: the
+     assert-rung test "3.2" in assert/execution-profile-emission.test.mjs derives the roles and
+     default pairs from the constants and asserts them in those docs.
+2. WHERE IT DOES NOT REACH, JUSTIFIED
+   - `modelText`'s "no directive" branch (execution-profile.mjs:271): unreachable for resolved views
+     now (every role resolves to a pair); kept because modelText also renders stored values and
+     pairText callers may pass an absent pair (profileDeltas). Dead for resolution, live for deltas.
+   - constants.mjs:711 and :714 (`--clear review-mode`, `--clear verbosity` notes): "lane's, then the
+     project's" is still the whole story for those two fields' existing defaults; the spec asks only
+     that the MODEL note name the default. Not changed.
+   - scripts/lib/execution-profile.mjs:76 text names `model:<role>` with the constant's list: fine.
+   - The sibling spec token-spend-tracking-per-epic/specs/spend-ledger/spec.md:396-399 still says
+     `plan`: NOT edited here (see commit-verification note): editing it stales that change's recorded
+     Gate 1 and conductor-15 9.14 refuses an unexplained stale verdict. Orchestrator applies it.
+3. DATA REFERENCE: epic.model / executionProfile.model / laneProfiles.<lane>.model hold role keys
+   - WRITERS: parseEpicProfileFlags + applyEpicModel (execution-profile.mjs:305-371; add-epic,
+     add-many, update-epic), applyProfileOps (set-profile, project and lane layers :235).
+   - READERS: resolveProfile (:137), profileDeltas (:398), laneLayerPhrase (:429), briefProfileLines
+     (:474), profileLines (:285-290). Every one iterates KNOWN_JOB_ROLES.
+   - REMOVERS: applyProfileOps unset (:244-250: `model:<role>` and `model`, empties the layer),
+     applyEpicModel via `--clear model` and `--clear-model <role>` (update-epic.mjs:573-945).
+     No remover strips a default, because none is stored. A new-role key left by a newer plugin and
+     read by an older one is inert (older resolver iterates only its own roles).
+4. INVERSES
+   - `--model <role>=...` <-> `set-profile --unset model:<role>` / `--unset model` and
+     `update-epic --clear-model <role>` / `--clear model`. All shipped, all six roles, all fall
+     through to the default (unit tests: unsetting restores default; --clear model note).
+   - OMITTED, justified: (a) "no directive" for a role (design Risks: the profile names a cost for
+     every job; platforms that cannot set a model are covered by "say so where it does not");
+     (b) a default writer (design D2: a stored default is indistinguishable from a choice and would
+     need a migration per default change). Neither has a verb, deliberately.

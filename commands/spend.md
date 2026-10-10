@@ -74,7 +74,7 @@ While tracking is on, the rules block tells you to begin every sub-agent dispatc
 pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]
 ```
 
-- `role` is one of `implement`, `test`, `review` — the execution profile's `KNOWN_JOB_ROLES`; the
+- `role` is one of `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary` — the execution profile's `KNOWN_JOB_ROLES`; the
   ledger declares no role list of its own.
 - `phase` is one of `plan`, `build`, `review`, `docs`, `release`.
 - `round` is a positive integer, 1 when omitted. A review gate's retry is `phase=review` with

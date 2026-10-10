@@ -138,15 +138,15 @@ before staging.
 
 ## 2. Defaults are never stored
 
-- [ ] 2.1 TDD (FILE): "No verb writes a default". Run `init`, then `upgrade`, on a temp repo. Then
+- [x] 2.1 TDD (FILE): "No verb writes a default". Run `init`, then `upgrade`, on a temp repo. Then
       the `state.json` bytes hold no `model` key at any layer. Verify: the assert test passes.
-- [ ] 2.2 Measure the rules-block growth with the `session-cost` report, before and after (design D6).
+- [x] 2.2 Measure the rules-block growth with the `session-cost` report, before and after (design D6).
       Record the byte delta in the 2.1 commit message. Verify: the brief's byte count is unchanged,
       and the report stays under `BRIEF_BYTE_CAP`.
 
 ## 3. Docs that ship with the plugin
 
-- [ ] 3.1 Update the docs and test 4.5 in ONE commit:
+- [x] 3.1 Update the docs and test 4.5 in ONE commit:
       - `commands/profile.md`: the field table's role list with a one-line meaning per role, the
         default table, and the one-shot override.
       - `commands/init.md` step 4: recommend accepting the defaults (record nothing), and show
@@ -159,7 +159,7 @@ before staging.
       Every refused example keeps its refusal-class marker. Verify:
       `node --test scripts/test/assert/parity.test.mjs`, the emission test, and the
       emitted-instructions twin pass.
-- [ ] 3.2 TDD (FILE), a doc-drift test (design D5). It asserts:
+- [x] 3.2 TDD (FILE), a doc-drift test (design D5). It asserts:
       - every role in `KNOWN_JOB_ROLES` appears in `commands/profile.md`, `commands/init.md`,
         `commands/epic.md` and `commands/spend.md`;
       - every role's default pair, rendered by `modelText`, appears in `commands/profile.md` and
@@ -167,7 +167,7 @@ before staging.
 
       Verify: the test fails when one role or one default is altered in a doc, and passes as
       shipped.
-- [ ] 3.3 Update `skills/conductor/SKILL.md` (the profile summary) and add the changeset fragment
+- [x] 3.3 Update `skills/conductor/SKILL.md` (the profile summary) and add the changeset fragment
       `.changesets/execution-profile-planning-and-light-roles.md`. The fragment must carry the
       BREAKING note on emitted instructions. Verify: `node scripts/conductor.mjs changesets` lists
       it.
@@ -178,13 +178,13 @@ before staging.
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`) plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record peak memory
       (`/usr/bin/time -l`).
-- [ ] 4.2 Dogfood: in this repo, `node scripts/conductor.mjs profile` shows six roles. This repo's
+- [x] 4.2 Dogfood: in this repo, `node scripts/conductor.mjs profile` shows six roles. This repo's
       three set roles show `(project)` and `plan`/`mechanical`/`rudimentary` show `(default)`.
       `rules` emits the same.
 
 ## 5. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 5.1 **Call-site completeness sweep** (item 1). Save the result as
+- [x] 5.1 **Call-site completeness sweep** (item 1). Save the result as
       `call-site-sweep-5.1.txt` in this directory.
       - **Callers.** Derive the callers mechanically, with
         `rg -n -e 'KNOWN_JOB_ROLES|DEFAULT_ROLE_MODELS|resolveProfile\(|no model directive|no directive' -e 'implement\|test\|review' -e 'implement\\\|test' -e 'implement \| test \| review' -e "lane's, then the project's" scripts commands skills README.md`.
