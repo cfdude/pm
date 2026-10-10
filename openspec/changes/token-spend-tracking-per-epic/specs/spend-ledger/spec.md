@@ -395,8 +395,8 @@ A sub-agent row SHALL NOT be window-attributed.
 
 #### Scenario: A role added to the job-role list is accepted without a ledger change
 
-- **WHEN** `KNOWN_JOB_ROLES` gains a role `plan`
-- **THEN** a marker with `role=plan` is valid
+- **WHEN** `KNOWN_JOB_ROLES` gains a role not yet in it, for example `deploy`
+- **THEN** a marker with `role=deploy` is valid
 
 #### Scenario: A non-integer round is invalid
 
