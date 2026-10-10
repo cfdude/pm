@@ -36,12 +36,24 @@ const refuse = (msg) => die(`conductor: ${msg}\n`);
 /** The MAIN tree's record. From the main tree this is just `loadState()`; from a linked worktree it is
  *  the main tree's `state.json`, read through a disk store rooted there. */
 function mainState(tree) {
-  if (!tree.linked) return loadState();
-  const read = diskStore({ ...invocation(), root: tree.main, store: undefined, __store: undefined }).readRecord();
-  if (read.kind !== "ok") {
-    refuse(`spend could not read the main working tree's state.json (${escapeControls(tree.main)}) — a linked worktree reports from the main tree's record, and it is ${read.kind === "absent" ? "absent" : "unreadable"}.`);
+  const r = readMainState(tree);
+  if (r.reason) {
+    refuse(`spend could not read the main working tree's state.json (${escapeControls(tree.main)}) — a linked worktree reports from the main tree's record, and it is ${r.reason}.`);
   }
-  return read.state;
+  return r.state;
+}
+
+/** The NON-REFUSING half of mainState() (spend-guard D5a): `{ state }`, or `{ reason }` (`absent` or
+ *  `unreadable`) when a linked worktree cannot read the main tree's `state.json`. From the main tree it
+ *  is just `loadState()`, whose own refusals (an unreadable record) still propagate: that file is this
+ *  invocation's own, and not reading it is not something a guard may paper over. `spend` keeps its
+ *  refusing wrapper above, unchanged; `spend-guard` reports the reason and keeps applying the
+ *  recorded-verdict check. */
+export function readMainState(tree) {
+  if (!tree.linked) return { state: loadState() };
+  const read = diskStore({ ...invocation(), root: tree.main, store: undefined, __store: undefined }).readRecord();
+  if (read.kind !== "ok") return { reason: read.kind === "absent" ? "absent" : "unreadable" };
+  return { state: read.state };
 }
 
 const iso = (flag, value) => {
@@ -51,6 +63,17 @@ const iso = (flag, value) => {
 };
 
 const bytes = (n) => `${n.toLocaleString("en-US")} byte${n === 1 ? "" : "s"}`;
+
+/** Decide whether to ingest, and do it: the ingest summary the report echoes. SHARED with `spend-guard`
+ *  (which must not re-derive when an ingest runs and when it says it did not). A held lock or a detached
+ *  main HEAD reports from the existing ledger, it does not refuse. */
+export function ingestForReport({ noIngest, enabled, tree, readCtx, enabledAtMs }) {
+  if (noIngest) return { ran: false, reason: "--no-ingest: reporting from the existing ledger" };
+  if (!enabled) return { ran: false, reason: "tracking is off: no transcript was read; totals are as of the last ingest" };
+  if (mainTreeDetached(tree.main)) return { ran: false, reason: "did not ingest because the main working tree's HEAD is detached; reporting from what exists" };
+  const r = ingest({ ...readCtx, enabledAtMs });
+  return r.busy ? { ran: false, busy: true, reason: "an ingest was already in progress; reporting from the existing ledger" } : r;
+}
 
 /** `spend` */
 export function spend() {
@@ -90,14 +113,7 @@ export function spend() {
   if (doRebuild) return runRebuild(tree, readCtx, { enabled, enabledAtMs, yes });
 
   // ── ingest, then report ──
-  let ingestInfo;
-  if (on("no-ingest")) ingestInfo = { ran: false, reason: "--no-ingest: reporting from the existing ledger" };
-  else if (!enabled) ingestInfo = { ran: false, reason: "tracking is off: no transcript was read; totals are as of the last ingest" };
-  else if (mainTreeDetached(tree.main)) ingestInfo = { ran: false, reason: "did not ingest because the main working tree's HEAD is detached; reporting from what exists" };
-  else {
-    const r = ingest({ ...readCtx, enabledAtMs });
-    ingestInfo = r.busy ? { ran: false, busy: true, reason: "an ingest was already in progress; reporting from the existing ledger" } : r;
-  }
+  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled, tree, readCtx, enabledAtMs });
 
   const ledger = readLedger(tree.main);
   const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, state);

@@ -1323,6 +1323,38 @@ subscription auth. See `commands/spend.md`.
 </details>
 
 <details>
+<summary><code>set-spend-guard</code> / <code>spend-guard</code> / <code>override-spend-guard</code> — When is an epic stuck, and who gets the failure?</summary>
+
+A review loop that cannot converge keeps spending tokens until a person notices. Every accepted
+`record-gate-review` now keeps a per-gate round tally on the epic (always, no setting). The **guard** turns
+it into limits you choose; **no limit is on by default**.
+
+```bash
+node scripts/conductor.mjs set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>] [--tokens <n>] [--warn-at <pct>] [--unset max-failed-rounds|tokens|warn-at|all]
+node scripts/conductor.mjs spend-guard <epicId> [--json] [--no-ingest]
+node scripts/conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --escalated-to user|<model> --reason "<why>"
+node scripts/conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --revoke --reason "<why>"
+```
+
+Limits resolve epic, then lane, then project, field by field. `spend-guard` compares the epic's rounds (the
+larger of its recorded fail streak and, with spend tracking on, the distinct `phase=review` rounds the ledger
+holds since its last recorded pass) and its attributed tokens (tracking on only) with them. It exits **2**
+while the epic is stuck, after printing a STOP that names the escalation target: one model tier above the
+resolved `review` model for rounds (or `implement` for tokens), else the user. A STOP is not bypassed by
+epic-level autonomy; stop dispatching same-tier retries, hand the target the failure evidence and ask what is
+wrong and how to resolve it, then record the decision with `override-spend-guard`. An override is accepted only
+while the signal is tripped, must rank at or above the target, and no autonomy grant covers it; `--revoke`
+keeps the record. A failed verdict is always recorded, and the STOP follows it on stderr. The brief carries one
+`STOP: spend guard —` line for a stuck active epic and the rules block a `## Spend guard` section, only while a
+limit is set. Never wire `spend-guard` into a hook: exit 2 is the hook block code.
+
+**Not detected:** repeated failing `certify` runs (bound to the index, not to an epic) and per-test failures.
+With tracking off the token ceiling is not checked and every surface says so. See `commands/spend-guard.md`,
+`commands/set-spend-guard.md` and `commands/override-spend-guard.md`.
+
+</details>
+
+<details>
 <summary><code>recover-created-at</code> — Where did the dates go for epics older than the clock?</summary>
 
 Every epic registered from 0.40.0 on carries `createdAt`, stamped at `pushEpic()` — the single

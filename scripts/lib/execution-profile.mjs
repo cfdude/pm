@@ -100,7 +100,7 @@ function layersFor(state, epic, lane) {
  *  else the raw stored value; `check(raw)` returns `{ok, value}`. A stored value that fails its check
  *  is treated as unset at that layer, resolution falls through, and it is reported in `ignored`. When
  *  the winning layer is not the bottom one, `overrides` names the value it lowered or raised. */
-function resolveField(layers, read, check, dflt) {
+export function resolveField(layers, read, check, dflt) {
   const ignored = [];
   const valid = [];
   for (const layer of layers) {

@@ -18,6 +18,7 @@ import { conflictCount, conflictWarningLatched, consumeConflictWarning } from ".
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
+import { briefGuardLines } from "./spend-guard.mjs";
 
 /** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
  *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
@@ -196,6 +197,11 @@ export function buildBriefParts(state, { consume = false, specSync = false } = {
     // per field with the layer it came from, plus a `model:` line only for a role that resolves to
     // something other than the default. Read from the raw state record, like the resolver expects.
     for (const l of briefProfileLines(resolveProfile(state, { epicId: active.id }))) L.push(`  ${l}`);
+    // spend-budget-and-stuck-loop-guard: ONE `STOP: spend guard —` line for a stuck active epic. A plain
+    // string among the obligations, so fitBrief() never shortens it. Computed from `state` alone — the
+    // recorded verdicts and live overrides — and empty unless a limit is configured: the hook path reads
+    // no ledger file and a repo with no limit gains no byte.
+    for (const l of briefGuardLines(state, active.id)) L.push(l);
   } else if (activeEpic && activeEpic.status === "archived") {
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {

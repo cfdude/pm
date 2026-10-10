@@ -555,6 +555,9 @@ export async function renderedRulesBlocks() {
     // token-spend-tracking-per-epic: the tracking-ON render, so the dispatch-marker instruction is
     // checked like every other shipped instruction. Off is the matrix above (the default argument).
     out.push({ label: `rules[${platform} · spend tracking on]`, text: rulesBlock(null, "standard", [], platform, null, true) });
+    // spend-budget-and-stuck-loop-guard: the Spend guard section, so `spend-guard <epic>` and the override
+    // invocation are checked like every other shipped instruction.
+    out.push({ label: `rules[${platform} · spend guard on]`, text: rulesBlock(null, "standard", [], platform, null, false, true) });
   }
   return out;
 }
@@ -3057,6 +3060,14 @@ const PRINTER_FIXTURES = {
       out.push([repo.run(["remove-epic", "jd"]), /drop-detour jp --reason "<why>"/]);
     }
     return out;
+  },
+  "a stuck active epic: the brief's spend-guard STOP line (spend-budget-and-stuck-loop-guard)"() {
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "sg", "--lane", "claude-code", "--title", "sg"]);
+    repo.ok(["set-spend-guard", "--max-failed-rounds", "1"]);
+    repo.ok(["set-active", "sg"]);
+    repo.ok(["record-gate-review", "sg", "--gate", "1", "--verdict", "fail"]);
+    return [[repo.run(["brief"]), /Run `spend-guard sg`/]];
   },
   "activity log off"() {
     const repo = remedyRepo();

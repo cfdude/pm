@@ -895,6 +895,17 @@ it waits on.
   `pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]` (the rules block says so), or the tokens
   land in the unattributed bucket. Every write has an inverse: `spend --clear --yes`,
   `spend --rebuild --yes`, `spend --clear --timeline --yes`. It computes no cost. See `commands/spend.md`.
+- Review loop that will not converge, or tokens running past a budget? Every accepted `record-gate-review`
+  already keeps a per-gate round tally (`epic.gateRounds`). `set-spend-guard --max-failed-rounds <n>` and/or
+  `--tokens <n>` turn it into a limit at the project, a lane (`--lane`) or an epic (`--epic`); nothing is on
+  by default and every set has a `--unset`. Before each review or fix dispatch run `spend-guard <epic>`: exit 0
+  go on, **exit 2 is a STOP that epic-level autonomy does not bypass**. Stop same-tier retries, hand the failure
+  evidence to the escalation target it names (one model tier up, else the user) and ask what is wrong and how to
+  resolve it, then record the decision with `override-spend-guard <epic> --signal rounds|tokens --escalated-to
+  <target> --reason "<why>"` (accepted only while tripped; no autonomy grant covers it; `--revoke` keeps the
+  record). Mark review dispatches `pm-spend: epic=<id> role=review phase=review round=<n>` so unrecorded rounds
+  are counted. Never wire `spend-guard` into a hook (exit 2 blocks). A failed verdict is always recorded; the STOP
+  is printed after it. See `commands/spend-guard.md`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —
@@ -1341,7 +1352,19 @@ spendTracking? : { enabled, enabledAt } — opt-in token-spend ledger switch. Ab
                 `enabledAt` is the time of the FIRST `on` and never moves (it bounds an ingest's
                 look-back). Set via `set-spend-tracking on|off`; read with `spend`. Added field, no
                 migration. While on, the rules block carries a `## Spend tracking` section.
-epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+gateRounds?   : on an epic — { gate1?, gate2? }, each { fails, passes, failStreak, lastVerdictAt,
+                lastPassAt? }. Written ONLY by an accepted `record-gate-review`, always, with no
+                limit configured; a pass zeroes `failStreak` and stamps `lastPassAt` (the epic's
+                "pass anchor" is the latest across gates). Withdrawing a verdict does not un-count it.
+                Epics recorded before 0.52 read as zero. Added field, no migration.
+spendGuard?   : { maxFailedRounds?, tokenCeiling?, warnAt? } — the guard's limits at the PROJECT layer;
+laneSpendGuards? : { <lane>: { ... } } and `epic.spendGuard?` are the lane and epic layers (epic first,
+                then lane, then project; a detour inherits nothing). Set via `set-spend-guard`, every
+                field with an `--unset`. No default limit; `warnAt` defaults to 80.
+spendGuardOverrides? : on an epic — [{ signal, baseline, escalatedTo, reason, at, revokedAt?,
+                revokeReason? }]. Appended by `override-spend-guard` only while the signal is tripped;
+                a revoke marks the entry and keeps it. Added field, no migration.
+epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, gateRounds?, withdrawnGateReviews?, spendGuard?, spendGuardOverrides?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
 createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
                 through — at the moment the epic is registered. ABSENT means UNKNOWN, never
                 today and never another field's value; `recover-created-at` backfills it from

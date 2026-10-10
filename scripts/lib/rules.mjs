@@ -31,6 +31,7 @@ import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
+import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -108,6 +109,13 @@ export function currentProfileContext(epicId) {
  *  an unreadable file for the same reason they do. */
 export function currentSpendTracking() {
   try { return spendEnabled(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
+}
+
+/** Is a spend-guard LIMIT configured in this repo? The rules block emits its `## Spend guard` section only
+ *  while one is (spend-budget-and-stuck-loop-guard). Falls back to NO like the other readers, rethrowing an
+ *  unreadable file for the same reason they do. */
+export function currentSpendGuard() {
+  try { return guardConfigured(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -684,7 +692,7 @@ function spendTrackingLines() {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false) {
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -879,6 +887,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     `Current mode: **${mode}**.`,
     "",
     ...(spend ? spendTrackingLines() : []),
+    ...(guard ? spendGuardLines() : []),
     "## Release candidate",
     "",
     "Building a release from several changes? Do not run a Gate 2 round per change: batch the work by",
@@ -1199,7 +1208,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard());
   let next;
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and

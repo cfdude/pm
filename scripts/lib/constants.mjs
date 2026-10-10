@@ -50,6 +50,11 @@ export const CONFLICT_EXIT_CODE = 9;
 // refusal there would be indistinguishable from a Node bootstrap crash; 11 is unassigned. Shared by
 // the unreadable-state refusal and the ambiguous rules-block refusal — the message names the file.
 export const UNREADABLE_INPUT_EXIT_CODE = 11;
+// spend-budget-and-stuck-loop-guard: `spend-guard` exits 2 while an epic is STOPPED. Distinct from the
+// 1 every usage error and refusal uses, so a scripted check can tell "stuck" from "wrong arguments".
+// 2 is also Claude Code's hook "block" code, which is why the verb is documented as never to be wired
+// into a hook.
+export const SPEND_GUARD_STOP_EXIT_CODE = 2;
 // The state-file lock (state.mjs saveState, design D4). A save holds it for milliseconds, so a
 // writer waits WAIT_MS for a live holder, polling every POLL_MS, and is then refused with the
 // conflict exit code — never a lost update. STALE_MS is the age backstop: a lock older than this
@@ -861,12 +866,12 @@ export const VERB_FLAGS = [
   // `--verbosity` here are the PROJECT/LANE-layer writers; the same names are EPIC_FLAGS rows for
   // add-epic/add-many/update-epic. `--model` and `--unset` repeat. `--lane` is also add-epic's
   // (an epic's own lane) but the rows are scoped per command, so neither reads the other.
-  { flag: "lane", commands: ["set-profile", "profile"], placeholder: "openspec|superpowers|claude-code|decision|external" },
+  { flag: "lane", commands: ["set-profile", "profile", "set-spend-guard"], placeholder: "openspec|superpowers|claude-code|decision|external" },
   { flag: "review", commands: ["set-profile"], placeholder: "off|standard|thorough" },
   { flag: "model", commands: ["set-profile"], repeats: true, placeholder: "role=model[:effort]" },
   { flag: "verbosity", commands: ["set-profile"], placeholder: "quiet|verbose" },
   { flag: "unset", commands: ["set-profile"], repeats: true, placeholder: "review|verbosity|model|model:role" },
-  { flag: "epic", commands: ["profile"], requires: "an epic id" },
+  { flag: "epic", commands: ["profile", "set-spend-guard"], requires: "an epic id" },
   // set-autonomy — #152's sharpest instance.
   { flag: "level", commands: ["set-autonomy"], placeholder: "off|autonomous" },
   { flag: "preauthorize", commands: ["set-autonomy"], repeats: true },
@@ -969,7 +974,7 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity", "spend"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard"], valueless: true },
   // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
@@ -990,7 +995,18 @@ export const VERB_FLAGS = [
   // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
   // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
   { flag: "until", commands: ["spend"], requires: "an ISO-8601 timestamp" },
-  { flag: "no-ingest", commands: ["spend"], valueless: true },
+  { flag: "no-ingest", commands: ["spend", "spend-guard"], valueless: true },
+  // spend-budget-and-stuck-loop-guard. `set-spend-guard`'s three limits and its `--unset` (repeatable, its own
+  // placeholder: set-profile's `--unset` row lists different fields), then `override-spend-guard`'s four. Its
+  // `--revoke` is VALUELESS here and value-bearing on `set-autonomy`; the rows are scoped per command.
+  { flag: "max-failed-rounds", commands: ["set-spend-guard"], requires: "a positive whole number" },
+  { flag: "tokens", commands: ["set-spend-guard"], requires: "a positive whole number" },
+  { flag: "warn-at", commands: ["set-spend-guard"], requires: "a whole number from 1 to 99" },
+  { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|warn-at|all" },
+  { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
+  { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
+  { flag: "reason", commands: ["override-spend-guard"], requires: REASON_REQUIRES },
+  { flag: "revoke", commands: ["override-spend-guard"], valueless: true },
   { flag: "clear", commands: ["spend"], valueless: true },
   { flag: "rebuild", commands: ["spend"], valueless: true },
   { flag: "timeline", commands: ["spend"], valueless: true },
@@ -1074,6 +1090,7 @@ export const VERB_POSITIONALS = {
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
@@ -1513,6 +1530,9 @@ export const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
 export const KNOWN_MODELS = ["fable", "opus", "sonnet", "haiku"];
 export const KNOWN_EFFORTS = ["low", "medium", "high", "xhigh", "max", "ultracode"];
 export const MODELS_WITHOUT_EFFORT = ["haiku"];
+/** The model RANK, lowest first, declared once beside KNOWN_MODELS (spend-guard D7): the order the
+ *  escalation target steps up in. `user` is above the top and is not a model. */
+export const MODEL_RANK = Object.freeze(["haiku", "sonnet", "opus", "fable"]);
 /** The spend ledger's PHASE vocabulary (token-spend-tracking-per-epic), declared once. It is a separate
  *  closed list from KNOWN_JOB_ROLES on purpose: a role says what an agent IS (it picks a model), a phase
  *  says where in an epic's life the tokens went. A "gate retry" is `phase=review` with `round>1`. */

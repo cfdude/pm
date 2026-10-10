@@ -453,6 +453,14 @@ const DISPATCH_BASELINE = {
   spend: { args: ["spend"] },
   "set-activity-log": { args: ["set-activity-log", "on"] },
   "set-spend-tracking": { args: ["set-spend-tracking", "on"] },
+  // spend-budget-and-stuck-loop-guard. `override-spend-guard` is accepted only while a signal is tripped, so it
+  // seeds one: a round limit of 1, then one recorded failed verdict.
+  "set-spend-guard": { args: ["set-spend-guard", "--max-failed-rounds", "2"] },
+  "spend-guard": { args: ["spend-guard", "e1"] },
+  "override-spend-guard": {
+    pre: [["set-spend-guard", "--max-failed-rounds", "1"], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"]],
+    args: ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
+  },
   "purge-logs": { args: ["purge-logs", "--keep", "5"] },
   "verify-worktrees": { args: ["verify-worktrees"] },
   // Declared `expectsFailure` in VERB_EFFECTS: its job is to fail on drift. A copied fixture's
@@ -691,6 +699,7 @@ const POSITIONAL_COUNTS = {
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
   "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1,
+  "spend-guard": 1, "override-spend-guard": 1,
 };
 for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;
 

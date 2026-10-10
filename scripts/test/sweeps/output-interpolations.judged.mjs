@@ -990,3 +990,91 @@ x("render.mjs", "renderVerb", {
 }, "escaped", "the two cost lines, each through escapeControls before the join");
 // token-spend-tracking-per-epic: the rules-block section
 j("rules.mjs", "spendTrackingLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (the role and phase lists are engine vocabulary)");
+// ── spend-budget-and-stuck-loop-guard: the three verbs and the pure core (generated from the sweep's own findings, then judged)
+x("spend-command.mjs", "mainState", {
+  "r.reason": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any stored or typed value where it is built");
+x("spend-guard-verbs.mjs", "parseSetSpendGuard", {
+  "UNSET_NAMES.join(\"|\")": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "parseSetSpendGuard", {
+  "FLAG_OF[clash]": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "applyGuardOps", {
+  "field": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "applyGuardOps", {
+  "value": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "parsed.message": 1,
+}, "passthrough", "parseSetSpendGuard's message, which escapes the values it quotes (escapeControls) where it is built");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "already.join(\", \")": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "where": 3,
+}, "passthrough", "`epic <id>` / `lane <lane>` / `project`, the id and lane escaped where `where` is built");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "notes": 2,
+}, "passthrough", "a parenthesised list of validated guard field names");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "described.join(\", \")": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "evaluate", {
+  "main.reason": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "evaluate", {
+  "ingestInfo.busy ? INGEST_BUSY : ingestInfo.reason": 1,
+}, "passthrough", "spend's own ingest summary reason text (ingestForReport): literal sentences, no stored value");
+x("spend-guard-verbs.mjs", "withdrawnNotices", {
+  "n": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "limitText", {
+  "s.limit": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "limitText", {
+  "s.source": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "reportLines", {
+  "r.ledger": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "accepted.join(\"|\")": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "signal": 5,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "ev.tracking": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "sig.state": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "sig.count": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "sig.limit": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "spendGuard", {
+  "jsonText(out, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
+x("spend-guard.mjs", "tallyVerdict", {
+  "gate": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard.mjs", "escalationTarget", {
+  "model": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard.mjs", "stopBlock", {
+  "t.from": 1,
+}, "passthrough", "a model name from the profile resolver; the whole block leaves through lines.map(escapeControls)");
+x("spend-guard-verbs.mjs", "withdrawnNotices", {
+  "before.map((k) => k.replace(\"gate\", \"gate \")).join(\" and \")": 1,
+}, "engine", "gate keys filtered by a gate-number pattern before they are named, so only the literal words gate1 and gate2 can print");
+x("spend-guard.mjs", "stopBlock", {
+  "t.source": 1,
+}, "passthrough", "a resolver source layer name (epic, lane:<lane>, project, default); the whole block leaves through lines.map(escapeControls)");

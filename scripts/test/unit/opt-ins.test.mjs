@@ -25,6 +25,7 @@ unitTest("gh#210: laneRouting with zero overrides reads as NOT SET and says what
 unitTest("gh#210: adopted opt-ins move to the summary line and out of the NOT SET list", () => {
   const state = {
     reviewMode: "thorough", activityLog: { enabled: true }, spendTracking: { enabled: true },
+    spendGuard: { maxFailedRounds: 2 },
     tracker: { system: "github-issues" },
     laneRouting: { overrides: [{ match: "migration", lane: "openspec" }] },
     epics: [],
@@ -35,6 +36,7 @@ unitTest("gh#210: adopted opt-ins move to the summary line and out of the NOT SE
   assert.match(lines[0], /activityLog: on/);
   assert.match(lines[0], /tracker: github-issues/);
   assert.match(lines[0], /laneRouting: 1 override/);
+  assert.match(lines[0], /spendGuard: configured/);
 });
 
 unitTest("gh#210: a claim is an epic's temporary hold, not a repo setting, so it is never listed as NOT SET", () => {

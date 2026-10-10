@@ -7,13 +7,16 @@
 //
 // THE REGISTRY BELOW IS THE LIST. `upgrade` prints from it and nothing else; a new opt-in is one
 // row here, and `scripts/test/unit/opt-ins.test.mjs` fails if a row names a verb or command doc
-// that does not exist. LEAF module: imports constants.mjs only.
+// that does not exist. Imports constants.mjs, and spend-guard.mjs for the one "is a limit configured" predicate
+// the spendGuard row asks (it was a constants-only leaf until that row; spend-guard.mjs reaches only constants.mjs and
+// execution-profile.mjs, so no cycle runs back through here).
 //
 // ARCHITECTURAL LAW: this is a READ of `state.json` that EMITS INSTRUCTIONS. It enables nothing,
 // opens no connection, calls no tracker. A repo that declines an opt-in loses nothing — the lines
 // are information, printed every run, never a refusal and never a gate.
 
 import { escapeControls } from "./constants.mjs";
+import { guardConfigured } from "./spend-guard.mjs";
 
 /** One row per opt-in. `isSet(state)` is the adoption test; `describe(state)` renders the adopted
  *  value; `missing` is what an unadopted repo is losing, in a clause; `command` is the adopting
@@ -63,6 +66,17 @@ export const OPT_INS = [
     missing: "spendTracking — no record of which epic, phase, role or model spent tokens",
     command: "set-spend-tracking on",
     example: ["set-spend-tracking", "on"],
+  },
+  {
+    // spend-budget-and-stuck-loop-guard. A limit is `maxFailedRounds` or `tokenCeiling` at the project, at any
+    // lane, or on any epic that is not archived (a `warnAt` alone is not one). No default ships, so a repo that
+    // never configures one sees nothing but the always-on round counter.
+    id: "spendGuard", verb: "set-spend-guard", doc: "set-spend-guard",
+    isSet: (s) => guardConfigured(s),
+    describe: () => "spendGuard: configured",
+    missing: "spendGuard — a review loop that cannot converge runs until a person notices (no round limit, no stop, no one named to hand the failure to)",
+    command: "set-spend-guard --max-failed-rounds <n>",
+    example: ["set-spend-guard", "--max-failed-rounds", "2"],
   },
 ];
 

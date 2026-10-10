@@ -116,6 +116,11 @@
       "platforms": { "claude-code": "slash command wrapping set-spend-tracking / spend — an opt-in, local, read-only per-epic token ledger built from Claude Code's own transcript files" }
     },
     {
+      "id": "spend-guard",
+      "artifacts": ["commands/spend-guard.md", "commands/set-spend-guard.md", "commands/override-spend-guard.md"],
+      "platforms": { "claude-code": "slash commands wrapping spend-guard / set-spend-guard / override-spend-guard — an opt-in stuck-loop and token-ceiling guard: a gate-round counter, a check verb that exits 2 with a STOP naming the escalation target, and a recorded, revocable override" }
+    },
+    {
       "id": "session-lifecycle-hooks",
       "artifacts": ["hooks/hooks.json", "hooks/README.md"],
       "platforms": { "claude-code": "SessionStart / PreCompact / PostToolUse / PostToolUseFailure hooks in hooks.json, each passing --platform claude-code" }

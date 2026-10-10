@@ -66,7 +66,7 @@ These rules bind every section below.
 
 ## 1. The gate-round counter (stuck-loop half)
 
-- [ ] 1.1 TDD (UNIT): in `recordGateReview()`, update `epic.gateRounds.gate<N>` (`fails`, `passes`,
+- [x] 1.1 TDD (UNIT): in `recordGateReview()`, update `epic.gateRounds.gate<N>` (`fails`, `passes`,
       `failStreak`, `lastVerdictAt` = the entry's `reviewedAt`, and on a `pass` only, `lastPassAt` =
       the entry's `reviewedAt`) in the same `saveState` as the verdict. Cover every scenario of the
       spec's "keeps a per-gate round tally" requirement, including:
@@ -75,13 +75,13 @@ These rules bind every section below.
       - the pass anchor is the latest `lastPassAt` across gates (export the helper; 3.1, 3.5 and 4.2
         read it, never `gateReview`)
       - a refused invocation making no write on the in-memory store
-- [ ] 1.2 TDD (UNIT): the "Only a recorded verdict moves the tally" requirement.
+- [x] 1.2 TDD (UNIT): the "Only a recorded verdict moves the tally" requirement.
       - `update-epic --withdraw-gate-review` and the archive-drift heal (`epic-progress.mjs`, the
         `ungated` Gate 2 write) leave `gateRounds` unchanged.
       - An epic with no `gateRounds` reads zero with no pass anchor.
       - A withdrawn pass is flagged by `spend-guard`, not undone, and its `lastPassAt` still anchors
         (asserted in 3.4).
-- [ ] 1.3 **Call-site sweep for the tally** (required item 1).
+- [x] 1.3 **Call-site sweep for the tally** (required item 1).
       - Run `rg -n "gateReview(\.|\[)gate|gateReview\s*=" scripts/` and list every writer of a gate
         entry.
       - Run `rg -n "gateRounds" scripts/` and list every reader and writer.
@@ -92,14 +92,14 @@ These rules bind every section below.
 
 ## 2. Limits: the three-layer cascade
 
-- [ ] 2.1 TDD (UNIT): export the profile's `resolveField` from `execution-profile.mjs` (no behaviour
+- [x] 2.1 TDD (UNIT): export the profile's `resolveField` from `execution-profile.mjs` (no behaviour
       change; the existing profile tests stay green). Add the guard resolver over `state.spendGuard`,
       `state.laneSpendGuards[lane]` and `epic.spendGuard`. Cover:
       - epic over lane over project
       - an invalid stored value is ignored and reported
       - `warnAt` defaults to 80
       - a detour inherits nothing
-- [ ] 2.2 TDD (UNIT): `set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>]
+- [x] 2.2 TDD (UNIT): `set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>]
       [--tokens <n>] [--warn-at <pct>] [--unset max-failed-rounds|tokens|warn-at|all]`. Cover every
       refusal and unset scenario in the spec. Add the verb to:
       - the verb registry, its arity and flag tables, and `USAGE`
@@ -110,7 +110,7 @@ These rules bind every section below.
 
 ## 3. The rounds signal, the check verb and the override (stuck-loop half)
 
-- [ ] 3.1 TDD (UNIT): the rounds signal's recorded side (design D2), as a pure function of the epic's
+- [x] 3.1 TDD (UNIT): the rounds signal's recorded side (design D2), as a pure function of the epic's
       tally, the resolved limit and the live overrides, taking the ledger side as an optional input
       that 4.2 supplies. Cover:
       - "Recorded fails decide when they are higher" and the tracking-off degradation text
@@ -118,7 +118,7 @@ These rules bind every section below.
         the pass on the same gate do not revive the override" (liveness read from the pass anchor)
 
       The ledger-side scenarios belong to 4.2.
-- [ ] 3.2 TDD (UNIT): the escalation target (design D7). Declare the model rank once, beside
+- [x] 3.2 TDD (UNIT): the escalation target (design D7). Declare the model rank once, beside
       `KNOWN_MODELS`, and the STOP exit code as a named constant beside `CONFLICT_EXIT_CODE`. The
       function takes the resolved `{model, source}` whatever the source. Cover:
       - sonnet → opus
@@ -126,7 +126,7 @@ These rules bind every section below.
       - fable → user
       - no model, or a model not in the ladder → user (pure-function input, so it is testable before
         and after the sibling's default table lands)
-- [ ] 3.3 TDD (UNIT): the STOP block text. It must contain:
+- [x] 3.3 TDD (UNIT): the STOP block text. It must contain:
       - the epic
       - the tripped signal with its count and limit
       - the target and "or the user"
@@ -135,7 +135,7 @@ These rules bind every section below.
       - the autonomy sentence
 
       Every value leaves through `escapeControls`.
-- [ ] 3.4 TDD (UNIT + FILE): the `spend-guard <epicId> [--json] [--no-ingest]` verb.
+- [x] 3.4 TDD (UNIT + FILE): the `spend-guard <epicId> [--json] [--no-ingest]` verb.
       - Rounds only in this task: the token signal reports `not-checked` until 4.1.
       - Cover the exit codes 0, 1 and 2, the JSON shape, the unknown epic, and the withdrawn-pass
         notice.
@@ -155,17 +155,17 @@ These rules bind every section below.
         observe-reads fixture.
       - Add `commands/spend-guard.md` and its parity-ledger claim. Register the verb, with
         `verb-effects` set to `reads`.
-- [ ] 3.5 TDD (UNIT): `override-spend-guard` and `--revoke` (design D6). Cover every scenario of the
+- [x] 3.5 TDD (UNIT): `override-spend-guard` and `--revoke` (design D6). Cover every scenario of the
       two override requirements, including the rank refusal and "a second model override must go to
       the user". Add `commands/override-spend-guard.md` and its parity-ledger claim,
       and register the verb.
-- [ ] 3.6 **Inverse sweep** (required item 1). For each write in design D8, show the shipped inverse
+- [x] 3.6 **Inverse sweep** (required item 1). For each write in design D8, show the shipped inverse
       or the stated justification, with a test reference. Append the result to
       `call-site-sweep-1.3.txt`.
 
 ## 4. The token signal
 
-- [ ] 4.1 TDD (UNIT + FILE): the token signal.
+- [x] 4.1 TDD (UNIT + FILE): the token signal.
       - Reuse `spend`'s ingest → `attribute()` → `buildReport({filters: {epic}})` pipeline in-process,
         never a second transcript reader.
       - Cover OK, WARN and tripped, and the override baseline.
@@ -174,7 +174,7 @@ These rules bind every section below.
         off.
       - FILE: a fixture ledger under a temp `CLAUDE_CONFIG_DIR` gives the expected totals, and
         `--no-ingest` performs no ingest.
-- [ ] 4.2 TDD (UNIT): the ledger side of the rounds signal: the distinct `round` values on attributed
+- [x] 4.2 TDD (UNIT): the ledger side of the rounds signal: the distinct `round` values on attributed
       `phase=review` rows after the pass anchor (1.1's helper), minus one, floored at 0; every row
       when there is no anchor. Cover "Unrecorded
       review rounds are still counted", "A recorded pass ends the ledger side too", and a marker
@@ -182,17 +182,17 @@ These rules bind every section below.
 
 ## 5. Emission
 
-- [ ] 5.1 TDD (UNIT): `record-gate-review` prints the STOP block on stderr, after the success line,
+- [x] 5.1 TDD (UNIT): `record-gate-review` prints the STOP block on stderr, after the success line,
       when the accepted verdict leaves the recorded part tripped. It exits 0, and the check reads state
       only. FILE: no ledger file is opened with tracking on.
-- [ ] 5.2 TDD (UNIT): the brief.
+- [x] 5.2 TDD (UNIT): the brief.
       - Add one `STOP: spend guard —` line for a stuck active epic, from state alone, in the part of
         the brief `fitBrief` never cuts. Assert it survives an over-cap brief.
       - With no limit configured, assert the guard's brief helper returns no lines and no brief line
         contains `spend guard`.
       - FILE (observe-reads): the SessionStart, PreCompact and PreToolUse hooks open no spend or
         transcript path, with tracking on and with no limit configured.
-- [ ] 5.3 TDD (UNIT + FILE): the `## Spend guard` rules section.
+- [x] 5.3 TDD (UNIT + FILE): the `## Spend guard` rules section.
       - It sits immediately after the `## Spend tracking` slot in `rulesBlock()`
         (`...(spend ? spendTrackingLines() : [])`, `token-spend-tracking-per-epic` task 5.1), in the
         same position when tracking is off. Name this ordering in the 0.2 chokepoint review.
@@ -202,15 +202,15 @@ These rules bind every section below.
         with "no autonomy grant covers it", and the `phase=review round=<n>` marker form.
       - FILE: `CLAUDE.md` is rewritten on set and on the last unset.
       - This is a managed-rules surface, so certify functional.
-- [ ] 5.4 TDD (UNIT): the `OPT_INS` `spendGuard` row and its `upgrade` line, with no migration. A
+- [x] 5.4 TDD (UNIT): the `OPT_INS` `spendGuard` row and its `upgrade` line, with no migration. A
       0.51.0 state fixture loads unchanged.
-- [ ] 5.5 Changeset fragment `.changesets/spend-budget-and-stuck-loop-guard.md`, and the
+- [x] 5.5 Changeset fragment `.changesets/spend-budget-and-stuck-loop-guard.md`, and the
       `skills/conductor/SKILL.md` section on the guard. Verify: `node scripts/conductor.mjs changesets`
       lists the fragment.
 
 ## 6. Dogfood
 
-- [ ] 6.1 Integration: the full assertion half passes
+- [x] 6.1 Integration: the full assertion half passes
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`), plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record its peak
       memory.
@@ -224,13 +224,13 @@ These rules bind every section below.
 
 ## 7. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.3 and 3.6. Verify that
+- [x] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.3 and 3.6. Verify that
       `call-site-sweep-1.3.txt` names every writer of a gate entry, every reader of `gateRounds`, and
       every inverse in design D8.
 - [ ] 7.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in THAT
       commit. Save the result as `commit-verification-7.2.txt`.
-- [ ] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
+- [x] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
       lines. Verify: `rg -n "pm:lifecycle" openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md`
       lists both.
 - [ ] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do

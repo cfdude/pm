@@ -1,0 +1,86 @@
+✖ 1.1 consecutive fails build a streak, with no lastPassAt key (13.728958ms)
+✖ 1.1 a pass ends the streak, keeps the lifetime counts and stamps lastPassAt (4.890584ms)
+✖ 1.1 the two gates are counted apart (5.675583ms)
+✖ 1.1 pass, fail, fail on one gate keeps lastPassAt though gateReview dropped the pass (5.681458ms)
+✔ 1.1 the pass anchor is the latest lastPassAt across gates, and none without one (0.181917ms)
+✔ 1.1 recordedStreak is the highest failStreak across gates, naming the gate (0.094ms)
+✔ 1.1 tallyVerdict is the pure fold the verb calls (0.089584ms)
+✔ 1.1 a refused invocation makes no write (2.528333ms)
+✖ 1.2 withdrawing a verdict leaves the tally unchanged (6.464583ms)
+✖ 1.2 a withdrawn pass is not undone: the streak stays 0 and lastPassAt still anchors (6.261375ms)
+✔ 1.2 an epic recorded before this release reads zero with no anchor (0.0885ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 5
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.305041
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 consecutive fails build a streak, with no lastPassAt key (13.728958ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'gate1')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:23:39
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 a pass ends the streak, keeps the lifetime counts and stamps lastPassAt (4.890584ms)
+  Error: conductor: a gate 2 'pass' requires the commit range it covered — missing --base-sha and --head-sha. Record the range the reviewer actually read (a 'fail' may omit it).
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at pass (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:17:32)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:31:3
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: "conductor: a gate 2 'pass' requires the commit range it covered — missing --base-sha and --head-sha. Record the range the reviewer actually read (a 'fail' may omit it).\n"
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the two gates are counted apart (5.675583ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'gate1')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:45:18
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 pass, fail, fail on one gate keeps lastPassAt though gateReview dropped the pass (5.681458ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'gate1')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:55:29
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 withdrawing a verdict leaves the tally unchanged (6.464583ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'gate1')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:104:41
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 a withdrawn pass is not undone: the streak stays 0 and lastPassAt still anchors (6.261375ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'gate1')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/unit/spend-guard-tally.test.mjs:111:45
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ad8f953038e6443aa/scripts/test/fixtures/unit-harness.mjs:131:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
