@@ -174,7 +174,7 @@ before staging.
 
 ## 4. Integration
 
-- [ ] 4.1 Run the full assertion half
+- [x] 4.1 Run the full assertion half
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`) plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record peak memory
       (`/usr/bin/time -l`).
@@ -199,10 +199,10 @@ before staging.
         - `--clear model`.
       - **Omitted inverses.** "no directive" for a role is a justified omitted inverse (design
         Risks), and so is the absent default writer.
-- [ ] 5.2 **Verify each task against its commit** (item 2). For every task above, run
+- [x] 5.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in
       THAT commit. Save the result as `commit-verification-5.2.txt`.
-- [ ] 5.3 **Lifecycle marker** (item 3). Tasks 8.2 and 8.3 carry `<!-- pm:lifecycle -->` on their
+- [x] 5.3 **Lifecycle marker** (item 3). Tasks 8.2 and 8.3 carry `<!-- pm:lifecycle -->` on their
       task lines. Verify:
       `rg -n "pm:lifecycle" openspec/changes/execution-profile-planning-and-light-roles/tasks.md`
       lists both.
