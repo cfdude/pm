@@ -310,7 +310,7 @@ compute the rounds signal from recorded verdicts, and exit by the 0/2 rule, neve
 - from a linked worktree, the main tree's `state.json` is absent or unreadable (tracking `unknown`)
 - the ledger read itself fails
 
-The main-tree read SHALL NOT refuse. In the main tree, its own unreadable `state.json` still exits 11, the engine-wide code for an unreadable record (exit 1 means wrong arguments).
+The main-tree read SHALL NOT refuse. In the main tree, its own unreadable `state.json` exits 11, not 1.
 
 #### Scenario: The main tree's record is unreadable from a linked worktree
 
