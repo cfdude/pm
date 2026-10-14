@@ -141,6 +141,8 @@ test("2.4 A concurrent ingest does not interleave: a live lock makes the second 
   const { repo, opts } = scene();
   fs.mkdirSync(spendDir(repo), { recursive: true });
   fs.writeFileSync(path.join(spendDir(repo), "ingest.lock"), "{}");
+  // Stamp the mtime from Date.now(): under the CI shifted clock a real-time mtime reads as ancient and the engine breaks it.
+  fs.utimesSync(path.join(spendDir(repo), "ingest.lock"), new Date(Date.now()), new Date(Date.now()));
   const r = ingest(opts);
   assert.deepEqual([r.ran, r.busy], [false, true]);
   assert.equal(walk(spendDir(repo)).includes("rows.jsonl"), false, "nothing was ingested");

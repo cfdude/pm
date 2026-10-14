@@ -359,6 +359,8 @@ test("4.3 --clear and --rebuild refuse while an ingest holds the lock, and chang
   json(sc);
   const before = ledgerBytes(sc.cwd);
   fs.writeFileSync(spendPath(sc.cwd, "ingest.lock"), "{}");
+  // Stamp the mtime from Date.now(): under the CI shifted clock a real-time mtime reads as ancient and the engine breaks it.
+  fs.utimesSync(spendPath(sc.cwd, "ingest.lock"), new Date(Date.now()), new Date(Date.now()));
   expectFail(() => run(["spend", "--clear", "--yes"], sc.opts));
   expectFail(() => run(["spend", "--rebuild", "--yes"], sc.opts));
   assert.deepEqual(ledgerBytes(sc.cwd), before);

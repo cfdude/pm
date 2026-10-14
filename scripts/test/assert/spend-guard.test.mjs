@@ -151,6 +151,8 @@ test("3.4 A held ingest lock: the existing ledger is read, may trip, and the rep
   const sc = scene({ on: true, limit: 2 });
   ledger(sc, reviewRows([1, 2, 3]));
   fs.writeFileSync(spendPath(sc.cwd, "ingest.lock"), "{}");
+  // Stamp the mtime from Date.now(): under the CI shifted clock a real-time mtime reads as ancient and the engine breaks it.
+  fs.utimesSync(spendPath(sc.cwd, "ingest.lock"), new Date(Date.now()), new Date(Date.now()));
   const r = guard(sc);
   assert.equal(r.status, 2);
   assert.match(r.stdout, /did not ingest|not refreshed \(an ingest was already in progress\); counts may be stale/);
