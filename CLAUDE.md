@@ -469,7 +469,7 @@ shared branch); those are out of scope regardless of autonomy level.
 
 How intensely to review, which model and effort each job role runs on, and how often you report.
 Each field resolves independently, most specific first: the epic's own value, else its lane's,
-else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).
+else the project's, else the built-in default (review `standard`, verbosity `quiet`, and per model role: plan opus (high), implement sonnet (medium), test sonnet (low), review opus (high), mechanical sonnet (low), rudimentary haiku).
 Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own
 through `add-epic`, `add-many` or `update-epic`; `profile` prints the effective values with the layer each came from
 (pass its `--epic` flag for one epic). The engine records and emits the profile — it never
@@ -478,15 +478,21 @@ dispatches an agent or checks which model ran.
 Project values:
 - review: standard (project)
 - verbosity: quiet (project)
+- model plan: opus (high) (default)
 - model implement: sonnet (medium) (project)
 - model test: sonnet (low) (project)
 - model review: opus (high) (project)
+- model mechanical: sonnet (low) (default)
+- model rudimentary: haiku (default)
 
 Lane overrides: none.
 
-**Before dispatching a job** (implementing, testing, reviewing), resolve the active epic's
+**Before dispatching a job** (plan, implement, test, review, mechanical, rudimentary), resolve the active epic's
 profile and run that job's role on its `{model, effort}` where your platform lets you set them
 per dispatch. Where it does not, say so rather than implying it was applied.
+
+**One-shot build.** To have a top-tier model build an epic straight off its finished plan, set
+`--model implement=fable:<effort>` on that epic: an override of `implement`, not a separate role.
 
 **Verbosity:** `quiet` — one completion message per epic; `verbose` — a message at each phase
 transition and gate.
@@ -512,12 +518,24 @@ backticks, written without them, since the line must start with `pm-spend:`):
 `pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]`
 
 - `epic` — the id of the epic the work serves.
-- `role` — one of `implement`, `test`, `review` (the job roles the execution profile uses).
+- `role` — one of `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary` (the job roles the execution profile uses).
 - `phase` — one of `plan`, `build`, `review`, `docs`, `release`.
 - `round` — optional, a positive integer, 1 when omitted. A review gate's retry is `phase=review`
   with `round` above 1.
 
 A dispatch without the marker is counted as unattributed.
+
+## Spend guard
+
+A spend limit is configured. Before EVERY review or fix dispatch for an epic, run `spend-guard <epic>`.
+Exit 0 means go on; exit 2 is a STOP. A STOP is a genuine safety stop that epic-level autonomy does
+not bypass: stop dispatching same-tier retries, hand the failure evidence to the escalation target it
+names (or the user) and ask what is wrong and how to resolve it, then record the decision with
+`override-spend-guard <epic> --signal rounds|tokens --escalated-to <target> --reason "<why>"`. No
+autonomy grant covers `override-spend-guard`. Never wire `spend-guard` into a hook (exit 2 is a hook block).
+
+Round counts include review dispatches, so mark each one in the exact form
+`pm-spend: epic=<id> role=review phase=review round=<n>` (a marker with any other phase is not counted).
 
 ## Release candidate
 

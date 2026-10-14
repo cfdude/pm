@@ -3054,13 +3054,31 @@
           "text": "lane: superpowers not claude-code — a new guard on /opsx:apply; under-processing costs the record (intake rule 4)"
         }
       ],
-      "touchedAt": "2026-10-09T19:23:16.626Z",
+      "touchedAt": "2026-10-14T04:02:29.801Z",
       "release": "0.52.0",
       "attributedCommits": [
         "02e53b683567005f8a01185a72f7ff3580973f09",
         "fc36b3c21c95cc0110b405b190393a5e0bc9ac8f",
         "ce592206e1b1c697f9aada716b5e871241f6007f"
-      ]
+      ],
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:29.796Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:29.796Z",
+          "lastPassAt": "2026-10-14T04:02:29.796Z"
+        }
+      }
     },
     {
       "id": "openspec-planning-completeness-instruction",
@@ -5535,8 +5553,26 @@
           "text": "2026-10-06 Rob asked to consider this as a 0.52.0 bug fix. Lane kept; the build step is in cfdude/.github, then re-pin here."
         }
       ],
-      "touchedAt": "2026-10-07T16:13:02.988Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:02:29.105Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:29.101Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:29.101Z",
+          "lastPassAt": "2026-10-14T04:02:29.101Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-168",
@@ -6461,7 +6497,7 @@
         "aa66c49c98608d527bbd57acf15a72e50aea9eff"
       ],
       "createdAt": "2026-09-09T00:20:59.267Z",
-      "touchedAt": "2026-10-07T18:00:28.202Z",
+      "touchedAt": "2026-10-14T04:02:27.798Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:30.522Z",
@@ -6471,7 +6507,25 @@
       ],
       "startedAt": "2026-10-05T21:51:49.812Z",
       "trackerRefreshNeeded": true,
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:27.794Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:27.794Z",
+          "lastPassAt": "2026-10-14T04:02:27.794Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-182",
@@ -7146,7 +7200,7 @@
         "c25858ebad7dd3f3485510b0150f1031ba94f477"
       ],
       "createdAt": "2026-09-14T18:18:17.982Z",
-      "touchedAt": "2026-10-07T16:13:01.486Z",
+      "touchedAt": "2026-10-14T04:02:28.442Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:20.116Z",
@@ -7154,7 +7208,25 @@
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
       ],
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:28.438Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:28.438Z",
+          "lastPassAt": "2026-10-14T04:02:28.438Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-194",
@@ -10065,7 +10137,7 @@
         "992157ab112c9cfeb1aab82fc0a618a29e9fa7a8"
       ],
       "createdAt": "2026-09-17T05:13:42.425Z",
-      "touchedAt": "2026-10-07T16:12:56.012Z",
+      "touchedAt": "2026-10-14T04:02:26.530Z",
       "notes": [
         {
           "at": "2026-09-17T05:13:42.890Z",
@@ -10073,7 +10145,25 @@
           "text": "Evidence (0.45.0 Gate 2, scratch repros under the session scratchpad gate2-45-nudge/l2): 200 commits since the anchor took 8 s and printed 24 KB of hook context; a 330-commit window held the lock ~10 s. Partial-line anchor not reproduced. Old-format commit-observe.json {size,line} from unreleased dev builds reads as no anchor (acceptable: never on main). Spec write-site table in conductor-record omits commit-observe.json.lock/.lock.break and the retract-detour non-hex refusal is not listed in the commit-observation refusal scenario — declined at archive to avoid staling the release cross-spec review; fold into this epic's spec touch."
         }
       ],
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:26.526Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:26.526Z",
+          "lastPassAt": "2026-10-14T04:02:26.526Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-207",
@@ -11129,8 +11219,26 @@
         "5877ccbabc7e91eea2160f679e2979f782d5726b"
       ],
       "createdAt": "2026-09-25T21:57:39.453Z",
-      "touchedAt": "2026-10-07T18:00:26.703Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:02:25.907Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:25.902Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:25.902Z",
+          "lastPassAt": "2026-10-14T04:02:25.902Z"
+        }
+      }
     },
     {
       "id": "spec-sync-waive-for-skip-specs",
@@ -11730,8 +11838,26 @@
         "93f420955060f8a16bfe3437dc49af57cde12436"
       ],
       "createdAt": "2026-09-28T17:11:08.328Z",
-      "touchedAt": "2026-10-07T18:00:27.461Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:02:27.164Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:27.159Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:27.159Z",
+          "lastPassAt": "2026-10-14T04:02:27.159Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-211",
@@ -11766,8 +11892,26 @@
         "45ad537edf14725ea1d5684360174b7c9c122ea2"
       ],
       "createdAt": "2026-09-28T17:11:10.612Z",
-      "touchedAt": "2026-10-09T19:23:09.512Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:02:31.259Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:31.254Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:31.254Z",
+          "lastPassAt": "2026-10-14T04:02:31.254Z"
+        }
+      }
     },
     {
       "id": "certification-record-redesign",
@@ -12679,7 +12823,7 @@
         "0f90cdbdf249d8f5daab70ba204d676a9b47683f"
       ],
       "createdAt": "2026-10-01T23:10:17.077Z",
-      "touchedAt": "2026-10-09T18:08:39.841Z",
+      "touchedAt": "2026-10-14T04:02:30.536Z",
       "notes": [
         {
           "at": "2026-10-06T19:57:49.395Z",
@@ -12687,7 +12831,25 @@
           "text": "lane: superpowers not claude-code — new integrity check sharing the Gate 1 surface with openspec-gate1-guard-on-apply"
         }
       ],
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:30.531Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:30.531Z",
+          "lastPassAt": "2026-10-14T04:02:30.531Z"
+        }
+      }
     },
     {
       "id": "conductor-tells-the-truth-gate2-unreviewed-range",
@@ -12806,22 +12968,31 @@
       "description": "Rob 2026-10-06: a test fails repeatedly, loops back through Gate 1 and Gate 2, fails again, and burns millions of tokens without fixing the problem. Guard: (1) per-epic token ceiling, soft warn then stop-and-ask (set in the profile layers); (2) stuck-loop detector — the same test/finding failing across N review or fix rounds, or a sub-agent past a spend threshold with no green test, stops the autonomous run; (3) escalation protocol: hand the failure to a higher model with the failure evidence ('what is wrong and how do we resolve it') or to the user, rather than another same-tier retry. Instruction-layer: the engine emits the stop rule and the check verb; the interactive agent acts. Interacts with epic-level autonomy's stop conditions. Depends on the ledger from token-spend-tracking-per-epic.",
       "attributedCommits": [
         "f9de945a51e0a12d2b0ef29f5af632b35633dd51",
-        "038eea419634b27e9303a5a0b47eade932f7127c"
+        "038eea419634b27e9303a5a0b47eade932f7127c",
+        "0049c5406bcb72e27e512ad73fac9f9c8d07ea44",
+        "2c29916a9a1992caed8d8791817a2fe27fd0839b",
+        "248ac345a819e8ba4616cf09617630ed607fb891"
       ],
       "createdAt": "2026-10-06T17:29:47.026Z",
-      "touchedAt": "2026-10-09T22:57:18.683Z",
+      "touchedAt": "2026-10-14T04:14:11.175Z",
       "release": "0.52.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-10-09T22:57:18.675Z",
+          "reviewedAt": "2026-10-10T01:28:49.599Z",
           "artifacts": [
+            "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
             "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
             "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
             "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
             "openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md"
           ],
           "artifactDigests": [
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+              "sha256": "5cdadf032d904ade49ec62b82c0210f0d940de6c4b82618a01e344a3166398a3"
+            },
             {
               "path": "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
               "sha256": "69e3f9751cb9e8d52697531d3e61bc97776e09273c8a554bd642e7b0e750a151"
@@ -12831,11 +13002,80 @@
               "sha256": "00dd787c1451bd42917d02f2a6c1445fc41705f0bc6350c789836ceab86528bd"
             },
             {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+              "sha256": "37dc3ea471b1e6b923e74bb7f639b752143c6928c62d921627aee0d1b4098b60"
+            },
+            {
               "path": "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
-              "sha256": "25fa4687b0bf9799f03ab7335eb9dff28857538952c211e9993713370ad1f990"
+              "sha256": "501f4acad0c9275f93d80f13db66d0cda3c9e6d1a398ae1dcce1fd7068b446c0"
             }
           ],
-          "reviewer": "opus fresh-context (round 1 fail 1C/5I fixed; confirmation fail 1C/3I fixed 038eea41; narrow re-verify pass)"
+          "reviewer": "opus fresh-context (exit-code wording only, 248ac345; strict validate passes)",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-10T01:27:48.955Z",
+            "artifacts": [
+              "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+                "sha256": "5cdadf032d904ade49ec62b82c0210f0d940de6c4b82618a01e344a3166398a3"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+                "sha256": "69e3f9751cb9e8d52697531d3e61bc97776e09273c8a554bd642e7b0e750a151"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+                "sha256": "00dd787c1451bd42917d02f2a6c1445fc41705f0bc6350c789836ceab86528bd"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+                "sha256": "37dc3ea471b1e6b923e74bb7f639b752143c6928c62d921627aee0d1b4098b60"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+                "sha256": "225f2609d851c34a706c5784ededb52020dea6c5fde5fa8b39074658a3a112d0"
+              }
+            ],
+            "reviewer": "opus fresh-context (exit-code wording only, 2c29916a)"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:14:11.169Z",
+          "baseSha": "6e754d8becf3e1f87e2ce6ca7f7b3ae0c35335ef",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context (38-mutant mutation run, 36 caught; minors logged); Gate 2 review ran 2026-10-10 before the exit-code spec wording fix, re-recorded after it",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-10T01:28:50.378Z",
+            "baseSha": "6e754d8becf3e1f87e2ce6ca7f7b3ae0c35335ef",
+            "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+            "reviewer": "opus fresh-context (38-mutant mutation run, 36 caught; minors logged)"
+          }
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 2,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-10T01:28:49.599Z",
+          "lastPassAt": "2026-10-10T01:28:49.599Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 3,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:14:11.169Z",
+          "lastPassAt": "2026-10-14T04:14:11.169Z"
         }
       }
     },
@@ -12954,8 +13194,26 @@
         "63f3089b0656fe15f8ded8bcbb622e78a33f17a7"
       ],
       "createdAt": "2026-10-06T19:57:50.197Z",
-      "touchedAt": "2026-10-09T19:23:12.534Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:02:32.065Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:32.060Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:32.060Z",
+          "lastPassAt": "2026-10-14T04:02:32.060Z"
+        }
+      }
     },
     {
       "id": "openspec-1-14-workflows-evaluation",
@@ -12999,6 +13257,26 @@
           "text": "lane: superpowers not unrouted — suggest-lane returned none; a hook/log-detour behavior fix touching retraction semantics, not a sub-2h tweak"
         }
       ]
+    },
+    {
+      "id": "spend-guard-rules-section-follows-live-limits",
+      "title": "The rules block's Spend guard section follows whether a limit is live, through archive, remove and un-archive",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "spend-budget-and-stuck-loop-guard",
+          "reason": "found by its Gate 2 review"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Gate 2 minor on spend-budget-and-stuck-loop-guard: the managed rules block's ## Spend guard section is toggled only by set-spend-guard. Archiving or removing the only epic that holds a limit leaves the section stale; un-archiving it (update-epic --status untriaged) leaves the section absent while the limit is live, so the per-dispatch spend-guard instruction disappears (the brief and record-gate-review STOPs still fire). Sweep every writer that can change whether a limit is live and refresh the block at each.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T03:55:59.065Z",
+      "touchedAt": "2026-10-14T03:55:59.072Z"
     }
   ],
   "detourStack": [],
@@ -13009,7 +13287,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1955,
+  "revision": 1976,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13589,18 +13867,41 @@
       ],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-10-09T18:37:09.154Z",
+        "reviewedAt": "2026-10-14T04:01:56.699Z",
         "specs": [
           {
+            "key": "execution-profile-planning-and-light-roles/specs/execution-profile/spec.md",
+            "sha256": "6b1d56d8490d906662cbd4e17f56d8f0849020c37cd38e25983a7c3b686ca5b7"
+          },
+          {
+            "key": "spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+            "sha256": "501f4acad0c9275f93d80f13db66d0cda3c9e6d1a398ae1dcce1fd7068b446c0"
+          },
+          {
             "key": "token-spend-tracking-per-epic/specs/conductor-record/spec.md",
-            "sha256": "81fbc4e868887b816acc18e5fe5d3d76777a05e1e27ccfb0be7def51fae2ecc2"
+            "sha256": "e091459aca16741cdbb8118f7e1a93e3a9033bcc1f2539cb1d5be616e73d4568"
           },
           {
             "key": "token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
-            "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+            "sha256": "29816ea7f7cda44e714f87d88ff8059cd4c5888b39c5f40e4b3973a03713cb7b"
           }
         ],
-        "reviewer": "opus fresh-context"
+        "reviewer": "opus fresh-context (retroactive over the built set)",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T18:37:09.154Z",
+          "specs": [
+            {
+              "key": "token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+              "sha256": "81fbc4e868887b816acc18e5fe5d3d76777a05e1e27ccfb0be7def51fae2ecc2"
+            },
+            {
+              "key": "token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+              "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+            }
+          ],
+          "reviewer": "opus fresh-context"
+        }
       }
     },
     {
@@ -13630,5 +13931,8 @@
   "spendTracking": {
     "enabled": true,
     "enabledAt": "2026-10-09T22:28:28.347Z"
+  },
+  "spendGuard": {
+    "maxFailedRounds": 2
   }
 }
