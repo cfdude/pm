@@ -3895,7 +3895,7 @@
       "id": "gh-114-lane-routing-blind-to-product",
       "title": "Lane routing reads the ask and nothing else",
       "priority": "P2",
-      "status": "later",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3924,7 +3924,23 @@
       ],
       "createdAt": "2026-08-25T16:36:38-07:00",
       "externalUpdatedAt": "2026-08-29T14:55:03Z",
-      "touchedAt": "2026-10-06T19:57:53.294Z"
+      "touchedAt": "2026-10-14T23:49:32.553Z",
+      "disposition": {
+        "outcome": "declined",
+        "recordedAt": "2026-10-14T23:49:32.549Z",
+        "reason": "Judgment of whether work serves a commitment stays the agent's by design (instruction layer, not integration layer). 0.27 built the mechanical half and 0.36 (04fdd8a) the instruction half: suggestion is an input, judgment named absent, tie-break away from claude-code. The one local-data remainder (release intents in triage) is carved out as triage-surfaces-open-release-intents."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T23:49:32.549Z",
+        "deferrals": [
+          {
+            "epic": "triage-surfaces-open-release-intents",
+            "section": "triage output gains release intents"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T23:49:32.549Z"
     },
     {
       "id": "gh-115-gates-blind-to-absent-edit",
@@ -11054,7 +11070,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-10-06T19:36:18.057Z",
+      "touchedAt": "2026-10-14T23:49:33.927Z",
       "notes": [
         {
           "at": "2026-09-25T21:14:34.648Z",
@@ -11065,6 +11081,11 @@
           "at": "2026-09-28T22:29:17.081Z",
           "actor": "agent",
           "text": "0.51.0 conditional: include only if an n=3 quiet-machine measurement (no agents running, empty-preload control) still shows the file rung dominated by init's CLAUDE.md/.gitignore writes; otherwise --defer it from 0.51.0 with the numbers"
+        },
+        {
+          "at": "2026-10-14T23:49:33.923Z",
+          "actor": "agent",
+          "text": "2026-10-14: NOT declined. Loose run (load 4.6-5.5) shows the assertion half at ~28s, up from 15.4s at the 09-25 profile; the file rung ~26.7s. writeRules still writes to disk (rules.mjs:1201-1240). Decision gate moved to a story on pm-overhead-baseline: build only if disk-write tests carry >=10s of the file rung (threshold is a proposal, not measured). Decide at 0.54.0 grooming."
         }
       ],
       "startedAt": "2026-10-05T22:07:30.403Z"
@@ -13460,12 +13481,17 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-07T00:23:56.798Z",
-      "touchedAt": "2026-10-07T00:23:57.544Z",
+      "touchedAt": "2026-10-14T23:49:34.605Z",
       "notes": [
         {
           "at": "2026-10-07T00:23:57.541Z",
           "actor": "agent",
           "text": "lane: openspec not unrouted — triage returned no lane; evaluation can change rules-block/gate behavior. Local install now has all 12 workflows (profile custom). First step: read what verify does vs Gate 2, bulk-archive vs pm archive gate, ff/new/continue vs openspec-propose + sync. Source: screenshot from other machine showed 'openspec update' 1.14.0->1.14.1 and 6 extra workflows. Generated .claude/skills + .claude/commands/opsx files for the 6 new workflows are untracked, deliberately kept out of the 0.51.0 commit."
+        },
+        {
+          "at": "2026-10-14T23:49:34.601Z",
+          "actor": "agent",
+          "text": "2026-10-14: a git reset --hard on dev wiped the 9 tracked, modified OpenSpec 1.14 files (.claude/commands/opsx/{apply,archive,update}.md, .claude/skills/openspec-{apply-change,archive-change,explore,propose,sync-specs,update-change}/SKILL.md). They were generated, so regenerate with openspec update when this epic starts (Rob runs it, not the agent). The 12 untracked files remain."
         }
       ]
     },
@@ -13568,8 +13594,14 @@
       "description": "Rob 2026-10-13. Understand how tokens are spent across prompt creation, context and responses; measure input vs output and first-read vs cached-read tokens; establish the baseline cost of pm out of the box with every feature enabled (rules block, brief, hook injections, command/skill listings, hierarchy and EDD docs) and compare it with how much cheaper downstream tasks get because of tracking and record-keeping. Includes the overhead of spend tracking itself (if turning it on adds ~5,000 tokens a session Rob must be able to see that and shut it off). Reads the ledger; sibling of token-spend-analysis-and-recommendations. Evidence so far: cache-read is 96.2% of attributed tokens, output 0.34%; one 60.5M-token build agent ran 156 turns at ~379K context; pm's rules block is ~10K tokens and the brief was 78 KB uncapped before 0.52.",
       "attributedCommits": [],
       "createdAt": "2026-10-14T04:57:23.063Z",
-      "touchedAt": "2026-10-14T04:57:25.514Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-14T23:49:33.248Z",
+      "release": "0.53.0",
+      "stories": [
+        {
+          "title": "Re-baseline the per-commit gate on a quiet machine (n=3): per-test time in scripts/test/assert, and how much is init's CLAUDE.md/.gitignore writes. 2026-10-14 loose run: assertion half 28s (assert rung 26.7s, unit 3.1s) vs 15.4s in the epic's 09-25 profile. Build store-owns-claude-md-managed-block only if disk-write tests carry >=10s; else decline with the numbers",
+          "done": false
+        }
+      ]
     },
     {
       "id": "feature-switches-audit",
@@ -13612,6 +13644,33 @@
       "createdAt": "2026-10-14T04:57:24.708Z",
       "touchedAt": "2026-10-14T04:57:27.094Z",
       "release": "0.53.0"
+    },
+    {
+      "id": "triage-surfaces-open-release-intents",
+      "title": "triage shows open-release intents and each candidate's release membership",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-114-lane-routing-blind-to-product",
+          "reason": "the remainder of #114 after declining its judgment half"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "triage and suggest-lane never read state.releases[]. Add a release field per candidate and a releases[] list (id, intent, memberCount, sharedTokens) to triage output; verdict stays null. Files: scripts/lib/triage.mjs, commands/triage.md, commands/lane-routing.md:91-93 (wrongly says pm holds no milestone context), unit test + twin. README and Mintlify sync needed.",
+      "notes": [
+        {
+          "at": "2026-10-14T23:49:24.861Z",
+          "actor": "agent",
+          "text": "lane: superpowers (single subsystem, under 8h). Carved out of gh-114 2026-10-14."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T23:49:24.862Z",
+      "touchedAt": "2026-10-14T23:49:24.866Z"
     }
   ],
   "detourStack": [],
@@ -13622,7 +13681,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2024,
+  "revision": 2029,
   "reviewMode": "standard",
   "releases": [
     {
