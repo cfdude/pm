@@ -2096,7 +2096,7 @@
       "id": "rules-block-cli-fallback",
       "title": "rules block: CLI fallback for any platform lacking slash commands or hitting a namespace collision",
       "priority": "P3",
-      "status": "later",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2114,14 +2114,25 @@
         }
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
-      "touchedAt": "2026-10-06T19:57:51.747Z",
+      "touchedAt": "2026-10-14T04:57:36.455Z",
       "notes": [
         {
           "at": "2026-10-06T19:57:51.743Z",
           "actor": "agent",
           "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-10-14T04:57:36.451Z",
+        "reason": "merged into remaining-platform-investigation: no triggering platform and it already depended on that epic (0.53 backlog assessment, 2026-10-13)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:57:36.450Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:57:36.451Z"
     },
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
@@ -2534,7 +2545,13 @@
       "status": "queued",
       "role": "epic",
       "lane": "superpowers",
-      "links": [],
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "edd-run-policy-when-behavior-artifacts-change",
+          "reason": "folded in as its final story; the policy is worthless until the corpus grows"
+        }
+      ],
       "reconcileNeeded": false,
       "stories": [
         {
@@ -2558,7 +2575,7 @@
           "text": "lane: superpowers not claude-code — several mutation-tested scenarios with real design work (triage 2026-09-28)"
         }
       ],
-      "touchedAt": "2026-09-28T22:29:15.337Z"
+      "touchedAt": "2026-10-14T04:57:34.051Z"
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2714,7 +2731,8 @@
           "text": "GROOMING 0.41.0 — RESCOPED; most of this SHIPPED. The append-only per-epic session trail exists: conductor.mjs resolves the session in the TOP-LEVEL activity wrapper rather than inside claim dispatch, so diffEvents stamps identity onto EVERY event kind (activity-log.mjs), queryable with 'activity --epic'. An earlier reading that the trail covers only claim/release events is wrong. What actually remains is small: --session is registered for claim/unclaim ONLY (constants.mjs), so PM_SESSION is the sole channel on every other verb, and nothing lands on the epic record itself. Re-verified against HEAD after two agents disagreed about it."
         }
       ],
-      "touchedAt": "2026-09-10T04:38:22.802Z"
+      "touchedAt": "2026-10-14T04:57:01.556Z",
+      "release": "0.53.0"
     },
     {
       "id": "cross-session-epic-assignment",
@@ -2971,7 +2989,7 @@
       "id": "edd-run-policy-when-behavior-artifacts-change",
       "title": "Practice: run the EDD corpus when a change touches an artifact the AGENT reads (commands/agents/skills/hooks/.claude-plugin + rules.mjs), skip it for engine-internal/test-only changes; document in CLAUDE.md and consider a mechanical reminder",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2982,7 +3000,19 @@
         }
       ],
       "reconcileNeeded": false,
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-10-14T04:57:34.864Z",
+        "reason": "folded into edd-corpus-expansion-nondeterministic-surfaces as its final story (0.53 backlog assessment, 2026-10-13)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:57:34.864Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:57:34.865Z",
+      "touchedAt": "2026-10-14T04:57:34.869Z"
     },
     {
       "id": "conductor-skill-orient-reads-spec-inventory",
@@ -3156,7 +3186,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -3175,10 +3205,16 @@
           "at": "2026-09-10T04:37:59.247Z",
           "actor": "agent",
           "text": "GROOMING 0.41.0 — P3 to P2: growing faster than it is being fixed. Directive sites went 4 to 5 TODAY (commands/epic.md gained one in 48baf43), and rules.mjs EMITS the literal into every managed repo's CLAUDE.md, so each fleet upgrade propagates it further. Two of the epic's original citations have already drifted."
+        },
+        {
+          "at": "2026-10-14T04:57:12.225Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — grew from 4 sites to 17 lines in 7 files plus the emitted surface (0.53 backlog assessment)"
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-09-10T04:37:59.249Z"
+      "touchedAt": "2026-10-14T04:57:12.229Z",
+      "release": "0.53.0"
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -6132,6 +6168,11 @@
           "type": "supersedes",
           "epic": "multi-platform-agent-support",
           "reason": "carries forward the uninvestigated remainder — Gemini CLI, Grok Build, generic AGENTS.md — after Codex and Hermes were separately registered with hands-on verification"
+        },
+        {
+          "type": "supersedes",
+          "epic": "rules-block-cli-fallback",
+          "reason": "no triggering platform; it already depended on this epic"
         }
       ],
       "reconcileNeeded": false,
@@ -6143,7 +6184,8 @@
           "text": "lane: claude-code deliberately, against the usual away-from-claude-code tie-break — this is genuinely an investigation with a written finding as its only deliverable, not a port. If the finding says a port is viable, THAT becomes its own epic in a lane chosen then. Also: README.md:205-212 must be corrected in the same change, since it currently attributes all six platform rows to an epic that is being superseded."
         }
       ],
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "touchedAt": "2026-10-14T04:57:35.668Z"
     },
     {
       "id": "record-answers-for-itself",
@@ -10237,7 +10279,8 @@
       "externalUpdatedAt": "2026-09-17T11:31:29Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T11:31:37.673Z",
-      "touchedAt": "2026-09-17T11:31:37.678Z"
+      "touchedAt": "2026-10-14T04:57:04.887Z",
+      "release": "0.53.0"
     },
     {
       "id": "gh-cfdude-pm-208",
@@ -10295,14 +10338,15 @@
       "externalUpdatedAt": "2026-09-16T23:30:21Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T19:47:11.764Z",
-      "touchedAt": "2026-09-17T19:47:12.370Z",
+      "touchedAt": "2026-10-14T04:57:03.210Z",
       "notes": [
         {
           "at": "2026-09-17T19:47:12.367Z",
           "actor": "agent",
           "text": "lane: superpowers not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "gh-cfdude-pm-205",
@@ -11716,7 +11760,8 @@
       "externalUpdatedAt": "2026-09-25T20:22:34Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:02.240Z",
-      "touchedAt": "2026-09-28T17:11:02.244Z"
+      "touchedAt": "2026-10-14T04:57:05.717Z",
+      "release": "0.53.0"
     },
     {
       "id": "gh-cfdude-pm-227",
@@ -12266,14 +12311,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-29T18:26:52.090Z",
-      "touchedAt": "2026-09-29T18:26:52.902Z",
+      "touchedAt": "2026-10-14T04:57:08.172Z",
       "notes": [
         {
           "at": "2026-09-29T18:26:52.900Z",
           "actor": "agent",
           "text": "lane: claude-code not (none routed) — removal of a legacy file and its tolerance path, well under 2h; the design record lives in certification-record-redesign design D5"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "engine-source-extraction-vacuity",
@@ -12292,14 +12338,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-29T20:03:48.175Z",
-      "touchedAt": "2026-09-29T20:03:49.247Z",
+      "touchedAt": "2026-10-14T04:57:11.410Z",
       "notes": [
         {
           "at": "2026-09-29T20:03:49.244Z",
           "actor": "agent",
           "text": "lane: superpowers (routing returned none) — a shared helper plus a migration across ~8 test files"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "execution-profile-layered-settings",
@@ -12606,7 +12653,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:08.495Z",
-      "touchedAt": "2026-10-01T06:08:08.500Z"
+      "touchedAt": "2026-10-14T04:57:08.982Z",
+      "release": "0.53.0"
     },
     {
       "id": "flake-owner-g2-c1-i2-2000ms-bound",
@@ -12625,7 +12673,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:09.640Z",
-      "touchedAt": "2026-10-01T06:08:09.644Z"
+      "touchedAt": "2026-10-14T04:57:09.784Z",
+      "release": "0.53.0"
     },
     {
       "id": "release-in-flight-rule-needs-decision",
@@ -12686,7 +12735,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:12.232Z",
-      "touchedAt": "2026-10-01T06:08:12.237Z"
+      "touchedAt": "2026-10-14T04:57:10.595Z",
+      "release": "0.53.0"
     },
     {
       "id": "token-spend-tracking-per-epic",
@@ -12921,7 +12971,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T23:10:14.992Z",
-      "touchedAt": "2026-10-01T23:10:14.997Z"
+      "touchedAt": "2026-10-14T04:57:07.372Z",
+      "release": "0.53.0"
     },
     {
       "id": "integrity-reports-stale-gate-1",
@@ -13029,7 +13080,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.877Z",
-      "touchedAt": "2026-10-05T01:44:10.882Z"
+      "touchedAt": "2026-10-14T04:57:06.540Z",
+      "release": "0.53.0"
     },
     {
       "id": "planning-completeness-orient-and-autonomy-boundary",
@@ -13431,14 +13483,15 @@
       "externalUpdatedAt": "2026-09-30T07:01:00Z",
       "attributedCommits": [],
       "createdAt": "2026-10-07T07:12:35.191Z",
-      "touchedAt": "2026-10-07T07:12:35.907Z",
+      "touchedAt": "2026-10-14T04:57:04.062Z",
       "notes": [
         {
           "at": "2026-10-07T07:12:35.903Z",
           "actor": "agent",
           "text": "lane: superpowers not unrouted — suggest-lane returned none; a hook/log-detour behavior fix touching retraction semantics, not a sub-2h tweak"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "spend-guard-rules-section-follows-live-limits",
@@ -13458,7 +13511,8 @@
       "description": "Gate 2 minor on spend-budget-and-stuck-loop-guard: the managed rules block's ## Spend guard section is toggled only by set-spend-guard. Archiving or removing the only epic that holds a limit leaves the section stale; un-archiving it (update-epic --status untriaged) leaves the section absent while the limit is live, so the per-dispatch spend-guard instruction disappears (the brief and record-gate-review STOPs still fire). Sweep every writer that can change whether a limit is live and refresh the block at each.",
       "attributedCommits": [],
       "createdAt": "2026-10-14T03:55:59.065Z",
-      "touchedAt": "2026-10-14T03:55:59.072Z"
+      "touchedAt": "2026-10-14T04:57:00.697Z",
+      "release": "0.53.0"
     },
     {
       "id": "release-0-52-0-cut",
@@ -13481,6 +13535,69 @@
       "touchedAt": "2026-10-14T04:29:22.275Z",
       "release": "0.52.0",
       "startedAt": "2026-10-14T04:29:22.271Z"
+    },
+    {
+      "id": "pm-overhead-baseline",
+      "title": "Measure pm's own baseline token overhead per session with all features on, and the downstream efficiency it buys",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "token-spend-analysis-and-recommendations",
+          "reason": "reads the same ledger, reports the overhead baseline"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-13. Understand how tokens are spent across prompt creation, context and responses; measure input vs output and first-read vs cached-read tokens; establish the baseline cost of pm out of the box with every feature enabled (rules block, brief, hook injections, command/skill listings, hierarchy and EDD docs) and compare it with how much cheaper downstream tasks get because of tracking and record-keeping. Includes the overhead of spend tracking itself (if turning it on adds ~5,000 tokens a session Rob must be able to see that and shut it off). Reads the ledger; sibling of token-spend-analysis-and-recommendations. Evidence so far: cache-read is 96.2% of attributed tokens, output 0.34%; one 60.5M-token build agent ran 156 turns at ~379K context; pm's rules block is ~10K tokens and the brief was 78 KB uncapped before 0.52.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T04:57:23.063Z",
+      "touchedAt": "2026-10-14T04:57:25.514Z",
+      "release": "0.53.0"
+    },
+    {
+      "id": "feature-switches-audit",
+      "title": "Cost every pm feature and add an off switch where the measured overhead justifies one",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "pm-overhead-baseline",
+          "reason": "needs its per-feature numbers"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-13. Not every feature needs an on/off switch, but not everyone needs e.g. the EDD harness. Audit each feature's per-session token cost (rules-block text, brief lines, hook injections, skills and commands listed) using pm-overhead-baseline's numbers, add a switch only where cost justifies, register each in the OPT_INS registry so /pm:upgrade lists the unadopted ones, and document the switches in the README (including 'turn spend tracking on here' with the real verb, set-spend-tracking on). Spend tracking stays OFF by default: a developer feature that costs tokens itself.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T04:57:23.886Z",
+      "touchedAt": "2026-10-14T04:57:26.302Z",
+      "release": "0.53.0"
+    },
+    {
+      "id": "developer-session-log",
+      "title": "Developer-only session log: features on, request and context composition, response, token breakdown, context-retention warnings",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "token-spend-analysis-and-recommendations",
+          "reason": "the analysis reads this log"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-13. A dev feature, OFF by default (it costs tokens itself). An append-only JSONL log under .conductor/ (engine law: Node built-ins only, NO new runtime dependency — Rob suggested a dependency; recommendation is a plain file) recording current overhead and which features are on, what went into the request/context, what came back, the full token breakdown, and context-retention warnings such as 'same context window for seven days without a new session'. Data capture; token-spend-analysis-and-recommendations and pm-overhead-baseline read it.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T04:57:24.708Z",
+      "touchedAt": "2026-10-14T04:57:27.094Z",
+      "release": "0.53.0"
     }
   ],
   "detourStack": [],
@@ -13491,7 +13608,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1993,
+  "revision": 2019,
   "reviewMode": "standard",
   "releases": [
     {
@@ -14110,7 +14227,7 @@
     },
     {
       "id": "0.53.0",
-      "intent": "Token spend analysis: where the tokens went and what to change, plus the decision cost log, built on one release of ledger data",
+      "intent": "Know where the tokens went, and keep the record honest: the first analysis over real ledger data, pm's own baseline overhead and feature switches, a developer-only session log, the follow-ups the 0.52 gates logged, the record and refusal bugs users hit, and the known flakes paid down. Nothing platform-shaped. (Rob approved the 16-epic scope and the three overhead epics 2026-10-13.)",
       "deferred": []
     }
   ],
