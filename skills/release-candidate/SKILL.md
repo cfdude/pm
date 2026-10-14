@@ -16,7 +16,10 @@ reviewers or pushes.
    is written once and tested once. Split across agents only where the areas do not overlap.
 2. **One integration branch.** Every worktree branch merges into `rc/<releaseId>`, cut from `dev`
    by default. When the release's target (`release show <releaseId>` prints it) names an existing
-   branch, cut from that branch instead. **The cut point is the review's base.**
+   branch, cut from that branch instead. **The cut point is the review's base.** Commit
+   `.conductor/state.json` and any re-recorded gate verdict BEFORE dispatching a worktree agent: a
+   worktree starts from committed state, so a record only you hold uncommitted can leave its work
+   staged and uncommittable (the live-record tests fail there).
 3. **One converged review** of `<base>..<candidate head>`, at the budget below, capped at ONE round.
 4. **Route failures back.** A finding goes to the sub-agent that owns the code. The fix is made in
    that agent's worktree and re-merged into the candidate.

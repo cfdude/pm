@@ -115,7 +115,8 @@ unitTest("a detour epic does not inherit the profile of the epic it paused, thro
   engine(["push-detour", "parent", "--detour", "fix", "--reason", "blocked", "--reconcile"]);
   const out = engine(["profile", "--epic", "fix"]);
   assert.match(out, /review: standard \(default\)/);
-  assert.doesNotMatch(out, /thorough|haiku/);
+  assert.doesNotMatch(out, /thorough/);
+  assert.match(out, /model test: sonnet \(low\) \(default\)/, "the parent's haiku did not reach the detour; its default did");
 });
 
 // ── 3.4: the activity log ──

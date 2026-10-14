@@ -54,6 +54,13 @@ const ALLOWED = {
     "`.conductor/commit-observe.json` and its `.lock`: the lock's identity is an inode and a nonce " +
     "and it is broken by a stale-age rule reading the file's mtime — a filesystem primitive with no " +
     "in-memory meaning, and the record is useless without it (design D1)",
+  "scripts/lib/spend-ledger.mjs":
+    "the spend ledger's rows, cursor, markers and ingest lock under the MAIN working tree's " +
+    ".conductor/spend/: the store resolves artifacts under the INVOCATION's root, which a linked " +
+    "worktree is not, and the ingest takes an O_EXCL lock (broken by its mtime) and reads byte offsets " +
+    "into transcripts the engine does not own — filesystem primitives with no in-memory meaning, the " +
+    "same reason commit-watch.mjs is here. The timeline, written only from the main tree, DOES go " +
+    "through the store (ARTIFACT.SPEND_PREFIX).",
   "scripts/lib/activity-log.mjs":
     "activity retention's REMOVAL (`pruneToCap`), which takes a CALLER-SUPPLIED DIRECTORY — the suite " +
     "exercises exactly that against a scratch dir, and an artifact-keyed interface cannot name a file " +

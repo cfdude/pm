@@ -22,13 +22,16 @@ function rethrowUnreadable(e) {
 import fs from "node:fs";
 import path from "node:path";
 import {
+  DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
   KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
-import { profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
+import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
+import { spendEnabled } from "./spend-switch.mjs";
+import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -99,6 +102,20 @@ export function currentReviewMode(epicId) {
  *  effective values. Falls back to defaults like the other readers when state cannot be consulted. */
 export function currentProfileContext(epicId) {
   try { return profileContext(loadState(), epicId); } catch (e) { rethrowUnreadable(e); return null; }
+}
+
+/** Is spend tracking on in this repo? The rules block emits its `## Spend tracking` section only
+ *  while it is. Falls back to OFF like the other readers when state cannot be consulted, and rethrows
+ *  an unreadable file for the same reason they do. */
+export function currentSpendTracking() {
+  try { return spendEnabled(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
+}
+
+/** Is a spend-guard LIMIT configured in this repo? The rules block emits its `## Spend guard` section only
+ *  while one is (spend-budget-and-stuck-loop-guard). Falls back to NO like the other readers, rethrowing an
+ *  unreadable file for the same reason they do. */
+export function currentSpendGuard() {
+  try { return guardConfigured(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -647,7 +664,35 @@ function profileScopeLines(profile, mode) {
   return lines;
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null) {
+/** The `## Spend tracking` section (token-spend-tracking-per-epic D10), emitted ONLY while tracking is
+ *  on. It is the whole reason attribution costs an agent one line per dispatch and no tool call: the
+ *  marker is what lets a sub-agent's tokens be credited to an epic. The role and phase lists are
+ *  rendered from the constants, never typed here, so a role added to KNOWN_JOB_ROLES appears at once.
+ *  The marker line sits in a code span so the instruction checker treats it like every other shipped
+ *  invocation. Off, this returns nothing: a user who never opts in pays zero rules-block bytes. */
+function spendTrackingLines() {
+  return [
+    "## Spend tracking",
+    "",
+    "Spend tracking is on. `spend` builds a per-epic token ledger from Claude Code's own transcripts; a",
+    "sub-agent's tokens are credited to an epic ONLY if you say which one. Begin EVERY sub-agent",
+    "dispatch prompt with one line, on a line of its own and in exactly this form (the text between the",
+    "backticks, written without them, since the line must start with `pm-spend:`):",
+    "",
+    "`pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]`",
+    "",
+    `- \`epic\` — the id of the epic the work serves.`,
+    `- \`role\` — one of ${KNOWN_JOB_ROLES.map((r) => `\`${r}\``).join(", ")} (the job roles the execution profile uses).`,
+    `- \`phase\` — one of ${KNOWN_SPEND_PHASES.map((p) => `\`${p}\``).join(", ")}.`,
+    "- `round` — optional, a positive integer, 1 when omitted. A review gate's retry is `phase=review`",
+    "  with `round` above 1.",
+    "",
+    "A dispatch without the marker is counted as unattributed.",
+    "",
+  ];
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -663,6 +708,10 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   // /pm:upgrade running here — which is exactly the skew case the sentence existed to warn about.
   // `/pm:changelog` COMPUTES the answer instead of snapshotting it, so the warning points there
   // and asserts no number of its own.
+  // The built-in default pair of EVERY role, rendered from the one table (execution-profile-planning-and-
+  // light-roles D5): the value lines below show RESOLVED pairs, which hide the default of any role a layer
+  // overrides, so this sentence is the one place the floor is always visible.
+  const roleDefaults = KNOWN_JOB_ROLES.map((r) => `${r} ${modelText(DEFAULT_ROLE_MODELS[r])}`).join(", ");
   const lines = [
     RULES_BEGIN,
     "## PM Conductor — operating rules",
@@ -808,7 +857,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     "How intensely to review, which model and effort each job role runs on, and how often you report.",
     "Each field resolves independently, most specific first: the epic's own value, else its lane's,",
-    "else the project's, else the default (review `standard`, verbosity `quiet`, no model directive).",
+    `else the project's, else the built-in default (review \`standard\`, verbosity \`quiet\`, and per model role: ${roleDefaults}).`,
     "Set the project or a lane with `set-profile` (every set has an `--unset`); an epic sets its own",
     "through `add-epic`, `add-many` or `update-epic`; `profile` prints the effective values with the layer each came from",
     "(pass its `--epic` flag for one epic). The engine records and emits the profile — it never",
@@ -816,9 +865,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...profileScopeLines(profile, mode),
     "",
-    "**Before dispatching a job** (implementing, testing, reviewing), resolve the active epic's",
+    `**Before dispatching a job** (${KNOWN_JOB_ROLES.join(", ")}), resolve the active epic's`,
     "profile and run that job's role on its `{model, effort}` where your platform lets you set them",
     "per dispatch. Where it does not, say so rather than implying it was applied.",
+    "",
+    "**One-shot build.** To have a top-tier model build an epic straight off its finished plan, set",
+    "`--model implement=fable:<effort>` on that epic: an override of `implement`, not a separate role.",
     "",
     "**Verbosity:** `quiet` — one completion message per epic; `verbose` — a message at each phase",
     "transition and gate.",
@@ -834,6 +886,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     `Current mode: **${mode}**.`,
     "",
+    ...(spend ? spendTrackingLines() : []),
+    ...(guard ? spendGuardLines() : []),
     "## Release candidate",
     "",
     "Building a release from several changes? Do not run a Gate 2 round per change: batch the work by",
@@ -1154,7 +1208,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard());
   let next;
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and

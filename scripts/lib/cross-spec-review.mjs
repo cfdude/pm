@@ -170,7 +170,7 @@ export function crossSpecMarking(release, specs) {
  * apply and nothing is recorded, so a repo that does not plan in multi-spec releases sees
  * nothing at all.
  */
-export function crossSpecLine(state, epics, releaseId, root = engineRoot()) {
+export function crossSpecLine(state, epics, releaseId, root = engineRoot(), { compact = false } = {}) {
   const release = findRelease(state, releaseId);
   if (!release) return "";
   const specs = releaseSpecFiles(state, epics, releaseId, root);
@@ -183,7 +183,9 @@ export function crossSpecLine(state, epics, releaseId, root = engineRoot()) {
       : "";
   }
   const n = Array.isArray(entry.specs) ? entry.specs.length : 0;
-  const who = entry.reviewer ? ` · ${entry.reviewer}` : "";
+  // `compact` (the bounded SessionStart brief) drops the reviewer's free text, which runs to several KB
+  // on a hand-recorded retroactive review; the verdict, the spec count and the staleness mark stay.
+  const who = entry.reviewer && !compact ? ` · ${entry.reviewer}` : "";
   return ` · cross-spec ${entry.verdict} (${n} spec${n === 1 ? "" : "s"})${who}` +
     crossSpecMarking(release, specs);
 }

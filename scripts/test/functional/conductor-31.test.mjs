@@ -86,6 +86,12 @@ const VERB_BASELINE = {
   // until the branches met; `purge-logs` needs a selector to get past its own refusal, and
   // `--keep 5` matches nothing on a repo with no logs, so the baseline removes nothing.
   activity: () => ["activity"],
+  spend: () => ["spend"],
+  // spend-budget-and-stuck-loop-guard. `override-spend-guard` succeeds only against a tripped signal, so
+  // BASELINE_PRE below seeds one.
+  "set-spend-guard": () => ["set-spend-guard", "--max-failed-rounds", "2"],
+  "spend-guard": () => ["spend-guard", "e1"],
+  "override-spend-guard": () => ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
   owners: () => ["owners"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
@@ -257,6 +263,7 @@ test("gh-152: every command VERB_FLAGS names has a baseline invocation here", as
 const BASELINE_PRE = {
   "record-reconcile": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"], ["pop-detour", "e1"]],
   "drop-detour": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"]],
+  "override-spend-guard": [["set-spend-guard", "--max-failed-rounds", "1"], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"]],
 };
 
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {
@@ -332,15 +339,23 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // confirmation — so exempting them states a truth rather than buying a green suite. The
     // word in this assertion's message is SILENTLY: the list is closed, not frozen, and
     // widening it is a line in a diff somebody has to justify.
-    "owners/activity --json",
+    // token-spend-tracking-per-epic: `spend` shares --json/--yes and adds four booleans — `--clear` and
+    // `--rebuild` (the ledger's two inverses), `--timeline` (qualifies --clear) and `--no-ingest`.
+    "override-spend-guard --revoke",
+    "owners/activity/spend/spend-guard --json",
     "purge-logs --dry-run",
-    "purge-logs --yes",
+    "purge-logs/spend --yes",
     "push-detour --no-reconcile",
     "push-detour --reconcile",
     "remove-epic --cascade",
     "render --diff-summary",
+    "rules --sections",
     "set-lane-routing --clear",
     "set-tracker --remove",
+    "spend --clear",
+    "spend --rebuild",
+    "spend --timeline",
+    "spend/spend-guard --no-ingest",
     "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");

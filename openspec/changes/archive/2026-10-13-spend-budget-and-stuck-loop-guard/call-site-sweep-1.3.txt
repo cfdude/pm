@@ -1,0 +1,109 @@
+CALL-SITE SWEEP 1.3 (required task item 1) — spend-budget-and-stuck-loop-guard
+Derived mechanically on the build branch, not typed from memory.
+
+== 1. Every writer of a gate entry
+   command: rg -n "gateReview(\.|\[)gate|gateReview\s*=" scripts/ --glob '!test'
+
+   WRITERS (a line that assigns or deletes a gate entry):
+   scripts/lib/gate-review-writeback.mjs   `epic.gateReview = {...}` and `epic.gateReview[`gate${gate}`] = entry`
+       THE ONE THAT COUNTS. An accepted record-gate-review is a review round, so it calls tallyVerdict()
+       in the same saveState. Nothing else may.
+   scripts/lib/epic-progress.mjs:235-236   the archive-drift heal writes `gateReview.gate2 = {verdict: "ungated", ...}`
+       DOES NOT COUNT: "ungated" records that NO review took place. Counting it would invent a round.
+       Asserted: scripts/test/assert/archive-heal-claim.test.mjs is untouched and still green, and
+       unit/spend-guard-tally.test.mjs "1.2" pins that a record carrying an ungated/old entry reads zero.
+   scripts/lib/update-epic.mjs:885-895     `--withdraw-gate-review` DELETES the gate entry and moves it to
+       withdrawnGateReviews[].
+       DOES NOT COUNT, and does not un-count: the round happened and its tokens were spent (design D1).
+       Asserted: unit/spend-guard-tally.test.mjs "1.2 withdrawing a verdict leaves the tally unchanged"
+       and "1.2 a withdrawn pass is not undone".
+
+   NOT WRITERS (matched by the pattern, reviewed and excluded):
+   scripts/lib/migrations.mjs:165, archive-gate.mjs:190/383/395, epic-progress.mjs:234, integrity.mjs (many),
+   releases.mjs:394, gate1-guard.mjs:33, activity-log.mjs:309-310, update-epic.mjs:966 — all READ a gate entry.
+   scripts/lib/subcommands.mjs:974 and add-epic.mjs:470 — comments recording that no `gateReview.gate2` is written.
+
+== 2. Every reader and writer of gateRounds
+   command: rg -n "gateRounds" scripts/ --glob '!test'
+
+   WRITER: scripts/lib/spend-guard.mjs tallyVerdict(), called from exactly one place:
+           scripts/lib/gate-review-writeback.mjs (recordGateReview).
+   READERS: scripts/lib/spend-guard.mjs gateTallies() -> recordedStreak(), passAnchor(). Every consumer
+           (the rounds signal, override liveness, the ledger side's anchor, the brief line, the STOP check on
+           record-gate-review, the spend-guard verb) goes through those two functions; none reads gateReview.
+
+== 3. REMOVE paths for this data (the data-reference sweep)
+   `gateRounds` holds no other record's id, so no dangling pointer is possible.
+   remove-epic deletes the epic object, and the tally goes with it (it lives ON the epic).
+   The archive keeps the epic, and the tally stays as a harmless record. Neither needs to clear it (design D1:
+   "a record of events"). `--withdraw-gate-review` is covered above.
+
+== 4. Inverse of the operation (record-gate-review's tally)
+   None shipped, justified in design D8: it is a record of events. A pass ends the streak; the operational
+   "continue" is override-spend-guard. A reset verb would erase the evidence the guard reads.
+
+== 5. INVERSE SWEEP (task 3.6, required item 1) — every write in design D8
+   Derived from the verbs this change registers (rg -n "spendGuard|laneSpendGuards|spendGuardOverrides|gateRounds" scripts/lib).
+
+   write                                               inverse shipped                         test reference
+   --------------------------------------------------  --------------------------------------  ------------------------------------------------
+   epic.gateRounds update on a verdict (lastPassAt too) NONE, justified (D8): it is a record of    unit/spend-guard-tally.test.mjs "1.2 withdrawing a
+                                                       events. A pass ends the streak and an    verdict leaves the tally unchanged" and "1.2 a
+                                                       override is the operational "continue".  withdrawn pass is not undone". A reset verb would
+                                                       A reset verb would erase the evidence    erase the evidence the guard reads, and the
+                                                       the guard reads.                         heal/withdraw paths would then disagree with it.
+   set-spend-guard at the project layer                 --unset <field> | all (no flags)         unit/spend-guard-verbs.test.mjs "2.2 an unset
+                                                                                                removes that field from that layer only..."
+   set-spend-guard --lane <lane>                        --lane <lane> --unset <field> | all      same file, "2.2 a lane value applies..." and
+                                                                                                "2.2 an unset of an absent field changes nothing"
+   set-spend-guard --epic <id>                          --epic <id> --unset <field> | all        "2.2 an epic value overrides the project value,
+                                                                                                and unsetting it falls through"
+     (an emptied layer is REMOVED from the record, so a full unset is indistinguishable from never configured)
+   override-spend-guard (append to                      override-spend-guard --revoke --reason   unit/spend-guard-verbs.test.mjs "3.5 revoking marks
+   epic.spendGuardOverrides)                            (marks revokedAt/revokeReason, KEEPS     the latest live override and keeps it..." and
+                                                       the entry; baseline falls back to the    "3.5 a revoke falls back to the previous live
+                                                       previous live override or 0)             override's baseline"
+   OPT_INS row / the rules-block `## Spend guard`       unsetting the LAST limit removes the     assert/spend-guard.test.mjs "5.3 CLAUDE.md gains
+   section (a consequence of the limits above)          section (rewrites CLAUDE.md on the        the Spend guard section on the first limit and
+                                                       transition only); warnAt alone is not    loses it with the last"
+                                                       a limit
+   spend-guard's ingest (tracking on)                   the ledger's own spend --clear/--rebuild unchanged (spend-ledger); spend-guard writes no
+                                                       state.json and adds no new ledger file.
+
+   NOT shipped and justified: a "reset the tally" verb (above); a "delete override" verb (the revoke keeps the
+   record by design, following set-autonomy --revoke); un-recording a STOP (a STOP is output, not state).
+
+== 6. CALL-SITE SWEEP FOR THE NEW GUARDS (the rule "a limit configured => section/brief/STOP/opt-in")
+   command: rg -n "guardConfigured|briefGuardLines|recordedStopLines|spendGuardLines" scripts/lib
+   - guardConfigured:  rules.mjs currentSpendGuard (the rules block), opt-ins.mjs (the NOT SET row),
+                       spend-guard.mjs briefGuardLines + recordedStopLines (the early return that makes a
+                       repo with no limit pay nothing), spend-guard-verbs.mjs setSpendGuard (the rules
+                       rewrite on transition). Every site that asks "is a limit configured" uses this one
+                       predicate; none re-derives it.
+   - briefGuardLines:  briefing.mjs only (the SessionStart/PreCompact brief and, through buildBrief(), the
+                       PROJECT.md "Briefing" section — both render the same line). snapshot/brief/render all
+                       go through buildBriefParts, so there is no second brief composer to miss.
+   - recordedStopLines: gate-review-writeback.mjs only. record-gate-review is the ONLY verb that writes a gate
+                       verdict (section 1), so it is the only verb after which the recorded streak can have
+                       moved; update-epic --withdraw-gate-review and the archive heal do not move it and so
+                       print nothing.
+   - The ledger is read in exactly one place: spend-guard-verbs.mjs evaluate(), reached only by spend-guard
+                       and override-spend-guard (both of which are agent-run verbs, never hooks).
+
+== 7. OMISSIONS: paths where "a limit is configured" can FLIP without set-spend-guard (justified, not shipped)
+   The rules block's `## Spend guard` section follows guardConfigured(state). set-spend-guard rewrites CLAUDE.md
+   on the transition. Two other writes can also flip it:
+   - `update-epic <id> --status archived` on the ONLY epic carrying an epic-layer limit (an archived epic's layer
+     does not count);
+   - `remove-epic <id>` on the same epic.
+   Neither refreshes CLAUDE.md, so the section can outlive the last limit until the next writeRules
+   (`write-rules`, `upgrade`, `set-spend-tracking`, `set-profile`, `set-review-mode`, or the next set/unset here).
+   JUSTIFICATION: (1) the stale section is instruction text only — spend-guard, the brief and record-gate-review read
+   STATE, and with no limit they report no limit and never trip, so nothing misbehaves; (2) adding a rules rewrite to
+   archive and remove-epic would put a CLAUDE.md write (a repository file) on two of the engine's most-called write
+   paths for a cosmetic benefit, and the unit rung forbids filesystem writes there; (3) it is the same staleness
+   `set-spend-tracking`'s section has when state is edited by hand. Asserted: assert/spend-guard.test.mjs "5.3 With
+   tracking on the section follows ## Spend tracking, and an archived epic's layer does not count" runs `write-rules`
+   after the archive to prove the REFRESHED block drops the section.
+   FLAGGED for the orchestrator as a possible follow-up (not a defect against the spec's scenarios, which name only
+   set/unset).

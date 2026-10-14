@@ -4,7 +4,7 @@
 // Every accepted value is read from the one declaration in constants.mjs.
 
 import {
-  KNOWN_EFFORTS, KNOWN_JOB_ROLES, KNOWN_LANES, KNOWN_MODELS, KNOWN_REVIEW_MODES, KNOWN_VERBOSITY_LEVELS,
+  DEFAULT_ROLE_MODELS, KNOWN_EFFORTS, KNOWN_JOB_ROLES, KNOWN_LANES, KNOWN_MODELS, KNOWN_REVIEW_MODES, KNOWN_VERBOSITY_LEVELS,
   MODELS_WITHOUT_EFFORT, escapeControls,
 } from "./constants.mjs";
 
@@ -100,7 +100,7 @@ function layersFor(state, epic, lane) {
  *  else the raw stored value; `check(raw)` returns `{ok, value}`. A stored value that fails its check
  *  is treated as unset at that layer, resolution falls through, and it is reported in `ignored`. When
  *  the winning layer is not the bottom one, `overrides` names the value it lowered or raised. */
-function resolveField(layers, read, check, dflt) {
+export function resolveField(layers, read, check, dflt) {
   const ignored = [];
   const valid = [];
   for (const layer of layers) {
@@ -134,7 +134,7 @@ export function resolveProfile(state, { epicId, lane } = {}) {
   const layers = layersFor(s, epic, useLane);
   const model = {};
   for (const role of KNOWN_JOB_ROLES) {
-    model[role] = resolveField(layers, (l) => (isObj(l.model) ? l.model[role] : undefined), checkModelEntry, null);
+    model[role] = resolveField(layers, (l) => (isObj(l.model) ? l.model[role] : undefined), checkModelEntry, { ...DEFAULT_ROLE_MODELS[role] });
   }
   return {
     review: resolveField(layers, (l) => l.review, checkReview, DEFAULT_REVIEW),

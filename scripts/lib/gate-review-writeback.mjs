@@ -11,6 +11,7 @@ import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream } from "./invocation.mjs";
 import { recordArtifactDigests } from "./gate-artifact-evidence.mjs";
+import { recordedStopLines, tallyVerdict } from "./spend-guard.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
  *  than transcribing it, and deliberately NOT the same list as constants.mjs's
@@ -184,6 +185,10 @@ export function recordGateReview() {
     entry.superseded = kept;
   }
   epic.gateReview[`gate${gate}`] = entry;
+  // spend-budget-and-stuck-loop-guard D1: the round tally, in the SAME saveState as the verdict and
+  // whether or not any limit is configured. This is `epic.gateRounds`' ONLY writer (call-site sweep
+  // 1.3): the withdrawal and the archive-drift heal write `gateReview` and leave the tally alone.
+  tallyVerdict(epic, gate, verdict, entry.reviewedAt);
 
   const saved = saveState(state);
   render();
@@ -191,4 +196,9 @@ export function recordGateReview() {
     changed: `conductor: recorded gate ${gate} review '${escapeControls(verdict)}' for '${escapeControls(id)}'`,
     unchanged: `conductor: '${escapeControls(id)}' already carried this exact gate ${gate} verdict — ${STATE_UNCHANGED}`,
   });
+  // The verdict is evidence and is NEVER refused because a guard is tripped. When the accepted verdict leaves
+  // the epic's recorded rounds signal tripped, say STOP on stderr, AFTER the success line. Exit stays 0: the
+  // write succeeded. State only — this path reads no ledger file (spec: "The verdict path reads no ledger").
+  const stop = recordedStopLines(state, id);
+  if (stop.length) errStream().write(stop.map(escapeControls).join("\n") + "\n");
 }

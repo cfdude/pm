@@ -1,0 +1,115 @@
+✔ 1.2 `set-spend-tracking maybe` leaves state.json byte-identical (108.477875ms)
+✖ 1.2 a repeated `on` writes nothing: state.json is byte-identical (98.225125ms)
+✖ 1.2 init does not turn tracking on, and upgrade lists the unadopted switch (56.284084ms)
+✖ 1.3 upgrade backfills the .conductor/spend/ ignore line (145.740292ms)
+✖ 1.3 init writes the .conductor/spend/ ignore line (140.277042ms)
+file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a26bdaa4b237eeaf8/scripts/test/unit/spend-tracking.test.mjs:8
+import { KNOWN_SPEND_PHASES } from "../../lib/constants.mjs";
+         ^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '../../lib/constants.mjs' does not provide an export named 'KNOWN_SPEND_PHASES'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:105:5)
+
+Node.js v26.10.0
+✖ scripts/test/unit/spend-tracking.test.mjs (624.915041ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1143.6595
+
+✖ failing tests:
+
+test at scripts/test/assert/spend-tracking.test.mjs:21:1
+✖ 1.2 a repeated `on` writes nothing: state.json is byte-identical (98.225125ms)
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a26bdaa4b237eeaf8/scripts/test/fixtures/harness.mjs:116:17)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a26bdaa4b237eeaf8/scripts/test/assert/spend-tracking.test.mjs:24:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/assert/spend-tracking.test.mjs:30:1
+✖ 1.2 init does not turn tracking on, and upgrade lists the unadopted switch (56.284084ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /NOT SET: spendTracking — no record of which epic, phase, role or model spent tokens → set-spend-tracking on/. Input:
+  
+  'conductor: opt-ins — none adopted\n' +
+    "conductor:   NOT SET: reviewMode — every gate reviews at the default (standard), never tuned to this repo's risk → set-review-mode off|standard|thorough\n" +
+    'conductor:   NOT SET: laneRouting (0 overrides) — suggest-lane and triage return null for every ask → set-lane-routing --add "<match>:<lane>"  e.g. --add "migration:openspec"\n' +
+    'conductor:   NOT SET: activityLog — nothing records how the project got to its present state → set-activity-log on\n' +
+    'conductor:   NOT SET: tracker — no external issue tracker is mirrored (only worth it if work is managed in one) → set-tracker <system> (see /pm:tracker)\n' +
+    'conductor:   NOT SET: advisory claim — no session owns any epic → claim <epic-id>\n'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a26bdaa4b237eeaf8/scripts/test/assert/spend-tracking.test.mjs:35:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: `conductor: opt-ins — none adopted\nconductor:   NOT SET: reviewMode — every gate reviews at the default (standard), never tuned to this repo's risk → set-review-mode off|standard|thorough\nconductor:   NOT SET: laneRouting (0 overrides) — suggest-lane and triage return null for every ask → set-lane-routing --add "<match>:<lane>"  e.g. --add "migration:openspec"\nconductor:   NOT SET: activityLog — nothing records how the project got to its present state → set-activity-log on\nconductor:   NOT SET: tracker — no external issue tracker is mirrored (only worth it if work is managed in one) → set-tracker <system> (see /pm:tracker)\nconductor:   NOT SET: advisory claim — no session owns any epic → claim <epic-id>\n`,
+    expected: /NOT SET: spendTracking — no record of which epic, phase, role or model spent tokens → set-spend-tracking on/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spend-tracking.test.mjs:39:1
+✖ 1.3 upgrade backfills the .conductor/spend/ ignore line (145.740292ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(fs.readFileSync(gi, "utf8").split("\n").map((l) => l.trim()).includes(".conductor/spend/"))
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a26bdaa4b237eeaf8/scripts/test/assert/spend-tracking.test.mjs:46:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spend-tracking.test.mjs:49:1
+✖ 1.3 init writes the .conductor/spend/ ignore line (140.277042ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(fs.readFileSync(path.join(cwd, ".gitignore"), "utf8").split("\n").map((l) => l.trim()).includes(".conductor/spend/"))
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a26bdaa4b237eeaf8/scripts/test/assert/spend-tracking.test.mjs:52:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/unit/spend-tracking.test.mjs:1:1
+✖ scripts/test/unit/spend-tracking.test.mjs (624.915041ms)
+  'test failed'

@@ -24,7 +24,7 @@ const x = (f, fn, exprs, cls, why) => {
 
 // ── line-sink flow, and the first judgments of each sink's neighbours
 j("briefing.mjs", "specSyncBlock", ALL, "sink-flow", "the spec-sync block's lines (handoff-demand-blind-spots D6): its only consumers are buildBrief's L (joined through L.map(escapeControls)) and renderVerb(), which joins them through lines.map(escapeControls); header names are JSON-quoted");
-j("briefing.mjs", "buildBrief", ALL, "sink-flow", "every line is pushed onto L, joined through L.map(escapeControls) at buildBrief's return");
+j("briefing.mjs", "buildBriefParts", ALL, "sink-flow", "every line is pushed onto L and escaped by escapeControls where `plain` and `parts` are assembled at buildBriefParts return");
 j("briefing.mjs", "BRIEF_REMEDIES", ALL, "sink-flow", "each render() result is pushed onto buildBrief's L (briefRemedy) or its trackerLines, which join L's sink; ids in commands go through printedId/asCode");
 j("render.mjs", "render", ALL, "sink-flow", "every PROJECT.md line is pushed onto md, joined through md.map(escapeControls); cells additionally through tableRow's escapeTableCell");
 x("render.mjs", "tableRow", {
@@ -158,6 +158,51 @@ x("conductor.mjs", "runInvocation", {
 x("activity-log.mjs", "setActivityLog", {
   "arg": 2,
 }, "engine", "arg is validated on|off before this line (activityDir() is escaped: it sits under CLAUDE_PROJECT_DIR, a governed value, Gate 2 W-I1)");
+// ── token-spend-tracking-per-epic ─────────────────────────────────────────────────────────────────
+// [group 3] the switch and the timeline
+x("spend-tracking.mjs", "setSpendTracking", {
+  "arg": 4,
+}, "engine", "arg is validated on|off before these lines (token-spend-tracking-per-epic; the same shape as setActivityLog above); the main tree's path in the refusals is escaped");
+x("spend-tracking.mjs", "TIMELINE", {
+  "ARTIFACT.SPEND_PREFIX": 1,
+}, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");
+x("spend-tracking.mjs", "appendTimeline", {
+  "JSON.stringify(entry)": 1,
+}, "not-output", "the timeline's file BODY — one JSON object per line, handed to the store");
+// [group 2] the ledger's files and the transcript reader
+x("spend-ledger.mjs", "writeAtomic", {
+  "file": 1,
+  "process.pid": 1,
+  "Date.now()": 1,
+}, "not-output", "a temp file NAME handed to fs, renamed over the ledger file");
+x("spend-ledger.mjs", "ingestLocked", {
+  "JSON.stringify(markers)": 2,
+  "JSON.stringify(cursor)": 2,
+}, "not-output", "the ledger files' BODIES (rows.jsonl, markers.json, cursor.json), written with fs and never printed");
+x("spend-reader.mjs", "transcriptDirs", {
+  "encoded": 1,
+}, "not-output", "a directory-name PREFIX matched against a listing, never printed");
+// [group 4] the report and the verb
+j("spend-report.mjs", "parts", ALL, "sink-flow", "called only inside renderReport's lines.push(...), which returns lines.map(escapeControls)");
+j("spend-report.mjs", "dim", ALL, "sink-flow", "called only inside renderReport's lines.push(...), which returns lines.map(escapeControls)");
+x("spend-command.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any stored or typed value where it is built");
+x("spend-command.mjs", "iso", {
+  "flag": 1,
+}, "engine", "the registry's flag name (since / until); the typed value is escaped");
+x("spend-command.mjs", "bytes", {
+  "n.toLocaleString(\"en-US\")": 1,
+}, "engine", "a byte count");
+x("spend-command.mjs", "spend", {
+  "reportFlags.join(\", --\")": 1,
+}, "engine", "registry flag names");
+x("spend-command.mjs", "spend", {
+  "renderReport(report, { ingestLines: ingestLines(ingestInfo, ledger, tree, enabled) }).join(\"\\n\")": 1,
+}, "escaped", "renderReport() returns its lines through lines.map(escapeControls)");
+x("spend-command.mjs", "spend", {
+  "jsonText(report, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
 x("activity-log.mjs", "segmentName", {
   "at.toISOString().replace(/[:.]/g, \"-\")": 1,
 }, "not-output", "a segment file name");
@@ -569,8 +614,11 @@ x("subcommands.mjs", "ownArtifacts", {
 }, "not-output", "an artifact path compared against changed files");
 x("subcommands.mjs", "retractDetour", {
   "commits.join(\", \")": 1,
-  "label": 2,
+  "label": 3,
 }, "engine", "detours.log row shas, filtered to hexadecimal by rowShasOverlap(), or git's short sha");
+x("subcommands.mjs", "runNudge", {
+  "more": 1,
+}, "engine", "an integer: the count of unreported commits past the walk cap, from commit-watch.mjs's counter");
 x("subcommands.mjs", "retractDetour", {
   "msg": 1,
 }, "passthrough", "refuse(): every caller escapes the values it quotes");
@@ -598,8 +646,13 @@ x("migrations.mjs", "upgrade", {
   "delta.map(s => s.body).join(\"\\n\\n\")": 1,
 }, "engine", "sections of the shipped CHANGELOG.md");
 x("migrations.mjs", "upgrade", {
-  "l": 1,
-}, "escaped", "openspecCurrencyLines() returns its lines escaped (Gate 2 T-S2)");
+  "l": 2,
+}, "escaped", "openspecCurrencyLines() returns its lines escaped (Gate 2 T-S2); optInLines() (gh#210) builds its lines from OPT_INS registry literals and state values it passes through escapeControls");
+x("opt-ins.mjs", "optInLines", {
+  "summary": 1,
+  "o.missing": 1,
+  "o.command": 1,
+}, "engine", "OPT_INS registry literals, and describe() output whose every state-derived value (reviewMode, tracker.system) goes through escapeControls inside the registry row; the override count is a number");
 x("migrations.mjs", "upgrade", {
   "u": 1,
 }, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
@@ -676,10 +729,13 @@ x("subcommands.mjs", "attributionNudge", {
   "id": 4,
 }, "escaped", "the single candidate's id after escapeControls(epic.id) (hook-friction-0-51): bound once as `const id`, so the sweep cannot see the escape at each use");
 x("subcommands.mjs", "attributionNudge", {
-  "shortSha(c.sha)": 1,
+  "shortSha(c.sha)": 2,
   "shown(bookkeeping)": 2,
-  "bookkeepingNote": 4,
-}, "engine", "git short shas of reflog-observed commits, joined by shown(), and the note composed from them and fixed prose (hook-friction-0-51)");
+  "trailer": 4,
+  "heldNote": 2,
+  "attributionHolders(state, c.sha).map(i => `\\`${escapeControls(i)}\\``).join(\", \")": 1,
+  "held.map(c => `\\`${shortSha(c.sha)}\\` is already attributed to ${attributionHolders(state, c.sha).map(i => `\\`${escapeControls(i)}\\``).join(\", \")}`).join(\"; \")": 1,
+}, "engine", "git short shas of reflog-observed commits, joined by shown(), and the notes composed from them and fixed prose (hook-friction-0-51); the holder ids of an already-attributed commit pass through escapeControls (gh#213)");
 x("subcommands.mjs", "isAttributionBookkeeping", {
   "a[1]": 1,
   "a[2]": 1,
@@ -712,6 +768,9 @@ x("subcommands.mjs", "sync", {
 x("update-epic.mjs", "updateEpic", {
   "undoneNote": 2,
 }, "passthrough", "the \"--status was NOT kept\" clause, composed just above from escapeControls(status) and literal text");
+x("update-epic.mjs", "updateEpic", {
+  "storyNote": 1,
+}, "passthrough", "the \"story n (1-indexed): title\" echo (gh#176), composed where the story is resolved from the integer-validated index and escapeControls(title)");
 x("subcommands.mjs", "sync", {
   "skipNote": 2,
 }, "passthrough", "the skip-count clause, composed two lines above from a count and literal text");
@@ -761,7 +820,7 @@ x("update-epic.mjs", "updateEpic", {
   "r.key": 1,
   "contradictory.join(\", --clear \")": 1,
   "contradictory.join(\", --\")": 1,
-  "n": 2,
+  "n": 5,
   "colons": 1,
   "k": 1,
   "gate": 1,
@@ -872,3 +931,150 @@ x("execution-profile.mjs", "briefProfileLines", {
 x("rules.mjs", "profileScopeLines", {
   "l": 2,
 }, "engine", "lines from profileBlockLines()/laneOverrideLines(): resolved closed-list values and layer labels only, the `ignored:` notes (the one place a raw stored value appears) filtered out");
+x("gate1-guard.mjs", "gate1ActivationRefusal", {
+  "gap": 1,
+  "head": 2,
+}, "passthrough", "gate1ActivationGap()'s reason: a closed set of literal sentences, the one stored value in it (a verdict name) escapeControls()d where the reason is built; `head` is that reason inside one literal sentence");
+x("gate1-guard.mjs", "gate1ActivationNotice", {
+  "gap": 1,
+}, "passthrough", "gate1ActivationGap()'s reason, as for gate1ActivationRefusal: literal sentences with the one stored value escaped where it is built");
+x("update-epic.mjs", "updateEpic", {
+  "refusal": 1,
+}, "passthrough", "gate1ActivationRefusal()'s text: every id in it goes through escapeControls/printedId/asCode where it is built");
+x("active-pointer.mjs", "setActive", {
+  "refusal": 1,
+}, "passthrough", "gate1ActivationRefusal()'s text: every id in it goes through escapeControls/printedId/asCode where it is built");
+x("add-epic.mjs", "addEpic", {
+  "gate1Refusal": 1,
+}, "passthrough", "gate1ActivationRefusal()'s text: every id in it goes through escapeControls/printedId/asCode where it is built");
+
+
+// ── rules-block-session-cost: session-cost.mjs (pure) and its two printing call sites
+x("session-cost.mjs", "fitBrief", {
+  "originalBytes": 2,
+  "originalBytes - cap": 1,
+  "cap": 2,
+  "where": 2,
+}, "engine", "byte counts (the brief's measured size, the BRIEF_BYTE_CAP constant or the caller's integer cap) and a module literal naming the PROJECT.md section that holds the full text");
+x("session-cost.mjs", "fitBrief", {
+  "prefix": 1,
+}, "passthrough", "the runtime-support floor line, composed and escaped by supportFloorLine() where it is built");
+x("session-cost.mjs", "trimLine", {
+  "chars.slice(0, max - 1).join(\"\")": 1,
+}, "passthrough", "a slice of a line that was escaped at buildBriefParts's return; trimming on code points cannot introduce a control character");
+x("session-cost.mjs", "sessionCostLines", {
+  "file": 2,
+}, "engine", "the basename of the rules file the platform's own precedence chain resolves (CLAUDE.md, AGENTS.md, HERMES.md) — engine vocabulary; both call sites also join the lines through escapeControls");
+x("session-cost.mjs", "sessionCostLines", {
+  "block.bytes": 1,
+  "block.tokens": 1,
+  "brief.bytes": 3,
+  "brief.originalBytes": 2,
+  "estimateTokens(brief.bytes)": 3,
+  "cap": 3,
+}, "engine", "byte and token counts computed by session-cost.mjs");
+x("session-cost.mjs", "sectionTableLines", {
+  "String(s.bytes).padStart(7)": 1,
+  "pct": 1,
+  "measured.bytes": 1,
+  "measured.tokens": 1,
+}, "engine", "byte counts, a one-decimal percentage and a token estimate");
+x("session-cost.mjs", "sectionTableLines", {
+  "s.heading": 1,
+}, "passthrough", "a heading line of the generated rules block, which rulesBlock() already joined through lines.map(escapeControls) (a tracker repo can appear in one)");
+x("conductor.mjs", "runInvocation", {
+  "sectionTableLines(measureRulesBlock(block)).join(\"\\n\")": 1,
+}, "passthrough", "`rules --sections`: the table's headings come from the block rulesBlock() already swept, the rest are counts");
+x("render.mjs", "renderVerb", {
+  "sessionCostReport(state, resolvePlatform({}, state)).map(escapeControls).join(\"\\n\")": 1,
+}, "escaped", "the two cost lines, each through escapeControls before the join");
+// token-spend-tracking-per-epic: the rules-block section
+j("rules.mjs", "spendTrackingLines", ALL, "sink-flow", "a rules-block line builder: its only consumer is rulesBlock()'s lines (the role and phase lists are engine vocabulary)");
+// ── spend-budget-and-stuck-loop-guard: the three verbs and the pure core (generated from the sweep's own findings, then judged)
+x("spend-command.mjs", "mainState", {
+  "r.reason": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any stored or typed value where it is built");
+x("spend-guard-verbs.mjs", "parseSetSpendGuard", {
+  "UNSET_NAMES.join(\"|\")": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "parseSetSpendGuard", {
+  "FLAG_OF[clash]": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "applyGuardOps", {
+  "field": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "applyGuardOps", {
+  "value": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "parsed.message": 1,
+}, "passthrough", "parseSetSpendGuard's message, which escapes the values it quotes (escapeControls) where it is built");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "already.join(\", \")": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "where": 3,
+}, "passthrough", "`epic <id>` / `lane <lane>` / `project`, the id and lane escaped where `where` is built");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "notes": 2,
+}, "passthrough", "a parenthesised list of validated guard field names");
+x("spend-guard-verbs.mjs", "setSpendGuard", {
+  "described.join(\", \")": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "evaluate", {
+  "main.reason": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "evaluate", {
+  "ingestInfo.busy ? INGEST_BUSY : ingestInfo.reason": 1,
+}, "passthrough", "spend's own ingest summary reason text (ingestForReport): literal sentences, no stored value");
+x("spend-guard-verbs.mjs", "withdrawnNotices", {
+  "n": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "limitText", {
+  "s.limit": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "limitText", {
+  "s.source": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "reportLines", {
+  "r.ledger": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "accepted.join(\"|\")": 2,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "signal": 5,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "ev.tracking": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "sig.state": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "sig.count": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "overrideSpendGuard", {
+  "sig.limit": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard-verbs.mjs", "spendGuard", {
+  "jsonText(out, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
+x("spend-guard.mjs", "tallyVerdict", {
+  "gate": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard.mjs", "escalationTarget", {
+  "model": 1,
+}, "engine", "numbers, validated vocabulary (registry flag names, the closed signal and field lists), engine reason words, and values validated before this line");
+x("spend-guard.mjs", "stopBlock", {
+  "t.from": 1,
+}, "passthrough", "a model name from the profile resolver; the whole block leaves through lines.map(escapeControls)");
+x("spend-guard-verbs.mjs", "withdrawnNotices", {
+  "before.map((k) => k.replace(\"gate\", \"gate \")).join(\" and \")": 1,
+}, "engine", "gate keys filtered by a gate-number pattern before they are named, so only the literal words gate1 and gate2 can print");
+x("spend-guard.mjs", "stopBlock", {
+  "t.source": 1,
+}, "passthrough", "a resolver source layer name (epic, lane:<lane>, project, default); the whole block leaves through lines.map(escapeControls)");

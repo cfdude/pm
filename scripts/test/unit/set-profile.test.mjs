@@ -161,7 +161,7 @@ unitTest("profile prints each field with its source and names the value an epic 
   const out = engine(["profile", "--epic", "e"]);
   assert.match(out, /review: standard \(epic\) — overrides project thorough/);
   assert.match(out, /verbosity: quiet \(default\)/);
-  assert.match(out, /model implement: no directive \(default\)/);
+  assert.match(out, /model implement: sonnet \(medium\) \(default\)/);
 });
 
 unitTest("profile names a stored value it ignored", () => {

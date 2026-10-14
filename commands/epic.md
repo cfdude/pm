@@ -241,7 +241,7 @@ To change an epic that already exists (notably, to record a tracker key after cr
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
   [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"] \
-  [--clear-links] [--clear <field>] [--spec-deltas-waived "<why>"] [--lane <lane>] [--plan <path>] [--spec <path>]
+  [--clear-links] [--clear <field>] [--spec-deltas-waived "<why>"] [--gate1-waived "<why>"] [--lane <lane>] [--plan <path>] [--spec <path>]
 ```
 
 **Every flag `update-epic` accepts.** The list below is the whole surface — an unlisted flag
@@ -260,12 +260,13 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--parent <id>` | `parent` | no self-parent, no cycle |
 | `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
 | `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically. **Refused** on an epic that owes a reconcile and holds an armed (or pre-0.44.0) `may-invalidate` link — the clear-and-re-supply repair included — until `record-reconcile` answers it |
-| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `spec-deltas-waived`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `spec-deltas-waived`, `gate1-waived`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
 | `--external-url <url>` | `externalUrl` | the globally unique dedup key — one tracker item, one epic: setting a URL another epic holds (archived included) is refused naming it; `--clear external-url` on the holder frees it. Compared exactly after trimming surrounding whitespace — a trailing `/`, the host's case or a query string make a different URL, so record the tracker's canonical URL |
 | `--spec-deltas-waived "<why>"` | `specDeltasWaived` | records that a delivered change's archived spec deltas were **deliberately not applied** to the main specs (a change archived without applying its specs); the value IS the reason, so a blank one is refused. **Refused unless the epic is in the check's scope**: a delivered, openspec-lane epic whose change directory is archived under `openspec/changes/archive/` (the refusal names that scope and writes nothing). A waiver is listed, never silent: the briefing and the `render` verb's output print `SPEC DELTAS WAIVED (N)` with the epic ids. `integrity`'s `delivered-epic-spec-deltas-absent` and the briefing's spec-sync block then stop reporting the epic. It removes the epic from that report only: its archived change still discharges other epics' obligations. Inverse: `--clear spec-deltas-waived` (the epic is reported again; the clear is announced) |
+| `--gate1-waived "<why>"` | `gate1Waived` | records that an openspec-lane epic was **deliberately activated without a passing Gate 1** (spec review); the value IS the reason, so a blank one is refused, and it is refused on a non-openspec epic. Read by the activation guard (see "Set the active epic"); pass it WITH `--status active` and one call waives and activates. Inverse: `--clear gate1-waived` re-arms the guard (a `--clear` in the same call as the activation also removes it before the check) |
 | `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock — an ISO-8601 date-time WITH a zone (`…Z`, `…+00:00`, or Jira's `…+0000`); a bare date, a zoneless time or an impossible date is refused |
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order. Resolved at write time and stored as the FULL object name (`HEAD`, a short sha or an annotated tag records the commit it names now); a value that is not a commit in this clone refuses the whole invocation. A commit the array already holds (or one given twice in the call) is a **no-op**: exit 0, said on stderr, nothing written for it. Attributing a commit that turns a passing Gate 2 stale prints that, and names `--withdraw-commit` for lifecycle bookkeeping |
 | `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence (the last) of a commit this epic attributed and records why. Matched by commit IDENTITY where the value resolves — a full sha withdraws a legacy short entry of the same commit — and by exact spelling otherwise, so a legacy value that no longer resolves (`not-a-commit`, a commit this clone lost) stays withdrawable. The withdrawal records the stored entry removed. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
@@ -279,12 +280,17 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--declined-deferral "<what>::<why not>"` | `deferralAssertion` | **repeatable**; `::` separates, and a lone `:` still works |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none". Refused together with `--deferral` or `--declined-deferral` — "there are none" and "here is one" contradict, and nothing is written |
 | `--review-mode <m>` | `reviewMode` | the epic's own review value, above OR below the lane's and the repo's (most specific wins; see `/pm:profile`). Also accepted by `add-epic` and `add-many` (batch key `reviewMode`) |
-| `--model <role>=<model>[:<effort>]` | `model` | **repeatable**; the epic's model and effort for one job role (`implement\|test\|review`). `haiku` takes no effort; every other model requires one. Setting one role leaves the others. Also on `add-epic` and `add-many` (batch key `model`: an array of the same strings, or a `{role: "model:effort"}` object) |
+| `--model <role>=<model>[:<effort>]` | `model` | **repeatable**; the epic's model and effort for one job role (`plan\|implement\|test\|review\|mechanical\|rudimentary`). `haiku` takes no effort; every other model requires one. Setting one role leaves the others. Also on `add-epic` and `add-many` (batch key `model`: an array of the same strings, or a `{role: "model:effort"}` object) |
 | `--clear-model <role>` | `model` | **repeatable**; removes one role's pair (`--clear model` removes every role) |
 | `--verbosity <quiet\|verbose>` | `verbosity` | the epic's own report frequency. Also on `add-epic` and `add-many` |
 | `--add-story "<title>"` | `stories` | **repeatable**; appends `{title, done: false}` |
 | `--story <n> --done` | `stories[n-1].done` | 1-indexed |
 | `--story <n> --wont-do "<reason>"` | `stories[n-1].disposition` | 1-indexed; the reason is REQUIRED |
+| `--story <n> --correct-disposition "<why it was wrong>"` | `stories[n-1].corrections[]` | 1-indexed; reopens a story whose `done` or wont-do was recorded against the wrong index, keeping the original. May carry `--done` or `--wont-do` to apply the right mutation in the same call |
+
+**`stories[]` in `state.json` is a 0-indexed array; `--story <n>` is 1-indexed.** Reading a position
+off the file and passing it unchanged lands one story early (gh#176). A successful `--story` write
+echoes the story it landed on, so an off-by-one is visible at once.
 
 `--description` and `--notes` are DISTINCT and neither substitutes for the other: a description
 says why the epic exists and what would make it worth revisiting; notes are a trail of what
@@ -659,7 +665,10 @@ update-epic deploy-pipeline --story 3 --wont-do "old worker was decommissioned b
 
 The reason is required — a terminal state with no recorded why reproduces the original problem
 one level down. A disposed story is refused a second disposition and cannot be ticked `--done`
-afterwards; a story already `--done` cannot be dropped.
+afterwards; a story already `--done` cannot be dropped. A disposition written against the wrong
+story is undone with `update-epic <id> --story <n> --correct-disposition "<why it was wrong>"`: the
+story reopens, and the prior `done` or disposition is kept under `stories[n-1].corrections[]` with
+the reason and a timestamp (append-only; a story with nothing recorded has nothing to correct).
 
 A disposed story leaves **both** sides of the progress ratio, exactly as a `<!-- pm:lifecycle -->`
 task does: `3/3 stories · 2 disposed`, never `5/5` (which would claim completion for work nobody
@@ -787,6 +796,18 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" clear-active        # no acti
 together, demoting any previously-active epic to `queued` — so the pointer and status can never
 disagree. It rejects an unknown or archived id. `update-epic <id> --status active` keeps them in
 sync too (it sets `.active`), and moving the active epic off `active` clears the pointer.
+
+**The Gate 1 activation guard.** Gate 1 (spec review) is recorded by `record-gate-review` and gates CODE, so an
+openspec-lane epic may not be moved INTO `active` while its change is on disk (`openspec/changes/<id>/`) and it
+holds no passing Gate 1 verdict (absent, `fail` or withdrawn). It binds the transition, not the state: an epic
+already active is never refused, and an epic with NO change on disk is pre-propose (activating it is how the
+change gets written) and is never refused. Doors: `set-active`, `update-epic --status active`, and
+`add-epic` / `add-many` creating at `active` (these refuse; `add-many` refuses the whole batch). `push-detour`
+and `pop-detour` print a warning instead of refusing, because refusing would leave no route to set work aside.
+The refusal names `record-gate-review <id> --gate 1 --verdict pass --artifact <path>` and the deliberate way
+past it, `update-epic <id> --status active --gate1-waived "<why>"`. A STALE Gate 1 is not refused here;
+`integrity` reports it (`gate1-verdict-stale`). The engine has no "apply started" event, so activation is the
+nearest mechanical door; `/opsx:apply` itself is OpenSpec's and is not intercepted.
 
 **Moving the pointer off an epic that owes a reconcile warns and keeps the obligation.** Every verb
 that moves `.active` — `set-active`, `clear-active`, `update-epic`, `add-epic`/`add-many` creating

@@ -18,6 +18,7 @@ import { conflictCount, conflictWarningLatched, consumeConflictWarning } from ".
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
+import { briefGuardLines } from "./spend-guard.mjs";
 
 /** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
  *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
@@ -116,10 +117,36 @@ export function specSyncUnavailable(e) {
   return `spec-sync check unavailable: ${escapeControls(code ? `${code} — ${msg}` : msg)}`;
 }
 
-export function buildBrief(state, { consume = false, specSync = false } = {}) {
+/** The PLAIN brief: every shortenable list in full (the NEXT_CAP ones at their historical cap), in the
+ *  order PROJECT.md's "Briefing" section embeds it. The SessionStart hook uses buildBriefParts(). */
+export function buildBrief(state, opts = {}) {
+  return buildBriefParts(state, opts).plain;
+}
+
+const BOUNDED_RELEASES = 3;
+const BOUNDED_LIST = 5;
+
+/** `{plain, parts}`. `plain` is the text buildBrief() returns. `parts` is the same brief as the
+ *  session-start fitter (session-cost.mjs fitBrief) consumes it: escaped strings in order with ONE
+ *  `{lists}` slot where the shortenable lists go. In `plain` each list sits where it always did; in
+ *  `parts` they are collected into the slot AFTER every obligation block, so shortening them can
+ *  never reach a block that must be read whole. A list is `{heading, items, boundedCap, fromEnd, more}`:
+ *  items are arrays of lines, `fromEnd` keeps the LAST n (releases: the most recent), and `more(n)` is
+ *  the visible overflow line, which names where the rest really is. */
+export function buildBriefParts(state, { consume = false, specSync = false } = {}) {
   const epics = resolveEpics(state);
   const byId = Object.fromEntries(epics.map(e => [e.id, e]));
   const L = [];
+  const boundedLists = [];
+  const LISTS_SLOT = { slot: true };
+  // A shortenable list. Expanded in place for `plain` (at `plainCap`, with `plainMore`'s overflow line if
+  // any) and collected for the fitter. `boundedItems`, when given, replaces `items` in the fitter (a
+  // compact form of the same rows). Nothing is emitted for an empty list.
+  const emitList = ({ heading, items, boundedItems = items, plainCap = Infinity, plainMore = null, boundedCap, fromEnd = false, more }) => {
+    if (!items.length) return;
+    L.push({ list: true, heading, items, plainCap, plainMore });
+    boundedLists.push({ heading, items: boundedItems, boundedCap, fromEnd, more });
+  };
 
   const stamped = state.pmVersion || "0.0.0";
   const newest = newestInstalledVersion();
@@ -170,6 +197,11 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
     // per field with the layer it came from, plus a `model:` line only for a role that resolves to
     // something other than the default. Read from the raw state record, like the resolver expects.
     for (const l of briefProfileLines(resolveProfile(state, { epicId: active.id }))) L.push(`  ${l}`);
+    // spend-budget-and-stuck-loop-guard: ONE `STOP: spend guard —` line for a stuck active epic. A plain
+    // string among the obligations, so fitBrief() never shortens it. Computed from `state` alone — the
+    // recorded verdicts and live overrides — and empty unless a limit is configured: the hook path reads
+    // no ledger file and a repo with no limit gains no byte.
+    for (const l of briefGuardLines(state, active.id)) L.push(l);
   } else if (activeEpic && activeEpic.status === "archived") {
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {
@@ -267,43 +299,43 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
   // FOR. Each exclusion's reason is enumerated in PROJECT.md and readable in state.json; a brief
   // that recites every reason is a brief a reader learns to skip.
   const releases = releaseSummaries(state, epics);
-  if (releases.length) {
-    L.push("RELEASES:");
-    for (const r of releases) {
-      L.push(`  • ${releaseLine(r)}${crossSpecLine(state, epics, r.id)}${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`);
-    }
-    L.push("");
-  }
+  const releaseRow = (r, opts) =>
+    [`  • ${releaseLine(r)}${crossSpecLine(state, epics, r.id, undefined, opts)}${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`];
+  emitList({
+    heading: "RELEASES:",
+    items: releases.map(r => releaseRow(r, {})),
+    // The SessionStart brief keeps each release's verdict and count but not the reviewer's free text
+    // (crossSpecLine's `compact`), and only the most recent few; PROJECT.md "Releases" holds them all.
+    boundedItems: releases.map(r => releaseRow(r, { compact: true })),
+    boundedCap: BOUNDED_RELEASES, fromEnd: true,
+    more: (n) => `  (+${n} older release${n === 1 ? "" : "s"} — see PROJECT.md "Releases")`,
+  });
 
   // Same rule as PROJECT.md's Dispositions table: only records carrying a judgment, so the
   // migration's `unknown` stamps never crowd the brief. Capped like NEXT UP — the full list
   // is in PROJECT.md, which is the surface for enumeration.
   const dispositions = recordedDispositions(epics);
-  if (dispositions.length) {
-    L.push("DISPOSITIONS (recorded outcomes):");
-    for (const { epic, disposition: d } of dispositions.slice(0, NEXT_CAP)) {
+  emitList({
+    heading: "DISPOSITIONS (recorded outcomes):",
+    items: dispositions.map(({ epic, disposition: d }) => {
       const when = d.recordedAt ? ` (${d.recordedAt.slice(0, 10)})` : "";
       const why = d.reason ? ` — ${d.reason}` : "";
       const carried = d.carriedTo ? ` — carried to \`${d.carriedTo}\`` : "";
-      L.push(`  • \`${epic.id}\` — ${outcomeOf(epic)}${correctionMarking(d)}${when}${why}${carried}${correctionNote(d)}`);
-    }
-    if (dispositions.length > NEXT_CAP) {
-      L.push(`  (+${dispositions.length - NEXT_CAP} more — see PROJECT.md)`);
-    }
-    L.push("");
-  }
+      return [`  • \`${epic.id}\` — ${outcomeOf(epic)}${correctionMarking(d)}${when}${why}${carried}${correctionNote(d)}`];
+    }),
+    plainCap: NEXT_CAP, plainMore: (n) => `  (+${n} more — see PROJECT.md)`,
+    boundedCap: BOUNDED_LIST, more: (n) => `  (+${n} more — see PROJECT.md "Dispositions")`,
+  });
 
   // Which epics, and each cell's text, from gateTableRows() — the one decision PROJECT.md renders too,
   // so a verdict cannot read as evidenced, or a gate as withdrawn, on one surface and not the other.
   const gated = gateTableRows(epics);
-  if (gated.length) {
-    L.push("GATE REVIEWS:");
-    for (const row of gated.slice(0, NEXT_CAP)) {
-      L.push(`  • \`${row.id}\` gate 1: ${row.gate1} · gate 2: ${row.gate2}`);
-    }
-    if (gated.length > NEXT_CAP) L.push(`  (+${gated.length - NEXT_CAP} more — see PROJECT.md)`);
-    L.push("");
-  }
+  emitList({
+    heading: "GATE REVIEWS:",
+    items: gated.map(row => [`  • \`${row.id}\` gate 1: ${row.gate1} · gate 2: ${row.gate2}`]),
+    plainCap: NEXT_CAP, plainMore: (n) => `  (+${n} more — see PROJECT.md)`,
+    boundedCap: BOUNDED_LIST, more: (n) => `  (+${n} more — see PROJECT.md "Gate reviews")`,
+  });
 
   // The UNGATED-ARCHIVE notice — recomputed from state.json at every composition and NEVER
   // consumed on delivery. An `ungated` verdict is a standing record condition, not an episode:
@@ -347,22 +379,24 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
   // Both ends of every handoff, so the epic that INHERITED work is as legible as the one that
   // carried it out — a relationship visible from one side only is how a remainder disappears.
   const handoffs = epics.filter(e => e.disposition && e.disposition.carriedTo);
-  if (handoffs.length) {
-    L.push("HANDOFFS (work carried out of an archived epic):");
-    for (const e of handoffs) {
-      L.push(`  • \`${e.id}\` carried work to \`${e.disposition.carriedTo}\`` +
-        `${e.disposition.reason ? ` — ${e.disposition.reason}` : ""}`);
-      L.push(`      \`${e.disposition.carriedTo}\` inherited it from \`${e.id}\``);
-    }
-    L.push("");
-  }
+  // The full HANDOFFS and EPIC LINKS lists live only in PROJECT.md's embedded "Briefing" section (the
+  // plain text), which is what the bounded form's overflow line points at.
+  emitList({
+    heading: "HANDOFFS (work carried out of an archived epic):",
+    items: handoffs.map(e => [
+      `  • \`${e.id}\` carried work to \`${e.disposition.carriedTo}\`` +
+        `${e.disposition.reason ? ` — ${e.disposition.reason}` : ""}`,
+      `      \`${e.disposition.carriedTo}\` inherited it from \`${e.id}\``,
+    ]),
+    boundedCap: BOUNDED_LIST, more: (n) => `  (+${n} more — see PROJECT.md "Briefing")`,
+  });
 
   const links = epics.flatMap(e => (e.links || []).filter(isRenderableLink).map(l => ({ from: e.id, ...l })));
-  if (links.length) {
-    L.push("EPIC LINKS:");
-    for (const l of links) L.push(`  • \`${l.from}\` ${l.type} \`${l.epic}\`${l.reason ? ` — ${l.reason}` : ""}`);
-    L.push("");
-  }
+  emitList({
+    heading: "EPIC LINKS:",
+    items: links.map(l => [`  • \`${l.from}\` ${l.type} \`${l.epic}\`${l.reason ? ` — ${l.reason}` : ""}`]),
+    boundedCap: BOUNDED_LIST, more: (n) => `  (+${n} more — see PROJECT.md "Briefing")`,
+  });
 
   // TRACKER SYNC — governed by DIRECTION, not by a tracker merely existing. Gating the drift
   // line on `state.tracker` alone is the half of #109 that lived here: a github-issues repo
@@ -449,6 +483,10 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
     L.push("");
   }
 
+  // WHERE THE SHORTENABLE LISTS GO in the bounded form: after every obligation block above, before the
+  // standing instructions below. `plain` ignores the slot (its lists were expanded in place).
+  L.push(LISTS_SLOT);
+
   // The lifecycle-marker obligation — instruction, always, and deliberately in the BRIEF as well
   // as the rules block. The engine infers lifecycle exclusion from nothing: the marker is
   // agent-declared, so an agent who never reads it leaves every self-referential archive task
@@ -471,5 +509,22 @@ export function buildBrief(state, { consume = false, specSync = false } = {}) {
   // is what guarantees no stored value (a reason, a title, a release id, a tracker scope) can begin a
   // line of the brief, whichever interpolation carried it. escapeControls() is idempotent, so the
   // shared helpers that already escape (gateTableRows) are not double-escaped.
-  return L.map(escapeControls).join("\n");
+  const plain = [];
+  const parts = [];
+  for (const x of L) {
+    if (typeof x === "string") { plain.push(escapeControls(x)); parts.push(escapeControls(x)); continue; }
+    if (x === LISTS_SLOT) {
+      parts.push({ lists: boundedLists.map(l => ({
+        ...l, heading: escapeControls(l.heading),
+        items: l.items.map(it => it.map(escapeControls)),
+        more: (n) => escapeControls(l.more(n)),
+      })) });
+      continue;
+    }
+    plain.push(escapeControls(x.heading));
+    for (const it of x.items.slice(0, x.plainCap)) for (const line of it) plain.push(escapeControls(line));
+    if (x.plainMore && x.items.length > x.plainCap) plain.push(escapeControls(x.plainMore(x.items.length - x.plainCap)));
+    plain.push("");
+  }
+  return { plain: plain.join("\n"), parts };
 }

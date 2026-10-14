@@ -1097,6 +1097,9 @@ for (const verb of ["brief", "commit-nudge", "gate-guard", "init", "lesson-advic
 // ── read verbs ──
 recipe("activity --since", { notRendered: "an unparseable --since filters nothing and is printed by no surface", run: (c, v) => pm(c.cwd, ["activity", "--since", v]) });
 recipe("activity --epic", { notRendered: "--epic only filters the events read; the report does not echo it", run: (c, v) => pm(c.cwd, ["activity", "--epic", v]) });
+recipe("spend --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["spend", "--since", v]) });
+recipe("spend --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => pm(c.cwd, ["spend", "--until", v]) });
+recipe("spend --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["spend", "--epic", v]) });
 recipe("sync --only", { exempt: "--only must name a candidate change, plan or archived change or an existing epic; anything else is refused, the value echoed escaped, and nothing is written", run: (c, v) => pm(c.cwd, ["sync", "--only", v]) });
 recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and anything else is refused", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
@@ -1131,6 +1134,7 @@ recipe("update-epic --clear", { exempt: "--clear must name a field this command 
 recipe("update-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--description", v]) });
 recipe("update-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--notes", v]) });
 recipe("update-epic --spec-deltas-waived", { notRendered: "the waiver's reason is stored and printed by no surface (the briefing lists the waived epic's id, never the reason; the clear's announcement does not echo it)", run: (c, v) => pm(c.cwd, ["update-epic", "sw", "--spec-deltas-waived", v]) });
+recipe("update-epic --gate1-waived", { notRendered: "the waiver's reason is stored and printed by no surface (the activation refusal names the flag, never a stored reason)", run: (c, v) => pm(c.cwd, ["update-epic", "sw", "--gate1-waived", v]) });
 recipe("update-epic --external-updated-at", { exempt: EXEMPT.timestamp("external-updated-at"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
 recipe("update-epic --attribute-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--attribute-commit", v]) });
 recipe("update-epic --withdraw-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-commit", v, "--withdrawal-reason", "r"]) });
@@ -1217,6 +1221,24 @@ recipe("set-profile --model", { exempt: EXEMPT.vocab("model"), run: (c, v) => pm
 recipe("set-profile --verbosity", { exempt: EXEMPT.vocab("verbosity"), run: (c, v) => pm(c.cwd, ["set-profile", "--verbosity", v]) });
 recipe("set-profile --unset", { exempt: EXEMPT.vocab("unset"), run: (c, v) => pm(c.cwd, ["set-profile", "--unset", v]) });
 recipe("profile --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["profile", "--lane", v]) });
+// spend-budget-and-stuck-loop-guard. Every set-spend-guard value is validated before anything is written, and
+// override-spend-guard's reason is stored and printed by no text surface (spend-guard --json emits it through
+// jsonText, which is not swept as prose).
+recipe("set-spend-guard --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--lane", v, "--tokens", "5"]) });
+recipe("set-spend-guard --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--epic", v, "--tokens", "5"]) });
+recipe("set-spend-guard --max-failed-rounds", { exempt: EXEMPT.number("max-failed-rounds"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--max-failed-rounds", v]) });
+recipe("set-spend-guard --tokens", { exempt: EXEMPT.number("tokens"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--tokens", v]) });
+recipe("set-spend-guard --warn-at", { exempt: EXEMPT.number("warn-at"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--warn-at", v]) });
+recipe("set-spend-guard --unset", { exempt: EXEMPT.vocab("unset"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--unset", v]) });
+recipe("override-spend-guard --signal", { exempt: EXEMPT.vocab("signal"), run: (c, v) => pm(c.cwd, ["override-spend-guard", "base", "--signal", v, "--escalated-to", "user", "--reason", "r"]) });
+recipe("override-spend-guard --escalated-to", { exempt: EXEMPT.vocab("escalated-to"), run: (c, v) => pm(c.cwd, ["override-spend-guard", "base", "--signal", "rounds", "--escalated-to", v, "--reason", "r"]) });
+recipe("override-spend-guard --reason", { notRendered: "an override's reason is stored in the record and printed by no text surface", run: (c, v) => {
+  const id = fresh("og");
+  ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code"]);
+  ok(c.cwd, ["set-spend-guard", "--epic", id, "--max-failed-rounds", "1"]);
+  ok(c.cwd, ["record-gate-review", id, "--gate", "1", "--verdict", "fail"]);
+  return pm(c.cwd, ["override-spend-guard", id, "--signal", "rounds", "--escalated-to", "user", "--reason", v]);
+} });
 recipe("profile --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["profile", "--epic", v]) });
 recipe("set-tracker --role", { exempt: EXEMPT.vocab("role"), run: (c, v) => pm(c.cwd, ["set-tracker", "--role", v, "--system", "jira"]) });
 recipe("set-tracker --system", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--system", v, "--project", "ABC", "--direction", "inward"]) });

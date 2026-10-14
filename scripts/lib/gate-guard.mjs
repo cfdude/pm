@@ -2,7 +2,7 @@
 // The optional opt-in PreToolUse guard that blocks writes while a reconcile is owed.
 // One-directional dependencies only.
 
-import { isInitialized, loadState, saveState, readStdin, StateUnreadableError } from "./state.mjs";
+import { drainHookPayload, isInitialized, loadState, saveState, readStdin, StateUnreadableError } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
@@ -326,7 +326,7 @@ function trackerBlockMessage(active, shape) {
  *  reconcile-owed check itself. Exits 2 to block per Claude Code's PreToolUse convention
  *  (stderr becomes the reason shown to the agent). */
 export function gateGuardCheck() {
-  if (!isInitialized()) return;         // DORMANT until /pm:init
+  if (!isInitialized()) { drainHookPayload(); return; }   // DORMANT until /pm:init, but the payload is still on stdin
   // The payload is no longer discarded. `tool_name` decides which path this call takes, and for an
   // affirmed Bash call `tool_input.command` is what the closed shape list reads.
   const payload = readStdin();          // drained FIRST, so a refusal leaves no writer holding a pipe

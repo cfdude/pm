@@ -196,3 +196,8 @@ carries, reached by a path no gate sees. The one live finding is `conductor-tell
 reviewed up to bd2b1e6, which does not reach the commit attributed to it, eb787d9. That is the check doing its
 job on a real record, not a defect in the check; the repair is a Gate 2 re-record over a range that reaches the
 attributed commit, and belongs to the orchestrator.
+
+## `gate-1-verdict-stale` — 0 findings
+
+Added 2026-10-07 by integrity-reports-stale-gate-1. An epic whose Gate 1 verdict carries artifact digests and a
+reviewed artifact was amended after the review. Zero here, measured 2026-10-07 against the disk. The check RAN.

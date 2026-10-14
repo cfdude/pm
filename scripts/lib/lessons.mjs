@@ -34,7 +34,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
-import { isInitialized, readStdin } from "./state.mjs";
+import { drainHookPayload, isInitialized, readStdin } from "./state.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 import { escapeControls, jsonText } from "./constants.mjs";
 import { currentCwd, currentEnv, outStream } from "./invocation.mjs";
@@ -374,7 +374,7 @@ export function adviceText(hits) {
  *  NEVER exits non-zero. The gate guard exits 2 to BLOCK; this one advises, and an advisor that
  *  can block is a gate nobody agreed to. */
 export function lessonAdvice() {
-  if (!isInitialized()) return;              // DORMANT until /pm:init
+  if (!isInitialized()) { drainHookPayload(); return; }   // DORMANT until /pm:init, but the payload is still on stdin
   // Drained BEFORE anything else on this path, exactly as the gate guard does it — the payload
   // is on stdin and a hook that returns without reading it leaves the writer holding a pipe.
   const payload = readStdin();

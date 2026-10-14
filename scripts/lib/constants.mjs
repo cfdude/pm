@@ -50,6 +50,11 @@ export const CONFLICT_EXIT_CODE = 9;
 // refusal there would be indistinguishable from a Node bootstrap crash; 11 is unassigned. Shared by
 // the unreadable-state refusal and the ambiguous rules-block refusal — the message names the file.
 export const UNREADABLE_INPUT_EXIT_CODE = 11;
+// spend-budget-and-stuck-loop-guard: `spend-guard` exits 2 while an epic is STOPPED. Distinct from the
+// 1 every usage error and refusal uses, so a scripted check can tell "stuck" from "wrong arguments".
+// 2 is also Claude Code's hook "block" code, which is why the verb is documented as never to be wired
+// into a hook.
+export const SPEND_GUARD_STOP_EXIT_CODE = 2;
 // The state-file lock (state.mjs saveState, design D4). A save holds it for milliseconds, so a
 // writer waits WAIT_MS for a live holder, polling every POLL_MS, and is then refused with the
 // conflict exit code — never a lost update. STALE_MS is the age backstop: a lock older than this
@@ -385,6 +390,22 @@ export const REASON_REQUIRES = "a non-empty reason";
  *  re-derived from position by every reader. */
 export const EPIC_DEDUP_KEYS = { primary: "externalUrl", fallback: "externalId" };
 
+/** THE JOB ROLES (execution-profile-planning-and-light-roles D1), declared ONCE and early in the file
+ *  because the epic-flag table below renders its help text from this list when the module evaluates.
+ *  Lifecycle order is print order. The spend ledger's `role` vocabulary is this same list. */
+export const KNOWN_JOB_ROLES = ["plan", "implement", "test", "review", "mechanical", "rudimentary"];
+/** The built-in default `{model, effort}` per job role (D2): the last layer of resolution, applied at
+ *  READ time and NEVER written to state, so a stored value is always something someone chose. A model
+ *  without an effort is invalid (haiku takes none). Frozen, and one key per role. */
+export const DEFAULT_ROLE_MODELS = Object.freeze({
+  plan: Object.freeze({ model: "opus", effort: "high" }),
+  implement: Object.freeze({ model: "sonnet", effort: "medium" }),
+  test: Object.freeze({ model: "sonnet", effort: "low" }),
+  review: Object.freeze({ model: "opus", effort: "high" }),
+  mechanical: Object.freeze({ model: "sonnet", effort: "low" }),
+  rudimentary: Object.freeze({ model: "haiku" }),
+});
+
 export const EPIC_FLAGS = [
   { flag: "id", key: "id", commands: ["add-epic", "add-many"] },
   { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"],
@@ -469,6 +490,13 @@ export const EPIC_FLAGS = [
   { flag: "spec-deltas-waived", key: "specDeltasWaived", commands: ["update-epic"], nullable: true,
     requires: REASON_REQUIRES,
     clearNote: "`delivered-epic-spec-deltas-absent` reports this epic again if its archived spec deltas are absent from the main specs. Re-record with --spec-deltas-waived \"<why>\"" },
+  // openspec-gate1-guard-on-apply. The ONE record that an openspec-lane epic was activated WITHOUT a passing Gate 1
+  // on purpose (see gate1-guard.mjs). The value IS the reason, so a waiver cannot be recorded without one.
+  // Nullable: `--clear gate1-waived` is the inverse and puts the epic back under the activation guard.
+  // update-epic only — a waiver judges a transition, so a creation surface (which refuses instead) has none.
+  { flag: "gate1-waived", key: "gate1Waived", commands: ["update-epic"], nullable: true,
+    requires: REASON_REQUIRES,
+    clearNote: "the activation guard refuses this epic again if its change is on disk with no passing Gate 1. Re-record with --gate1-waived \"<why>\"" },
   { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append",
     setOnly: "an APPEND-ONLY trail — each entry records what was said and when, so removing one would edit history rather than clear a value" },
   // The tracker's OWN updated timestamp as of the last time the agent read that item's content
@@ -691,11 +719,11 @@ export const EPIC_FLAGS = [
     clearNote: "this epic stops carrying its own verbosity and falls back to its lane's, then the project's — the `profile` verb with --epic shows where it now comes from. Re-set it with --verbosity <level>" },
   { flag: "model", key: "model", commands: ["add-epic", "add-many", "update-epic"], repeats: true, nullable: true,
     placeholder: "role=model[:effort]",
-    clearNote: "this epic stops carrying its own model for EVERY role and each falls back to its lane's, then the project's — the `profile` verb with --epic shows where each now comes from. To drop one role only, use --clear-model <role>. Re-set with --model <role>=<model>[:<effort>]" },
+    clearNote: "this epic stops carrying its own model for EVERY role and each falls back to its lane's, then the project's, then its built-in default — the `profile` verb with --epic shows where each now comes from. To drop one role only, use --clear-model <role>. Re-set with --model <role>=<model>[:<effort>]" },
   // The one-role inverse of `--model`. `key` is null: the write lands inside `epic.model`, so the
   // command owns it, exactly as `--wont-do` owns its write into a story.
   { flag: "clear-model", key: null, commands: ["update-epic"], repeats: true, write: "custom",
-    requires: "a job role (implement|test|review)", placeholder: "implement|test|review" },
+    requires: `a job role (${KNOWN_JOB_ROLES.join("|")})`, placeholder: KNOWN_JOB_ROLES.join("|") },
   // Stories, and the ONE registry edit that makes a plan land with its milestones (#95).
   // `add-epic` and `add-many` join `update-epic` here rather than growing a second literal:
   // `epicFlagsFor("add-epic")` builds add-epic's allowlist and `epicBatchKeys()` builds
@@ -711,7 +739,10 @@ export const EPIC_FLAGS = [
   { flag: "add-story", key: "stories", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
     requires: "a non-empty title",
     setOnly: "a story ENDS by carrying `--wont-do \"<reason>\"`, and the row survives — deleting it destroys the record that the work was ever projected, which is the history an archived epic's reader needs" },
-  { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
+  // `placeholder` states the index base where `--help` is read (gh#176): `stories[]` in state.json is a
+  // 0-indexed array, `--story` is 1-indexed, and reading positions off the file is the trap.
+  { flag: "story", key: null, commands: ["update-epic"], write: "custom",
+    placeholder: "n, 1-indexed (NOT the 0-indexed stories[] position in state.json)" },
   { flag: "done", key: null, commands: ["update-epic"], write: "custom", valueless: true },
   // The story-level TERMINAL DISPOSITION. `--story <n> --wont-do "<reason>"` keeps the row and
   // records why it will never be done, which is the only honest key to the archive gate's
@@ -835,12 +866,12 @@ export const VERB_FLAGS = [
   // `--verbosity` here are the PROJECT/LANE-layer writers; the same names are EPIC_FLAGS rows for
   // add-epic/add-many/update-epic. `--model` and `--unset` repeat. `--lane` is also add-epic's
   // (an epic's own lane) but the rows are scoped per command, so neither reads the other.
-  { flag: "lane", commands: ["set-profile", "profile"], placeholder: "openspec|superpowers|claude-code|decision|external" },
+  { flag: "lane", commands: ["set-profile", "profile", "set-spend-guard"], placeholder: "openspec|superpowers|claude-code|decision|external" },
   { flag: "review", commands: ["set-profile"], placeholder: "off|standard|thorough" },
   { flag: "model", commands: ["set-profile"], repeats: true, placeholder: "role=model[:effort]" },
   { flag: "verbosity", commands: ["set-profile"], placeholder: "quiet|verbose" },
   { flag: "unset", commands: ["set-profile"], repeats: true, placeholder: "review|verbosity|model|model:role" },
-  { flag: "epic", commands: ["profile"], requires: "an epic id" },
+  { flag: "epic", commands: ["profile", "set-spend-guard"], requires: "an epic id" },
   // set-autonomy — #152's sharpest instance.
   { flag: "level", commands: ["set-autonomy"], placeholder: "off|autonomous" },
   { flag: "preauthorize", commands: ["set-autonomy"], repeats: true },
@@ -910,6 +941,8 @@ export const VERB_FLAGS = [
   // FLAGLESS_VERBS, where it would have been a false claim.
   { flag: "diff-summary", commands: ["render"], valueless: true },
   { flag: "epic", commands: ["rules"] },
+  // rules-block-session-cost: print the ranked per-section sizes of the block instead of the block.
+  { flag: "sections", commands: ["rules"], valueless: true },
   // `init` and the five HOOK verbs join the three that read it (every-verb-refuses-what-it-does-not-read
   // D6): hooks/hooks.json passes `--platform claude-code` to every hook, so declaring it anywhere
   // less than all of them would make the check refuse pm's own hook lines. Each validates it before
@@ -941,13 +974,13 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard"], valueless: true },
   // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
   // filters a log. What they agree on — that a value is required — is all the row carries.
-  { flag: "since", commands: ["activity"], requires: "an ISO-8601 timestamp" },
-  { flag: "epic", commands: ["activity"], requires: "an epic id" },
+  { flag: "since", commands: ["activity", "spend"], requires: "an ISO-8601 timestamp" },
+  { flag: "epic", commands: ["activity", "spend"], requires: "an epic id" },
   // purge-logs. Its own `--keep`/`--over`/`--older-than` checks stay and run AFTER this rule,
   // on the precedent `triage --limit` set: neither is subsumed, because a value that is present
   // and unparseable is a different mistake from a value that is absent.
@@ -956,7 +989,27 @@ export const VERB_FLAGS = [
   { flag: "over", commands: ["purge-logs"], requires: "a size like 500K, 10M or 1G" },
   { flag: "older-than", commands: ["purge-logs"], requires: "a non-negative number of days" },
   { flag: "dry-run", commands: ["purge-logs"], valueless: true },
-  { flag: "yes", commands: ["purge-logs"], valueless: true },
+  { flag: "yes", commands: ["purge-logs", "spend"], valueless: true },
+  // token-spend-tracking-per-epic's `spend`. `--json`, `--since`, `--epic` and `--yes` are the rows
+  // above (same meaning on each verb); these five are its own. `--until` is the half-open upper bound
+  // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
+  // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
+  { flag: "until", commands: ["spend"], requires: "an ISO-8601 timestamp" },
+  { flag: "no-ingest", commands: ["spend", "spend-guard"], valueless: true },
+  // spend-budget-and-stuck-loop-guard. `set-spend-guard`'s three limits and its `--unset` (repeatable, its own
+  // placeholder: set-profile's `--unset` row lists different fields), then `override-spend-guard`'s four. Its
+  // `--revoke` is VALUELESS here and value-bearing on `set-autonomy`; the rows are scoped per command.
+  { flag: "max-failed-rounds", commands: ["set-spend-guard"], requires: "a positive whole number" },
+  { flag: "tokens", commands: ["set-spend-guard"], requires: "a positive whole number" },
+  { flag: "warn-at", commands: ["set-spend-guard"], requires: "a whole number from 1 to 99" },
+  { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|warn-at|all" },
+  { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
+  { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
+  { flag: "reason", commands: ["override-spend-guard"], requires: REASON_REQUIRES },
+  { flag: "revoke", commands: ["override-spend-guard"], valueless: true },
+  { flag: "clear", commands: ["spend"], valueless: true },
+  { flag: "rebuild", commands: ["spend"], valueless: true },
+  { flag: "timeline", commands: ["spend"], valueless: true },
   // THE argv-level row (see the header above). On a mutating verb whose writes never reach the
   // guarded state write (`honcho-memory`, `purge-logs`) it is accepted and does nothing — the one
   // accepted-but-unread flag, stated rather than hidden: the alternative is a second, undeclared list
@@ -1023,7 +1076,7 @@ export const VERB_POSITIONALS = {
   init: P0, render: P0, brief: P0, snapshot: P0, "commit-nudge": P0, sync: P0,
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
   "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
-  activity: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
+  activity: P0, spend: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
   integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
@@ -1036,6 +1089,8 @@ export const VERB_POSITIONALS = {
   "retract-detour": { min: 1, max: 1, form: "<sha>", idFirst: false, freeText: false },
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
@@ -1061,6 +1116,8 @@ export const FLAGLESS_VERBS = [
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
   "set-activity-log",
+  // token-spend-tracking-per-epic's switch: the POSITIONAL `on|off`, same shape as the toggle above.
+  "set-spend-tracking",
   // The registration-date recovery takes no arguments at all: it sweeps every epic that has
   // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
   "recover-created-at",
@@ -1473,7 +1530,13 @@ export const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
 export const KNOWN_MODELS = ["fable", "opus", "sonnet", "haiku"];
 export const KNOWN_EFFORTS = ["low", "medium", "high", "xhigh", "max", "ultracode"];
 export const MODELS_WITHOUT_EFFORT = ["haiku"];
-export const KNOWN_JOB_ROLES = ["implement", "test", "review"];
+/** The model RANK, lowest first, declared once beside KNOWN_MODELS (spend-guard D7): the order the
+ *  escalation target steps up in. `user` is above the top and is not a model. */
+export const MODEL_RANK = Object.freeze(["haiku", "sonnet", "opus", "fable"]);
+/** The spend ledger's PHASE vocabulary (token-spend-tracking-per-epic), declared once. It is a separate
+ *  closed list from KNOWN_JOB_ROLES on purpose: a role says what an agent IS (it picks a model), a phase
+ *  says where in an epic's life the tokens went. A "gate retry" is `phase=review` with `round>1`. */
+export const KNOWN_SPEND_PHASES = ["plan", "build", "review", "docs", "release"];
 export const KNOWN_VERBOSITY_LEVELS = ["quiet", "verbose"];
 export const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 export const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);

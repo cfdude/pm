@@ -2,6 +2,7 @@
 // Atomic bulk epic creation. One-directional dependency on lib/add-epic.mjs
 // (parentError) and lib/render.mjs (render) -- neither calls back here.
 
+import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
@@ -160,6 +161,11 @@ export function addMany() {
     }
     if (e.externalUpdatedAt !== undefined && timestampValueError(e.externalUpdatedAt, "externalUpdatedAt")) {
       refuse(`epic '${escapeControls(id)}': ${escapeControls(timestampValueError(e.externalUpdatedAt, "externalUpdatedAt"))}`);
+    }
+    // Gate 1 activation guard (openspec-gate1-guard-on-apply): refuses the WHOLE batch, like every other check here.
+    if (status === "active") {
+      const gate1Refusal = gate1ActivationRefusal({ id, lane: e.lane, planPath: e.planPath, specPath: e.specPath }, { creating: true });
+      if (gate1Refusal) refuse(gate1Refusal);
     }
     batchIds.add(id);
   }

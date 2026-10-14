@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "release-0-51-0-cut",
+  "active": "release-0-52-0-cut",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -2096,7 +2096,7 @@
       "id": "rules-block-cli-fallback",
       "title": "rules block: CLI fallback for any platform lacking slash commands or hitting a namespace collision",
       "priority": "P3",
-      "status": "later",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2114,14 +2114,25 @@
         }
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
-      "touchedAt": "2026-10-06T19:57:51.747Z",
+      "touchedAt": "2026-10-14T04:57:36.455Z",
       "notes": [
         {
           "at": "2026-10-06T19:57:51.743Z",
           "actor": "agent",
           "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-10-14T04:57:36.451Z",
+        "reason": "merged into remaining-platform-investigation: no triggering platform and it already depended on that epic (0.53 backlog assessment, 2026-10-13)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:57:36.450Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:57:36.451Z"
     },
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
@@ -2534,7 +2545,13 @@
       "status": "queued",
       "role": "epic",
       "lane": "superpowers",
-      "links": [],
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "edd-run-policy-when-behavior-artifacts-change",
+          "reason": "folded in as its final story; the policy is worthless until the corpus grows"
+        }
+      ],
       "reconcileNeeded": false,
       "stories": [
         {
@@ -2558,7 +2575,7 @@
           "text": "lane: superpowers not claude-code — several mutation-tested scenarios with real design work (triage 2026-09-28)"
         }
       ],
-      "touchedAt": "2026-09-28T22:29:15.337Z"
+      "touchedAt": "2026-10-14T04:57:34.051Z"
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2714,7 +2731,8 @@
           "text": "GROOMING 0.41.0 — RESCOPED; most of this SHIPPED. The append-only per-epic session trail exists: conductor.mjs resolves the session in the TOP-LEVEL activity wrapper rather than inside claim dispatch, so diffEvents stamps identity onto EVERY event kind (activity-log.mjs), queryable with 'activity --epic'. An earlier reading that the trail covers only claim/release events is wrong. What actually remains is small: --session is registered for claim/unclaim ONLY (constants.mjs), so PM_SESSION is the sole channel on every other verb, and nothing lands on the epic record itself. Re-verified against HEAD after two agents disagreed about it."
         }
       ],
-      "touchedAt": "2026-09-10T04:38:22.802Z"
+      "touchedAt": "2026-10-14T04:57:01.556Z",
+      "release": "0.53.0"
     },
     {
       "id": "cross-session-epic-assignment",
@@ -2971,7 +2989,7 @@
       "id": "edd-run-policy-when-behavior-artifacts-change",
       "title": "Practice: run the EDD corpus when a change touches an artifact the AGENT reads (commands/agents/skills/hooks/.claude-plugin + rules.mjs), skip it for engine-internal/test-only changes; document in CLAUDE.md and consider a mechanical reminder",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2982,7 +3000,19 @@
         }
       ],
       "reconcileNeeded": false,
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-10-14T04:57:34.864Z",
+        "reason": "folded into edd-corpus-expansion-nondeterministic-surfaces as its final story (0.53 backlog assessment, 2026-10-13)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:57:34.864Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:57:34.865Z",
+      "touchedAt": "2026-10-14T04:57:34.869Z"
     },
     {
       "id": "conductor-skill-orient-reads-spec-inventory",
@@ -3041,7 +3071,7 @@
       "id": "openspec-gate1-guard-on-apply",
       "title": "Gate 1 is RECORDED but never GUARDED: record-gate-review writes epic.gateReview.gate1, yet nothing blocks an openspec epic entering implementation without it. The archived df-no-mechanical-openspec-gate-enforcement epic shipped only the ARCHIVE/gate2 guard (update-epic.mjs:107) and update-epic.mjs:104 deliberately exempts gate1 from archive — so the guard belongs on the transition INTO apply, not archive",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -3054,8 +3084,43 @@
           "text": "lane: superpowers not claude-code — a new guard on /opsx:apply; under-processing costs the record (intake rule 4)"
         }
       ],
-      "touchedAt": "2026-10-06T19:58:03.743Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:55:09.790Z",
+      "release": "0.52.0",
+      "attributedCommits": [
+        "02e53b683567005f8a01185a72f7ff3580973f09",
+        "fc36b3c21c95cc0110b405b190393a5e0bc9ac8f",
+        "ce592206e1b1c697f9aada716b5e871241f6007f"
+      ],
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:29.796Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:29.796Z",
+          "lastPassAt": "2026-10-14T04:02:29.796Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:09.786Z",
+        "reason": "built for 0.52.0 in 02e53b68, fc36b3c2, ce592206; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:09.785Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:09.786Z"
     },
     {
       "id": "openspec-planning-completeness-instruction",
@@ -3121,7 +3186,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -3140,10 +3205,16 @@
           "at": "2026-09-10T04:37:59.247Z",
           "actor": "agent",
           "text": "GROOMING 0.41.0 — P3 to P2: growing faster than it is being fixed. Directive sites went 4 to 5 TODAY (commands/epic.md gained one in 48baf43), and rules.mjs EMITS the literal into every managed repo's CLAUDE.md, so each fleet upgrade propagates it further. Two of the epic's original citations have already drifted."
+        },
+        {
+          "at": "2026-10-14T04:57:12.225Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — grew from 4 sites to 17 lines in 7 files plus the emitted surface (0.53 backlog assessment)"
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-09-10T04:37:59.249Z"
+      "touchedAt": "2026-10-14T04:57:12.229Z",
+      "release": "0.53.0"
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -5510,7 +5581,7 @@
       "id": "gh-172-trufflehog-false-positive",
       "title": "CI's TruffleHog (3.96.0) reports a pytest function name as a VERIFIED Lob API key. Lob's test-mode keys are test_-prefixed and so is every pytest function, so a long enough name collides — and it is reported VERIFIED, the one class a reviewer is trained never to wave through. Fixed upstream: 3.97.0 finds nothing in the same file. The version comes from cfdude/.github's SHA-pinned reusable workflow, so the fix is a scanner bump there, affecting every consuming repo — deliberately not changed as a side effect of a release here. 0.39.0 renamed two tests as a labelled workaround, which weakens nothing but does not survive the next contributor naming a test test_a_...",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "external",
       "links": [],
@@ -5519,7 +5590,9 @@
       "externalId": "172",
       "externalUrl": "https://github.com/cfdude/pm/issues/172",
       "externalUpdatedAt": "2026-09-05T09:41:51Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "250c574b211b5219b1d96f2ff6e45f54e6bc9fbf"
+      ],
       "createdAt": "2026-09-08T17:55:42-07:00",
       "notes": [
         {
@@ -5528,8 +5601,37 @@
           "text": "2026-10-06 Rob asked to consider this as a 0.52.0 bug fix. Lane kept; the build step is in cfdude/.github, then re-pin here."
         }
       ],
-      "touchedAt": "2026-10-07T00:37:09.550Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:55:06.275Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:29.101Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:29.101Z",
+          "lastPassAt": "2026-10-14T04:02:29.101Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:06.271Z",
+        "reason": "built for 0.52.0 in 250c574b (scanner re-pin); CI only"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:06.270Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:06.271Z"
     },
     {
       "id": "gh-cfdude-pm-168",
@@ -6066,6 +6168,11 @@
           "type": "supersedes",
           "epic": "multi-platform-agent-support",
           "reason": "carries forward the uninvestigated remainder — Gemini CLI, Grok Build, generic AGENTS.md — after Codex and Hermes were separately registered with hands-on verification"
+        },
+        {
+          "type": "supersedes",
+          "epic": "rules-block-cli-fallback",
+          "reason": "no triggering platform; it already depended on this epic"
         }
       ],
       "reconcileNeeded": false,
@@ -6077,7 +6184,8 @@
           "text": "lane: claude-code deliberately, against the usual away-from-claude-code tie-break — this is genuinely an investigation with a written finding as its only deliverable, not a port. If the finding says a port is viable, THAT becomes its own epic in a lane chosen then. Also: README.md:205-212 must be corrected in the same change, since it currently attributes all six platform rows to an epic that is being superseded."
         }
       ],
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "touchedAt": "2026-10-14T04:57:35.668Z"
     },
     {
       "id": "record-answers-for-itself",
@@ -6441,7 +6549,7 @@
       "id": "gh-cfdude-pm-176",
       "title": "--story <n> is 1-indexed but --help says only '<a value>'; a wrong index writes a wont-do reason onto the wrong story with no correction path",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -6449,9 +6557,12 @@
       "externalId": "176",
       "externalUrl": "https://github.com/cfdude/pm/issues/176",
       "externalUpdatedAt": "2026-09-08T17:49:40Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "538e8a3fc462498bc5700744c7d6caffc23a1862",
+        "aa66c49c98608d527bbd57acf15a72e50aea9eff"
+      ],
       "createdAt": "2026-09-09T00:20:59.267Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-14T04:55:08.048Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:30.522Z",
@@ -6461,7 +6572,37 @@
       ],
       "startedAt": "2026-10-05T21:51:49.812Z",
       "trackerRefreshNeeded": true,
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:27.794Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:27.794Z",
+          "lastPassAt": "2026-10-14T04:02:27.794Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:08.044Z",
+        "reason": "built for 0.52.0 in 538e8a3f, aa66c49c; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:08.044Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:08.044Z"
     },
     {
       "id": "gh-cfdude-pm-182",
@@ -7124,7 +7265,7 @@
       "id": "gh-cfdude-pm-196",
       "title": "OpenSpec drift is reported as no drift when openspec --version is slow, so the drift line flaps in a committed PROJECT.md",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -7132,9 +7273,11 @@
       "externalId": "196",
       "externalUrl": "https://github.com/cfdude/pm/issues/196",
       "externalUpdatedAt": "2026-09-14T18:17:01Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c25858ebad7dd3f3485510b0150f1031ba94f477"
+      ],
       "createdAt": "2026-09-14T18:18:17.982Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-14T04:55:08.921Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:20.116Z",
@@ -7142,7 +7285,37 @@
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
       ],
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:28.438Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:28.438Z",
+          "lastPassAt": "2026-10-14T04:02:28.438Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:08.917Z",
+        "reason": "built for 0.52.0 in c25858eb; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:08.916Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:08.917Z"
     },
     {
       "id": "gh-cfdude-pm-194",
@@ -10038,7 +10211,7 @@
       "id": "commit-observation-gate2-minors",
       "title": "commit-nudge observation: Gate 2 minors deferred from 0.45.0 — no cap on commits walked or output size, a partial last reflog line can become the anchor, a retraction row names only the first epic, the detached-tree finish() path is untested, prefix-of-prefix pruned rows retract together",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10049,9 +10222,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "992157ab112c9cfeb1aab82fc0a618a29e9fa7a8"
+      ],
       "createdAt": "2026-09-17T05:13:42.425Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-14T04:55:05.367Z",
       "notes": [
         {
           "at": "2026-09-17T05:13:42.890Z",
@@ -10059,7 +10234,36 @@
           "text": "Evidence (0.45.0 Gate 2, scratch repros under the session scratchpad gate2-45-nudge/l2): 200 commits since the anchor took 8 s and printed 24 KB of hook context; a 330-commit window held the lock ~10 s. Partial-line anchor not reproduced. Old-format commit-observe.json {size,line} from unreleased dev builds reads as no anchor (acceptable: never on main). Spec write-site table in conductor-record omits commit-observe.json.lock/.lock.break and the retract-detour non-hex refusal is not listed in the commit-observation refusal scenario — declined at archive to avoid staling the release cross-spec review; fold into this epic's spec touch."
         }
       ],
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:26.526Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:26.526Z",
+          "lastPassAt": "2026-10-14T04:02:26.526Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:05.363Z",
+        "reason": "built for 0.52.0 in 992157ab; internal hardening"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:05.361Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:05.363Z"
     },
     {
       "id": "gh-cfdude-pm-207",
@@ -10075,7 +10279,8 @@
       "externalUpdatedAt": "2026-09-17T11:31:29Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T11:31:37.673Z",
-      "touchedAt": "2026-09-17T11:31:37.678Z"
+      "touchedAt": "2026-10-14T04:57:04.887Z",
+      "release": "0.53.0"
     },
     {
       "id": "gh-cfdude-pm-208",
@@ -10133,14 +10338,15 @@
       "externalUpdatedAt": "2026-09-16T23:30:21Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T19:47:11.764Z",
-      "touchedAt": "2026-09-17T19:47:12.370Z",
+      "touchedAt": "2026-10-14T04:57:03.210Z",
       "notes": [
         {
           "at": "2026-09-17T19:47:12.367Z",
           "actor": "agent",
           "text": "lane: superpowers not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "gh-cfdude-pm-205",
@@ -11099,7 +11305,7 @@
       "id": "brief-snapshot-epipe-on-large-hook-payload",
       "title": "brief and snapshot do not drain stdin: a large hook payload can EPIPE the hook (0.43.0 review minor, left by the 0.50.0 minors pass because it is only testable at the process boundary)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -11110,10 +11316,42 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f7dcbdacf9e04f20d4938a32cb69af1a0075ace0",
+        "5877ccbabc7e91eea2160f679e2979f782d5726b"
+      ],
       "createdAt": "2026-09-25T21:57:39.453Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:55:04.412Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:25.902Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:25.902Z",
+          "lastPassAt": "2026-10-14T04:02:25.902Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:04.408Z",
+        "reason": "built for 0.52.0 in f7dcbdac, 5877ccba; internal hook fix"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:04.407Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:04.408Z"
     },
     {
       "id": "spec-sync-waive-for-skip-specs",
@@ -11522,7 +11760,8 @@
       "externalUpdatedAt": "2026-09-25T20:22:34Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:02.240Z",
-      "touchedAt": "2026-09-28T17:11:02.244Z"
+      "touchedAt": "2026-10-14T04:57:05.717Z",
+      "release": "0.53.0"
     },
     {
       "id": "gh-cfdude-pm-227",
@@ -11694,7 +11933,7 @@
       "id": "gh-cfdude-pm-213",
       "title": "commit-nudge auto-detour heuristic misclassifies an epic's own small chore commits as detours",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -11708,10 +11947,43 @@
       "externalId": "213",
       "externalUrl": "https://github.com/cfdude/pm/issues/213",
       "externalUpdatedAt": "2026-09-23T19:40:15Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "23a2b0b1866b65c077bf9599ab210b2c173734cf",
+        "93f420955060f8a16bfe3437dc49af57cde12436"
+      ],
       "createdAt": "2026-09-28T17:11:08.328Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:55:07.160Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:27.159Z",
+          "baseSha": "5f88e8c726f4d558a0e77409af1ab82e34b5c410",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 1, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:27.159Z",
+          "lastPassAt": "2026-10-14T04:02:27.159Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:07.156Z",
+        "reason": "built for 0.52.0 in 23a2b0b1, 93f42095; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:07.155Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:07.156Z"
     },
     {
       "id": "gh-cfdude-pm-211",
@@ -11733,7 +12005,7 @@
       "id": "gh-cfdude-pm-210",
       "title": "/pm:upgrade reviews the changelog delta but never the repo's own unadopted opt-ins",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11741,10 +12013,43 @@
       "externalId": "210",
       "externalUrl": "https://github.com/cfdude/pm/issues/210",
       "externalUpdatedAt": "2026-09-18T17:37:17Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "cc3a53fc7eba9ac15e5e4427e07712ce0e221070",
+        "45ad537edf14725ea1d5684360174b7c9c122ea2"
+      ],
       "createdAt": "2026-09-28T17:11:10.612Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:55:11.552Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:31.254Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:31.254Z",
+          "lastPassAt": "2026-10-14T04:02:31.254Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:11.548Z",
+        "reason": "built for 0.52.0 in cc3a53fc, 45ad537e; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:11.547Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:11.548Z"
     },
     {
       "id": "certification-record-redesign",
@@ -12006,14 +12311,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-29T18:26:52.090Z",
-      "touchedAt": "2026-09-29T18:26:52.902Z",
+      "touchedAt": "2026-10-14T04:57:08.172Z",
       "notes": [
         {
           "at": "2026-09-29T18:26:52.900Z",
           "actor": "agent",
           "text": "lane: claude-code not (none routed) — removal of a legacy file and its tolerance path, well under 2h; the design record lives in certification-record-redesign design D5"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "engine-source-extraction-vacuity",
@@ -12032,14 +12338,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-29T20:03:48.175Z",
-      "touchedAt": "2026-09-29T20:03:49.247Z",
+      "touchedAt": "2026-10-14T04:57:11.410Z",
       "notes": [
         {
           "at": "2026-09-29T20:03:49.244Z",
           "actor": "agent",
           "text": "lane: superpowers (routing returned none) — a shared helper plus a migration across ~8 test files"
         }
-      ]
+      ],
+      "release": "0.53.0"
     },
     {
       "id": "execution-profile-layered-settings",
@@ -12288,7 +12595,7 @@
       "id": "release-0-51-0-cut",
       "title": "Cut pm 0.51.0: version bump, CHANGELOG section, Mintlify sync (execution profile + review-mode page and epic flag reference; release-candidate page and release show reference; /pm:upgrade untrack block), Changelog page and Real Numbers, release PR into main, fleet pass",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12309,10 +12616,25 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "aa157e04f2279863e075268f7b9523ba9ee7fe03",
+        "72f2027f2cc8f7dc34190a76cd4745ff718f39f7",
+        "824eeb4c07bc4def93aa671b7ad99286b6d5451e"
+      ],
       "createdAt": "2026-10-01T02:51:50.830Z",
-      "touchedAt": "2026-10-07T00:02:13.214Z",
-      "startedAt": "2026-10-01T06:08:24.532Z"
+      "touchedAt": "2026-10-07T01:12:34.053Z",
+      "startedAt": "2026-10-01T06:08:24.532Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-07T01:12:34.050Z",
+        "reason": "0.51.0 shipped: PR #240 squash-merged as af14c617, docs PR cfdude/pm-docs#58 merged and verified live, release marked delivered"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-07T01:12:34.049Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-07T01:12:34.050Z"
     },
     {
       "id": "flake-owner-certify-index-sigterm",
@@ -12331,7 +12653,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:08.495Z",
-      "touchedAt": "2026-10-01T06:08:08.500Z"
+      "touchedAt": "2026-10-14T04:57:08.982Z",
+      "release": "0.53.0"
     },
     {
       "id": "flake-owner-g2-c1-i2-2000ms-bound",
@@ -12350,7 +12673,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:09.640Z",
-      "touchedAt": "2026-10-01T06:08:09.644Z"
+      "touchedAt": "2026-10-14T04:57:09.784Z",
+      "release": "0.53.0"
     },
     {
       "id": "release-in-flight-rule-needs-decision",
@@ -12411,13 +12735,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T06:08:12.232Z",
-      "touchedAt": "2026-10-01T06:08:12.237Z"
+      "touchedAt": "2026-10-14T04:57:10.595Z",
+      "release": "0.53.0"
     },
     {
       "id": "token-spend-tracking-per-epic",
       "title": "Token spend tracking per epic: start at planning, end at release, split by phase (spec, build, test, review, gate retries), a config flag off by default and on for pm's own development",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -12446,10 +12771,188 @@
           "text": "2026-10-06 Rob asked for this in 0.51.0; recommendation taken instead: split into a themed 0.52.0 release (5 epics) so 0.51.0 ships now — adding it would force a new Gate 1 + cross-spec review + a second converged review on a finished 24-epic release, delaying the fixes that already cut process cost. This epic is the foundation the other four build on."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "d889fa400baed754a9b7bc784e6b6bfd9a175fbf",
+        "8b49f0015e9f3c61505dcd64685c439413daed27",
+        "2ccb078be5d0352e25ea69f283937da8998c2289",
+        "164f239d579bc3cde8aafb2e85e81d27225631c3",
+        "5fa66bd9d6a0697967a7d458d1b42edc00d57fa7",
+        "82b39de2b23b759fd98ad2b1d51e38a1cd72b45b",
+        "a8eb9cadbdef64b3fc6ebc41803e9498b5b2239f",
+        "57d56c54c995a453e6c7c7d6200608e9bcbd9bfd",
+        "88a00e01f176d2f5fdc5d9cba650d1dad1de4a2d",
+        "04f0d7531a87d063b607d2460f76787e786d6717",
+        "a5f472cf66c13586b3d5994c86bd8c5d3952703c",
+        "2677e2f2b3f4133afd9c4c3934f33740f648e77c"
+      ],
       "createdAt": "2026-10-01T07:33:57.581Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:54:39.443Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-10T00:21:25.588Z",
+          "artifacts": [
+            "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
+            "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
+            "openspec/changes/token-spend-tracking-per-epic/design.md",
+            "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+            "openspec/changes/token-spend-tracking-per-epic/red-1.1-1.3.txt",
+            "openspec/changes/token-spend-tracking-per-epic/red-2.1-2.6.txt",
+            "openspec/changes/token-spend-tracking-per-epic/red-3.1-3.5.txt",
+            "openspec/changes/token-spend-tracking-per-epic/red-4.1-4.4.txt",
+            "openspec/changes/token-spend-tracking-per-epic/red-5.1-5.2.txt",
+            "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+            "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+            "openspec/changes/token-spend-tracking-per-epic/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
+              "sha256": "83a1825d37bab2e154fb88b46c490c9b3b19cc206656975a3b2c93400bcdba34"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
+              "sha256": "4fb5aaa9c19b51fc794ab4b4b4493bc86df3b451bd23f53cd3d7659f62051d6f"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/design.md",
+              "sha256": "44050d6bb93cedd925af09a393d12e60f553a1efbf087b0b9f2af519e7945dc2"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+              "sha256": "87c5fbbebcee7a73218931c67ffe88467603e3055b028fc637590d7eb2d564bd"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/red-1.1-1.3.txt",
+              "sha256": "4db1ac52829a037bc5f42f59e0db656712f7499dd88c8348aa40ba861f5133fd"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/red-2.1-2.6.txt",
+              "sha256": "62d3638cce0ff8d5f96f4e0fe74786b465cdc79d40b2b5978e055736abcddddd"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/red-3.1-3.5.txt",
+              "sha256": "852cf85bcbc37421598a5ecc5d5d21192e1b9281a5884008001230e2e09bc1a3"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/red-4.1-4.4.txt",
+              "sha256": "6a6206af4de1534b2a338be2e71d32071b9aa5219e1578eaabd1caf3d05561f2"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/red-5.1-5.2.txt",
+              "sha256": "f7ad90272fb543cbaa8ff5ef10eca261d0181e1c8d4c629a2e105819387ad1cc"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+              "sha256": "e091459aca16741cdbb8118f7e1a93e3a9033bcc1f2539cb1d5be616e73d4568"
+            },
+            {
+              "path": "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+              "sha256": "29816ea7f7cda44e714f87d88ff8059cd4c5888b39c5f40e4b3973a03713cb7b"
+            }
+          ],
+          "reviewer": "opus fresh-context (example-role wording only, 79d2ffa9)",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-09T22:27:13.847Z",
+            "artifacts": [
+              "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
+              "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
+              "openspec/changes/token-spend-tracking-per-epic/design.md",
+              "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+              "openspec/changes/token-spend-tracking-per-epic/red-1.1-1.3.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-2.1-2.6.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-3.1-3.5.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-4.1-4.4.txt",
+              "openspec/changes/token-spend-tracking-per-epic/red-5.1-5.2.txt",
+              "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+              "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+              "openspec/changes/token-spend-tracking-per-epic/tasks.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/call-site-sweep-1.4.txt",
+                "sha256": "83a1825d37bab2e154fb88b46c490c9b3b19cc206656975a3b2c93400bcdba34"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/commit-verification-7.2.txt",
+                "sha256": "4fb5aaa9c19b51fc794ab4b4b4493bc86df3b451bd23f53cd3d7659f62051d6f"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/design.md",
+                "sha256": "44050d6bb93cedd925af09a393d12e60f553a1efbf087b0b9f2af519e7945dc2"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/proposal.md",
+                "sha256": "87c5fbbebcee7a73218931c67ffe88467603e3055b028fc637590d7eb2d564bd"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-1.1-1.3.txt",
+                "sha256": "4db1ac52829a037bc5f42f59e0db656712f7499dd88c8348aa40ba861f5133fd"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-2.1-2.6.txt",
+                "sha256": "62d3638cce0ff8d5f96f4e0fe74786b465cdc79d40b2b5978e055736abcddddd"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-3.1-3.5.txt",
+                "sha256": "852cf85bcbc37421598a5ecc5d5d21192e1b9281a5884008001230e2e09bc1a3"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-4.1-4.4.txt",
+                "sha256": "6a6206af4de1534b2a338be2e71d32071b9aa5219e1578eaabd1caf3d05561f2"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/red-5.1-5.2.txt",
+                "sha256": "f7ad90272fb543cbaa8ff5ef10eca261d0181e1c8d4c629a2e105819387ad1cc"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+                "sha256": "e091459aca16741cdbb8118f7e1a93e3a9033bcc1f2539cb1d5be616e73d4568"
+              },
+              {
+                "path": "openspec/changes/token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+                "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+              }
+            ],
+            "reviewer": "opus fresh-context (spec file-name correction 2677e2f2 after Gate 2)"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T22:57:19.909Z",
+          "baseSha": "97d15765a35efb1925abd6d58e72f1dde49ec6a1",
+          "headSha": "038eea419634b27e9303a5a0b47eade932f7127c",
+          "reviewer": "opus fresh-context (Important fixed 57d56c54..2677e2f2, not re-reviewed per one-round rule)"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:54:39.434Z",
+        "reason": "built for 0.52.0; ships with the release cut; Mintlify pass carried",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:54:39.406Z",
+        "deferrals": [
+          {
+            "epic": "token-spend-analysis-and-recommendations",
+            "section": "archive-time freeze"
+          }
+        ],
+        "declined": [
+          {
+            "what": "record-spend verb for non-Claude-Code platforms",
+            "reason": "no second platform yet"
+          },
+          {
+            "what": "rows.jsonl rotation",
+            "reason": "revisit past ~100 MB; the reader contract does not change"
+          }
+        ]
+      },
+      "completedAt": "2026-10-14T04:54:39.434Z"
     },
     {
       "id": "integrity-reports-legacy-duplicate-attributions",
@@ -12468,13 +12971,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-01T23:10:14.992Z",
-      "touchedAt": "2026-10-01T23:10:14.997Z"
+      "touchedAt": "2026-10-14T04:57:07.372Z",
+      "release": "0.53.0"
     },
     {
       "id": "integrity-reports-stale-gate-1",
       "title": "integrity has no check naming an epic whose Gate 1 artifactDigests read stale",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -12485,9 +12989,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "0f90cdbdf249d8f5daab70ba204d676a9b47683f"
+      ],
       "createdAt": "2026-10-01T23:10:17.077Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
+      "touchedAt": "2026-10-14T04:55:10.663Z",
       "notes": [
         {
           "at": "2026-10-06T19:57:49.395Z",
@@ -12495,7 +13001,37 @@
           "text": "lane: superpowers not claude-code — new integrity check sharing the Gate 1 surface with openspec-gate1-guard-on-apply"
         }
       ],
-      "release": "0.52.0"
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:30.531Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:30.531Z",
+          "lastPassAt": "2026-10-14T04:02:30.531Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:10.659Z",
+        "reason": "built for 0.52.0 in 0f90cdbd; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:10.658Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:10.659Z"
     },
     {
       "id": "conductor-tells-the-truth-gate2-unreviewed-range",
@@ -12544,7 +13080,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.877Z",
-      "touchedAt": "2026-10-05T01:44:10.882Z"
+      "touchedAt": "2026-10-14T04:57:06.540Z",
+      "release": "0.53.0"
     },
     {
       "id": "planning-completeness-orient-and-autonomy-boundary",
@@ -12595,7 +13132,7 @@
       "id": "spend-budget-and-stuck-loop-guard",
       "title": "Spend budget and stuck-loop guard: a per-epic token ceiling, and detection of a failure repeating through gate rounds, with escalation to a stronger model or to the user instead of more retries",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -12612,16 +13149,146 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-06: a test fails repeatedly, loops back through Gate 1 and Gate 2, fails again, and burns millions of tokens without fixing the problem. Guard: (1) per-epic token ceiling, soft warn then stop-and-ask (set in the profile layers); (2) stuck-loop detector — the same test/finding failing across N review or fix rounds, or a sub-agent past a spend threshold with no green test, stops the autonomous run; (3) escalation protocol: hand the failure to a higher model with the failure evidence ('what is wrong and how do we resolve it') or to the user, rather than another same-tier retry. Instruction-layer: the engine emits the stop rule and the check verb; the interactive agent acts. Interacts with epic-level autonomy's stop conditions. Depends on the ledger from token-spend-tracking-per-epic.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f9de945a51e0a12d2b0ef29f5af632b35633dd51",
+        "038eea419634b27e9303a5a0b47eade932f7127c",
+        "0049c5406bcb72e27e512ad73fac9f9c8d07ea44",
+        "2c29916a9a1992caed8d8791817a2fe27fd0839b",
+        "248ac345a819e8ba4616cf09617630ed607fb891"
+      ],
       "createdAt": "2026-10-06T17:29:47.026Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:54:51.403Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-10T01:28:49.599Z",
+          "artifacts": [
+            "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+            "openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+              "sha256": "5cdadf032d904ade49ec62b82c0210f0d940de6c4b82618a01e344a3166398a3"
+            },
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+              "sha256": "69e3f9751cb9e8d52697531d3e61bc97776e09273c8a554bd642e7b0e750a151"
+            },
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+              "sha256": "00dd787c1451bd42917d02f2a6c1445fc41705f0bc6350c789836ceab86528bd"
+            },
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+              "sha256": "37dc3ea471b1e6b923e74bb7f639b752143c6928c62d921627aee0d1b4098b60"
+            },
+            {
+              "path": "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+              "sha256": "501f4acad0c9275f93d80f13db66d0cda3c9e6d1a398ae1dcce1fd7068b446c0"
+            }
+          ],
+          "reviewer": "opus fresh-context (exit-code wording only, 248ac345; strict validate passes)",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-10T01:27:48.955Z",
+            "artifacts": [
+              "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+              "openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/call-site-sweep-1.3.txt",
+                "sha256": "5cdadf032d904ade49ec62b82c0210f0d940de6c4b82618a01e344a3166398a3"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/design.md",
+                "sha256": "69e3f9751cb9e8d52697531d3e61bc97776e09273c8a554bd642e7b0e750a151"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/proposal.md",
+                "sha256": "00dd787c1451bd42917d02f2a6c1445fc41705f0bc6350c789836ceab86528bd"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/red-1.1.txt",
+                "sha256": "37dc3ea471b1e6b923e74bb7f639b752143c6928c62d921627aee0d1b4098b60"
+              },
+              {
+                "path": "openspec/changes/spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+                "sha256": "225f2609d851c34a706c5784ededb52020dea6c5fde5fa8b39074658a3a112d0"
+              }
+            ],
+            "reviewer": "opus fresh-context (exit-code wording only, 2c29916a)"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:14:11.169Z",
+          "baseSha": "6e754d8becf3e1f87e2ce6ca7f7b3ae0c35335ef",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context (38-mutant mutation run, 36 caught; minors logged); Gate 2 review ran 2026-10-10 before the exit-code spec wording fix, re-recorded after it",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-10T01:28:50.378Z",
+            "baseSha": "6e754d8becf3e1f87e2ce6ca7f7b3ae0c35335ef",
+            "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+            "reviewer": "opus fresh-context (38-mutant mutation run, 36 caught; minors logged)"
+          }
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 2,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-10T01:28:49.599Z",
+          "lastPassAt": "2026-10-10T01:28:49.599Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 3,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:14:11.169Z",
+          "lastPassAt": "2026-10-14T04:14:11.169Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:54:51.396Z",
+        "reason": "built for 0.52.0; ships with the release cut; Mintlify pass carried",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:54:51.377Z",
+        "deferrals": [
+          {
+            "epic": "token-spend-analysis-and-recommendations",
+            "section": "design Open Questions (phase=build fix-round signal)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "per-epic failing-certify detection",
+            "reason": "a certify run is bound to the index, not to an epic"
+          }
+        ]
+      },
+      "completedAt": "2026-10-14T04:54:51.396Z"
     },
     {
       "id": "execution-profile-planning-and-light-roles",
       "title": "Execution profile model tiers: add planning and mechanical roles so the profile says Opus plans, Sonnet executes, Haiku does rudimentary work, and a one-shot model (Fable) can build straight off a plan",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -12638,10 +13305,69 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-06: clear alignment on model tiers — planning on an Opus-class model, execution on Sonnet by default (unless a one-shot model such as Fable builds directly off a finished plan), rudimentary/simple tasks on Haiku. The profile today has roles implement/test/review only (0.51.0). Add a 'plan' role and a 'mechanical' role (and a documented one-shot mode), recommended defaults, and let the spend analysis flag a tier mismatch. Extends execution-profile-layered-settings (archived, 0.51.0); closed role/value lists live in the profile's constants.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "d719cefe9aaa14c28d03d5a9d5a4668fdb889e43",
+        "3fd2910eaeacba2b9ad09328e55d1d8534b9d579",
+        "aeed6728f5e3bbb8127c45981d9e7d4c03737062",
+        "5c8c39bdc016a4a97c7bb86b6e4301b8f3950377",
+        "cfeada94406e92eb9694dd2b743c73968cc2e0c2",
+        "79d2ffa9f2e5f5f362b3c038ff36b59a0dce3e1b",
+        "e5101f4dbd7c0f5ab4bdb6158cb3a9b5c2795202"
+      ],
       "createdAt": "2026-10-06T17:29:47.792Z",
-      "touchedAt": "2026-10-06T17:29:49.360Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:54:50.340Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T22:48:04.748Z",
+          "artifacts": [
+            "openspec/changes/execution-profile-planning-and-light-roles/design.md",
+            "openspec/changes/execution-profile-planning-and-light-roles/proposal.md",
+            "openspec/changes/execution-profile-planning-and-light-roles/specs/execution-profile/spec.md",
+            "openspec/changes/execution-profile-planning-and-light-roles/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/execution-profile-planning-and-light-roles/design.md",
+              "sha256": "2519fa67af28a6f5118f7ae73193d03b9231ebe877fb3c43a5db8def16b9fbdb"
+            },
+            {
+              "path": "openspec/changes/execution-profile-planning-and-light-roles/proposal.md",
+              "sha256": "768b0afba605ac2fa78cbf92233203e4707321eb306619fc3af8047233e6f333"
+            },
+            {
+              "path": "openspec/changes/execution-profile-planning-and-light-roles/specs/execution-profile/spec.md",
+              "sha256": "6b1d56d8490d906662cbd4e17f56d8f0849020c37cd38e25983a7c3b686ca5b7"
+            }
+          ],
+          "reviewer": "opus fresh-context (round 1 fail 3C/4I fixed; confirmation round pass)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-10T00:28:23.455Z",
+          "baseSha": "3fd2910eaeacba2b9ad09328e55d1d8534b9d579",
+          "headSha": "e5101f4dbd7c0f5ab4bdb6158cb3a9b5c2795202",
+          "reviewer": "opus fresh-context (3 Important test gaps fixed e5101f4d, not re-reviewed per one-round rule)"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:54:50.333Z",
+        "reason": "built for 0.52.0; ships with the release cut; Mintlify pass carried",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:54:50.305Z",
+        "deferrals": [
+          {
+            "epic": "token-spend-analysis-and-recommendations",
+            "section": "proposal Impact (spend analysis flags a tier mismatch)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:54:50.333Z"
     },
     {
       "id": "decision-cost-log",
@@ -12673,7 +13399,7 @@
       "id": "rules-block-session-cost",
       "title": "Measure and cap the per-session cost of pm's managed rules block (about 40 KB, roughly 10K tokens, in this repo) plus the SessionStart brief",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -12685,10 +13411,43 @@
       ],
       "reconcileNeeded": false,
       "description": "Found by the 0.52.0 backlog assessment 2026-10-06: the managed rules block in CLAUDE.md is 40,087 bytes (lines 111-624), roughly 10K tokens by bytes/4, paid by EVERY session and every dispatched agent, and no epic measures or caps it. A per-epic ledger never sees it. Measure per-repo size, decide what can move to on-demand skills (a task item beats a prose bullet for adoption, so keep the required items), cap the brief, and report block size in upgrade/status. Must not drop any required task item (14/14 vs 3/15 adoption evidence).",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "213b0e65a1817a2530cef7966c3fa843f6619414",
+        "63f3089b0656fe15f8ded8bcbb622e78a33f17a7"
+      ],
       "createdAt": "2026-10-06T19:57:50.197Z",
-      "touchedAt": "2026-10-06T19:58:03.743Z",
-      "release": "0.52.0"
+      "touchedAt": "2026-10-14T04:55:12.477Z",
+      "release": "0.52.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-14T04:02:32.060Z",
+          "baseSha": "aa66c49c98608d527bbd57acf15a72e50aea9eff",
+          "headSha": "248ac345a819e8ba4616cf09617630ed607fb891",
+          "reviewer": "opus fresh-context, converged release-candidate review (batch 2, 0.52.0): no Critical; Important fixed, not re-reviewed"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-14T04:02:32.060Z",
+          "lastPassAt": "2026-10-14T04:02:32.060Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T04:55:12.473Z",
+        "reason": "built for 0.52.0 in 213b0e65, 63f3089b; README/Mintlify/Changelog carried to the 0.52.0 release cut",
+        "carriedTo": "release-0-52-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T04:55:12.472Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T04:55:12.473Z"
     },
     {
       "id": "openspec-1-14-workflows-evaluation",
@@ -12709,17 +13468,150 @@
           "text": "lane: openspec not unrouted — triage returned no lane; evaluation can change rules-block/gate behavior. Local install now has all 12 workflows (profile custom). First step: read what verify does vs Gate 2, bulk-archive vs pm archive gate, ff/new/continue vs openspec-propose + sync. Source: screenshot from other machine showed 'openspec update' 1.14.0->1.14.1 and 6 extra workflows. Generated .claude/skills + .claude/commands/opsx files for the 6 new workflows are untracked, deliberately kept out of the 0.51.0 commit."
         }
       ]
+    },
+    {
+      "id": "gh-cfdude-pm-239",
+      "title": "log-detour stamps HEAD after a failed commit, and the MINIMAL row can never be retracted",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "239",
+      "externalUrl": "https://github.com/cfdude/pm/issues/239",
+      "externalUpdatedAt": "2026-09-30T07:01:00Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-07T07:12:35.191Z",
+      "touchedAt": "2026-10-14T04:57:04.062Z",
+      "notes": [
+        {
+          "at": "2026-10-07T07:12:35.903Z",
+          "actor": "agent",
+          "text": "lane: superpowers not unrouted — suggest-lane returned none; a hook/log-detour behavior fix touching retraction semantics, not a sub-2h tweak"
+        }
+      ],
+      "release": "0.53.0"
+    },
+    {
+      "id": "spend-guard-rules-section-follows-live-limits",
+      "title": "The rules block's Spend guard section follows whether a limit is live, through archive, remove and un-archive",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "spend-budget-and-stuck-loop-guard",
+          "reason": "found by its Gate 2 review"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Gate 2 minor on spend-budget-and-stuck-loop-guard: the managed rules block's ## Spend guard section is toggled only by set-spend-guard. Archiving or removing the only epic that holds a limit leaves the section stale; un-archiving it (update-epic --status untriaged) leaves the section absent while the limit is live, so the per-dispatch spend-guard instruction disappears (the brief and record-gate-review STOPs still fire). Sweep every writer that can change whether a limit is live and refresh the block at each.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T03:55:59.065Z",
+      "touchedAt": "2026-10-14T04:57:00.697Z",
+      "release": "0.53.0"
+    },
+    {
+      "id": "release-0-52-0-cut",
+      "title": "Cut pm 0.52.0: version bump, CHANGELOG, one Mintlify pass, release PR, close the GitHub issues, fleet upgrade",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "token-spend-tracking-per-epic",
+          "reason": "docs and release cut"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Release cut for 0.52.0 Safe to leave running, in a NEW session (rule: new session per release). Follow the release-checklist and pr-workflow skills; do not re-derive. Carries the docs of every member built in 0.52.0 (one Mintlify pass: spend / set-spend-tracking, execution-profile six roles and defaults, spend-guard verbs, rules --sections, the brief cap and per-list caps, upgrade opt-ins, the story correction flag, the Gate 1 activation guard and --gate1-waived, integrity gate-1-verdict-stale, the new hook-drain and commit-nudge behaviour, the TruffleHog pin). Close the GitHub issues at release (176, 196, 210, 213, 172) after confirming with Rob. Then the fleet upgrade pass and release 0.52.0 --deliver, re-check integrity. Rob's rules: one capped review round, stage by name, plain-language context for every epic or issue number.",
+      "attributedCommits": [
+        "adca59831f8036227d6637d24f3c98a88f259d20",
+        "3ff2f60a7b126c9d28c52fd6a35f06c21156484e"
+      ],
+      "createdAt": "2026-10-14T04:29:17.523Z",
+      "touchedAt": "2026-10-14T16:08:27.369Z",
+      "release": "0.52.0",
+      "startedAt": "2026-10-14T04:29:22.271Z"
+    },
+    {
+      "id": "pm-overhead-baseline",
+      "title": "Measure pm's own baseline token overhead per session with all features on, and the downstream efficiency it buys",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "token-spend-analysis-and-recommendations",
+          "reason": "reads the same ledger, reports the overhead baseline"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-13. Understand how tokens are spent across prompt creation, context and responses; measure input vs output and first-read vs cached-read tokens; establish the baseline cost of pm out of the box with every feature enabled (rules block, brief, hook injections, command/skill listings, hierarchy and EDD docs) and compare it with how much cheaper downstream tasks get because of tracking and record-keeping. Includes the overhead of spend tracking itself (if turning it on adds ~5,000 tokens a session Rob must be able to see that and shut it off). Reads the ledger; sibling of token-spend-analysis-and-recommendations. Evidence so far: cache-read is 96.2% of attributed tokens, output 0.34%; one 60.5M-token build agent ran 156 turns at ~379K context; pm's rules block is ~10K tokens and the brief was 78 KB uncapped before 0.52.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T04:57:23.063Z",
+      "touchedAt": "2026-10-14T04:57:25.514Z",
+      "release": "0.53.0"
+    },
+    {
+      "id": "feature-switches-audit",
+      "title": "Cost every pm feature and add an off switch where the measured overhead justifies one",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "pm-overhead-baseline",
+          "reason": "needs its per-feature numbers"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-13. Not every feature needs an on/off switch, but not everyone needs e.g. the EDD harness. Audit each feature's per-session token cost (rules-block text, brief lines, hook injections, skills and commands listed) using pm-overhead-baseline's numbers, add a switch only where cost justifies, register each in the OPT_INS registry so /pm:upgrade lists the unadopted ones, and document the switches in the README (including 'turn spend tracking on here' with the real verb, set-spend-tracking on). Spend tracking stays OFF by default: a developer feature that costs tokens itself.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T04:57:23.886Z",
+      "touchedAt": "2026-10-14T04:57:26.302Z",
+      "release": "0.53.0"
+    },
+    {
+      "id": "developer-session-log",
+      "title": "Developer-only session log: features on, request and context composition, response, token breakdown, context-retention warnings",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "token-spend-analysis-and-recommendations",
+          "reason": "the analysis reads this log"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob 2026-10-13. A dev feature, OFF by default (it costs tokens itself). An append-only JSONL log under .conductor/ (engine law: Node built-ins only, NO new runtime dependency — Rob suggested a dependency; recommendation is a plain file) recording current overhead and which features are on, what went into the request/context, what came back, the full token breakdown, and context-retention warnings such as 'same context window for seven days without a new session'. Data capture; token-spend-analysis-and-recommendations and pm-overhead-baseline read it.",
+      "attributedCommits": [],
+      "createdAt": "2026-10-14T04:57:24.708Z",
+      "touchedAt": "2026-10-14T04:57:27.094Z",
+      "release": "0.53.0"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.50.0",
+  "pmVersion": "0.51.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1899,
+  "revision": 2021,
   "reviewMode": "standard",
   "releases": [
     {
@@ -13273,6 +14165,9 @@
           }
         ],
         "reviewer": "opus fresh-context, combined with Gate 1; Critical fixed a2bb4b2b"
+      },
+      "delivered": {
+        "recordedAt": "2026-10-07T01:12:16.163Z"
       }
     },
     {
@@ -13293,11 +14188,49 @@
           "to": "0.53.0",
           "at": "2026-10-06T19:58:04.525Z"
         }
-      ]
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-10-14T04:01:56.699Z",
+        "specs": [
+          {
+            "key": "execution-profile-planning-and-light-roles/specs/execution-profile/spec.md",
+            "sha256": "6b1d56d8490d906662cbd4e17f56d8f0849020c37cd38e25983a7c3b686ca5b7"
+          },
+          {
+            "key": "spend-budget-and-stuck-loop-guard/specs/spend-guard/spec.md",
+            "sha256": "501f4acad0c9275f93d80f13db66d0cda3c9e6d1a398ae1dcce1fd7068b446c0"
+          },
+          {
+            "key": "token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+            "sha256": "e091459aca16741cdbb8118f7e1a93e3a9033bcc1f2539cb1d5be616e73d4568"
+          },
+          {
+            "key": "token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+            "sha256": "29816ea7f7cda44e714f87d88ff8059cd4c5888b39c5f40e4b3973a03713cb7b"
+          }
+        ],
+        "reviewer": "opus fresh-context (retroactive over the built set)",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-09T18:37:09.154Z",
+          "specs": [
+            {
+              "key": "token-spend-tracking-per-epic/specs/conductor-record/spec.md",
+              "sha256": "81fbc4e868887b816acc18e5fe5d3d76777a05e1e27ccfb0be7def51fae2ecc2"
+            },
+            {
+              "key": "token-spend-tracking-per-epic/specs/spend-ledger/spec.md",
+              "sha256": "93db8d7c494189ad910f279a3cf521f125f0d3cc8c7af06ab319239c4346bbee"
+            }
+          ],
+          "reviewer": "opus fresh-context"
+        }
+      }
     },
     {
       "id": "0.53.0",
-      "intent": "Token spend analysis: where the tokens went and what to change, plus the decision cost log, built on one release of ledger data",
+      "intent": "Know where the tokens went, and keep the record honest: the first analysis over real ledger data, pm's own baseline overhead and feature switches, a developer-only session log, the follow-ups the 0.52 gates logged, the record and refusal bugs users hit, and the known flakes paid down. Nothing platform-shaped. (Rob approved the 16-epic scope and the three overhead epics 2026-10-13.)",
       "deferred": []
     }
   ],
@@ -13318,5 +14251,12 @@
         "effort": "high"
       }
     }
+  },
+  "spendTracking": {
+    "enabled": true,
+    "enabledAt": "2026-10-09T22:28:28.347Z"
+  },
+  "spendGuard": {
+    "maxFailedRounds": 2
   }
 }

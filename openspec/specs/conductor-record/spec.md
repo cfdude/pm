@@ -573,6 +573,8 @@ outside a closed list.
 | `render.mjs` | `render-stamp.json` | NO — see below |
 | `state.mjs` | `state.json.lock` | NO — see below |
 | `state.mjs` | `state.json.lock.break` | NO — see below |
+| `spend-tracking.mjs` dispatch append and `set-spend-tracking` toggle entry | `spend/timeline.jsonl` | YES — which epic the main working tree's session had active, a record of work in progress; written only from the main working tree, and suppressed when its HEAD is detached. `set-spend-tracking` is REFUSED there rather than flipping `state.json` without its entry, which would credit off-period spend to an epic |
+| `spend-ledger.mjs` ingest, `spend --rebuild`, `spend --clear` | `spend/rows.jsonl`, `spend/cursor.json`, `spend/markers.json`, `spend/ingest.lock` | YES — derived spend data, kept in the MAIN working tree; suppressed when the main working tree's HEAD is detached (the tree being written to), and `spend` then reports from what exists and says it did not ingest |
 
 **`write-conflicts.log` and its latch are NOT suppressed.** They record that two writers collided,
 which is a fact about the repository rather than about a session, and the latch is consumed by
@@ -646,6 +648,13 @@ already go unnoticed, which is the lost-update window `state-write-guard` closes
 - **WHEN** a live, fresh state lock is held by another process in a working tree whose HEAD is
   detached, and a mutating verb saves state there
 - **THEN** the save does not write while that lock is held, exactly as it would on a branch
+
+#### Scenario: Spend data is not written in a detached tree
+
+- **WHEN** spend tracking is on, the main working tree's HEAD is detached, and `set-active e1` runs there and then `spend` runs
+- **THEN** both verbs complete and report as they normally would
+- **AND** no file under `.conductor/spend/` is created or changed
+- **AND** `spend` states that it did not ingest because HEAD is detached
 
 #### Scenario: A tree on a branch is unaffected
 

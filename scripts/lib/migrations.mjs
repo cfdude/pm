@@ -15,9 +15,11 @@ import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore, untrackInstruction } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { sessionCostReport } from "./session-cost-report.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
 import { die } from "./command-exit.mjs";
+import { optInLines } from "./opt-ins.mjs";
 import { errStream, outStream } from "./invocation.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
@@ -255,6 +257,10 @@ export function upgrade() {
       `What's new in pm (since ${escapeControls(stamped)}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
   }
 
+  // gh#210 — the half of the adoption review the delta above cannot cover: opt-ins THIS repo has
+  // never turned on, from an earlier release or this one. Printed on every run, delta or none.
+  for (const l of optInLines(state)) outStream().write(l + "\n");
+
   // gh#128 — "is this repo current with pm?" is the question this verb exists to answer, and it
   // is exactly the question nothing asks about the OpenSpec CLI. Same emitter as the brief, so
   // the two surfaces cannot report the same drift differently. NOT a MIGRATIONS entry: nothing
@@ -264,6 +270,11 @@ export function upgrade() {
   // never-replayed transformation may not have.
   const openspecLines = openspecCurrencyLines();
   for (const l of openspecLines) errStream().write(l + "\n");
+
+  // rules-block-session-cost — what this repo's pm now costs every session: the managed block just
+  // written and the SessionStart brief it will send (capped). A READ, like the line above: measured
+  // from what is on disk and in state, nothing recorded. Not a migration for the same reason.
+  for (const l of sessionCostReport(state, resolvePlatform({}, state))) errStream().write(escapeControls(l) + "\n");
 
   // COMMIT WHAT THIS JUST REWROTE. Every path below is one THIS function wrote a moment ago:
   // state.json (migrations + the version stamp), the platform's rules file (NOT always

@@ -120,10 +120,24 @@ export const VERB_EFFECTS = {
   // silence that warning for every real write the verb makes.
   release: { effect: "mutates", writes: "state.json (releases, one-way membership, deferrals and the amendments trail), plus render()'s writes — except `release show`, which writes nothing at all" },
   "record-reconcile": { effect: "mutates", writes: "state.json (the reconcile verdict on an epic's detour link)" },
-  "record-gate-review": { effect: "mutates", writes: "state.json (gateReview.gateN)" },
+  "record-gate-review": { effect: "mutates", writes: "state.json (gateReview.gateN and, in the same write, the epic's gateRounds tally); a verdict that leaves the recorded rounds signal tripped also prints the STOP block on stderr" },
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
   "record-tracker-refresh": { effect: "mutates", writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
   "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
+  "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch), CLAUDE.md (the rules block), and the main working tree's .conductor/spend/timeline.jsonl" },
+  // `detachedNoOp`: `spend` writes ONLY into the MAIN working tree's git-ignored .conductor/spend/ and
+  // never state.json, and it asks about the main tree's HEAD itself (suppressing its ingest and saying
+  // so). The generic "discarded write" warning is about THIS root's tracked record, which `spend`
+  // never touches, so printing it from a detached linked worktree would be false.
+  spend: { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree (rows, cursor, markers, ingest lock; with --clear/--rebuild also removes or rewrites them, with --clear --timeline the timeline) — never state.json and never a transcript" },
+  // spend-budget-and-stuck-loop-guard. The limit cascade and the overrides are `state.json` writes; the managed
+  // rules block is refreshed only when "a limit is configured" flips.
+  "set-spend-guard": { effect: "mutates", writes: "state.json (the project, lane or epic spend-guard layer), CLAUDE.md (the rules block, only when a limit first appears or the last goes), plus render()'s writes" },
+  "override-spend-guard": { effect: "mutates", writes: "state.json (an epic's spendGuardOverrides: appended, or the latest marked revoked and kept), plus render()'s writes; an append (not a revoke) first runs the same ingest spend-guard does, into the MAIN working tree's ignored .conductor/spend/, while tracking is on" },
+  // `detachedNoOp` for `spend`'s reason: with tracking on `spend-guard` ingests into the MAIN working tree's
+  // ignored .conductor/spend/ and never writes state.json (spec: "It writes nothing to state.json"); with
+  // tracking off it reads state only. Declared `mutates` for the ingest, not read-only.
+  "spend-guard": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
   // DESTRUCTIVE by nature, which is why it removes nothing without both a selector and --yes.
   "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
   claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },

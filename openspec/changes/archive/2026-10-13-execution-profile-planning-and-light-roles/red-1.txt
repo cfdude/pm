@@ -1,0 +1,25 @@
+file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-a589ccaaf3ce60732/scripts/test/unit/execution-profile-defaults.test.mjs:8
+import { DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES } from "../../lib/constants.mjs";
+         ^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '../../lib/constants.mjs' does not provide an export named 'DEFAULT_ROLE_MODELS'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:463:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:561:5)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:105:5)
+
+Node.js v26.10.0
+✖ scripts/test/unit/execution-profile-defaults.test.mjs (132.751292ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136.638625
+
+✖ failing tests:
+
+test at scripts/test/unit/execution-profile-defaults.test.mjs:1:1
+✖ scripts/test/unit/execution-profile-defaults.test.mjs (132.751292ms)
+  'test failed'

@@ -4,6 +4,8 @@
 // lib/add-epic.mjs (parseFlags) -- see the design doc.
 
 import { loadState } from "./state.mjs";
+import { resolvePlatform } from "./platform.mjs";
+import { sessionCostReport } from "./session-cost-report.mjs";
 import { ARTIFACT, storeOps } from "./store.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
@@ -38,8 +40,13 @@ export function tableRow(...cells) {
 export function renderVerb() {
   const status = render();
   if (parseFlags(currentArgv().slice(3))["diff-summary"]) return status;
-  const lines = specSyncBlock(loadState());
+  const state = loadState();
+  const lines = specSyncBlock(state);
   if (lines.length) outStream().write(lines.map(escapeControls).join("\n") + "\n");
+  // rules-block-session-cost: what pm costs every session, one line each — the managed rules block and the
+  // SessionStart brief. Printed HERE and not inside render() for the spec-sync block's reason: render()
+  // runs in-process under hooks and most mutating verbs, and measuring builds the brief again.
+  outStream().write(sessionCostReport(state, resolvePlatform({}, state)).map(escapeControls).join("\n") + "\n");
   return status;
 }
 

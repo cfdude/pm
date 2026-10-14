@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES,
-  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
+  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, isOpenspecLane, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
@@ -15,6 +15,7 @@ import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, gateStaleness, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived, SPEC_DELTAS_SCOPE, specDeltasScopeBase } from "./epic-progress.mjs";
+import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { trackerKeyHolder, trackerKeyRefusal } from "./tracker-dedup.mjs";
 import { releaseClaimOfEndedEpic } from "./claim-shape.mjs";
@@ -291,7 +292,7 @@ export function updateEpic() {
   // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
     errStream().write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--spec-deltas-waived \"<why the archived deltas were deliberately not applied>\"] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    die(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--verbosity quiet|verbose] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--story <n> --correct-disposition \"<why the recorded one was wrong>\"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--spec-deltas-waived \"<why the archived deltas were deliberately not applied>\"] [--gate1-waived \"<why Gate 1 does not apply before activating>\"] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
@@ -407,6 +408,29 @@ export function updateEpic() {
   const status = str(f.status);
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     die(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`);
+  }
+  // The Gate 1 activation guard (openspec-gate1-guard-on-apply). Only a TRANSITION to active: an epic already
+  // active is not entering anything (a `--notes` on it must not re-litigate). The waiver is read from THIS call
+  // first, so `--status active --gate1-waived "<why>"` is one call; `--clear gate1-waived` in the same call
+  // removes the stored one before the check.
+  const gate1WaivedFlag = str(f["gate1-waived"]);
+  // Judged against the lane THIS call sets (`--lane openspec --gate1-waived …` on an epic in another lane
+  // is the call that makes it an openspec epic), not the lane it is leaving.
+  const effectiveLane = str(f.lane) !== undefined ? str(f.lane) : epic.lane;
+  if (gate1WaivedFlag !== undefined && !isOpenspecLane({ lane: effectiveLane })) {
+    die(`conductor: --gate1-waived applies only to an openspec-lane epic; '${escapeControls(id)}' is not one, so there is no Gate 1 to waive. Nothing was written.\n`);
+  }
+  if (status === "active" && snapshot.status !== "active") {
+    const clearsWaiver = [].concat(f.clear === undefined ? [] : f.clear).includes("gate1-waived");
+    // The artifact paths too: `--spec openspec/changes/<name>/… --status active` names the epic's change in
+    // THIS call (gh#200), and `--clear spec|plan` removes the link before the check.
+    const clears = [].concat(f.clear === undefined ? [] : f.clear);
+    const candidate = { ...snapshot, lane: effectiveLane,
+      gate1Waived: gate1WaivedFlag !== undefined ? gate1WaivedFlag : (clearsWaiver ? undefined : snapshot.gate1Waived),
+      planPath: str(f.plan) !== undefined ? str(f.plan) : (clears.includes("plan") ? undefined : snapshot.planPath),
+      specPath: str(f.spec) !== undefined ? str(f.spec) : (clears.includes("spec") ? undefined : snapshot.specPath) };
+    const refusal = gate1ActivationRefusal(candidate);
+    if (refusal) die(`conductor: ${refusal}\n`);
   }
   // The same vocabulary and timestamp checks add-epic and add-many make, from the same helpers.
   if (str(f.priority) !== undefined && priorityValueError(str(f.priority))) {
@@ -584,11 +608,24 @@ export function updateEpic() {
   // pre-existing handoff refusal, whose other remedy — the `<!-- pm:lifecycle -->` marker —
   // cannot be applied to an inline story at all, there being no task source to write it in.
   const wontDo = f["wont-do"];
-  let storyIndex, storyMutation;
+  let storyIndex, storyMutation, storyNote = "";
+  // gh#176: the STORY-scoped correction. `--correct-disposition "<why>"` beside `--story <n>` reopens a story
+  // whose recorded state (done, or a wont-do) was written against the wrong index. Same shape as the epic-level
+  // one: the prior state is KEPT (`stories[n-1].corrections[]`, append-only), never overwritten or deleted.
+  let storyCorrection;
+  if (f.story !== undefined && f["correct-disposition"] !== undefined) {
+    storyCorrection = str(f["correct-disposition"]);
+    if (storyCorrection === undefined) {
+      die("conductor: --correct-disposition requires a reason saying why the recorded state was wrong — it is kept on the record beside the one it supersedes\n");
+    }
+    if (f.status === "archived") {
+      die("conductor: --story <n> --correct-disposition corrects a STORY; it cannot be combined with --status archived, which would read the same flag as the epic's correction. Correct the story first, then archive. Nothing was written.\n");
+    }
+  }
   if (f.story !== undefined) {
     const asked = [f.done === true ? "done" : null, wontDo !== undefined ? "wont-do" : null].filter(Boolean);
-    if (asked.length === 0) {
-      die("conductor: --story <n> requires a mutation — --done (it shipped) or --wont-do \"<reason>\" (it will not be done, and why)\n");
+    if (asked.length === 0 && storyCorrection === undefined) {
+      die("conductor: --story <n> requires a mutation — --done (it shipped) or --wont-do \"<reason>\" (it will not be done, and why), or --correct-disposition \"<why>\" to undo a wrong one\n");
     }
     if (asked.length > 1) {
       die("conductor: --done and --wont-do are mutually exclusive — a story either shipped or it did not\n");
@@ -612,13 +649,20 @@ export function updateEpic() {
     // somebody's decision and this verb does not silently destroy it. Correcting a mistaken
     // story disposition is deliberately not something this command does.
     const target = stories[storyIndex];
-    if (isStoryDisposed(target)) {
+    // Echoed on success so an off-by-one is visible the moment it happens (gh#176).
+    storyNote = ` — story ${n} (1-indexed): "${escapeControls(target.title)}"`;
+    if (storyCorrection !== undefined) {
+      if (!target.done && !isStoryDisposed(target)) {
+        die(`conductor: story ${n} of '${escapeControls(id)}' (${escapeControls(target.title)}) records neither done nor a disposition — there is nothing to correct. Nothing was written.\n`);
+      }
+    } else if (isStoryDisposed(target)) {
       die(
         `conductor: story ${n} of '${escapeControls(id)}' already carries a recorded disposition ` +
         `('${escapeControls(target.disposition.state)}': ${escapeControls(target.disposition.reason)}). Replacing it would ` +
-        "destroy a judgment somebody made.\n");
+        "destroy a judgment somebody made. If it was recorded against the wrong story, " +
+        `--story ${n} --correct-disposition "<why it was wrong>" reopens it and keeps the original beside the correction.\n`);
     }
-    if (storyMutation === "wont-do" && target.done) {
+    if (storyCorrection === undefined && storyMutation === "wont-do" && target.done) {
       die(`conductor: story ${n} of '${escapeControls(id)}' is already done — work that shipped cannot be dropped\n`);
     }
   } else if (f.done === true) {
@@ -772,8 +816,8 @@ export function updateEpic() {
   //   2. UNREACHABLE — the whole disposition block below sits inside `status === "archived"`,
   //      so `--correct-disposition` alone parses, writes nothing, exits 0 and prints "updated".
   //      Diagnosed by name rather than dropped.
-  const correction = str(f["correct-disposition"]);
-  if (f["correct-disposition"] !== undefined) {
+  const correction = f.story === undefined ? str(f["correct-disposition"]) : undefined;
+  if (f["correct-disposition"] !== undefined && f.story === undefined) {
     if (correction === undefined) {
       die(
         "conductor: --correct-disposition requires a reason saying why the recorded disposition " +
@@ -949,6 +993,7 @@ export function updateEpic() {
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.
   if (description !== undefined) epic.description = description;
   if (specDeltasWaived !== undefined) epic.specDeltasWaived = specDeltasWaived;
+  if (gate1WaivedFlag !== undefined) epic.gate1Waived = gate1WaivedFlag;
   if (note !== undefined) {
     if (!Array.isArray(epic.notes)) epic.notes = [];
     epic.notes.push(noteEntry(note));
@@ -961,8 +1006,17 @@ export function updateEpic() {
     // The ROW SURVIVES in both branches. Deletion is never the answer to "this will not be
     // done": removing it destroys the record that the work was ever projected, which is exactly
     // the history an archived epic's reader needs.
-    if (storyMutation === "done") epic.stories[storyIndex].done = true;
-    else epic.stories[storyIndex].disposition = storyDisposition({ state: "wont-do", reason: wontDo });
+    const row = epic.stories[storyIndex];
+    if (storyCorrection !== undefined) {
+      // The prior state moves, verbatim, under `corrections[]` (append-only: a second correction keeps the first).
+      const prior = row.done ? { done: true } : { disposition: row.disposition };
+      if (!Array.isArray(row.corrections)) row.corrections = [];
+      row.corrections.push({ prior, reason: storyCorrection, correctedAt: new Date().toISOString() });
+      row.done = false;
+      delete row.disposition;
+    }
+    if (storyMutation === "done") row.done = true;
+    else if (storyMutation === "wont-do") row.disposition =storyDisposition({ state: "wont-do", reason: wontDo });
   }
 
   // The unsets. AFTER every field write above, and it costs nothing that they cannot collide:
@@ -1196,7 +1250,7 @@ export function updateEpic() {
       "first (or leave it archived)."
     : "";
   reportSave(saved, {
-    changed: `conductor: updated '${escapeControls(id)}'${undoneNote}`,
+    changed: `conductor: updated '${escapeControls(id)}'${storyNote}${undoneNote}`,
     unchanged: statusUndone
       ? `conductor: nothing changed on '${escapeControls(id)}'${undoneNote}`
       : `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +

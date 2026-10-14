@@ -177,7 +177,7 @@ changed) so deciding whether a PROJECT.md diff is safe to discard as noise is me
 instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
 sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
-execution profile (review, model per job role, verbosity) at the project and lane layers — resolved
+execution profile (review, model per job role — `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary`, each with a built-in default pair that is never stored — and verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
 epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
@@ -888,6 +888,34 @@ it waits on.
   is what a hand-edit looks like from the record's side. Off by default; it records nothing
   retroactively, so turning it on says nothing about yesterday. `purge-logs` is the manual
   cleanup — it removes nothing without a selector, and nothing without `--yes`.
+- Want to know which epic, phase, role and model the tokens went to? `set-spend-tracking on` is an
+  opt-in, off by default; `spend` ingests Claude Code's own transcripts (read-only, local) and reports
+  per-epic totals by actor, role, phase, gate round and model tier, with the unattributed spend and a
+  coverage share always shown. While it is on, begin every sub-agent dispatch prompt with
+  `pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]` (the rules block says so), or the tokens
+  land in the unattributed bucket. Every write has an inverse: `spend --clear --yes`,
+  `spend --rebuild --yes`, `spend --clear --timeline --yes`. It computes no cost. See `commands/spend.md`.
+- Making an openspec-lane epic active with its change on disk? It is refused without a passing Gate 1
+  (`record-gate-review <id> --gate 1 --artifact …`), or waive it in one call with
+  `update-epic <id> --status active --gate1-waived "<why>"`. `integrity`'s `gate-1-verdict-stale` names an
+  epic whose reviewed artifact was amended since. See `commands/epic.md`.
+- `/pm:upgrade` ends with one `NOT SET` line per opt-in this repo never adopted, each with the command that
+  adopts it; judge each against the repo, enable nothing unasked. The SessionStart brief is capped at 16384
+  bytes (lists shortened, obligation blocks never cut) and `rules --sections` ranks the rules block's
+  sections by size. See `commands/upgrade.md` and `commands/status.md`.
+- Recorded a story's `--done` / `--wont-do` against the wrong index? `update-epic <id> --story <n>
+  --correct-disposition "<why>"` reopens it and keeps the original (`--story` is 1-indexed).
+- Review loop that will not converge, or tokens running past a budget? Every accepted `record-gate-review`
+  already keeps a per-gate round tally (`epic.gateRounds`). `set-spend-guard --max-failed-rounds <n>` and/or
+  `--tokens <n>` turn it into a limit at the project, a lane (`--lane`) or an epic (`--epic`); nothing is on
+  by default and every set has a `--unset`. Before each review or fix dispatch run `spend-guard <epic>`: exit 0
+  go on, **exit 2 is a STOP that epic-level autonomy does not bypass**. Stop same-tier retries, hand the failure
+  evidence to the escalation target it names (one model tier up, else the user) and ask what is wrong and how to
+  resolve it, then record the decision with `override-spend-guard <epic> --signal rounds|tokens --escalated-to
+  <target> --reason "<why>"` (accepted only while tripped; no autonomy grant covers it; `--revoke` keeps the
+  record). Mark review dispatches `pm-spend: epic=<id> role=review phase=review round=<n>` so unrecorded rounds
+  are counted. Never wire `spend-guard` into a hook (exit 2 blocks). A failed verdict is always recorded; the STOP
+  is printed after it. See `commands/spend-guard.md`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —
@@ -1314,11 +1342,11 @@ pmVersion     : "<semver>" — release that last touched this repo (set by init/
 tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
                 opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
-executionProfile? : { model?: {implement?|test?|review?: {model, effort?}}, verbosity?: "quiet"|"verbose" } —
+executionProfile? : { model?: {plan?|implement?|test?|review?|mechanical?|rudimentary?: {model, effort?}}, verbosity?: "quiet"|"verbose" } —
                 the PROJECT layer of the execution profile (the project `review` is `reviewMode` above,
                 reused rather than moved). `model` ∈ fable|opus|sonnet|haiku, `effort` ∈
                 low|medium|high|xhigh|max|ultracode; haiku takes no effort, every other model requires
-                one. Set/unset via `set-profile`; read via `profile`. Absent resolves to today's behaviour.
+                one. Set/unset via `set-profile`; read via `profile`. Absent resolves to each role's built-in default (never written here).
 laneProfiles? : { "<lane>": { review?, model?, verbosity? } } — the LANE layer, same value shapes; an
                 emptied lane is removed. Set via `set-profile --lane <lane>`.
 gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate the reconcile-owed
@@ -1330,7 +1358,23 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+spendTracking? : { enabled, enabledAt } — opt-in token-spend ledger switch. Absent reads as off.
+                `enabledAt` is the time of the FIRST `on` and never moves (it bounds an ingest's
+                look-back). Set via `set-spend-tracking on|off`; read with `spend`. Added field, no
+                migration. While on, the rules block carries a `## Spend tracking` section.
+gateRounds?   : on an epic — { gate1?, gate2? }, each { fails, passes, failStreak, lastVerdictAt,
+                lastPassAt? }. Written ONLY by an accepted `record-gate-review`, always, with no
+                limit configured; a pass zeroes `failStreak` and stamps `lastPassAt` (the epic's
+                "pass anchor" is the latest across gates). Withdrawing a verdict does not un-count it.
+                Epics recorded before 0.52 read as zero. Added field, no migration.
+spendGuard?   : { maxFailedRounds?, tokenCeiling?, warnAt? } — the guard's limits at the PROJECT layer;
+laneSpendGuards? : { <lane>: { ... } } and `epic.spendGuard?` are the lane and epic layers (epic first,
+                then lane, then project; a detour inherits nothing). Set via `set-spend-guard`, every
+                field with an `--unset`. No default limit; `warnAt` defaults to 80.
+spendGuardOverrides? : on an epic — [{ signal, baseline, escalatedTo, reason, at, revokedAt?,
+                revokeReason? }]. Appended by `override-spend-guard` only while the signal is tripped;
+                a revoke marks the entry and keeps it. Added field, no migration.
+epics[]       : { id, title, priority, status, role, lane, reviewMode?, model?, verbosity?, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, gateRounds?, withdrawnGateReviews?, spendGuard?, spendGuardOverrides?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
 createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
                 through — at the moment the epic is registered. ABSENT means UNKNOWN, never
                 today and never another field's value; `recover-created-at` backfills it from

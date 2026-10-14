@@ -450,7 +450,17 @@ const DISPATCH_BASELINE = {
   unclaim: { pre: [["claim", "e1", "--session", "s"]], args: ["unclaim", "e1", "--session", "s"] },
   owners: { args: ["owners"] },
   activity: { args: ["activity"] },
+  spend: { args: ["spend"] },
   "set-activity-log": { args: ["set-activity-log", "on"] },
+  "set-spend-tracking": { args: ["set-spend-tracking", "on"] },
+  // spend-budget-and-stuck-loop-guard. `override-spend-guard` is accepted only while a signal is tripped, so it
+  // seeds one: a round limit of 1, then one recorded failed verdict.
+  "set-spend-guard": { args: ["set-spend-guard", "--max-failed-rounds", "2"] },
+  "spend-guard": { args: ["spend-guard", "e1"] },
+  "override-spend-guard": {
+    pre: [["set-spend-guard", "--max-failed-rounds", "1"], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"]],
+    args: ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
+  },
   "purge-logs": { args: ["purge-logs", "--keep", "5"] },
   "verify-worktrees": { args: ["verify-worktrees"] },
   // Declared `expectsFailure` in VERB_EFFECTS: its job is to fail on drift. A copied fixture's
@@ -621,6 +631,33 @@ test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (n
   assert.match(r.stderr, /unknown flag --bogus for gate-guard/);
 });
 
+test("REGRESSION GUARD: brief, snapshot, commit-nudge, gate-guard and lesson-advice drain a large hook payload (no EPIPE)", async () => {
+  // Same async spawn + stdin.end() shape as the gate-guard guard above, for the verbs that never
+  // read the payload (brief, snapshot) or return before they do (commit-nudge in a repo without pm).
+  // The payload is 1 MiB: well past any pipe buffer, so an unread writer must see EPIPE.
+  const payload = JSON.stringify({ hook_event_name: "SessionStart", transcript: "y".repeat(1024 * 1024) });
+  const feed = (verb, cwd) => new Promise((resolve) => {
+    const child = spawn("node", [ENGINE, verb], {
+      cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+    });
+    let writeError = null;
+    child.stdout.resume();
+    child.stderr.resume();
+    child.stdin.on("error", (e) => { writeError = e; });
+    const timer = setTimeout(() => child.kill("SIGKILL"), 30000);
+    child.on("close", (status, signal) => { clearTimeout(timer); resolve({ status, signal, writeError }); });
+    child.stdin.end(payload);
+  });
+  for (const [label, makeRepo] of [["with pm", initialized], ["without pm", gitRepoWithoutPm]]) {
+    for (const verb of ["brief", "snapshot", "commit-nudge", "gate-guard", "lesson-advice"]) {
+      const r = await feed(verb, makeRepo());
+      assert.equal(r.signal, null, `${verb} (${label}) did not finish within 30 s`);
+      assert.equal(r.writeError, null, `${verb} (${label}): the writer saw ${r.writeError && r.writeError.code}`);
+      assert.equal(r.status, 0, `${verb} (${label}) exited ${r.status}`);
+    }
+  }
+});
+
 // ═══════════════ 2.3 — --force reaches the verbs that carried their own allowlists ═══════════════
 
 test("--force is not refused on a mutating verb that validates its own flags", () => {
@@ -661,7 +698,8 @@ const POSITIONAL_COUNTS = {
   "log-detour": 1, "retract-detour": 1, "push-detour": 1, "drop-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
-  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1,
+  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1,
+  "spend-guard": 1, "override-spend-guard": 1,
 };
 for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;
 

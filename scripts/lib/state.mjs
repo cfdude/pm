@@ -56,6 +56,14 @@ export function readStdin() {
   try { return stdinSource().read(); } catch { return ""; }
 }
 
+/** Drain a HOOK's payload and discard it. For a hook verb that never reads the payload (`brief`,
+ *  `snapshot`) or that returns before it does (a dormant repo, a detached tree): a writer holding a
+ *  payload larger than the pipe buffer (~64 KiB) gets EPIPE if the process exits unread. Never from a
+ *  terminal, where the read would wait for an EOF only a person can send. */
+export function drainHookPayload() {
+  if (!stdinSource().isTTY) readStdin();
+}
+
 /** Is there a record at all? ASKS THE STORE, so a memory store answers "yes" for a record it was
  *  seeded with and "no" for one it was not — the same question, asked of the same seam.
  *

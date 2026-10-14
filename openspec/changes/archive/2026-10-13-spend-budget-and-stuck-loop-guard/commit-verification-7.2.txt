@@ -1,0 +1,24 @@
+Commit verification (CLAUDE.md required item 2) — spend-budget-and-stuck-loop-guard
+Run 2026-10-13 against the commits, not the working tree: `git show --stat <sha>`.
+
+f9de945a docs(spec): propose — files present in the commit:
+  openspec/changes/spend-budget-and-stuck-loop-guard/{.openspec.yaml,design.md,proposal.md,tasks.md,specs/spend-guard/spec.md}
+038eea41 docs(spec): confirmation-review fixes — design.md, proposal.md, specs/spend-guard/spec.md, tasks.md
+0049c540 feat(spend-guard): tasks 1.1-5.5 (one unit) — present in THAT commit:
+  1.1-1.3 scripts/lib/gate-review-writeback.mjs, scripts/test/unit/spend-guard-tally.test.mjs,
+          openspec/changes/.../red-1.1.txt, openspec/changes/.../call-site-sweep-1.3.txt
+  2.1-2.2 scripts/lib/execution-profile.mjs, scripts/lib/spend-guard-verbs.mjs, commands/set-spend-guard.md
+  3.1-3.6 scripts/lib/spend-guard.mjs, scripts/lib/spend-guard-verbs.mjs, commands/spend-guard.md,
+          commands/override-spend-guard.md, scripts/test/unit/spend-guard-core.test.mjs,
+          scripts/test/unit/spend-guard-verbs.test.mjs, scripts/test/assert/spend-guard.test.mjs
+  4.1-4.2 scripts/lib/spend-command.mjs, scripts/lib/spend-guard.mjs
+  5.1-5.3 scripts/lib/briefing.mjs, scripts/lib/rules.mjs, scripts/test/unit/spend-guard-emission.test.mjs
+  5.4     scripts/lib/opt-ins.mjs, scripts/test/unit/opt-ins.test.mjs
+  5.5     .changesets/spend-budget-and-stuck-loop-guard.md, skills/conductor/SKILL.md
+  also    docs/parity-ledger.json (3 commands claimed), README.md (9.1), scripts/lib/constants.mjs,
+          scripts/lib/verb-effects.mjs, scripts/conductor.mjs, tasks.md (ticks)
+2c29916a, 248ac345 docs(spec): spec.md exit-code wording only (Gate 2 minor), one file each.
+
+Result: every file a task claims appears in the commit that task names. 6.1 (integration) and 6.2
+(dogfood) change no file; 6.2 was run 2026-10-13: `spend-guard spend-budget-and-stuck-loop-guard`
+printed rounds ok, count 0, limit 2 (project), recorded 0, ledger 0, exit 0.

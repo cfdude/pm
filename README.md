@@ -719,7 +719,9 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. The document may hold only `parent` and `epics`; `links` take the `--link` grammar or `{type, epic, reason}` objects and must name an epic in the record or the batch — anything else refuses the batch by name. |
-| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--spec-deltas-waived "<why>"] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--verbosity …] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic execution-profile values (`--review-mode`, `--model`, `--verbosity`; an epic may raise or lower the lane's and repo's), inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. `--spec-deltas-waived "<why>"` takes a delivered change archived without applying its specs out of the spec-deltas report (the reason is the value, so it cannot be blank; refused unless the epic is a delivered openspec-lane epic whose change is archived), and the briefing prints `SPEC DELTAS WAIVED (N)`; inverse `--clear spec-deltas-waived`. `--plan` / `--spec` refuse a trailing-slash value or a directory (also on `add-epic` and `add-many`), and `--no-deferrals` together with `--deferral` or `--declined-deferral` is refused with nothing written. A `--plan` / `--spec` naming a file under `openspec/changes/[archive/]<name>/` claims that change for `integrity` and `sync`. |
+| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--spec-deltas-waived "<why>"] [--gate1-waived "<why>"] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--verbosity …] [--model <role>=<model>[:<effort>]] [--clear-model <role>] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic execution-profile values (`--review-mode`, `--model`, `--verbosity`; an epic may raise or lower the lane's and repo's), inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. `--spec-deltas-waived "<why>"` takes a delivered change archived without applying its specs out of the spec-deltas report (the reason is the value, so it cannot be blank; refused unless the epic is a delivered openspec-lane epic whose change is archived), and the briefing prints `SPEC DELTAS WAIVED (N)`; inverse `--clear spec-deltas-waived`. `--plan` / `--spec` refuse a trailing-slash value or a directory (also on `add-epic` and `add-many`), and `--no-deferrals` together with `--deferral` or `--declined-deferral` is refused with nothing written. A `--plan` / `--spec` naming a file under `openspec/changes/[archive/]<name>/` claims that change for `integrity` and `sync`. |
+| `update-epic <id> --story <n> --correct-disposition "<why>" [--done\|--wont-do "<reason>"]` | Reopens a story whose `--done` or `--wont-do` was recorded against the wrong index (gh#176). `--story <n>` is **1-indexed** (`--help` says so: `n, 1-indexed (NOT the 0-indexed stories[] position in state.json)`), and a successful `--story` write echoes the story it landed on. The original disposition is kept under `stories[n-1].corrections[]`; add `--done` or `--wont-do` to apply the right mutation in the same call. The replacement guard is unchanged and its refusal names this path. |
+| `update-epic <id> --status active --gate1-waived "<why>"` | An openspec-lane epic whose `openspec/changes/<id>/` exists can no longer be made active (`set-active`, `update-epic --status active`, or `add-epic` / `add-many` creating at `active`) while its Gate 1 is absent, failed or withdrawn; the refusal names `record-gate-review <id> --gate 1 …` and this waiver (reason required, openspec-lane only; inverse `--clear gate1-waived`). A change is found by id or by the directory its `--plan` / `--spec` points into, and an epic with no change on disk yet, one already active, or one with a stale-but-passing Gate 1 is not refused. `push-detour` / `pop-detour` warn instead of refusing. |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at write time and stored as the full object name (`HEAD` or a tag records the commit it names now); a value that is not a commit in this clone is refused with nothing written. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. A repeat is a no-op (exit 0, said on stderr); if an attribution turns a passing Gate 2 stale the engine says so and names re-recording Gate 2 or `--withdraw-commit`. |
 | `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. Matched by commit identity where the value resolves (a full sha withdraws a legacy short entry of the same commit), and by exact spelling otherwise, so a legacy value that no longer resolves stays withdrawable. The array stays append-only, so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
 | `update-epic <id> --withdraw-gate-review <1\|2> --withdrawal-reason "<why>"` | **Withdraw a recorded gate verdict** that does not belong on this epic — re-recording can replace a verdict, but only this says it was never this epic's. Repeatable, so both gates go in one call under the one reason. The whole entry, `superseded` included, moves into `withdrawnGateReviews` — recorded, never erased — and re-recording is the way back. Refused without a reason, for a gate other than 1 or 2, for the same gate twice, where no verdict is stored, and against an `ungated` stamp (cleared by recording a real verdict); `--withdrawal-reason` alone is refused too. It is a field write the archive gate decides on: a Gate 2 withdrawal in a `delivered` archive call, or on an archived `delivered` epic whose Gate 2 was met, is refused and prints the one call that withdraws AND records the right disposition. |
@@ -869,12 +871,15 @@ layer it came from).
 
 The execution profile says how intensely to review, which model and effort each job role runs on, and
 how often you report. Three fields: `review` (`off|standard|thorough`), `model` (per role
-`implement|test|review`, a `{model, effort}` pair; `model` is `fable|opus|sonnet|haiku`, and every
-model except `haiku` takes an effort) and `verbosity` (`quiet|verbose`). `/pm:init` asks about it and
-recommends `opus` at `medium` effort for every role.
+`plan|implement|test|review|mechanical|rudimentary`, a `{model, effort}` pair; `model` is `fable|opus|sonnet|haiku`, and every
+model except `haiku` takes an effort) and `verbosity` (`quiet|verbose`). Each role has a built-in default pair, applied when nothing sets it and never
+stored: `plan` `opus` (`high`), `implement` `sonnet` (`medium`), `test` `sonnet` (`low`), `review`
+`opus` (`high`), `mechanical` `sonnet` (`low`), `rudimentary` `haiku`. `/pm:init` recommends accepting them
+(it records nothing). To have a top-tier model build one epic straight off its finished plan, set
+`--model implement=fable:<effort>` on that epic.
 
 Each field resolves on its own, most specific first: **epic, then lane, then project, then the
-default** (`review: standard`, `verbosity: quiet`, no model directive). Set the project or a lane
+default** (`review: standard`, `verbosity: quiet`, and each model role's default pair). Set the project or a lane
 with `set-profile [--lane <lane>] --review … --model <role>=<model>[:<effort>] --verbosity …`; an epic
 sets its own with `add-epic` / `update-epic` (`--review-mode`, `--model`, `--verbosity`) or
 `add-many`. An epic may lower a value as well as raise it. Every set has an inverse:
@@ -1022,6 +1027,23 @@ headline and recommends adopting any opt-in capability that's relevant to this r
 `.conductor/state.json` (e.g. secondary trackers, `thorough` review mode) — one line, one
 reason, the command to run. It never enables anything itself.
 
+`upgrade` also reviews the opt-ins this repo has **never** adopted, on every run, because the
+changelog delta only names what a release added (gh#210). After the delta it prints one `opt-ins`
+line of what is adopted and one `NOT SET` line per opt-in that is not, each naming the command that
+adopts it (`set-review-mode --mode …`, `set-lane-routing --add …`, `set-activity-log on`,
+`set-tracker --system …`, `set-spend-tracking on`, `set-spend-guard …`). It reads `state.json` from a registry
+in `scripts/lib/opt-ins.mjs` and enables nothing. It ends with two measured lines: the managed
+rules block on disk and the SessionStart brief (bytes and estimated tokens, bytes/4).
+
+**The SessionStart brief is capped at 16384 bytes.** It grows with a repository's history (78,275
+bytes on pm's own repo before the cap), so over the cap the hook shortens only its lists: RELEASES
+(the 3 most recent), DISPOSITIONS, GATE REVIEWS, HANDOFFS and EPIC LINKS (the first 5 each), every item
+line trimmed to 240 characters, each list ending in `(+N more — see PROJECT.md "<section>")`. Warnings
+and obligation blocks are never cut: if they alone exceed the cap they are sent whole and the marker says
+so. A brief under the cap is unchanged, PROJECT.md's "Briefing" and the PreCompact snapshot stay uncapped.
+`rules --sections` prints the managed rules block's per-section sizes, ranked, so the cost of each
+section is visible.
+
 **If an upgrade goes wrong, git is the rollback.** `.conductor/state.json` is git-tracked, so
 commit `state.json` before upgrading (a restore discards every uncommitted state change since
 the last commit, not only the migration's), then `git restore .conductor/state.json` and
@@ -1115,7 +1137,7 @@ open in a release that has already delivered, an epic another epic declares it s
 that never ended, a `github-issues` tracker whose recorded repo is not `[HOST/]owner/name`
 (`tracker-repo-not-a-github-repository`, which gets no `gh` listing step until it is re-recorded),
 a `delivered` openspec epic whose archived spec deltas never reached `openspec/specs/`
-(`delivered-epic-spec-deltas-absent`), two epics holding one tracker item (`tracker-item-held-by-two-epics`), a change present both live and under `archive/` with identical content (`archived-change-also-live`), a failing gate verdict recorded after the merge (`late-failing-gate-review`), and an archived `delivered` epic that no longer meets what `delivered` requires (`archived-delivered-fails-delivered-obligation`). Each remedy is printed under `/pm:status`.
+(`delivered-epic-spec-deltas-absent`), two epics holding one tracker item (`tracker-item-held-by-two-epics`), an epic whose Gate 1 verdict reads stale because a reviewed artifact was amended (`gate-1-verdict-stale`: names the changed files and `record-gate-review <id> --gate 1 …` to re-record; a legacy verdict with no digests is `unverifiable` and not reported), a change present both live and under `archive/` with identical content (`archived-change-also-live`), a failing gate verdict recorded after the merge (`late-failing-gate-review`), and an archived `delivered` epic that no longer meets what `delivered` requires (`archived-delivered-fails-delivered-obligation`). Each remedy is printed under `/pm:status`.
 
 **The spec-sync check reads git's INDEX.** For each `delivered` openspec epic whose change is
 archived, every ADDED/MODIFIED header (and RENAMED `TO`) of its archived delta specs must be under the
@@ -1279,6 +1301,77 @@ the rotation boundary only. `.conductor/activity/` is git-ignored by `init` and 
 
 `purge-logs` refuses to guess twice: with no selector it removes nothing, and without `--yes` it
 prints the plan and removes nothing.
+
+</details>
+
+<details>
+<summary><code>set-spend-tracking</code> / <code>spend</code> — Which epic, phase, role and model did the tokens go to?</summary>
+
+Spend tracking is an opt-in developer feature: it is **OFF by default** and is turned on with `set-spend-tracking on` (there is no separate config command). It is on in pm's own repository.
+
+An **opt-in, off-by-default** record of token spend, built read-only from Claude Code's own
+transcript files. Nothing is read until you opt in, and then only by `spend`: no hook reads a
+transcript, and a repo with tracking off pays nothing new on any hot path.
+
+```bash
+node scripts/conductor.mjs set-spend-tracking on|off
+node scripts/conductor.mjs spend [--epic <id>] [--since <iso>] [--until <iso>] [--json] [--no-ingest]
+node scripts/conductor.mjs spend --clear [--timeline] [--yes]
+node scripts/conductor.mjs spend --rebuild [--yes]
+```
+
+`enabledAt` is written on the first `on` and never moves; `init` and `upgrade` never turn it on,
+and `upgrade` lists it as `NOT SET` until you do. `spend` ingests incrementally, then reports
+per-epic totals split by actor, role, phase, gate round and model tier. The ledger stores counts and
+identifiers only, never prompt or response text, and lives in the main working tree's git-ignored
+`.conductor/spend/`.
+
+**Attribution** is computed when the ledger is read: a sub-agent by a `pm-spend: epic=<id> role=<role>
+phase=<phase> [round=<n>]` line that the rules block asks you to begin each dispatch prompt with
+(emitted only while tracking is on); orchestrator spend by an active-epic timeline the engine records;
+everything else lands in an **unattributed** bucket, by reason, that the report always prints, with a
+coverage share. Spend made while tracking was off is never credited to an epic.
+
+**Every write has an inverse**, and each prints its plan without `--yes`: `set-spend-tracking off`,
+`spend --clear`, `spend --rebuild` (which keeps rows whose transcript Claude Code has since pruned) and
+`spend --clear --timeline`.
+
+**Not measured:** Claude Code's background calls, spend before `enabledAt` or while tracking was off,
+and (in a release candidate) the orchestrator's spend is attributed to whichever epic is active. No
+cost is computed: pm ships no price table, and Claude Code's own cost figures are notional under
+subscription auth. See `commands/spend.md`.
+
+</details>
+
+<details>
+<summary><code>set-spend-guard</code> / <code>spend-guard</code> / <code>override-spend-guard</code> — When is an epic stuck, and who gets the failure?</summary>
+
+A review loop that cannot converge keeps spending tokens until a person notices. Every accepted
+`record-gate-review` now keeps a per-gate round tally on the epic (always, no setting). The **guard** turns
+it into limits you choose; **no limit is on by default**.
+
+```bash
+node scripts/conductor.mjs set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>] [--tokens <n>] [--warn-at <pct>] [--unset max-failed-rounds|tokens|warn-at|all]
+node scripts/conductor.mjs spend-guard <epicId> [--json] [--no-ingest]
+node scripts/conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --escalated-to user|<model> --reason "<why>"
+node scripts/conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --revoke --reason "<why>"
+```
+
+Limits resolve epic, then lane, then project, field by field. `spend-guard` compares the epic's rounds (the
+larger of its recorded fail streak and, with spend tracking on, the distinct `phase=review` rounds the ledger
+holds since its last recorded pass) and its attributed tokens (tracking on only) with them. It exits **2**
+while the epic is stuck, after printing a STOP that names the escalation target: one model tier above the
+resolved `review` model for rounds (or `implement` for tokens), else the user. A STOP is not bypassed by
+epic-level autonomy; stop dispatching same-tier retries, hand the target the failure evidence and ask what is
+wrong and how to resolve it, then record the decision with `override-spend-guard`. An override is accepted only
+while the signal is tripped, must rank at or above the target, and no autonomy grant covers it; `--revoke`
+keeps the record. A failed verdict is always recorded, and the STOP follows it on stderr. The brief carries one
+`STOP: spend guard —` line for a stuck active epic and the rules block a `## Spend guard` section, only while a
+limit is set. Never wire `spend-guard` into a hook: exit 2 is the hook block code.
+
+**Not detected:** repeated failing `certify` runs (bound to the index, not to an epic) and per-test failures.
+With tracking off the token ceiling is not checked and every surface says so. See `commands/spend-guard.md`,
+`commands/set-spend-guard.md` and `commands/override-spend-guard.md`.
 
 </details>
 

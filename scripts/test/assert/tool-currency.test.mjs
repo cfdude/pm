@@ -72,6 +72,47 @@ test("gh#128: the nudge says pm's ENGINE will not run it, not that a human must"
   assert.match(src, /YOU|you run|run it/i, "the emitted text names who runs the command");
 });
 
+// ───────────────── gh#196: slow or unreadable is UNKNOWN, never "no drift" ─────────────────
+
+function openspecProject(stamp) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec"), { recursive: true });
+  const dir = path.join(cwd, ".claude", "skills", "openspec-fixture");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "SKILL.md"),
+    `---\nname: openspec-fixture\nmetadata:\n  generatedBy: "${stamp}"\n---\n\nbody\n`);
+  return cwd;
+}
+const briefOf = (cwd, env) => JSON.parse(run(["brief"], { cwd, env })).hookSpecificOutput.additionalContext;
+
+test("gh#196: a CLI that is present but whose version cannot be read renders UNKNOWN, not silence", () => {
+  const cwd = openspecProject("1.12.0");
+  const brief = briefOf(cwd, { PM_OPENSPEC_VERSION: "unknown" });
+  assert.match(brief, /OpenSpec drift UNKNOWN/);
+  assert.match(brief, /1\.12\.0/);
+  assert.equal(briefOf(cwd, { PM_OPENSPEC_VERSION: "unknown" }), brief, "same state, same bytes — nothing to flap");
+  assert.doesNotMatch(briefOf(cwd, { PM_OPENSPEC_VERSION: "" }), /OpenSpec/, "an ABSENT CLI is still silent");
+});
+
+test("gh#196: the installed version is read from the package beside the binary, with no spawn", () => {
+  const cwd = openspecProject("1.12.0");
+  const root = path.join(cwd, "fake-openspec");   // inside tmpRepo(), which is removed at exit
+  fs.mkdirSync(root);
+  const pkg = path.join(root, "lib", "node_modules", "@fission-ai", "openspec");
+  fs.mkdirSync(path.join(pkg, "bin"), { recursive: true });
+  fs.writeFileSync(path.join(pkg, "package.json"), JSON.stringify({ name: "@fission-ai/openspec", version: "1.13.0" }));
+  // The binary FAILS if it is ever executed: a spawn could not produce 1.13.0, so the version below can
+  // only have come from the file read.
+  fs.writeFileSync(path.join(pkg, "bin", "openspec.js"), "#!/bin/sh\nexit 99\n", { mode: 0o755 });
+  fs.mkdirSync(path.join(root, "bin"));
+  fs.symlinkSync(path.join(pkg, "bin", "openspec.js"), path.join(root, "bin", "openspec"));
+  const brief = briefOf(cwd, { PATH: path.join(root, "bin"), PM_OPENSPEC_VERSION: undefined });
+  assert.match(brief, /OpenSpec drift/);
+  assert.match(brief, /1\.13\.0/);
+  assert.doesNotMatch(brief, /UNKNOWN/);
+});
+
 // ───────────────────────── the deliberate omissions ─────────────────────────
 //
 // The five positive cases — "brief nudges when the project's generated artifacts lag the installed

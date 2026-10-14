@@ -87,7 +87,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, currentSpendTracking, currentSpendGuard, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
@@ -102,6 +102,7 @@ import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render, renderVerb } from "./lib/render.mjs";
+import { measureRulesBlock, sectionTableLines } from "./lib/session-cost.mjs";
 import { init, brief, snapshot, commitNudge, syncVerb, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
@@ -128,6 +129,9 @@ import { claim, unclaim, owners } from "./lib/claims.mjs";
 import { activityEnabled, appendEvents, diffEvents, setActivityLog } from "./lib/activity-log.mjs";
 import { activity } from "./lib/activity-report.mjs";
 import { purgeLogs } from "./lib/purge-logs.mjs";
+import { recordActiveChange, setSpendTracking, spendEnabled } from "./lib/spend-tracking.mjs";
+import { spend } from "./lib/spend-command.mjs";
+import { overrideSpendGuard, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
 import { isInitialized } from "./lib/state.mjs";
 import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
@@ -242,7 +246,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|spend|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -384,6 +388,11 @@ function runInvocation(argv, io = {}) {
   // command into a visible failure, and would fire when the filesystem is already in trouble.
   let activityBefore = null;
   let activitySession = null;
+  // token-spend-tracking-per-epic D7: the spend timeline rides the SAME snapshot. `undefined` means
+  // tracking is off and nothing below does any spend work; otherwise it holds `state.active` at entry.
+  // The only thing this adds to an invocation is the after-image read in the `finally` below, and the
+  // git probes behind recordActiveChange() run only once the pointer has actually moved.
+  let spendActiveBefore;
   try {
     if (isInitialized()) {
       const snapshot = loadState();
@@ -391,6 +400,7 @@ function runInvocation(argv, io = {}) {
         activityBefore = snapshot;
         activitySession = resolveSession(parseFlags(currentArgv().slice(3)));
       }
+      if (spendEnabled(snapshot)) spendActiveBefore = snapshot.active || null;
     }
   } catch { /* including a state.json this process cannot read at all */ }
 
@@ -451,6 +461,11 @@ function runInvocation(argv, io = {}) {
     owners,
     activity,
     "set-activity-log": setActivityLog,
+    "set-spend-tracking": setSpendTracking,
+    spend,
+    "set-spend-guard": setSpendGuard,
+    "spend-guard": spendGuard,
+    "override-spend-guard": overrideSpendGuard,
     "purge-logs": purgeLogs,
     "recover-created-at": recoverCreatedAt,
     "unconsidered-outcomes": unconsideredOutcomesReport,
@@ -465,7 +480,11 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      outStream().write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId)));
+      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking(), currentSpendGuard());
+      // `--sections`: instead of the block, the ranked per-section sizes of the block that WOULD be written
+      // (rules-block-session-cost). Read-only like the verb itself.
+      if (f.sections) outStream().write(sectionTableLines(measureRulesBlock(block)).join("\n") + "\n");
+      else outStream().write(block);
     },
     "write-rules": () => {
       // #152: `--platform` is read straight off argv by platformFlag(), which treats a valueless
@@ -517,15 +536,20 @@ function runInvocation(argv, io = {}) {
     // ONE line per invocation, on EVERY path — success, a refusal, and a re-thrown crash alike —
     // and it runs BEFORE main() returns, so an in-process caller can read the log the moment the
     // call is over rather than at some later process exit.
-    if (activityBefore) {
-      try {
-        const after = loadState();
-        // No revision movement means no write happened; recording a line for it would make every
-        // read verb a log entry and drown the signal the log exists for.
-        if (after.revision !== activityBefore.revision) {
-          appendEvents(diffEvents(activityBefore, after, { verb: cmd, session: activitySession }));
-        }
-      } catch { /* never break the run being observed */ }
+    if (activityBefore || spendActiveBefore !== undefined) {
+      let after = null;
+      try { after = loadState(); } catch { /* never break the run being observed */ }
+      if (after && activityBefore) {
+        try {
+          // No revision movement means no write happened; recording a line for it would make every
+          // read verb a log entry and drown the signal the log exists for.
+          if (after.revision !== activityBefore.revision) {
+            appendEvents(diffEvents(activityBefore, after, { verb: cmd, session: activitySession }));
+          }
+        } catch { /* never break the run being observed */ }
+      }
+      // Its own guard: a failing activity append must not skip the timeline, nor the reverse.
+      if (after && spendActiveBefore !== undefined) recordActiveChange(spendActiveBefore, after);
     }
   }
   // The SUCCESS path, written rather than left to fall off the end, so that `main()` RETURNS a

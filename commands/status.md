@@ -71,6 +71,18 @@ or `0/0 · N lifecycle` where every task is excluded. The archive task always qu
 cannot be ticked before the thing that ticks it, so it used to render as outstanding work
 forever and would now demand a handoff at archive time.
 
+## What pm costs every session — the two `conductor:` lines at the end of `render`
+
+`render` ends with two lines on stdout (not under `--diff-summary`): the first, starting "conductor: rules
+block", gives the managed block as it sits on disk in bytes and estimated tokens; the second, starting
+"conductor: SessionStart brief", gives what the SessionStart hook will send. Tokens are bytes/4, an estimate. The block is paid by every session and every dispatched agent. The
+brief is capped at 16384 bytes: over it, the hook shortens its long lists (RELEASES, DISPOSITIONS, GATE
+REVIEWS, HANDOFFS, EPIC LINKS), each ending in a `(+N more — see PROJECT.md ...)` line, adds a
+`[pm brief: ...]` marker, and keeps every warning and obligation block whole; this line says `N of M bytes
+sent ... long lists shortened`. If the warnings and obligations alone exceed the cap they are sent anyway and
+this line says `OVER`. The full brief is in PROJECT.md's "Briefing" section, which is never capped. Report both lines when you summarize. `rules --sections` prints
+the block's per-section sizes, ranked, for deciding what is worth its bytes.
+
 ## Is this PROJECT.md diff worth reading — `render --diff-summary`
 
 ```bash
@@ -115,7 +127,10 @@ holders and `update-epic <one> --clear external-url`), a change present BOTH liv
 instead of moving, cfdude/pm#215; the remedy is `git rm -r` of the live copy, and a live change that
 differs from its archived namesake is a re-proposal and is not reported), a FAILING gate verdict
 recorded after the epic's merge (`late-failing-gate-review`: an audit of merged work is a real review,
-not bookkeeping, and `gate-recorded-as-bookkeeping` no longer reports it), an archived epic recorded
+not bookkeeping, and `gate-recorded-as-bookkeeping` no longer reports it), an epic whose Gate 1
+verdict reads stale (`gate-1-verdict-stale`: a reviewed spec artifact was amended after the review —
+the artifact-digest staleness behind the gate table's `⚠ stale`, listing the changed files and `record-gate-review <id> --gate 1
+…` to re-record; reported, never refused), an archived epic recorded
 `delivered` that no longer meets what `delivered` requires
 (`archived-delivered-fails-delivered-obligation`: a Gate 2 flipped to fail after the archive, the heal
 re-archiving a changed epic, a stripped `carriedTo`, tasks that changed on disk; epics whose Gate 2 is

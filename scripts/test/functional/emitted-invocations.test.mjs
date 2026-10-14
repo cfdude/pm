@@ -552,6 +552,12 @@ export async function renderedRulesBlocks() {
       const label = `rules[${platform} · ${tracker ? `${tracker.system}/${tracker.direction}/${tracker.repo || tracker.projectKey || "scope-less"}` : "none"} · ${secondaries.map(s => s.system).join("+") || "no secondary"}]`;
       out.push({ label, text: rulesBlock(tracker, "standard", secondaries, platform) });
     }
+    // token-spend-tracking-per-epic: the tracking-ON render, so the dispatch-marker instruction is
+    // checked like every other shipped instruction. Off is the matrix above (the default argument).
+    out.push({ label: `rules[${platform} · spend tracking on]`, text: rulesBlock(null, "standard", [], platform, null, true) });
+    // spend-budget-and-stuck-loop-guard: the Spend guard section, so `spend-guard <epic>` and the override
+    // invocation are checked like every other shipped instruction.
+    out.push({ label: `rules[${platform} · spend guard on]`, text: rulesBlock(null, "standard", [], platform, null, false, true) });
   }
   return out;
 }
@@ -1127,6 +1133,21 @@ const INTEGRITY_BUILDERS = {
     },
     produce: integrityProducer("gate-recorded-as-bookkeeping"),
     reported: blockHas(),
+  },
+  // integrity-reports-stale-gate-1: a Gate 1 whose reviewed artifact was amended afterwards. The one printed
+  // remedy is the Gate 1 re-record, which refreshes the digests, so the finding clears.
+  "gate-1-verdict-stale": {
+    setup() {
+      const repo = remedyRepo();
+      repo.ok(["add-epic", "--id", "sg", "--lane", "openspec", "--title", "sg"]);
+      const art = repo.file("openspec/changes/sg/proposal.md", "# sg as reviewed\n");
+      repo.ok(["record-gate-review", "sg", "--gate", "1", "--verdict", "pass", "--artifact", art]);
+      repo.file("openspec/changes/sg/proposal.md", "# sg amended after the review\n");
+      return { repo, epicId: "sg", art };
+    },
+    produce: integrityProducer("gate-1-verdict-stale"),
+    reported: blockHas(),
+    meaning: (fx) => ({ artifact: fx.art }),
   },
   "change-registered-under-two-lanes": {
     prints: "none",
@@ -3039,6 +3060,14 @@ const PRINTER_FIXTURES = {
       out.push([repo.run(["remove-epic", "jd"]), /drop-detour jp --reason "<why>"/]);
     }
     return out;
+  },
+  "a stuck active epic: the brief's spend-guard STOP line (spend-budget-and-stuck-loop-guard)"() {
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "sg", "--lane", "claude-code", "--title", "sg"]);
+    repo.ok(["set-spend-guard", "--max-failed-rounds", "1"]);
+    repo.ok(["set-active", "sg"]);
+    repo.ok(["record-gate-review", "sg", "--gate", "1", "--verdict", "fail"]);
+    return [[repo.run(["brief"]), /Run `spend-guard sg`/]];
   },
   "activity log off"() {
     const repo = remedyRepo();

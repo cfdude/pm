@@ -321,6 +321,23 @@ test("gh#128: no engine source runs `openspec` with anything but a read-only fla
     "instruction for the user to run");
 });
 
+test("gh#196: a present openspec whose --version outlasts the timeout reads UNKNOWN, and the only argv it gets is --version", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withOpenspecArtifacts(cwd, { stamps: ["1.12.0"] });
+  // A wrapper with no package.json beside it, so the file read cannot answer and the spawn fallback runs.
+  const bin = path.join(cwd, "slow-bin");   // inside tmpRepo(), which is removed at exit
+  fs.mkdirSync(bin);
+  const argvLog = path.join(bin, "argv.log");
+  fs.writeFileSync(path.join(bin, "openspec"),
+    `#!/bin/sh\necho "$@" >> "${argvLog}"\nsleep 5\necho 1.13.0\n`, { mode: 0o755 });
+  const env = { PATH: `${bin}${path.delimiter}${process.env.PATH}`, PM_OPENSPEC_SPAWN_TIMEOUT_MS: "300" };
+  const brief = parseBrief(cwd, { env });
+  assert.match(brief, /OpenSpec drift UNKNOWN/, "slow is unknown, not 'no drift'");
+  assert.match(brief, /1\.12\.0/);
+  for (const line of fs.readFileSync(argvLog, "utf8").trim().split("\n")) assert.equal(line, "--version");
+});
+
 /** A git repo with the generated artifacts actually COMMITTED — the only state in which
  *  `git diff` after `openspec update` shows anything at all. */
 function gitTrack(cwd) {
