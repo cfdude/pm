@@ -66,7 +66,7 @@ These rules bind every section below.
       Fix the Critical and Important findings. Re-validate with
       `openspec validate token-spend-tracking-per-epic --strict`. Record the verdict:
       `record-gate-review token-spend-tracking-per-epic --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.52.0** (required item 5). This change alone carries two spec
+- [x] 0.2 **Cross-spec review of release 0.52.0** (required item 5). This change alone carries two spec
       files (`spend-ledger`, `conductor-record`), so the review is required.
       - Before `/opsx:apply`, invoke the `cross-spec-review` skill over the whole spec set of the
         0.52.0 members' changes on disk.
@@ -292,7 +292,7 @@ These rules bind every section below.
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`), plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record its peak
       memory.
-- [ ] 6.2 Turn the switch on in this repo: `node scripts/conductor.mjs set-spend-tracking on`. Run
+- [x] 6.2 Turn the switch on in this repo: `node scripts/conductor.mjs set-spend-tracking on`. Run
       `spend` once. Verify:
       - the output names the transcript directory it read
       - it prints an unattributed line and a coverage line
@@ -308,21 +308,26 @@ These rules bind every section below.
 - [x] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
       lines. Verify: `rg -n "pm:lifecycle" openspec/changes/token-spend-tracking-per-epic/tasks.md`
       lists both.
-- [ ] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do
+- [x] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do
       NOT attribute the archive move (10.3), or a lifecycle-only commit after Gate 2 is recorded.
       Verify: `attributedCommits` lists them in landing order.
-- [ ] 7.5 Cross-spec review (item 5). Satisfied by 0.2.
+- [x] 7.5 Cross-spec review (item 5). Satisfied by 0.2.
 - [ ] 7.6 End by recording a disposition (item 6). Satisfied by 10.2.
-- [ ] 7.7 **Route what the work taught you** (item 7). Name each lesson as one of three kinds:
+- [x] 7.7 **Route what the work taught you** (item 7). Name each lesson as one of three kinds:
       - a practice (register an epic)
       - tooling friction (`/pm:feedback`)
       - a process failure (`docs/lessons/`)
 
       Give the evidence with each. "None" is a claim, and it must say what was looked at.
+      Routed 2026-10-13 (closeout):
+      - process failure: `docs/lessons/record-each-gate-when-its-review-ends.md` (gates recorded in one command, 779 ms apart as reported by the closing orchestrator, tripped `gate-recorded-as-bookkeeping` and live-record tests 9.4/9.14)
+      - process failure: `docs/lessons/a-spec-edit-stales-a-recorded-gate-1-until-the-record-is-committed.md` (79d2ffa9 17:20 edit, re-record committed 6e754d8b 18:08)
+      - practice: `skills/release-candidate/SKILL.md` step 2 now says to commit conductor records before dispatching worktree agents
+      - tooling friction: drafted for `/pm:feedback` in the closeout report (spend-marker phase names `spec`/`gate-1` rejected as `invalid-marker`, 24,509,352 tokens unattributed per `spend`; `openspec validate --strict` failures hidden behind `| tail -1`)
 
 ## 8. Gate 2
 
-- [ ] 8.1 **Gate 2** at this epic's effective review. When built inside the 0.52.0 release candidate,
+- [x] 8.1 **Gate 2** at this epic's effective review. When built inside the 0.52.0 release candidate,
       the converged release-candidate review satisfies it. The review covers the full `BASE..HEAD`
       diff:
       - spec alignment
@@ -340,7 +345,7 @@ These rules bind every section below.
 
 ## 9. Docs (after Gate 2 only)
 
-- [ ] 9.1 README: the spend-tracking opt-in, `spend`, the marker, the inverses, and what is not
+- [x] 9.1 README: the spend-tracking opt-in, `spend`, the marker, the inverses, and what is not
       measured. Verify: `rg -n "set-spend-tracking" README.md`.
 - [ ] 9.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill: a spend page and the opt-in
       list. If the site must not document the feature before the plugin ships, carry this task to the

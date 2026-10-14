@@ -39,7 +39,7 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`, one fresh-context reviewer, opus) over these artifacts, by
+- [x] 0.1 **Gate 1** (review `standard`, one fresh-context reviewer, opus) over these artifacts, by
       path:
       - `proposal.md` and `design.md`
       - `specs/spend-guard/spec.md`
@@ -48,7 +48,7 @@ These rules bind every section below.
       Fix the Critical and Important findings. Re-validate with
       `openspec validate spend-budget-and-stuck-loop-guard --strict`. Record the verdict:
       `record-gate-review spend-budget-and-stuck-loop-guard --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.52.0** (required item 5). The release now holds three or
+- [x] 0.2 **Cross-spec review of release 0.52.0** (required item 5). The release now holds three or
       more spec files (`spend-ledger`, `conductor-record`, `spend-guard`, plus any other member's).
       - Invoke the `cross-spec-review` skill over the whole set on disk before `/opsx:apply`.
       - Name these shared chokepoints:
@@ -214,7 +214,7 @@ These rules bind every section below.
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`), plus
       `node scripts/test/certify.mjs functional` and `… sweeps`. Time the run and record its peak
       memory.
-- [ ] 6.2 In this repo, run `node scripts/conductor.mjs set-spend-guard --max-failed-rounds 2`, per
+- [x] 6.2 In this repo, run `node scripts/conductor.mjs set-spend-guard --max-failed-rounds 2`, per
       design D4 or Rob's answer to 0.3(b). Then run `spend-guard spend-budget-and-stuck-loop-guard`.
       Verify:
       - its recorded side is 0 with the "counting starts at this release" note, because this epic's
@@ -227,27 +227,32 @@ These rules bind every section below.
 - [x] 7.1 Call-site completeness sweep (item 1). Satisfied by 1.3 and 3.6. Verify that
       `call-site-sweep-1.3.txt` names every writer of a gate entry, every reader of `gateRounds`, and
       every inverse in design D8.
-- [ ] 7.2 **Verify each task against its commit** (item 2). For every task above, run
+- [x] 7.2 **Verify each task against its commit** (item 2). For every task above, run
       `git show --stat <that task's sha>`, and assert that every file the task claims appears in THAT
       commit. Save the result as `commit-verification-7.2.txt`.
 - [x] 7.3 **Lifecycle marker** (item 3). Tasks 10.2 and 10.3 carry `<!-- pm:lifecycle -->` on their task
       lines. Verify: `rg -n "pm:lifecycle" openspec/changes/spend-budget-and-stuck-loop-guard/tasks.md`
       lists both.
-- [ ] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do
+- [x] 7.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit. Do
       NOT attribute the archive move (10.3), or a lifecycle-only commit after Gate 2 is recorded.
       Verify: `attributedCommits` lists them in landing order.
-- [ ] 7.5 Cross-spec review (item 5). Satisfied by 0.2.
+- [x] 7.5 Cross-spec review (item 5). Satisfied by 0.2.
 - [ ] 7.6 End by recording a disposition (item 6). Satisfied by 10.2.
-- [ ] 7.7 **Route what the work taught you** (item 7). Name each lesson as one of three kinds:
+- [x] 7.7 **Route what the work taught you** (item 7). Name each lesson as one of three kinds:
       - a practice (register an epic)
       - tooling friction (`/pm:feedback`)
       - a process failure (`docs/lessons/`)
 
       Give the evidence with each. "None" is a claim, and it must say what was looked at.
+      Routed 2026-10-13 (closeout):
+      - process failure: `docs/lessons/record-each-gate-when-its-review-ends.md` (gates recorded in one command, 779 ms apart as reported by the closing orchestrator, tripped `gate-recorded-as-bookkeeping` and live-record tests 9.4/9.14)
+      - process failure: `docs/lessons/a-spec-edit-stales-a-recorded-gate-1-until-the-record-is-committed.md` (79d2ffa9 17:20 edit, re-record committed 6e754d8b 18:08)
+      - practice: `skills/release-candidate/SKILL.md` step 2 now says to commit conductor records before dispatching worktree agents
+      - tooling friction: drafted for `/pm:feedback` in the closeout report (spend-marker phase names `spec`/`gate-1` rejected as `invalid-marker`, 24,509,352 tokens unattributed per `spend`; `openspec validate --strict` failures hidden behind `| tail -1`)
 
 ## 8. Gate 2
 
-- [ ] 8.1 **Gate 2** at this epic's effective review. When built inside the 0.52.0 release candidate,
+- [x] 8.1 **Gate 2** at this epic's effective review. When built inside the 0.52.0 release candidate,
       the converged release-candidate review satisfies it. The review covers the full `BASE..HEAD`
       diff:
       - spec alignment
@@ -264,7 +269,7 @@ These rules bind every section below.
 
 ## 9. Docs (after Gate 2 only)
 
-- [ ] 9.1 README: the guard, the three verbs, exit 2, the escalation protocol, and what is not
+- [x] 9.1 README: the guard, the three verbs, exit 2, the escalation protocol, and what is not
       detected. Verify: `rg -n "spend-guard" README.md`.
 - [ ] 9.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill. If the site must not document
       the feature before the plugin ships, carry this task to the 0.52.0 release cut.

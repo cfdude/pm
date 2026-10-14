@@ -33,7 +33,7 @@ These rules bind every section below.
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`, one fresh-context reviewer, opus) over these artifacts, by
+- [x] 0.1 **Gate 1** (review `standard`, one fresh-context reviewer, opus) over these artifacts, by
       path:
       - `proposal.md`, `design.md`, `specs/execution-profile/spec.md` and this file.
 
@@ -55,7 +55,7 @@ These rules bind every section below.
 
       Verify: `openspec validate execution-profile-planning-and-light-roles --strict` passes, and
       the spec's default table equals the one 1.1 encodes.
-- [ ] 0.3 **Cross-spec review of release 0.52.0** (required item 5). The release holds this change's
+- [x] 0.3 **Cross-spec review of release 0.52.0** (required item 5). The release holds this change's
       `execution-profile` delta plus `token-spend-tracking-per-epic`'s two specs.
       - Invoke the `cross-spec-review` skill over the whole 0.52.0 spec set on disk, naming the
         shared chokepoints: `KNOWN_JOB_ROLES` (the ledger's role vocabulary) and the rules-block
@@ -206,21 +206,26 @@ before staging.
       task lines. Verify:
       `rg -n "pm:lifecycle" openspec/changes/execution-profile-planning-and-light-roles/tasks.md`
       lists both.
-- [ ] 5.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit.
+- [x] 5.4 **Attribute every commit** (item 4), in landing order, starting with the proposal commit.
       Do NOT attribute the archive move (8.3), or a lifecycle-only commit made after Gate 2 is
       recorded. Verify: `attributedCommits` lists them in landing order.
-- [ ] 5.5 Cross-spec review (item 5). Satisfied by 0.3.
+- [x] 5.5 Cross-spec review (item 5). Satisfied by 0.3.
 - [ ] 5.6 End by recording a disposition (item 6). Satisfied by 8.2.
-- [ ] 5.7 **Route what the work taught you** (item 7). Name each lesson as one of three kinds:
+- [x] 5.7 **Route what the work taught you** (item 7). Name each lesson as one of three kinds:
       - a practice (register an epic);
       - tooling friction (`/pm:feedback`);
       - a process failure (`docs/lessons/`).
 
       Give the evidence with each. "None" is a claim, and it must say what was looked at.
+      Routed 2026-10-13 (closeout):
+      - process failure: `docs/lessons/record-each-gate-when-its-review-ends.md` (gates recorded in one command, 779 ms apart as reported by the closing orchestrator, tripped `gate-recorded-as-bookkeeping` and live-record tests 9.4/9.14)
+      - process failure: `docs/lessons/a-spec-edit-stales-a-recorded-gate-1-until-the-record-is-committed.md` (79d2ffa9 17:20 edit, re-record committed 6e754d8b 18:08)
+      - practice: `skills/release-candidate/SKILL.md` step 2 now says to commit conductor records before dispatching worktree agents
+      - tooling friction: drafted for `/pm:feedback` in the closeout report (spend-marker phase names `spec`/`gate-1` rejected as `invalid-marker`, 24,509,352 tokens unattributed per `spend`; `openspec validate --strict` failures hidden behind `| tail -1`)
 
 ## 6. Gate 2
 
-- [ ] 6.1 **Gate 2** at this epic's effective review. When the epic is built inside the 0.52.0
+- [x] 6.1 **Gate 2** at this epic's effective review. When the epic is built inside the 0.52.0
       release candidate, the converged release-candidate review satisfies it. The review covers the
       full `BASE..HEAD` diff:
       - spec alignment;
@@ -235,7 +240,7 @@ before staging.
 
 ## 7. Docs (after Gate 2 only)
 
-- [ ] 7.1 README: the six roles, the default table, default-vs-explicit, and the one-shot override.
+- [x] 7.1 README: the six roles, the default table, default-vs-explicit, and the one-shot override.
       Verify: `rg -n "rudimentary" README.md`.
 - [ ] 7.2 Mintlify (`pm-plugin.dev`), per the `mintlify-doc-sync` skill: the profile page and the
       init page. If the site must not document the feature before the plugin ships, carry this
