@@ -13531,10 +13531,11 @@
       "reconcileNeeded": false,
       "description": "Release cut for 0.52.0 Safe to leave running, in a NEW session (rule: new session per release). Follow the release-checklist and pr-workflow skills; do not re-derive. Carries the docs of every member built in 0.52.0 (one Mintlify pass: spend / set-spend-tracking, execution-profile six roles and defaults, spend-guard verbs, rules --sections, the brief cap and per-list caps, upgrade opt-ins, the story correction flag, the Gate 1 activation guard and --gate1-waived, integrity gate-1-verdict-stale, the new hook-drain and commit-nudge behaviour, the TruffleHog pin). Close the GitHub issues at release (176, 196, 210, 213, 172) after confirming with Rob. Then the fleet upgrade pass and release 0.52.0 --deliver, re-check integrity. Rob's rules: one capped review round, stage by name, plain-language context for every epic or issue number.",
       "attributedCommits": [
-        "adca59831f8036227d6637d24f3c98a88f259d20"
+        "adca59831f8036227d6637d24f3c98a88f259d20",
+        "3ff2f60a7b126c9d28c52fd6a35f06c21156484e"
       ],
       "createdAt": "2026-10-14T04:29:17.523Z",
-      "touchedAt": "2026-10-14T15:58:57.509Z",
+      "touchedAt": "2026-10-14T16:08:27.369Z",
       "release": "0.52.0",
       "startedAt": "2026-10-14T04:29:22.271Z"
     },
@@ -13610,7 +13611,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2020,
+  "revision": 2021,
   "reviewMode": "standard",
   "releases": [
     {
