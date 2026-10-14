@@ -895,6 +895,16 @@ it waits on.
   `pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]` (the rules block says so), or the tokens
   land in the unattributed bucket. Every write has an inverse: `spend --clear --yes`,
   `spend --rebuild --yes`, `spend --clear --timeline --yes`. It computes no cost. See `commands/spend.md`.
+- Making an openspec-lane epic active with its change on disk? It is refused without a passing Gate 1
+  (`record-gate-review <id> --gate 1 --artifact …`), or waive it in one call with
+  `update-epic <id> --status active --gate1-waived "<why>"`. `integrity`'s `gate-1-verdict-stale` names an
+  epic whose reviewed artifact was amended since. See `commands/epic.md`.
+- `/pm:upgrade` ends with one `NOT SET` line per opt-in this repo never adopted, each with the command that
+  adopts it; judge each against the repo, enable nothing unasked. The SessionStart brief is capped at 16384
+  bytes (lists shortened, obligation blocks never cut) and `rules --sections` ranks the rules block's
+  sections by size. See `commands/upgrade.md` and `commands/status.md`.
+- Recorded a story's `--done` / `--wont-do` against the wrong index? `update-epic <id> --story <n>
+  --correct-disposition "<why>"` reopens it and keeps the original (`--story` is 1-indexed).
 - Review loop that will not converge, or tokens running past a budget? Every accepted `record-gate-review`
   already keeps a per-gate round tally (`epic.gateRounds`). `set-spend-guard --max-failed-rounds <n>` and/or
   `--tokens <n>` turn it into a limit at the project, a lane (`--lane`) or an epic (`--epic`); nothing is on

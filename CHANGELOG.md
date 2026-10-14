@@ -6,6 +6,131 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.52.0] — 2026-10-14
+
+Safe to leave running. This release stops runaway and stuck-loop token burn, stops hooks injecting large
+context into every session, stops several silent wrong records, and adds a way to measure spend: opt-in,
+off by default, and on in pm's own repository. A per-epic spend ledger, a review-loop guard with
+escalation, a six-role execution profile with built-in model defaults, a capped SessionStart brief and a
+Gate 1 activation guard are the headline changes. 14 epics were members of this release: 13 shipped and the
+14th is this release's own cut. Two candidates, `decision-cost-log` and
+`token-spend-analysis-and-recommendations`, moved to 0.53.0. Resolves #172, #176, #196, #210 and #213. Run
+`/reload-plugins` after updating, then `/pm:upgrade` in each repo: the managed rules block changes (the six
+role defaults, plus the spend and spend-guard sections while those are on) and the brief it sends is now
+capped. There is no `state.json` schema change, so no migration runs: the newest `MIGRATIONS` entry is
+still 0.44.0, and every field this release adds (`state.spendTracking`, `epic.gateRounds`, the spend-guard
+limits, `gate1Waived`, a story's `corrections[]`) is optional.
+
+### Added
+
+* **Spend tracking per epic, phase, role and model: opt-in, off by default.** `set-spend-tracking on|off`
+  turns on a local, read-only ledger built from Claude Code's own transcript files. `spend` is the only
+  reader: no hook reads a transcript, and a repo with tracking off pays nothing new on any hot path. The
+  ledger stores counts and identifiers only, never prompt or response text. Sub-agents are attributed by a
+  `pm-spend: epic=<id> role=<role> phase=<phase> [round=<n>]` line the rules block asks you to begin each
+  dispatch prompt with (that section is emitted only while tracking is on); orchestrator spend by an
+  active-epic timeline the engine records; the rest is reported as **unattributed**, by reason, with a
+  coverage share, so unmeasured spend never looks like zero. `spend [--epic] [--since] [--until] [--json]
+  [--no-ingest]` reports per-epic totals by actor, role, phase, gate round and model tier. It computes no
+  cost: pm ships no price table. Every write has an inverse: `spend --clear --yes`, `spend --rebuild --yes`
+  (keeps rows whose transcript Claude Code has pruned) and `spend --clear --timeline --yes`, each printing
+  its plan without `--yes`. The ledger lives in the main working tree's git-ignored `.conductor/spend/`.
+  See `commands/spend.md`.
+* **A spend and stuck-loop guard: opt-in, no limit on by default.** Every accepted `record-gate-review` now
+  keeps a per-gate round tally on the epic (`epic.gateRounds`), in the same write as the verdict and with no
+  setting needed. `set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>] [--tokens <n>]
+  [--warn-at <pct>] [--unset <field>]` turns it into limits at the project, a lane or an epic (most specific
+  wins). `spend-guard <epic> [--json] [--no-ingest]` compares the epic's rounds and attributed tokens with
+  those limits and exits **2** while it is stuck, printing a STOP that names the escalation target (one model
+  tier above the resolved `review` or `implement` model, else the user) and says autonomy does not bypass it.
+  `override-spend-guard <epic> --signal rounds|tokens --escalated-to user|<model> --reason "<why>"` records
+  the decision (no autonomy grant covers it), and `--revoke --reason` marks it revoked without deleting it.
+  The brief carries one `STOP: spend guard —` line for a stuck active epic, and the rules block a
+  `## Spend guard` section only while a limit is configured. Never wire `spend-guard` into a hook: exit 2 is
+  the hook block code. See `commands/spend-guard.md`, `commands/set-spend-guard.md` and
+  `commands/override-spend-guard.md`.
+* **Six execution-profile job roles, each with a built-in default model.** The roles grow from `implement |
+  test | review` to `plan | implement | test | review | mechanical | rudimentary`, and each resolves to a
+  default `{model, effort}` when no layer sets it: `plan` `opus` (`high`), `implement` `sonnet` (`medium`),
+  `test` `sonnet` (`low`), `review` `opus` (`high`), `mechanical` `sonnet` (`low`), `rudimentary` `haiku`. A
+  default is applied at read time and never written to `state.json`; `profile` reports it as source
+  `default`, and unsetting a role falls back to it. To have a top-tier model build an epic straight off its
+  finished plan, set `update-epic <id> --model implement=fable:<effort>`: an override of `implement`, not a
+  seventh role. `/pm:init` now recommends accepting the defaults. **Breaking, in emitted instructions only:**
+  a repo that never set a model used to read "no model directive"; after `/pm:upgrade` its rules block names
+  a default pair for every role. Its `state.json` does not change.
+* **`rules --sections` and a session-cost report.** `rules --sections` prints the managed rules block's
+  per-section sizes, ranked. `render` (`/pm:status`) and `upgrade` now end with two lines: the rules block as
+  it sits on disk and the SessionStart brief (bytes and estimated tokens, bytes/4). The block itself is
+  unchanged.
+* **`/pm:upgrade` lists the opt-ins a repo has never adopted, on every run (#210).** The changelog delta
+  only names what a release added, so an opt-in skipped at an earlier release was invisible forever. After
+  the delta, `upgrade` prints one `opt-ins` line of what is adopted and one `NOT SET` line per opt-in that
+  is not, each naming the command that adopts it (`set-review-mode --mode …`, `set-lane-routing --add …`,
+  `set-activity-log on`, `set-tracker --system …`, `set-spend-tracking on`, `set-spend-guard …`). It reads a
+  registry in `scripts/lib/opt-ins.mjs` and `state.json`, and enables nothing. There is no `claim` row: a
+  claim is an epic's temporary hold, not a repo setting.
+* **An openspec-lane epic can no longer be made active with its change on disk and no passing Gate 1.**
+  `set-active`, `update-epic --status active`, and `add-epic` / `add-many` creating at `active` refuse an
+  epic whose `openspec/changes/<id>/` exists and whose Gate 1 is absent, failed or withdrawn; the refusal
+  names `record-gate-review <id> --gate 1 …` and the waiver. New `update-epic <id> --status active
+  --gate1-waived "<why>"` (reason required, openspec-lane only) waives it in one call; inverse `--clear
+  gate1-waived`. The guard finds the change by the epic's id or by the directory its `--plan` / `--spec`
+  points into, and `update-epic` judges it against the lane the call sets. An epic with no change on disk
+  yet, one already active, and a stale-but-passing Gate 1 are not refused; `push-detour` / `pop-detour` warn
+  instead.
+* **`integrity` names an epic whose Gate 1 verdict reads stale.** The new `gate-1-verdict-stale` check
+  reuses the artifact-digest predicate behind the `⚠ stale` marking on `/pm:status` and the brief, prints its
+  count line even at zero, names the changed artifact files and `record-gate-review <id> --gate 1 …` to
+  re-record. A legacy verdict with no digests is `⚠ unverifiable` and is not reported. Reported, never
+  refused.
+* **`update-epic --story <n> --correct-disposition "<why>"` reopens a story recorded against the wrong
+  index (gh#176).** The original is kept under `stories[n-1].corrections[]`, and the call may carry `--done`
+  or `--wont-do` to apply the right mutation at once. `--help` now renders `--story n, 1-indexed (NOT the
+  0-indexed stories[] position in state.json)`, and a successful `--story` write echoes the story it landed
+  on. The replacement guard is unchanged and its refusal names this path.
+
+### Changed
+
+* **The SessionStart brief is capped at 16384 bytes, and the cap shortens lists instead of cutting text.**
+  The brief was uncapped and grows with a repository's history: 78,275 bytes, about 19.5K tokens, on pm's
+  own repo. A brief under the cap is sent unchanged. Over it, only RELEASES (the 3 most recent),
+  DISPOSITIONS, GATE REVIEWS, HANDOFFS and EPIC LINKS (the first 5 each) are bounded, each item line is
+  trimmed to 240 characters and each list ends in `(+N more — see PROJECT.md "<section>")`; those lists move
+  after every obligation block. Warnings and obligation blocks are never cut: if they alone exceed the cap
+  they are sent whole and the marker says so. On pm's own record the brief is now 8,242 bytes. The PreCompact
+  snapshot and PROJECT.md's "Briefing" are unchanged and uncapped.
+* **The commit hook no longer logs an epic's own small chore commits as AUTO-DETOURs (#213).** A commit is
+  left out of the detour trail when the record ties it to the active epic: already attributed to an epic,
+  its subject names the active epic's id, or every path it changed was already changed by a commit attributed
+  to the active epic. That last rule needs two or more changed paths, and a commit made while a detour is
+  open is never suppressed. A commit another epic already holds is no longer offered for attribution again,
+  and the two messages for a commit named in both places no longer contradict each other. The hook also
+  reports at most 50 commits per run and says how many remain, anchors only on a complete reflog line, and a
+  retraction row names every epic it covers.
+* **Hooks drain their payload.** `brief` and `snapshot` now read stdin first, and `gate-guard`,
+  `lesson-advice` and `commit-nudge` do the same where they used to return before reading (a repository
+  without pm, a detached tree), so a hook payload past the pipe buffer (about 64 KiB) can no longer leave the
+  writer holding an unread pipe and failing with EPIPE. Allow and deny decisions are unchanged.
+* **`upgrade`'s printed opt-in commands run as printed.** `set-review-mode` and `set-tracker` first shipped in
+  the registry without the `--mode` / `--system` flags the verbs read; every printed command is now run
+  against the engine by a test.
+* **CI re-pinned to TruffleHog 3.97.0 (#172).** `.github/workflows/security.yml` points at a
+  `cfdude/.github` workflow SHA whose scanner no longer reports a `test_`-prefixed pytest function name as a
+  verified Lob API key.
+
+### Fixed
+
+* **A slow or unreadable `openspec --version` no longer reads as "no drift" (#196).** The installed OpenSpec
+  version is read from the `@fission-ai/openspec` package.json beside the resolved binary on `PATH`, with no
+  spawn; only when that cannot answer does the engine fall back to `openspec --version`, now with a 15 s
+  timeout (was 3 s) and one answer per process. When the CLI is present but its version still cannot be read,
+  the brief, `PROJECT.md` and `upgrade` print one fixed `OpenSpec drift UNKNOWN` line instead of nothing, so
+  the drift line stops flapping between renders of a committed `PROJECT.md`. A CLI absent from `PATH` stays
+  silent.
+
+---
+
 ## [0.51.0] — 2026-10-06
 
 Test infrastructure you can trust, and gate and record verbs that refuse what they should. The
