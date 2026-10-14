@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "release-0-52-0-cut",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -13518,7 +13518,7 @@
       "id": "release-0-52-0-cut",
       "title": "Cut pm 0.52.0: version bump, CHANGELOG, one Mintlify pass, release PR, close the GitHub issues, fleet upgrade",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -13535,9 +13535,20 @@
         "3ff2f60a7b126c9d28c52fd6a35f06c21156484e"
       ],
       "createdAt": "2026-10-14T04:29:17.523Z",
-      "touchedAt": "2026-10-14T16:08:27.369Z",
+      "touchedAt": "2026-10-14T16:50:50.930Z",
       "release": "0.52.0",
-      "startedAt": "2026-10-14T04:29:22.271Z"
+      "startedAt": "2026-10-14T04:29:22.271Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-14T16:50:50.925Z",
+        "reason": "pm 0.52.0 cut and shipped: PR 244 squash-merged to main 77a9ea27, docs live (pm-docs#59), fleet pass done on 23 personal repos plus pm; Highway repos and GitHub issue closes held for Rob"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-14T16:50:50.924Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-14T16:50:50.925Z"
     },
     {
       "id": "pm-overhead-baseline",
@@ -13611,7 +13622,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2022,
+  "revision": 2024,
   "reviewMode": "standard",
   "releases": [
     {
@@ -14226,6 +14237,9 @@
           ],
           "reviewer": "opus fresh-context"
         }
+      },
+      "delivered": {
+        "recordedAt": "2026-10-14T16:50:31.289Z"
       }
     },
     {
