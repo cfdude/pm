@@ -1903,7 +1903,8 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "createdAt": "2026-07-28T19:25:39-07:00",
-      "touchedAt": "2026-09-28T22:28:59.239Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "edd-observe-hardcodes-claude-md",
@@ -2090,7 +2091,9 @@
           "text": "RESCOPE 2026-09-07: drop the sol.md half. 'sol.md' is a Typeless mishearing of SOUL.md, and SOUL.md was already ruled out of scope by design at docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md:187-188 — Hermes loads it from HERMES_HOME, not the project directory, so init could not detect it even in principle. The AGENTS.md half HOLDS: init() at scripts/lib/subcommands.mjs:68-85 reads no instruction file of any kind."
         }
       ],
-      "createdAt": "2026-07-30T12:31:30-07:00"
+      "createdAt": "2026-07-30T12:31:30-07:00",
+      "release": "0.54.0",
+      "touchedAt": "2026-10-17T12:42:17.936Z"
     },
     {
       "id": "rules-block-cli-fallback",
@@ -2497,7 +2500,9 @@
           "done": false
         }
       ],
-      "createdAt": "2026-07-30T12:31:30-07:00"
+      "createdAt": "2026-07-30T12:31:30-07:00",
+      "release": "0.54.0",
+      "touchedAt": "2026-10-17T12:42:17.936Z"
     },
     {
       "id": "autodetour-parser-misses-am-and-f",
@@ -2575,7 +2580,8 @@
           "text": "lane: superpowers not claude-code — several mutation-tested scenarios with real design work (triage 2026-09-28)"
         }
       ],
-      "touchedAt": "2026-10-14T04:57:34.051Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2615,7 +2621,8 @@
           "text": "GROOMING 0.41.0 — absorbed parity-propagation-skill. Same trigger (the first real port), same procedural layer in docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md. This epic's own stories ARE the propagation skill's content: add the platform to platforms[], fill its column, run the corpus, record what differed. Verified still unbuilt: docs/parity-ledger.json still reads platforms: [\"claude-code\"] and contains zero occurrences of 'exempt'."
         }
       ],
-      "touchedAt": "2026-09-10T04:37:55.671Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "parity-propagation-skill",
@@ -5838,7 +5845,9 @@
           "text": "MEASUREMENT CORRECTED 2026-09-07. The '23 of 26 stale' figure in the title is dead — the manual sweep already ran and the fleet is current. Two better arguments survive: (1) discovery is the actual gap, and a fixed-depth glob gets it WRONG — there are 28 .conductor directories, not 26, because a repo can hold NESTED conductors (~/Documents/Repos/highway-llm/projects/maca/ and .../maca/api/, at depths 7 and 8). The skill I wrote to do this by hand shipped that exact bug and had to be repatched twice in one hour, which is the case for an engine verb rather than a shell recipe. (2) ~/Documents/Repos/highway-llm/projects/maca/api/.conductor/ holds ONLY render-stamp.json and no state.json — pm wrote a breadcrumb into a tree that was never /pm:init'd. That is gh-cfdude-pm-175's defect found independently, in a second location."
         }
       ],
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "release": "0.54.0",
+      "touchedAt": "2026-10-17T12:42:17.936Z"
     },
     {
       "id": "epic-registration-clock",
@@ -5969,7 +5978,8 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-09-10T04:39:53.334Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -6201,7 +6211,8 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-10-14T04:57:35.668Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "record-answers-for-itself",
@@ -10331,14 +10342,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-17T18:18:06.298Z",
-      "touchedAt": "2026-09-17T18:18:06.785Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
       "notes": [
         {
           "at": "2026-09-17T18:18:06.783Z",
           "actor": "agent",
           "text": "Evidence from 0.45.0 user-text-never-forges-output: the task list named a site list; the apply run found ~20 more; Gate 2 found 5 more; the per-interpolation sweep then found 12 more. What binds a future flag is the completeness assertion (every registry entry has a recipe, unconstructable bound = 0), not the enumeration. See also docs/lessons/a-static-guard-over-dynamic-code-needs-declared-limits.md and docs/lessons/bind-rules-to-functions-not-enumerations.md"
         }
-      ]
+      ],
+      "release": "0.54.0"
     },
     {
       "id": "gh-cfdude-pm-204",
@@ -10614,14 +10626,15 @@
       "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
       "attributedCommits": [],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-09-18T05:38:54.047Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
           "actor": "agent",
           "text": "lane: superpowers not <none routed> — suggest-lane returned no lane for this ask. Routed AWAY from claude-code deliberately, per the asymmetric tie-break: this is a new required task item in the emitted rules block plus its three mirrors and a load-bearing-claim entry, which is a gate/discipline change with a durable record, not a sub-2-hour tweak. superpowers over openspec because it modifies one subsystem (the gate procedure's item list) rather than adding a capability."
         }
-      ]
+      ],
+      "release": "0.54.0"
     },
     {
       "id": "functional-assertion-test-split",
@@ -12020,7 +12033,8 @@
       "externalUpdatedAt": "2026-09-18T03:05:04Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:09.453Z",
-      "touchedAt": "2026-09-28T17:11:09.457Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "gh-cfdude-pm-210",
@@ -13121,7 +13135,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T21:51:24.361Z",
-      "touchedAt": "2026-10-05T21:51:24.375Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
     },
     {
       "id": "token-spend-analysis-and-recommendations",
@@ -13481,7 +13496,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-07T00:23:56.798Z",
-      "touchedAt": "2026-10-14T23:49:34.605Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
       "notes": [
         {
           "at": "2026-10-07T00:23:57.541Z",
@@ -13493,7 +13508,8 @@
           "actor": "agent",
           "text": "2026-10-14: a git reset --hard on dev wiped the 9 tracked, modified OpenSpec 1.14 files (.claude/commands/opsx/{apply,archive,update}.md, .claude/skills/openspec-{apply-change,archive-change,explore,propose,sync-specs,update-change}/SKILL.md). They were generated, so regenerate with openspec update when this epic starts (Rob runs it, not the agent). The 12 untracked files remain."
         }
-      ]
+      ],
+      "release": "0.54.0"
     },
     {
       "id": "gh-cfdude-pm-239",
@@ -13670,7 +13686,291 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-14T23:49:24.862Z",
-      "touchedAt": "2026-10-14T23:49:24.866Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-253",
+      "title": "Conductor-level concurrency guard: serialise test-running hooks across agents in one repo",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "253",
+      "externalUrl": "https://github.com/cfdude/pm/issues/253",
+      "externalUpdatedAt": "2026-10-17T07:44:57Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:39.273Z",
+      "touchedAt": "2026-10-17T12:41:40.175Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:40.170Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-252",
+      "title": "record-gate-review --artifact <directory> records no digest, so Gate 1 always reads unverifiable",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "252",
+      "externalUrl": "https://github.com/cfdude/pm/issues/252",
+      "externalUpdatedAt": "2026-10-16T01:28:17Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:40.986Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:41.788Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-251",
+      "title": "Spend guard: the token ceiling counts cache-read, so it measures session length rather than work done",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "251",
+      "externalUrl": "https://github.com/cfdude/pm/issues/251",
+      "externalUpdatedAt": "2026-10-15T17:22:12Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:42.610Z",
+      "touchedAt": "2026-10-17T12:42:12.982Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:43.405Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.53.0"
+    },
+    {
+      "id": "gh-cfdude-pm-250",
+      "title": "Spend guard: distinguish converging review loops and support a scoped confirmation round",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "250",
+      "externalUrl": "https://github.com/cfdude/pm/issues/250",
+      "externalUpdatedAt": "2026-10-14T22:56:08Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:44.228Z",
+      "touchedAt": "2026-10-17T12:41:45.061Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:45.057Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-249",
+      "title": "update-epic --status active silently moves the active pointer and demotes the active epic",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "249",
+      "externalUrl": "https://github.com/cfdude/pm/issues/249",
+      "externalUpdatedAt": "2026-10-14T22:56:07Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:45.870Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:46.681Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-248",
+      "title": "Lighter rules block: emit sections only for features the repo uses",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "248",
+      "externalUrl": "https://github.com/cfdude/pm/issues/248",
+      "externalUpdatedAt": "2026-10-15T17:22:35Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:47.516Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:48.331Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-247",
+      "title": "Record what a blocked epic waits on when it is not another epic",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "247",
+      "externalUrl": "https://github.com/cfdude/pm/issues/247",
+      "externalUpdatedAt": "2026-10-14T22:02:30Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:49.147Z",
+      "touchedAt": "2026-10-17T12:41:49.977Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:49.973Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-246",
+      "title": "NEXT UP silently omits a queued openspec epic with no change on disk",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "246",
+      "externalUrl": "https://github.com/cfdude/pm/issues/246",
+      "externalUpdatedAt": "2026-10-14T22:02:28Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:50.796Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:51.618Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-245",
+      "title": "rename-epic verb (and accept notes in add-many entries)",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "245",
+      "externalUrl": "https://github.com/cfdude/pm/issues/245",
+      "externalUpdatedAt": "2026-10-14T22:02:27Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:52.437Z",
+      "touchedAt": "2026-10-17T12:41:53.245Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:53.240Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-243",
+      "title": "Gate 1 can be recorded while openspec validate --strict fails (hidden by a piped tail)",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "243",
+      "externalUrl": "https://github.com/cfdude/pm/issues/243",
+      "externalUpdatedAt": "2026-10-14T15:38:03Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:54.053Z",
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:54.863Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-242",
+      "title": "Invalid pm-spend marker phase is rejected without naming the value or the accepted set",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "242",
+      "externalUrl": "https://github.com/cfdude/pm/issues/242",
+      "externalUpdatedAt": "2026-10-14T15:38:00Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:55.680Z",
+      "touchedAt": "2026-10-17T12:42:12.982Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:56.480Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ],
+      "release": "0.53.0"
+    },
+    {
+      "id": "gh-cfdude-pm-241",
+      "title": "Parallel epic branches conflict on state.json / PROJECT.md / render-stamp.json; no verb or merge driver to resolve",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "241",
+      "externalUrl": "https://github.com/cfdude/pm/issues/241",
+      "externalUpdatedAt": "2026-10-13T14:02:17Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-17T12:41:57.292Z",
+      "touchedAt": "2026-10-17T12:41:58.101Z",
+      "notes": [
+        {
+          "at": "2026-10-17T12:41:58.097Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -13681,7 +13981,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2029,
+  "revision": 2056,
   "reviewMode": "standard",
   "releases": [
     {
@@ -14304,6 +14604,11 @@
     {
       "id": "0.53.0",
       "intent": "Know where the tokens went, and keep the record honest: the first analysis over real ledger data, pm's own baseline overhead and feature switches, a developer-only session log, the follow-ups the 0.52 gates logged, the record and refusal bugs users hit, and the known flakes paid down. Nothing platform-shaped. (Rob approved the 16-epic scope and the three overhead epics 2026-10-13.)",
+      "deferred": []
+    },
+    {
+      "id": "0.54.0",
+      "intent": "Portable, and within budget: a second platform (Hermes), gate practices, backlog tooling. PROVISIONAL until 0.53.0 deploys and the section 7 re-check in docs/reviews/pm-0.54.0-grooming.md is done.",
       "deferred": []
     }
   ],
