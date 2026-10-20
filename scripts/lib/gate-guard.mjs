@@ -280,7 +280,7 @@ function affirmedBashCommand(payload) {
  *  This change does not make it true either — every undecidable form passes, and an unreadable
  *  record allows every Bash call — so what replaces it is the obligation itself, which is the
  *  instruction layer doing the work the mechanism cannot. */
-function reconcileBlockMessage(active, shape) {
+export function reconcileBlockMessage(active, shape) {
   return `conductor: gate guard — '${escapeControls(active.id)}' still owes a reconcile (a detour touched shared ` +
     "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
     // NO BYPASS SENTENCE HERE, and its absence is the fix. This branch is UNCONDITIONAL —

@@ -59,6 +59,7 @@ export const VERB_EFFECTS = {
   "suggest-lane": { effect: "read-only", exercise: ["a caching bug"], note: "returns the routed lane for a title" },
   triage: { effect: "read-only", exercise: ["a caching bug in the renderer"], note: "candidate duplicates + lane suggestion; emits verdict:null and registers nothing" },
   "verify-specs": { effect: "read-only", exercise: [], note: "design-document coverage inventory" },
+  overhead: { effect: "read-only", exercise: [], note: "reports what pm injects into a session, by surface and feature, in memory; opens no spend or transcript path" },
   list: { effect: "read-only", exercise: [], note: "lists the record's epics, filtered by --status/--lane/--linked-to; the engine's answer where agents used to read state.json" },
   // #84's whole point: an orchestrator asks "is it safe to write here" BEFORE dispatching into
   // a sibling repo. A verb that dirtied that repo to answer would be answering its own question

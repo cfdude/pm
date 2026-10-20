@@ -439,6 +439,26 @@ x("git.mjs", "appendRetraction", {
 x("git.mjs", "appendMinimalRetraction", {
   "line": 1,
 }, "not-output", "the detour log's file BODY, same shape as appendRetraction's; the target's timestamp is a log-written ISO string");
+j("overhead.mjs", "overheadText", ALL, "sink-flow", "every line is pushed onto L and the text is returned through L.map(escapeControls)");
+x("overhead.mjs", "tok", {
+  "estimateTokens(bytes)": 1,
+}, "engine", "a number computed from a byte count; no workspace text");
+x("overhead.mjs", "readListings", {
+  "f": 2,
+  "d": 1,
+}, "not-output", "builds paths from directory entries of the plugin's own commands/, skills/ and agents/ to read them; the result reaches output only as a listing id inside overheadText's escaped lines or jsonText");
+x("overhead.mjs", "collectSurfaces", {
+  "slug(sec.heading)": 1,
+  "base": 1,
+  "n": 1,
+  "l.file": 1,
+  "l.name": 1,
+  "l.description": 1,
+  "plain": 1,
+}, "sink-flow", "surface ids and sizes: they reach output only through overheadText's L.map(escapeControls) join or jsonText(); `plain` is concatenated to measure its byte length and never printed");
+x("overhead.mjs", "overhead", {
+  "jsonText(report, null, 2)": 1,
+}, "json", "one JSON document through jsonText()");
 x("list.mjs", "list", {
   "jsonText({ count: rows.length, epics: rows }, null, 2)": 1,
 }, "json", "one JSON document through jsonText()");

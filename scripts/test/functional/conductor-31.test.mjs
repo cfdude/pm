@@ -81,6 +81,7 @@ const VERB_BASELINE = {
   owners: () => ["owners"],
   // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
   list: () => ["list"],
+  overhead: () => ["overhead"],
   "log-detour": () => ["log-detour", "a baseline fix"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
@@ -330,9 +331,12 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // widening it is a line in a diff somebody has to justify.
     // token-spend-tracking-per-epic: `spend` shares --json/--yes and adds four booleans — `--clear` and
     // `--rebuild` (the ledger's two inverses), `--timeline` (qualifies --clear) and `--no-ingest`.
+    // pm-overhead-baseline: `overhead --all-features` computes the report over the every-opt-in-on hypothetical in
+    // memory; a genuine boolean (a mode), like --json.
+    "overhead --all-features",
     "override-spend-guard --revoke",
     // gh-204: `list` shares --json (the same genuine boolean: a rendering).
-    "owners/activity/spend/spend-guard/list --json",
+    "owners/activity/spend/spend-guard/list/overhead --json",
     "purge-logs --dry-run",
     "purge-logs/spend --yes",
     "push-detour --no-reconcile",
