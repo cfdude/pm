@@ -2743,11 +2743,47 @@
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
-      "touchedAt": "2026-10-20T07:22:27.986Z",
+      "touchedAt": "2026-10-20T10:32:33.506Z",
       "release": "0.53.0",
       "attributedCommits": [
         "14fbe99c32af9262aeb7b936cfd59d3f191203d4"
-      ]
+      ],
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:33.502Z",
+          "artifacts": [
+            "openspec/changes/epic-session-attribution/proposal.md",
+            "openspec/changes/epic-session-attribution/design.md",
+            "openspec/changes/epic-session-attribution/tasks.md",
+            "openspec/changes/epic-session-attribution/specs/epic-session-trail/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/epic-session-attribution/proposal.md",
+              "sha256": "50efcee41e82353dc1be1e6d3f3f83dac6f2f4d97f59c7f2edd0489143a7b35a"
+            },
+            {
+              "path": "openspec/changes/epic-session-attribution/design.md",
+              "sha256": "22fc25f1f6d28e11ac3aaf4bc0e952f8f226558796e6fff31f04d0df88e8ce61"
+            },
+            {
+              "path": "openspec/changes/epic-session-attribution/specs/epic-session-trail/spec.md",
+              "sha256": "a1cdd2837055821cc1917ef63f8a383e06616f24b7e039521c126182ca2e890e"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:33.502Z",
+          "lastPassAt": "2026-10-20T10:32:33.502Z"
+        }
+      }
     },
     {
       "id": "cross-session-epic-assignment",
@@ -3233,11 +3269,47 @@
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-10-20T07:04:35.672Z",
+      "touchedAt": "2026-10-20T10:32:32.852Z",
       "release": "0.53.0",
       "attributedCommits": [
         "0a58b202ff877649e72ad2f2e6f3129d4f23af82"
-      ]
+      ],
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:32.848Z",
+          "artifacts": [
+            "openspec/changes/dehardcode-openspec-change-root-in-instructions/proposal.md",
+            "openspec/changes/dehardcode-openspec-change-root-in-instructions/design.md",
+            "openspec/changes/dehardcode-openspec-change-root-in-instructions/tasks.md",
+            "openspec/changes/dehardcode-openspec-change-root-in-instructions/specs/emitted-instructions/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/dehardcode-openspec-change-root-in-instructions/proposal.md",
+              "sha256": "bd094daea7f783eee97c934a356ff22fb0cd9e7a78844fdabaf40428e38e52d9"
+            },
+            {
+              "path": "openspec/changes/dehardcode-openspec-change-root-in-instructions/design.md",
+              "sha256": "5ff1fb936c488e93e1ab5fbade0b1d05f04ff01263e4c8ed95adf8ae470b8d04"
+            },
+            {
+              "path": "openspec/changes/dehardcode-openspec-change-root-in-instructions/specs/emitted-instructions/spec.md",
+              "sha256": "2270707a86e3bc0cd2e03ea8773e191bc3ba24ea6048bca34cede521692daa33"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:32.848Z",
+          "lastPassAt": "2026-10-20T10:32:32.848Z"
+        }
+      }
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -13298,8 +13370,44 @@
         "9d43ae2949a4c1bb29e7cc2111ceb294af87c54b"
       ],
       "createdAt": "2026-10-06T17:29:46.271Z",
-      "touchedAt": "2026-10-20T09:33:12.476Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T10:32:35.484Z",
+      "release": "0.53.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:35.480Z",
+          "artifacts": [
+            "openspec/changes/token-spend-analysis-and-recommendations/proposal.md",
+            "openspec/changes/token-spend-analysis-and-recommendations/design.md",
+            "openspec/changes/token-spend-analysis-and-recommendations/tasks.md",
+            "openspec/changes/token-spend-analysis-and-recommendations/specs/spend-analysis/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/token-spend-analysis-and-recommendations/proposal.md",
+              "sha256": "0fe5a50fcb6e953bd749a2e717888079b57397088f2764e50afc114137626e07"
+            },
+            {
+              "path": "openspec/changes/token-spend-analysis-and-recommendations/design.md",
+              "sha256": "a4cc7f28ee8f710682dbd1c6e43047c73bdb7737b97d100f7b79c9be372d401e"
+            },
+            {
+              "path": "openspec/changes/token-spend-analysis-and-recommendations/specs/spend-analysis/spec.md",
+              "sha256": "ed7a6f62ddfb0b7d2cbe8f0ce8dfe3fc652e70f3915bd06cb071f50fe6ca828f"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:35.480Z",
+          "lastPassAt": "2026-10-20T10:32:35.480Z"
+        }
+      }
     },
     {
       "id": "spend-budget-and-stuck-loop-guard",
@@ -13568,7 +13676,7 @@
         "3ed04972fa78ffe115f09314c4d3258287e9d4e2"
       ],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-20T10:19:01.201Z",
+      "touchedAt": "2026-10-20T10:32:36.145Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -13576,7 +13684,43 @@
           "actor": "agent",
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
-      ]
+      ],
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:36.141Z",
+          "artifacts": [
+            "openspec/changes/decision-cost-log/proposal.md",
+            "openspec/changes/decision-cost-log/design.md",
+            "openspec/changes/decision-cost-log/tasks.md",
+            "openspec/changes/decision-cost-log/specs/decision-cost-log/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/decision-cost-log/proposal.md",
+              "sha256": "2186bfd0379009d1a38994c9c59b7ec2321f55de5ca79f13177f661ada4714dd"
+            },
+            {
+              "path": "openspec/changes/decision-cost-log/design.md",
+              "sha256": "0aa368d17ecb3607d6fa41722cb4a129592095ff2db79bffad943b8be2fe378e"
+            },
+            {
+              "path": "openspec/changes/decision-cost-log/specs/decision-cost-log/spec.md",
+              "sha256": "2a91767c96c05492207f5462a9eab5155f66eb41c3b39fcbc969d5126f957a2c"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:36.141Z",
+          "lastPassAt": "2026-10-20T10:32:36.141Z"
+        }
+      }
     },
     {
       "id": "rules-block-session-cost",
@@ -13715,7 +13859,7 @@
         "c51c99bec71255e600fb8acda0a67a546e3147c0"
       ],
       "createdAt": "2026-10-14T03:55:59.065Z",
-      "touchedAt": "2026-10-20T06:57:24.763Z",
+      "touchedAt": "2026-10-20T10:32:32.203Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -13723,7 +13867,43 @@
           "actor": "agent",
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
-      ]
+      ],
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:32.199Z",
+          "artifacts": [
+            "openspec/changes/spend-guard-rules-section-follows-live-limits/proposal.md",
+            "openspec/changes/spend-guard-rules-section-follows-live-limits/design.md",
+            "openspec/changes/spend-guard-rules-section-follows-live-limits/tasks.md",
+            "openspec/changes/spend-guard-rules-section-follows-live-limits/specs/spend-guard/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/spend-guard-rules-section-follows-live-limits/proposal.md",
+              "sha256": "6f129b573c963561f0905b16ea43aba10202033cfccad51a88b579c75bc8418a"
+            },
+            {
+              "path": "openspec/changes/spend-guard-rules-section-follows-live-limits/design.md",
+              "sha256": "9bfab0e919effb5e23b1f370aa7f951bb7d44ae57af6df49dd3e06ed203ed908"
+            },
+            {
+              "path": "openspec/changes/spend-guard-rules-section-follows-live-limits/specs/spend-guard/spec.md",
+              "sha256": "c9a6670f03519cd86a6d7a2a1ff1e415cd5940980a1221655cab64d5c957b1a9"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:32.199Z",
+          "lastPassAt": "2026-10-20T10:32:32.199Z"
+        }
+      }
     },
     {
       "id": "release-0-52-0-cut",
@@ -13844,8 +14024,44 @@
         "b4e7816ba574df0f91ccbba193b26ffc787c7691"
       ],
       "createdAt": "2026-10-14T04:57:23.886Z",
-      "touchedAt": "2026-10-20T08:59:46.767Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T10:32:34.827Z",
+      "release": "0.53.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:34.823Z",
+          "artifacts": [
+            "openspec/changes/feature-switches-audit/proposal.md",
+            "openspec/changes/feature-switches-audit/design.md",
+            "openspec/changes/feature-switches-audit/tasks.md",
+            "openspec/changes/feature-switches-audit/specs/feature-switches/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/feature-switches-audit/proposal.md",
+              "sha256": "54e5abc6eebe3797b18b18a9afc0c205721e8fbe23918b7dee46b783978df19c"
+            },
+            {
+              "path": "openspec/changes/feature-switches-audit/design.md",
+              "sha256": "7d8714dad789ccadbaf9f89421cc3708d2f11b24c66d5884ad22649ecdbbe97c"
+            },
+            {
+              "path": "openspec/changes/feature-switches-audit/specs/feature-switches/spec.md",
+              "sha256": "74cb2c2b20f9fb1bcfb484c5a19727d186d79f3ab1d298fab6d88ee53d463b65"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:34.823Z",
+          "lastPassAt": "2026-10-20T10:32:34.823Z"
+        }
+      }
     },
     {
       "id": "developer-session-log",
@@ -13869,8 +14085,44 @@
         "e08ece1e8a55184c14449f7aea391ddf13a526c7"
       ],
       "createdAt": "2026-10-14T04:57:24.708Z",
-      "touchedAt": "2026-10-20T08:49:30.792Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T10:32:34.177Z",
+      "release": "0.53.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:34.173Z",
+          "artifacts": [
+            "openspec/changes/developer-session-log/proposal.md",
+            "openspec/changes/developer-session-log/design.md",
+            "openspec/changes/developer-session-log/tasks.md",
+            "openspec/changes/developer-session-log/specs/developer-session-log/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/developer-session-log/proposal.md",
+              "sha256": "5366181d25f10be184d4042b5eb6c86260226db3648856075273b92a711f5850"
+            },
+            {
+              "path": "openspec/changes/developer-session-log/design.md",
+              "sha256": "92fce828e247ccf99a28ec3a795decb6a7151c709e931eb9a68048f142ac2aab"
+            },
+            {
+              "path": "openspec/changes/developer-session-log/specs/developer-session-log/spec.md",
+              "sha256": "4c71c16ec51482d370a58f73d634ae8a90c9c46aefad49cf657bca0b0d3b8a41"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:34.173Z",
+          "lastPassAt": "2026-10-20T10:32:34.173Z"
+        }
+      }
     },
     {
       "id": "triage-surfaces-open-release-intents",
@@ -13964,7 +14216,7 @@
         "360389ad9a2ba03e753b0325c2d59457148e6cf2"
       ],
       "createdAt": "2026-10-17T12:41:42.610Z",
-      "touchedAt": "2026-10-20T06:44:38.487Z",
+      "touchedAt": "2026-10-20T10:32:30.821Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:43.405Z",
@@ -13977,7 +14229,48 @@
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
-      "release": "0.53.0"
+      "release": "0.53.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:30.817Z",
+          "artifacts": [
+            "openspec/changes/gh-cfdude-pm-251/proposal.md",
+            "openspec/changes/gh-cfdude-pm-251/design.md",
+            "openspec/changes/gh-cfdude-pm-251/tasks.md",
+            "openspec/changes/gh-cfdude-pm-251/specs/spend-guard/spec.md",
+            "openspec/changes/gh-cfdude-pm-251/specs/spend-ledger/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/gh-cfdude-pm-251/proposal.md",
+              "sha256": "95caef1a94cc797a634c9d20e1abf2e2520cdbb995100464a0524c05fdc3f0e8"
+            },
+            {
+              "path": "openspec/changes/gh-cfdude-pm-251/design.md",
+              "sha256": "bda80750574bdcab20ae91a7eb229388dc94d6583d9ee0077845422c7a030784"
+            },
+            {
+              "path": "openspec/changes/gh-cfdude-pm-251/specs/spend-guard/spec.md",
+              "sha256": "d1f78cd3d0093632d8bc42bca954285865a1503c67b23a01e6f2e0e05e7b2bc6"
+            },
+            {
+              "path": "openspec/changes/gh-cfdude-pm-251/specs/spend-ledger/spec.md",
+              "sha256": "1c9841f5b4305eaa02a6311627e3e8dbd7c34b8190ff7ba71075494fafc8a0bb"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:30.817Z",
+          "lastPassAt": "2026-10-20T10:32:30.817Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-250",
@@ -14160,7 +14453,7 @@
         "e9c8ccedeba50d928440c3edc14fd6eadb5d503d"
       ],
       "createdAt": "2026-10-17T12:41:55.680Z",
-      "touchedAt": "2026-10-20T06:50:49.025Z",
+      "touchedAt": "2026-10-20T10:32:31.546Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:56.480Z",
@@ -14173,7 +14466,43 @@
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
-      "release": "0.53.0"
+      "release": "0.53.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T10:32:31.541Z",
+          "artifacts": [
+            "openspec/changes/gh-cfdude-pm-242/proposal.md",
+            "openspec/changes/gh-cfdude-pm-242/design.md",
+            "openspec/changes/gh-cfdude-pm-242/tasks.md",
+            "openspec/changes/gh-cfdude-pm-242/specs/spend-ledger/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/gh-cfdude-pm-242/proposal.md",
+              "sha256": "f17603ec71eb57393c411c559b2d72d3de3b3ec29a02c820d84ff9d9904ceb9c"
+            },
+            {
+              "path": "openspec/changes/gh-cfdude-pm-242/design.md",
+              "sha256": "dcbd11cdd1b2e154af842f026244ae70f9be3ac143a7a22b164a1302e546317d"
+            },
+            {
+              "path": "openspec/changes/gh-cfdude-pm-242/specs/spend-ledger/spec.md",
+              "sha256": "df2145edbc3e595aad5aa04efa8133665b46d7e6831a5d23341c582893fc0b76"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T10:32:31.541Z",
+          "lastPassAt": "2026-10-20T10:32:31.541Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-241",
@@ -14207,7 +14536,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2102,
+  "revision": 2111,
   "reviewMode": "standard",
   "releases": [
     {
