@@ -75,5 +75,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic developer-session-log --status archived --outcome delivered --reason "<why>" --declined-deferral "verbatim request/response capture:privacy and size; the ledger's never-text rule; needs Rob's explicit ask"`, then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive developer-session-log`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic developer-session-log --status archived --outcome delivered --reason "<why>" --declined-deferral "verbatim request/response capture:privacy and size; the ledger's never-text rule; needs Rob's explicit ask"`, then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive developer-session-log`. Not attributed.
