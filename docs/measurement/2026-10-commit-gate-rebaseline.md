@@ -51,19 +51,32 @@ load 6-16", and rerun on a quiet machine before relying on a sub-second differen
 
 ## Against the 10 s gate (a proposal)
 
-The gate as worded, "the disk-write tests carry 10 s or more of the file rung", has two readings, and they
-disagree:
+Design D7 defines the measure as "the summed time of file-rung tests that reach init's `CLAUDE.md` or
+`.gitignore` write", against 10 s. On that measure:
 
-| Reading | Value | Against 10 s |
+| Measure | Value | Against 10 s |
 | --- | --- | --- |
-| Summed time of the tests that reach a write | 312-328 s summed, about 26-28 s wall-equivalent | passes, but it does not discriminate: 94-96% of the rung reaches a write twice running, because nearly every file-rung test initialises a repo and then does other work |
-| Time spent inside the write calls (what an in-memory store would remove) | 27-30 s summed, about 2.3-2.6 s wall-equivalent | does not reach 10 s |
+| Summed time of file-rung tests that reach a write (D7's measure) | 312-328 s summed across the three runs; about 26-28 s wall-equivalent (summed divided by the ~12x parallelism observed) | **Met**, by a wide margin, in all three runs |
+| Same, as a share of the file rung | 94-96% (525 of 892 tests) | the 2026-09-25 profile found 96% |
+| Time spent inside the write calls themselves (a LOWER BOUND on raw I/O only) | 27-30 s summed, about 2.3-2.6 s wall-equivalent | not the measure D7 sets, and not what the change removes (below) |
 
-**Recommendation (a proposal, for the orchestrator to record on `store-owns-claude-md-managed-block` and for
-0.54.0 grooming):** do not build it on commit-gate speed. The part the change can remove is about 2.5 s of a
-30 s gate, and even that is inflated by contention. Defer or decline it on this ground; if it is wanted for a
-correctness reason, that is a separate case. If the gate is meant to read the first row, it needs a
-different threshold, since the first row is 94-96% for any gate-relevant change.
+Why the write-call row is a lower bound and not the gate. What `store-owns-claude-md-managed-block` removes
+is not the `writeFileSync` call; it is the need for those tests to be file-rung tests at all: a real
+temp directory, `init`, fsync and the on-disk read-back. The 0.48.0 unit-rung migration measured that
+difference directly for tests it moved: the same 1,243 tests ran in 12.2 s on an in-memory store against
+73.2 s on disk (`scripts/test/fixtures/unit-harness.mjs`). So the write call is the smallest part of what
+reaching the write costs a test.
+
+What this measurement does NOT show: how many of the 525 reaching tests could actually move to the unit
+rung (some assert bytes on disk and must stay on the file rung; `conductor-25` gh-85, 9.7 s, is the named
+floor). The 94-96% share says the population is large, not how much of it moves. That is the number to size
+before building, and it is a separate piece of work.
+
+**Verdict on the gate as written: met.** (A proposal for the orchestrator to record on
+`store-owns-claude-md-managed-block` and weigh at 0.54.0 grooming; the recommendation to build or decline
+there rests on sizing the movable share, which this document does not do.) The not-quiet caveat above
+applies: the walls were stable at 29.1-30.5 s across load 6-16, but a quiet-machine rerun is still owed
+before relying on a sub-second figure.
 
 ## What changed since 2026-09-25 (task R.7's question: load or growth?)
 
