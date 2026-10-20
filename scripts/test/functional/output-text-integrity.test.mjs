@@ -1153,6 +1153,7 @@ recipe("unclaim --session", { exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, 
     release: ["release", "rel1", "--intent", "x"],
     "set-spend-guard": ["set-spend-guard", "--max-failed-rounds", "3"],
     "override-spend-guard": ["override-spend-guard", "k1", "--signal", "rounds", "--escalated-to", "user", "--reason", "r"],
+    "record-decision": ["record-decision", "k1", "--withdraw", "1", "--reason", "r"],
     sync: ["sync"],
     upgrade: ["upgrade"],
     "recover-created-at": ["recover-created-at"],
@@ -1284,6 +1285,27 @@ recipe("override-spend-guard --reason", { notRendered: "an override's reason is 
   ok(c.cwd, ["set-spend-guard", "--epic", id, "--max-failed-rounds", "1"]);
   ok(c.cwd, ["record-gate-review", id, "--gate", "1", "--verdict", "fail"]);
   return pm(c.cwd, ["override-spend-guard", id, "--signal", "rounds", "--escalated-to", "user", "--reason", v]);
+} });
+// decision-cost-log. A decision's text is stored and printed by no surface at record time (`decisions` prints it
+// escaped); the timestamps, the phase and the number are validated before anything is written.
+const decideBase = (c) => {
+  const id = fresh("dc");
+  ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code"]);
+  ok(c.cwd, ["set-spend-tracking", "on"]);
+  return id;
+};
+const decide = (c, over = []) => pm(c.cwd, ["record-decision", decideBase(c), "--what", "w", "--why", "y", "--since", "2026-10-10T00:00:00Z", ...over]);
+recipe("record-decision --what", { notRendered: "a decision's text is stored and printed by no text surface at record time", run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--what", v, "--why", "y", "--since", "2026-10-10T00:00:00Z"]) });
+recipe("record-decision --why", { notRendered: "a decision's text is stored and printed by no text surface at record time", run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--what", "w", "--why", v, "--since", "2026-10-10T00:00:00Z"]) });
+recipe("record-decision --alternative", { notRendered: "a decision's text is stored and printed by no text surface at record time", run: (c, v) => decide(c, ["--alternative", v]) });
+recipe("record-decision --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--what", "w", "--why", "y", "--since", v]) });
+recipe("record-decision --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => decide(c, ["--until", v]) });
+recipe("record-decision --phase", { exempt: EXEMPT.vocab("phase"), run: (c, v) => decide(c, ["--phase", v]) });
+recipe("record-decision --withdraw", { exempt: EXEMPT.number("withdraw"), run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--withdraw", v, "--reason", "r"]) });
+recipe("record-decision --reason", { notRendered: "a withdrawal's reason is stored in the record and printed by no text surface", run: (c, v) => {
+  const id = decideBase(c);
+  ok(c.cwd, ["record-decision", id, "--what", "w", "--why", "y", "--since", "2026-10-10T00:00:00Z"]);
+  return pm(c.cwd, ["record-decision", id, "--withdraw", "1", "--reason", v]);
 } });
 recipe("profile --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["profile", "--epic", v]) });
 recipe("set-tracker --role", { exempt: EXEMPT.vocab("role"), run: (c, v) => pm(c.cwd, ["set-tracker", "--role", v, "--system", "jira"]) });

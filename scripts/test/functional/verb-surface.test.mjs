@@ -445,6 +445,8 @@ const DISPATCH_BASELINE = {
   // token-spend-analysis-and-recommendations: with tracking off it prints that and reads nothing.
   "spend-analysis": { args: ["spend-analysis"] },
   "set-dev-log": { pre: [["set-spend-tracking", "on"]], args: ["set-dev-log", "on"] },
+  // decision-cost-log: recording is refused while spend tracking is off, so it seeds the prerequisite.
+  "record-decision": { pre: [["set-spend-tracking", "on"]], args: ["record-decision", "e1", "--what", "x", "--why", "y", "--since", "2026-10-10T00:00:00Z"] },
   // spend-budget-and-stuck-loop-guard. `override-spend-guard` is accepted only while a signal is tripped, so it
   // seeds one: a round limit of 1, then one recorded failed verdict.
   "set-spend-guard": { args: ["set-spend-guard", "--max-failed-rounds", "2"] },
@@ -693,7 +695,7 @@ const POSITIONAL_COUNTS = {
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
   "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1, "set-dev-log": 1,
-  "spend-guard": 1, "override-spend-guard": 1,
+  "spend-guard": 1, "override-spend-guard": 1, "record-decision": 1,
 };
 for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;
 

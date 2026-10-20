@@ -75,6 +75,8 @@ const BASELINE = {
   "record-reconcile": null,
   "record-tracker-refresh": null,
   "override-spend-guard": null,
+  // decision-cost-log: recording is refused while spend tracking is off, so no bare baseline succeeds.
+  "record-decision": null,
   "recover-created-at": null,
   upgrade: null,
 };

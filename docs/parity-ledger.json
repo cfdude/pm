@@ -127,6 +127,11 @@
       "platforms": { "claude-code": "slash command wrapping the read-only spend-analysis verb - the spend ledger as a postmortem: token classes kept apart, sub-agents ranked by work, tool-call counts, rule-based outlier flags with one recommendation each, and a cross-release trend with a data floor" }
     },
     {
+      "id": "decision-cost-log",
+      "artifacts": ["commands/record-decision.md"],
+      "platforms": { "claude-code": "slash command wrapping record-decision - a numbered decision on an epic (what, why, alternatives, phase, the window of work that reached it), withdrawn never deleted, with its cost computed from the spend ledger when read and never stored" }
+    },
+    {
       "id": "session-overhead",
       "artifacts": ["commands/overhead.md"],
       "platforms": { "claude-code": "slash command wrapping the read-only overhead verb — what pm injects into a session, by surface and by feature, each figure labelled bytes/4 (an estimate), with an in-memory every-opt-in-on case" }

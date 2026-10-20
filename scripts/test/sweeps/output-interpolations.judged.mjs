@@ -208,6 +208,23 @@ x("spend-analysis.mjs", "pct", {
 x("spend-analysis.mjs", "buildTrend", {
   "releases.reduce((s, r) => s + r.epics, 0)": 1,
 }, "engine", "a count of epics the engine computed, inside the fixed `insufficient data` phrase");
+x("decision-log.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");
+x("decision-log.mjs", "recordDecision", {
+  "flag": 3,
+  "[...text].length.toLocaleString(\"en-US\")": 1,
+  "DECISION_TEXT_MAX.toLocaleString(\"en-US\")": 1,
+  "main.reason": 1,
+  "n": 1,
+}, "engine", "registry flag names (what|why|alternative|reason|since|until), a character or decision count formatted with toLocaleString, the engine's reason word (absent|unreadable) and the decision number the engine assigned");
+x("decision-log.mjs", "recordDecision", {
+  "notes": 1,
+}, "escaped", "the `update-epic <id> --notes` command built by orNoRemedy(printedId()), which shell-quotes the id or prints the no-remedy message");
+x("decision-log.mjs", "withdraw", {
+  "stray.join(\", --\")": 1,
+  "n": 3,
+}, "engine", "registry flag names of the refused decision fields, and a decision number validated as a positive whole number");
 x("spend-analysis.mjs", "refuse", {
   "msg": 1,
 }, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");

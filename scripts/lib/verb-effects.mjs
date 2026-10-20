@@ -141,6 +141,9 @@ export const VERB_EFFECTS = {
   // token-spend-analysis-and-recommendations: read-only analysis. `mutates` + `detachedNoOp` for `spend-guard`'s reason: with
   // tracking on it runs the same ingest into the MAIN working tree's ignored .conductor/spend/, never state.json.
   "spend-analysis": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
+  // decision-cost-log. `record-decision` writes an epic's decisions (append, or the withdrawal mark) and nothing else; its
+  // cost is never stored.
+  "record-decision": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's decisions: one appended, or one marked withdrawn and kept), plus render()'s writes" },
   // spend-budget-and-stuck-loop-guard. The limit cascade and the overrides are `state.json` writes; the managed
   // rules block is refreshed only when "a limit is configured" flips.
   "set-spend-guard": { effect: "mutates", epicWriting: true, writes: "state.json (the project, lane or epic spend-guard layer), CLAUDE.md (the rules block, only when a limit first appears or the last goes), plus render()'s writes" },

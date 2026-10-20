@@ -78,6 +78,8 @@ const VERB_BASELINE = {
   "set-spend-guard": () => ["set-spend-guard", "--max-failed-rounds", "2"],
   "spend-guard": () => ["spend-guard", "e1"],
   "override-spend-guard": () => ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
+  // decision-cost-log: recording is refused while spend tracking is off, so BASELINE_PRE below turns it on first.
+  "record-decision": () => ["record-decision", "e1", "--what", "x", "--why", "y", "--since", "2026-10-10T00:00:00Z"],
   owners: () => ["owners"],
   // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
   list: () => ["list"],
@@ -257,6 +259,7 @@ const BASELINE_PRE = {
   "record-reconcile": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"], ["pop-detour", "e1"]],
   "drop-detour": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"]],
   "override-spend-guard": [["set-spend-guard", "--max-failed-rounds", "1"], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"]],
+  "record-decision": [["set-spend-tracking", "on"]],
 };
 
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {

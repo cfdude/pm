@@ -804,6 +804,10 @@ export const EPIC_FLAGS = [
       "`recover-created-at` will attempt it again from this checkout's git history on its next run, which is " +
       "what makes clear-then-recover the correction path for a date the recovery got wrong (a reused id, a " +
       "wholesale state.json rewrite, a filter-branch or subtree split). Nothing else derives from it" },
+  // decision-cost-log: `epic.decisions` is written ONLY by `record-decision` (append, and the withdrawal mark).
+  { flag: "decisions", key: "decisions", commands: ["update-epic"], engineWritten: true,
+    setOnly: "a RECORD of what was decided, with the work window that reached it — a correction is a withdrawal (record-decision's " +
+      "--withdraw, which marks the decision withdrawn and keeps it) plus a new entry, and a bulk clear would erase the record a withdrawal exists to keep" },
   // epic-session-attribution: `epic.sessions` is the ENGINE's trail of which named sessions wrote the record
   // (stampTouched in store.mjs). Not typeable, and set-only for the reason below.
   { flag: "sessions", key: "sessions", commands: ["update-epic"], engineWritten: true,
@@ -1002,8 +1006,15 @@ export const VERB_FLAGS = [
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
   // filters a log. What they agree on — that a value is required — is all the row carries.
-  { flag: "since", commands: ["activity", "spend", "dev-log"], requires: "an ISO-8601 timestamp" },
+  { flag: "since", commands: ["activity", "spend", "dev-log", "record-decision"], requires: "an ISO-8601 timestamp" },
   { flag: "epic", commands: ["activity", "spend", "spend-analysis"], requires: "an epic id" },
+  // decision-cost-log: `record-decision`'s own flags. `--since`, `--until` and `--reason` are the rows beside this
+  // verb's neighbours (same meaning); `--alternative` repeats, one value per alternative considered.
+  { flag: "what", commands: ["record-decision"], requires: "the decision, in words" },
+  { flag: "why", commands: ["record-decision"], requires: "why it was decided" },
+  { flag: "alternative", commands: ["record-decision"], repeats: true, requires: "an alternative that was considered" },
+  { flag: "phase", commands: ["record-decision"], placeholder: "plan|build|review|docs|release" },
+  { flag: "withdraw", commands: ["record-decision"], requires: "a decision number" },
   // token-spend-analysis-and-recommendations: `--release` scopes the analysis to the epics whose `release` is that id.
   { flag: "release", commands: ["spend-analysis"], requires: "a release id" },
   // purge-logs. Its own `--keep`/`--over`/`--older-than` checks stay and run AFTER this rule,
@@ -1019,7 +1030,7 @@ export const VERB_FLAGS = [
   // above (same meaning on each verb); these five are its own. `--until` is the half-open upper bound
   // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
   // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
-  { flag: "until", commands: ["spend", "dev-log"], requires: "an ISO-8601 timestamp" },
+  { flag: "until", commands: ["spend", "dev-log", "record-decision"], requires: "an ISO-8601 timestamp" },
   { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log", "spend-analysis"], valueless: true },
   // developer-session-log: `dev-log --session-id` names a Claude Code TRANSCRIPT session, never pm's own `--session` identity.
   { flag: "session-id", commands: ["dev-log"], requires: "a Claude Code transcript session id" },
@@ -1033,7 +1044,7 @@ export const VERB_FLAGS = [
   { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|token-basis|warn-at|all" },
   { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
   { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
-  { flag: "reason", commands: ["override-spend-guard"], requires: REASON_REQUIRES },
+  { flag: "reason", commands: ["override-spend-guard", "record-decision"], requires: REASON_REQUIRES },
   { flag: "revoke", commands: ["override-spend-guard"], valueless: true },
   { flag: "clear", commands: ["spend", "dev-log"], valueless: true },
   { flag: "rebuild", commands: ["spend"], valueless: true },
@@ -1120,6 +1131,8 @@ export const VERB_POSITIONALS = {
   "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
+  // decision-cost-log: both take the epic the decisions belong to.
+  "record-decision": EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },

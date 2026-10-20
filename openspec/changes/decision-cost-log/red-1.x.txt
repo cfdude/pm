@@ -1,0 +1,234 @@
+✖ 1.1 a decision is appended with its values, until equal to its record time, and numbered 1 (1.939959ms)
+✖ 1.1 phase and alternatives are optional: phase is null and alternatives empty (0.590833ms)
+✖ 1.1 an explicit --until is kept as given (0.311917ms)
+✖ 1.1 numbering is per epic, 1-based and never reused: a withdrawn decision's number stays taken (0.286625ms)
+✖ 1.1 an archived epic accepts a decision (0.284709ms)
+✖ 1.1 every invalid input is refused naming what is wrong, and state.json is byte-identical (0.494834ms)
+✖ 1.1 with spend tracking off, recording is refused naming set-spend-tracking on and update-epic --notes, and writes nothing (0.338084ms)
+✖ 1.1 the verb is registered: epic-writing (so --session is accepted), engine-written set-only field, flags declared (0.096292ms)
+✖ 1.1 --session is recorded on the epic by the same save (0.260292ms)
+✖ 1.2 --withdraw marks the decision withdrawn with the time and reason and keeps it (0.295916ms)
+✖ 1.2 withdrawing an absent or an already-withdrawn decision is refused and writes nothing (0.262458ms)
+✖ 1.2 --withdraw takes no decision fields; a stray --reason on a record is refused too (0.238875ms)
+✖ 1.2 withdrawing is accepted with tracking off (it reads no ledger) (0.216209ms)
+✔ 1.2 a fresh init holds no decisions and upgrade records none (6.008583ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 1
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.309083
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 a decision is appended with its values, until equal to its record time, and numbered 1 (1.939959ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:20:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 phase and alternatives are optional: phase is null and alternatives empty (0.590833ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:30:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 an explicit --until is kept as given (0.311917ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:36:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 numbering is per epic, 1-based and never reused: a withdrawn decision's number stays taken (0.286625ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:42:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 an archived epic accepts a decision (0.284709ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:52:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 every invalid input is refused naming what is wrong, and state.json is byte-identical (0.494834ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  AssertionError [ERR_ASSERTION]: record-decision e1 --why y --since 2026-10-10T00:00:00Z
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:79:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n',
+    expected: /--what/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 with spend tracking off, recording is refused naming set-spend-tracking on and update-epic --notes, and writes nothing (0.338084ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /set-spend-tracking on/. Input:
+  
+  'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:89:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n',
+    expected: /set-spend-tracking on/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the verb is registered: epic-writing (so --session is accepted), engine-written set-only field, flags declared (0.096292ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  TypeError: Cannot read properties of undefined (reading 'epicWriting')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:97:48
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 --session is recorded on the epic by the same save (0.260292ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:110:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 --withdraw marks the decision withdrawn with the time and reason and keeps it (0.295916ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:118:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 withdrawing an absent or an already-withdrawn decision is refused and writes nothing (0.262458ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:128:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 --withdraw takes no decision fields; a stray --reason on a record is refused too (0.238875ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:148:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 withdrawing is accepted with tracking off (it reads no ledger) (0.216209ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs]
+  Error: usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/decision-log.test.mjs:163:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n'
+  }
