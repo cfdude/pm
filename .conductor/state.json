@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "pm-overhead-baseline",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -2720,7 +2720,7 @@
       "priority": "P3",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "openspec",
       "links": [
         {
           "type": "relates-to",
@@ -2736,9 +2736,14 @@
           "at": "2026-09-10T04:38:22.800Z",
           "actor": "agent",
           "text": "GROOMING 0.41.0 — RESCOPED; most of this SHIPPED. The append-only per-epic session trail exists: conductor.mjs resolves the session in the TOP-LEVEL activity wrapper rather than inside claim dispatch, so diffEvents stamps identity onto EVERY event kind (activity-log.mjs), queryable with 'activity --epic'. An earlier reading that the trail covers only claim/release events is wrong. What actually remains is small: --session is registered for claim/unclaim ONLY (constants.mjs), so PM_SESSION is the sole channel on every other verb, and nothing lands on the epic record itself. Re-verified against HEAD after two agents disagreed about it."
+        },
+        {
+          "at": "2026-10-20T05:49:15.372Z",
+          "actor": "agent",
+          "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
-      "touchedAt": "2026-10-14T04:57:01.556Z",
+      "touchedAt": "2026-10-20T05:49:15.377Z",
       "release": "0.53.0"
     },
     {
@@ -3193,7 +3198,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [
         {
           "type": "relates-to",
@@ -3217,10 +3222,15 @@
           "at": "2026-10-14T04:57:12.225Z",
           "actor": "agent",
           "text": "lane: superpowers not claude-code — grew from 4 sites to 17 lines in 7 files plus the emitted surface (0.53 backlog assessment)"
+        },
+        {
+          "at": "2026-10-20T05:49:13.937Z",
+          "actor": "agent",
+          "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-10-14T04:57:12.229Z",
+      "touchedAt": "2026-10-20T05:49:13.941Z",
       "release": "0.53.0"
     },
     {
@@ -10296,7 +10306,7 @@
       "id": "gh-cfdude-pm-207",
       "title": "A free-text value beginning with -- is refused with 'quote the whole value', which cannot help; the hint should name the = form",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -10304,10 +10314,23 @@
       "externalId": "207",
       "externalUrl": "https://github.com/cfdude/pm/issues/207",
       "externalUpdatedAt": "2026-09-17T11:31:29Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "008f270cd621e88c3f28f459d5755065fa8b272d"
+      ],
       "createdAt": "2026-09-17T11:31:37.673Z",
-      "touchedAt": "2026-10-14T04:57:04.887Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:50:07.419Z",
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:07.415Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:07.415Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:07.415Z"
     },
     {
       "id": "gh-cfdude-pm-208",
@@ -10356,7 +10379,7 @@
       "id": "gh-cfdude-pm-204",
       "title": "No engine verb lists epics; intake and deferral routing fall back to reading state.json",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -10364,9 +10387,11 @@
       "externalId": "204",
       "externalUrl": "https://github.com/cfdude/pm/issues/204",
       "externalUpdatedAt": "2026-09-16T23:30:21Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "164d5df31ad1d493eebc4aee4af55787e0f7f562"
+      ],
       "createdAt": "2026-09-17T19:47:11.764Z",
-      "touchedAt": "2026-10-14T04:57:03.210Z",
+      "touchedAt": "2026-10-20T05:50:06.608Z",
       "notes": [
         {
           "at": "2026-09-17T19:47:12.367Z",
@@ -10374,7 +10399,18 @@
           "text": "lane: superpowers not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
         }
       ],
-      "release": "0.53.0"
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:06.604Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:06.603Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:06.604Z"
     },
     {
       "id": "gh-cfdude-pm-205",
@@ -11784,7 +11820,7 @@
       "id": "gh-cfdude-pm-228",
       "title": "A consumer repo's rejected lesson detect: is still reported by no surface — only pm's own index test names it",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -11792,10 +11828,23 @@
       "externalId": "228",
       "externalUrl": "https://github.com/cfdude/pm/issues/228",
       "externalUpdatedAt": "2026-09-25T20:22:34Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "7b653b81a90854f0160d6ca80795fae9ef1bf086"
+      ],
       "createdAt": "2026-09-28T17:11:02.240Z",
-      "touchedAt": "2026-10-14T04:57:05.717Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:50:09.151Z",
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:09.148Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:09.147Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:09.148Z"
     },
     {
       "id": "gh-cfdude-pm-227",
@@ -12374,7 +12423,7 @@
       "id": "engine-source-extraction-vacuity",
       "title": "Test guards that extract a value from engine source (indexOf slices, regex captures, dispatch-table readers) silently match nothing after the engine changes shape — one helper that refuses an empty extraction",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -12385,9 +12434,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "7aa2de506177af2fbcbbd8d8e18c5c1a3c14c2bd"
+      ],
       "createdAt": "2026-09-29T20:03:48.175Z",
-      "touchedAt": "2026-10-14T04:57:11.410Z",
+      "touchedAt": "2026-10-20T05:50:05.574Z",
       "notes": [
         {
           "at": "2026-09-29T20:03:49.244Z",
@@ -12395,7 +12446,18 @@
           "text": "lane: superpowers (routing returned none) — a shared helper plus a migration across ~8 test files"
         }
       ],
-      "release": "0.53.0"
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:05.569Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:05.568Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:05.569Z"
     },
     {
       "id": "execution-profile-layered-settings",
@@ -12689,7 +12751,7 @@
       "id": "flake-owner-certify-index-sigterm",
       "title": "Owning epic for known flake certify-index 1.2 (SIGTERM process-lifetime): make it load-independent, then drop it from known-flakes.json",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12700,16 +12762,29 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "8ed9ea8a856daafee7e9ef4797994939545a4c38"
+      ],
       "createdAt": "2026-10-01T06:08:08.495Z",
-      "touchedAt": "2026-10-14T04:57:08.982Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:50:01.304Z",
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:01.300Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:01.299Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:01.300Z"
     },
     {
       "id": "flake-owner-g2-c1-i2-2000ms-bound",
       "title": "Owning epic for known flake G2-C1/I2 (state-file-refuses-to-guess, 2000 ms bound under load): make it load-independent, then drop it from known-flakes.json",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12720,10 +12795,23 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a00077f7ce47ba2d16c3f48422af4c0ed81f48b8"
+      ],
       "createdAt": "2026-10-01T06:08:09.640Z",
-      "touchedAt": "2026-10-14T04:57:09.784Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:50:02.853Z",
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:02.847Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:02.846Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:02.847Z"
     },
     {
       "id": "release-in-flight-rule-needs-decision",
@@ -12771,7 +12859,7 @@
       "id": "unit-rung-flake-retry-gap",
       "title": "A unit-rung failure reports unit-harness.mjs as its location, so the flake retry never re-runs it: flakes in the unit rung are uncovered",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12782,10 +12870,23 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a90170961e52db2b7c3504b00afd647ed0c02beb"
+      ],
       "createdAt": "2026-10-01T06:08:12.232Z",
-      "touchedAt": "2026-10-14T04:57:10.595Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:50:04.086Z",
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:04.080Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:04.079Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:04.080Z"
     },
     {
       "id": "token-spend-tracking-per-epic",
@@ -13007,7 +13108,7 @@
       "id": "integrity-reports-legacy-duplicate-attributions",
       "title": "integrity has no check for legacy duplicate attributedCommits entries (written before B1 made attribution once-only)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -13018,10 +13119,23 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6de6103e3d36018c7bc219f4bb2002686cd13f0c"
+      ],
       "createdAt": "2026-10-01T23:10:14.992Z",
-      "touchedAt": "2026-10-14T04:57:07.372Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:50:10.007Z",
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:10.003Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:10.003Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:10.003Z"
     },
     {
       "id": "integrity-reports-stale-gate-1",
@@ -13425,7 +13539,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [
         {
           "type": "depends-on",
@@ -13442,8 +13556,15 @@
       "description": "Rob 2026-10-06: log the decision-making process — that a specific decision was made and cost ~750,000 tokens — as self-reflection to find process improvements, not as raw spend. A verb to record a decision (what, why, alternatives considered, tokens spent reaching it, epic/phase) attached to the epic, rendered in the postmortem alongside the spend breakdown; likely built on the activity log. Off with the rest of the spend feature by default. Depends on the ledger.",
       "attributedCommits": [],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-06T19:58:04.528Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:49:16.625Z",
+      "release": "0.53.0",
+      "notes": [
+        {
+          "at": "2026-10-20T05:49:16.619Z",
+          "actor": "agent",
+          "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
+        }
+      ]
     },
     {
       "id": "rules-block-session-cost",
@@ -13529,7 +13650,7 @@
       "id": "gh-cfdude-pm-239",
       "title": "log-detour stamps HEAD after a failed commit, and the MINIMAL row can never be retracted",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -13537,9 +13658,11 @@
       "externalId": "239",
       "externalUrl": "https://github.com/cfdude/pm/issues/239",
       "externalUpdatedAt": "2026-09-30T07:01:00Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6b5741afe24174c15269c1f6dc3cc33afd8c8605"
+      ],
       "createdAt": "2026-10-07T07:12:35.191Z",
-      "touchedAt": "2026-10-14T04:57:04.062Z",
+      "touchedAt": "2026-10-20T05:50:08.200Z",
       "notes": [
         {
           "at": "2026-10-07T07:12:35.903Z",
@@ -13547,7 +13670,18 @@
           "text": "lane: superpowers not unrouted — suggest-lane returned none; a hook/log-detour behavior fix touching retraction semantics, not a sub-2h tweak"
         }
       ],
-      "release": "0.53.0"
+      "release": "0.53.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T05:50:08.196Z",
+        "reason": "built in rc/0.53.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T05:50:08.195Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T05:50:08.196Z"
     },
     {
       "id": "spend-guard-rules-section-follows-live-limits",
@@ -13555,7 +13689,7 @@
       "priority": "P3",
       "status": "planned",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [
         {
           "type": "relates-to",
@@ -13567,8 +13701,15 @@
       "description": "Gate 2 minor on spend-budget-and-stuck-loop-guard: the managed rules block's ## Spend guard section is toggled only by set-spend-guard. Archiving or removing the only epic that holds a limit leaves the section stale; un-archiving it (update-epic --status untriaged) leaves the section absent while the limit is live, so the per-dispatch spend-guard instruction disappears (the brief and record-gate-review STOPs still fire). Sweep every writer that can change whether a limit is live and refresh the block at each.",
       "attributedCommits": [],
       "createdAt": "2026-10-14T03:55:59.065Z",
-      "touchedAt": "2026-10-14T04:57:00.697Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T05:49:12.674Z",
+      "release": "0.53.0",
+      "notes": [
+        {
+          "at": "2026-10-20T05:49:12.670Z",
+          "actor": "agent",
+          "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
+        }
+      ]
     },
     {
       "id": "release-0-52-0-cut",
@@ -13610,7 +13751,7 @@
       "id": "pm-overhead-baseline",
       "title": "Measure pm's own baseline token overhead per session with all features on, and the downstream efficiency it buys",
       "priority": "P1",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -13624,14 +13765,46 @@
       "description": "Rob 2026-10-13. Understand how tokens are spent across prompt creation, context and responses; measure input vs output and first-read vs cached-read tokens; establish the baseline cost of pm out of the box with every feature enabled (rules block, brief, hook injections, command/skill listings, hierarchy and EDD docs) and compare it with how much cheaper downstream tasks get because of tracking and record-keeping. Includes the overhead of spend tracking itself (if turning it on adds ~5,000 tokens a session Rob must be able to see that and shut it off). Reads the ledger; sibling of token-spend-analysis-and-recommendations. Evidence so far: cache-read is 96.2% of attributed tokens, output 0.34%; one 60.5M-token build agent ran 156 turns at ~379K context; pm's rules block is ~10K tokens and the brief was 78 KB uncapped before 0.52.",
       "attributedCommits": [],
       "createdAt": "2026-10-14T04:57:23.063Z",
-      "touchedAt": "2026-10-14T23:49:33.248Z",
+      "touchedAt": "2026-10-20T05:49:32.905Z",
       "release": "0.53.0",
       "stories": [
         {
           "title": "Re-baseline the per-commit gate on a quiet machine (n=3): per-test time in scripts/test/assert, and how much is init's CLAUDE.md/.gitignore writes. 2026-10-14 loose run: assertion half 28s (assert rung 26.7s, unit 3.1s) vs 15.4s in the epic's 09-25 profile. Build store-owns-claude-md-managed-block only if disk-write tests carry >=10s; else decline with the numbers",
           "done": false
         }
-      ]
+      ],
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T05:49:23.709Z",
+          "artifacts": [
+            "openspec/changes/pm-overhead-baseline/proposal.md",
+            "openspec/changes/pm-overhead-baseline/design.md",
+            "openspec/changes/pm-overhead-baseline/tasks.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/pm-overhead-baseline/proposal.md",
+              "sha256": "88a07b4aae1042d624edf667cb9414c28188afa4e30127db5653145196500281"
+            },
+            {
+              "path": "openspec/changes/pm-overhead-baseline/design.md",
+              "sha256": "eda2e32204296bedb839090524d5ee998d4e49b7ff0e3b81c9fc484a796435cc"
+            }
+          ],
+          "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T05:49:23.709Z",
+          "lastPassAt": "2026-10-20T05:49:23.709Z"
+        }
+      },
+      "startedAt": "2026-10-20T05:49:32.901Z"
     },
     {
       "id": "feature-switches-audit",
@@ -13756,7 +13929,7 @@
       "priority": "P2",
       "status": "untriaged",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "251",
@@ -13764,12 +13937,17 @@
       "externalUpdatedAt": "2026-10-15T17:22:12Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:42.610Z",
-      "touchedAt": "2026-10-17T12:42:12.982Z",
+      "touchedAt": "2026-10-20T05:49:10.312Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:43.405Z",
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        },
+        {
+          "at": "2026-10-20T05:49:10.305Z",
+          "actor": "agent",
+          "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
       "release": "0.53.0"
@@ -13945,7 +14123,7 @@
       "priority": "P2",
       "status": "untriaged",
       "role": "epic",
-      "lane": "superpowers",
+      "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "242",
@@ -13953,12 +14131,17 @@
       "externalUpdatedAt": "2026-10-14T15:38:00Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:55.680Z",
-      "touchedAt": "2026-10-17T12:42:12.982Z",
+      "touchedAt": "2026-10-20T05:49:11.449Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:56.480Z",
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        },
+        {
+          "at": "2026-10-20T05:49:11.444Z",
+          "actor": "agent",
+          "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
       "release": "0.53.0"
@@ -13995,7 +14178,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2059,
+  "revision": 2085,
   "reviewMode": "standard",
   "releases": [
     {
