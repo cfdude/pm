@@ -934,6 +934,20 @@ const INTEGRITY_BUILDERS = {
     produce: integrityProducer("verdict-range-omits-cited-commits"),
     reported: blockHas(),
   },
+  // integrity-reports-legacy-duplicate-attributions. REPORT-ONLY: no verb removes one entry of the
+  // append-only array, so the finding prints no engine invocation (`prints: "none"`).
+  "attributed-commits-hold-duplicates": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      const [a] = repo.commits("one");
+      repo.write({ epics: [{ id: "dd", title: "dd", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [],
+        attributedCommits: [a, a] }] });
+      return { repo, epicId: "dd" };
+    },
+    produce: integrityProducer("attributed-commits-hold-duplicates"),
+    reported: blockHas(),
+  },
   "archived-with-no-gate-2-review": {
     setup() {
       const repo = remedyRepo();

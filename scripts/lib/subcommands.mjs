@@ -14,7 +14,7 @@ import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
-import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
+import { COMMIT_DERIVED_KINDS, appendDetourLog, appendMinimalRetraction, appendRetraction, visibleDetourRows, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { STORABLE_EPIC_ID, asCode, escapeControls, jsonText, printedId, orNoRemedy, commandValue, unstorableSkipLine } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
@@ -1219,17 +1219,39 @@ export function logDetour() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const reason = checkedPositionals("log-detour").join(" ").trim();
   if (!reason) { die("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); }
+  // gh-239: `--sha <sha>` records the declaration against THAT commit instead of HEAD. HEAD is the
+  // wrong answer exactly when the commit the declaration describes did not land (a hook refused it):
+  // HEAD is then the PREVIOUS commit, and the row was stamped on it with no warning.
+  const f = parseFlags(currentArgv().slice(3));
+  requireFlagValues("log-detour", f);
+  let rev;
+  if (f.sha !== undefined) {
+    rev = isCommitNameShaped(f.sha) ? fullSha(String(f.sha).trim().toLowerCase()) : null;
+    if (!rev) { die(`conductor: log-detour --sha ${escapeControls(JSON.stringify(f.sha))} names no commit in this repository. Nothing was written.\n`); }
+  }
   const state = loadState();
+  // The SAME thing from the other side, when no --sha was given: HEAD already carries a MINIMAL row the
+  // log still shows. That is legitimate (two declarations between commits are two events), so it is
+  // said after the write rather than refused -- and it names the way out.
+  const head = rev === undefined ? fullSha("HEAD") : null;
+  const priorAtHead = head ? visibleDetourRows().filter(r => r.kind === "MINIMAL" && rowMatches(r.sha, head)) : [];
   // gh#175 Gate 2 C2: HONOUR THE RETURN. appendDetourLog()'s docstring says the boolean exists
   // "so a caller never announces 'logged to detours.log' for a row that was suppressed" — the two
   // commit-nudge callers already honour it, and this one did not. Detachment added a second
   // suppressed path through a channel that was already there, which is the absent-edit class in
   // the change that ships the rule against it.
-  const logged = appendDetourLog("MINIMAL", state.active || "-", reason);
+  const logged = appendDetourLog("MINIMAL", state.active || "-", reason, rev);
   render();
   errStream().write(logged
     ? "conductor: logged minimal detour\n"
     : "conductor: NOT logged — this tree is detached, so nothing was written to .conductor/detours.log\n");
+  if (logged && priorAtHead.length) {
+    errStream().write(`conductor: note — HEAD ${escapeControls(priorAtHead[0].sha)} already carried ${priorAtHead.length} MINIMAL row(s) ` +
+      "(the last reads: " + `"${escapeControls(priorAtHead[priorAtHead.length - 1].note || "")}"). ` +
+      "If the commit this declaration describes did not land (a hook refused it), HEAD is still the previous commit and this row is on the wrong one: " +
+      `retract it (retract-detour ${escapeControls(priorAtHead[0].sha)} with --minimal naming the exact text you just logged, and a --reason), ` +
+      "then re-declare with log-detour --sha <the new commit> once it lands. commands/detour.md has the full forms.\n");
+  }
 }
 
 /** `retract-detour <sha> --reason "<why>"` — the inverse of the commit hook's automatic logging
@@ -1257,6 +1279,27 @@ export function retractDetour() {
   const reason = typeof f.reason === "string" ? f.reason.trim() : "";
   if (!reason) refuse("--reason is empty — a retraction with no reason is indistinguishable from a deleted row");
   const sha = String(arg).trim().toLowerCase();
+
+  // gh-239: `--minimal "<description>"` retracts ONE declared MINIMAL row instead. A MINIMAL row has no
+  // identity beyond its timestamp (two declarations can share a sha), so the description picks it and
+  // the retraction names its timestamp. The row stays in the log, hidden from PROJECT.md.
+  if (f.minimal !== undefined) {
+    if (!/^[0-9a-f]+$/.test(sha)) refuse(`'${escapeControls(arg)}' is not a hexadecimal sha — retract-detour takes a commit sha, not a ref`);
+    const wanted = escapeControls(String(f.minimal).replace(/\s+/g, " ").trim());
+    const full = /^[0-9a-f]{4,64}$/.test(sha) ? fullSha(sha) : null;
+    const candidates = visibleDetourRows(readDetourRows()).filter(r => r.kind === "MINIMAL" &&
+      (full ? rowMatches(r.sha, full) : rowShasOverlap(r.sha, sha)) && (r.note || "") === wanted);
+    if (!candidates.length) {
+      refuse(`'${escapeControls(sha)}' has no visible MINIMAL row whose description is exactly "${wanted}" — ` +
+        "nothing to retract (it may already be retracted, or the text differs)");
+    }
+    const row = candidates[candidates.length - 1];
+    if (!appendMinimalRetraction(row, reason)) die("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
+    render();
+    errStream().write(`conductor: retracted the MINIMAL row for ${escapeControls(row.sha)} ("${wanted}") — ` +
+      "kept in .conductor/detours.log, hidden from PROJECT.md\n");
+    return;
+  }
 
   // G2-M2: a ref (`HEAD`, `main~1`) is not a sha. It used to fall through to the pruned-commit branch
   // and be told it "resolves to no commit", which is false. The contract is a sha: a row names a

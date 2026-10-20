@@ -872,6 +872,7 @@ test("5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's ep
   const READERS = {
     "git.mjs:visibleDetourRows": "filters rows by kind and sha only",
     "render.mjs:render": "displays each row through tableRow()",
+    "subcommands.mjs:logDetour": "filters the visible rows by kind and sha only, to warn that HEAD already has a MINIMAL row",
     "subcommands.mjs:retractDetour": "copies the matched row's epic field into the RETRACTED row it appends",
     "subcommands.mjs:supersedeAmended": "copies the matched row's epic field into the RETRACTED row it appends",
   };
@@ -1107,7 +1108,10 @@ recipe("rules --epic", { notRendered: "--epic selects the review mode the block 
 recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });
 recipe("triage <positional>", { notRendered: "triage's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["triage", v]) });
 recipe("suggest-lane --ask", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", "--ask", v]) });
-recipe("suggest-lane <positional>", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
+recipe("list --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["list", "--status", v]) });
+recipe("list --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["list", "--lane", v]) });
+recipe("list --linked-to", { notRendered: "--linked-to only filters the epics listed; the listing does not echo it", run: (c, v) => pm(c.cwd, ["list", "--linked-to", v]) });
+recipe("suggest-lane <positional>",{ notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
 recipe("verify-specs --root", { rendered: true, run: (c, v) => pm(c.cwd, ["verify-specs", "--root", v]) });
 recipe("purge-logs --kind", { exempt: EXEMPT.vocab("kind"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", v]) });
 recipe("purge-logs --keep", { exempt: EXEMPT.number("keep"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--keep", v]) });
@@ -1266,7 +1270,13 @@ recipe("drop-detour --reason", { notRendered: "a drop's reason is stored on the 
   return out;
 } });
 recipe("log-detour <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["log-detour", v]) });
-recipe("honcho-memory <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
+recipe("log-detour --sha", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["log-detour", "--sha", v, "a described fix"]) });
+recipe("retract-detour --minimal", { rendered: true, run: (c, v) => {
+  const sha = c.repo.commit({ [`src/${fresh("f")}.txt`]: "x" }, "fix: a declared detour");
+  ok(c.cwd, ["log-detour", "--sha", sha, v]);
+  return pm(c.cwd, ["retract-detour", sha, "--minimal", v, "--reason", "the wrong row"]);
+} });
+recipe("honcho-memory <positional>",{ rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
 recipe("retract-detour --reason", { notRendered: "render drops RETRACTED rows, and the verb does not echo the reason", run: (c, v) => {
   const sha = c.repo.commit({ [`src/${fresh("f")}.txt`]: "x" }, "fix: a detour commit");
   c.repo.observe("PostToolUse", "git commit -m x");

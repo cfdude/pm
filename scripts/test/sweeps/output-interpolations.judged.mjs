@@ -316,7 +316,7 @@ x("argv-surface.mjs", "surplusMessage", {
   "prev.name": 2,
 }, "engine", "verb, registry arity form, and a declared flag's name (undeclared flags are refused first)");
 x("argv-surface.mjs", "undeclaredFlagMessage", {
-  "verb": 4,
+  "verb": 6,
   "f": 1,
   "pos.form": 1,
   "msg": 1,
@@ -436,6 +436,15 @@ x("gate-guard.mjs", "trackerBlockMessage", {
 x("git.mjs", "appendRetraction", {
   "line": 1,
 }, "not-output", "the detour log's file BODY; the line itself is built by the statement above and its values are escaped there");
+x("git.mjs", "appendMinimalRetraction", {
+  "line": 1,
+}, "not-output", "the detour log's file BODY, same shape as appendRetraction's; the target's timestamp is a log-written ISO string");
+x("list.mjs", "list", {
+  "jsonText({ count: rows.length, epics: rows }, null, 2)": 1,
+}, "json", "one JSON document through jsonText()");
+x("subcommands.mjs", "retractDetour", {
+  "wanted": 2,
+}, "escaped", "wanted = escapeControls(the --minimal description), computed where it is declared and printed twice");
 x("git.mjs", "appendDetourLog", {
   "line": 1,
 }, "not-output", "the detour log's file BODY, same shape as appendRetraction's");
