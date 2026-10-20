@@ -4,7 +4,7 @@
 // repository and reads the ledger bytes; this file holds every branch with the filesystem injected.
 
 import assert from "node:assert/strict";
-import { unitTest } from "../fixtures/unit-harness.mjs";
+import { unitTest, unitFileMarker } from "../fixtures/unit-harness.mjs";
 
 const load = () => import(new URL("../flake-retry.mjs", import.meta.url).href);
 const CWD = "/run/tree";
@@ -51,6 +51,26 @@ unitTest("a failure in a file the runner was not given (a helper's path) is unma
   const { failuresOf } = await load();
   assert.equal(failuresOf(specOutput([["scripts/test/fixtures/unit-harness.mjs", "x"]]), { cwd: CWD, files: FILES, realpath: (p) => p }).unmapped, 1);
   assert.equal(failuresOf("ℹ tests 3\nℹ fail 1\n", { cwd: CWD, files: FILES, realpath: (p) => p }).unmapped, 1);
+});
+
+unitTest("a unit-rung failure located at the harness maps to the file its body names, and is retried", async () => {
+  const { failuresOf, recoverFlakes } = await load();
+  const U = "scripts/test/unit/u.test.mjs";
+  const body = (abs) => `ℹ tests 4\nℹ pass 3\nℹ fail 1\n\n✖ failing tests:\n\ntest at scripts/test/fixtures/unit-harness.mjs:127:3\n` +
+    `✖ flaky unit (1.2ms)\n  ${unitFileMarker(abs)}\n  AssertionError: x\n      at y\n`;
+  const opts = { cwd: CWD, files: [...FILES, `${CWD}/${U}`], realpath: (p) => p };
+  assert.deepEqual(failuresOf(body(`${CWD}/${U}`), opts), { failures: [{ file: U, test: "flaky unit" }], unmapped: 0 });
+  // a marker naming a file the runner was NOT given stays unmapped, and so does a body with no marker
+  assert.equal(failuresOf(body("/elsewhere/x.test.mjs"), opts).unmapped, 1);
+  assert.equal(failuresOf(body(`${CWD}/${U}`).replace(/ {2}\[unit-test-file[^\n]*\n/, ""), opts).unmapped, 1);
+  const reruns = [];
+  const r = await recoverFlakes({
+    output: body(`${CWD}/${U}`), status: 1, ...opts, ledgerRoot: "/repo", knownFile: "/k.json", io: fakeIo([]),
+    now: NOW, load: () => 1,
+    rerun: async (abs) => { reruns.push(abs); return { status: 0, output: "ℹ tests 1\nℹ pass 1\nℹ fail 0\n" }; },
+  });
+  assert.equal(r.recovered, true);
+  assert.deepEqual(reruns, [[`${CWD}/${U}`]], "the unit file is re-run, not the harness");
 });
 
 unitTest("a listed test that passes on retry recovers, is named a known flake, and the ledger gets one line", async () => {

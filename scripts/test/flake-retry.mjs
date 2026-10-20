@@ -48,6 +48,16 @@ export const countsOf = (output) => ({
   tests: summaryCount(output, "tests"), pass: summaryCount(output, "pass"), fail: summaryCount(output, "fail"),
 });
 
+/** The file a unit-rung failure names for itself: the first `[unit-test-file: <path>]` line in the body that
+ *  starts at `from`, stopping at the next entry (a column-0 line). Null when the body carries none. */
+function unitFileOf(lines, from) {
+  for (let j = from; j < lines.length && (lines[j] === "" || /^\s/.test(lines[j])); j++) {
+    const m = /^\s*\[unit-test-file: (.+)\]\s*$/.exec(lines[j]);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 /** The failures a spec-reporter run lists: `[{ file, test }]` plus how many could NOT be mapped to a file
  *  the runner was given. `file` is root-relative and posix. `cwd` is the directory the runner ran in (the
  *  `test at` path is relative to it), `files` the absolute paths it was handed. Both sides go through
@@ -73,7 +83,14 @@ export function failuresOf(output, { cwd, files, realpath = (p) => p }) {
     const named = /^✖ (.*?)(?: \([\d.]+m?s\))?\s*$/.exec(lines[i]);
     if (!named) continue;
     const loc = pending; pending = null;
-    const rel = loc ? posix(path.relative(base, path.resolve(base, loc[1]))) : null;
+    let rel = loc ? posix(path.relative(base, path.resolve(base, loc[1]))) : null;
+    // A unit-rung test is declared through `unitTest()`, so node:test locates it at the HARNESS, a file the
+    // runner was not given. The harness puts a `[unit-test-file: <abs path>]` line at the top of the failure
+    // body (fixtures/unit-harness.mjs); read it back so the declaring file is retried like any other.
+    if (rel !== null && !given.has(rel)) {
+      const marked = unitFileOf(lines, i + 1);
+      if (marked !== null) rel = posix(path.relative(base, real(marked)));
+    }
     if (rel === null || !given.has(rel)) { unmapped++; continue; }
     failures.push({ file: rel, test: named[1] });
   }

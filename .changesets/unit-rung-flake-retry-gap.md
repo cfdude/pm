@@ -1,0 +1,1 @@
+* **Internal: a flaky unit-rung test is now retried like any other.** A `unitTest()` failure was located at the harness, a file the runner was not given, so the flake retry judged it unmappable and never re-ran it. The harness now puts a `[unit-test-file: <path>]` line at the top of the failure, and the retry reads it back to find the declaring file. (unit-rung-flake-retry-gap)
