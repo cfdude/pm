@@ -14717,7 +14717,7 @@
       "id": "gh-cfdude-pm-242",
       "title": "Invalid pm-spend marker phase is rejected without naming the value or the accepted set",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -14729,7 +14729,7 @@
         "e9c8ccedeba50d928440c3edc14fd6eadb5d503d"
       ],
       "createdAt": "2026-10-17T12:41:55.680Z",
-      "touchedAt": "2026-10-20T11:30:54.935Z",
+      "touchedAt": "2026-10-20T11:35:11.022Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:56.480Z",
@@ -14797,7 +14797,24 @@
           "lastVerdictAt": "2026-10-20T11:27:29.751Z",
           "lastPassAt": "2026-10-20T11:27:29.751Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:35:11.017Z",
+        "reason": "Invalid pm-spend marker now names the failing field, rejected value and accepted set (text line and unattributed.invalidMarkers JSON); built in rc/0.53.0 as e9c8cced, converged Gate 2 at 8c4b1c78. Outstanding: D.1 README unattributed-bucket text and Mintlify, moved to release-0-53-0-cut",
+        "carriedTo": "release-0-53-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:35:10.997Z",
+        "deferrals": [
+          {
+            "epic": "release-0-53-0-cut",
+            "section": "README and Mintlify for the spend invalid-marker line (task D.1)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T11:35:11.017Z"
     },
     {
       "id": "gh-cfdude-pm-241",
@@ -14886,7 +14903,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2142,
+  "revision": 2143,
   "reviewMode": "standard",
   "releases": [
     {
