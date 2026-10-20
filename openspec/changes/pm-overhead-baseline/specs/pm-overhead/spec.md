@@ -36,10 +36,15 @@ SHALL be enumerated from their builders and files, never from a typed list.
 
 ### Requirement: Each surface is attributed to exactly one feature
 
-Every surface SHALL carry exactly one feature id: `core`, `listings` (every command, skill and agent
-description the plugin ships, which the host reads whatever is on), or an `OPT_INS` id. The map SHALL be
-declared beside `OPT_INS`; `overhead` SHALL report per-feature subtotals and `on`. A feature that is off
-SHALL report 0 bytes.
+Every surface SHALL carry a stable surface id (`rules:<section-slug>`, `brief`, `snapshot`,
+`hook:<verb>`, `listing:<file>`) and exactly one feature id: `core`, `listings` (shipped command, skill
+and agent descriptions), or an `OPT_INS` id. The map is keyed by surface id, beside `OPT_INS`. `overhead`
+SHALL report per-surface and per-feature figures and `on`; an off feature SHALL report 0 bytes.
+
+#### Scenario: Core is split into named surfaces
+
+- **WHEN** `overhead --json` runs
+- **THEN** `surfaces` lists each always-on rules section under its own id, such as `rules:intake` and `rules:execution-profile`, each with feature `core`
 
 #### Scenario: A surface with no feature fails
 

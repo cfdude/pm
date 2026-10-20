@@ -27,6 +27,11 @@ store-owns gate.
   `rulesBlock()`'s section split; the brief from the brief builder; each hook from `hooks/hooks.json`
   with its verb's output for the current state; listings from the plugin's own files. A new section or
   hook appears without editing the verb.
+- **D2a — Stable surface ids.** Each surface has an id derived from its source (`rules:` plus the section
+  heading slugged, `hook:` plus the hook verb, `listing:` plus the file path, `brief`, `snapshot`). Feature
+  switches are audited per surface id, so a switch re-assigns named surfaces from `core` to a new feature.
+  The `## Execution profile` section maps to `core`: it is emitted whatever the profile holds; only
+  `reviewMode` is an opt-in and it changes a value inside the section, not whether the section exists.
 - **D2 — One feature per surface.** Feature ids are `core`, `listings` (all shipped command, skill and
   agent descriptions: the host lists them whatever is switched on, so they cannot belong to an opt-in), or
   an `OPT_INS` id (`reviewMode`,
