@@ -13798,13 +13798,18 @@
         "3ed04972fa78ffe115f09314c4d3258287e9d4e2"
       ],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-20T11:27:36.232Z",
+      "touchedAt": "2026-10-20T11:40:19.121Z",
       "release": "0.53.0",
       "notes": [
         {
           "at": "2026-10-20T05:49:16.619Z",
           "actor": "agent",
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
+        },
+        {
+          "at": "2026-10-20T11:40:19.117Z",
+          "actor": "agent",
+          "text": "lessons: PRACTICE: a decision is a record of what was decided; a correction is a withdrawal plus a new entry (append and withdraw, no edit verb). TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and had to be re-recorded. CARRIED: the dogfood record-decision (R.7) was not recorded because it needs spend tracking on and a real decision; moved to release-0-53-0-cut."
         }
       ],
       "gateReview": {
@@ -14981,7 +14986,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2149,
+  "revision": 2150,
   "reviewMode": "standard",
   "releases": [
     {

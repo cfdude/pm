@@ -15,10 +15,10 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/decision-cost-log/spec.md` and
+- [x] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/decision-cost-log/spec.md` and (Gate 1 pass recorded 2026-10-20)
       this file; fix Critical and Important; `openspec validate decision-cost-log --strict` (read the
       exit status); `record-gate-review decision-cost-log --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoints: the `spend`
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoints: the `spend` (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       pipeline and its `work` total (`gh-cfdude-pm-251`), the `spend-analysis` output (owned by
       `token-spend-analysis-and-recommendations`, except the Decisions section owned here), the shared
       flag allowlist (`epic-session-attribution` grows it too).
@@ -50,18 +50,20 @@
       a decision is a record of what was decided; a correction is a withdrawal plus a new entry).
       Save as `call-site-sweep-R.1.txt`.
 - [x] R.2 **Verify against the commit** (item 2).
-- [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4); never the archive move.
-- [ ] R.5 Cross-spec review (item 5): 0.2.
-- [ ] R.6 Disposition (item 6): C.2.
+- [x] R.5 Cross-spec review (item 5): 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): C.2. (by C.2)
 - [ ] R.7 **Route what the work taught you** (item 7). Record at least one real decision from this
       release's own build with `record-decision` (dogfood) and name what it showed.
       NOTE (build agent, 2026-10-20): left for the orchestrator. The dogfood `record-decision` needs a real decision from the
       release's own build and a recorded read-back; this agent did not write one into the record.
+      CARRIED (2026-10-20, closeout): left unticked on purpose. A dogfood decision needs spend tracking on and a real decision with a recorded
+      read-back; none was recorded. Carried to `release-0-53-0-cut` with D.1.
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): no stored cost, no second
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): no stored cost, no second (converged Gate 2 recorded at 8c4b1c78)
       transcript reader, off while tracking is off, withdraw keeps the record.
 
 ## D. Docs (after Gate 2 only)
@@ -70,6 +72,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs.
+- [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic decision-cost-log --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive decision-cost-log`. Not attributed.
