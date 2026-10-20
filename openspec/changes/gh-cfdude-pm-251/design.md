@@ -36,7 +36,9 @@ no configured 0.52 ceiling silently changes meaning.
   ignored, and `spend-guard` prints that it was recorded in another basis. Only the LATEST live tokens
   override governs; an older one in the matching basis never revives (reviving would let a basis flip
   quietly restore a stale baseline). An override recorded before
-  this release has no `basis` and reads as `total` (D1).
+  this release has no `basis` and reads as `total` (D1). A set-aside override still counts toward
+  escalation and is still listed as live in the `overrides:` line, beside the "set aside" notice: it stops
+  supplying a baseline, not its place in the escalation history.
 - **D5 — Floor of 10,000,000, total basis only.** The issue's suggestion, labelled as such in the warning
   and in `commands/set-spend-guard.md`. A work-basis ceiling gets no floor: there is no measured range yet.
 - **D6 — The worked example** is the issue's: `--tokens 300000000` (total basis) for one epic in
