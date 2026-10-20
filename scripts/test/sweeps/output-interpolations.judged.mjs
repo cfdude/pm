@@ -316,7 +316,7 @@ x("argv-surface.mjs", "surplusMessage", {
   "prev.name": 2,
 }, "engine", "verb, registry arity form, and a declared flag's name (undeclared flags are refused first)");
 x("argv-surface.mjs", "undeclaredFlagMessage", {
-  "verb": 4,
+  "verb": 6,
   "f": 1,
   "pos.form": 1,
   "msg": 1,
