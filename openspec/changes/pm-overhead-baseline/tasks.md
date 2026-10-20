@@ -28,60 +28,60 @@
 
 ## 1. The verb
 
-- [ ] 1.1 TDD (UNIT): the surface enumerator from builders and files (design D1): rules sections equal
+- [x] 1.1 TDD (UNIT): the surface enumerator from builders and files (design D1): rules sections equal
       `rules --sections`, the brief, the snapshot, each hook verb's output for the current state, listings.
-- [ ] 1.2 TDD (UNIT): the surface-to-feature map beside `OPT_INS` (design D2) and the test failing on an
+- [x] 1.2 TDD (UNIT): the surface-to-feature map beside `OPT_INS` (design D2) and the test failing on an
       unassigned or doubly assigned surface; per-feature subtotals and `on`.
-- [ ] 1.3 TDD (UNIT): conditional surfaces (design D3) and the unconditional session total.
-- [ ] 1.4 TDD (UNIT + FILE): `--all-features` over the named hypothetical (design D4), byte-identical
+- [x] 1.3 TDD (UNIT): conditional surfaces (design D3) and the unconditional session total.
+- [x] 1.4 TDD (UNIT + FILE): `--all-features` over the named hypothetical (design D4), byte-identical
       files afterwards.
-- [ ] 1.5 TDD (UNIT): labels (design D6) and the downstream line naming `spend-analysis` and no `docs/` path;
+- [x] 1.5 TDD (UNIT): labels (design D6) and the downstream line naming `spend-analysis` and no `docs/` path;
       spend tracking's marker line as a per-dispatch cost (design D5).
-- [ ] 1.6 TDD (FILE): observe-reads proves no spend or transcript path is opened, tracking on and off.
+- [x] 1.6 TDD (FILE): observe-reads proves no spend or transcript path is opened, tracking on and off.
       Register the verb (`reads`), `USAGE`, `commands/overhead.md` and its parity-ledger claim.
-- [ ] 1.7 Changeset fragment `.changesets/pm-overhead-baseline.md`.
+- [x] 1.7 Changeset fragment `.changesets/pm-overhead-baseline.md`.
 
 ## 2. Baseline
 
-- [ ] 2.1 Run `overhead` and `overhead --all-features` in this repository and in one fleet repo with
+- [x] 2.1 Run `overhead` and `overhead --all-features` in this repository and in one fleet repo with
       default opt-ins; record both under `docs/measurement/2026-10-pm-overhead-baseline.md` with the
       commit, state and date.
 
 ## 3. Calibration and the downstream question
 
-- [ ] 3.1 Write the calibration protocol in the same doc: a fixture directory isolated from user memory
+- [x] 3.1 Write the calibration protocol in the same doc: a fixture directory isolated from user memory
       (`claudeMdExcludes` and `autoMemoryEnabled` set in the fixture, per the project memory note on
       headless evals), pm enabled vs disabled, n=3 each, measuring the first assistant message's
       `input + cacheCreation` from its transcript.
 - [ ] 3.2 After 0.3, run it; record the measured pm delta and the measured-to-estimate ratio against
       2.1's bytes/4 figure. If 0.3 is declined, record that and leave the verb's label as an estimate.
-- [ ] 3.3 The downstream section: state what the ledger can show (spend per epic by phase, review rounds,
+- [x] 3.3 The downstream section: state what the ledger can show (spend per epic by phase, review rounds,
       `spend-analysis` flags) and that no counterfactual (the same work without pm) has been measured;
       propose an A/B protocol with its expected token cost for Rob to approve. Every figure is
       conditional and sourced; no saving is claimed.
 
 ## 4. Re-baseline story — gates `store-owns-claude-md-managed-block`
 
-- [ ] 4.1 On a quiet machine (no agents running; load recorded), run the assertion half
+- [x] 4.1 (MACHINE NOT QUIET: load 6-16, other sessions open; recorded in the doc, rerun owed) On a quiet machine (no agents running; load recorded), run the assertion half
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`) n=3 plus an
       empty-preload control, as in the 2026-09-25 profile (epic note on `store-owns-claude-md-managed-block`).
       Record wall time per rung and the summed time of file-rung tests that reach init's `CLAUDE.md` or
       `.gitignore` write, method stated (how a test is classified as reaching the write).
-- [ ] 4.2 Record the outcome in `docs/measurement/2026-10-commit-gate-rebaseline.md` against the 10 s gate,
+- [x] 4.2 Record the outcome in `docs/measurement/2026-10-commit-gate-rebaseline.md` against the 10 s gate,
       labelled a proposal: build if the disk-write tests carry 10 s or more of the file rung, else
       recommend decline or defer with the numbers. Report it so the orchestrator records it on
       `store-owns-claude-md-managed-block` (this change writes no state); it is decided at 0.54.0 grooming.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "OPT_INS" scripts/lib`: every reader of the
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "OPT_INS" scripts/lib`: every reader of the
       registry, and confirm the surface map is read by every consumer that needs a feature id.
       `rg -n "\"command\":" hooks/hooks.json` and the `## ` headings of `rulesBlock()`'s output: every
       surface source is enumerated by 1.1. Inverse: a read-only verb; none owed. Save as
       `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4), including the measurement-doc commits; never the archive move.
+- [x] R.4 **Attribute every commit** (item 4), including the measurement-doc commits; never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2.
 - [ ] R.7 **Route what the work taught you** (item 7). The assertion half went from 15.4 s to ~28 s
