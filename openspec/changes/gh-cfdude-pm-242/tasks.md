@@ -23,7 +23,7 @@
 
 ## 1. The invalid-marker report
 
-- [ ] 1.1 TDD (UNIT): make the validity check return the first failing field (`role`, `phase`, `round`)
+- [ ] 1.1 TDD (UNIT): make `resolveMarker()`'s validity check return the first failing field (`role`, `phase`, `round`)
       and the rejected value, reading the accepted sets from `KNOWN_JOB_ROLES` and `KNOWN_SPEND_PHASES`
       (design D2). Every existing attribution test stays green; the `reason` stays `invalid-marker`.
 - [ ] 1.2 TDD (UNIT): group invalid markers by `(field, value)` into `unattributed.invalidMarkers`

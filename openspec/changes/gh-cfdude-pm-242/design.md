@@ -2,7 +2,7 @@
 
 ## Context
 
-`isValidMarker()` in `scripts/lib/spend-attribution.mjs` returns `{ ok: false, reason: "invalid-marker" }`
+`resolveMarker()` in `scripts/lib/spend-attribution.mjs:72` returns `{ ok: false, reason: "invalid-marker" }`
 and drops which check failed. Markers are stored raw, keyed by `agentId` (`spend-ledger`: "The dispatch
 marker is captured once per sub-agent and stored as tokens"), so the failing field and value are
 recoverable at read time without touching the ledger.
