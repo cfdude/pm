@@ -1103,6 +1103,8 @@ recipe("activity --epic", { notRendered: "--epic only filters the events read; t
 recipe("spend --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["spend", "--since", v]) });
 recipe("spend --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => pm(c.cwd, ["spend", "--until", v]) });
 recipe("spend --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["spend", "--epic", v]) });
+recipe("spend-analysis --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["spend-analysis", "--epic", v]) });
+recipe("spend-analysis --release", { exempt: "--release must name a declared release; anything else is refused, the value echoed escaped, and nothing is ingested", run: (c, v) => pm(c.cwd, ["spend-analysis", "--release", v]) });
 recipe("dev-log --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["dev-log", "--since", v]) });
 recipe("dev-log --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => pm(c.cwd, ["dev-log", "--until", v]) });
 recipe("dev-log --session-id", { notRendered: "--session-id only filters the sessions listed; the report does not echo it", run: (c, v) => pm(c.cwd, ["dev-log", "--session-id", v]) });

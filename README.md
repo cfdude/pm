@@ -1332,6 +1332,8 @@ phase=<phase> [round=<n>]` line that the rules block asks you to begin each disp
 everything else lands in an **unattributed** bucket, by reason, that the report always prints, with a
 coverage share. Spend made while tracking was off is never credited to an epic.
 
+`spend-analysis [--epic <id> | --release <id>]` reads that ledger as a postmortem: token classes kept apart, sub-agents ranked by `work`, tool-call counts, outlier flags with one rule-rendered recommendation each, and a cross-release trend. It never turns tracking on and writes nothing.
+
 A developer-only companion, `set-dev-log on|off` (off by default, needs spend tracking), records per session which
 pm features were on and the byte-count composition of each request and response (never any text), read back with
 `dev-log`; `overhead` reports what pm itself injects into a session, by surface and by feature.

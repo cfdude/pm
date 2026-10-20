@@ -442,6 +442,8 @@ const DISPATCH_BASELINE = {
   // developer-session-log: the log is refused while spend tracking is off, so it seeds the prerequisite.
   // developer-session-log: reports from the ledger; with the log off it prints which switch is off and reads nothing.
   "dev-log": { args: ["dev-log"] },
+  // token-spend-analysis-and-recommendations: with tracking off it prints that and reads nothing.
+  "spend-analysis": { args: ["spend-analysis"] },
   "set-dev-log": { pre: [["set-spend-tracking", "on"]], args: ["set-dev-log", "on"] },
   // spend-budget-and-stuck-loop-guard. `override-spend-guard` is accepted only while a signal is tripped, so it
   // seeds one: a round limit of 1, then one recorded failed verdict.

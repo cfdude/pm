@@ -138,6 +138,9 @@ export const VERB_EFFECTS = {
   // so). The generic "discarded write" warning is about THIS root's tracked record, which `spend`
   // never touches, so printing it from a detached linked worktree would be false.
   spend: { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree (rows, cursor, markers, ingest lock; with --clear/--rebuild also removes or rewrites them, with --clear --timeline the timeline) — never state.json and never a transcript" },
+  // token-spend-analysis-and-recommendations: read-only analysis. `mutates` + `detachedNoOp` for `spend-guard`'s reason: with
+  // tracking on it runs the same ingest into the MAIN working tree's ignored .conductor/spend/, never state.json.
+  "spend-analysis": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
   // spend-budget-and-stuck-loop-guard. The limit cascade and the overrides are `state.json` writes; the managed
   // rules block is refreshed only when "a limit is configured" flips.
   "set-spend-guard": { effect: "mutates", epicWriting: true, writes: "state.json (the project, lane or epic spend-guard layer), CLAUDE.md (the rules block, only when a limit first appears or the last goes), plus render()'s writes" },

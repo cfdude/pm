@@ -84,6 +84,7 @@ const VERB_BASELINE = {
   overhead: () => ["overhead"],
   // developer-session-log: with the log off `dev-log` reads nothing, so the valueless sweep reaches its flags cheaply.
   "dev-log": () => ["dev-log"],
+  "spend-analysis": () => ["spend-analysis"],
   "log-detour": () => ["log-detour", "a baseline fix"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
@@ -338,7 +339,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "overhead --all-features",
     "override-spend-guard --revoke",
     // gh-204: `list` shares --json (the same genuine boolean: a rendering).
-    "owners/activity/spend/spend-guard/list/overhead/dev-log --json",
+    "owners/activity/spend/spend-guard/list/overhead/dev-log/spend-analysis --json",
     "purge-logs --dry-run",
     "purge-logs/spend/dev-log --yes",
     "push-detour --no-reconcile",
@@ -351,7 +352,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "spend --rebuild",
     "spend --timeline",
     "spend/dev-log --clear",
-    "spend/spend-guard/dev-log --no-ingest",
+    "spend/spend-guard/dev-log/spend-analysis --no-ingest",
     "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");

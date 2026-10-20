@@ -916,6 +916,9 @@ it waits on.
   record). Mark review dispatches `pm-spend: epic=<id> role=review phase=review round=<n>` so unrecorded rounds
   are counted. Never wire `spend-guard` into a hook (exit 2 blocks). A failed verdict is always recorded; the STOP
   is printed after it. See `commands/spend-guard.md`.
+- Want to know where an epic's or a release's tokens went, not only how many? `spend-analysis [--epic <id> | --release <id>]`
+  reads the ledger (it never turns tracking on) and ranks sub-agents by `work`, counts tool use, flags outliers and prints
+  one recommendation per flag. See `commands/spend-analysis.md`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —

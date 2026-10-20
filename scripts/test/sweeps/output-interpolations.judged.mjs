@@ -201,6 +201,37 @@ x("dev-log-report.mjs", "devLogVerb", {
 x("dev-log-report.mjs", "devLogVerb", {
   "jsonText(report, null, 2)": 2,
 }, "json", "--json: the whole stdout is one JSON document");
+x("spend-analysis.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");
+x("spend-analysis.mjs", "classes", {
+  "n(t.input)": 1,
+  "n(t.cacheCreation)": 1,
+  "n(t.cacheRead)": 1,
+  "n(t.output)": 1,
+  "n(t.work)": 1,
+  "n(t.total)": 1,
+}, "engine", "token counts formatted with toLocaleString");
+x("spend-analysis.mjs", "renderAnalysis", {
+  "s.epic": 1,
+  "s.release": 1,
+}, "sink-flow", "the scope's epic or release id, pushed onto L and returned through L.map(escapeControls)");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "r.reason": 1,
+  "ingestInfo.rowsAdded": 1,
+  "ledger.corrupt": 1,
+}, "engine", "the engine's own reason word (absent|unreadable) and counts");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "ingestInfo.ran ? `+${ingestInfo.rowsAdded} message(s)` : ingestInfo.reason": 1,
+}, "sink-flow", "an `extra` line handed to renderAnalysis, which returns every line through L.map(escapeControls); ingestInfo.reason is one of ingestForReport's fixed phrases");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "jsonText(empty, null, 2)": 1,
+  "jsonText(out, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "renderAnalysis(empty).join(\"\\n\")": 1,
+  "renderAnalysis(out, { extra }).join(\"\\n\")": 1,
+}, "escaped", "renderAnalysis() returns its lines already through L.map(escapeControls)");
 x("spend-tracking.mjs", "TIMELINE", {
   "ARTIFACT.SPEND_PREFIX": 1,
 }, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");

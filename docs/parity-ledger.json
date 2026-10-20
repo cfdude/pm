@@ -122,6 +122,11 @@
       "platforms": { "claude-code": "slash commands wrapping spend-guard / set-spend-guard / override-spend-guard — an opt-in stuck-loop and token-ceiling guard: a gate-round counter, a check verb that exits 2 with a STOP naming the escalation target, and a recorded, revocable override" }
     },
     {
+      "id": "spend-analysis",
+      "artifacts": ["commands/spend-analysis.md"],
+      "platforms": { "claude-code": "slash command wrapping the read-only spend-analysis verb - the spend ledger as a postmortem: token classes kept apart, sub-agents ranked by work, tool-call counts, rule-based outlier flags with one recommendation each, and a cross-release trend with a data floor" }
+    },
+    {
       "id": "session-overhead",
       "artifacts": ["commands/overhead.md"],
       "platforms": { "claude-code": "slash command wrapping the read-only overhead verb — what pm injects into a session, by surface and by feature, each figure labelled bytes/4 (an estimate), with an in-memory every-opt-in-on case" }

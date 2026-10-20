@@ -1,0 +1,35 @@
+node:internal/modules/esm/resolve:989
+    throw error;
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/lib/spend-analysis.mjs' imported from /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-analysis.test.mjs
+    at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+    at moduleResolve (node:internal/modules/esm/resolve:846:10)
+    at defaultResolve (node:internal/modules/esm/resolve:973:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:752:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:772:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:810:56)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:651:27)
+    at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:328:33)
+    at ModuleJobSync.link (node:internal/modules/esm/module_job:626:17)
+    at new ModuleJobSync (node:internal/modules/esm/module_job:616:26) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/lib/spend-analysis.mjs'
+}
+
+Node.js v26.12.0
+✖ scripts/test/unit/spend-analysis.test.mjs (111.095792ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 114.289958
+
+✖ failing tests:
+
+test at scripts/test/unit/spend-analysis.test.mjs:1:1
+✖ scripts/test/unit/spend-analysis.test.mjs (111.095792ms)
+  'test failed'

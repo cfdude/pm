@@ -991,7 +991,7 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log", "spend-analysis"], valueless: true },
   // pm-overhead-baseline: compute the report over the named every-opt-in-on hypothetical, in memory, writing nothing.
   { flag: "all-features", commands: ["overhead"], valueless: true },
   // `list` (#204), the read-only epic listing. `--status` and `--lane` FILTER here where the epic
@@ -1003,7 +1003,9 @@ export const VERB_FLAGS = [
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
   // filters a log. What they agree on — that a value is required — is all the row carries.
   { flag: "since", commands: ["activity", "spend", "dev-log"], requires: "an ISO-8601 timestamp" },
-  { flag: "epic", commands: ["activity", "spend"], requires: "an epic id" },
+  { flag: "epic", commands: ["activity", "spend", "spend-analysis"], requires: "an epic id" },
+  // token-spend-analysis-and-recommendations: `--release` scopes the analysis to the epics whose `release` is that id.
+  { flag: "release", commands: ["spend-analysis"], requires: "a release id" },
   // purge-logs. Its own `--keep`/`--over`/`--older-than` checks stay and run AFTER this rule,
   // on the precedent `triage --limit` set: neither is subsumed, because a value that is present
   // and unparseable is a different mistake from a value that is absent.
@@ -1018,7 +1020,7 @@ export const VERB_FLAGS = [
   // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
   // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
   { flag: "until", commands: ["spend", "dev-log"], requires: "an ISO-8601 timestamp" },
-  { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log"], valueless: true },
+  { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log", "spend-analysis"], valueless: true },
   // developer-session-log: `dev-log --session-id` names a Claude Code TRANSCRIPT session, never pm's own `--session` identity.
   { flag: "session-id", commands: ["dev-log"], requires: "a Claude Code transcript session id" },
   // spend-budget-and-stuck-loop-guard. `set-spend-guard`'s three limits and its `--unset` (repeatable, its own
@@ -1103,7 +1105,7 @@ export const VERB_POSITIONALS = {
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
   "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
   activity: P0, spend: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
-  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0, overhead: P0, "dev-log": P0,
+  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0, overhead: P0, "dev-log": P0, "spend-analysis": P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
