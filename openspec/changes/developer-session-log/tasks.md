@@ -28,35 +28,35 @@
 
 ## 1. Switch and capture
 
-- [ ] 1.1 Read one real transcript (with the memory guard) to confirm the entry shapes D2 relies on
+- [x] 1.1 Read one real transcript (with the memory guard) to confirm the entry shapes D2 relies on
       (`tool_use_id` to tool name, attachment and system-reminder blocks) and whether a compaction
       boundary entry exists (D5). Save the field names only, no content, as `shapes-1.1.txt`.
-- [ ] 1.2 TDD (UNIT): `set-dev-log on|off`, the spend-tracking prerequisite, the main-tree refusal,
+- [x] 1.2 TDD (UNIT): `set-dev-log on|off`, the spend-tracking prerequisite, the main-tree refusal,
       idempotence, the `OPT_INS` `devLog` row, and in the same commit `devLog`'s entries in `pm-overhead`'s
       surface-to-feature map and its `--all-features` hypothetical. Register the verb, `commands/set-dev-log.md` and its parity-ledger claim.
-- [ ] 1.3 TDD (UNIT + FILE): the composition pass inside ingest, only while both switches are on;
+- [x] 1.3 TDD (UNIT + FILE): the composition pass inside ingest, only while both switches are on;
       the sentinel test; idempotent re-ingest; no hook opens the file (observe-reads).
-- [ ] 1.4 TDD (UNIT): the `features` snapshot from `overhead`'s per-feature `on` and bytes (never `isSet`),
+- [x] 1.4 TDD (UNIT): the `features` snapshot from `overhead`'s per-feature `on` and bytes (never `isSet`),
       appended on change only.
 
 ## 2. Report and inverse
 
-- [ ] 2.1 TDD (UNIT): `dev-log` per-session report joined to ledger rows, the three warnings with their
+- [x] 2.1 TDD (UNIT): `dev-log` per-session report joined to ledger rows, the three warnings with their
       named thresholds, the mid-session switch mark, `tokens: not in ledger`, the off message. Register
       the verb (`reads`, plus the ingest), `commands/dev-log.md` and its parity-ledger claim.
-- [ ] 2.2 TDD (FILE): `dev-log --clear` plan-first and `--yes`; `set-dev-log off` keeps the file.
-- [ ] 2.3 Changeset fragment `.changesets/developer-session-log.md`.
+- [x] 2.2 TDD (FILE): `dev-log --clear` plan-first and `--yes`; `set-dev-log off` keeps the file.
+- [x] 2.3 Changeset fragment `.changesets/developer-session-log.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "spendEnabled|ingest\(" scripts/lib scripts/conductor.mjs`:
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "spendEnabled|ingest\(" scripts/lib scripts/conductor.mjs`:
       every ingest entry point (`spend`, `spend-guard`, `override-spend-guard`, `spend-analysis`,
       `decisions`), each stated as capturing or not while the log is on. `rg -n "devlog" scripts/`: the
       single writer. Inverses: on ↔ off, append ↔ `--clear`; `spend --clear` does not remove the log
       (D3: the report degrades to `not in ledger`), justified. Save as `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2.
 - [ ] R.7 **Route what the work taught you** (item 7). Rob proposed a dependency; the outcome (none

@@ -1,0 +1,90 @@
+# R.1 call-site completeness sweep, developer-session-log (2026-10-20, derived mechanically)
+
+## rg -n "ingest\(" scripts/lib scripts/conductor.mjs  (every ingest entry point)
+scripts/lib/spend-command.mjs:76:  const r = ingest({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
+scripts/lib/spend-command.mjs:186:  const r = rebuild({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
+scripts/lib/spend-ledger.mjs:287:export function ingest(opts, fsx = fs) {
+scripts/lib/spend-ledger.mjs:382:export function rebuild(opts, fsx = fs) {
+
+## rg -n "ingestForReport" scripts/lib  (the ONE place the devLog option is decided)
+scripts/lib/dev-log-report.mjs:32:import { ingestForReport, readMainState } from "./spend-command.mjs";
+scripts/lib/dev-log-report.mjs:187:  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled: true, tree, readCtx, enabledAtMs, state });
+scripts/lib/spend-guard-verbs.mjs:27:import { ingestForReport, readMainState } from "./spend-command.mjs";
+scripts/lib/spend-guard-verbs.mjs:243:        ingestInfo = ingestForReport({ noIngest, enabled: true, tree, readCtx, enabledAtMs, state: mainState });
+scripts/lib/spend-command.mjs:33:import { devLogOptions } from "./dev-log.mjs";
+scripts/lib/spend-command.mjs:71:export function ingestForReport({ noIngest, enabled, tree, readCtx, enabledAtMs, state }) {
+scripts/lib/spend-command.mjs:76:  const r = ingest({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
+scripts/lib/spend-command.mjs:118:  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled, tree, readCtx, enabledAtMs, state });
+scripts/lib/spend-command.mjs:186:  const r = rebuild({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
+scripts/lib/dev-log.mjs:100: *  state, else null. The ONE place that decides, so every caller of `ingestForReport` captures or none does. */
+scripts/lib/dev-log.mjs:101:export function devLogOptions(state) {
+
+## rg -n "spendEnabled" scripts/lib  (readers of the tracking switch)
+scripts/lib/dev-log-report.mjs:30:import { spendEnabled } from "./spend-switch.mjs";
+scripts/lib/dev-log-report.mjs:169:  const tracking = spendEnabled(state), logOn = devLogEnabled(state);
+scripts/lib/overhead.mjs:25:import { spendEnabled } from "./spend-switch.mjs";
+scripts/lib/overhead.mjs:168:  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s));
+scripts/lib/overhead.mjs:212:  out.push(surface("spend-marker", spendEnabled(state) ? byteSize(SPEND_MARKER_LINE) : 0, {
+scripts/lib/spend-guard-verbs.mjs:25:import { spendEnabled } from "./spend-switch.mjs";
+scripts/lib/spend-guard-verbs.mjs:173:  if (parsed.ops.sets.tokenCeiling !== undefined && !spendEnabled(state)) {
+scripts/lib/spend-guard-verbs.mjs:219:    tracking = spendEnabled(mainState) ? "on" : "off";
+scripts/lib/spend-switch.mjs:11:export function spendEnabled(state) {
+scripts/lib/rules.mjs:33:import { spendEnabled } from "./spend-switch.mjs";
+scripts/lib/rules.mjs:111:  try { return spendEnabled(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
+scripts/lib/spend-command.mjs:26:import { spendEnabled } from "./spend-tracking.mjs";
+scripts/lib/spend-command.mjs:101:  const enabled = spendEnabled(state);
+scripts/lib/spend-tracking.mjs:33:import { spendEnabled } from "./spend-switch.mjs";
+scripts/lib/spend-tracking.mjs:40:export { spendEnabled };
+scripts/lib/spend-tracking.mjs:65:    if (!spendEnabled(after)) return;
+scripts/lib/spend-tracking.mjs:95:  if (arg === "off" && !spendEnabled(state)) {
+scripts/lib/dev-log.mjs:25:import { spendEnabled } from "./spend-switch.mjs";
+scripts/lib/dev-log.mjs:54:  if (arg === "on" && !spendEnabled(state)) {
+scripts/lib/dev-log.mjs:102:  if (!devLogEnabled(state) || !spendEnabled(state)) return null;
+
+## rg -n "devlog|DEVLOG_FILE|appendDevLog|removeDevLog" scripts/lib  (the writers of the file)
+scripts/lib/dev-log-report.mjs:35:import { DEVLOG_FILE, devLogSize, readDevLog, removeDevLog } from "./dev-log-capture.mjs";
+scripts/lib/dev-log-report.mjs:194:    log: { file: DEVLOG_FILE, exists: log.exists, unreadableLines: log.corrupt },
+scripts/lib/dev-log-report.mjs:216:    lines.push(`  ${DEVLOG_FILE} (${n(size)} byte${size === 1 ? "" : "s"})`);
+scripts/lib/dev-log-report.mjs:223:  const got = withLedgerLock(tree.main, () => removeDevLog(tree.main));
+scripts/lib/dev-log-report.mjs:225:  outStream().write(escapeControls(`dev-log --clear: removed ${got.value ? DEVLOG_FILE : "nothing"}`) + "\n");
+scripts/lib/spend-ledger.mjs:29:import { appendDevLog, feedLine, finishRead, newCollector } from "./dev-log-capture.mjs";
+scripts/lib/spend-ledger.mjs:261:    try { result.devLog = appendDevLog(mainRoot, devEntries, devLog.snapshot, fsx); } catch { result.devLog = { failed: true }; }
+scripts/lib/verb-effects.mjs:133:  "dev-log": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree: the ingest `spend` runs (rows, cursor, markers, devlog.jsonl, ingest lock; --no-ingest skips it); --clear removes devlog.jsonl only — never state.json and never a transcript" },
+scripts/lib/dev-log-capture.mjs:29:export const DEVLOG_FILE = "devlog.jsonl";
+scripts/lib/dev-log-capture.mjs:186:const devPath = (mainRoot) => path.join(spendDir(mainRoot), DEVLOG_FILE);
+scripts/lib/dev-log-capture.mjs:209:export function appendDevLog(mainRoot, entries, snapshot, fsx = fs) {
+scripts/lib/dev-log-capture.mjs:241:/** Remove `devlog.jsonl` and nothing else. Returns whether a file was removed. */
+scripts/lib/dev-log-capture.mjs:242:export function removeDevLog(mainRoot, fsx = fs) {
+scripts/lib/dev-log.mjs:12:// CAPTURE IS INGEST'S, AND ONLY INGEST'S. No hook reads or writes `devlog.jsonl`; the ledger stays the one
+scripts/lib/dev-log.mjs:29:export { DEVLOG_FILE } from "./dev-log-capture.mjs";
+scripts/lib/dev-log.mjs:70:      ? " — composition entries are captured by `spend`'s ingest into .conductor/spend/devlog.jsonl (counts only, never text)."
+
+## Statement: where the capture rule holds, and where it does not (each omission justified)
+- Entry points that call ingest: `spend` (spend-command.mjs:118 via ingestForReport), `spend --rebuild`
+  (spend-command.mjs:186 passes devLogOptions directly), `spend-guard` (spend-guard-verbs.mjs:243 via
+  ingestForReport) and `dev-log` (dev-log-report.mjs:187 via ingestForReport). All four capture while both
+  switches are on, because the decision is made in ONE place (devLogOptions, called by ingestForReport and rebuild).
+  The test `spend captures, and so does spend-guard` pins the second caller: spend-guard advances the shared
+  cursor, so a verb that ingested without capturing would lose those messages permanently.
+- `override-spend-guard`, `set-spend-guard` and `set-spend-tracking` do not ingest: no capture owed.
+- `spend-analysis` and `decisions` (named in the task text) do not exist on this branch (their changes are not
+  built yet); when they land they must call ingestForReport and pass `state`. Flagged for the orchestrator.
+- No hook reaches ingest or the file (test: no hook opens or stats devlog.jsonl).
+- Single writer of devlog.jsonl: appendDevLog (dev-log-capture.mjs), called from spend-ledger.mjs ingestLocked and
+  nowhere else; removeDevLog is the only remover, called from `dev-log --clear` under the ingest lock.
+
+## Inverses (enumerated, each named)
+- on <-> off: `set-dev-log on|off`. Off stops capture and keeps the file (test pins it).
+- append <-> clear: `dev-log --clear [--yes]` (plan first). Shipped.
+- `spend --clear` / `spend --rebuild` do not remove the log. `--clear`: the report degrades to `tokens: not in
+  ledger` (design D3), justified; `--rebuild` re-reads every transcript and the append de-duplicates by messageId,
+  so it adds nothing twice (test pins it).
+- `set-spend-tracking off` stops capture too (devLogOptions needs both switches) and keeps both the file and
+  `state.devLog`; `dev-log` then says spend tracking is off.
+- `features` snapshot: appended on change only; its inverse is the same `dev-log --clear`.
+
+## Data references
+`devlog.jsonl` entries hold `messageId` and `sessionId`, which reference the ledger's rows and a transcript. Writers:
+appendDevLog. Readers: `dev-log` (readDevLog). Removers: `dev-log --clear` removes the whole file. A ledger row
+removed by `spend --clear` leaves the entry, which the report handles (`tokens: not in ledger`); a pruned
+transcript leaves its entries, which stay the only copy of the composition (kept on purpose, like the ledger rows).

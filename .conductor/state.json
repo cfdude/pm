@@ -13855,9 +13855,13 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-13. A dev feature, OFF by default (it costs tokens itself). An append-only JSONL log under .conductor/ (engine law: Node built-ins only, NO new runtime dependency — Rob suggested a dependency; recommendation is a plain file) recording current overhead and which features are on, what went into the request/context, what came back, the full token breakdown, and context-retention warnings such as 'same context window for seven days without a new session'. Data capture; token-spend-analysis-and-recommendations and pm-overhead-baseline read it.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "52916a98c830747ff6b276b439de593a68ad65c8",
+        "33b702494affd386633425d3a1ae88c48146ca0b",
+        "e08ece1e8a55184c14449f7aea391ddf13a526c7"
+      ],
       "createdAt": "2026-10-14T04:57:24.708Z",
-      "touchedAt": "2026-10-14T04:57:27.094Z",
+      "touchedAt": "2026-10-20T08:49:30.792Z",
       "release": "0.53.0"
     },
     {
@@ -14195,7 +14199,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2094,
+  "revision": 2097,
   "reviewMode": "standard",
   "releases": [
     {
