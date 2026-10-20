@@ -12333,7 +12333,7 @@
       "id": "retire-single-file-certification-record",
       "title": "Retire the single-file certification record (pm-suite-certification.json) once no pre-0.51.0 branch is live",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -12344,9 +12344,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "7220cff7051b8e30b2ff4495db249751ec001f42"
+      ],
       "createdAt": "2026-09-29T18:26:52.090Z",
-      "touchedAt": "2026-10-14T04:57:08.172Z",
+      "touchedAt": "2026-10-20T03:15:32.934Z",
       "notes": [
         {
           "at": "2026-09-29T18:26:52.900Z",
@@ -12354,7 +12356,19 @@
           "text": "lane: claude-code not (none routed) — removal of a legacy file and its tolerance path, well under 2h; the design record lives in certification-record-redesign design D5"
         }
       ],
-      "release": "0.53.0"
+      "release": "0.53.0",
+      "startedAt": "2026-10-20T03:04:29.543Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T03:15:32.930Z",
+        "reason": "hook removes legacy file; 7220cff7"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T03:15:32.929Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T03:15:32.930Z"
     },
     {
       "id": "engine-source-extraction-vacuity",
@@ -13981,7 +13995,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2056,
+  "revision": 2059,
   "reviewMode": "standard",
   "releases": [
     {
