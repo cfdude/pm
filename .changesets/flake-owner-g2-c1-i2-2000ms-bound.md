@@ -1,0 +1,1 @@
+* **Internal: the G2-C1/I2 lock-refusal guard no longer flakes under load.** It timed a spawned engine against the 2000 ms lock wait, which also counted node's own start-up. It now asserts WHICH refusal came back (the immediate "cannot be taken" one, not the wait-it-out "was not released within" one). The known-flakes list is now empty. (flake-owner-g2-c1-i2-2000ms-bound)

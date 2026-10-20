@@ -125,6 +125,22 @@ export function unitTest(name, fn) {
   assert.ok(actor, `${name}: unitTest() could not identify the calling test file — it is called ` +
     "from scripts/test/unit/<id>.test.mjs, and the counter keys its read check on that path");
   test(name, async (t) => {
+    try {
+      await unitBody(t);
+    } catch (e) {
+      // THE FAILURE NAMES ITS FILE. node:test locates a failing test at the `test()` CALL, which is this
+      // module for every unit test, so the flake retry saw `unit-harness.mjs` (a file the runner was not
+      // given) and never re-ran a unit-rung failure (unit-rung-flake-retry-gap). The marker is the line
+      // flake-retry.mjs reads back out of the failure body.
+      if (e instanceof Error) {
+        // The STACK, not the message: an AssertionError with a generated message prints only its stack.
+        try { e.stack = `${unitFileMarker(actor)}\n${e.stack}`; } catch { /* a frozen error keeps its stack */ }
+      }
+      throw e;
+    }
+  });
+
+  async function unitBody(t) {
     armFsCounter([actor]);
     let bodyError = null;
     try {
@@ -141,5 +157,8 @@ export function unitTest(name, fn) {
       "half's floors and fixtures live. See design D4 — this is the run-time half of the guard, and " +
       "the source scan next door cannot see a call reached through a helper.");
     if (bodyError) throw bodyError;
-  });
+  }
 }
+
+/** The line a unit-rung failure carries so a reader of the spec output can tell WHICH file declared it. */
+export const unitFileMarker = (file) => `[unit-test-file: ${String(file).replace(/^\/\/(?=\/)/, "")}]`;

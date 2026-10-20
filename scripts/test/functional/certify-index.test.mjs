@@ -56,7 +56,9 @@ test("stub", async () => {
     execFileSync("git", ["-C", process.env.PM_STUB_REPO, "add", "--", "scripts/lib/m.mjs"]);
   }
   if (mode === "hang") {
-    fs.writeFileSync(process.env.PM_STUB_READY, String(process.pid));
+    // ATOMIC: write beside it, then rename, so a reader never sees the file created but still empty.
+    fs.writeFileSync(process.env.PM_STUB_READY + ".tmp", String(process.pid));
+    fs.renameSync(process.env.PM_STUB_READY + ".tmp", process.env.PM_STUB_READY);
     await new Promise((resolve) => setTimeout(resolve, 60000));
   }
   if (mode === "fail") throw new Error("stub failed on purpose");
@@ -256,6 +258,10 @@ test("1.2 a passing, a failing and a SIGTERM'd run leave the repository as they 
     assert.ok(fs.existsSync(ready), "the stub never reported ready: the run did not reach the bucket");
     assert.equal(runDirsIn(tmp).length, 1, "mid-run, the run directory must exist in the TMPDIR it was handed — else the leftover check below is vacuous");
     const stubPid = Number(fs.readFileSync(ready, "utf8"));
+    // A pid of 0 (an empty file read as a number) would make process.kill(0, 0) signal OUR OWN group and
+    // report it alive for ever: the load-dependent failure this guard closes. The stub renames the file
+    // into place, so a reader sees all of it or none.
+    assert.ok(Number.isInteger(stubPid) && stubPid > 1, `the ready file did not hold a pid: ${JSON.stringify(stubPid)}`);
     child.kill("SIGTERM");
     const { code, signal } = await exited;
     assert.ok(code === 143 || signal === "SIGTERM", `the runner did not end on SIGTERM (code ${code}, signal ${signal})`);

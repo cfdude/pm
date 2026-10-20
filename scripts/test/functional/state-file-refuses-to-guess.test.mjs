@@ -749,7 +749,12 @@ test("G2-C1/I2: an old directory at the lock or break path cannot be removed, so
   const r = shBounded(["update-epic", "e1", "--status", "active"], { cwd: atLock });
   assert.equal(r.signal, null, `killed after ${r.ms} ms`);
   assert.equal(r.status, CONFLICT, `stderr: ${r.stderr}`);
-  assert.ok(r.ms < 2000, `refused without waiting out the lock, took ${r.ms} ms`);
+  // "AT ONCE" IS A BRANCH, NOT A STOPWATCH. Wall-clock around a spawned engine includes node's own
+  // start-up, which a loaded machine stretches past the 2000 ms lock wait (the known flake this
+  // replaced). The engine returns the `blocked` refusal BEFORE its wait loop sleeps; the wait-it-out
+  // refusal says "was not released within". Which message came back says which branch ran.
+  assert.match(r.stderr, /lock cannot be taken\b/, `the immediate (blocked) refusal, not the wait-it-out one: ${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /was not released within/, `waited out the lock instead of refusing at once: ${r.stderr}`);
   assert.match(r.stderr, /rm -r\b.*\.conductor\/state\.json\.lock\b/, `names what to remove: ${r.stderr}`);
 
   const atBreak = threeEpicRepo();

@@ -12,6 +12,7 @@ import { removeAtExit } from "../fixtures/temp-dir.mjs";  // gh-cfdude-pm-224: s
 import { execFileSync, spawnSync } from "node:child_process";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, parseBrief, fixtureCommits, fixtureCommit } from "../fixtures/functional-harness.mjs";
 import { engineCode } from "../fixtures/source-code.mjs";
+import { nonEmpty } from "../fixtures/engine-extraction.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -356,7 +357,7 @@ function bodyOfModule(src, fn) {
   const start = src.indexOf(`export function ${fn}(`);
   assert.notEqual(start, -1, `${fn} is still exported`);
   const next = src.indexOf("\nexport ", start + 1);
-  return src.slice(start, next === -1 ? undefined : next);
+  return nonEmpty(src.slice(start, next === -1 ? undefined : next), `the body of ${fn}`);
 }
 
 /** The source of one operation in lib/git-gateway.mjs's returned object literal. The operations are
@@ -367,7 +368,7 @@ function gatewayOperationBody(src, name) {
   assert.notEqual(start, -1, `${name} is still an operation in git-gateway.mjs`);
   const end = src.indexOf("\n\n", start + 1);
   assert.notEqual(end, -1, `${name}'s operation body ended before the next one — the extractor's anchor moved`);
-  return src.slice(start, end);
+  return nonEmpty(src.slice(start, end), `the gateway operation ${name}`);
 }
 
 test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH", () => {
