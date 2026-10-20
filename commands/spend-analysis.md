@@ -36,6 +36,25 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 - **Tools.** The number of messages that called each tool, per actor. A ledger row stores a message's tool names
   once, so a message calling `Read` twice counts once. Tokens are not apportioned to tools: a message's usage is
   one number for everything in it.
+- **Outliers**, from a closed list of rules. Each flag prints its evidence, its threshold and exactly one
+  recommendation, rendered from fixed text for the rule (no model call). Every threshold is a named constant
+  labelled a PROPOSAL, tuned on one release's data, not a measurement:
+
+  | Rule | Raised when | Recommendation |
+  | --- | --- | --- |
+  | `long-context-agent` | a sub-agent has at least 100 messages and at least 200,000 mean context per message (`input + cacheCreation + cacheRead`) | split the batch or hand off to a fresh context |
+  | `dominant-agent` | one agent holds at least 50% of an epic's work, on an epic with 2 or more agents | the plan left one executor too much to decide: sharpen it |
+  | `tier-mismatch` | role `mechanical`, `rudimentary` or `test` on an opus or fable tier; role `plan` or `review` on a haiku tier | `set-profile --model <role>=<model>` |
+  | `review-loop` | an epic's `phase=review` rows carry at least 3 distinct round values (not the spend guard's rounds signal, which counts from the pass anchor) | `spend-guard <epic>`, escalate |
+  | `low-coverage` | ledger coverage is below 90% | mark dispatches and keep an epic active |
+  | `invalid-markers` | any `invalid-marker` tokens | fix the phase and role names `spend` lists |
+
+  A scope with no flag says so and prints each rule's threshold. `low-coverage` and `invalid-markers` describe
+  the whole ledger whatever the scope.
+- **Trend.** Mean `work` per epic for each release with attributed epics (newest release first, by
+  registration). A verdict (`growing` or `falling` at a 20% band, else `flat`, a proposal) needs 2 releases each
+  holding at least 3 epics with attributed rows; below that it prints `insufficient data` with the counts.
+  Ledger-wide, whatever the scope.
 - **Cost.** Not computed, as in `spend`: tokens are the measure.
 
 ## Tracking off

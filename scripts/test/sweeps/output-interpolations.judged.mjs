@@ -201,6 +201,13 @@ x("dev-log-report.mjs", "devLogVerb", {
 x("dev-log-report.mjs", "devLogVerb", {
   "jsonText(report, null, 2)": 2,
 }, "json", "--json: the whole stdout is one JSON document");
+j("spend-analysis.mjs", "RULES", ALL, "sink-flow", "every rule's describe/evidence/recommend text is consumed only by renderAnalysis(), whose L is returned through L.map(escapeControls), and by --json, which is one JSON document; agent ids and marker values are stored text and reach no other sink; the one epic id in a printed command goes through orNoRemedy(printedId())");
+x("spend-analysis.mjs", "pct", {
+  "(x * 100).toFixed(1)": 1,
+}, "engine", "a share the engine computed, formatted with toFixed");
+x("spend-analysis.mjs", "buildTrend", {
+  "releases.reduce((s, r) => s + r.epics, 0)": 1,
+}, "engine", "a count of epics the engine computed, inside the fixed `insufficient data` phrase");
 x("spend-analysis.mjs", "refuse", {
   "msg": 1,
 }, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");

@@ -23,7 +23,7 @@ import os from "node:os";
 import { isInitialized } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { die } from "./command-exit.mjs";
-import { escapeControls, jsonText } from "./constants.mjs";
+import { escapeControls, jsonText, orNoRemedy, printedId } from "./constants.mjs";
 import { currentArgv, currentEnv, outStream } from "./invocation.mjs";
 import { resolveMainTree } from "./spend-tree.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
@@ -68,6 +68,156 @@ const sumInto = (target, t) => {
   target.total += t.total; target.work += t.work; target.messages += t.messages;
 };
 
+// ───────────────────────────── the rules ─────────────────────────────
+//
+// EVERY THRESHOLD BELOW IS A PROPOSAL, NOT A MEASUREMENT (design D3, D5). The ledger holds 4 epics in one release
+// (assessment section 6), so these are starting values to be tuned on 0.53's own build; each flag prints its evidence
+// and its threshold so a reader can disagree. Rob's call: the values.
+
+/** long-context-agent: a sub-agent with at least this many messages... */
+export const LONG_CONTEXT_MIN_MESSAGES = 100;
+/** ...AND at least this mean per-message context (`input + cacheCreation + cacheRead`). */
+export const LONG_CONTEXT_MIN_PER_MESSAGE = 200_000;
+/** dominant-agent: one agent holds at least this share of an epic's work... */
+export const DOMINANT_AGENT_SHARE = 0.5;
+/** ...on an epic with at least this many sub-agents. */
+export const DOMINANT_AGENT_MIN_AGENTS = 2;
+/** review-loop: an epic's phase=review rows carry at least this many distinct round values. */
+export const REVIEW_LOOP_MIN_ROUNDS = 3;
+/** low-coverage: the ledger's coverage share below this. */
+export const LOW_COVERAGE_SHARE = 0.9;
+/** tier-mismatch: light roles on a top tier, heavy roles on a low tier. */
+export const TIER_MISMATCH = Object.freeze({
+  lightRoles: Object.freeze(["mechanical", "rudimentary", "test"]), topTiers: Object.freeze(["opus", "fable"]),
+  heavyRoles: Object.freeze(["plan", "review"]), lowTiers: Object.freeze(["haiku"]),
+});
+/** The trend floor and band (design D5): a verdict needs this many releases, each with this many attributed epics. */
+export const TREND_MIN_RELEASES = 2;
+export const TREND_MIN_EPICS = 3;
+/** growing at this fraction above the previous release's mean work per epic, falling at this fraction below. */
+export const TREND_BAND = 0.2;
+
+const INVALID_VALUE_MAX = 64;
+const pct = (x) => `${(x * 100).toFixed(1)}%`;
+const ctxText = (v) => n(Math.round(v));
+
+/** The closed rule list, in the order flags print. Each rule: its id, its threshold (as printed and as carried by
+ *  every flag it raises), the pure `find` that raises flags from the analysis inputs, and `evidence` / `recommend`,
+ *  which render FIXED text from a flag's own values. No model call: a recommendation is a template. */
+export const RULES = [
+  {
+    id: "long-context-agent", status: "proposal",
+    threshold: { minMessages: LONG_CONTEXT_MIN_MESSAGES, minContextPerMessage: LONG_CONTEXT_MIN_PER_MESSAGE },
+    describe: () => `an agent with >= ${n(LONG_CONTEXT_MIN_MESSAGES)} messages and >= ${n(LONG_CONTEXT_MIN_PER_MESSAGE)} mean context per message`,
+    find: ({ agents }) => agents
+      .filter((g) => g.messages >= LONG_CONTEXT_MIN_MESSAGES && g.contextPerMessage >= LONG_CONTEXT_MIN_PER_MESSAGE)
+      .map((g) => ({ subject: `agent ${g.agentId}`, values: { agentId: g.agentId, epic: g.epic, messages: g.messages, contextPerMessage: g.contextPerMessage, work: g.work, total: g.total } })),
+    evidence: (f) => `${f.values.messages} messages (threshold ${n(LONG_CONTEXT_MIN_MESSAGES)}), mean context ${ctxText(f.values.contextPerMessage)} per message (threshold ${n(LONG_CONTEXT_MIN_PER_MESSAGE)}); work ${n(f.values.work)}, total ${n(f.values.total)}`,
+    recommend: (f) => `${f.subject} carried about ${ctxText(f.values.contextPerMessage)} tokens of context on each of ${f.values.messages} messages: split the batch or hand off to a fresh context before the context passes ${n(LONG_CONTEXT_MIN_PER_MESSAGE)} per message.`,
+  },
+  {
+    id: "dominant-agent", status: "proposal",
+    threshold: { share: DOMINANT_AGENT_SHARE, minAgents: DOMINANT_AGENT_MIN_AGENTS },
+    describe: () => `one agent holding >= ${pct(DOMINANT_AGENT_SHARE)} of an epic's work, on an epic with >= ${DOMINANT_AGENT_MIN_AGENTS} agents`,
+    find: ({ agents, epicWork }) => {
+      const perEpic = new Map();
+      for (const g of agents) perEpic.set(g.epic, (perEpic.get(g.epic) || 0) + 1);
+      return agents
+        .filter((g) => perEpic.get(g.epic) >= DOMINANT_AGENT_MIN_AGENTS && epicWork[g.epic] > 0 && g.work / epicWork[g.epic] >= DOMINANT_AGENT_SHARE)
+        .map((g) => ({ subject: `agent ${g.agentId}`, values: { agentId: g.agentId, epic: g.epic, share: g.work / epicWork[g.epic], work: g.work, epicWork: epicWork[g.epic], agentsOnEpic: perEpic.get(g.epic) } }));
+    },
+    evidence: (f) => `${pct(f.values.share)} of epic ${f.values.epic}'s work (${n(f.values.work)} of ${n(f.values.epicWork)}) across ${f.values.agentsOnEpic} agents (threshold ${pct(DOMINANT_AGENT_SHARE)} on at least ${DOMINANT_AGENT_MIN_AGENTS})`,
+    recommend: (f) => `${f.subject} did ${pct(f.values.share)} of epic ${f.values.epic}'s work: the plan left one executor too much to decide, so sharpen the plan or split the epic into stories dispatched separately.`,
+  },
+  {
+    id: "tier-mismatch", status: "proposal",
+    threshold: { lightRoles: TIER_MISMATCH.lightRoles, topTiers: TIER_MISMATCH.topTiers, heavyRoles: TIER_MISMATCH.heavyRoles, lowTiers: TIER_MISMATCH.lowTiers },
+    describe: () => `role ${TIER_MISMATCH.lightRoles.join("/")} on a ${TIER_MISMATCH.topTiers.join("/")} model, or role ${TIER_MISMATCH.heavyRoles.join("/")} on a ${TIER_MISMATCH.lowTiers.join("/")} model`,
+    find: ({ agents }) => agents
+      .filter((g) => (TIER_MISMATCH.lightRoles.includes(g.role) && TIER_MISMATCH.topTiers.includes(g.tier))
+        || (TIER_MISMATCH.heavyRoles.includes(g.role) && TIER_MISMATCH.lowTiers.includes(g.tier)))
+      .map((g) => ({ subject: `agent ${g.agentId}`, values: { agentId: g.agentId, epic: g.epic, role: g.role, tier: g.tier, work: g.work, total: g.total } })),
+    evidence: (f) => `role=${f.values.role} ran on the ${f.values.tier} tier; work ${n(f.values.work)}, total ${n(f.values.total)}`,
+    recommend: (f) => `${f.subject} ran role=${f.values.role} on the ${f.values.tier} tier: set the role's model with set-profile --model ${f.values.role}=<model> (or --model on the epic).`,
+  },
+  {
+    id: "review-loop", status: "proposal",
+    threshold: { minDistinctRounds: REVIEW_LOOP_MIN_ROUNDS },
+    describe: () => `an epic whose phase=review rows carry >= ${REVIEW_LOOP_MIN_ROUNDS} distinct round values`,
+    find: ({ reviewRounds }) => Object.entries(reviewRounds)
+      .filter(([, rounds]) => rounds.length >= REVIEW_LOOP_MIN_ROUNDS)
+      .map(([epic, rounds]) => ({
+        subject: `epic ${epic}`, values: { epic, distinctRounds: rounds.length, rounds },
+        note: "distinct review rounds in the ledger; this is not the spend guard's rounds signal, which counts from the pass anchor",
+      })),
+    evidence: (f) => `${f.values.distinctRounds} distinct review rounds (${f.values.rounds.join(", ")}; threshold ${REVIEW_LOOP_MIN_ROUNDS}); ${f.note}`,
+    recommend: (f) => `${f.subject} reached ${f.values.distinctRounds} distinct review rounds: if the rounds fail on the same finding, run ${orNoRemedy(() => `spend-guard ${printedId(f.values.epic)}`)} and escalate rather than retry at the same tier.`,
+  },
+  {
+    id: "low-coverage", status: "proposal",
+    threshold: LOW_COVERAGE_SHARE,
+    describe: () => `ledger coverage below ${pct(LOW_COVERAGE_SHARE)}`,
+    find: ({ coverage }) => (coverage.share !== null && coverage.share < LOW_COVERAGE_SHARE
+      ? [{ subject: "ledger", values: { share: coverage.share, attributed: coverage.attributed, total: coverage.total } }] : []),
+    evidence: (f) => `${pct(f.values.share)} of ${n(f.values.total)} tokens attributed to an epic (threshold ${pct(LOW_COVERAGE_SHARE)}); the unattributed reasons are printed above`,
+    recommend: (f) => `Only ${pct(f.values.share)} of the ledger is attributed: begin each sub-agent dispatch prompt with the pm-spend marker line and keep an epic active (set-active) so orchestrator turns are credited.`,
+  },
+  {
+    id: "invalid-markers", status: "proposal",
+    threshold: { minTokens: 1 },
+    describe: () => "any invalid-marker tokens",
+    find: ({ unattributed }) => {
+      const t = unattributed.byReason["invalid-marker"];
+      if (!t || t.total <= 0) return [];
+      return [{
+        subject: "ledger",
+        values: {
+          tokens: t.total, messages: t.messages,
+          markers: (unattributed.invalidMarkers || []).map((m) => ({ field: m.field, value: String([...String(m.value)].slice(0, INVALID_VALUE_MAX).join("")), agents: m.agents, tokens: m.totals.total })),
+        },
+      }];
+    },
+    evidence: (f) => `${n(f.values.tokens)} tokens in ${n(f.values.messages)} messages under markers the ledger refused${f.values.markers.length ? ` (${f.values.markers.map((m) => `${m.field} "${m.value}"`).join(", ")})` : ""}`,
+    recommend: (f) => `${n(f.values.tokens)} tokens sit under phase or role names outside the accepted lists: fix the names in the dispatch prompts (each invalid pm-spend marker line \`spend\` prints names the value and the accepted set).`,
+  },
+];
+
+function raiseFlags(inputs) {
+  const flags = [];
+  for (const rule of RULES) {
+    const found = rule.find(inputs).sort((a, b) => (a.subject < b.subject ? -1 : a.subject > b.subject ? 1 : 0));
+    for (const f of found) {
+      const flag = { rule: rule.id, subject: f.subject, values: f.values, threshold: rule.threshold, ...(f.note ? { note: f.note } : {}) };
+      flag.recommendation = rule.recommend(flag);
+      flags.push(flag);
+    }
+  }
+  return flags;
+}
+
+/** The cross-release trend (design D5). Ledger-wide, whatever the scope. Releases are ordered by registration in
+ *  state, newest first; an epic counts toward its release only when it holds attributed rows. */
+function buildTrend(state, reportEpics) {
+  const releases = [];
+  for (const rel of [...(state.releases || [])].reverse()) {
+    if (!rel || typeof rel.id !== "string") continue;
+    const members = (state.epics || []).filter((e) => e && e.release === rel.id && reportEpics[e.id] && reportEpics[e.id].totals.messages > 0);
+    if (!members.length) continue;
+    const work = members.reduce((sum, e) => sum + reportEpics[e.id].totals.work, 0);
+    releases.push({ release: rel.id, epics: members.length, meanWork: work / members.length });
+  }
+  const qualifying = releases.filter((r) => r.epics >= TREND_MIN_EPICS);
+  const base = { releases, floor: { minReleases: TREND_MIN_RELEASES, minEpicsPerRelease: TREND_MIN_EPICS }, band: TREND_BAND, status: "proposal" };
+  if (qualifying.length < TREND_MIN_RELEASES) {
+    const reason = `insufficient data — ${releases.length} releases, ${releases.reduce((s, r) => s + r.epics, 0)} epics`;
+    return { ...base, verdict: "insufficient data", reason };
+  }
+  const [latest, previous] = qualifying;
+  const verdict = latest.meanWork >= previous.meanWork * (1 + TREND_BAND) ? "growing"
+    : latest.meanWork <= previous.meanWork * (1 - TREND_BAND) ? "falling" : "flat";
+  return { ...base, verdict, latest: latest.release, previous: previous.release };
+}
+
 /** Analyse attributed rows (spend-attribution.mjs `attribute()`), pure.
  *    scope  { epic?, release? } -- at most one
  *    state  the record: its epics (and their `release`) and its releases */
@@ -97,6 +247,14 @@ export function analyze({ attributed, state, tracking, ingest = null, scope = {}
   agents.sort((a, b) => desc(a.work, b.work) || desc(a.total, b.total) || (a.agentId < b.agentId ? -1 : 1));
 
   const toolRows = attributed.filter((r) => (ids === null ? true : r.epic != null && ids.has(r.epic)));
+  const epicWork = Object.fromEntries(Object.entries(report.epics).map(([id, e]) => [id, e.totals.work]));
+  const rounds = {};
+  for (const r of toolRows) {
+    if (r.phase !== "review" || r.epic == null) continue;
+    const key = r.round === null || r.round === undefined ? 1 : r.round;
+    (rounds[r.epic] ||= new Set()).add(key);
+  }
+  const reviewRounds = Object.fromEntries(Object.entries(rounds).map(([id, set]) => [id, [...set].sort((a, b) => a - b)]));
   return {
     tracking: report.tracking,
     ingest: report.ingest,
@@ -106,8 +264,8 @@ export function analyze({ attributed, state, tracking, ingest = null, scope = {}
     unattributed: report.unattributed,
     coverage: report.coverage,
     tools: countTools(toolRows),
-    flags: [],
-    trend: null,
+    flags: raiseFlags({ agents, epicWork, reviewRounds, coverage: report.coverage, unattributed: report.unattributed }),
+    trend: buildTrend(state, report.epics),
     cost: report.cost,
   };
 }
@@ -153,6 +311,23 @@ export function renderAnalysis(a, { extra = [] } = {}) {
     if (list.length) L.push(`  ${actor}: ${list.map((x) => `${x.tool} ${n(x.count)}`).join(" · ")}`);
   }
   L.push(`  ${a.tools.note}`);
+
+  L.push("", "outliers:");
+  if (!a.flags.length) {
+    L.push("  no outliers were found. Thresholds are proposals, not measurements:");
+    for (const r of RULES) L.push(`    ${r.id}: ${r.describe()}`);
+  }
+  for (const f of a.flags) {
+    const rule = RULES.find((r) => r.id === f.rule);
+    L.push(`  FLAG ${f.rule} — ${f.subject}: ${rule.evidence(f)}`, `    recommendation: ${f.recommendation}`);
+  }
+  if (a.flags.length) L.push("  (thresholds are proposals, not measurements)");
+
+  L.push("", "trend (mean work per epic, newest release first):");
+  for (const r of a.trend.releases) L.push(`  ${r.release}: ${n(r.epics)} epics, mean work ${n(Math.round(r.meanWork))}`);
+  L.push(a.trend.verdict === "insufficient data"
+    ? `  ${a.trend.reason}`
+    : `  ${a.trend.verdict}: ${a.trend.latest} against ${a.trend.previous} (band ${pct(TREND_BAND)}, a proposal)`);
 
   L.push("", `cost: ${COST_NOTE}`);
   return L.map(escapeControls);
