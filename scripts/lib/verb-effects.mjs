@@ -84,7 +84,7 @@ export const VERB_EFFECTS = {
   "unconsidered-outcomes": { effect: "read-only", exercise: [], note: "the archived epics whose outcome nobody considered, each with the invocation that would record one" },
 
   // ─────────────── mutates: never call these against a repo you are only inspecting ───────────────
-  init: { effect: "mutates", writes: ".conductor/state.json, .gitignore, CLAUDE.md, PROJECT.md" },
+  init: { effect: "mutates", epicWriting: true, writes: ".conductor/state.json, .gitignore, CLAUDE.md, PROJECT.md" },
   render: { effect: "mutates", writes: "PROJECT.md, .conductor/render-stamp.json (both skipped when the content would be identical)" },
   snapshot: { effect: "mutates", hook: true, writes: ".conductor/brief.txt, plus render()'s writes" },
   // gh#175 `detachedNoOp`: this verb's ENTIRE write set is session bookkeeping, so in a detached
@@ -113,7 +113,7 @@ export const VERB_EFFECTS = {
   "remove-epic": { effect: "mutates", epicWriting: true, writes: "state.json, plus render()'s writes" },
   reorder: { effect: "mutates", epicWriting: true, writes: "state.json (epic rank), plus render()'s writes" },
   "set-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
-  "clear-active": { effect: "mutates", writes: "state.json (the active pointer), plus render()'s writes" },
+  "clear-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "set-tracker": { effect: "mutates", writes: "state.json (tracker config), CLAUDE.md (the rules block)" },
   "set-lane-routing": { effect: "mutates", writes: "state.json (lane-routing overrides)" },
   "set-autonomy": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's autonomy block and notifications)" },

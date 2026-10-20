@@ -30,11 +30,40 @@ unitTest("1.3 the epic-writing verbs are DERIVED from the effects registry, and 
   for (const verb of ["claim", "unclaim"]) assert.ok(derived.includes(verb));
 });
 
-unitTest("1.3 a verb whose registered writes name an epic is marked epicWriting (the marker cannot silently lag)", () => {
+// Every non-hook verb that mutates is EITHER epicWriting (declares --session) OR named here with the reason
+// its save never changes an epic. The partition is total and does not read the wording of `writes`: a verb
+// added to the registry fails this test until someone classifies it, which is the call-site sweep made
+// mechanical (R.1). `init` is NOT here: its sync(true) registers epics, so it declares --session.
+const NO_EPIC_CHANGE = {
+  render: "writes PROJECT.md and the render stamp; its only state save is the archived-epic self-heal a hook also runs",
+  "log-detour": "append-only detours.log", "retract-detour": "detours.log and PROJECT.md", "honcho-memory": "append-only memories log",
+  "set-tracker": "tracker config and the rules block", "set-lane-routing": "lane-routing overrides",
+  "set-review-mode": "the review-mode dial", "set-profile": "project or lane profile layer",
+  "set-gate-guard": "the gate-guard toggle", "record-cross-spec-review": "a release-scope verdict",
+  "set-activity-log": "the activityLog switch", "dev-log": "the dev log under .conductor/spend/",
+  "set-dev-log": "the devLog switch", "set-spend-tracking": "the spendTracking switch and rules block",
+  spend: "the spend ledger", "spend-analysis": "reads the ledger", decisions: "reads the ledger",
+  "spend-guard": "reads limits and the ledger", "purge-logs": "log files", "write-rules": "the rules block",
+};
+
+unitTest("1.3 every mutating non-hook verb is epicWriting or named with why it never changes an epic (no wording heuristic)", () => {
+  const unclassified = [];
   for (const [verb, v] of Object.entries(VERB_EFFECTS)) {
     if (v.effect !== "mutates" || v.hook === true) continue;
-    if (/\bepic'?s?\b/i.test(String(v.writes))) assert.equal(v.epicWriting, true, `${verb} writes "${String(v.writes).slice(0, 60)}…" but is not marked epicWriting`);
+    const exempt = verb in NO_EPIC_CHANGE;
+    if (v.epicWriting === true && exempt) assert.fail(`${verb} is epicWriting and also listed as changing no epic`);
+    if (v.epicWriting !== true && !exempt) unclassified.push(verb);
   }
+  assert.deepEqual(unclassified, [], "each of these can change an epic (or must be named in NO_EPIC_CHANGE with a reason)");
+  for (const verb of Object.keys(NO_EPIC_CHANGE)) assert.ok(VERB_EFFECTS[verb], `${verb} is a registered verb`);
+  for (const verb of ["init", "clear-active"]) assert.equal(VERB_EFFECTS[verb].epicWriting, true, `${verb} changes an epic`);
+});
+
+unitTest("1.3 clear-active and init accept --session and stamp it on the epic they changed", () => {
+  const engine = seeded([epic("e1", { status: "active" })], { active: "e1" });
+  engine(["clear-active", "--session", "build-a"]);
+  assert.equal(e1(engine).status, "queued");
+  assert.deepEqual(e1(engine).sessions.map((s) => s.session), ["build-a"]);
 });
 
 unitTest("1.3 no hook verb declares --session, and epic.sessions is declared set-only with its reason", () => {

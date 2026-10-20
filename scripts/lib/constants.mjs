@@ -1152,10 +1152,10 @@ export const VERB_POSITIONALS = {
 
 export const FLAGLESS_VERBS = [
   "honcho-memory",
-  // epic-session-attribution: `reorder`, `set-active`, `upgrade`, `recover-created-at` and `pop-detour` are NOT
+  // epic-session-attribution: `reorder`, `set-active`, `clear-active`, `upgrade`, `recover-created-at` and `pop-detour` are NOT
   // here any more. Each can change an epic, so each declares `--session` (the `session` row's commands are
   // derived from the effects registry's `epicWriting` marker), and a verb is claimed by exactly one declaration.
-  "clear-active", "set-gate-guard",
+  "set-gate-guard",
   "verify-worktrees", "verify-state", "integrity", "changesets",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to

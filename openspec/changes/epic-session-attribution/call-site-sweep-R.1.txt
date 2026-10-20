@@ -103,3 +103,9 @@ scripts/lib/worktree-hygiene.mjs:166:  // saveState() began stamping it, the las
 
 ## Inverses
 - --session has no "unset": it is an input, not a stored setting. epic.sessions has no clear verb: declared set-only in EPIC_FLAGS (APPEND-ONLY history, design D5); a mistyped identity is a true record of what was typed.
+
+## Gate 2 fix: verbs that change an epic but were not marked (epicWriting)
+- init: its sync(true) registers existing openspec changes and plans as epics, so it changes epics. Now epicWriting (declares --session).
+- clear-active: demotes the epic the active pointer named (status active -> queued). Now epicWriting (declares --session).
+- Derivation is no longer a wording match on `writes`: scripts/test/unit/epic-session-trail.test.mjs requires every mutating non-hook verb to be epicWriting or named in NO_EPIC_CHANGE with a reason, so a new verb fails until classified.
+- render is listed as changing no epic: its only state save is the archived-epic self-heal that hooks also run (hook-wired verbs never stamp, D4a). A manual `render` still runs under PM_SESSION validation; declaring --session there is deliberately not done.

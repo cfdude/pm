@@ -66,6 +66,8 @@ const BASELINE = {
   "remove-epic": () => ["remove-epic", "other"],
   reorder: () => ["reorder", "other", "e1"],
   "set-active": () => ["set-active", "other"],
+  "clear-active": () => ["clear-active"],
+  init: null,
   "set-autonomy": () => ["set-autonomy", "e1", "--level", "off"],
   "push-detour": () => ["push-detour", "e1", "--detour", "other", "--reason", "why", "--no-reconcile"],
   "set-spend-guard": () => ["set-spend-guard", "--max-failed-rounds", "3"],
