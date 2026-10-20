@@ -14181,7 +14181,7 @@
         "363d9603d25b31943e4f177af4e8ae2a6947e13d"
       ],
       "createdAt": "2026-10-14T04:57:23.063Z",
-      "touchedAt": "2026-10-20T11:28:23.001Z",
+      "touchedAt": "2026-10-20T11:43:13.952Z",
       "release": "0.53.0",
       "stories": [
         {
@@ -14234,7 +14234,14 @@
           "lastPassAt": "2026-10-20T11:27:32.900Z"
         }
       },
-      "startedAt": "2026-10-20T05:49:32.901Z"
+      "startedAt": "2026-10-20T05:49:32.901Z",
+      "notes": [
+        {
+          "at": "2026-10-20T11:43:13.948Z",
+          "actor": "agent",
+          "text": "lessons: PROCESS FAILURE: the assertion half went from 15.4 s to about 28 s between two measurements under different load (4.1 ran at load 6-16 with other sessions open); whether that is load or growth is unresolved, so the quiet-machine rerun is owed and carried to pm-overhead-calibration-and-feature-switches. PRACTICE: every overhead figure carries an estimate label until calibrated (3.2). TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and re-recorded. ROUTING OWED: 4.2 outcome to be recorded on store-owns-claude-md-managed-block at 0.54.0 grooming."
+        }
+      ]
     },
     {
       "id": "feature-switches-audit",
@@ -15036,7 +15043,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2153,
+  "revision": 2154,
   "reviewMode": "standard",
   "releases": [
     {
