@@ -4,7 +4,8 @@
 
 import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
-import { UNATTRIBUTED_REASONS, attribute } from "../../lib/spend-attribution.mjs";
+import { KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES } from "../../lib/constants.mjs";
+import { UNATTRIBUTED_REASONS, attribute, resolveMarker } from "../../lib/spend-attribution.mjs";
 import { COST_NOTE, buildReport, renderReport } from "../../lib/spend-report.mjs";
 
 const T = (sec) => new Date(Date.UTC(2026, 9, 9, 10, 0, sec)).toISOString();
@@ -37,7 +38,7 @@ unitTest("4.1 The JSON shape serves the dependent epics: every key the spec name
   }
   assert.deepEqual({ ...e1.totals }, { input: 2, cacheCreation: 20, cacheRead: 200, output: 2000, total: 2 * TOTAL, work: 2022, messages: 2 });
   assert.deepEqual(e1.agents.A, { role: "review", phase: "review", round: 2, tier: "sonnet", totals: e1.agents.A.totals });
-  assert.deepEqual(Object.keys(r.unattributed).sort(), ["byReason", "totals"]);
+  assert.deepEqual(Object.keys(r.unattributed).sort(), ["byReason", "invalidMarkers", "totals"]);
   assert.equal(r.cost.computed, false);
   assert.equal(r.cost.note, COST_NOTE);
 });
@@ -155,4 +156,76 @@ unitTest("1.1 the text totals line names the work total beside the four classes"
   const r = report([row({ messageId: "o1", at: T(10) })]);
   const line = renderReport(r).find((l) => l.startsWith("epic e1:"));
   assert.match(line, /work 1,011/);
+});
+
+// gh-cfdude-pm-242 tasks 1.1-1.3 — an invalid marker is reported with the rejected value and the accepted set.
+const withMarkers = (markers, rows) => buildReport({
+  attributed: attribute(rows, markers, TL, STATE),
+  tracking: { enabled: true, enabledAt: T(0) }, ingest: { ran: true },
+});
+const subRow = (id, agentId, over = {}) => row({ messageId: id, actor: "subagent", agentId, at: T(11), ...over });
+const mk = (role, phase, round = null) => ({ epic: "e1", role, phase, round });
+
+unitTest("1.1 resolveMarker names the first failing field (role, phase, round) and the rejected value", () => {
+  const lists = { epicIds: new Set(["e1"]) };
+  const bad = (m) => resolveMarker(m, lists);
+  assert.deepEqual(bad(mk("architect", "plan")), { ok: false, reason: "invalid-marker", field: "role", value: "architect", accepted: KNOWN_JOB_ROLES });
+  assert.deepEqual(bad(mk("review", "gate-1")), { ok: false, reason: "invalid-marker", field: "phase", value: "gate-1", accepted: KNOWN_SPEND_PHASES });
+  const r = bad(mk("review", "review", "zero"));
+  assert.deepEqual([r.field, r.value], ["round", "zero"]);
+  assert.equal(bad(mk("architect", "gate-1")).field, "role", "role is checked before phase");
+  assert.equal(bad(mk("review", "gate-1", "x")).field, "phase", "phase is checked before round");
+  assert.equal(bad(mk("review", "review")).ok, true);
+});
+
+unitTest("1.2 a rejected phase is one entry with field, value, accepted set, agents and totals", () => {
+  const r = withMarkers({ A: mk("review", "gate-1") }, [subRow("a1", "A"), subRow("a2", "A")]);
+  assert.equal(r.unattributed.invalidMarkers.length, 1);
+  const m = r.unattributed.invalidMarkers[0];
+  assert.deepEqual([m.field, m.value, m.agents], ["phase", "gate-1", 1]);
+  assert.deepEqual(m.accepted, KNOWN_SPEND_PHASES);
+  assert.equal(m.totals.total, 2 * TOTAL);
+  assert.equal(m.totals.work, 2 * 1011);
+});
+
+unitTest("1.2 two dispatches with the same wrong value are one entry; a different value is another", () => {
+  const r = withMarkers({ A: mk("review", "spec"), B: mk("plan", "spec"), C: mk("plan", "gate-1") },
+    [subRow("a", "A"), subRow("b", "B"), subRow("c", "C")]);
+  const byValue = Object.fromEntries(r.unattributed.invalidMarkers.map((m) => [m.value, m]));
+  assert.deepEqual([byValue.spec.agents, byValue["gate-1"].agents], [2, 1]);
+  assert.equal(r.unattributed.invalidMarkers.length, 2);
+});
+
+unitTest("1.2 a rejected role names the job-role list", () => {
+  const r = withMarkers({ A: mk("architect", "plan") }, [subRow("a", "A")]);
+  const m = r.unattributed.invalidMarkers[0];
+  assert.deepEqual([m.field, m.value, m.accepted], ["role", "architect", KNOWN_JOB_ROLES]);
+});
+
+unitTest("1.2 no alias is accepted: phase=spec stays invalid-marker and nothing is attributed as plan", () => {
+  const rows = attribute([subRow("a", "A")], { A: mk("review", "spec") }, TL, STATE);
+  assert.equal(rows[0].reason, "invalid-marker");
+  assert.equal(rows[0].epic, null);
+  assert.notEqual(rows[0].phase, "plan");
+});
+
+unitTest("1.2 a clean ledger has an empty invalidMarkers array", () => {
+  const r = withMarkers({ A: mk("review", "review") }, [subRow("a", "A")]);
+  assert.deepEqual(r.unattributed.invalidMarkers, []);
+  assert.equal(renderReport(r).some((l) => l.includes("invalid pm-spend marker")), false);
+});
+
+unitTest("1.3 the text line names field, value, accepted set, agent count and tokens", () => {
+  const r = withMarkers({ A: mk("review", "gate-1") }, [subRow("a", "A")]);
+  const line = renderReport(r).find((l) => l.includes("invalid pm-spend marker"));
+  assert.equal(line, `invalid pm-spend marker: phase "gate-1" is not one of plan|build|review|docs|release — 1 agents, ${TOTAL.toLocaleString("en-US")} tokens`);
+});
+
+unitTest("1.3 a control character in the value is escaped, never raw, and a long value is truncated and marked", () => {
+  const r = withMarkers({ A: mk("review", "bad\u001b[31mred"), B: mk("review", "x".repeat(200)) }, [subRow("a", "A"), subRow("b", "B")]);
+  const text = renderReport(r).join("\n");
+  assert.equal(text.includes("\u001b"), false);
+  assert.match(text, /x{64}… \(truncated\)/);
+  assert.equal(text.includes("x".repeat(65)), false);
+  assert.equal(r.unattributed.invalidMarkers.find((m) => m.value.startsWith("xxxx")).value.length, 200, "JSON keeps the stored value");
 });

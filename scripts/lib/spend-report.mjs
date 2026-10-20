@@ -50,7 +50,8 @@ export function buildReport({ attributed, tracking, ingest, filters = {} }) {
   const rows = attributed.filter((r) => inWindow(r.at, sinceMs, untilMs));
 
   const epics = {};
-  const unattributed = { totals: emptyTotals(), byReason: Object.fromEntries(UNATTRIBUTED_REASONS.map((k) => [k, emptyTotals()])) };
+  const unattributed = { totals: emptyTotals(), byReason: Object.fromEntries(UNATTRIBUTED_REASONS.map((k) => [k, emptyTotals()])), invalidMarkers: [] };
+  const invalidGroups = new Map();
   let attributedTokens = 0, grand = 0;
 
   for (const r of rows) {
@@ -58,6 +59,14 @@ export function buildReport({ attributed, tracking, ingest, filters = {} }) {
     if (r.epic === null || r.epic === undefined) {
       addTo(unattributed.totals, r);
       addTo(bucket(unattributed.byReason, r.reason || "unknown-epic"), r);
+      if (r.reason === "invalid-marker" && r.invalid) {
+        // One entry per (field, value) (gh-cfdude-pm-242 D3): 40 dispatches with phase=spec are one line.
+        const key = JSON.stringify([r.invalid.field, r.invalid.value]);
+        const g = invalidGroups.get(key) || { field: r.invalid.field, value: r.invalid.value, accepted: [...r.invalid.accepted], agentIds: new Set(), totals: emptyTotals() };
+        if (r.agentId) g.agentIds.add(r.agentId);
+        addTo(g.totals, r);
+        invalidGroups.set(key, g);
+      }
       continue;
     }
     attributedTokens += rowTotal(r);
@@ -80,6 +89,11 @@ export function buildReport({ attributed, tracking, ingest, filters = {} }) {
       a._byTier[r.tier] = (a._byTier[r.tier] || 0) + rowTotal(r);
     }
   }
+  // Largest first, ties by field then value, so two runs over the same ledger print the same order.
+  unattributed.invalidMarkers = [...invalidGroups.values()]
+    .map((g) => ({ field: g.field, value: g.value, accepted: g.accepted, agents: g.agentIds.size, totals: g.totals }))
+    .sort((x, y) => (x.totals.total < y.totals.total ? 1 : x.totals.total > y.totals.total ? -1
+      : (x.field + String(x.value) < y.field + String(y.value) ? -1 : 1)));
   // An agent's `tier` is the tier that carried most of its tokens (one agent can switch model).
   for (const e of Object.values(epics)) {
     for (const a of Object.values(e.agents)) {
@@ -101,6 +115,8 @@ export function buildReport({ attributed, tracking, ingest, filters = {} }) {
 // ───────────────────────────── the text rendering ─────────────────────────────
 
 const n = (v) => v.toLocaleString("en-US");
+/** A marker value is agent-written text of any length; the text report shows this many characters. */
+const INVALID_VALUE_MAX = 64;
 const parts = (t) => `input ${n(t.input)} · cache-write ${n(t.cacheCreation)} · cache-read ${n(t.cacheRead)} · output ${n(t.output)} · work ${n(t.work)}`;
 // Largest first, ties by key. A three-way comparison and not a subtraction: conductor-13 forbids a second
 // place that subtracts `.total`, because that is how outstanding-work arithmetic forks.
@@ -132,6 +148,15 @@ export function renderReport(report, { ingestLines = [] } = {}) {
   const u = report.unattributed;
   lines.push("", `unattributed: ${n(u.totals.total)} tokens in ${n(u.totals.messages)} messages` +
     `  (${UNATTRIBUTED_REASONS.map((k) => `${k} ${n(u.byReason[k].total)}`).join(" · ")})`);
+  for (const m of u.invalidMarkers || []) {
+    const shown = String(m.value);
+    const chars = [...shown];
+    const head = chars.slice(0, INVALID_VALUE_MAX).join("");
+    const accepted = m.accepted.join("|");
+    const value = chars.length > INVALID_VALUE_MAX ? `${escapeControls(head)}… (truncated)` : shown;
+    const expect = m.field === "round" ? "is not a positive integer" : `is not one of ${escapeControls(accepted)}`;
+    lines.push(`invalid pm-spend marker: ${m.field} "${value}" ${expect} — ${n(m.agents)} agents, ${n(m.totals.total)} tokens`);
+  }
   const c = report.coverage;
   lines.push(`coverage: ${c.share === null ? "n/a (no spend in this window)" : `${(c.share * 100).toFixed(1)}%`} of ${n(c.total)} tokens attributed to an epic`);
   lines.push(`cost: ${report.cost.note}`);

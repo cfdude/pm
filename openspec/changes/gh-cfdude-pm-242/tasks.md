@@ -23,16 +23,16 @@
 
 ## 1. The invalid-marker report
 
-- [ ] 1.1 TDD (UNIT): make `resolveMarker()`'s validity check return the first failing field (`role`, `phase`, `round`)
+- [x] 1.1 TDD (UNIT): make `resolveMarker()`'s validity check return the first failing field (`role`, `phase`, `round`)
       and the rejected value, reading the accepted sets from `KNOWN_JOB_ROLES` and `KNOWN_SPEND_PHASES`
       (design D2). Every existing attribution test stays green; the `reason` stays `invalid-marker`.
-- [ ] 1.2 TDD (UNIT): group invalid markers by `(field, value)` into `unattributed.invalidMarkers`
+- [x] 1.2 TDD (UNIT): group invalid markers by `(field, value)` into `unattributed.invalidMarkers`
       (`field`, `value`, `accepted`, `agents`, `totals`); empty array on a clean ledger. Cover every
       scenario in the spec, including "No alias is accepted".
-- [ ] 1.3 TDD (UNIT): the text line `invalid pm-spend marker: <field> "<value>" is not one of <set> — <n> agents, <t> tokens`,
+- [x] 1.3 TDD (UNIT): the text line `invalid pm-spend marker: <field> "<value>" is not one of <set> — <n> agents, <t> tokens`,
       values through `escapeControls`, truncated at 64 characters with the truncation marked (design
       Risks). No line on a clean ledger.
-- [ ] 1.4 `commands/spend.md`: document the line and the JSON key; changeset fragment
+- [x] 1.4 `commands/spend.md`: document the line and the JSON key; changeset fragment
       `.changesets/gh-cfdude-pm-242.md`. Verify `node scripts/conductor.mjs changesets` lists it.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)

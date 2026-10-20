@@ -66,13 +66,22 @@ export function activeAt(entries, t) {
   return seen ? { active } : { before: true };
 }
 
+/** What a `round` must be: not a list, so the one-element description both report forms print. */
+export const ROUND_ACCEPTED = Object.freeze(["positive integer"]);
+
 /** Validate a stored marker against the CURRENT lists and state. `roles` and `phases` default to the
  *  constants and are parameters so a role added to KNOWN_JOB_ROLES is accepted with no ledger change. */
 export function resolveMarker(marker, { epicIds, roles = KNOWN_JOB_ROLES, phases = KNOWN_SPEND_PHASES }) {
   if (!marker || typeof marker !== "object") return { ok: false, reason: "unmarked-subagent" };
   const { epic, role, phase } = marker;
   const roundText = marker.round === null || marker.round === undefined ? "1" : String(marker.round);
-  if (!roles.includes(role) || !phases.includes(phase) || !/^[1-9][0-9]*$/.test(roundText)) return { ok: false, reason: "invalid-marker" };
+  // The FIRST failing field in the fixed order role, phase, round (gh-cfdude-pm-242 D1) is carried out with
+  // the rejected value and the accepted set, read from the lists the check itself uses (D2). Validation
+  // stays strict: no alias is mapped, so `reason` is still `invalid-marker` and nothing is attributed.
+  const invalid = (field, value, accepted) => ({ ok: false, reason: "invalid-marker", field, value: value === undefined ? null : value, accepted });
+  if (!roles.includes(role)) return invalid("role", role, roles);
+  if (!phases.includes(phase)) return invalid("phase", phase, phases);
+  if (!/^[1-9][0-9]*$/.test(roundText)) return invalid("round", marker.round, ROUND_ACCEPTED);
   if (typeof epic !== "string" || !epicIds.has(epic)) return { ok: false, reason: "unknown-epic" };
   return { ok: true, epic, role, phase, round: Number(roundText) };
 }
@@ -94,7 +103,11 @@ export function attribute(rows, markers, timeline, state, opts = {}) {
     if (r.actor === "subagent") {
       const m = markers && r.agentId ? markers[r.agentId] : undefined;
       const resolved = resolveMarker(m, lists);
-      if (!resolved.ok) return unattributed(r, resolved.reason);
+      if (!resolved.ok) {
+        const row = unattributed(r, resolved.reason);
+        // Only an invalid marker carries the field that failed; the report groups on it at read time.
+        return resolved.field ? { ...row, invalid: { field: resolved.field, value: resolved.value, accepted: resolved.accepted } } : row;
+      }
       return { ...r, epic: resolved.epic, role: resolved.role, phase: resolved.phase, round: resolved.round, attribution: "marker", reason: null };
     }
     const at = activeAt(entries, t);

@@ -84,6 +84,21 @@ The engine reads the first such line of a sub-agent's first user entry, once, an
 tokens. A marker naming a role or phase outside those lists, or a round that is not a positive
 integer, is `invalid-marker`; one naming an epic that is not registered (now) is `unknown-epic`.
 
+Validation is strict and no alias is accepted: `phase=spec` is not read as `plan`, because a guessed
+attribution is worse than a legible refusal. The report names what it refused. For every distinct
+`(field, value)` that made a marker invalid (the first failing field in the order `role`, `phase`,
+`round`) it prints one line, after the `unattributed:` line and only when there is one:
+
+```
+invalid pm-spend marker: phase "gate-1" is not one of plan|build|review|docs|release — 3 agents, 1,204,331 tokens
+```
+
+`--json` carries the same as `unattributed.invalidMarkers`, an array of `{field, value, accepted, agents,
+totals}` (empty on a clean ledger). The accepted set is read from the constants the check uses. Values are
+escaped, and the text form shows at most 64 characters of one, marked `… (truncated)`; `--json` keeps the
+stored value. Markers are stored raw and attributed at read time, so correcting the vocabulary
+re-attributes the rows with no re-ingest.
+
 ## The report
 
 `spend` ingests (unless `--no-ingest`, tracking is off, or the main tree's HEAD is detached), then

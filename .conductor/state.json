@@ -13936,10 +13936,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/251",
       "externalUpdatedAt": "2026-10-15T17:22:12Z",
       "attributedCommits": [
-        "b8550a2c20be6e62b58d1085ebba80e97e98ba57"
+        "b8550a2c20be6e62b58d1085ebba80e97e98ba57",
+        "360389ad9a2ba03e753b0325c2d59457148e6cf2"
       ],
       "createdAt": "2026-10-17T12:41:42.610Z",
-      "touchedAt": "2026-10-20T06:07:49.990Z",
+      "touchedAt": "2026-10-20T06:44:38.487Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:43.405Z",
@@ -14180,7 +14181,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2086,
+  "revision": 2087,
   "reviewMode": "standard",
   "releases": [
     {

@@ -1,0 +1,48 @@
+# R.1 call-site sweep (gh-cfdude-pm-242)
+
+## rg -n "invalid-marker" scripts/ commands/ skills/ (non-test)
+scripts/lib/spend-report.mjs:62:      if (r.reason === "invalid-marker" && r.invalid) {
+scripts/lib/spend-attribution.mjs:24:  "tracking-off", "unmarked-subagent", "invalid-marker", "unknown-epic", "no-active-epic", "before-timeline",
+scripts/lib/spend-attribution.mjs:80:  // stays strict: no alias is mapped, so `reason` is still `invalid-marker` and nothing is attributed.
+scripts/lib/spend-attribution.mjs:81:  const invalid = (field, value, accepted) => ({ ok: false, reason: "invalid-marker", field, value: value === undefined ? null : valu
+commands/spend.md:64:   `invalid-marker`, `unknown-epic`, `no-active-epic`, `before-timeline`.
+commands/spend.md:85:integer, is `invalid-marker`; one naming an epic that is not registered (now) is `unknown-epic`.
+
+## rg -n "KNOWN_SPEND_PHASES|KNOWN_JOB_ROLES" scripts/lib
+scripts/lib/execution-profile.mjs:7:  DEFAULT_ROLE_MODELS, KNOWN_EFFORTS, KNOWN_JOB_ROLES, KNOWN_LANES, KNOWN_MODELS, KNOWN_REVIEW_MODES, KNOWN_VERBOSITY_LEVELS,
+scripts/lib/execution-profile.mjs:26:  return KNOWN_JOB_ROLES.includes(text)
+scripts/lib/execution-profile.mjs:28:    : { ok: false, message: `job role '${escapeControls(String(text))}' is not one of ${KNOWN_JOB_ROLES.join("|")}` };
+scripts/lib/execution-profile.mjs:57:    return { ok: false, message: `model '${escapeControls(String(s))}' must be <role>=<model>[:<effort>], role one of ${KNOWN_JOB_ROL
+scripts/lib/execution-profile.mjs:76:  return { ok: false, message: `unset field '${escapeControls(String(s))}' is not one of review|verbosity|model|model:<role> (role on
+scripts/lib/execution-profile.mjs:136:  for (const role of KNOWN_JOB_ROLES) {
+scripts/lib/execution-profile.mjs:197:    const names = u.field === "model" && !u.role ? KNOWN_JOB_ROLES.map((r) => `model:${r}`) : [u.field === "model" ? `model:${u.role
+scripts/lib/execution-profile.mjs:232:  for (const role of KNOWN_JOB_ROLES) {
+scripts/lib/execution-profile.mjs:285:  for (const role of KNOWN_JOB_ROLES) {
+scripts/lib/execution-profile.mjs:290:    ...KNOWN_JOB_ROLES.map((role) => [`model ${role}`, profile.model[role]])];
+scripts/lib/execution-profile.mjs:398:    for (const role of KNOWN_JOB_ROLES) push(epic, layer, `model.${role}`, pairText(x.model[role]), pairText(y.model[role]));
+scripts/lib/execution-profile.mjs:428:    for (const role of KNOWN_JOB_ROLES) {
+scripts/lib/execution-profile.mjs:473:  for (const role of KNOWN_JOB_ROLES) {
+scripts/lib/spend-attribution.mjs:20:import { KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES } from "./constants.mjs";
+scripts/lib/spend-attribution.mjs:73: *  constants and are parameters so a role added to KNOWN_JOB_ROLES is accepted with no ledger change. */
+scripts/lib/spend-attribution.mjs:74:export function resolveMarker(marker, { epicIds, roles = KNOWN_JOB_ROLES, phases = KNOWN_SPEND_PHASES }) {
+scripts/lib/spend-attribution.mjs:96:  const lists = { epicIds, roles: opts.roles || KNOWN_JOB_ROLES, phases: opts.phases || KNOWN_SPEND_PHASES };
+scripts/lib/rules.mjs:25:  DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
+scripts/lib/rules.mjs:671: *  rendered from the constants, never typed here, so a role added to KNOWN_JOB_ROLES appears at once.
+scripts/lib/rules.mjs:686:    `- \`role\` — one of ${KNOWN_JOB_ROLES.map((r) => `\`${r}\``).join(", ")} (the job roles the execution profile uses).`,
+scripts/lib/rules.mjs:687:    `- \`phase\` — one of ${KNOWN_SPEND_PHASES.map((p) => `\`${p}\``).join(", ")}.`,
+scripts/lib/rules.mjs:715:  const roleDefaults = KNOWN_JOB_ROLES.map((r) => `${r} ${modelText(DEFAULT_ROLE_MODELS[r])}`).join(", ");
+scripts/lib/rules.mjs:869:    `**Before dispatching a job** (${KNOWN_JOB_ROLES.join(", ")}), resolve the active epic's`,
+scripts/lib/constants.mjs:396:export const KNOWN_JOB_ROLES = ["plan", "implement", "test", "review", "mechanical", "rudimentary"];
+scripts/lib/constants.mjs:726:    requires: `a job role (${KNOWN_JOB_ROLES.join("|")})`, placeholder: KNOWN_JOB_ROLES.join("|") },
+scripts/lib/constants.mjs:1559: *  closed list from KNOWN_JOB_ROLES on purpose: a role says what an agent IS (it picks a model), a phase
+scripts/lib/constants.mjs:1561:export const KNOWN_SPEND_PHASES = ["plan", "build", "review", "docs", "release"];
+
+## Where the reason is produced, counted or printed, and whether it now names the value
+- PRODUCED: scripts/lib/spend-attribution.mjs resolveMarker() (one place). It now returns {field,value,accepted} for the FIRST failing field (role, phase, round); accepted is the roles/phases list the check itself used (lists are parameters defaulting to the constants), so the message cannot drift from the check.
+- CARRIED: attribute() puts {invalid:{field,value,accepted}} on an invalid-marker row only.
+- COUNTED: scripts/lib/spend-report.mjs buildReport() byReason (unchanged) and the new unattributed.invalidMarkers grouping by (field,value).
+- PRINTED: renderReport() prints the unattributed line (unchanged) plus one invalid-marker line per group. `spend` is the only printer.
+- spend-guard: ledgerRounds() reads attributed rows and ignores unattributed ones; it prints nothing about invalid markers, deliberately (the guard signal is review rounds; the rules block already lists the accepted phases). Not changed, justified.
+- integrity: does not read the ledger (rg above shows no hit). Not changed.
+
+## Inverse: this change adds a report section, not a write; no inverse is owed.
