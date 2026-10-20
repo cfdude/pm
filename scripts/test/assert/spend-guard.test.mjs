@@ -327,6 +327,20 @@ test("gh-251 A basis change sets the override aside and the text says which basi
   assert.match(out, /tokens: ok — 700 work attributed/, "no baseline was subtracted from the work count");
 });
 
+test("gh-251 An override recorded under a work basis stores that basis and is not set aside while the basis is unchanged", () => {
+  const sc = workScene(1000);
+  ledger(sc, classRows({ input: 100, cacheCreation: 300, output: 600, cacheRead: 9000 }));
+  assert.equal(guard(sc, "--no-ingest").status, 2, "tripped on work tokens");
+  const ov = invokeEngine(["override-spend-guard", "e1", "--signal", "tokens", "--escalated-to", "opus", "--reason", "x"], sc.opts);
+  assert.equal(ov.status, 0, ov.stderr);
+  const stored = stateOf(sc.cwd).epics[0].spendGuardOverrides;
+  assert.equal(stored.length, 1);
+  assert.deepEqual([stored[0].signal, stored[0].basis, stored[0].baseline], ["tokens", "work", 1000]);
+  const r = guard(sc, "--no-ingest");
+  assert.equal(r.status, 0, "the work baseline applies: 1000 - 1000 is under the ceiling");
+  assert.doesNotMatch(r.stdout, /set aside/);
+});
+
 test("4.1 --no-ingest performs no ingest: a transcript that grew is not read", () => {
   const sc = scene({ on: true, limit: null, tokens: 1000 });
   const proj = path.join(sc.cfg, "projects");
