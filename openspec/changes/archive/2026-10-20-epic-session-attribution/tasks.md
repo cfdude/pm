@@ -70,5 +70,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs if a docs commit was attributed. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic epic-session-attribution --status archived --outcome delivered --reason "<why>" --declined-deferral "linking a named session to a transcript sessionId:pm cannot observe the mapping; a later change may record it when the agent supplies both"`, then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive epic-session-attribution`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic epic-session-attribution --status archived --outcome delivered --reason "<why>" --declined-deferral "linking a named session to a transcript sessionId:pm cannot observe the mapping; a later change may record it when the agent supplies both"`, then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive epic-session-attribution`. Not attributed.

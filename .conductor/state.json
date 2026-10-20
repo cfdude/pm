@@ -2718,7 +2718,7 @@
       "id": "epic-session-attribution",
       "title": "Record which session did the work on an epic (opaque agent-supplied identity, append-only trail)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -2748,7 +2748,7 @@
           "text": "lessons: PROCESS FAILURE: the epicWriting guard test derived its verb set from a word match on the writes text and missed init and clear-active; fixed at Gate 2 by requiring every mutating non-hook verb to be epicWriting or named in NO_EPIC_CHANGE with a reason. PROCESS FAILURE: two agents disagreed about what had shipped until re-verified against HEAD (verify before acting). TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and re-recorded."
         }
       ],
-      "touchedAt": "2026-10-20T11:36:05.849Z",
+      "touchedAt": "2026-10-20T11:38:09.090Z",
       "release": "0.53.0",
       "attributedCommits": [
         "14fbe99c32af9262aeb7b936cfd59d3f191203d4",
@@ -2804,7 +2804,29 @@
           "lastVerdictAt": "2026-10-20T11:27:32.096Z",
           "lastPassAt": "2026-10-20T11:27:32.096Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:38:09.086Z",
+        "reason": "Every epic-writing verb accepts --session and the save stamps an append-only epic.sessions trail on non-hook verbs; built in rc/0.53.0 as 14fbe99c eb0ffcbf ae37b7d8, converged Gate 2 at 8c4b1c78. Outstanding: D.1 README and Mintlify, moved to release-0-53-0-cut",
+        "carriedTo": "release-0-53-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:38:09.072Z",
+        "deferrals": [
+          {
+            "epic": "release-0-53-0-cut",
+            "section": "README line under the epic record and Mintlify epic page (task D.1)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "linking a named session to a transcript sessionId",
+            "reason": "pm cannot observe the mapping; a later change may record it when the agent supplies both"
+          }
+        ]
+      },
+      "completedAt": "2026-10-20T11:38:09.086Z"
     },
     {
       "id": "cross-session-epic-assignment",
@@ -14937,7 +14959,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2147,
+  "revision": 2148,
   "reviewMode": "standard",
   "releases": [
     {
