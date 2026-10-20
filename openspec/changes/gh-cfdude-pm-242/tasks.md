@@ -14,11 +14,11 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`, one fresh-context reviewer) over `proposal.md`, `design.md`,
+- [x] 0.1 **Gate 1** (review `standard`, one fresh-context reviewer) over `proposal.md`, `design.md`, (Gate 1 pass recorded 2026-10-20)
       `specs/spend-ledger/spec.md` and this file. Fix Critical and Important findings, re-run
       `openspec validate gh-cfdude-pm-242 --strict` (read its exit status; never pipe it through
       `tail`), then `record-gate-review gh-cfdude-pm-242 --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (required item 5) is release-scoped and covers this
+- [x] 0.2 **Cross-spec review of release 0.53.0** (required item 5) is release-scoped and covers this (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       change's spec. Do not apply before `release show 0.53.0` shows a current passing verdict.
 
 ## 1. The invalid-marker report
@@ -44,16 +44,16 @@
       Inverse: this change adds a report section, not a write; state that no inverse is owed.
 - [x] R.2 **Verify against the commit** (item 2). For every task, `git show --stat <sha>` and assert every
       claimed file is in THAT commit.
-- [ ] R.3 **Lifecycle marker** (item 3). `rg -n "pm:lifecycle" <this file>` lists C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3). `rg -n "pm:lifecycle" <this file>` lists C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4), in landing order. Never the archive move (C.3).
-- [ ] R.5 Cross-spec review (item 5). Satisfied by 0.2.
-- [ ] R.6 Disposition (item 6). Satisfied by C.2.
-- [ ] R.7 **Route what the work taught you** (item 7): practice, tooling friction or process failure,
+- [x] R.5 Cross-spec review (item 5). Satisfied by 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6). Satisfied by C.2. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7): practice, tooling friction or process failure, (practice and tooling friction named in epic notes)
       each named with its evidence. "None" says what was looked at.
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over the full `BASE..HEAD` diff (or the converged `rc/0.53.0` review): spec
+- [x] G.1 **Gate 2** over the full `BASE..HEAD` diff (or the converged `rc/0.53.0` review): spec (converged Gate 2 recorded at 8c4b1c78)
       alignment, tests passing, the accepted set read from the constants, strictness unchanged. Record
       with `--base-sha`/`--head-sha` where the head reaches every attributed commit.
 
@@ -64,6 +64,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs if a docs commit was attributed. Re-record, never withdraw.
+- [x] C.1 Re-record Gate 2 after docs if a docs commit was attributed. Re-record, never withdraw. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic gh-cfdude-pm-242 --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive gh-cfdude-pm-242`. The archive-move commit is NOT attributed.
