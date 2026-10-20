@@ -3251,7 +3251,7 @@
       "id": "dehardcode-openspec-change-root-in-instructions",
       "title": "Instruction text hardcodes openspec/changes/<id>/ in 4 locations across 3 files — agents/reconciler.md:20, agents/reconciler.md:22, skills/conductor/SKILL.md:328, commands/status.md:19. Phrase as 'the change root as OpenSpec resolves it'. NOTE: the page's original citation of scripts/lib/rules.mjs:129 is WRONG at 0.25.0 (that line holds no path literal) — do not edit it",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -3290,7 +3290,7 @@
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-10-20T11:30:54.065Z",
+      "touchedAt": "2026-10-20T11:33:39.377Z",
       "release": "0.53.0",
       "attributedCommits": [
         "0a58b202ff877649e72ad2f2e6f3129d4f23af82"
@@ -3344,7 +3344,24 @@
           "lastVerdictAt": "2026-10-20T11:27:31.295Z",
           "lastPassAt": "2026-10-20T11:27:31.295Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:33:39.373Z",
+        "reason": "Hardcoded openspec/changes paths in emitted instructions, commands, agents, skills and README rewritten to the change root as OpenSpec resolves it, with a sweep test deriving its population; built in rc/0.53.0 as 0a58b202, converged Gate 2 at 8c4b1c78. Outstanding: D.1 Mintlify pages, moved to release-0-53-0-cut",
+        "carriedTo": "release-0-53-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:33:39.359Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "engine path handling and printed messages",
+            "reason": "the engine reads openspec/changes/ itself, so naming it is true; following changeRoot in the engine is a relocation feature"
+          }
+        ]
+      },
+      "completedAt": "2026-10-20T11:33:39.373Z"
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -14869,7 +14886,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2141,
+  "revision": 2142,
   "reviewMode": "standard",
   "releases": [
     {

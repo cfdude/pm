@@ -62,5 +62,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs if a docs commit was attributed. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic dehardcode-openspec-change-root-in-instructions --status archived --outcome delivered --reason "<why>" --declined-deferral "engine path handling and printed messages:the engine reads openspec/changes/ itself, so naming it is true; following changeRoot in the engine is a relocation feature"`, then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive dehardcode-openspec-change-root-in-instructions`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic dehardcode-openspec-change-root-in-instructions --status archived --outcome delivered --reason "<why>" --declined-deferral "engine path handling and printed messages:the engine reads openspec/changes/ itself, so naming it is true; following changeRoot in the engine is a relocation feature"`, then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive dehardcode-openspec-change-root-in-instructions`. Not attributed.
