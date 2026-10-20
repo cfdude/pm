@@ -26,11 +26,11 @@
 
 ## 1. The audit
 
-- [ ] 1.1 Run `overhead --all-features` at the head that holds `pm-overhead-baseline` and
+- [x] 1.1 Run `overhead --all-features` at the head that holds `pm-overhead-baseline` and
       `developer-session-log`; write `docs/measurement/2026-10-feature-switch-audit.md` with one row per
       surface id (design D0): feature, cost, conditional or not, decision and reason. Zero switches is a
       valid outcome.
-- [ ] 1.2 TDD (FILE): the README table check (design D5), with the table written from 1.1, including the
+- [x] 1.2 TDD (FILE): the README table check (design D5), with the table written from 1.1, including the
       `set-spend-tracking on` row and the listings' `no switch` row.
 
 ## 2. Switches the audit justified (one task per switch; none if 1.1 adds none)
@@ -46,17 +46,17 @@
       `upgrade` `on (default)` line (design D3), `overhead` reporting 0 bytes when off, `CLAUDE.md` refreshed
       on toggle; its command doc and parity-ledger claim in the same commit. Name each switch as a sub-task
       (2.1a, 2.1b, …) when it is added.
-- [ ] 2.2 Changeset fragment `.changesets/feature-switches-audit.md`.
+- [x] 2.2 Changeset fragment `.changesets/feature-switches-audit.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). For each new switch: `rg -n "<section heading>" scripts/lib`
+- [x] R.1 **Call-site completeness sweep** (item 1). For each new switch: `rg -n "<section heading>" scripts/lib`
       lists every emitter of its text (rules block, brief, hooks, command docs) and each is gated or
       justified. `rg -n "OPT_INS" scripts/lib`: every registry reader handles a default-on row. Inverse:
       on ↔ off for each switch; state that no switch ships without both. Save as `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2.
 - [ ] R.7 **Route what the work taught you** (item 7). Hand 1.1's numbers to the 0.54.0 rules-block budget

@@ -13834,9 +13834,11 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-13. Not every feature needs an on/off switch, but not everyone needs e.g. the EDD harness. Audit each feature's per-session token cost (rules-block text, brief lines, hook injections, skills and commands listed) using pm-overhead-baseline's numbers, add a switch only where cost justifies, register each in the OPT_INS registry so /pm:upgrade lists the unadopted ones, and document the switches in the README (including 'turn spend tracking on here' with the real verb, set-spend-tracking on). Spend tracking stays OFF by default: a developer feature that costs tokens itself.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "b4e7816ba574df0f91ccbba193b26ffc787c7691"
+      ],
       "createdAt": "2026-10-14T04:57:23.886Z",
-      "touchedAt": "2026-10-14T04:57:26.302Z",
+      "touchedAt": "2026-10-20T08:59:46.767Z",
       "release": "0.53.0"
     },
     {
@@ -14199,7 +14201,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2097,
+  "revision": 2098,
   "reviewMode": "standard",
   "releases": [
     {
