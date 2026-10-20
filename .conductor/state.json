@@ -13906,7 +13906,7 @@
       "id": "spend-guard-rules-section-follows-live-limits",
       "title": "The rules block's Spend guard section follows whether a limit is live, through archive, remove and un-archive",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -13923,7 +13923,7 @@
         "72d4700edcb9ff89309f57daddaba9813211cf30"
       ],
       "createdAt": "2026-10-14T03:55:59.065Z",
-      "touchedAt": "2026-10-20T11:30:53.127Z",
+      "touchedAt": "2026-10-20T11:31:47.350Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -14011,7 +14011,18 @@
           "lastVerdictAt": "2026-10-20T11:27:30.515Z",
           "lastPassAt": "2026-10-20T11:27:30.515Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:31:47.347Z",
+        "reason": "Rules-block Spend guard section now follows live limits through archive, remove and un-archive; built and merged in rc/0.53.0 as c51c99be and 72d4700e, converged Gate 2 at 8c4b1c78"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:31:47.328Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T11:31:47.347Z"
     },
     {
       "id": "release-0-52-0-cut",
@@ -14858,7 +14869,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2140,
+  "revision": 2141,
   "reviewMode": "standard",
   "releases": [
     {

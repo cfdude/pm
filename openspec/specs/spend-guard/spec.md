@@ -422,14 +422,12 @@ text.
 ### Requirement: The rules block carries a Spend guard section only while a limit is configured
 
 While a limit is configured (opt-in requirement), the rules block SHALL carry a `## Spend guard`
-section after the `## Spend tracking` slot, telling the agent to:
-
-- run `spend-guard <epic>` before every review or fix dispatch
-- treat exit 2 as a STOP autonomy does not bypass, and escalate
-- record the decision with `override-spend-guard`, which no autonomy grant covers
-- mark review dispatches `phase=review round=<n>`
-
-With no limit, there is no such section.
+section after the `## Spend tracking` slot, telling the agent to run `spend-guard <epic>` before every
+review or fix dispatch, to treat exit 2 as a STOP autonomy does not bypass and escalate, to record the
+decision with `override-spend-guard`, which no autonomy grant covers, and to mark review dispatches
+`phase=review round=<n>`. With no limit there is no such section. A non-hook verb whose state write
+changes whether a limit is configured SHALL refresh the block. A hook verb (one `hooks/hooks.json`
+invokes) SHALL do no liveness comparison and no refresh.
 
 #### Scenario: A configured limit adds the section
 
@@ -446,6 +444,43 @@ With no limit, there is no such section.
 
 - **WHEN** the only guard field set anywhere is `warnAt`
 - **THEN** the rules block contains no `## Spend guard` section
+
+#### Scenario: Archiving the only epic holding a limit removes the section
+
+- **WHEN** epic E holds the only configured limit (`--epic E --max-failed-rounds 2`)
+- **AND** `update-epic E --status archived --outcome abandoned --reason "x" --no-deferrals` runs
+- **THEN** `CLAUDE.md`'s managed block on disk contains no `## Spend guard` section
+
+#### Scenario: Removing the only epic holding a limit removes the section
+
+- **WHEN** epic E holds the only configured limit and `remove-epic E` runs
+- **THEN** `CLAUDE.md`'s managed block on disk contains no `## Spend guard` section
+
+#### Scenario: Un-archiving restores the section
+
+- **WHEN** archived epic E holds `--epic E --max-failed-rounds 2`, no other limit exists, and `update-epic E --status untriaged` runs
+- **THEN** `CLAUDE.md`'s managed block on disk contains `## Spend guard`
+
+#### Scenario: A write that leaves liveness unchanged does not rewrite CLAUDE.md
+
+- **WHEN** a project-layer limit is configured and `update-epic E --notes "x"` runs
+- **THEN** `CLAUDE.md` is byte-identical to before and its mtime is unchanged
+
+#### Scenario: A refused invocation refreshes nothing
+
+- **WHEN** `update-epic E --status archived` is refused for a missing outcome
+- **THEN** `CLAUDE.md` is byte-identical to before
+
+#### Scenario: A hook does no liveness comparison
+
+- **WHEN** the SessionStart, PreCompact, PostToolUse or PreToolUse hook runs, including a `commit-nudge` whose archive self-heal saves state
+- **THEN** no after-image of `state.json` is read for the guard and `CLAUDE.md` is byte-identical to before
+- **AND** the next non-hook verb that writes state refreshes the block if liveness differs from what the block shows
+
+#### Scenario: A refresh failure does not fail the write
+
+- **WHEN** archiving E changes liveness and `CLAUDE.md` cannot be written
+- **THEN** the archive is recorded, the verb exits with its own status, and a warning names `write-rules` as the remedy
 
 ### Requirement: An override records the escalation and re-arms the guard from the current count
 

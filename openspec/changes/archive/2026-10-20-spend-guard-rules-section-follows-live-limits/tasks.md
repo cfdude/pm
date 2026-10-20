@@ -67,5 +67,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 if anything was attributed after it. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic spend-guard-rules-section-follows-live-limits --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive spend-guard-rules-section-follows-live-limits`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic spend-guard-rules-section-follows-live-limits --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive spend-guard-rules-section-follows-live-limits`. Not attributed.
