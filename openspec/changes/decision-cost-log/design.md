@@ -35,7 +35,8 @@ from the ledger; the postmortem shows it.
 - **D5 — Numbering is per epic, 1-based, never reused**, so `--withdraw <n>` cannot hit a different
   decision after a later append.
 - **D6 — This capability owns the postmortem section** inside `spend-analysis --epic <id>`. The analysis
-  spec does not mention decisions; this spec does, so one change owns that output.
+  spec only reserves the `decisions` JSON key and defers its content to this capability; every
+  requirement on that section's behaviour lives here, so one change owns that output.
 
 ## Risks / Trade-offs
 
