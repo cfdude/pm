@@ -23,8 +23,10 @@ import { die } from "./command-exit.mjs";
 import { escapeControls } from "./constants.mjs";
 import { mainTreeDetached, resolveMainTree } from "./spend-tree.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
+import { buildReport, hookVerbs, readListings } from "./overhead.mjs";
+import { matchableLessons } from "./lessons.mjs";
 
-export const DEVLOG_FILE = "devlog.jsonl";
+export { DEVLOG_FILE } from "./dev-log-capture.mjs";
 
 /** Is the developer log on in this record? Absent reads as off. The ONE predicate; `isSet` of the opt-in row,
  *  ingest and the reports all ask it. */
@@ -69,4 +71,36 @@ export function setDevLog() {
       : " — nothing further is captured. What was already recorded is kept; `dev-log --clear --yes` removes it."}`,
     unchanged: `conductor: the developer log was already ${arg} — ${STATE_UNCHANGED}`,
   });
+}
+
+// ───────────────────────────── the features snapshot ─────────────────────────────
+
+/** Surfaces whose size follows the record's HISTORY rather than the configuration: they would append a snapshot to
+ *  nearly every ingest of an active repository. `overhead` reports them live; the snapshot omits them. */
+export const VOLATILE_SURFACES = Object.freeze(["brief", "snapshot"]);
+
+/** Which pm features were on, and what each costs, as of now: each feature's `on` and unconditional bytes, and
+ *  the per-surface bytes, all as `overhead` computes them (never an OPT_INS row's `isSet`). Reads the plugin's own
+ *  files, so it runs only while the log is on. */
+export function featuresSnapshot(state) {
+  let lessons = [];
+  try { lessons = matchableLessons().map((l) => ({ rule: l.rule, file: l.file })); } catch { /* no corpus is no lesson */ }
+  const report = buildReport(state, { listings: readListings(), hooks: hookVerbs(), lessons });
+  const stable = report.surfaces.filter((s) => !VOLATILE_SURFACES.includes(s.id) && s.bytes !== null);
+  const surfaces = Object.fromEntries(stable.map((s) => [s.id, s.bytes]));
+  const features = {};
+  for (const [id, f] of Object.entries(report.features)) {
+    const own = stable.filter((s) => s.feature === id && !s.conditional && !s.perDispatch);
+    features[id] = { on: f.on, bytes: own.reduce((a, s) => a + s.bytes, 0) };
+  }
+  return { features, surfaces };
+}
+
+/** The `devLog` option `ingest` takes: `{ enabledAtMs, snapshot }` when BOTH switches are on in the MAIN tree's
+ *  state, else null. The ONE place that decides, so every caller of `ingestForReport` captures or none does. */
+export function devLogOptions(state) {
+  if (!devLogEnabled(state) || !spendEnabled(state)) return null;
+  const enabledAtMs = Date.parse(state.devLog.enabledAt);
+  if (!Number.isFinite(enabledAtMs)) return null;
+  return { enabledAtMs, snapshot: () => featuresSnapshot(state) };
 }

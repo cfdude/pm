@@ -167,6 +167,14 @@ x("spend-tracking.mjs", "setSpendTracking", {
 x("dev-log.mjs", "setDevLog", {
   "arg": 4,
 }, "engine", "arg is validated on|off before these lines (the same shape as setSpendTracking above); the main tree's path in the refusals is escaped");
+x("dev-log-capture.mjs", "keyOf", {
+  "e.messageId": 1,
+  "e.sessionId": 1,
+  "e.at": 1,
+}, "not-output", "an in-memory de-duplication key built from a stored entry's identifiers; it is compared and never printed");
+x("dev-log-capture.mjs", "appendDevLog", {
+  "fresh.map((e) => JSON.stringify(e)).join(\"\\n\")": 1,
+}, "not-output", "devlog.jsonl's file BODY, one JSON object per line built from the stored-entry allowlist");
 x("spend-tracking.mjs", "TIMELINE", {
   "ARTIFACT.SPEND_PREFIX": 1,
 }, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");

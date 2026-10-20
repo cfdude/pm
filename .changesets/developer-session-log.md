@@ -2,3 +2,4 @@
   `upgrade` never turn it on; `on` is refused while spend tracking is off and in a linked worktree or on a detached
   main HEAD, as `set-spend-tracking` is. `off` stops capture and deletes nothing. `upgrade` lists `devLog` among
   the opt-ins a repo has not adopted, and `overhead --all-features` counts it as on.
+* **While the developer log and spend tracking are both on, `spend`'s ingest (and `spend-guard`'s, which shares it) appends a composition entry per assistant message to `.conductor/spend/devlog.jsonl`.** Each holds byte counts only (user text, tool results per tool name, attachments, an image count, the response's text and thinking bytes) and identifiers, never any text; tokens are joined from the ledger at report time. A `features` snapshot (each feature's on state and per-surface bytes from `overhead`) is appended when it changes. No hook reads or writes the file, and `spend --rebuild` does not duplicate entries.

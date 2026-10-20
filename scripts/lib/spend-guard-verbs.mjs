@@ -240,7 +240,7 @@ function evaluate(state, epic, { noIngest }) {
       try {
         const env = currentEnv();
         const readCtx = { mainRoot: tree.main, env, home: env.HOME || os.homedir() };
-        ingestInfo = ingestForReport({ noIngest, enabled: true, tree, readCtx, enabledAtMs });
+        ingestInfo = ingestForReport({ noIngest, enabled: true, tree, readCtx, enabledAtMs, state: mainState });
         const ledger = readLedger(tree.main);
         const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, mainState);
         const report = buildReport({ attributed, tracking: mainState.spendTracking, ingest: ingestInfo, filters: { epic: epic.id } });
