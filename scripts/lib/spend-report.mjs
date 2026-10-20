@@ -11,7 +11,7 @@
 // like spend that did not happen, and a coverage share makes the gap a number rather than a feeling.
 
 import { escapeControls } from "./constants.mjs";
-import { rowTotal } from "./spend-reader.mjs";
+import { rowTotal, rowWork } from "./spend-reader.mjs";
 import { UNATTRIBUTED_REASONS } from "./spend-attribution.mjs";
 
 export const COST_NOTE =
@@ -20,11 +20,11 @@ export const COST_NOTE =
 /** The key a dimension shows for a row it does not apply to (an orchestrator row has no role). */
 export const NONE_KEY = "none";
 
-export const emptyTotals = () => ({ input: 0, cacheCreation: 0, cacheRead: 0, output: 0, total: 0, messages: 0 });
+export const emptyTotals = () => ({ input: 0, cacheCreation: 0, cacheRead: 0, output: 0, total: 0, work: 0, messages: 0 });
 
 function addTo(t, r) {
   t.input += r.input; t.cacheCreation += r.cacheCreation; t.cacheRead += r.cacheRead; t.output += r.output;
-  t.total += rowTotal(r); t.messages += 1;
+  t.total += rowTotal(r); t.work += rowWork(r); t.messages += 1;
   return t;
 }
 const bucket = (map, key) => (map[key] ||= emptyTotals());
@@ -101,7 +101,7 @@ export function buildReport({ attributed, tracking, ingest, filters = {} }) {
 // ───────────────────────────── the text rendering ─────────────────────────────
 
 const n = (v) => v.toLocaleString("en-US");
-const parts = (t) => `input ${n(t.input)} · cache-write ${n(t.cacheCreation)} · cache-read ${n(t.cacheRead)} · output ${n(t.output)}`;
+const parts = (t) => `input ${n(t.input)} · cache-write ${n(t.cacheCreation)} · cache-read ${n(t.cacheRead)} · output ${n(t.output)} · work ${n(t.work)}`;
 // Largest first, ties by key. A three-way comparison and not a subtraction: conductor-13 forbids a second
 // place that subtracts `.total`, because that is how outstanding-work arithmetic forks.
 const byTotalDesc = (x, y) => (x[1].total < y[1].total ? 1 : x[1].total > y[1].total ? -1 : (x[0] < y[0] ? -1 : 1));

@@ -94,8 +94,9 @@ when it is 0: spend that was not measured must never look like spend that did no
 
 `--json` prints one object — `tracking`, `ingest`, `epics`, `unattributed`, `coverage`, `cost`. Every
 totals object holds `input`, `cacheCreation`, `cacheRead`, `output`, `total` (the four summed, nothing
-else) and `messages`. `epics.<id>` holds `totals`, `byActor`, `byRole`, `byPhase`, `byRound`, `byTier`,
-`firstAt`, `lastAt` and `agents.<agentId>` (`role`, `phase`, `round`, `tier`, `totals`).
+else), `work` (`input + cacheCreation + output`: every class except `cacheRead`, which is re-counted on
+every assistant message and so tracks context size times message count) and `messages`. `epics.<id>`
+holds `totals`, `byActor`, `byRole`, `byPhase`, `byRound`, `byTier`, `firstAt`, `lastAt` and `agents.<agentId>` (`role`, `phase`, `round`, `tier`, `totals`).
 
 **No cost is computed.** pm ships no price table: a hardcoded per-token price is an invented number
 that goes stale silently. Tokens are the measure, and Claude Code's own cost figures are notional

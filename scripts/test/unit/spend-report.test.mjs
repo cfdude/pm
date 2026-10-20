@@ -35,7 +35,7 @@ unitTest("4.1 The JSON shape serves the dependent epics: every key the spec name
   for (const t of [e1.totals, e1.byActor.orchestrator, e1.byRole.review, e1.byPhase.review, e1.byRound["2"], e1.byTier.opus, e1.agents.A.totals, r.unattributed.totals]) {
     for (const k of ["input", "cacheCreation", "cacheRead", "output", "total"]) assert.equal(typeof t[k], "number", k);
   }
-  assert.deepEqual({ ...e1.totals }, { input: 2, cacheCreation: 20, cacheRead: 200, output: 2000, total: 2 * TOTAL, messages: 2 });
+  assert.deepEqual({ ...e1.totals }, { input: 2, cacheCreation: 20, cacheRead: 200, output: 2000, total: 2 * TOTAL, work: 2022, messages: 2 });
   assert.deepEqual(e1.agents.A, { role: "review", phase: "review", round: 2, tier: "sonnet", totals: e1.agents.A.totals });
   assert.deepEqual(Object.keys(r.unattributed).sort(), ["byReason", "totals"]);
   assert.equal(r.cost.computed, false);
@@ -44,7 +44,7 @@ unitTest("4.1 The JSON shape serves the dependent epics: every key the spec name
 
 unitTest("4.1 input, cacheCreation, cacheRead and output are kept separate per agent", () => {
   const r = report([row({ messageId: "a1", actor: "subagent", agentId: "A", at: T(11), input: 3, cacheCreation: 5, cacheRead: 7, output: 11 })]);
-  assert.deepEqual(r.epics.e1.agents.A.totals, { input: 3, cacheCreation: 5, cacheRead: 7, output: 11, total: 26, messages: 1 });
+  assert.deepEqual(r.epics.e1.agents.A.totals, { input: 3, cacheCreation: 5, cacheRead: 7, output: 11, total: 26, work: 19, messages: 1 });
 });
 
 unitTest("4.1 byRound separates gate rounds: review round 1 and round 2 are different keys", () => {
@@ -129,4 +129,30 @@ unitTest("4.1 the report is built from the rows it is given and never mutates th
   const frozen = JSON.stringify(rows);
   buildReport({ attributed: rows, tracking: {}, ingest: null });
   assert.equal(JSON.stringify(rows), frozen);
+});
+
+// gh-cfdude-pm-251 task 1.1 — the work total: input + cacheCreation + output, defined once.
+unitTest("1.1 the work total excludes cache-read (the issue's numbers)", () => {
+  const r = report([row({ messageId: "o1", at: T(10), input: 10, cacheCreation: 5366, cacheRead: 1123665, output: 2111 })]);
+  assert.equal(r.epics.e1.totals.work, 7487);
+  assert.equal(r.epics.e1.totals.total, 1131152);
+});
+
+unitTest("1.1 every totals object and every dimension bucket carries work", () => {
+  const r = report([
+    row({ messageId: "o1", at: T(10) }),
+    row({ messageId: "a1", actor: "subagent", agentId: "A", at: T(11), tier: "sonnet" }),
+    row({ messageId: "x1", actor: "subagent", agentId: "ZZ", at: T(12) }),
+  ]);
+  const e1 = r.epics.e1;
+  const objs = [e1.totals, r.unattributed.totals, ...Object.values(r.unattributed.byReason), ...Object.values(e1.agents).map((a) => a.totals)];
+  for (const dim of ["byActor", "byRole", "byPhase", "byTier", "byRound"]) objs.push(...Object.values(e1[dim]));
+  assert.ok(objs.length > 8);
+  for (const t of objs) assert.equal(t.work, t.input + t.cacheCreation + t.output);
+});
+
+unitTest("1.1 the text totals line names the work total beside the four classes", () => {
+  const r = report([row({ messageId: "o1", at: T(10) })]);
+  const line = renderReport(r).find((l) => l.startsWith("epic e1:"));
+  assert.match(line, /work 1,011/);
 });

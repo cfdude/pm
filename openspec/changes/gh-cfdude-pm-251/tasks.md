@@ -30,7 +30,7 @@
 
 ## 1. The work total
 
-- [ ] 1.1 TDD (UNIT): `work` on every totals object `buildReport()` returns (epic, agent, unattributed),
+- [x] 1.1 TDD (UNIT): `work` on every totals object `buildReport()` returns (epic, agent, unattributed),
       and on the text totals line. Cover the spec's three scenarios, including the issue's numbers.
 
 ## 2. The basis field
