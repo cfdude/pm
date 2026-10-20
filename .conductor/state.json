@@ -15089,11 +15089,16 @@
           "at": "2026-10-20T11:28:06.602Z",
           "actor": "agent",
           "text": "lane: decision not none — needs Rob's go on spend and thresholds before any build"
+        },
+        {
+          "at": "2026-10-20T12:53:26.366Z",
+          "actor": "agent",
+          "text": "Rob 2026-10-20 (artifact thread): approved a SMALL CAPPED calibration (headless claude -p, pm on vs off) and keeping the 1,000-token line as the working threshold. No run count or token ceiling set yet: propose both at epic start and get Rob's OK on the ceiling BEFORE any run. Never-switch list and the rules:intake decision follow the measured numbers."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-20T11:28:06.603Z",
-      "touchedAt": "2026-10-20T11:28:06.606Z"
+      "touchedAt": "2026-10-20T12:53:26.371Z"
     }
   ],
   "detourStack": [],
@@ -15104,7 +15109,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2158,
+  "revision": 2159,
   "reviewMode": "standard",
   "releases": [
     {
