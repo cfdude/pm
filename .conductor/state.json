@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "pm-overhead-baseline",
+  "active": "release-0-53-0-cut",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -2743,7 +2743,7 @@
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
-      "touchedAt": "2026-10-20T11:10:13.327Z",
+      "touchedAt": "2026-10-20T11:27:32.100Z",
       "release": "0.53.0",
       "attributedCommits": [
         "14fbe99c32af9262aeb7b936cfd59d3f191203d4",
@@ -2775,6 +2775,13 @@
             }
           ],
           "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:32.096Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -2784,6 +2791,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T10:32:33.502Z",
           "lastPassAt": "2026-10-20T10:32:33.502Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:32.096Z",
+          "lastPassAt": "2026-10-20T11:27:32.096Z"
         }
       }
     },
@@ -3271,7 +3285,7 @@
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-10-20T10:32:32.852Z",
+      "touchedAt": "2026-10-20T11:27:31.300Z",
       "release": "0.53.0",
       "attributedCommits": [
         "0a58b202ff877649e72ad2f2e6f3129d4f23af82"
@@ -3301,6 +3315,13 @@
             }
           ],
           "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:31.295Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -3310,6 +3331,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T10:32:32.848Z",
           "lastPassAt": "2026-10-20T10:32:32.848Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:31.295Z",
+          "lastPassAt": "2026-10-20T11:27:31.295Z"
         }
       }
     },
@@ -13372,7 +13400,7 @@
         "9d43ae2949a4c1bb29e7cc2111ceb294af87c54b"
       ],
       "createdAt": "2026-10-06T17:29:46.271Z",
-      "touchedAt": "2026-10-20T10:32:35.484Z",
+      "touchedAt": "2026-10-20T11:27:35.384Z",
       "release": "0.53.0",
       "gateReview": {
         "gate1": {
@@ -13399,6 +13427,13 @@
             }
           ],
           "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:35.379Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -13408,6 +13443,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T10:32:35.480Z",
           "lastPassAt": "2026-10-20T10:32:35.480Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:35.379Z",
+          "lastPassAt": "2026-10-20T11:27:35.379Z"
         }
       }
     },
@@ -13678,7 +13720,7 @@
         "3ed04972fa78ffe115f09314c4d3258287e9d4e2"
       ],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-20T10:32:36.145Z",
+      "touchedAt": "2026-10-20T11:27:36.232Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -13712,6 +13754,13 @@
             }
           ],
           "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:36.227Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -13721,6 +13770,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T10:32:36.141Z",
           "lastPassAt": "2026-10-20T10:32:36.141Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:36.227Z",
+          "lastPassAt": "2026-10-20T11:27:36.227Z"
         }
       }
     },
@@ -13862,7 +13918,7 @@
         "72d4700edcb9ff89309f57daddaba9813211cf30"
       ],
       "createdAt": "2026-10-14T03:55:59.065Z",
-      "touchedAt": "2026-10-20T11:21:00.128Z",
+      "touchedAt": "2026-10-20T11:27:30.520Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -13921,6 +13977,13 @@
             ],
             "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:30.515Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -13930,6 +13993,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T11:21:00.124Z",
           "lastPassAt": "2026-10-20T11:21:00.124Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:30.515Z",
+          "lastPassAt": "2026-10-20T11:27:30.515Z"
         }
       }
     },
@@ -13973,7 +14043,7 @@
       "id": "pm-overhead-baseline",
       "title": "Measure pm's own baseline token overhead per session with all features on, and the downstream efficiency it buys",
       "priority": "P1",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -13991,7 +14061,7 @@
         "363d9603d25b31943e4f177af4e8ae2a6947e13d"
       ],
       "createdAt": "2026-10-14T04:57:23.063Z",
-      "touchedAt": "2026-10-20T07:58:01.108Z",
+      "touchedAt": "2026-10-20T11:28:23.001Z",
       "release": "0.53.0",
       "stories": [
         {
@@ -14019,6 +14089,13 @@
             }
           ],
           "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:32.900Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -14028,6 +14105,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T05:49:23.709Z",
           "lastPassAt": "2026-10-20T05:49:23.709Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:32.900Z",
+          "lastPassAt": "2026-10-20T11:27:32.900Z"
         }
       },
       "startedAt": "2026-10-20T05:49:32.901Z"
@@ -14052,7 +14136,7 @@
         "b4e7816ba574df0f91ccbba193b26ffc787c7691"
       ],
       "createdAt": "2026-10-14T04:57:23.886Z",
-      "touchedAt": "2026-10-20T11:21:00.968Z",
+      "touchedAt": "2026-10-20T11:27:34.546Z",
       "release": "0.53.0",
       "gateReview": {
         "gate1": {
@@ -14104,6 +14188,13 @@
             ],
             "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:34.542Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -14113,6 +14204,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T11:21:00.964Z",
           "lastPassAt": "2026-10-20T11:21:00.964Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:34.542Z",
+          "lastPassAt": "2026-10-20T11:27:34.542Z"
         }
       }
     },
@@ -14139,7 +14237,7 @@
         "fa3e36c0e54a5d1872d5003dcf9ae397ed449b1e"
       ],
       "createdAt": "2026-10-14T04:57:24.708Z",
-      "touchedAt": "2026-10-20T11:21:01.744Z",
+      "touchedAt": "2026-10-20T11:27:33.707Z",
       "release": "0.53.0",
       "gateReview": {
         "gate1": {
@@ -14191,6 +14289,13 @@
             ],
             "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:33.702Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -14200,6 +14305,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T11:21:01.740Z",
           "lastPassAt": "2026-10-20T11:21:01.740Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:33.702Z",
+          "lastPassAt": "2026-10-20T11:27:33.702Z"
         }
       }
     },
@@ -14298,7 +14410,7 @@
         "42adc70e78ff1e27fc94cbf5f95ad013bb48e192"
       ],
       "createdAt": "2026-10-17T12:41:42.610Z",
-      "touchedAt": "2026-10-20T11:21:02.549Z",
+      "touchedAt": "2026-10-20T11:27:28.893Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:43.405Z",
@@ -14372,6 +14484,13 @@
             ],
             "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:28.888Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -14381,6 +14500,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T11:21:02.544Z",
           "lastPassAt": "2026-10-20T11:21:02.544Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:28.888Z",
+          "lastPassAt": "2026-10-20T11:27:28.888Z"
         }
       }
     },
@@ -14565,7 +14691,7 @@
         "e9c8ccedeba50d928440c3edc14fd6eadb5d503d"
       ],
       "createdAt": "2026-10-17T12:41:55.680Z",
-      "touchedAt": "2026-10-20T10:32:31.546Z",
+      "touchedAt": "2026-10-20T11:27:29.756Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:56.480Z",
@@ -14604,6 +14730,13 @@
             }
           ],
           "reviewer": "opus fresh-context Gate 1 reviewer 2026-10-20; Important and Minor findings fixed by the author, not re-reviewed (one-round rule)"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-10-20T11:27:29.751Z",
+          "baseSha": "054e5324d8b4e744bcff762cf10d3312ba991864",
+          "headSha": "8c4b1c78d6a1f25bccad3d988e855602c2e62f60",
+          "reviewer": "opus fresh-context converged Gate 2 reviewer 2026-10-20 (rc/0.53.0, standard, one round): 0 Critical, 4 Important fixed (eb0ffcbf ae37b7d8 696976c3 43fad44e), Minor logged; not re-reviewed"
         }
       },
       "gateRounds": {
@@ -14613,6 +14746,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-10-20T10:32:31.541Z",
           "lastPassAt": "2026-10-20T10:32:31.541Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-10-20T11:27:29.751Z",
+          "lastPassAt": "2026-10-20T11:27:29.751Z"
         }
       }
     },
@@ -14638,6 +14778,61 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ]
+    },
+    {
+      "id": "release-0-53-0-cut",
+      "title": "Cut pm 0.53.0: version bump, CHANGELOG from .changesets, README and one Mintlify pass, release PR, close the GitHub issues, fleet upgrade",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "Carry target for the 0.53.0 build. Owes: plugin.json bump, CHANGELOG consolidation from .changesets/, README + Mintlify pass for list verb, log-detour --sha, retract-detour, briefing rejected-lesson line, integrity attributed-commits-hold-duplicates, --token-basis, work total, spend marker naming, session trail, overhead, set-dev-log, dev-log, spend-analysis, record-decision, decisions; PR to protected main; close issues; fleet upgrade; pm-deployer. Outward-facing, so not done in the unattended sprint.",
+      "notes": [
+        {
+          "at": "2026-10-20T11:28:05.573Z",
+          "actor": "agent",
+          "text": "lane: claude-code not none — release-cut mechanics follow the release-checklist skill, mirroring release-0-52-0-cut"
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-10-20T11:28:05.573Z",
+      "touchedAt": "2026-10-20T11:28:23.001Z",
+      "release": "0.53.0",
+      "startedAt": "2026-10-20T11:28:22.992Z"
+    },
+    {
+      "id": "pm-overhead-calibration-and-feature-switches",
+      "title": "Headless calibration runs for the overhead estimate, and the real feature switches the audit justifies",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "decision",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "pm-overhead-baseline",
+          "reason": "remainder"
+        },
+        {
+          "type": "relates-to",
+          "epic": "feature-switches-audit",
+          "reason": "remainder"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Remainder of pm-overhead-baseline (task 3.2 calibration: headless claude -p sessions that spend real tokens, 4.1 quiet-machine re-baseline) and feature-switches-audit (0.3 threshold and never-switch list, 2.0 spec amendment, 2.1 switches). Needs Rob's go for the token spend and the threshold. First candidate: rules:intake at 1,006 tokens against a proposed 1,000-token line.",
+      "notes": [
+        {
+          "at": "2026-10-20T11:28:06.602Z",
+          "actor": "agent",
+          "text": "lane: decision not none — needs Rob's go on spend and thresholds before any build"
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-10-20T11:28:06.603Z",
+      "touchedAt": "2026-10-20T11:28:06.606Z"
     }
   ],
   "detourStack": [],
@@ -14648,7 +14843,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2122,
+  "revision": 2137,
   "reviewMode": "standard",
   "releases": [
     {
@@ -15271,7 +15466,58 @@
     {
       "id": "0.53.0",
       "intent": "Know where the tokens went, and keep the record honest: the first analysis over real ledger data, pm's own baseline overhead and feature switches, a developer-only session log, the follow-ups the 0.52 gates logged, the record and refusal bugs users hit, and the known flakes paid down. Nothing platform-shaped. (Rob approved the 16-epic scope and the three overhead epics 2026-10-13.)",
-      "deferred": []
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-10-20T11:27:37.083Z",
+        "specs": [
+          {
+            "key": "decision-cost-log/specs/decision-cost-log/spec.md",
+            "sha256": "2a91767c96c05492207f5462a9eab5155f66eb41c3b39fcbc969d5126f957a2c"
+          },
+          {
+            "key": "dehardcode-openspec-change-root-in-instructions/specs/emitted-instructions/spec.md",
+            "sha256": "2270707a86e3bc0cd2e03ea8773e191bc3ba24ea6048bca34cede521692daa33"
+          },
+          {
+            "key": "developer-session-log/specs/developer-session-log/spec.md",
+            "sha256": "9c746e1060b998d39ce635c57170aedc2c75f8c06d0e892a5e49d1a1e7222859"
+          },
+          {
+            "key": "epic-session-attribution/specs/epic-session-trail/spec.md",
+            "sha256": "a1cdd2837055821cc1917ef63f8a383e06616f24b7e039521c126182ca2e890e"
+          },
+          {
+            "key": "feature-switches-audit/specs/feature-switches/spec.md",
+            "sha256": "3ce2ad8bd16be586a7ea259210fae927d33884cc79208da8139bf34c8d6795d2"
+          },
+          {
+            "key": "gh-cfdude-pm-242/specs/spend-ledger/spec.md",
+            "sha256": "df2145edbc3e595aad5aa04efa8133665b46d7e6831a5d23341c582893fc0b76"
+          },
+          {
+            "key": "gh-cfdude-pm-251/specs/spend-guard/spec.md",
+            "sha256": "d1f78cd3d0093632d8bc42bca954285865a1503c67b23a01e6f2e0e05e7b2bc6"
+          },
+          {
+            "key": "gh-cfdude-pm-251/specs/spend-ledger/spec.md",
+            "sha256": "1c9841f5b4305eaa02a6311627e3e8dbd7c34b8190ff7ba71075494fafc8a0bb"
+          },
+          {
+            "key": "pm-overhead-baseline/specs/pm-overhead/spec.md",
+            "sha256": "80bdd2f97c0560533f943bf1363a4933fa24f0f451b075a8a929dca076c29923"
+          },
+          {
+            "key": "spend-guard-rules-section-follows-live-limits/specs/spend-guard/spec.md",
+            "sha256": "29877de68971b80ad3dce29e888a31b6fc89ac24cf0eff0f3860c100ca61cf55"
+          },
+          {
+            "key": "token-spend-analysis-and-recommendations/specs/spend-analysis/spec.md",
+            "sha256": "ed7a6f62ddfb0b7d2cbe8f0ce8dfe3fc652e70f3915bd06cb071f50fe6ca828f"
+          }
+        ],
+        "reviewer": "opus fresh-context cross-spec reviewer 2026-10-20: 1 BLOCK (surface slug fork) fixed in 8c4b1c78, POLISH partly applied, not re-reviewed (one round)"
+      }
     },
     {
       "id": "0.54.0",
