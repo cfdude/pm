@@ -14,10 +14,10 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/epic-session-trail/spec.md`
+- [x] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/epic-session-trail/spec.md` (Gate 1 pass recorded 2026-10-20)
       and this file; fix Critical and Important; `openspec validate epic-session-attribution --strict`
       (read the exit status); `record-gate-review epic-session-attribution --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoint: the shared flag
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoint: the shared flag (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       allowlist in `constants.mjs`, also grown by `decision-cost-log` (`record-decision`) and
       `token-spend-analysis-and-recommendations`.
 
@@ -51,16 +51,16 @@
       enumerate its writer (one), readers and REMOVE path (`remove-epic`). Inverse: none shipped,
       justified by design D5. Save as `call-site-sweep-R.1.txt`.
 - [x] R.2 **Verify against the commit** (item 2).
-- [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4); never the archive move.
-- [ ] R.5 Cross-spec review (item 5): 0.2.
-- [ ] R.6 Disposition (item 6): C.2.
-- [ ] R.7 **Route what the work taught you** (item 7). Weigh the epic's own history: two agents disagreed
+- [x] R.5 Cross-spec review (item 5): 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): C.2. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7). Weigh the epic's own history: two agents disagreed (lessons in epic notes)
       about what had shipped until it was re-verified against HEAD (epic note).
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): one save writes the
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): one save writes the (converged Gate 2 recorded at 8c4b1c78)
       trail, no-op preserved, every epic-writing verb declares the flag through the allowlist.
 
 ## D. Docs (after Gate 2 only)
@@ -69,6 +69,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs if a docs commit was attributed.
+- [x] C.1 Re-record Gate 2 after docs if a docs commit was attributed. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic epic-session-attribution --status archived --outcome delivered --reason "<why>" --declined-deferral "linking a named session to a transcript sessionId:pm cannot observe the mapping; a later change may record it when the agent supplies both"`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive epic-session-attribution`. Not attributed.
