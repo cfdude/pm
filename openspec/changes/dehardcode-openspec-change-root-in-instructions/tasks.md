@@ -17,10 +17,10 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/emitted-instructions/spec.md`
+- [x] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/emitted-instructions/spec.md` (Gate 1 pass recorded 2026-10-20)
       and this file; fix Critical and Important; `openspec validate dehardcode-openspec-change-root-in-instructions --strict`
       (read the exit status); `record-gate-review … --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. The rules block is also edited by `feature-switches-audit`. Chokepoint: the rules block,
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. The rules block is also edited by `feature-switches-audit`. Chokepoint: the rules block, (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       also edited by `spend-guard-rules-section-follows-live-limits`.
 
 ## 1. The sweep and the edits
@@ -42,16 +42,16 @@
       restricted to string literals) and state why each is out of scope (the engine reads that path).
       Inverse: none owed (a text rule, not an operation).
 - [x] R.2 **Verify against the commit** (item 2).
-- [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4); never the archive move.
-- [ ] R.5 Cross-spec review (item 5): 0.2.
-- [ ] R.6 Disposition (item 6): C.2, carrying the engine-path declined deferral.
-- [ ] R.7 **Route what the work taught you** (item 7). Evidence to weigh: the site count grew 4 → 27 while
+- [x] R.5 Cross-spec review (item 5): 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): C.2, carrying the engine-path declined deferral. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7). Evidence to weigh: the site count grew 4 → 27 while (process failure: the site count grew 4 to 27 while open and the citation was wrong twice, so sites are derived by rg at build time, never typed; see epic notes)
       the epic was open, and its own citation was wrong twice (epic notes).
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): every directive rewritten
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): every directive rewritten (converged Gate 2 recorded at 8c4b1c78)
       with meaning kept, the sweep derives its population, `rules --sections` delta reported.
 
 ## D. Docs (after Gate 2 only)
@@ -61,6 +61,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs if a docs commit was attributed.
+- [x] C.1 Re-record Gate 2 after docs if a docs commit was attributed. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic dehardcode-openspec-change-root-in-instructions --status archived --outcome delivered --reason "<why>" --declined-deferral "engine path handling and printed messages:the engine reads openspec/changes/ itself, so naming it is true; following changeRoot in the engine is a relocation feature"`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive dehardcode-openspec-change-root-in-instructions`. Not attributed.
