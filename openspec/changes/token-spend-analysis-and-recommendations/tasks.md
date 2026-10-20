@@ -27,40 +27,43 @@
 
 ## 1. The verb and the breakdown
 
-- [ ] 1.1 TDD (UNIT + FILE): `spend-analysis` scope handling, ingest-as-`spend`, tracking-off and
+- [x] 1.1 TDD (UNIT + FILE): `spend-analysis` scope handling, ingest-as-`spend`, tracking-off and
       empty-ledger behaviour (tracking off opens no spend path), byte-identical state. Register the verb (`reads`), its flags, `USAGE`,
       `commands/spend-analysis.md` and its parity-ledger claim in the same commit.
-- [ ] 1.2 TDD (UNIT): the breakdown (design D1, D2): classes apart, by actor/tier/role/phase, agents by
+- [x] 1.2 TDD (UNIT): the breakdown (design D1, D2): classes apart, by actor/tier/role/phase, agents by
       `work`, the unattributed section, no money cost.
-- [ ] 1.3 TDD (UNIT): the tools section: call counts per tool name from the rows' `tools`, per actor, and
+- [x] 1.3 TDD (UNIT): the tools section: call counts per tool name from the rows' `tools`, per actor, and
       the line saying tokens are not apportioned to tools.
 
 ## 2. Flags, recommendations, trend
 
-- [ ] 2.1 TDD (UNIT): the six rules as named constants with "proposal" comments (design D3), every flag
+- [x] 2.1 TDD (UNIT): the six rules as named constants with "proposal" comments (design D3), every flag
       scenario including the clean scope.
-- [ ] 2.2 TDD (UNIT): one recommendation per rule (design D4), deterministic over an unchanged ledger.
-- [ ] 2.3 TDD (UNIT): the trend and its floor (design D5), every trend scenario.
-- [ ] 2.4 TDD (UNIT): the JSON shape.
-- [ ] 2.5 Changeset fragment `.changesets/token-spend-analysis-and-recommendations.md`.
+- [x] 2.2 TDD (UNIT): one recommendation per rule (design D4), deterministic over an unchanged ledger.
+- [x] 2.3 TDD (UNIT): the trend and its floor (design D5), every trend scenario.
+- [x] 2.4 TDD (UNIT): the JSON shape.
+- [x] 2.5 Changeset fragment `.changesets/token-spend-analysis-and-recommendations.md`.
 
 ## 3. Dogfood
 
-- [ ] 3.1 Run `node scripts/conductor.mjs spend-analysis --no-ingest` in this repository and save the
+- [x] 3.1 Run `node scripts/conductor.mjs spend-analysis --no-ingest` in this repository and save the
       output as `dogfood-3.1.txt`. Confirm the 60.5M agent raises `long-context-agent`, the
       `invalid-marker` bucket raises `invalid-markers`, and the trend reads `insufficient data`. Any
       disagreement with assessment §6 is investigated before Gate 2, not explained away.
+      NOTE (2026-10-20): the 60.5M agent and the invalid-marker bucket are flagged as expected. The trend reads `falling`, not
+      `insufficient data`: the ledger now holds two releases (0.52.0, 0.53.0) with 3+ epics each; the in-flight 0.53.0 is compared
+      with a finished one. Cause and the dominant-agent noise are in `dogfood-3.1.txt`; both are for Rob's call (design D3/D5).
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "buildReport|attribute\(" scripts/lib`: every
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "buildReport|attribute\(" scripts/lib`: every
       consumer of the report; confirm the analysis adds no second ingest or transcript reader.
       `rg -n "KNOWN_MODELS|tier" scripts/lib/spend*.mjs`: the tier mapping `tier-mismatch` reads is the
       one the ledger writes. Inverse: a read-only verb; the ingest it performs has `spend --clear` as its
       inverse already. Save as `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2, with the deferral below.
 - [ ] R.7 **Route what the work taught you** (item 7). Evidence on hand: 24.5M tokens lost to two phase
