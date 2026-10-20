@@ -15,10 +15,10 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { writeRules } from "./rules.mjs";
+import { rulesBlockShowsSpendGuard, writeRules } from "./rules.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { CommandExit, die } from "./command-exit.mjs";
-import { currentArgv, currentEnv, outStream } from "./invocation.mjs";
+import { currentArgv, currentEnv, errStream, outStream } from "./invocation.mjs";
 import {
   KNOWN_LANES, KNOWN_MODELS, SPEND_GUARD_STOP_EXIT_CODE, escapeControls, jsonText,
 } from "./constants.mjs";
@@ -31,7 +31,7 @@ import { buildReport, emptyTotals } from "./spend-report.mjs";
 import {
   GUARD_FIELDS, GUARD_SIGNALS, SIGNAL_ROLE, checkMaxFailedRounds, checkTokenBasis, checkTokenCeiling, checkWarnAt,
   LOW_TOTAL_CEILING_FLOOR,
-  guardConfigured, ledgerRounds, liveOverrides, passAnchor, resolveGuard, rolePair, roundsSignal, escalationRank,
+  guardConfigured, guardLivenessChanged, ledgerRounds, liveOverrides, passAnchor, resolveGuard, rolePair, roundsSignal, escalationRank,
   stopBlock, targetFor, tokenSignal, unrevokedOverrides,
 } from "./spend-guard.mjs";
 import os from "node:os";
@@ -172,6 +172,27 @@ export function setSpendGuard() {
   if (lowNotice) outStream().write(`${escapeControls(lowNotice)}\n`);
   if (parsed.ops.sets.tokenCeiling !== undefined && !spendEnabled(state)) {
     outStream().write("conductor: note — tokenCeiling is recorded but will not be checked until you run set-spend-tracking on; spend tracking is off, so the guard is counting rounds only.\n");
+  }
+}
+
+/** Keep the rules block's `## Spend guard` section equal to "a limit is configured" after ANY verb that
+ *  wrote state (spend-guard-rules-section-follows-live-limits). `before` is the dispatch wrapper's
+ *  snapshot, `after` the one image read once the verb returned. The block is rewritten only when the
+ *  section on disk disagrees with `guardConfigured(after)`, which makes it exact on four counts: a verb
+ *  that already refreshed (`set-spend-guard`) is not refreshed twice; a write that leaves liveness alone
+ *  rewrites nothing; a liveness change a HOOK's self-heal left unreflected is picked up here, by the next
+ *  non-hook write; and a repository with no managed block is never given one. A failure is a warning, not
+ *  a failed verb: the state write already happened. */
+export function refreshSpendGuardSection(before, after) {
+  try {
+    const platform = resolvePlatform({}, after);
+    const shown = rulesBlockShowsSpendGuard(platform);
+    const configured = guardConfigured(after);
+    if (shown === null || shown === configured) return;
+    writeRules(platform);
+  } catch (e) {
+    const why = guardLivenessChanged(before, after) ? "this write changed whether a spend limit is configured" : "the block on disk disagrees with the configured spend limits";
+    errStream().write(`conductor: warning — ${escapeControls(why)}, but the rules block's Spend guard section could not be refreshed (${escapeControls(String(e && e.message))}). Run \`write-rules\` to refresh the rules block.\n`);
   }
 }
 

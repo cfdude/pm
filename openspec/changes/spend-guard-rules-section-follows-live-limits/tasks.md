@@ -25,20 +25,20 @@
 
 ## 1. Refresh on a liveness change
 
-- [ ] 1.1 TDD (UNIT): a pure `guardLivenessChanged(before, after)` over two state objects, true exactly
+- [x] 1.1 TDD (UNIT): a pure `guardLivenessChanged(before, after)` over two state objects, true exactly
       when `guardConfigured()` differs. Cover archive, remove, un-archive, an epic-layer limit on an
       epic moved between archived and not, and a project limit present throughout (false).
-- [ ] 1.2 TDD (FILE): in the dispatch wrapper, for a NON-hook verb that wrote state only (design D1a),
+- [x] 1.2 TDD (FILE): in the dispatch wrapper, for a NON-hook verb that wrote state only (design D1a),
       take the before-image from the snapshot already loaded, read the after-image once, and call
       `writeRules()` when 1.1 is true and the verb did not already refresh (design D3). Hook verbs are
       derived from `hooks/hooks.json`, never typed; cover "A hook does no liveness comparison" with the
       observe-reads fixture (no extra `state.json` read on PreToolUse) and a `commit-nudge` self-heal. Cover every scenario of the MODIFIED requirement, including mtime unchanged
       on a no-op write and on a refused write, and the warning on a failed refresh (design D4).
-- [ ] 1.3 Changeset fragment `.changesets/spend-guard-rules-section-follows-live-limits.md`.
+- [x] 1.3 Changeset fragment `.changesets/spend-guard-rules-section-follows-live-limits.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). Derive mechanically:
+- [x] R.1 **Call-site completeness sweep** (item 1). Derive mechanically:
       `rg -n "status\s*=\s*\"archived\"|\.status\s*=|epics\.splice|epics\s*=\s*.*filter|spendGuard\s*=" scripts/lib scripts/conductor.mjs`
       lists every writer that can change an epic's archived status, existence or epic-layer limit;
       `rg -n "writeRules\(" scripts/` lists every refresh. For each writer state that it runs inside the

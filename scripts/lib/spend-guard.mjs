@@ -156,6 +156,13 @@ export function guardConfigured(state) {
   return (Array.isArray(s.epics) ? s.epics : []).some((e) => e && e.status !== "archived" && has(e.spendGuard));
 }
 
+/** Did a write change whether a limit is configured? True exactly when `guardConfigured()` differs between
+ *  the two record images. PURE. The dispatch wrapper compares the snapshot it already holds with one
+ *  after-image, so an archive, a removal or an un-archive moves the rules block whichever verb made it. */
+export function guardLivenessChanged(before, after) {
+  return guardConfigured(before) !== guardConfigured(after);
+}
+
 // ─────────────── D6: overrides ───────────────
 
 export const GUARD_SIGNALS = Object.freeze(["rounds", "tokens"]);

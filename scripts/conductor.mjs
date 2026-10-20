@@ -131,7 +131,7 @@ import { activity } from "./lib/activity-report.mjs";
 import { purgeLogs } from "./lib/purge-logs.mjs";
 import { recordActiveChange, setSpendTracking, spendEnabled } from "./lib/spend-tracking.mjs";
 import { spend } from "./lib/spend-command.mjs";
-import { overrideSpendGuard, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
+import { overrideSpendGuard, refreshSpendGuardSection, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
 import { isInitialized } from "./lib/state.mjs";
 import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
@@ -394,6 +394,11 @@ function runInvocation(argv, io = {}) {
   // The only thing this adds to an invocation is the after-image read in the `finally` below, and the
   // git probes behind recordActiveChange() run only once the pointer has actually moved.
   let spendActiveBefore;
+  // spend-guard-rules-section-follows-live-limits D1/D1a: whether a limit is configured depends on epic
+  // status, so ANY verb that writes state can move it. The comparison rides this same snapshot, for a
+  // verb the effects registry marks `mutates` and NOT `hook` (the registry's hook set is held equal to
+  // hooks/hooks.json by verb-surface.test.mjs; it is never typed here), so a hook adds no read.
+  let guardBefore = null;
   try {
     if (isInitialized()) {
       const snapshot = loadState();
@@ -402,6 +407,8 @@ function runInvocation(argv, io = {}) {
         activitySession = resolveSession(parseFlags(currentArgv().slice(3)));
       }
       if (spendEnabled(snapshot)) spendActiveBefore = snapshot.active || null;
+      const effects = VERB_EFFECTS[cmd];
+      if (effects && effects.effect === "mutates" && !effects.hook) guardBefore = snapshot;
     }
   } catch { /* including a state.json this process cannot read at all */ }
 
@@ -538,7 +545,7 @@ function runInvocation(argv, io = {}) {
     // ONE line per invocation, on EVERY path — success, a refusal, and a re-thrown crash alike —
     // and it runs BEFORE main() returns, so an in-process caller can read the log the moment the
     // call is over rather than at some later process exit.
-    if (activityBefore || spendActiveBefore !== undefined) {
+    if (activityBefore || spendActiveBefore !== undefined || guardBefore) {
       let after = null;
       try { after = loadState(); } catch { /* never break the run being observed */ }
       if (after && activityBefore) {
@@ -552,6 +559,7 @@ function runInvocation(argv, io = {}) {
       }
       // Its own guard: a failing activity append must not skip the timeline, nor the reverse.
       if (after && spendActiveBefore !== undefined) recordActiveChange(spendActiveBefore, after);
+      if (after && guardBefore && after.revision !== guardBefore.revision) refreshSpendGuardSection(guardBefore, after);
     }
   }
   // The SUCCESS path, written rather than left to fall off the end, so that `main()` RETURNS a

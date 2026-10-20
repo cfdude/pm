@@ -1187,6 +1187,17 @@ export function assertRulesBlockWritable(platform = "claude-code") {
   }
 }
 
+/** Does the managed rules block ON DISK carry a `## Spend guard` section? `null` when there is no block to
+ *  judge (no file, no markers, or an ambiguous arrangement): the wrapper that asks never creates a block,
+ *  and never throws on a file the user is mid-way through fixing. */
+export function rulesBlockShowsSpendGuard(platform = "claude-code") {
+  let existing;
+  try { existing = fs.readFileSync(rulesTarget(platform, engineRoot()), "utf8"); } catch { return null; }
+  const arrangement = rulesBlockArrangement(existing);
+  if (arrangement.kind !== "one") return null;
+  return arrangement.lines.slice(arrangement.i, arrangement.j + 1).some((l) => l.replace(/\r?\n$/, "") === "## Spend guard");
+}
+
 /** Write (or refresh) the managed rules block into whichever file `platform`'s precedence
  *  chain resolves to (see rulesTarget()) -- NOT always CLAUDE.md. A repo that already has an
  *  AGENTS.md and is driven by Hermes must get the block IN AGENTS.md: Hermes resolves project

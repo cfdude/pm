@@ -14132,9 +14132,11 @@
       "externalId": "242",
       "externalUrl": "https://github.com/cfdude/pm/issues/242",
       "externalUpdatedAt": "2026-10-14T15:38:00Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "e9c8ccedeba50d928440c3edc14fd6eadb5d503d"
+      ],
       "createdAt": "2026-10-17T12:41:55.680Z",
-      "touchedAt": "2026-10-20T05:49:11.449Z",
+      "touchedAt": "2026-10-20T06:50:49.025Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:56.480Z",
@@ -14181,7 +14183,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2087,
+  "revision": 2088,
   "reviewMode": "standard",
   "releases": [
     {

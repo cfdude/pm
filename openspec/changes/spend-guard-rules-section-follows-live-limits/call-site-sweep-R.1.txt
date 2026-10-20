@@ -1,0 +1,81 @@
+# R.1 call-site sweep (spend-guard-rules-section-follows-live-limits)
+
+## rg -n "status\s*=\s*\"archived\"|\.status\s*=|epics\.splice|epics\s*=\s*.*filter|spendGuard\s*=" scripts/lib scripts/conductor.mjs
+scripts/lib/remove-epic.mjs:134:  state.epics = state.epics.filter(e => !toRemove.has(e.id));
+scripts/lib/render.mjs:96:  } else if (activeEpic && activeEpic.status === "archived") {
+scripts/lib/render.mjs:146:      const archived = kids.filter(k => k.status === "archived").length;
+scripts/lib/render.mjs:201:  const backlog = epics.filter(e => e.status === "later" || e.status === "planned");
+scripts/lib/rank.mjs:84:    if (byId.get(id).status === "archived") {
+scripts/lib/add-epic.mjs:501:  if (epic.status === "active") {
+scripts/lib/add-epic.mjs:509:  if (epic.status === "active") {
+scripts/lib/claims.mjs:197:  if (epic.status === "archived") refuse(`epic '${escapeControls(epicId)}' is archived — there is no work to claim`);
+scripts/lib/claims.mjs:338:  const epics = rows.filter(r => r.scope === "epic");
+scripts/lib/integrity.mjs:182:    if (!withdrawal || !(e.status === "archived" || isArchived(e))) continue;
+scripts/lib/integrity.mjs:852:        if (!e || !superseded.has(e.id) || e.status === "archived") continue;
+scripts/lib/integrity.mjs:930:          if (members.some(e => e.status === "active" || e.status === "paused")) continue;
+scripts/lib/integrity.mjs:935:          if (e.status === "archived" || cut.has(e.id)) continue;
+scripts/lib/integrity.mjs:991:      const epics = (state.epics || []).filter(e => e && typeof e === "object");
+scripts/lib/integrity.mjs:1292:        if (e.status === "archived") {
+scripts/lib/integrity.mjs:1336:  const code = e && (e.code || (typeof e.status === "number" ? `exit ${e.status}` : null));
+scripts/lib/active-pointer.mjs:41:  for (const e of state.epics) if (e.status === "active" && e.id !== id) e.status = "queued";
+scripts/lib/active-pointer.mjs:44:    t.status = "active";
+scripts/lib/active-pointer.mjs:102:  if (t.status === "archived" || isArchived(t)) {
+scripts/lib/active-pointer.mjs:128:    if (a && a.status === "active") a.status = "queued";
+scripts/lib/self-hosting.mjs:181:  return r.status === null ? 1 : r.status;
+scripts/lib/detour-stack.mjs:123:  if (paused.status === "archived") {
+scripts/lib/detour-stack.mjs:132:  if (detour.status === "archived") refuse(`detour epic '${escapeControls(detourId)}' is archived — there is nothing left to build`)
+scripts/lib/detour-stack.mjs:146:  paused.status = "paused";
+scripts/lib/detour-stack.mjs:235:  if (epic.status === "archived") {
+scripts/lib/update-epic.mjs:150:  if (!(isArchived({ ...next, id }) || (snapshot.status === "archived" && status === undefined))) return [];
+scripts/lib/update-epic.mjs:621:    if (f.status === "archived") {
+scripts/lib/update-epic.mjs:903:  if (status !== undefined) epic.status = status;
+scripts/lib/update-epic.mjs:1105:      wasArchived: snapshot.status === "archived",
+scripts/lib/update-epic.mjs:1127:  // `str(f.status)` in the first half and raw `f.status === undefined` in the last are
+scripts/lib/update-epic.mjs:1171:  if (epic.status === "active") activate(state, id);
+scripts/lib/update-epic.mjs:1245:    return !!after && after.status === "archived";
+scripts/lib/spend-guard-verbs.mjs:117:    if (empty) delete epic.spendGuard; else epic.spendGuard = layer;
+scripts/lib/spend-guard-verbs.mjs:125:    state.spendGuard = layer;
+scripts/lib/briefing.mjs:115:  const code = e && (e.code || (typeof e.status === "number" ? `exit ${e.status}` : null));
+scripts/lib/briefing.mjs:205:  } else if (activeEpic && activeEpic.status === "archived") {
+scripts/lib/briefing.mjs:291:  const plannedCount = epics.filter(e => e.status === "planned").length;
+scripts/lib/epic-progress.mjs:159:  if (!record || record.status === "archived" || isArchiveBackfilled(record) || !day) return true;
+scripts/lib/epic-progress.mjs:208:      e.status = "archived";
+scripts/lib/epic-progress.mjs:249:    if (!a || a.status === "archived" || isArchived(a)) { state.active = null; changed = true; }
+scripts/lib/epic-progress.mjs:360:  const archived = epic.status === "archived";
+scripts/lib/git.mjs:63:    answer = e && e.status === 1 ? "detached" : "unknown";
+scripts/lib/git.mjs:260:    return e && e.status === 1 ? false : null;
+scripts/lib/git.mjs:500:  catch (e) { return !!e && (e.status === 128 || e.code === "ENOENT"); }
+scripts/lib/git.mjs:512:    if (e && e.status === 128 && noRepositoryHere()) return null;
+scripts/lib/tracker-dedup.mjs:58:  const status = typeof holder.status === "string" ? holder.status : "unknown status";
+scripts/lib/dependency-order.mjs:53:export const dependencySatisfied = (e) => !!e && e.status === "archived";
+scripts/lib/dependency-order.mjs:68:    if (from.status === "archived") continue;
+scripts/lib/worktree-hygiene.mjs:68:      const archived = !!(epic && epic.status === "archived");
+scripts/lib/subcommands.mjs:1008:    if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
+scripts/lib/subcommands.mjs:1009:      e.status = "untriaged";
+scripts/lib/archive-gate.mjs:346:    .filter(e => e && e.status === "archived" && isEngineStamped(e.disposition) &&
+
+## rg -n "writeRules\(" scripts/ (non-test)
+scripts/lib/migrations.mjs:238:  const rulesFile = path.basename(writeRules(resolvePlatform({}, state)));
+scripts/lib/migrations.mjs:282:  // writeRules()'s return, never a literal), PROJECT.md and the render stamp (both via
+scripts/lib/subcommands.mjs:190:  writeRules(platform);
+scripts/lib/profile-verbs.mjs:36:  writeRules(resolvePlatform({}, state));   // the block shows project and lane values
+scripts/lib/save-report.mjs:20:// rewritten. Most verbs call render() (PROJECT.md) and several call writeRules() (CLAUDE.md) after
+scripts/lib/spend-guard-verbs.mjs:165:  if (guardConfigured(state) !== wasConfigured) writeRules(resolvePlatform({}, state));
+scripts/lib/spend-guard-verbs.mjs:191:    writeRules(platform);
+scripts/lib/constants.mjs:1566:// Platform-neutral by design: this is the literal ANCHOR writeRules() detects/replaces the
+scripts/lib/constants.mjs:1577:// longer matched a block written by any earlier version -- so writeRules() fell through to its
+scripts/lib/review-mode.mjs:3:// dependency on lib/rules.mjs's writeRules() -- NOT circular, see the design doc.
+scripts/lib/review-mode.mjs:31:  writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees the new active mode
+scripts/lib/spend-tracking.mjs:116:  writeRules(resolvePlatform({}, state));
+scripts/lib/rules.mjs:1213:export function writeRules(platform = "claude-code") {
+scripts/lib/tracker.mjs:3:// One-directional dependency on lib/rules.mjs's writeRules() -- see the design doc's
+scripts/lib/tracker.mjs:118:      writeRules(resolvePlatform({}, state));
+scripts/lib/tracker.mjs:140:    writeRules(resolvePlatform({}, state));
+scripts/lib/tracker.mjs:226:  writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
+scripts/conductor.mjs:518:      writeRules(platform);
+
+## Verdict per writer
+- Every hit in the first list lives in a verb the effects registry marks effect:mutates and not hook (update-epic, remove-epic, sync, upgrade, pop-detour/push-detour, add-epic, add-many, set-spend-guard, ...). They all run inside main(), so the dispatch wrapper's before/after comparison in conductor.mjs covers them WITHOUT being listed (design D1): the wrapper compares the on-disk block with guardConfigured(after) after any verb whose save moved state.revision.
+- Hook paths that write state: commit-nudge and render's reconcileArchived() self-heal (onConflict:"skip"). Excluded by design D1a: the wrapper takes no before-image for a hook verb, so a hook adds no read and rewrites no CLAUDE.md. A liveness change a hook's heal made is picked up by the next non-hook write, because the comparison is against the block ON DISK, not only against this invocation's before-image (covered by the hook test).
+- set-spend-guard keeps its own writeRules(); the wrapper finds the block already agreeing and does not rewrite (D3), asserted by the one-refresh-line test.
+- Inverses: archive <-> un-archive and add <-> remove are covered by the same comparison (asserted both ways).
