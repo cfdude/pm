@@ -37,7 +37,7 @@ refreshing from a hook (the PreToolUse hook does no guard work — `spend-guard`
   the wrapper skips when the verb's own `writeRules()` ran in this invocation (a module-level flag set by
   `writeRules`).
 - **D4 — Failure does not fail the verb.** A refresh failure after a successful state write prints a
-  warning naming `rules` as the remedy and exits with the verb's own status, matching the spend timeline
+  warning naming `write-rules` as the remedy and exits with the verb's own status, matching the spend timeline
   append (`spend-ledger`, "A failing append does not fail the verb").
 - **D5 — A refused invocation refreshes nothing.** No state write means no liveness change.
 

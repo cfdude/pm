@@ -61,4 +61,4 @@ invokes) SHALL do no liveness comparison and no refresh.
 #### Scenario: A refresh failure does not fail the write
 
 - **WHEN** archiving E changes liveness and `CLAUDE.md` cannot be written
-- **THEN** the archive is recorded, the verb exits with its own status, and a warning names `rules` as the remedy
+- **THEN** the archive is recorded, the verb exits with its own status, and a warning names `write-rules` as the remedy
