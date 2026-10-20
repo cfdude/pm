@@ -13,6 +13,7 @@ import { tmpRepo, withAssertInvocation } from "../fixtures/assert-harness.mjs";
 import { installedInvocation, setInvocation } from "../../lib/invocation.mjs";
 import { indexFileContents, parseCatFileBatch } from "../../lib/git.mjs";
 import { engineCode } from "../fixtures/source-code.mjs";
+import { sliceBetween } from "../fixtures/engine-extraction.mjs";
 
 /** A `cat-file --batch` answer, built the way git frames it: `<oid> blob <size>` with `<size>` in BYTES,
  *  the content, a newline — or `<name> missing`. */
@@ -32,7 +33,7 @@ function batchAnswer(entries) {
 test("3.2 twin: indexBlobs keeps its explicit 256 MiB maxBuffer (the default 1 MiB is below the main specs)", async () => {
   const fs = await import("node:fs");
   const src = engineCode("scripts/lib/git-gateway.mjs");   // CODE: a commented-out maxBuffer is none
-  const body = src.slice(src.indexOf("    indexBlobs: (lines) =>"), src.indexOf("    revListNotReached: ("));
+  const body = sliceBetween(src, "    indexBlobs: (lines) =>", "    revListNotReached: (", "the indexBlobs operation of git-gateway.mjs");
   assert.match(body, /maxBuffer: 256 \* 1024 \* 1024/, "an overflow must be ENOBUFS at 256 MiB, never at the 1 MiB default");
 });
 

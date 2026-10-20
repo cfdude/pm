@@ -45,6 +45,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gitSpawns, otherSpawns, spawnerNames, spawnSites } from "../fixtures/spawn-derivation.mjs";
 import { engineCode } from "../fixtures/source-code.mjs";
+import { nonEmpty } from "../fixtures/engine-extraction.mjs";
 
 const SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const GATEWAY = "scripts/lib/git-gateway.mjs";
@@ -70,7 +71,7 @@ function operationBody(src, name) {
   assert.notEqual(start, -1, `${name} is not an operation in ${GATEWAY} — the table and the source disagree`);
   const end = src.indexOf("\n\n", start + 1);
   assert.notEqual(end, -1, `${name}'s body ended before the next operation — the extractor's anchor moved`);
-  return src.slice(start, end);
+  return nonEmpty(src.slice(start, end), `the gateway operation ${name}`);
 }
 
 test("gateway: no engine module outside the gateway spawns git — the call sites are DERIVED, not listed", () => {

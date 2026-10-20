@@ -32,6 +32,7 @@ import { run, readState, tmpRepo, archiveDay } from "../fixtures/assert-harness.
 import fs from "node:fs";
 import path from "node:path";
 import { codeOnly } from "../fixtures/source-code.mjs";
+import { nonEmpty } from "../fixtures/engine-extraction.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const epicOf = (cwd, id) => readState(cwd).epics.find(e => e.id === id);
@@ -118,7 +119,7 @@ function functionSource(file, name) {
   assert.notEqual(at, -1, `${file} still declares ${name}()`);
   const end = src.indexOf("\n}\n", at);
   assert.notEqual(end, -1, `${name}() has a closing brace in column 0`);
-  return src.slice(at, end + 2);
+  return nonEmpty(src.slice(at, end + 2), `${name}() in ${file}`);
 }
 
 test("drop-detour writes the whole transition in exactly ONE saveState", () => {
