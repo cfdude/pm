@@ -14284,7 +14284,7 @@
         "b4e7816ba574df0f91ccbba193b26ffc787c7691"
       ],
       "createdAt": "2026-10-14T04:57:23.886Z",
-      "touchedAt": "2026-10-20T11:27:34.546Z",
+      "touchedAt": "2026-10-20T11:44:34.834Z",
       "release": "0.53.0",
       "gateReview": {
         "gate1": {
@@ -14360,7 +14360,14 @@
           "lastVerdictAt": "2026-10-20T11:27:34.542Z",
           "lastPassAt": "2026-10-20T11:27:34.542Z"
         }
-      }
+      },
+      "notes": [
+        {
+          "at": "2026-10-20T11:44:34.831Z",
+          "actor": "agent",
+          "text": "lessons: ROUTING: the 1.1 audit numbers (docs/measurement/2026-10-feature-switch-audit.md) are input to the 0.54.0 rules-block budget (GitHub #248). PRACTICE: the audit and README table check land before any switch; zero switches is a valid outcome, so switch building (2.0/2.1) waits on Rob's threshold and never-switch list. TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and had to be re-recorded."
+        }
+      ]
     },
     {
       "id": "developer-session-log",
@@ -15064,7 +15071,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2155,
+  "revision": 2156,
   "reviewMode": "standard",
   "releases": [
     {
