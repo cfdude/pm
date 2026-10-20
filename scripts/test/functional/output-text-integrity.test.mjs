@@ -1232,6 +1232,7 @@ recipe("set-spend-guard --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => 
 recipe("set-spend-guard --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--epic", v, "--tokens", "5"]) });
 recipe("set-spend-guard --max-failed-rounds", { exempt: EXEMPT.number("max-failed-rounds"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--max-failed-rounds", v]) });
 recipe("set-spend-guard --tokens", { exempt: EXEMPT.number("tokens"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--tokens", v]) });
+recipe("set-spend-guard --token-basis", { exempt: EXEMPT.vocab("token-basis"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--token-basis", v]) });
 recipe("set-spend-guard --warn-at", { exempt: EXEMPT.number("warn-at"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--warn-at", v]) });
 recipe("set-spend-guard --unset", { exempt: EXEMPT.vocab("unset"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--unset", v]) });
 recipe("override-spend-guard --signal", { exempt: EXEMPT.vocab("signal"), run: (c, v) => pm(c.cwd, ["override-spend-guard", "base", "--signal", v, "--escalated-to", "user", "--reason", "r"]) });

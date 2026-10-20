@@ -35,22 +35,22 @@
 
 ## 2. The basis field
 
-- [ ] 2.1 TDD (UNIT): add `tokenBasis` to `GUARD_FIELDS` with its check (`total|work`), default `total`
+- [x] 2.1 TDD (UNIT): add `tokenBasis` to `GUARD_FIELDS` with its check (`total|work`), default `total`
       with source `default`; `--token-basis` in the flag registry (`constants.mjs`) for `set-spend-guard`
       only; `--unset token-basis`. Cover every scenario of the two MODIFIED configuration requirements,
       including "A basis alone is not a limit" against the `OPT_INS` row and `rulesBlock()`.
-- [ ] 2.2 TDD (UNIT): the token signal counts in the resolved basis (MODIFIED "The token signal"
+- [x] 2.2 TDD (UNIT): the token signal counts in the resolved basis (MODIFIED "The token signal"
       requirement, every scenario including "A work basis ignores cache-read").
-- [ ] 2.3 TDD (UNIT): the breakdown line and `signals.tokens.{basis,breakdown}`; nothing computed when
+- [x] 2.3 TDD (UNIT): the breakdown line and `signals.tokens.{basis,breakdown}`; nothing computed when
       tracking is off.
-- [ ] 2.4 TDD (UNIT): the low total-basis warning (floor 10,000,000 as a named constant, labelled a
+- [x] 2.4 TDD (UNIT): the low total-basis warning (floor 10,000,000 as a named constant, labelled a
       suggestion in its comment and the line it prints).
-- [ ] 2.5 TDD (UNIT): the override records `basis`; a mismatched basis is set aside with its notice; a
+- [x] 2.5 TDD (UNIT): the override records `basis`; a mismatched basis is set aside with its notice; a
       0.52 entry with no basis reads as `total`.
 
 ## 3. Docs in the engine commit
 
-- [ ] 3.1 `commands/set-spend-guard.md`: `--token-basis`, the unset, the floor warning, and the worked
+- [x] 3.1 `commands/set-spend-guard.md`: `--token-basis`, the unset, the floor warning, and the worked
       example (design D6) with its provenance (GitHub #251). `commands/spend-guard.md`: the breakdown.
       `commands/spend.md`: `work`. Changeset fragment `.changesets/gh-cfdude-pm-251.md`.
 

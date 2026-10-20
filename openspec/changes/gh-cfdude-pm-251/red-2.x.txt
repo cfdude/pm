@@ -1,0 +1,242 @@
+file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-core.test.mjs:326
+import { LOW_TOTAL_CEILING_FLOOR, tokenBaseline, checkTokenBasis } from "../../lib/spend-guard.mjs";
+         ^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '../../lib/spend-guard.mjs' does not provide an export named 'LOW_TOTAL_CEILING_FLOOR'
+    at ModuleJobSync.instantiateSync (node:internal/modules/esm/module_job:635:19)
+    at node:internal/modules/esm/loader:375:11
+    at TracingChannel.traceSync (node:diagnostics_channel:557:14)
+    at ModuleLoader.importForEntryPoint (node:internal/modules/esm/loader:372:21)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:184:34)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v26.12.0
+✖ scripts/test/unit/spend-guard-core.test.mjs (118.600084ms)
+✖ 2.2 every invalid call is refused naming the offending value and what is accepted (1.144417ms)
+✖ 2.2 a good call parses into ops, and 'all' expands to every field (0.37525ms)
+✔ 2.2 setting at each layer lands in its own place (0.1945ms)
+✔ 2.2 an unset removes that field from that layer only, and an emptied layer disappears (0.102ms)
+✔ 2.2 an unset of an absent field changes nothing and says which (0.078834ms)
+✔ 2.2 every refusal through the engine writes nothing and exits non-zero (3.620541ms)
+✔ 2.2 an unset of an absent field exits 0, says nothing changed, and writes nothing (0.364708ms)
+✔ 2.2 an epic value overrides the project value, and unsetting it falls through (13.458792ms)
+✔ 2.2 a lane value applies to that lane's epics only (2.732833ms)
+✔ 2.2 a ceiling set while tracking is off is recorded and the output says it will not be checked (1.544791ms)
+✔ 3.4 a healthy epic exits 0 and prints each signal's count and limit (0.408292ms)
+✔ 3.4 a stuck epic prints the STOP block and exits 2 (0.329458ms)
+✔ 3.4 the JSON form is one object with the documented keys, and its exit code follows the same rule (0.514333ms)
+✔ 3.4 an unknown epic is refused with exit 1 naming the id (0.220709ms)
+✔ 3.4 spend-guard writes nothing to the record (0.419292ms)
+✔ 3.4 with no ceiling and tracking off the token line says there is no limit, not 'not checked' (0.215667ms)
+✔ 3.4 a withdrawn pass is flagged, not undone, and still anchors (0.496833ms)
+✔ 3.4 an epic recorded before this release reads zero, says no pass anchor, and never trips (0.492875ms)
+✔ 3.4 an epic whose gates are all tallied carries no 'before the tally' note, and the report names its pass anchor (0.488875ms)
+✔ 3.5 overriding a tripped rounds signal records the baseline and the model, and re-arms the guard (2.111417ms)
+✔ 3.5 the model that failed cannot override itself: the lowest accepted model is named (0.268125ms)
+✔ 3.5 a second model override must go to the user (1.674416ms)
+✔ 3.5 an override cannot pre-authorize: an untripped signal is refused and nothing is written (0.229708ms)
+✔ 3.5 a tokens override needs the ledger: refused while tracking is off (0.22725ms)
+✔ 3.5 required fields: a missing or blank reason, a bad or missing --escalated-to, a bad signal (1.04ms)
+✔ 3.5 revoking marks the latest live override and keeps it, and the guard is re-armed at once (1.601375ms)
+✔ 3.5 a revoke with nothing live is refused; --escalated-to is refused alongside --revoke (0.391417ms)
+✔ 3.5 a revoke falls back to the previous live override's baseline (1.667292ms)
+✖ 2.1 --token-basis is validated, stored at its layer, and has an unset (0.166292ms)
+✖ 2.1 unsetting the project basis falls back to total (default) (0.370583ms)
+✖ 2.4 a low total-basis ceiling is recorded and warns naming cache-read and --token-basis work (1.302625ms)
+✖ 2.4 a work basis, or a value at the floor, prints no low-ceiling line (0.355042ms)
+✖ 2.4 a lane that inherits no basis warns; a lane that sets work does not (1.358166ms)
+✖ 2.1 a basis set alone is stored at the project layer (guardConfigured, tested in the core file, says it is no limit) (0.179125ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 26
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 181.449125
+
+✖ failing tests:
+
+test at scripts/test/unit/spend-guard-core.test.mjs:1:1
+✖ scripts/test/unit/spend-guard-core.test.mjs (118.600084ms)
+  'test failed'
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 every invalid call is refused naming the offending value and what is accepted (1.144417ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--unset 'model' is not one of max-failed-rounds\|tokens\|token-basis\|warn-at\|all/. Input:
+  
+  "--unset 'model' is not one of max-failed-rounds|tokens|warn-at|all"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:37:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "--unset 'model' is not one of max-failed-rounds|tokens|warn-at|all",
+    expected: /--unset 'model' is not one of max-failed-rounds\|tokens\|token-basis\|warn-at\|all/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 a good call parses into ops, and 'all' expands to every field (0.37525ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'maxFailedRounds',
+      'tokenCeiling',
+  -   'tokenBasis',
+      'warnAt'
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:47:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'maxFailedRounds', 'tokenCeiling', 'warnAt' ],
+    expected: [ 'maxFailedRounds', 'tokenCeiling', 'tokenBasis', 'warnAt' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.1 --token-basis is validated, stored at its layer, and has an unset (0.166292ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--token-basis 'cached' must be one of total\|work/. Input:
+  
+  'set-spend-guard needs an operation — --max-failed-rounds <n>, --tokens <n>, --warn-at <pct> or --unset max-failed-rounds|tokens|warn-at|all. Nothing was written.'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:344:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'set-spend-guard needs an operation — --max-failed-rounds <n>, --tokens <n>, --warn-at <pct> or --unset max-failed-rounds|tokens|warn-at|all. Nothing was written.',
+    expected: /--token-basis 'cached' must be one of total\|work/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.1 unsetting the project basis falls back to total (default) (0.370583ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'work'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:356:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'work',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.4 a low total-basis ceiling is recorded and warns naming cache-read and --token-basis work (1.302625ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /cache-read/. Input:
+  
+  'conductor: note — tokenCeiling is recorded but will not be checked until you run set-spend-tracking on; spend tracking is off, so the guard is counting rounds only.\n' +
+    'conductor: rendered PROJECT.md\n' +
+    'conductor: project spend guard: tokenCeiling=1500000\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:365:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: note — tokenCeiling is recorded but will not be checked until you run set-spend-tracking on; spend tracking is off, so the guard is counting rounds only.\nconductor: rendered PROJECT.md\nconductor: project spend guard: tokenCeiling=1500000\n',
+    expected: /cache-read/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.4 a work basis, or a value at the floor, prints no low-ceiling line (0.355042ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   undefined,
+  +   undefined
+  -   1500000,
+  -   'work'
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:372:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined, undefined ],
+    expected: [ 1500000, 'work' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.4 a lane that inherits no basis warns; a lane that sets work does not (1.358166ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /cache-read/. Input:
+  
+  'conductor: unknown flag --token-basis for set-spend-guard — it accepts: --lane, --epic, --max-failed-rounds, --tokens, --warn-at, --unset, --force\n' +
+    'Nothing was written.\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:382:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: unknown flag --token-basis for set-spend-guard — it accepts: --lane, --epic, --max-failed-rounds, --tokens, --warn-at, --unset, --force\nNothing was written.\n',
+    expected: /cache-read/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.1 a basis set alone is stored at the project layer (guardConfigured, tested in the core file, says it is no limit) (0.179125ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs]
+  Error: conductor: unknown flag --token-basis for set-spend-guard — it accepts: --lane, --epic, --max-failed-rounds, --tokens, --warn-at, --unset, --force
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-guard-verbs.test.mjs:387:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --token-basis for set-spend-guard — it accepts: --lane, --epic, --max-failed-rounds, --tokens, --warn-at, --unset, --force\nNothing was written.\n'
+  }

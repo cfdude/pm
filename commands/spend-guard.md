@@ -23,12 +23,12 @@ verdict.
 | Signal | Counted from | Trips when |
 |---|---|---|
 | `rounds` | the larger of the epic's highest recorded **fail streak**, and (tracking on) the distinct `round` values on its attributed `phase=review` ledger rows since the epic's last recorded pass, minus one | the count, minus the live override baseline, reaches `maxFailedRounds` |
-| `tokens` | the epic's **attributed** total from the spend ledger (the figure `spend` reports) | the total, minus the live override baseline, reaches `tokenCeiling`; it warns from `warnAt` percent (default 80) |
+| `tokens` | the epic's **attributed** total from the spend ledger (the figure `spend` reports) | the count in the resolved `tokenBasis` (`total` by default, or `work`, which leaves out `cache-read`), minus the live override baseline recorded in that same basis, reaches `tokenCeiling`; it warns from `warnAt` percent (default 80) |
 
 The report prints each signal's count, limit and the layer each limit came from (`epic`, `lane:<lane>` or
 `project`), which of the two rounds counts decided, the live overrides, and the escalation target for each
 signal. `--json` prints one object: `epic`, `stuck`, `signals.rounds` and `signals.tokens` (each with
-`state`, `count`, `limit`, `source` and `baseline`), `overrides`, `escalation`, `tracking`, `coverage`,
+`state`, `count`, `limit`, `source` and `baseline`; `signals.tokens` also `basis`, `basisSource` and, whenever the ledger was read, `breakdown`: `input`, `cacheCreation`, `cacheRead`, `output`, `work`, `total`), `overrides`, `escalation`, `tracking`, `coverage`,
 `notes`, and `stop` when stuck.
 
 **Exit codes.** 0: no signal is tripped. 2: a signal is tripped (the STOP block is printed first). 1: wrong

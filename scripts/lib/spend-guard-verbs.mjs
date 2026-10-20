@@ -27,9 +27,10 @@ import { resolveMainTree } from "./spend-tree.mjs";
 import { ingestForReport, readMainState } from "./spend-command.mjs";
 import { readLedger } from "./spend-ledger.mjs";
 import { attribute } from "./spend-attribution.mjs";
-import { buildReport } from "./spend-report.mjs";
+import { buildReport, emptyTotals } from "./spend-report.mjs";
 import {
-  GUARD_FIELDS, GUARD_SIGNALS, SIGNAL_ROLE, checkMaxFailedRounds, checkTokenCeiling, checkWarnAt,
+  GUARD_FIELDS, GUARD_SIGNALS, SIGNAL_ROLE, checkMaxFailedRounds, checkTokenBasis, checkTokenCeiling, checkWarnAt,
+  LOW_TOTAL_CEILING_FLOOR,
   guardConfigured, ledgerRounds, liveOverrides, passAnchor, resolveGuard, rolePair, roundsSignal, escalationRank,
   stopBlock, targetFor, tokenSignal, unrevokedOverrides,
 } from "./spend-guard.mjs";
@@ -41,9 +42,9 @@ const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
 // ─────────────── set-spend-guard: parsing and the pure write ───────────────
 
-const UNSET_FIELD = { "max-failed-rounds": "maxFailedRounds", tokens: "tokenCeiling", "warn-at": "warnAt" };
+const UNSET_FIELD = { "max-failed-rounds": "maxFailedRounds", tokens: "tokenCeiling", "token-basis": "tokenBasis", "warn-at": "warnAt" };
 const UNSET_NAMES = [...Object.keys(UNSET_FIELD), "all"];
-const FLAG_OF = { maxFailedRounds: "--max-failed-rounds", tokenCeiling: "--tokens", warnAt: "--warn-at" };
+const FLAG_OF = { maxFailedRounds: "--max-failed-rounds", tokenCeiling: "--tokens", tokenBasis: "--token-basis", warnAt: "--warn-at" };
 
 /** `set-spend-guard`'s parsed flags -> `{ ok: true, ops }` or `{ ok: false, message }` naming the first
  *  refusal. PURE. `epicIds` are the registered ids. Refuses: both `--epic` and `--lane`; an unknown
@@ -64,6 +65,7 @@ export function parseSetSpendGuard(f, epicIds) {
   const checks = [
     ["maxFailedRounds", f["max-failed-rounds"], checkMaxFailedRounds],
     ["tokenCeiling", f.tokens, checkTokenCeiling],
+    ["tokenBasis", f["token-basis"], checkTokenBasis],
     ["warnAt", f["warn-at"], checkWarnAt],
   ];
   for (const [field, raw, check] of checks) {
@@ -82,7 +84,7 @@ export function parseSetSpendGuard(f, epicIds) {
   if (!Object.keys(sets).length && !unsets.length) {
     return {
       ok: false,
-      message: "set-spend-guard needs an operation — --max-failed-rounds <n>, --tokens <n>, --warn-at <pct> " +
+      message: "set-spend-guard needs an operation — --max-failed-rounds <n>, --tokens <n>, --token-basis <total|work>, --warn-at <pct> " +
         `or --unset ${UNSET_NAMES.join("|")}. Nothing was written.`,
     };
   }
@@ -125,8 +127,22 @@ export function applyGuardOps(state, ops) {
   return { changed: snapshot(state) !== before, already, described };
 }
 
+/** The one-line warning for a low `total`-basis ceiling, or null. PURE. `state` is the record AFTER the write, so
+ *  the basis it resolves is the one the written layer will actually be counted in (a lane or epic that also
+ *  set `--token-basis work` in this same call, or one inherited from a layer above, is honoured). */
+export function lowCeilingNotice(state, ops) {
+  const n = ops.sets.tokenCeiling;
+  if (n === undefined || n >= LOW_TOTAL_CEILING_FLOOR) return null;
+  const basis = resolveGuard(state, { epicId: ops.epic, lane: ops.lane }).tokenBasis.value;
+  if (basis !== "total") return null;
+  return escapeControls(
+    `conductor: note — a total counts cache-read on every message, so ${n.toLocaleString("en-US")} is low for a total-basis ceiling ` +
+    `(${LOW_TOTAL_CEILING_FLOOR.toLocaleString("en-US")} is the GitHub #251 reporter's suggested floor, not a measurement); ` +
+    "the value is recorded. To count only input, cache-write and output, add --token-basis work.");
+}
+
 /** `set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>] [--tokens <n>]
- *  [--warn-at <pct>] [--unset max-failed-rounds|tokens|warn-at|all]...` — writes the project layer, one
+ *  [--token-basis total|work] [--warn-at <pct>] [--unset max-failed-rounds|tokens|token-basis|warn-at|all]...` — writes the project layer, one
  *  lane's, or one epic's. Every set has its inverse in `--unset`. The managed rules block is refreshed
  *  only when "a limit is configured" flips, because that is the one fact the block carries. */
 export function setSpendGuard() {
@@ -138,10 +154,12 @@ export function setSpendGuard() {
   if (!parsed.ok) die(`conductor: ${parsed.message}\n`);
   const wasConfigured = guardConfigured(state);
   const { changed, already, described } = applyGuardOps(state, parsed.ops);
+  const lowNotice = lowCeilingNotice(state, parsed.ops);
   const where = parsed.ops.epic ? `epic ${escapeControls(parsed.ops.epic)}` : parsed.ops.lane ? `lane ${escapeControls(parsed.ops.lane)}` : "project";
   const notes = already.length ? ` (already unset: ${already.join(", ")})` : "";
   if (!changed) {
     outStream().write(`conductor: ${where} spend guard unchanged${notes} — ${STATE_UNCHANGED}\n`);
+    if (lowNotice) outStream().write(`${escapeControls(lowNotice)}\n`);
     return;
   }
   const saved = saveState(state);
@@ -151,6 +169,7 @@ export function setSpendGuard() {
     changed: `conductor: ${where} spend guard: ${described.join(", ")}${notes}`,
     unchanged: `conductor: ${where} spend guard already held exactly this — ${STATE_UNCHANGED}`,
   });
+  if (lowNotice) outStream().write(`${escapeControls(lowNotice)}\n`);
   if (parsed.ops.sets.tokenCeiling !== undefined && !spendEnabled(state)) {
     outStream().write("conductor: note — tokenCeiling is recorded but will not be checked until you run set-spend-tracking on; spend tracking is off, so the guard is counting rounds only.\n");
   }
@@ -205,7 +224,11 @@ function evaluate(state, epic, { noIngest }) {
         const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, mainState);
         const report = buildReport({ attributed, tracking: mainState.spendTracking, ingest: ingestInfo, filters: { epic: epic.id } });
         ledgerSide = ledgerRounds(attributed, epic.id, passAnchor(epic));
-        tokenStatus = { checked: true, total: report.epics[epic.id] ? report.epics[epic.id].totals.total : 0 };
+        const t = report.epics[epic.id] ? report.epics[epic.id].totals : emptyTotals();
+        tokenStatus = {
+          checked: true, total: t.total, work: t.work,
+          breakdown: { input: t.input, cacheCreation: t.cacheCreation, cacheRead: t.cacheRead, output: t.output, work: t.work, total: t.total },
+        };
         coverage = report.coverage.share;
         if (!ingestInfo.ran) {
           notes.push(`the ledger was not refreshed (${ingestInfo.busy ? INGEST_BUSY : ingestInfo.reason}); counts may be stale`);
@@ -264,11 +287,16 @@ function reportLines(epic, ev, notices) {
   if (r.overrideSpent) lines.push("  the latest rounds override is spent: a pass was recorded after it, so its baseline no longer applies");
   if (t.state === "not-checked") lines.push(`tokens: not checked — ${t.reason}`);
   else if (t.state === "not-read") lines.push(`tokens: not read — ${t.reason}`);
-  else if (t.limit === null) lines.push(`tokens: no limit set (attributed ${t.count === null ? "n/a" : t.count.toLocaleString("en-US")})`);
+  else if (t.limit === null) lines.push(`tokens: no limit set (attributed ${t.count === null ? "n/a" : t.count.toLocaleString("en-US")} ${t.basis})`);
   else {
-    lines.push(`tokens: ${t.state} — ${t.count.toLocaleString("en-US")} attributed, ceiling ${limitText(t)}, baseline ${t.baseline.toLocaleString("en-US")}, warn at ${t.warnAt}%`);
+    lines.push(`tokens: ${t.state} — ${t.count.toLocaleString("en-US")} ${t.basis} attributed, ceiling ${limitText(t)}, baseline ${t.baseline.toLocaleString("en-US")}, warn at ${t.warnAt}%`);
     lines.push(`  coverage: ${ev.coverage === null ? "n/a (no spend in the ledger)" : `${(ev.coverage * 100).toFixed(1)}%`} of ledger tokens are attributed to an epic; unattributed tokens are not charged to this epic`);
   }
+  if (t.breakdown) {
+    const b = t.breakdown, c = (v) => v.toLocaleString("en-US");
+    lines.push(`  basis: ${t.basis} (${t.basisSource}) · input ${c(b.input)} · cache-write ${c(b.cacheCreation)} · cache-read ${c(b.cacheRead)} · output ${c(b.output)} · work ${c(b.work)} · total ${c(b.total)}`);
+  }
+  if (t.overrideSetAside) lines.push(`  the latest tokens override is set aside: it was recorded in the ${t.overrideSetAside} basis and this epic now counts ${t.basis}, so no baseline applies`);
   const live = [...liveOverrides(epic, "rounds"), ...liveOverrides(epic, "tokens")];
   lines.push(`overrides: ${live.length ? live.map((o) => `${o.signal} baseline ${o.baseline} -> ${o.escalatedTo}`).join("; ") : "none live"}`);
   for (const s of GUARD_SIGNALS) {
@@ -378,7 +406,7 @@ export function overrideSpendGuard() {
   }
   epic.spendGuardOverrides = [
     ...(Array.isArray(epic.spendGuardOverrides) ? epic.spendGuardOverrides : []),
-    { signal, baseline: sig.count, escalatedTo, reason: f.reason.trim(), at },
+    { signal, ...(signal === "tokens" ? { basis: sig.basis } : {}), baseline: sig.count, escalatedTo, reason: f.reason.trim(), at },
   ];
   const saved = saveState(state);
   render();

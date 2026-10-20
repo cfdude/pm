@@ -1010,8 +1010,9 @@ export const VERB_FLAGS = [
   // `--revoke` is VALUELESS here and value-bearing on `set-autonomy`; the rows are scoped per command.
   { flag: "max-failed-rounds", commands: ["set-spend-guard"], requires: "a positive whole number" },
   { flag: "tokens", commands: ["set-spend-guard"], requires: "a positive whole number" },
+  { flag: "token-basis", commands: ["set-spend-guard"], placeholder: "total|work" },
   { flag: "warn-at", commands: ["set-spend-guard"], requires: "a whole number from 1 to 99" },
-  { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|warn-at|all" },
+  { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|token-basis|warn-at|all" },
   { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
   { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
   { flag: "reason", commands: ["override-spend-guard"], requires: REASON_REQUIRES },
