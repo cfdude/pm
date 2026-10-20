@@ -37,7 +37,7 @@ SHALL be enumerated from their builders and files, never from a typed list.
 ### Requirement: Each surface is attributed to exactly one feature
 
 Every surface SHALL carry a stable surface id (`rules:<section-slug>`, `brief`, `snapshot`,
-`hook:<verb>`, `listing:<file>`) and exactly one feature id: `core`, `listings` (shipped command, skill
+`spend-marker`, `hook:<verb>`, `listing:<file>`) and exactly one feature id (a rules section's slug is its heading text before the first ` — ` or ` (`, slugged, so the gate procedure is `rules:the-gate-procedure`): `core`, `listings` (shipped command, skill
 and agent descriptions), or an `OPT_INS` id. The map is keyed by surface id, beside `OPT_INS`. `overhead`
 SHALL report per-surface and per-feature figures and `on`; an off feature SHALL report 0 bytes.
 

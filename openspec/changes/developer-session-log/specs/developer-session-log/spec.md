@@ -42,7 +42,7 @@ SHALL carry a `devLog` row.
 
 ### Requirement: Capture happens only during ingest, never on a hot path
 
-While the log is on and spend tracking is on, `spend`'s ingest SHALL append one `devlog.jsonl` entry per
+While the log is on and spend tracking is on, any ingest (`spend` and every verb that reads the ledger through the shared ingest) SHALL append one `devlog.jsonl` entry per
 newly ingested assistant message to the spend directory. Nothing else SHALL write the file, and no hook
 SHALL read or write it. While either switch is off, no entry SHALL be appended.
 

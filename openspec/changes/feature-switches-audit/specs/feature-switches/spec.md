@@ -36,7 +36,7 @@ record-integrity rule, or when it is a developer feature that costs tokens itsel
 
 #### Scenario: A safety rule is never switched
 
-- **WHEN** the `rules:the-gate-procedure-required-task-items` surface exceeds the threshold
+- **WHEN** the `rules:the-gate-procedure` surface exceeds the threshold
 - **THEN** its README row says `no switch` with the reason that it is a record-integrity rule
 
 #### Scenario: A switch re-assigns named surfaces
