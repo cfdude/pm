@@ -13771,9 +13771,11 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-13. Understand how tokens are spent across prompt creation, context and responses; measure input vs output and first-read vs cached-read tokens; establish the baseline cost of pm out of the box with every feature enabled (rules block, brief, hook injections, command/skill listings, hierarchy and EDD docs) and compare it with how much cheaper downstream tasks get because of tracking and record-keeping. Includes the overhead of spend tracking itself (if turning it on adds ~5,000 tokens a session Rob must be able to see that and shut it off). Reads the ledger; sibling of token-spend-analysis-and-recommendations. Evidence so far: cache-read is 96.2% of attributed tokens, output 0.34%; one 60.5M-token build agent ran 156 turns at ~379K context; pm's rules block is ~10K tokens and the brief was 78 KB uncapped before 0.52.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c5257d07cabdb30431426a323c56aad151fba13e"
+      ],
       "createdAt": "2026-10-14T04:57:23.063Z",
-      "touchedAt": "2026-10-20T05:49:32.905Z",
+      "touchedAt": "2026-10-20T07:45:50.998Z",
       "release": "0.53.0",
       "stories": [
         {
@@ -14191,7 +14193,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2091,
+  "revision": 2092,
   "reviewMode": "standard",
   "releases": [
     {

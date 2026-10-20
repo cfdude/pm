@@ -1,0 +1,65 @@
+# R.1 call-site completeness sweep, pm-overhead-baseline (2026-10-20, derived mechanically)
+
+## rg -n "OPT_INS" scripts/lib
+scripts/lib/overhead.mjs:27:import { OPT_INS } from "./opt-ins.mjs";
+scripts/lib/overhead.mjs:75:/** Feature ids a surface may carry: core, listings, or an OPT_INS id. */
+scripts/lib/overhead.mjs:76:export const featureIds = () => [CORE, LISTINGS, ...OPT_INS.map(o => o.id)];
+scripts/lib/overhead.mjs:219:  const on = (id) => id === CORE || id === LISTINGS || OPT_INS.some(o => o.id === id && o.isSet(state || {}));
+scripts/lib/opt-ins.mjs:29:export const OPT_INS = [
+scripts/lib/opt-ins.mjs:89:  const set = OPT_INS.filter(o => o.isSet(s));
+scripts/lib/opt-ins.mjs:90:  const unset = OPT_INS.filter(o => !o.isSet(s));
+
+## rg -n "\"command\":" hooks/hooks.json
+9:            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" brief --platform claude-code"
+20:            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" snapshot --platform claude-code"
+31:            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" commit-nudge --platform claude-code"
+42:            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" commit-nudge --platform claude-code"
+53:            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" gate-guard --platform claude-code"
+62:            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" lesson-advice --platform claude-code"
+
+## "## " headings of rulesBlock() output, all opt-ins on
+PM Conductor — operating rules  ->  rules:pm-conductor  ->  core
+Getting help with pm — two channels, and which one can lie  ->  rules:getting-help-with-pm  ->  core
+The gate procedure — required task items  ->  rules:the-gate-procedure  ->  core
+Intake — triage an ask against the whole backlog BEFORE registering it  ->  rules:intake  ->  core
+Reporting — pm owns what is recorded and what is said; you own how you say it  ->  rules:reporting  ->  core
+Epic-level autonomy  ->  rules:epic-level-autonomy  ->  core
+Execution profile  ->  rules:execution-profile  ->  core
+Spend tracking  ->  rules:spend-tracking  ->  spendTracking
+Spend guard  ->  rules:spend-guard  ->  spendGuard
+Release candidate  ->  rules:release-candidate  ->  core
+Feedback — don't let friction stay silent  ->  rules:feedback  ->  core
+GitHub issue sync (example/repo)  ->  rules:github-issue-sync  ->  tracker
+Secondary tracker sync (jira · ABC)  ->  rules:secondary-tracker-sync  ->  tracker
+Sync after completing tracker-linked work  ->  rules:sync-after-completing-tracker-linked-work  ->  tracker
+Re-read the source before an epic becomes the work  ->  rules:re-read-the-source-before-an-epic-becomes-the-work  ->  core
+
+## Readers of the surface-to-feature map (SURFACE_FEATURES / featureOf)
+scripts/lib/overhead.mjs:18:// ONE FEATURE PER SURFACE (design D2). `SURFACE_FEATURES` is keyed by surface id; `feature-switches-audit`
+scripts/lib/overhead.mjs:49:export const SURFACE_FEATURES = {
+scripts/lib/overhead.mjs:76:export const featureIds = () => [CORE, LISTINGS, ...OPT_INS.map(o => o.id)];
+scripts/lib/overhead.mjs:79:export function featureOf(id) {
+scripts/lib/overhead.mjs:80:  if (Object.hasOwn(SURFACE_FEATURES, id)) return SURFACE_FEATURES[id];
+scripts/lib/overhead.mjs:91:  id, feature: featureOf(id), bytes, estimatedTokens: bytes === null ? null : estimateTokens(bytes), method: METHOD,
+scripts/lib/overhead.mjs:221:  for (const id of featureIds()) features[id] = { on: on(id), bytes: 0, estimatedTokens: 0, surfaces: [] };
+scripts/test/assert/overhead.test.mjs:13:import { hookVerbs, readListings, featureOf, collectSurfaces } from "../../lib/overhead.mjs";
+scripts/test/assert/overhead.test.mjs:60:    for (const s of collectSurfaces(state, { listings, hooks, lessons: [] })) assert.notEqual(featureOf(s.id), null, `surface ${s.id} has no feature`);
+scripts/test/unit/overhead.test.mjs:9:  DOWNSTREAM_LINE, SPEND_MARKER_LINE, SURFACE_FEATURES, buildHypotheticalReport, buildReport, collectSurfaces,
+scripts/test/unit/overhead.test.mjs:10:  featureIds, featureOf, frontmatterDescription, hypotheticalState, overheadText, rulesBlockFor, slug,
+scripts/test/unit/overhead.test.mjs:56:      assert.ok(featureIds().includes(featureOf(s.id)), `surface ${s.id} is assigned a feature that exists`);
+scripts/test/unit/overhead.test.mjs:57:      assert.equal(s.feature, featureOf(s.id));
+scripts/test/unit/overhead.test.mjs:63:  assert.equal(featureOf("rules:a-section-nobody-assigned"), null);
+scripts/test/unit/overhead.test.mjs:64:  assert.equal(featureOf("listing:commands/anything.md"), "listings");
+scripts/test/unit/overhead.test.mjs:68:  for (const [id, f] of Object.entries(SURFACE_FEATURES)) assert.ok(featureIds().includes(f), `${id} -> ${f}`);
+scripts/test/unit/overhead.test.mjs:69:  assert.equal(new Set(Object.keys(SURFACE_FEATURES)).size, Object.keys(SURFACE_FEATURES).length);
+scripts/test/unit/overhead.test.mjs:73:  for (const o of OPT_INS) assert.ok(featureIds().includes(o.id));
+scripts/test/unit/overhead.test.mjs:81:  for (const id of featureIds()) {
+scripts/test/unit/overhead.test.mjs:129:  for (const id of featureIds()) assert.equal(r.features[id].on, true, id);
+
+## Inverse enumeration
+The verb is read-only and writes nothing (observe-by-fs-recorder test, assert/overhead.test.mjs 1.4 and 1.6): it adds no state, so there is no operation to undo. None owed.
+
+## Findings
+- Every hook verb hooks/hooks.json invokes (brief, snapshot, commit-nudge, gate-guard, lesson-advice) is a surface. Every rules heading resolves to exactly one feature in the table above.
+- reviewMode, laneRouting and activityLog own no surface of their own (they change a value inside a core section, or a file nothing injects); the map test allows a feature with zero surfaces, so a future opt-in is not forced to state one. feature-switches-audit should read that as "no injected cost", not "unmeasured".
+- hook:commit-nudge has no static size (see docs/measurement/2026-10-pm-overhead-baseline.md).
