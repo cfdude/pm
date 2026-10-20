@@ -117,13 +117,26 @@ unitTest("1.2 the same validation binds claim (same resolver): a control charact
 });
 
 unitTest("1.2 a hook never refuses on the identity, never stamps it, and prints no identity text", () => {
-  const engine = seeded();
-  for (const hook of [["brief"], ["snapshot"], ["commit-nudge"]]) {
+  // The seeded epic carries a stray reconcileNeeded flag with no frame and no link: the render self-heal
+  // (reconcileArchived) clears it, which is a REAL hook save that changes this epic. Without such a seed a
+  // hook has nothing to save and "nothing stamped" would hold even if a hook stamped.
+  const seed = () => seeded([epic("e1", { reconcileNeeded: true })]);
+  const probe = seed();
+  assert.equal(probe.result(["snapshot"]).status, 0);
+  assert.equal(e1(probe).reconcileNeeded, false, "precondition: a hook really saved a change to this epic");
+
+  for (const hook of [["snapshot"], ["commit-nudge"]]) {
+    const engine = seed();
     const r = engine.result(hook, as("bad\u001b[31mevil"));
     assert.equal(r.status, 0, `${hook[0]}: ${r.stderr}`);
     assert.equal((r.stdout + r.stderr).includes("evil"), false, `${hook[0]} output carries no identity text`);
   }
-  assert.equal("sessions" in e1(engine), false);
+  for (const hook of [["brief"], ["snapshot"]]) {
+    const engine = seed();
+    engine.result(hook, as("hook-session"));
+    if (hook[0] === "snapshot") assert.equal(e1(engine).reconcileNeeded, false, "the hook saved");
+    assert.equal("sessions" in e1(engine), false, `${hook[0]} stamped no session`);
+  }
 });
 
 // ───────────── 2.1 the trail ─────────────
