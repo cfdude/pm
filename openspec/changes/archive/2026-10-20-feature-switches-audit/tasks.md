@@ -74,5 +74,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic feature-switches-audit --status archived --outcome delivered --reason "<why>"` with `--declined-deferral "automatic section selection:GitHub #248, the 0.54.0 rules-block budget"` (or `--deferral` once #248 is mirrored as an epic), then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive feature-switches-audit`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic feature-switches-audit --status archived --outcome delivered --reason "<why>"` with `--declined-deferral "automatic section selection:GitHub #248, the 0.54.0 rules-block budget"` (or `--deferral` once #248 is mirrored as an epic), then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive feature-switches-audit`. Not attributed.
