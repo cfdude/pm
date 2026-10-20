@@ -1363,6 +1363,9 @@ spendTracking? : { enabled, enabledAt } — opt-in token-spend ledger switch. Ab
                 `enabledAt` is the time of the FIRST `on` and never moves (it bounds an ingest's
                 look-back). Set via `set-spend-tracking on|off`; read with `spend`. Added field, no
                 migration. While on, the rules block carries a `## Spend tracking` section.
+devLog?       : { enabled, enabledAt } — opt-in developer session log switch. Absent reads as off; needs
+                spendTracking on (refused otherwise). Set via `set-dev-log on|off`; read with `dev-log`.
+                Added field, no migration. Injects nothing into a session.
 gateRounds?   : on an epic — { gate1?, gate2? }, each { fails, passes, failStreak, lastVerdictAt,
                 lastPassAt? }. Written ONLY by an accepted `record-gate-review`, always, with no
                 limit configured; a pass zeroes `failStreak` and stamps `lastPassAt` (the epic's

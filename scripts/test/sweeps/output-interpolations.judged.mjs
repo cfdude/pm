@@ -163,6 +163,10 @@ x("activity-log.mjs", "setActivityLog", {
 x("spend-tracking.mjs", "setSpendTracking", {
   "arg": 4,
 }, "engine", "arg is validated on|off before these lines (token-spend-tracking-per-epic; the same shape as setActivityLog above); the main tree's path in the refusals is escaped");
+// ── developer-session-log
+x("dev-log.mjs", "setDevLog", {
+  "arg": 4,
+}, "engine", "arg is validated on|off before these lines (the same shape as setSpendTracking above); the main tree's path in the refusals is escaped");
 x("spend-tracking.mjs", "TIMELINE", {
   "ARTIFACT.SPEND_PREFIX": 1,
 }, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");

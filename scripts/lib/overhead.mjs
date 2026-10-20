@@ -97,7 +97,7 @@ const surface = (id, bytes, extra = {}) => ({
 export const HYPOTHETICAL = Object.freeze({
   name: "all-features",
   description: "every opt-in on: a github-issues tracker, reviewMode thorough, one lane-routing override, " +
-    "the activity log, spend tracking on, a project spend-guard of 2 failed rounds",
+    "the activity log, spend tracking on, the developer log on, a project spend-guard of 2 failed rounds",
 });
 /** A deep copy of `state` with every opt-in on. Pure, in memory: the argument is never touched. */
 export function hypotheticalState(state) {
@@ -107,6 +107,8 @@ export function hypotheticalState(state) {
   if (!((s.laneRouting || {}).overrides || []).length) s.laneRouting = { overrides: [{ match: "migration", lane: "openspec" }] };
   s.activityLog = { ...(s.activityLog || {}), enabled: true };
   s.spendTracking = { ...(s.spendTracking || {}), enabled: true };
+  // developer-session-log: owns no injected surface (a developer file nothing injects), but is an opt-in and so is on here.
+  s.devLog = { ...(s.devLog || {}), enabled: true };
   if (!guardConfigured(s)) s.spendGuard = { ...(s.spendGuard || {}), maxFailedRounds: 2 };
   return s;
 }
@@ -248,7 +250,8 @@ export function buildHypotheticalReport(state, inputs = {}) {
   hyp.hypothetical = { ...HYPOTHETICAL };
   for (const [id, f] of Object.entries(hyp.features)) {
     const r = real.features[id];
-    f.on = true;
+    // `on` stays what the hypothetical state's own isSet says. Forcing it true would hide an opt-in the
+    // hypothetical forgot to turn on, which is the failure hypotheticalState's unit test exists to catch.
     f.realOn = r.on;
     f.wouldAddBytes = f.bytes - r.bytes;
     f.wouldAddEstimatedTokens = estimateTokens(Math.max(0, f.wouldAddBytes));

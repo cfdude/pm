@@ -1332,6 +1332,10 @@ phase=<phase> [round=<n>]` line that the rules block asks you to begin each disp
 everything else lands in an **unattributed** bucket, by reason, that the report always prints, with a
 coverage share. Spend made while tracking was off is never credited to an epic.
 
+A developer-only companion, `set-dev-log on|off` (off by default, needs spend tracking), records per session which
+pm features were on and the byte-count composition of each request and response (never any text), read back with
+`dev-log`; `overhead` reports what pm itself injects into a session, by surface and by feature.
+
 **Every write has an inverse**, and each prints its plan without `--yes`: `set-spend-tracking off`,
 `spend --clear`, `spend --rebuild` (which keeps rows whose transcript Claude Code has since pruned) and
 `spend --clear --timeline`.

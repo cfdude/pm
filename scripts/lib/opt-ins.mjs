@@ -25,6 +25,7 @@ import { guardConfigured } from "./spend-guard.mjs";
  *  the flags the verb reads (0.51: two rows printed bare positionals the engine refused). The claim
  *  row is deliberately NOT here: a claim is an epic's temporary advisory hold, not a repo setting,
  *  so "NOT SET" was true of every repo on every upgrade and told it nothing.
+ *  `before` (optional) is the argv lists the example needs run first, as `set-dev-log` needs spend tracking on.
  *  `verb`/`doc` name the engine verb and `commands/<doc>.md` the test pins to reality. */
 export const OPT_INS = [
   {
@@ -66,6 +67,17 @@ export const OPT_INS = [
     missing: "spendTracking — no record of which epic, phase, role or model spent tokens",
     command: "set-spend-tracking on",
     example: ["set-spend-tracking", "on"],
+  },
+  {
+    // developer-session-log. Off by default and never enabled by init or upgrade; it needs spendTracking on.
+    id: "devLog", verb: "set-dev-log", doc: "set-dev-log",
+    isSet: (s) => !!(s.devLog && s.devLog.enabled === true),
+    describe: () => "devLog: on",
+    missing: "devLog — no per-session view of which pm features were on, what each request carried or when a session ran too long (developer-only; needs spendTracking)",
+    command: "set-dev-log on",
+    example: ["set-dev-log", "on"],
+    // Invocations that must succeed first for `example` to run: the log is refused while spend tracking is off.
+    before: [["set-spend-tracking", "on"]],
   },
   {
     // spend-budget-and-stuck-loop-guard. A limit is `maxFailedRounds` or `tokenCeiling` at the project, at any

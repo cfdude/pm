@@ -1114,6 +1114,7 @@ export const VERB_POSITIONALS = {
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
@@ -1145,6 +1146,8 @@ export const FLAGLESS_VERBS = [
   "set-activity-log",
   // token-spend-tracking-per-epic's switch: the POSITIONAL `on|off`, same shape as the toggle above.
   "set-spend-tracking",
+  // developer-session-log's switch: the POSITIONAL `on|off` again.
+  "set-dev-log",
   // The unconsidered-outcome walker's ASK. Its population is a PREDICATE over the whole record
   // — an engine stamp carrying `unknown` — so there is nothing to select; a `--status` or
   // `--lane` filter would let a caller narrow the very set the question is "show me all of".

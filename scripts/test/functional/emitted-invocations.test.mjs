@@ -3006,6 +3006,11 @@ export function printedTemplates(verbs = dispatchedVerbs(), dir = path.join(REPO
  *  Layer A over it and asserts every template in the source was reached. `expect` is the fixture's
  *  own sanity check that it produced the printer it is named for. */
 const PRINTER_FIXTURES = {
+  "set-dev-log on while spend tracking is off (developer-session-log)"() {
+    // The refusal names the prerequisite switch as a runnable invocation.
+    const repo = remedyRepo();
+    return [[repo.run(["set-dev-log", "on"]), /set-spend-tracking on/]];
+  },
   "reconcile owed: pop-detour, --clear-links, a bad --link, remove-epic, and moving the pointer off"() {
     const repo = remedyRepo();
     repo.ok(["add-epic", "--id", "rp", "--lane", "claude-code", "--title", "rp"]);

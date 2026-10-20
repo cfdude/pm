@@ -132,6 +132,11 @@ unitTest("1.4 --all-features: the hypothetical is named, every feature is on, an
   assert.equal(r.features.reviewMode.realOn, true, "reviewMode was already set");
 });
 
+unitTest("1.4 every OPT_INS row is on in the hypothetical, so a new opt-in cannot ship without stating how --all-features turns it on", () => {
+  const hyp = hypotheticalState(base());
+  for (const o of OPT_INS) assert.equal(o.isSet(hyp), true, `${o.id} is not set by hypotheticalState()`);
+});
+
 unitTest("1.4 --all-features in a repo with only reviewMode set reports the bytes every other feature would add", () => {
   const r = buildHypotheticalReport({ ...base(), reviewMode: "thorough" }, inputs);
   const off = Object.entries(r.features).filter(([, f]) => !f.realOn).map(([id]) => id);

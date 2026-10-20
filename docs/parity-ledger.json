@@ -127,6 +127,11 @@
       "platforms": { "claude-code": "slash command wrapping the read-only overhead verb — what pm injects into a session, by surface and by feature, each figure labelled bytes/4 (an estimate), with an in-memory every-opt-in-on case" }
     },
     {
+      "id": "developer-session-log",
+      "artifacts": ["commands/set-dev-log.md"],
+      "platforms": { "claude-code": "slash command wrapping set-dev-log — an opt-in, developer-only, per-session log of which pm features were on and the composition of each request and response, captured by the spend ledger's own ingest" }
+    },
+    {
       "id": "session-lifecycle-hooks",
       "artifacts": ["hooks/hooks.json", "hooks/README.md"],
       "platforms": { "claude-code": "SessionStart / PreCompact / PostToolUse / PostToolUseFailure hooks in hooks.json, each passing --platform claude-code" }

@@ -1,0 +1,42 @@
+Task 1.1: transcript entry shapes read for developer-session-log. FIELD NAMES ONLY; no content was kept.
+Read 2026-10-20 from one real Claude Code transcript of this repository (1,462 entries, 3.7 MB) with a
+line-streaming script and a 4 GB RSS watchdog (/usr/bin/time -l: 0.09 s), plus `rg -c` / `rg -o` over two
+larger transcripts of the same project for the compaction and subtype checks.
+
+Entry `type` values seen: custom-title agent-name mode bridge-session file-history-snapshot attachment user
+system atis-latch last-prompt assistant pr-link queue-operation cost-state permission-mode file-history-delta.
+
+user (message.content is a STRING in 38 entries and an ARRAY of blocks in 110):
+  top-level keys: cwd entrypoint gitBranch isMeta isSidechain message origin parentUuid permissionMode promptId
+    promptSource queueSkipAttachments sessionId session_id sourceToolAssistantUUID timestamp toolUseResult
+    turnOrigin turnPosition type userType uuid version      (isCompactSummary on a compaction summary, below)
+  block shapes: tool_result {content,is_error?,tool_use_id,type}; tool_result.content is a string (95) or an
+    array of {type:"text"} blocks (15).
+  NO `image` block and no user `text` block occurred in this sample, so the image count and an array `text`
+  block are built from the documented block shapes and tested over fixtures only; the real shape is unconfirmed.
+
+assistant (one API message = 2-3 entries sharing message.id, ONE content block each):
+  top-level keys: advisorModel apiBlockIndex attributionMcpServer attributionMcpTool cwd effort entrypoint
+    gitBranch isSidechain message parentUuid perTurnEffort requestId sessionId session_id thinkingDurationMs
+    timestamp type userType uuid version wireIngestContext wireToolInputs
+  block shapes: thinking {signature,thinking,type}; tool_use {caller,id,input,name,type}; text {text,type}.
+  tool_use_id (on a tool_result) resolves to the tool name through the earlier tool_use block's `id`.
+
+attachment (injected content: system reminders, hook context, listings):
+  top-level keys: attachment cwd entrypoint gitBranch isSidechain parentUuid rendered renderedRole sessionId
+    session_id timestamp type userType uuid version
+  attachment.type values seen: hook_success hook_additional_context environment model output_style_instructions
+    deferred_tools_delta agent_listing_delta mcp_instructions_delta skill_listing auto_mode total_tokens_reminder
+    output_style async_hook_response instructions session_context date credential_org remote_session_change
+    advisor_tool prompt_snapshot deferred_tools_record silent_turn_reminder edited_text_file thinking_drop
+
+system subtypes seen in the sample: local_command stop_hook_summary turn_duration away_summary.
+
+COMPACTION EXISTS (design D5's `compacted` rule stays): in two larger transcripts of this project,
+  `system` entries with subtype `compact_boundary` (2 and 11 of them), keys:
+    compactMetadata content cwd entrypoint gitBranch isMeta isSidechain level logicalParentUuid parentUuid
+    sessionId slug subtype timestamp type userType uuid version
+  compactMetadata keys: cumulativeDroppedTokens durationMs postTokens preTokens preservedMessages
+    preservedSegment trigger
+  each followed by a `user` entry with `isCompactSummary: true` (message.content a string; extra keys
+  isVisibleInTranscriptOnly slug turnPosition).
