@@ -269,7 +269,9 @@ test("3.4 Line separators other than LF are escaped too", () => {
 test("3.4a A session name cannot forge a line in the owners report", () => {
   const cwd = initRepo();
   ok(cwd, ["add-epic", "--id", "e1", "--lane", "claude-code"]);
-  ok(cwd, ["claim", "e1", "--session", "s" + LF + "FORGED"]);
+  // epic-session-attribution D3: a control character in a session name is now REFUSED at input, so the
+  // hostile stored claim this surface still has to print safely is a LEGACY one, written before the rule.
+  legacyWrite(cwd, s => { s.epics.find(e => e.id === "e1").claim = { session: "s" + LF + "FORGED", claimedAt: new Date().toISOString(), ttlMinutes: 60 }; });
   const r = ok(cwd, ["owners"]);
   assert.deepEqual(linesBeginning(r.stdout, "FORGED"), [], `owners prints no line beginning FORGED:\n${r.stdout}`);
 });
@@ -1119,9 +1121,43 @@ recipe("purge-logs --over", { exempt: "--over must be a size like 500K", run: (c
 recipe("purge-logs --older-than", { exempt: EXEMPT.number("older-than"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--older-than", v]) });
 
 // ── claims ──
-recipe("claim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl", "--session", v]) });
+// epic-session-attribution D3: a session name holding a control character is refused before any write, on
+// every epic-writing verb including these two; a hostile STORED claim session is the legacy recipes' subject.
+const SESSION_REFUSED = "--session is validated at input: a control character is refused before any write (epic-session-attribution D3)";
+recipe("claim --session", { exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, ["claim", "cl", "--session", v]) });
 recipe("claim --ttl", { exempt: EXEMPT.number("ttl"), run: (c, v) => pm(c.cwd, ["claim", "cl2", "--session", "s", "--ttl", v]) });
-recipe("unclaim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["unclaim", "cl2", "--session", v]) });
+recipe("unclaim --session", { exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, ["unclaim", "cl2", "--session", v]) });
+// Every other epic-writing verb, DERIVED from the effects registry: a verb added with the marker and no
+// invocation here fails loudly rather than going unswept.
+{
+  const { VERB_EFFECTS } = await import(lib("verb-effects.mjs"));
+  const SESSION_INVOCATION = {
+    "add-epic": ["add-epic", "--id", "sess-a", "--lane", "claude-code"],
+    "add-many": ["add-many", "--from", "none.json"],
+    "update-epic": ["update-epic", "base", "--notes", "x"],
+    "remove-epic": ["remove-epic", "k5"],
+    reorder: ["reorder", "k1", "k2"],
+    "set-active": ["set-active", "k3"],
+    "set-autonomy": ["set-autonomy", "k4", "--level", "off"],
+    "push-detour": ["push-detour", "k1", "--detour", "k2", "--reason", "r", "--no-reconcile"],
+    "pop-detour": ["pop-detour", "k1"],
+    "drop-detour": ["drop-detour", "k1"],
+    "record-reconcile": ["record-reconcile", "k1", "--detour", "k2", "--verdict", "valid", "--amendments", "none"],
+    "record-gate-review": ["record-gate-review", "k1", "--gate", "1", "--verdict", "pass", "--artifact", "x.md", "--reviewer", "r"],
+    "record-tracker-refresh": ["record-tracker-refresh", "k1", "--verdict", "unchanged", "--external-updated-at", "2026-01-01T00:00:00Z"],
+    release: ["release", "rel1", "--intent", "x"],
+    "set-spend-guard": ["set-spend-guard", "--max-failed-rounds", "3"],
+    "override-spend-guard": ["override-spend-guard", "k1", "--signal", "rounds", "--escalated-to", "user", "--reason", "r"],
+    sync: ["sync"],
+    upgrade: ["upgrade"],
+    "recover-created-at": ["recover-created-at"],
+  };
+  for (const [verb, v] of Object.entries(VERB_EFFECTS)) {
+    if (v.epicWriting !== true || verb === "claim" || verb === "unclaim") continue;
+    if (!SESSION_INVOCATION[verb]) throw new Error(`${verb} is epicWriting but has no --session invocation in the poison recipes`);
+    recipe(`${verb} --session`, { exempt: SESSION_REFUSED, run: (c, val) => pm(c.cwd, [...SESSION_INVOCATION[verb], "--session", val]) });
+  }
+}
 
 // ── update-epic ──
 recipe("update-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--title", v]) });
@@ -1317,7 +1353,7 @@ export const SOURCE_RECIPES = [
       "\ndetect: {\"tool\":\"Bash\",\"commandMatches\":\"poison-me\"}\n---\n\nbody\n");
     return pm(c.cwd, ["lesson-advice", "--platform", "claude-code"], { input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "poison-me" } }) });
   } },
-  { key: "PM_SESSION", rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl3"], { env: { PM_SESSION: v } }) },
+  { key: "PM_SESSION", exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, ["claim", "cl3"], { env: { PM_SESSION: v } }) },
 ];
 
 // ── Gate 2 T-S1: the SUCCESS paths over what an older engine could have stored. Every argv recipe above

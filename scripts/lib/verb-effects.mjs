@@ -28,6 +28,10 @@
 //                                             must not look the same.
 //   effect: "mutates"    + writes: "…"      — DECLARED mutating, naming what it touches.
 //
+// `epicWriting: true` marks the NON-hook verbs whose save can change an epic's record. It is the one list
+// `--session` is declared from (constants.mjs derives the flag's `commands` from it), so a verb added with the
+// marker accepts the flag with no second edit; a test holds it equal to every verb whose `writes` names an epic.
+//
 // `hook: true` marks the verbs pm's own hooks/hooks.json invokes (verb-surface.test.mjs asserts the
 // marked set equals that file's verbs). It is what the pre-dispatch command-line check reads to keep
 // a hook verb DORMANT in a repository without pm: a hook line the engine would refuse must not print
@@ -91,27 +95,27 @@ export const VERB_EFFECTS = {
   // describe` spawn per call, for a verb that does nothing.
   "commit-nudge": { effect: "mutates", hook: true, detachedNoOp: true, writes: ".conductor/commit-observe.json (reflog anchor + reported set, under its .lock), .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
   // `dryRunFlag`: with that flag present the verb writes NOTHING, so the detached-tree "discarded write" warning (conductor.mjs) is false and is not printed.
-  sync: { effect: "mutates", dryRunFlag: "--dry-run", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics (`--dry-run` writes nothing)" },
+  sync: { effect: "mutates", epicWriting: true, dryRunFlag: "--dry-run", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics (`--dry-run` writes nothing)" },
   "log-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only)" },
   "retract-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only), PROJECT.md" },
   // #151. The substantial-detour PUSH and POP were a documented HAND-EDIT of state.json until
   // these existed, so they are `mutates` in the strongest sense: they are the transition, not a
   // record of one. Both go through saveState()'s normal path, so they inherit the write-conflict
   // guard and 0.32.0's read-back verification the hand-edit never had.
-  "push-detour": { effect: "mutates", writes: "state.json (the paused epic's status, the detour-stack frame, both protocol links and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
-  "drop-detour": { effect: "mutates", writes: "state.json (the named epic's detour-stack frame, the may-invalidate link's arming record and drop stamp, and reconcileNeeded), plus render()'s writes — never the epic's status and never the active pointer" },
-  "pop-detour": { effect: "mutates", writes: "state.json (the popped frame, the resumed epic's status and reconcileNeeded, and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
+  "push-detour": { effect: "mutates", epicWriting: true, writes: "state.json (the paused epic's status, the detour-stack frame, both protocol links and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
+  "drop-detour": { effect: "mutates", epicWriting: true, writes: "state.json (the named epic's detour-stack frame, the may-invalidate link's arming record and drop stamp, and reconcileNeeded), plus render()'s writes — never the epic's status and never the active pointer" },
+  "pop-detour": { effect: "mutates", epicWriting: true, writes: "state.json (the popped frame, the resumed epic's status and reconcileNeeded, and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
   "honcho-memory": { effect: "mutates", writes: ".conductor/honcho-memories.log (append-only)" },
-  "add-epic": { effect: "mutates", writes: "state.json, plus render()'s writes" },
-  "add-many": { effect: "mutates", writes: "state.json, plus render()'s writes" },
-  "update-epic": { effect: "mutates", writes: "state.json, plus render()'s writes" },
-  "remove-epic": { effect: "mutates", writes: "state.json, plus render()'s writes" },
-  reorder: { effect: "mutates", writes: "state.json (epic rank), plus render()'s writes" },
-  "set-active": { effect: "mutates", writes: "state.json (the active pointer), plus render()'s writes" },
+  "add-epic": { effect: "mutates", epicWriting: true, writes: "state.json, plus render()'s writes" },
+  "add-many": { effect: "mutates", epicWriting: true, writes: "state.json, plus render()'s writes" },
+  "update-epic": { effect: "mutates", epicWriting: true, writes: "state.json, plus render()'s writes" },
+  "remove-epic": { effect: "mutates", epicWriting: true, writes: "state.json, plus render()'s writes" },
+  reorder: { effect: "mutates", epicWriting: true, writes: "state.json (epic rank), plus render()'s writes" },
+  "set-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "clear-active": { effect: "mutates", writes: "state.json (the active pointer), plus render()'s writes" },
   "set-tracker": { effect: "mutates", writes: "state.json (tracker config), CLAUDE.md (the rules block)" },
   "set-lane-routing": { effect: "mutates", writes: "state.json (lane-routing overrides)" },
-  "set-autonomy": { effect: "mutates", writes: "state.json (an epic's autonomy block and notifications)" },
+  "set-autonomy": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's autonomy block and notifications)" },
   "set-review-mode": { effect: "mutates", writes: "state.json (the review-mode dial), CLAUDE.md (the rules block)" },
   "set-profile": { effect: "mutates", writes: "state.json (the project or lane execution-profile layer), CLAUDE.md (the rules block), plus render()'s writes" },
   "set-gate-guard": { effect: "mutates", writes: "state.json (the gate-guard toggle)" },
@@ -119,11 +123,11 @@ export const VERB_EFFECTS = {
   // `set-gate-guard`'s read form has. The classification stays `mutates` because it is a property
   // of the VERB, which is what the divergence warning is gated on; declaring it read-only would
   // silence that warning for every real write the verb makes.
-  release: { effect: "mutates", writes: "state.json (releases, one-way membership, deferrals and the amendments trail), plus render()'s writes — except `release show`, which writes nothing at all" },
-  "record-reconcile": { effect: "mutates", writes: "state.json (the reconcile verdict on an epic's detour link)" },
-  "record-gate-review": { effect: "mutates", writes: "state.json (gateReview.gateN and, in the same write, the epic's gateRounds tally); a verdict that leaves the recorded rounds signal tripped also prints the STOP block on stderr" },
+  release: { effect: "mutates", epicWriting: true, writes: "state.json (releases, one-way membership, deferrals and the amendments trail), plus render()'s writes — except `release show`, which writes nothing at all" },
+  "record-reconcile": { effect: "mutates", epicWriting: true, writes: "state.json (the reconcile verdict on an epic's detour link)" },
+  "record-gate-review": { effect: "mutates", epicWriting: true, writes: "state.json (gateReview.gateN and, in the same write, the epic's gateRounds tally); a verdict that leaves the recorded rounds signal tripped also prints the STOP block on stderr" },
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
-  "record-tracker-refresh": { effect: "mutates", writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
+  "record-tracker-refresh": { effect: "mutates", epicWriting: true, writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
   "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
   "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch), CLAUDE.md (the rules block), and the main working tree's .conductor/spend/timeline.jsonl" },
   // `detachedNoOp`: `spend` writes ONLY into the MAIN working tree's git-ignored .conductor/spend/ and
@@ -133,19 +137,19 @@ export const VERB_EFFECTS = {
   spend: { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree (rows, cursor, markers, ingest lock; with --clear/--rebuild also removes or rewrites them, with --clear --timeline the timeline) — never state.json and never a transcript" },
   // spend-budget-and-stuck-loop-guard. The limit cascade and the overrides are `state.json` writes; the managed
   // rules block is refreshed only when "a limit is configured" flips.
-  "set-spend-guard": { effect: "mutates", writes: "state.json (the project, lane or epic spend-guard layer), CLAUDE.md (the rules block, only when a limit first appears or the last goes), plus render()'s writes" },
-  "override-spend-guard": { effect: "mutates", writes: "state.json (an epic's spendGuardOverrides: appended, or the latest marked revoked and kept), plus render()'s writes; an append (not a revoke) first runs the same ingest spend-guard does, into the MAIN working tree's ignored .conductor/spend/, while tracking is on" },
+  "set-spend-guard": { effect: "mutates", epicWriting: true, writes: "state.json (the project, lane or epic spend-guard layer), CLAUDE.md (the rules block, only when a limit first appears or the last goes), plus render()'s writes" },
+  "override-spend-guard": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's spendGuardOverrides: appended, or the latest marked revoked and kept), plus render()'s writes; an append (not a revoke) first runs the same ingest spend-guard does, into the MAIN working tree's ignored .conductor/spend/, while tracking is on" },
   // `detachedNoOp` for `spend`'s reason: with tracking on `spend-guard` ingests into the MAIN working tree's
   // ignored .conductor/spend/ and never writes state.json (spec: "It writes nothing to state.json"); with
   // tracking off it reads state only. Declared `mutates` for the ingest, not read-only.
   "spend-guard": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
   // DESTRUCTIVE by nature, which is why it removes nothing without both a selector and --yes.
   "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
-  claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },
-  unclaim: { effect: "mutates", writes: "state.json (clears an epic's advisory claim) — or removes .conductor/session-claim.json with --repo" },
+  claim: { effect: "mutates", epicWriting: true, writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },
+  unclaim: { effect: "mutates", epicWriting: true, writes: "state.json (clears an epic's advisory claim) — or removes .conductor/session-claim.json with --repo" },
   // The 0.40.0 recovery, available as a verb precisely because it must be RE-RUNNABLE: a
   // checkout that fetches more history recovers dates the earlier run could not see.
-  "recover-created-at": { effect: "mutates", writes: "state.json (registration dates recovered from local git history), PROJECT.md and .conductor/render-stamp.json (via render())" },
-  upgrade: { effect: "mutates", writes: "state.json (migrations, pmVersion), the platform rules file (the rules block), PROJECT.md and .conductor/render-stamp.json (via render()), .gitignore" },
+  "recover-created-at": { effect: "mutates", epicWriting: true, writes: "state.json (registration dates recovered from local git history), PROJECT.md and .conductor/render-stamp.json (via render())" },
+  upgrade: { effect: "mutates", epicWriting: true, writes: "state.json (migrations, pmVersion), the platform rules file (the rules block), PROJECT.md and .conductor/render-stamp.json (via render()), .gitignore" },
   "write-rules": { effect: "mutates", writes: "CLAUDE.md (or the platform's rules file), state.json (the recorded platform)" },
 };

@@ -3230,8 +3230,11 @@
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-10-20T05:49:13.941Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T07:04:35.672Z",
+      "release": "0.53.0",
+      "attributedCommits": [
+        "0a58b202ff877649e72ad2f2e6f3129d4f23af82"
+      ]
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -14185,7 +14188,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2089,
+  "revision": 2090,
   "reviewMode": "standard",
   "releases": [
     {

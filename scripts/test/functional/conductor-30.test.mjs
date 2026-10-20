@@ -57,6 +57,26 @@ const BASELINE = {
   // `add-many` takes no epic flags on argv at all — its surface is the batch DOCUMENT's keys,
   // swept separately below because the shape of the mistake is a key with a non-string value.
   "add-many": null,
+  // epic-session-attribution: `--session` is one registry row declared on EVERY epic-writing verb, so each of
+  // those verbs is now a command EPIC_FLAGS names. The ones below have a baseline that exits 0 on this
+  // fixture; the `null` ones need state this fixture does not hold (a detour frame, a recorded reconcile, a
+  // tracker-linked epic, a spend override, a git history to recover from), so the sweep skips them exactly as
+  // it skips `add-many`. The row they share is still swept here through `update-epic`, `claim` and `unclaim`,
+  // and unit/epic-session-trail.test.mjs asserts the registry puts `--session` on each verb's value-bearing list.
+  "remove-epic": () => ["remove-epic", "other"],
+  reorder: () => ["reorder", "other", "e1"],
+  "set-active": () => ["set-active", "other"],
+  "set-autonomy": () => ["set-autonomy", "e1", "--level", "off"],
+  "push-detour": () => ["push-detour", "e1", "--detour", "other", "--reason", "why", "--no-reconcile"],
+  "set-spend-guard": () => ["set-spend-guard", "--max-failed-rounds", "3"],
+  sync: () => ["sync"],
+  "pop-detour": null,
+  "drop-detour": null,
+  "record-reconcile": null,
+  "record-tracker-refresh": null,
+  "override-spend-guard": null,
+  "recover-created-at": null,
+  upgrade: null,
 };
 
 /** The real commits each sweepRepo() fixture holds, keyed by its directory. */

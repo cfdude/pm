@@ -23,28 +23,28 @@
 
 ## 1. The flag
 
-- [ ] 1.1 TDD (UNIT): widen the `session` row's `commands` to every epic-writing verb, derived from the
+- [x] 1.1 TDD (UNIT): widen the `session` row's `commands` to every epic-writing verb, derived from the
       same set the allowlist's other epic rows use (never a typed list). Cover the three scenarios of
       "--session is accepted by every epic-writing verb"; the existing documented-surface test passes
       with `commands/epic.md` updated in the same commit.
-- [ ] 1.2 TDD (UNIT): identity validation (design D3), refusing before any write. It also binds `claim` and
+- [x] 1.2 TDD (UNIT): identity validation (design D3), refusing before any write. It also binds `claim` and
       `unclaim` (same resolver): say so in the changeset, and cover one claim refusal.
-- [ ] 1.3 TDD (UNIT): derive "every epic-writing verb" from `verb-effects` entries marked `mutates` that
+- [x] 1.3 TDD (UNIT): derive "every epic-writing verb" from `verb-effects` entries marked `mutates` that
       write an epic, and assert each accepts `--session`; add a set-only nullability marker for
       `epic.sessions` with its reason (epic-annotation "Nullability is declared").
 
 ## 2. The trail
 
-- [ ] 2.1 TDD (UNIT): in the save, stamp every epic whose record changed with the resolved identity
+- [x] 2.1 TDD (UNIT): in the save, stamp every epic whose record changed with the resolved identity
       (design D1, D2, D4), on non-hook verbs only (design D4a; hook verbs derived from `hooks/hooks.json`).
       Cover "A hook's self-heal save stamps nothing" and "A hook never refuses on the identity". Cover every scenario of "A changed epic records the session that changed it",
       including the no-op byte-identity and the 0.52.0 fixture.
-- [ ] 2.2 `commands/epic.md`: `--session` and `epic.sessions`; changeset fragment
+- [x] 2.2 `commands/epic.md`: `--session` and `epic.sessions`; changeset fragment
       `.changesets/epic-session-attribution.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "resolveSession|PM_SESSION|flag: \"session\"" scripts/`:
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "resolveSession|PM_SESSION|flag: \"session\"" scripts/`:
       every resolver call and its precedence; `rg -n "saveState\(" scripts/lib` lists every save that
       can change an epic, each stated as stamped or justified (a save that changes no epic). Data
       reference: `epic.sessions` holds identities, not ids, so no dangling-reference sweep is owed;

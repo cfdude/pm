@@ -18,6 +18,7 @@
 //
 // Leaf module: imports nothing from lib/. Nothing here reads or writes state.
 import { currentEnv } from "./invocation.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** The session identity for this invocation, or null when nobody said.
  *
@@ -31,6 +32,47 @@ export function resolveSession(flags = {}) {
   const fromEnv = currentEnv().PM_SESSION;
   if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
   return null;
+}
+
+/** The longest identity accepted. An identity is opaque: pm never derives one and never checks it against
+ *  anything, so the only rules are the ones that keep it safe to store and print. */
+export const SESSION_MAX_LENGTH = 128;
+
+/** Validate ONE identity string. Non-blank after trimming, at most SESSION_MAX_LENGTH characters, no control
+ *  character (C0, DEL or C1). Returns `{ ok: true, value }` (trimmed) or `{ ok: false, message }` naming the
+ *  rule and WHERE the value came from. The message never repeats the offending value. */
+export function checkSession(raw, origin = "--session") {
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!value) return { ok: false, message: escapeControls(origin) + " requires a session name — a blank one is refused" };
+  if (/[\u0000-\u001f\u007f-\u009f]/.test(value)) {
+    return { ok: false, message: escapeControls(origin) + " must not contain a control character — a session identity is a plain name" };
+  }
+  if ([...value].length > SESSION_MAX_LENGTH) {
+    return { ok: false, message: escapeControls(origin) + " must be at most " + SESSION_MAX_LENGTH + " characters" };
+  }
+  return { ok: true, value };
+}
+
+/** The identity this invocation acts as, VALIDATED: `{ ok: true, session }` (null when nobody said) or
+ *  `{ ok: false, message }`. Same precedence as resolveSession (an explicit flag beats PM_SESSION); a flag
+ *  that is present but blank is a refusal rather than a silent fall-through to the environment, and a blank
+ *  environment value is simply "nobody said". */
+export function resolveSessionChecked(flags = {}) {
+  const raw = flags.session;
+  const fromFlag = Array.isArray(raw) ? raw[raw.length - 1] : raw;
+  // A flag that is PRESENT is judged, string or not: a valueless `--session` parses as `true`, and falling
+  // through to the environment would turn "I named a session and forgot to say which" into a silent
+  // stamp of whatever PM_SESSION happens to hold.
+  if (fromFlag !== undefined) {
+    const c = checkSession(fromFlag, "--session");
+    return c.ok ? { ok: true, session: c.value } : c;
+  }
+  const fromEnv = currentEnv().PM_SESSION;
+  if (typeof fromEnv === "string" && fromEnv.trim()) {
+    const c = checkSession(fromEnv, "PM_SESSION");
+    return c.ok ? { ok: true, session: c.value } : c;
+  }
+  return { ok: true, session: null };
 }
 
 /** How a caller is told to supply one. Kept beside the resolver so the two cannot disagree

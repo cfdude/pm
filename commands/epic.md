@@ -137,6 +137,15 @@ written:
   `.conductor/state.json`, not to any verb's parser, so it may stand anywhere on the line and is
   never read as an id. `add-epic`, `update-epic` and `claim` used to refuse it outright.
   `node "$ENGINE" <verb> --help` lists it under "Accepted on every mutating verb".
+- **`--session <name>` is accepted on every verb that can change an epic** (the verbs whose `--help` lists it:
+  `add-epic`, `update-epic`, `set-active`, `claim` and the rest), with `PM_SESSION` as the fallback. When such a
+  verb's save changes an epic and an identity resolves, the SAME write records it on that epic as `sessions`: one
+  `{session, firstAt, lastAt}` entry per distinct name, in first-seen order, only `lastAt` moving on a later
+  write. It says which sessions wrote the record, not who did the work. No identity, no field; a write that
+  changes nothing records nothing. The name is opaque (pm never derives or checks one) and must be non-blank, at
+  most 128 characters, with no control character; anything else is refused before any write, on `claim` and
+  `unclaim` as well. A hook never validates, refuses on or records an identity. `sessions` is engine-written
+  history with no clear: a mistyped name is a true record of what was typed.
 
 ## Ids are refused at input; free text is escaped on display
 

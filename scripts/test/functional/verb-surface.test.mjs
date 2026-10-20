@@ -983,15 +983,27 @@ test("remove-epic --help names its positional form on the first line", () => {
   assert.match(first, /remove-epic <id>/, `the first line must show the positional form: ${first}`);
 });
 
-test("set-active --help says it has no flags of its own before listing --force", () => {
+test("clear-active --help says it has no flags of its own before listing --force", () => {
+  // set-active used to be this example; epic-session-attribution gave it `--session`, so the verb with no
+  // epic flags is now clear-active. set-active's own help is asserted separately below.
   const cwd = initialized();
-  const out = run(["set-active", "--help"], { cwd });
+  const out = run(["clear-active", "--help"], { cwd });
   const own = out.search(/no flags of its own/);
   const force = out.indexOf("--force");
-  assert.notEqual(own, -1, `set-active --help must say it has no flags of its own:\n${out}`);
+  assert.notEqual(own, -1, `clear-active --help must say it has no flags of its own:\n${out}`);
   assert.notEqual(force, -1, "…and still list the argv-level flag it accepts");
   assert.ok(own < force, "the statement comes before the argv-level flag");
   assert.doesNotMatch(out, /takes no flags/, "it accepts --force, so it does not take NO flags");
+});
+
+test("set-active --help lists its own --session before the argv-level --force", () => {
+  const cwd = initialized();
+  const out = run(["set-active", "--help"], { cwd });
+  const session = out.indexOf("--session");
+  const force = out.indexOf("--force");
+  assert.notEqual(session, -1, `set-active --help must list --session:\n${out}`);
+  assert.ok(force > session, "its own flag comes before the argv-level flag");
+  assert.doesNotMatch(out, /no flags of its own/);
 });
 
 test("REGRESSION GUARD: A read-only verb's help does not offer --force", () => {

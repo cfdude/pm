@@ -133,12 +133,12 @@ import { recordActiveChange, setSpendTracking, spendEnabled } from "./lib/spend-
 import { spend } from "./lib/spend-command.mjs";
 import { overrideSpendGuard, refreshSpendGuardSection, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
 import { isInitialized } from "./lib/state.mjs";
-import { resolveSession } from "./lib/session-identity.mjs";
+import { resolveSession, resolveSessionChecked } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 import { recoverCreatedAt } from "./lib/created-at.mjs";
 import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
 import { list } from "./lib/list.mjs";
-import { currentArgv, currentEnv, errStream, installedInvocation, normalizeStdin, outStream, setInvocation, stdinSource } from "./lib/invocation.mjs";
+import { currentArgv, currentEnv, errStream, installedInvocation, normalizeStdin, outStream, setInvocation, setInvocationSession, stdinSource } from "./lib/invocation.mjs";
 
 /** This module's own absolute path. `main()` hands it to the delegation handoff, the banner names
  *  its directory, and the tail compares it against `process.argv[1]` to decide whether this module
@@ -387,6 +387,19 @@ function runInvocation(argv, io = {}) {
   // EVERY call here is guarded. Observability must never break the run it observes — the rule
   // lib/write-conflicts.mjs opens with, for the same reason: a throw would convert a working
   // command into a visible failure, and would fire when the filesystem is already in trouble.
+  // epic-session-attribution D3/D4a: the identity the save stamps on every epic it changes. Resolved and
+  // VALIDATED here, before any write, and ONLY for a verb that is not a hook (the registry's `hook` set is
+  // derived from hooks/hooks.json): a hook's save is a self-heal, not work a session did, and a hook must
+  // never fail a tool call because of an environment variable. An invalid identity is a refusal that has
+  // written nothing.
+  if (VERB_EFFECTS[cmd] && VERB_EFFECTS[cmd].effect === "mutates" && VERB_EFFECTS[cmd].hook !== true) {
+    const who = resolveSessionChecked(parseFlags(currentArgv().slice(3)));
+    if (!who.ok) {
+      errStream().write(`conductor: ${escapeControls(who.message)}. Nothing was written.\n`);
+      return 1;
+    }
+    setInvocationSession(who.session);
+  }
   let activityBefore = null;
   let activitySession = null;
   // token-spend-tracking-per-epic D7: the spend timeline rides the SAME snapshot. `undefined` means

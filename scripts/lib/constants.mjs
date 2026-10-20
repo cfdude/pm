@@ -761,7 +761,13 @@ export const EPIC_FLAGS = [
   // that name is already this engine's version-release verb. One verb carrying two unrelated
   // meanings is how a `release --defer` would come to mean both "cut from a release" and "hand
   // the claim back".
-  { flag: "session", key: null, commands: ["claim", "unclaim"], write: "custom",
+  // epic-session-attribution: `--session` is declared for EVERY epic-writing verb, DERIVED from the effects
+  // registry's `epicWriting` marker (never typed here), so a verb added with the marker accepts it with no
+  // second edit. `claim` and `unclaim` are in that set. A hook verb is not: it never validates or stamps
+  // an identity (verb-effects.mjs).
+  { flag: "session", key: null,
+    commands: Object.entries(VERB_EFFECTS).filter(([, v]) => v.epicWriting === true).map(([verb]) => verb),
+    write: "custom",
     requires: "a session name — set PM_SESSION or pass --session <name>",
     placeholder: "a session name" },
   { flag: "ttl", key: null, commands: ["claim"], write: "custom",
@@ -798,6 +804,12 @@ export const EPIC_FLAGS = [
       "`recover-created-at` will attempt it again from this checkout's git history on its next run, which is " +
       "what makes clear-then-recover the correction path for a date the recovery got wrong (a reused id, a " +
       "wholesale state.json rewrite, a filter-branch or subtree split). Nothing else derives from it" },
+  // epic-session-attribution: `epic.sessions` is the ENGINE's trail of which named sessions wrote the record
+  // (stampTouched in store.mjs). Not typeable, and set-only for the reason below.
+  { flag: "sessions", key: "sessions", commands: ["update-epic"], engineWritten: true,
+    setOnly: "an APPEND-ONLY history of which named sessions changed this record, stamped by the engine in the " +
+      "save that changed it — removing an entry would edit history rather than clear a value, and a mistyped " +
+      "identity is a true record of what was typed (an epic removed with remove-epic takes its trail along)" },
   { flag: "touched-at", key: "touchedAt", commands: ["update-epic"], engineWritten: true,
     setOnly: "the engine stamps it on every write that changes the record (stampTouched in state.mjs), so " +
       "clearing it would be undone by the next real write — it answers no question a reader can ask, and an " +
@@ -1120,25 +1132,21 @@ export const VERB_POSITIONALS = {
 
 export const FLAGLESS_VERBS = [
   "honcho-memory",
-  "reorder", "set-active", "clear-active", "set-gate-guard",
-  "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
+  // epic-session-attribution: `reorder`, `set-active`, `upgrade`, `recover-created-at` and `pop-detour` are NOT
+  // here any more. Each can change an epic, so each declares `--session` (the `session` row's commands are
+  // derived from the effects registry's `epicWriting` marker), and a verb is claimed by exactly one declaration.
+  "clear-active", "set-gate-guard",
+  "verify-worktrees", "verify-state", "integrity", "changesets",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
   "set-activity-log",
   // token-spend-tracking-per-epic's switch: the POSITIONAL `on|off`, same shape as the toggle above.
   "set-spend-tracking",
-  // The registration-date recovery takes no arguments at all: it sweeps every epic that has
-  // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
-  "recover-created-at",
   // The unconsidered-outcome walker's ASK. Its population is a PREDICATE over the whole record
   // — an engine stamp carrying `unknown` — so there is nothing to select; a `--status` or
   // `--lane` filter would let a caller narrow the very set the question is "show me all of".
   "unconsidered-outcomes",
-  // `pop-detour` takes an OPTIONAL POSITIONAL assertion (the epic you expect to be on top) and
-  // no flags. The stack is LIFO, so a flag that SELECTED a frame would be a different verb; what
-  // the positional does is refuse when the top is not what the caller thinks it is.
-  "pop-detour",
 ];
 
 // ─────────────────── #84: advisory claim TTLs ───────────────────
