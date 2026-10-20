@@ -28,11 +28,18 @@
 
 - [ ] 1.1 Run `overhead --all-features` at the head that holds `pm-overhead-baseline` and
       `developer-session-log`; write `docs/measurement/2026-10-feature-switch-audit.md` with one row per
-      feature: cost, conditional or not, decision and reason. Zero switches is a valid outcome.
+      surface id (design D0): feature, cost, conditional or not, decision and reason. Zero switches is a
+      valid outcome.
 - [ ] 1.2 TDD (FILE): the README table check (design D5), with the table written from 1.1, including the
       `set-spend-tracking on` row and the listings' `no switch` row.
 
 ## 2. Switches the audit justified (one task per switch; none if 1.1 adds none)
+
+- [ ] 2.0 **Amend before building a switch.** For each switch 1.1 justifies: amend this change's spec
+      (a requirement naming the new `OPT_INS` id, its verb and the surface ids it takes from `core`) and
+      `pm-overhead`'s map entries; re-validate with `openspec validate feature-switches-audit --strict`;
+      re-run Gate 1 on the amended artifacts and re-run the release 0.53.0 cross-spec review (its verdict
+      goes stale on the amendment), recording both, BEFORE 2.1 starts.
 
 - [ ] 2.1 For each switch 1.1 adds: TDD (UNIT + FILE) its `OPT_INS` row, `set-<feature> on|off`
       (idempotent, refusing other arguments), absent = today's behaviour, `rulesBlock()` gating, the

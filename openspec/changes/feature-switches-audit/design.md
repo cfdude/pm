@@ -20,6 +20,11 @@ no behaviour change on upgrade.
 
 ## Decisions
 
+- **D0 — The audit unit is the surface.** `pm-overhead` gives every surface a stable id and assigns it a
+  feature (`core`, `listings` or an `OPT_INS` id). Most cost sits in `core`, so the audit's candidates are
+  surfaces, and a switch is a new `OPT_INS` id that named surfaces move to. One vocabulary across both
+  changes: surface id for what is measured, feature id for what is switched.
+
 - **D1 — Threshold 1,000 estimated tokens per session, unconditional surfaces only.** About 4,000 bytes.
   A proposal, not a measurement: **Rob's call.** Conditional surfaces (hooks that fire on a match) are
   costed per firing and are not switched by this rule.

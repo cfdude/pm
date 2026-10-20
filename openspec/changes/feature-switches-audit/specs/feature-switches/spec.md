@@ -5,21 +5,21 @@ switch that follows the existing opt-in pattern, with developer features off by 
 
 ## ADDED Requirements
 
-### Requirement: Every feature in the overhead map has a costed row and a switch decision
+### Requirement: Every surface in the overhead map has a costed row and a switch decision
 
-The README SHALL carry a "What each feature costs" table with one row per feature id in `pm-overhead`'s
-surface-to-feature map: its estimated per-session cost from `overhead --all-features`, labelled an
-estimate, and either the verb that switches it or `no switch` with a reason. A test SHALL fail when the
-table and the map disagree.
+The README SHALL carry a "What each feature costs" table with one row per surface id in `pm-overhead`'s
+map, except that every `listing:` surface is one `listings` row: its feature id, its estimated per-session
+cost from `overhead --all-features` labelled an estimate, and the verb that switches its feature or
+`no switch` with a reason. A test SHALL fail when the table and the map disagree.
 
-#### Scenario: A feature missing from the table fails
+#### Scenario: A surface missing from the table fails
 
-- **WHEN** the map holds a feature id the README table has no row for
+- **WHEN** the map holds a surface id the README table has no row for
 - **THEN** the assertion test fails, naming the id
 
-#### Scenario: A table row for an unknown feature fails
+#### Scenario: A table row for an unknown surface fails
 
-- **WHEN** the README table names a feature id the map does not hold
+- **WHEN** the README table names a surface id the map does not hold
 - **THEN** the assertion test fails, naming the id
 
 #### Scenario: The listings are reported as not switchable
@@ -29,14 +29,20 @@ table and the map disagree.
 
 ### Requirement: A switch is added only where the measured cost and the feature's nature justify it
 
-A feature SHALL get a switch only when its unconditional per-session cost is at or above the named
-threshold and its text is not a safety stop or record-integrity rule, or when it is a developer feature
-that costs tokens itself. Each decision SHALL be recorded with its number in the audit document.
+An audit candidate is a surface or named group of surfaces. It SHALL get a switch only when its
+unconditional per-session cost is at or above the named threshold and its text is not a safety stop or
+record-integrity rule, or when it is a developer feature that costs tokens itself. A switch SHALL be a new
+`OPT_INS` id the map re-assigns those surfaces to. Each decision is recorded with its number.
 
 #### Scenario: A safety rule is never switched
 
-- **WHEN** the gate procedure's required items exceed the threshold
-- **THEN** the README row says `no switch` with the reason that it is a record-integrity rule
+- **WHEN** the `rules:the-gate-procedure-required-task-items` surface exceeds the threshold
+- **THEN** its README row says `no switch` with the reason that it is a record-integrity rule
+
+#### Scenario: A switch re-assigns named surfaces
+
+- **WHEN** the audit adds a switch for a `core` surface
+- **THEN** the map assigns that surface id to the new `OPT_INS` id and `overhead` reports it under that feature
 
 #### Scenario: A developer feature is switchable at any size
 
