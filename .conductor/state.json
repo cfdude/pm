@@ -13400,8 +13400,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.877Z",
-      "touchedAt": "2026-10-14T04:57:06.540Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T12:51:58.863Z",
+      "release": "0.53.0",
+      "notes": [
+        {
+          "at": "2026-10-20T12:51:58.858Z",
+          "actor": "agent",
+          "text": "Rob 2026-10-20 (artifact thread): approved scoping to Gate 2 only — a Gate 2 fail requires --base-sha/--head-sha; a Gate 1 fail keeps taking --artifact. Re-scope the epic's spec accordingly before building (touches fewer than ~12 tests)."
+        }
+      ]
     },
     {
       "id": "planning-completeness-orient-and-autonomy-boundary",
@@ -15097,7 +15104,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2157,
+  "revision": 2158,
   "reviewMode": "standard",
   "releases": [
     {
