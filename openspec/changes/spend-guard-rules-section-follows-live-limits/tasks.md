@@ -28,9 +28,11 @@
 - [ ] 1.1 TDD (UNIT): a pure `guardLivenessChanged(before, after)` over two state objects, true exactly
       when `guardConfigured()` differs. Cover archive, remove, un-archive, an epic-layer limit on an
       epic moved between archived and not, and a project limit present throughout (false).
-- [ ] 1.2 TDD (FILE): in the dispatch wrapper, take the before-image from the snapshot already loaded,
-      read the after-image once, and call `writeRules()` when 1.1 is true and the verb did not already
-      refresh (design D3). Cover every scenario of the MODIFIED requirement, including mtime unchanged
+- [ ] 1.2 TDD (FILE): in the dispatch wrapper, for a NON-hook verb that wrote state only (design D1a),
+      take the before-image from the snapshot already loaded, read the after-image once, and call
+      `writeRules()` when 1.1 is true and the verb did not already refresh (design D3). Hook verbs are
+      derived from `hooks/hooks.json`, never typed; cover "A hook does no liveness comparison" with the
+      observe-reads fixture (no extra `state.json` read on PreToolUse) and a `commit-nudge` self-heal. Cover every scenario of the MODIFIED requirement, including mtime unchanged
       on a no-op write and on a refused write, and the warning on a failed refresh (design D4).
 - [ ] 1.3 Changeset fragment `.changesets/spend-guard-rules-section-follows-live-limits.md`.
 

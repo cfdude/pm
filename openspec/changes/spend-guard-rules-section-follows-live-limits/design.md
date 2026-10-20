@@ -23,6 +23,14 @@ refreshing from a hook (the PreToolUse hook does no guard work — `spend-guard`
   repeats the defect class this epic is (a writer added later is missed), and the call-site sweep would
   have to be re-run by every future change. The wrapper already holds a snapshot; the after-image is one
   `loadState()` and `guardConfigured()` is a pure function of it.
+- **D1a — Non-hook verbs only.** Hooks share `main()`, and `render()`'s and `commitNudge()`'s
+  `reconcileArchived()` self-heal saves state on a hook path (`scripts/lib/state.mjs` `saveState`, the
+  `onConflict: "skip"` hook policy). Comparing there would add an after-image read to every PreToolUse
+  and could rewrite `CLAUDE.md` from a hook, against the `spend-guard` hot-path requirement ("The guard
+  adds no work to a hook path"). So the comparison runs only for a verb not named in `hooks/hooks.json`
+  that reached a state write. A liveness change made by a hook's self-heal is picked up by the next
+  non-hook write; the comparison there is made against the liveness the on-disk block reflects (the
+  section's presence in `rulesBlock()` output), not only against this invocation's before-image.
 - **D2 — Refresh only on a change.** `writeRules()` touches `CLAUDE.md`; an unconditional refresh would
   rewrite it on every verb. A changed liveness bit is the only trigger.
 - **D3 — A verb that already refreshed is not refreshed twice.** `set-spend-guard` keeps its own refresh;

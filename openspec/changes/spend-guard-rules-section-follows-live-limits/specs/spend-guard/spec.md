@@ -6,8 +6,9 @@ While a limit is configured (opt-in requirement), the rules block SHALL carry a 
 section after the `## Spend tracking` slot, telling the agent to run `spend-guard <epic>` before every
 review or fix dispatch, to treat exit 2 as a STOP autonomy does not bypass and escalate, to record the
 decision with `override-spend-guard`, which no autonomy grant covers, and to mark review dispatches
-`phase=review round=<n>`. With no limit there is no such section. Any invocation that changes whether
-a limit is configured SHALL refresh the block.
+`phase=review round=<n>`. With no limit there is no such section. A non-hook verb whose state write
+changes whether a limit is configured SHALL refresh the block. A hook verb (one `hooks/hooks.json`
+invokes) SHALL do no liveness comparison and no refresh.
 
 #### Scenario: A configured limit adds the section
 
@@ -50,6 +51,12 @@ a limit is configured SHALL refresh the block.
 
 - **WHEN** `update-epic E --status archived` is refused for a missing outcome
 - **THEN** `CLAUDE.md` is byte-identical to before
+
+#### Scenario: A hook does no liveness comparison
+
+- **WHEN** the SessionStart, PreCompact, PostToolUse or PreToolUse hook runs, including a `commit-nudge` whose archive self-heal saves state
+- **THEN** no after-image of `state.json` is read for the guard and `CLAUDE.md` is byte-identical to before
+- **AND** the next non-hook verb that writes state refreshes the block if liveness differs from what the block shows
 
 #### Scenario: A refresh failure does not fail the write
 
