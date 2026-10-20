@@ -133,7 +133,7 @@ const BOUNDED_LIST = 5;
  *  never reach a block that must be read whole. A list is `{heading, items, boundedCap, fromEnd, more}`:
  *  items are arrays of lines, `fromEnd` keeps the LAST n (releases: the most recent), and `more(n)` is
  *  the visible overflow line, which names where the rest really is. */
-export function buildBriefParts(state, { consume = false, specSync = false } = {}) {
+export function buildBriefParts(state, { consume = false, specSync = false, lessonRejects = null } = {}) {
   const epics = resolveEpics(state);
   const byId = Object.fromEntries(epics.map(e => [e.id, e]));
   const L = [];
@@ -375,6 +375,21 @@ export function buildBriefParts(state, { consume = false, specSync = false } = {
   // file that the closeout then commits, and PROJECT.md would change with staging state rather than
   // with the record (design D6). The `render` VERB prints it on stdout instead (render.mjs renderVerb).
   if (specSync) L.push(...specSyncBlock(state, specSync === true ? {} : specSync));
+
+  // gh-228 — LESSON MATCHERS THE ENGINE REFUSED. A `detect:` that cannot work is rejected by
+  // classifyLessons() with a named reason, the lesson-advice hook (which must stay silent) never fires
+  // it, and until now nothing told the repo that owns it: only pm's own lessons-index test names a
+  // reject. The caller passes classifyLessons().rejected and only the SessionStart briefing does, so
+  // PROJECT.md and the PreCompact snapshot (both tracked or file-backed, and both built without it) do
+  // not depend on the contents of docs/lessons/. Prints nothing when there is nothing to say. Each
+  // reason carries text the lesson's author wrote, so it is escaped at THIS print site as well as by
+  // the line sink.
+  if (Array.isArray(lessonRejects) && lessonRejects.length) {
+    L.push(`⚠ ${lessonRejects.length} lesson matcher${lessonRejects.length === 1 ? "" : "s"} rejected — the lesson-advice hook never fires ${lessonRejects.length === 1 ? "it" : "them"}; fix the \`detect:\` in docs/lessons/:`);
+    for (const r of lessonRejects.slice(0, BOUNDED_LIST)) L.push(`  - ${escapeControls(r.file)}: ${escapeControls(r.reason)}`);
+    if (lessonRejects.length > BOUNDED_LIST) L.push(`  (+${lessonRejects.length - BOUNDED_LIST} more in docs/lessons/)`);
+    L.push("");
+  }
 
   // Both ends of every handoff, so the epic that INHERITED work is as legible as the one that
   // carried it out — a relationship visible from one side only is how a remainder disappears.

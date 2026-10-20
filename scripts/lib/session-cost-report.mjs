@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildBriefParts } from "./briefing.mjs";
+import { classifyLessons } from "./lessons.mjs";
 import { engineRoot } from "./constants.mjs";
 import { runtimeVersion } from "./invocation.mjs";
 import { rulesTarget } from "./platform.mjs";
@@ -15,7 +16,11 @@ import { BRIEF_BYTE_CAP, fitBrief, measureRulesBlock, onDiskRulesBlock, sessionC
  *  it and `upgrade` / `render` measure it, so the number they print is the number a session pays.
  *  Returns fitBrief()'s result. `consume` and `specSync` are buildBriefParts()'s, passed straight through. */
 export function sessionStartContext(state, { consume = false, specSync = true } = {}) {
-  const { plain, parts } = buildBriefParts(state, { consume, specSync });
+  // gh-228: the rejected lesson matchers ride only on the SessionStart context (this function), never in
+  // buildBrief() itself. A corpus that cannot be read is no reject to report, and never breaks the brief.
+  let lessonRejects = null;
+  try { lessonRejects = classifyLessons().rejected; } catch { /* the briefing outranks the lint */ }
+  const { plain, parts } = buildBriefParts(state, { consume, specSync, lessonRejects });
   // 0.49.0 (runtime-support) — ONE line, and only here: below the support floor, prepended at the top
   // for the reason briefing.mjs gives its currency lines. NOT in buildBrief(), which PROJECT.md (a
   // tracked file) and the PreCompact snapshot also embed — one machine's Node must never land in
