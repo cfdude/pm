@@ -14444,7 +14444,7 @@
       "id": "gh-cfdude-pm-251",
       "title": "Spend guard: the token ceiling counts cache-read, so it measures session length rather than work done",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -14460,7 +14460,7 @@
         "42adc70e78ff1e27fc94cbf5f95ad013bb48e192"
       ],
       "createdAt": "2026-10-17T12:41:42.610Z",
-      "touchedAt": "2026-10-20T11:36:04.943Z",
+      "touchedAt": "2026-10-20T11:36:45.401Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:43.405Z",
@@ -14563,7 +14563,24 @@
           "lastVerdictAt": "2026-10-20T11:27:28.888Z",
           "lastPassAt": "2026-10-20T11:27:28.888Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:36:45.396Z",
+        "reason": "Spend guard token ceiling gains an explicit basis (total|work), a work total, a breakdown line, a low-total warning and basis-aware overrides; built in rc/0.53.0 as b8550a2c 360389ad 696976c3 43fad44e 42adc70e, converged Gate 2 at 8c4b1c78. Outstanding: D.1 README and Mintlify, moved to release-0-53-0-cut",
+        "carriedTo": "release-0-53-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:36:45.382Z",
+        "deferrals": [
+          {
+            "epic": "release-0-53-0-cut",
+            "section": "README and Mintlify for the token basis, worked example and cache-read explanation (task D.1)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T11:36:45.396Z"
     },
     {
       "id": "gh-cfdude-pm-250",
@@ -14920,7 +14937,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2146,
+  "revision": 2147,
   "reviewMode": "standard",
   "releases": [
     {

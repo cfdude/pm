@@ -83,5 +83,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs. Re-record, never withdraw. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic gh-cfdude-pm-251 --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive gh-cfdude-pm-251`. The archive-move commit is NOT attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic gh-cfdude-pm-251 --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive gh-cfdude-pm-251`. The archive-move commit is NOT attributed.
