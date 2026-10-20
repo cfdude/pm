@@ -35,6 +35,10 @@ change an epic.
 - **D4 — Every epic the save changed is stamped**, including an epic changed as a side effect (for
   example the previously active epic demoted by `set-active`). The trail answers "which sessions
   touched this record", which is what the save can know.
+- **D4a — Hooks never stamp and never refuse.** A hook's save is a self-heal (`reconcileArchived()`
+  under the `onConflict: "skip"` hook policy), not work a session did, and a hook must never fail a
+  tool call because of an environment variable. Hook verbs are derived from `hooks/hooks.json`; on them
+  identity resolution is skipped entirely.
 - **D5 — No inverse verb.** The trail is history; an epic removed with `remove-epic` takes it along. A
   mistyped identity is a true record of what was typed. R.1 records this as a justified omission.
 

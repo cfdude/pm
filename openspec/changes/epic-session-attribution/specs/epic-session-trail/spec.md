@@ -28,7 +28,7 @@ The identity SHALL resolve as `--session`, else `PM_SESSION`, else none.
 
 ### Requirement: A changed epic records the session that changed it
 
-When an invocation's save changes an epic and an identity resolves, the same write SHALL record it in
+When a non-hook verb's save changes an epic and an identity resolves, the same write SHALL record it in
 `epic.sessions`: one `{session, firstAt, lastAt}` entry per distinct identity, in first-seen order.
 Entries SHALL NOT be reordered or removed. With no identity, `epic.sessions` SHALL NOT be written.
 
@@ -63,6 +63,11 @@ Entries SHALL NOT be reordered or removed. With no identity, `epic.sessions` SHA
 - **WHEN** E1 is active and `set-active E2 --session build-a` runs
 - **THEN** every epic whose record that save changed carries a `build-a` entry
 
+#### Scenario: A hook's self-heal save stamps nothing
+
+- **WHEN** `PM_SESSION=build-a` is set and a hook's `reconcileArchived()` self-heal changes an epic
+- **THEN** that epic gains no `sessions` entry from the hook's save
+
 #### Scenario: An older state file loads
 
 - **WHEN** a state file written by 0.52.0 is loaded
@@ -71,13 +76,19 @@ Entries SHALL NOT be reordered or removed. With no identity, `epic.sessions` SHA
 ### Requirement: A session identity is validated before any write
 
 An identity SHALL be non-blank after trimming, at most 128 characters, and free of control characters.
-An invalid identity SHALL be refused, naming the rule, with nothing written.
+On a non-hook verb an invalid identity SHALL be refused, naming the rule, with nothing written. A hook
+verb (one `hooks/hooks.json` invokes) SHALL neither validate, refuse on, nor stamp an identity.
 
 #### Scenario: A blank identity is refused
 
 - **WHEN** `update-epic E --notes "x" --session "   "` runs
 - **THEN** the verb exits non-zero naming the rule
 - **AND** `state.json` is byte-identical to before
+
+#### Scenario: A hook never refuses on the identity
+
+- **WHEN** `PM_SESSION` holds an escape character and the SessionStart, PreCompact, PostToolUse or PreToolUse hook runs
+- **THEN** the hook behaves exactly as with no identity: no refusal, no stamp, and its output carries no identity text
 
 #### Scenario: A control character is refused
 

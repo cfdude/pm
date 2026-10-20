@@ -36,7 +36,8 @@
 ## 2. The trail
 
 - [ ] 2.1 TDD (UNIT): in the save, stamp every epic whose record changed with the resolved identity
-      (design D1, D2, D4). Cover every scenario of "A changed epic records the session that changed it",
+      (design D1, D2, D4), on non-hook verbs only (design D4a; hook verbs derived from `hooks/hooks.json`).
+      Cover "A hook's self-heal save stamps nothing" and "A hook never refuses on the identity". Cover every scenario of "A changed epic records the session that changed it",
       including the no-op byte-identity and the 0.52.0 fixture.
 - [ ] 2.2 `commands/epic.md`: `--session` and `epic.sessions`; changeset fragment
       `.changesets/epic-session-attribution.md`.
