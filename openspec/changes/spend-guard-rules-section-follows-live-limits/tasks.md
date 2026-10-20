@@ -16,10 +16,10 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/spend-guard/spec.md` and this
+- [x] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/spend-guard/spec.md` and this (Gate 1 pass recorded 2026-10-20)
       file; fix Critical and Important; `openspec validate spend-guard-rules-section-follows-live-limits --strict`
       (read the exit status); `record-gate-review … --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. The rules block is also edited by `feature-switches-audit`. Name the chokepoint: the
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. The rules block is also edited by `feature-switches-audit`. Name the chokepoint: the (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       `spend-guard` spec is also edited by `gh-cfdude-pm-251` (other requirements); the rules block is
       also edited by `dehardcode-openspec-change-root-in-instructions` (other text).
 
@@ -46,26 +46,26 @@
       expected) and why it is excluded. Inverse: archive ↔ un-archive and add ↔ remove are both covered
       by the same comparison. Save as `call-site-sweep-R.1.txt`.
 - [x] R.2 **Verify against the commit** (item 2).
-- [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4); never the archive move.
-- [ ] R.5 Cross-spec review (item 5): 0.2.
-- [ ] R.6 Disposition (item 6): C.2.
-- [ ] R.7 **Route what the work taught you** (item 7). Candidate practice to name: "a section gated on
+- [x] R.5 Cross-spec review (item 5): 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): C.2. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7). Candidate practice to name: "a section gated on (practice: a section gated on derived state is refreshed on the derivation change, not at each writer; process failure: the spec scenario named the wrong verb, fixed in 72d4700e; see epic notes)
       derived state is refreshed on the derivation's change, not at each writer".
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): every liveness writer
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): every liveness writer (converged Gate 2 recorded at 8c4b1c78)
       covered, no rewrite on a no-op, no hook does guard work. Record with SHAs reaching every
       attributed commit.
 
 ## D. Docs (after Gate 2 only)
 
-- [ ] D.1 None user-facing: the section now does what `commands/set-spend-guard.md` already says. State
+- [x] D.1 None user-facing: the section now does what `commands/set-spend-guard.md` already says. State (none user-facing: the section now does what commands/set-spend-guard.md already says)
       that in the closeout.
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 if anything was attributed after it.
+- [x] C.1 Re-record Gate 2 if anything was attributed after it. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic spend-guard-rules-section-follows-live-limits --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive spend-guard-rules-section-follows-live-limits`. Not attributed.
