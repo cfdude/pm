@@ -127,7 +127,7 @@ rendered from these rules alone, never from a model call.
 ### Requirement: The cross-release trend gives a verdict only above a data floor
 
 The analysis SHALL report mean `work` per epic for each release with attributed epics. It SHALL give a
-verdict (`growing`, `falling` or `flat`, at a named 20% threshold between the latest two releases) only
+verdict (`growing`, `falling` or `flat`, at a named 20% threshold between the latest two releases, ordered by release registration, newest first) only
 when at least 2 releases each hold at least 3 epics with attributed rows, and otherwise SHALL print
 `insufficient data` with the release and epic counts.
 

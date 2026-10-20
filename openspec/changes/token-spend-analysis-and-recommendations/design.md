@@ -44,7 +44,8 @@ traceable to ledger rows.
   set the role's model with `set-profile`/`--model`; review-loop → the guard's escalation (`spend-guard`);
   low-coverage → mark dispatches and keep an epic active; invalid-markers → fix the phase/role names.
 - **D5 — The trend floor.** A verdict needs at least 2 releases each with at least 3 epics holding
-  attributed rows. Then `growing` when the latest release's mean `work` per epic exceeds the previous
+  attributed rows. Releases are ordered by registration order in state, newest first. Then `growing` when the latest
+  release's mean `work` per epic exceeds the previous
   release's by at least 20%, `falling` at 20% or more below, else `flat`. Below the floor:
   `insufficient data — <r> releases, <e> epics`. 20% is a proposal (Rob's call, with D3).
 - **D6 — Tools from the ledger's stored `tools` names.** Every row already holds the `tool_use` names of
