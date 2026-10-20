@@ -33,7 +33,9 @@ no configured 0.52 ceiling silently changes meaning.
   the project counts `total`. `warnAt` applies to whichever basis resolves.
 - **D4 — An override's `basis`.** A tokens override's `baseline` is a count in one basis. Comparing it
   with a count in another is meaningless, so an override whose `basis` differs from the resolved basis is
-  ignored, and `spend-guard` prints that it was recorded in another basis. An override recorded before
+  ignored, and `spend-guard` prints that it was recorded in another basis. Only the LATEST live tokens
+  override governs; an older one in the matching basis never revives (reviving would let a basis flip
+  quietly restore a stale baseline). An override recorded before
   this release has no `basis` and reads as `total` (D1).
 - **D5 — Floor of 10,000,000, total basis only.** The issue's suggestion, labelled as such in the warning
   and in `commands/set-spend-guard.md`. A work-basis ceiling gets no floor: there is no measured range yet.

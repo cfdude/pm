@@ -15,6 +15,7 @@ read it from the totals object rather than summing the classes itself.
 
 - **WHEN** `spend --json` runs
 - **THEN** `epics.<id>.totals`, each `agents.<agentId>.totals` and `unattributed.totals` all hold `work`
+- **AND** every bucket of `byActor`, `byRole`, `byPhase`, `byTier` and `byRound` holds `work`
 
 #### Scenario: The text report prints it
 

@@ -164,9 +164,9 @@ message, that the floor is a suggestion rather than a measurement, and naming `-
 ### Requirement: A tokens override is bound to the basis it was counted in
 
 `override-spend-guard <epicId> --signal tokens` SHALL record `basis` on the entry: the basis the baseline
-was counted in. A tokens override whose `basis` differs from the basis that resolves now SHALL NOT be
-applied, and `spend-guard` SHALL say it was recorded in another basis. An entry with no `basis` reads as
-`total`.
+was counted in. Only the latest live tokens override governs: when its `basis` differs from the basis
+that resolves now, no baseline is applied (an older override never revives) and `spend-guard` SHALL say
+so. An entry with no `basis` reads as `total`.
 
 #### Scenario: The override records its basis
 
@@ -178,6 +178,11 @@ applied, and `spend-guard` SHALL say it was recorded in another basis. An entry 
 - **WHEN** E holds a live tokens override with `basis: "total"` and E's basis is later set to `work`
 - **THEN** `spend-guard E` applies no baseline from that override
 - **AND** it prints that the override was recorded in the `total` basis
+
+#### Scenario: An older matching override does not revive
+
+- **WHEN** E holds an older live tokens override with `basis: "work"` and a later one with `basis: "total"`, and E resolves `tokenBasis work`
+- **THEN** `spend-guard E` applies no baseline and says the latest override was recorded in the `total` basis
 
 #### Scenario: A 0.52 override reads as total
 
