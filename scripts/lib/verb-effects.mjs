@@ -130,6 +130,7 @@ export const VERB_EFFECTS = {
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
   "record-tracker-refresh": { effect: "mutates", epicWriting: true, writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
   "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
+  "dev-log": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree: the ingest `spend` runs (rows, cursor, markers, devlog.jsonl, ingest lock; --no-ingest skips it); --clear removes devlog.jsonl only — never state.json and never a transcript" },
   "set-dev-log": { effect: "mutates", writes: "state.json (the devLog switch); nothing else — it writes no rules block and no ledger file" },
   "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch), CLAUDE.md (the rules block), and the main working tree's .conductor/spend/timeline.jsonl" },
   // `detachedNoOp`: `spend` writes ONLY into the MAIN working tree's git-ignored .conductor/spend/ and

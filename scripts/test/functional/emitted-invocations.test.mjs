@@ -3009,7 +3009,16 @@ const PRINTER_FIXTURES = {
   "set-dev-log on while spend tracking is off (developer-session-log)"() {
     // The refusal names the prerequisite switch as a runnable invocation.
     const repo = remedyRepo();
-    return [[repo.run(["set-dev-log", "on"]), /set-spend-tracking on/]];
+    const out = [[repo.run(["set-dev-log", "on"]), /set-spend-tracking on/]];
+    // dev-log's own off messages and the clear's refusal name the switch to run first.
+    out.push([repo.run(["dev-log"]), /set-spend-tracking on/]);
+    out.push([repo.run(["dev-log", "--clear", "--yes"]), /set-spend-tracking on/]);
+    repo.ok(["set-spend-tracking", "on"]);
+    out.push([repo.run(["dev-log"]), /set-dev-log on/]);
+    // and switching the log off names the verb that removes what it kept.
+    repo.ok(["set-dev-log", "on"]);
+    out.push([repo.run(["set-dev-log", "off"]), /dev-log --clear --yes/]);
+    return out;
   },
   "reconcile owed: pop-detour, --clear-links, a bad --link, remove-epic, and moving the pointer off"() {
     const repo = remedyRepo();

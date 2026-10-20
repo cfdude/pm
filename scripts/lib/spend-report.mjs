@@ -22,7 +22,7 @@ export const NONE_KEY = "none";
 
 export const emptyTotals = () => ({ input: 0, cacheCreation: 0, cacheRead: 0, output: 0, total: 0, work: 0, messages: 0 });
 
-function addTo(t, r) {
+export function addTo(t, r) {
   t.input += r.input; t.cacheCreation += r.cacheCreation; t.cacheRead += r.cacheRead; t.output += r.output;
   t.total += rowTotal(r); t.work += rowWork(r); t.messages += 1;
   return t;

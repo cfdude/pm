@@ -175,6 +175,32 @@ x("dev-log-capture.mjs", "keyOf", {
 x("dev-log-capture.mjs", "appendDevLog", {
   "fresh.map((e) => JSON.stringify(e)).join(\"\\n\")": 1,
 }, "not-output", "devlog.jsonl's file BODY, one JSON object per line built from the stored-entry allowlist");
+j("dev-log-report.mjs", "featuresLine", ALL, "sink-flow", "called only inside renderDevLog's L.push(...), which returns L.map(escapeControls)");
+x("dev-log-report.mjs", "buildSessions", {
+  "notInLedger": 1,
+}, "engine", "a count of messages (a number the engine computed) inside a fixed phrase");
+x("dev-log-report.mjs", "renderDevLog", {
+  "k": 1,
+}, "sink-flow", "a tool name from the log, interpolated into the `tools` string that is pushed onto L and returned through L.map(escapeControls)");
+x("dev-log-report.mjs", "renderDevLog", {
+  "n(v)": 1,
+}, "engine", "a byte count formatted with toLocaleString");
+x("dev-log-report.mjs", "devLogVerb", {
+  "ingestInfo.reason": 1,
+  "log.corrupt": 1,
+  "[...lines, ...extra.map(escapeControls)].join(\"\\n\")": 1,
+}, "escaped", "renderDevLog() returns lines already through L.map(escapeControls), the extra lines are mapped through escapeControls here, and ingestInfo.reason is one of ingestForReport's fixed phrases");
+x("dev-log-report.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any stored or typed value where it is built");
+x("dev-log-report.mjs", "devLogVerb", {
+  "reportFlags.join(\", --\")": 1,
+  "flag": 1,
+  "r.reason": 1,
+}, "engine", "registry flag names and the engine's own reason word (absent|unreadable); the typed value in the refusal beside `flag` is escaped");
+x("dev-log-report.mjs", "devLogVerb", {
+  "jsonText(report, null, 2)": 2,
+}, "json", "--json: the whole stdout is one JSON document");
 x("spend-tracking.mjs", "TIMELINE", {
   "ARTIFACT.SPEND_PREFIX": 1,
 }, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");

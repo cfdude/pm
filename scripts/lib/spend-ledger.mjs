@@ -293,6 +293,16 @@ export function ingest(opts, fsx = fs) {
   try { return ingestLocked(opts, fsx); } finally { releaseLock(fd, lockPath, fsx); }
 }
 
+/** Run `fn` while holding the ingest lock, or report `{ busy: true }` when a live ingest holds it. For the
+ *  one writer outside this module that must not race an ingest: `dev-log --clear`. */
+export function withLedgerLock(mainRoot, fn, fsx = fs) {
+  fsx.mkdirSync(spendDir(mainRoot), { recursive: true });
+  const lockPath = at(mainRoot, "lock");
+  const fd = acquireLock(lockPath, Date.now(), fsx);
+  if (fd === null) return { busy: true };
+  try { return { busy: false, value: fn() }; } finally { releaseLock(fd, lockPath, fsx); }
+}
+
 // ───────────────────────────── reading the ledger back ─────────────────────────────
 
 function readJsonLines(file, fsx) {

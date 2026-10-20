@@ -82,6 +82,8 @@ const VERB_BASELINE = {
   // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
   list: () => ["list"],
   overhead: () => ["overhead"],
+  // developer-session-log: with the log off `dev-log` reads nothing, so the valueless sweep reaches its flags cheaply.
+  "dev-log": () => ["dev-log"],
   "log-detour": () => ["log-detour", "a baseline fix"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
@@ -336,9 +338,9 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "overhead --all-features",
     "override-spend-guard --revoke",
     // gh-204: `list` shares --json (the same genuine boolean: a rendering).
-    "owners/activity/spend/spend-guard/list/overhead --json",
+    "owners/activity/spend/spend-guard/list/overhead/dev-log --json",
     "purge-logs --dry-run",
-    "purge-logs/spend --yes",
+    "purge-logs/spend/dev-log --yes",
     "push-detour --no-reconcile",
     "push-detour --reconcile",
     "remove-epic --cascade",
@@ -346,10 +348,10 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "rules --sections",
     "set-lane-routing --clear",
     "set-tracker --remove",
-    "spend --clear",
     "spend --rebuild",
     "spend --timeline",
-    "spend/spend-guard --no-ingest",
+    "spend/dev-log --clear",
+    "spend/spend-guard/dev-log --no-ingest",
     "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");

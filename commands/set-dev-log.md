@@ -23,4 +23,4 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 What is stored: byte COUNTS by kind (user text, tool results per tool name, attachments, an image count, the
 response's text and thinking) and identifiers, in `.conductor/spend/devlog.jsonl` (git-ignored with the spend
-directory). No prompt, response, tool input or tool output text is stored. Read it back with the `dev-log` verb.
+directory). No prompt, response, tool input or tool output text is stored. Read it back with `/pm:dev-log`.
