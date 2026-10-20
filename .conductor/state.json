@@ -13776,7 +13776,7 @@
       "id": "decision-cost-log",
       "title": "Decision cost log: record each significant decision with the tokens it cost, for postmortem self-reflection",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -13798,7 +13798,7 @@
         "3ed04972fa78ffe115f09314c4d3258287e9d4e2"
       ],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-20T11:40:19.121Z",
+      "touchedAt": "2026-10-20T11:41:01.261Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -13861,7 +13861,28 @@
           "lastVerdictAt": "2026-10-20T11:27:36.227Z",
           "lastPassAt": "2026-10-20T11:27:36.227Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:41:01.255Z",
+        "reason": "record-decision and decisions verbs plus the Decisions section in spend-analysis --epic: numbered append, withdraw-with-reason keeping the record, cost read from the ledger through spend's pipeline, no stored cost; built in rc/0.53.0 as e05d91cc 3ed04972, converged Gate 2 at 8c4b1c78. Outstanding: D.1 README and Mintlify and the R.7 dogfood decision, moved to release-0-53-0-cut",
+        "carriedTo": "release-0-53-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:41:01.237Z",
+        "deferrals": [
+          {
+            "epic": "release-0-53-0-cut",
+            "section": "README and Mintlify for record-decision and decisions (task D.1)"
+          },
+          {
+            "epic": "release-0-53-0-cut",
+            "section": "dogfood record-decision with read-back (task R.7)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T11:41:01.255Z"
     },
     {
       "id": "rules-block-session-cost",
@@ -14986,7 +15007,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2150,
+  "revision": 2151,
   "reviewMode": "standard",
   "releases": [
     {
