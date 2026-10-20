@@ -17,9 +17,10 @@ You will be given two ids: the **paused epic** and the **detour epic** (OpenSpec
 Procedure:
 
 1. Read the paused epic's proposal and tasks:
-   `openspec/changes/<paused>/proposal.md` and `tasks.md` (and its delta specs if present).
+   `proposal.md` and `tasks.md` in the paused change's directory (`changeRoot` from
+   `openspec status --change <paused> --json`; by default `openspec/changes/<paused>/`), and its delta specs if present.
 2. Determine what the detour actually changed:
-   - the detour's archived delta specs under `openspec/changes/archive/<detour>/` (or its
+   - the detour's archived delta specs (in its archived directory, where `/opsx:archive` moved it) (or its
      proposal if not yet archived),
    - the real diff: `git log` and `git diff` for the detour's commits; inspect the touched
      source files and any shared interfaces/contracts.

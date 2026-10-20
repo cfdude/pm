@@ -13699,9 +13699,11 @@
       ],
       "reconcileNeeded": false,
       "description": "Gate 2 minor on spend-budget-and-stuck-loop-guard: the managed rules block's ## Spend guard section is toggled only by set-spend-guard. Archiving or removing the only epic that holds a limit leaves the section stale; un-archiving it (update-epic --status untriaged) leaves the section absent while the limit is live, so the per-dispatch spend-guard instruction disappears (the brief and record-gate-review STOPs still fire). Sweep every writer that can change whether a limit is live and refresh the block at each.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c51c99bec71255e600fb8acda0a67a546e3147c0"
+      ],
       "createdAt": "2026-10-14T03:55:59.065Z",
-      "touchedAt": "2026-10-20T05:49:12.674Z",
+      "touchedAt": "2026-10-20T06:57:24.763Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -14183,7 +14185,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2088,
+  "revision": 2089,
   "reviewMode": "standard",
   "releases": [
     {

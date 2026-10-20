@@ -25,18 +25,18 @@
 
 ## 1. The sweep and the edits
 
-- [ ] 1.1 TDD (FILE): a sweep over the population `emitted-instructions` derives (reuse its enumerator;
+- [x] 1.1 TDD (FILE): a sweep over the population `emitted-instructions` derives (reuse its enumerator;
       do not type a list) failing on any `openspec/changes/` not preceded by `by default ` (design D2),
       naming file and line. UNIT twin for the rendered rules block and brief across platforms.
-- [ ] 1.2 Re-derive the sites with `rg -n "openspec/changes" commands agents skills hooks README.md scripts/lib/rules.mjs`
+- [x] 1.2 Re-derive the sites with `rg -n "openspec/changes" commands agents skills hooks README.md scripts/lib/rules.mjs`
       and rewrite each to the D1/D3 form, keeping meaning. `agents/reconciler.md` names
       `openspec status --change <paused> --json` → `changeRoot` (spec scenario). The emitted
       `rules.mjs` line keeps its meaning: the archive-move commit is never attributed.
-- [ ] 1.3 Changeset fragment `.changesets/dehardcode-openspec-change-root-in-instructions.md`.
+- [x] 1.3 Changeset fragment `.changesets/dehardcode-openspec-change-root-in-instructions.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). The rule's sites ARE the `rg` output in 1.2: save it
+- [x] R.1 **Call-site completeness sweep** (item 1). The rule's sites ARE the `rg` output in 1.2: save it
       before and after as `call-site-sweep-R.1.txt`, with every remaining hit justified (the D2 form
       only). List engine-printed messages that keep the literal (`rg -n "openspec/changes" scripts/lib`
       restricted to string literals) and state why each is out of scope (the engine reads that path).

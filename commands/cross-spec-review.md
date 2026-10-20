@@ -106,7 +106,7 @@ A recorded verdict is checkable, and every surface reports it beside the release
 - a reviewed spec **amended** → `⚠ stale`.
 - a spec the engine cannot read → `⚠ unverifiable`, and a `pass` is refused outright rather than
   recorded against evidence that does not exist.
-- the **archive move** (`openspec/changes/<id>/` → `archive/<date>-<id>/`) changes nothing: the
+- the **archive move** (the change's directory → its archived directory) changes nothing: the
   record is keyed change-relative, so relocating a change never reads as staleness.
 - a re-recorded verdict **supersedes** the prior one and keeps it readable — one nested level, so
   the record's depth is not a function of how many rounds ran.

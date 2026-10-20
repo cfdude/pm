@@ -49,16 +49,16 @@ constraint, not the headings: reshape freely, drop nothing.
   A relationship visible from one side only is how a remainder disappears.
 - each **release**'s `N epics, M deferred`.
 
-Story counts are derived live from each change's `tasks.md` — `openspec/changes/<id>/tasks.md` while
-the change is in flight, and its archived copy under `openspec/changes/archive/` once `/opsx:archive`
+Story counts are derived live from each change's `tasks.md` — the one in the change's directory (`changeRoot` from `openspec status --change <id> --json`; by default `openspec/changes/<id>/`) while
+the change is in flight, and its archived copy once `/opsx:archive`
 has moved it — if they look stale, the tasks.md checkboxes are the source of truth, not the index.
 
 **Progress is the UNION of two parts, and an archived change is still read.** An epic's count sums
 its inline **stories** (a story recorded `--wont-do` leaves both sides of the ratio) and its
 **checkbox source** — its plan file, or for an openspec-lane epic the change's `tasks.md`. Neither
 hides the other: adding a story to an epic that has a `tasks.md` no longer makes the tasks unread,
-and the ratio then counts `items`. Once `/opsx:archive` has moved `openspec/changes/<id>/`, the
-checkbox source is the ARCHIVED `tasks.md` (`openspec/changes/archive/<YYYY-MM-DD>-<id>/`, the
+and the ratio then counts `items`. Once `/opsx:archive` has moved the change's directory, the
+checkbox source is the ARCHIVED `tasks.md` (in its archived directory, by default `openspec/changes/archive/<YYYY-MM-DD>-<id>/`; the
 latest date winning where one id was archived twice) — for every epic, not only a backfilled one —
 so an archived epic renders its real counts instead of `0/0`, and the archive gate's handoff demand
 reads the same count. A missing `tasks.md` or plan still warns while the epic is not archived, whether
@@ -163,7 +163,7 @@ carrying the handoff — tick the tasks, or record where they went with
 Before this, the printed archive was refused by the gate it was meant to satisfy.
 
 `delivered-epic-spec-deltas-absent` is the one that reads git's INDEX. For every `delivered`
-openspec-lane epic whose change sits under `openspec/changes/archive/`, it reads each delta
+openspec-lane epic whose change sits in its archived directory (where `/opsx:archive` moved it), it reads each delta
 `specs/<capability>/spec.md` there and checks the main spec `openspec/specs/<capability>/spec.md`:
 every ADDED and MODIFIED requirement header, and each RENAMED `TO`, must be under its
 `## Requirements`; every REMOVED header, and each RENAMED `FROM`, must not be. Headers only, never
@@ -498,7 +498,7 @@ bullet reached 3/15.
    must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
    whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
    refuses the archive. **One exclusion:** the commit that moves
-   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+   the change's directory (`changeRoot` from `openspec status --change <id> --json`) into its archive, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
    the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for the

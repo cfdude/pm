@@ -136,7 +136,7 @@ call, and every commit of a call that made several.
   With no detour but an active epic, a small (≤3 files) `fix:`/`chore:` commit that does not name
   the active epic is logged as `AUTO-DETOUR` — a minimal detour nobody declared.
 - **When it does not.** A commit touching any of the active epic's own artifacts
-  (`openspec/changes/<id>/`, its plan path, its spec path) is that epic's work, not a detour. A
+  (the change's directory, `changeRoot` from `openspec status --change <id> --json`; its plan path, its spec path) is that epic's work, not a detour. A
   commit confined to a paused epic's own artifacts writes no `DETOUR-COMMIT`. A commit touching
   only pm's own generated files (`state.json`, `PROJECT.md`, `render-stamp.json`, the observation
   record) is bookkeeping — in a nested conductor too, because paths are compared from the

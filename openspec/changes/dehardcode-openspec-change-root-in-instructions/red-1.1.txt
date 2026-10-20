@@ -1,0 +1,228 @@
+✔ 1.1 the checker: a pinned path fails, a stated default passes, naming the line (4.51225ms)
+✔ 1.1 the population is derived and reaches every shipped root (0.970208ms)
+✖ 1.1 no shipped document pins an OpenSpec change's location (file and line named on failure) (10.362375ms)
+✖ 1.2 agents/reconciler.md points the reconciler at the resolved location (0.371125ms)
+✖ 1.1 the rules block carries no pinned path on any platform, opt-ins on or off (6.047ms)
+✔ 1.1 the SessionStart brief carries no pinned path (36.420791ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 3
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 715.953958
+
+✖ failing tests:
+
+test at scripts/test/assert/shipped-change-root.test.mjs:29:1
+✖ 1.1 no shipped document pins an OpenSpec change's location (file and line named on failure) (10.362375ms)
+  AssertionError [ERR_ASSERTION]: 
+  README.md:682  reconciles `openspec/changes/archive/` — an archived change the conductor never knew about is
+  README.md:722  | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clea
+  README.md:724  | `update-epic <id> --status active --gate1-waived "<why>"` | An openspec-lane epic whose `openspec/changes/<id>/` exists can no longer be m
+  README.md:725  | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at 
+  README.md:796  `openspec/changes/<id>/`, the checkbox source is the ARCHIVED `tasks.md` for every epic, not only a
+  README.md:1746  | PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than
+  agents/reconciler.md:20  `openspec/changes/<paused>/proposal.md` and `tasks.md` (and its delta specs if present).
+  agents/reconciler.md:22  - the detour's archived delta specs under `openspec/changes/archive/<detour>/` (or its
+  commands/cross-spec-review.md:109  - the **archive move** (`openspec/changes/<id>/` → `archive/<date>-<id>/`) changes nothing: the
+  commands/detour.md:139  (`openspec/changes/<id>/`, its plan path, its spec path) is that epic's work, not a detour. A
+  commands/epic.md:49  `verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also
+  commands/epic.md:49  `verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also
+  commands/epic.md:268  | `--spec-deltas-waived "<why>"` | `specDeltasWaived` | records that a delivered change's archived spec deltas were **deliberately not appli
+  commands/epic.md:309  read fresh. **Never attribute the commit that moves `openspec/changes/<id>/` under `archive/`.**
+  commands/epic.md:801  openspec-lane epic may not be moved INTO `active` while its change is on disk (`openspec/changes/<id>/`) and it
+  commands/epic.md:854  --artifact "openspec/changes/<id>/proposal.md" \
+  commands/epic.md:855  --artifact "openspec/changes/<id>/specs/<cap>/spec.md" --reviewer "<identity>"
+  commands/epic.md:908  change under `archive/` is not an amendment: a recorded `openspec/changes/<id>/<file>` is found under
+  commands/epic.md:994  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+  commands/status.md:52  Story counts are derived live from each change's `tasks.md` — `openspec/changes/<id>/tasks.md` while
+  commands/status.md:53  the change is in flight, and its archived copy under `openspec/changes/archive/` once `/opsx:archive`
+  commands/status.md:60  and the ratio then counts `items`. Once `/opsx:archive` has moved `openspec/changes/<id>/`, the
+  commands/status.md:61  checkbox source is the ARCHIVED `tasks.md` (`openspec/changes/archive/<YYYY-MM-DD>-<id>/`, the
+  commands/status.md:166  openspec-lane epic whose change sits under `openspec/changes/archive/`, it reads each delta
+  commands/status.md:501  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+  commands/sync.md:75  directory under `openspec/changes/`, a plan file, or an archive directory whose name fails it
+  commands/sync.md:100  ## The archive backfill — `openspec/changes/archive/`
+  commands/sync.md:102  `sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for
+  commands/sync.md:119  The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a
+  skills/conductor/SKILL.md:544  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+  skills/conductor/SKILL.md:938  active epic's own artifacts (`openspec/changes/<id>/`, its plan or spec path) is that epic's work,
+  skills/conductor/SKILL.md:1106  - `openspec` lane: `openspec/changes/<epicId>/{proposal,design,tasks}.md` and everything under
+  + actual - expected
+  
+  + [
+  +   'README.md:682  reconciles `openspec/changes/archive/` — an archived change the conductor never knew about is',
+  +   'README.md:722  | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clea',
+  +   'README.md:724  | `update-epic <id> --status active --gate1-waived "<why>"` | An openspec-lane epic whose `openspec/changes/<id>/` exists can no longer be m',
+  +   "README.md:725  | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at ",
+  +   'README.md:796  `openspec/changes/<id>/`, the checkbox source is the ARCHIVED `tasks.md` for every epic, not only a',
+  +   'README.md:1746  | PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than',
+  +   'agents/reconciler.md:20  `openspec/changes/<paused>/proposal.md` and `tasks.md` (and its delta specs if present).',
+  +   "agents/reconciler.md:22  - the detour's archived delta specs under `openspec/changes/archive/<detour>/` (or its",
+  +   'commands/cross-spec-review.md:109  - the **archive move** (`openspec/changes/<id>/` → `archive/<date>-<id>/`) changes nothing: the',
+  +   "commands/detour.md:139  (`openspec/changes/<id>/`, its plan path, its spec path) is that epic's work, not a detour. A",
+  +   'commands/epic.md:49  `verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also',
+  +   'commands/epic.md:49  `verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also',
+  +   'commands/epic.md:268  | `--spec-deltas-waived "<why>"` | `specDeltasWaived` | records that a delivered change\'s archived spec deltas were **deliberately not appli',
+  +   'commands/epic.md:309  read fresh. **Never attribute the commit that moves `openspec/changes/<id>/` under `archive/`.**',
+  +   'commands/epic.md:801  openspec-lane epic may not be moved INTO `active` while its change is on disk (`openspec/changes/<id>/`) and it',
+  +   'commands/epic.md:854  --artifact "openspec/changes/<id>/proposal.md" \\',
+  +   'commands/epic.md:855  --artifact "openspec/changes/<id>/specs/<cap>/spec.md" --reviewer "<identity>"',
+  +   'commands/epic.md:908  change under `archive/` is not an amendment: a recorded `openspec/changes/<id>/<file>` is found under',
+  +   'commands/epic.md:994  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a',
+  +   "commands/status.md:52  Story counts are derived live from each change's `tasks.md` — `openspec/changes/<id>/tasks.md` while",
+  +   'commands/status.md:53  the change is in flight, and its archived copy under `openspec/changes/archive/` once `/opsx:archive`',
+  +   'commands/status.md:60  and the ratio then counts `items`. Once `/opsx:archive` has moved `openspec/changes/<id>/`, the',
+  +   'commands/status.md:61  checkbox source is the ARCHIVED `tasks.md` (`openspec/changes/archive/<YYYY-MM-DD>-<id>/`, the',
+  +   'commands/status.md:166  openspec-lane epic whose change sits under `openspec/changes/archive/`, it reads each delta',
+  +   'commands/status.md:501  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a',
+  +   'commands/sync.md:75  directory under `openspec/changes/`, a plan file, or an archive directory whose name fails it',
+  +   'commands/sync.md:100  ## The archive backfill — `openspec/changes/archive/`',
+  +   'commands/sync.md:102  `sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for',
+  +   'commands/sync.md:119  The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a',
+  +   'skills/conductor/SKILL.md:544  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a',
+  +   "skills/conductor/SKILL.md:938  active epic's own artifacts (`openspec/changes/<id>/`, its plan or spec path) is that epic's work,",
+  +   'skills/conductor/SKILL.md:1106  - `openspec` lane: `openspec/changes/<epicId>/{proposal,design,tasks}.md` and everything under'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/shipped-change-root.test.mjs:34:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'README.md:682  reconciles `openspec/changes/archive/` — an archived change the conductor never knew about is', 'README.md:722  | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clea', 'README.md:724  | `update-epic <id> --status active --gate1-waived "<why>"` | An openspec-lane epic whose `openspec/changes/<id>/` exists can no longer be m', "README.md:725  | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at ", 'README.md:796  `openspec/changes/<id>/`, the checkbox source is the ARCHIVED `tasks.md` for every epic, not only a', 'README.md:1746  | PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than', 'agents/reconciler.md:20  `openspec/changes/<paused>/proposal.md` and `tasks.md` (and its delta specs if present).', "agents/reconciler.md:22  - the detour's archived delta specs under `openspec/changes/archive/<detour>/` (or its", 'commands/cross-spec-review.md:109  - the **archive move** (`openspec/changes/<id>/` → `archive/<date>-<id>/`) changes nothing: the', "commands/detour.md:139  (`openspec/changes/<id>/`, its plan path, its spec path) is that epic's work, not a detour. A", 'commands/epic.md:49  `verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also', 'commands/epic.md:49  `verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also', 'commands/epic.md:268  | `--spec-deltas-waived "<why>"` | `specDeltasWaived` | records that a delivered change\'s archived spec deltas were **deliberately not appli', 'commands/epic.md:309  read fresh. **Never attribute the commit that moves `openspec/changes/<id>/` under `archive/`.**', 'commands/epic.md:801  openspec-lane epic may not be moved INTO `active` while its change is on disk (`openspec/changes/<id>/`) and it', 'commands/epic.md:854  --artifact "openspec/changes/<id>/proposal.md" \\', 'commands/epic.md:855  --artifact "openspec/changes/<id>/specs/<cap>/spec.md" --reviewer "<identity>"', 'commands/epic.md:908  change under `archive/` is not an amendment: a recorded `openspec/changes/<id>/<file>` is found under', 'commands/epic.md:994  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a', "commands/status.md:52  Story counts are derived live from each change's `tasks.md` — `openspec/changes/<id>/tasks.md` while", 'commands/status.md:53  the change is in flight, and its archived copy under `openspec/changes/archive/` once `/opsx:archive`', 'commands/status.md:60  and the ratio then counts `items`. Once `/opsx:archive` has moved `openspec/changes/<id>/`, the', 'commands/status.md:61  checkbox source is the ARCHIVED `tasks.md` (`openspec/changes/archive/<YYYY-MM-DD>-<id>/`, the', 'commands/status.md:166  openspec-lane epic whose change sits under `openspec/changes/archive/`, it reads each delta', 'commands/status.md:501  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a', 'commands/sync.md:75  directory under `openspec/changes/`, a plan file, or an archive directory whose name fails it', 'commands/sync.md:100  ## The archive backfill — `openspec/changes/archive/`', 'commands/sync.md:102  `sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for', 'commands/sync.md:119  The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a', 'skills/conductor/SKILL.md:544  `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a', "skills/conductor/SKILL.md:938  active epic's own artifacts (`openspec/changes/<id>/`, its plan or spec path) is that epic's work,", 'skills/conductor/SKILL.md:1106  - `openspec` lane: `openspec/changes/<epicId>/{proposal,design,tasks}.md` and everything under' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/shipped-change-root.test.mjs:37:1
+✖ 1.2 agents/reconciler.md points the reconciler at the resolved location (0.371125ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /changeRoot[\s\S]{0,80}openspec status --change <paused> --json|openspec status --change <paused> --json[\s\S]{0,80}changeRoot/. Input:
+  
+  '---\n' +
+    'description: >\n' +
+    '  Re-validates a paused OpenSpec proposal against the changes a detour actually shipped.\n' +
+    '  Use at the reconcile gate when resuming an epic that was paused for a substantial detour\n' +
+    '  (i.e. its detour frame had reconcileOnResume: true). Runs in a clean context so the\n' +
+    "  judgment isn't biased by the detour conversation.\n" +
+    'model: sonnet\n' +
+    'tools: Read, Grep, Glob, Bash\n' +
+    '---\n' +
+    '\n' +
+    'You are the **reconciler**. A parent epic (an OpenSpec proposal) was paused while a detour\n' +
+    'epic was built and archived. The detour changed the codebase. Your job: decide whether the\n' +
+    'parent proposal is still correct and complete, BEFORE anyone resumes coding it.\n' +
+    '\n' +
+    'You will be given two ids: the **paused epic** and the **detour epic** (OpenSpec change ids).\n' +
+    '\n' +
+    'Procedure:\n' +
+    '\n' +
+    "1. Read the paused epic's proposal and tasks:\n" +
+    '   `openspec/changes/<paused>/proposal.md` and `tasks.md` (and its delta specs if present).\n' +
+    '2. Determine what the detour actually changed:\n' +
+    "   - the detour's archived delta specs under `openspec/changes/archive/<detour>/` (or its\n" +
+    '     proposal if not yet archived),\n' +
+    "   - the real diff: `git log` and `git diff` for the detour's commits; inspect the touched\n" +
+    '     source files and any shared interfaces/contracts.\n' +
+    '3. Compare intent vs reality. Ask specifically:\n' +
+    "   - Are any of the paused epic's stories now **already done** or **obsolete** because of\n" +
+    '     the detour?\n' +
+    '   - Are any **assumptions** in the proposal now **false** (moved interfaces, renamed\n' +
+    '     modules, changed behavior, new constraints)?\n' +
+    '   - Are **new stories** needed to integrate with what the detour shipped?\n' +
+    '   - Do acceptance criteria still hold?\n' +
+    '\n' +
+    'Report back concisely with a verdict and an action list, using this exact format so the main\n' +
+    'agent can translate it into a durable writeback (see below) without re-deriving your judgment:\n' +
+    '\n' +
+    '```\n' +
+    'VERDICT: valid | invalidated\n' +
+    'AMENDMENTS: <one per line — exact story to add/remove/rewrite, or "none">\n' +
+    'NOTES: <anything to double-check, or "none">\n' +
+    '```\n' +
+    '\n' +
+    '**These three field names and their order are a wire format, not a style, so they do NOT bend to\n' +
+    "a user's output style or CLAUDE.md communication contract** — the main agent transcribes `VERDICT`\n" +
+    'straight into `record-reconcile --verdict`, whose value space the engine enforces, and maps your\n' +
+    '`AMENDMENTS` lines onto flags one-for-one (below). The prose inside each field is ordinary writing and follows that\n' +
+    'contract like anything else. (An output style applies to the main conversation only and never\n' +
+    'reaches you; the CLAUDE.md hierarchy does.)\n' +
+    '\n' +
+    '- `VERDICT: valid` — proposal stands as-is; `AMENDMENTS` should be "none" (use `NOTES` for\n' +
+    '  anything merely worth double-checking, not requiring a change).\n' +
+    '- `VERDICT: invalidated` — enumerate the exact stories to add / remove / rewrite and which\n' +
+    '  proposal sections to update, with the reason tied to a specific detour change, one per\n' +
+    '  `AMENDMENTS` line.\n' +
+    '\n' +
+    'Do not edit files yourself. Do not write feature code. Return findings only; the main agent\n' +
+    'applies the amendments to the proposal/tasks.md AND records this verdict durably. There is ONE\n' +
+    'emitted form of that call:\n' +
+    '\n' +
+    '- `AMENDMENTS: none` →\n' +
+    '  `node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict <valid|invalidated> --amendments none`\n' +
+    '  — `none` (any case) records an empty amendment list, not an amendment reading "none".\n' +
+    '- any other `AMENDMENTS` → one `--amendment "<line>"` per line, each kept verbatim:\n' +
+    '  `node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict invalidated --amendment "<line 1>" --amendment "<line 2>"`\n' +
+    '  — a `;` inside a line stays inside that amendment. `--amendment` and `--amendments` together are\n' +
+    '  refused.\n' +
+    '\n' +
+    "This writes `{verdict, amendments, reconciledAt}` onto the paused epic's `may-invalidate` link to\n" +
+    'the detour in `.conductor/state.json`, so your judgment survives past this conversation instead of\n' +
+    'only ever living in the transcript. The engine accepts the verdict ONLY against a detour the epic\n' +
+    'was paused for with `push-detour --reconcile` (the link carries `reconcileOnResume: true`), and only\n' +
+    "once that detour's frame has been popped. It never creates a link: a `--detour` naming the paused\n" +
+    'epic itself, an unrelated epic, or a `--no-reconcile` detour is refused, naming the detours actually\n' +
+    'owed. `reconcileNeeded` clears only when no armed detour is left unanswered. Recording again against\n' +
+    'the same detour is a correction — the earlier verdict moves to `superseded` on the link rather than\n' +
+    'being overwritten.\n'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/shipped-change-root.test.mjs:39:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '---\ndescription: >\n  Re-validates a paused OpenSpec proposal against the changes a detour actually shipped.\n  Use at the reconcile gate when resuming an epic that was paused for a substantial detour\n  (i.e. its detour frame had reconcileOnResume: true). Runs in a clean context so the\n  judgment isn\'t biased by the detour conversation.\nmodel: sonnet\ntools: Read, Grep, Glob, Bash\n---\n\nYou are the **reconciler**. A parent epic (an OpenSpec proposal) was paused while a detour\nepic was built and archived. The detour changed the codebase. Your job: decide whether the\nparent proposal is still correct and complete, BEFORE anyone resumes coding it.\n\nYou will be given two ids: the **paused epic** and the **detour epic** (OpenSpec change ids).\n\nProcedure:\n\n1. Read the paused epic\'s proposal and tasks:\n   `openspec/changes/<paused>/proposal.md` and `tasks.md` (and its delta specs if present).\n2. Determine what the detour actually changed:\n   - the detour\'s archived delta specs under `openspec/changes/archive/<detour>/` (or its\n     proposal if not yet archived),\n   - the real diff: `git log` and `git diff` for the detour\'s commits; inspect the touched\n     source files and any shared interfaces/contracts.\n3. Compare intent vs reality. Ask specifically:\n   - Are any of the paused epic\'s stories now **already done** or **obsolete** because of\n     the detour?\n   - Are any **assumptions** in the proposal now **false** (moved interfaces, renamed\n     modules, changed behavior, new constraints)?\n   - Are **new stories** needed to integrate with what the detour shipped?\n   - Do acceptance criteria still hold?\n\nReport back concisely with a verdict and an action list, using this exact format so the main\nagent can translate it into a durable writeback (see below) without re-deriving your judgment:\n\n```\nVERDICT: valid | invalidated\nAMENDMENTS: <one per line — exact story to add/remove/rewrite, or "none">\nNOTES: <anything to double-check, or "none">\n```\n\n**These three field names and their order are a wire format, not a style, so they do NOT bend to\na user\'s output style or CLAUDE.md communication contract** — the main agent transcribes `VERDICT`\nstraight into `record-reconcile --verdict`, whose value space the engine enforces, and maps your\n`AMENDMENTS` lines onto flags one-for-one (below). The prose inside each field is ordinary writing and follows that\ncontract like anything else. (An output style applies to the main conversation only and never\nreaches you; the CLAUDE.md hierarchy does.)\n\n- `VERDICT: valid` — proposal stands as-is; `AMENDMENTS` should be "none" (use `NOTES` for\n  anything merely worth double-checking, not requiring a change).\n- `VERDICT: invalidated` — enumerate the exact stories to add / remove / rewrite and which\n  proposal sections to update, with the reason tied to a specific detour change, one per\n  `AMENDMENTS` line.\n\nDo not edit files yourself. Do not write feature code. Return findings only; the main agent\napplies the amendments to the proposal/tasks.md AND records this verdict durably. There is ONE\nemitted form of that call:\n\n- `AMENDMENTS: none` →\n  `node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict <valid|invalidated> --amendments none`\n  — `none` (any case) records an empty amendment list, not an amendment reading "none".\n- any other `AMENDMENTS` → one `--amendment "<line>"` per line, each kept verbatim:\n  `node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict invalidated --amendment "<line 1>" --amendment "<line 2>"`\n  — a `;` inside a line stays inside that amendment. `--amendment` and `--amendments` together are\n  refused.\n\nThis writes `{verdict, amendments, reconciledAt}` onto the paused epic\'s `may-invalidate` link to\nthe detour in `.conductor/state.json`, so your judgment survives past this conversation instead of\nonly ever living in the transcript. The engine accepts the verdict ONLY against a detour the epic\nwas paused for with `push-detour --reconcile` (the link carries `reconcileOnResume: true`), and only\nonce that detour\'s frame has been popped. It never creates a link: a `--detour` naming the paused\nepic itself, an unrelated epic, or a `--no-reconcile` detour is refused, naming the detours actually\nowed. `reconcileNeeded` clears only when no armed detour is left unanswered. Recording again against\nthe same detour is a correction — the earlier verdict moves to `superseded` on the link rather than\nbeing overwritten.\n',
+    expected: /changeRoot[\s\S]{0,80}openspec status --change <paused> --json|openspec status --change <paused> --json[\s\S]{0,80}changeRoot/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the rules block carries no pinned path on any platform, opt-ins on or off (6.047ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/shipped-change-root.test.mjs]
+  AssertionError [ERR_ASSERTION]: claude-code (plain)
+  + actual - expected
+  
+  + [
+  +   {
+  +     line: 159,
+  +     text: '`openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a'
+  +   }
+  + ]
+  - []
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/shipped-change-root.test.mjs:19:14
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { line: 159, text: '`openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

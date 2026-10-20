@@ -25,6 +25,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, invokeEngine } from "../fixtures/assert-harness.mjs";
+import { shippedDocs } from "../fixtures/shipped-docs.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const ENGINE_SRC = fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
@@ -40,25 +41,6 @@ function dispatchedVerbs() {
   return keys;
 }
 const VERBS = dispatchedVerbs();
-
-/** Every shipped markdown file. */
-function shippedDocs(root = REPO) {
-  const roots = ["commands", "agents", "skills", "hooks", ".claude-plugin"];
-  const out = [];
-  const walk = (abs) => {
-    for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
-      const p = path.join(abs, e.name);
-      if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith(".md")) out.push(path.relative(root, p));
-    }
-  };
-  for (const r of roots) {
-    const abs = path.join(root, r);
-    if (fs.existsSync(abs)) walk(abs);
-  }
-  for (const f of ["README.md"]) if (fs.existsSync(path.join(root, f))) out.push(f);
-  return out.sort();
-}
 
 /** Every `conductor.mjs <verb> …` occurrence in a document, as its argv words. A deliberately
  *  simple extractor: it handles the inline-code form the docs use, and it is only an ORACLE for the

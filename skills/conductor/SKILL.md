@@ -541,7 +541,7 @@ bullet reached 3/15.
    must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
    whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
    refuses the archive. **One exclusion:** the commit that moves
-   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+   the change's directory (`changeRoot` from `openspec status --change <id> --json`) into its archive, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
    the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for the
@@ -935,7 +935,7 @@ Several commits are deliberately NOT logged, so the trail describes the detour r
 (#81). A commit touching ONLY pm's own generated output — `state.json`, `PROJECT.md`,
 `render-stamp.json`, `commit-watch.json`, `commit-observe.json` — is bookkeeping, not detour work,
 in a nested conductor too (paths are compared from the conductor root). A commit touching the
-active epic's own artifacts (`openspec/changes/<id>/`, its plan or spec path) is that epic's work,
+active epic's own artifacts (the change's directory, `changeRoot` from `openspec status --change <id> --json`; its plan or spec path) is that epic's work,
 and one confined to a paused epic's own artifacts is not detour work. A commit reachable from no
 branch (rewritten by a rebase, reset away) is named as rewritten or abandoned and gets no row and no
 attribution command. An amend replaces: the replaced commit's row is retracted by the engine, and
@@ -1103,7 +1103,8 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
 **How to scan an epic (`epicId`):**
 
 1. Read that epic's FULL source, not a summary — whichever is its lane's real progress source:
-   - `openspec` lane: `openspec/changes/<epicId>/{proposal,design,tasks}.md` and everything under
+   - `openspec` lane: `{proposal,design,tasks}.md` in the change's directory (`changeRoot` from
+     `openspec status --change <epicId> --json`; by default `openspec/changes/<epicId>/`) and everything under
      its `specs/` directory.
    - `superpowers` lane: the file at the epic's `planPath`.
    - `claude-code` lane: the epic's inline `stories[]` in `.conductor/state.json`.
