@@ -1,0 +1,79 @@
+# R.1 call-site completeness sweep, decision-cost-log (2026-10-20, derived mechanically)
+
+## rg -n "decisions" scripts/lib
+scripts/lib/spend-guard-verbs.mjs:3:// `override-spend-guard`. The decisions are the pure functions in spend-guard.mjs; this file owns argv,
+scripts/lib/verb-effects.mjs:144:  // decision-cost-log. `record-decision` writes an epic's decisions (append, or the withdrawal mark) and nothing else; its
+scripts/lib/verb-effects.mjs:145:  // cost is never stored. `decisions` reads them back: with tracking on it runs the same ingest `spend` runs (the reason
+scripts/lib/verb-effects.mjs:147:  "record-decision": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's decisions: one appended, or one marked withdrawn and kept), plus render()'s writes" },
+scripts/lib/verb-effects.mjs:148:  decisions: { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on and a live decision exists (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
+scripts/lib/rules.mjs:853:    "   report what was asked, what was done, and the decisions made in the user's absence (drawn",
+scripts/lib/constants.mjs:807:  // decision-cost-log: `epic.decisions` is written ONLY by `record-decision` (append, and the withdrawal mark).
+scripts/lib/constants.mjs:808:  { flag: "decisions", key: "decisions", commands: ["update-epic"], engineWritten: true,
+scripts/lib/constants.mjs:998:  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log", "spend-analysis", "decisions"], valueless: true },
+scripts/lib/constants.mjs:1034:  { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log", "spend-analysis", "decisions"], valueless: true },
+scripts/lib/constants.mjs:1134:  // decision-cost-log: both take the epic the decisions belong to.
+scripts/lib/constants.mjs:1135:  "record-decision": EPIC_ID, decisions: EPIC_ID,
+
+## rg -n "decisions" scripts/lib/decision-log.mjs scripts/lib/spend-analysis.mjs (every reader and writer of epic.decisions)
+scripts/lib/spend-analysis.mjs:226: *    decisions  under --epic, that epic's stored decisions (default: the ones `state` holds) -- decision-cost-log owns the section */
+scripts/lib/spend-analysis.mjs:227:export function analyze({ attributed, state, tracking, ingest = null, scope = {}, decisions }) {
+scripts/lib/spend-analysis.mjs:273:    ...(scope.epic ? { decisions: costDecisions({ decisions: decisions !== undefined ? decisions : ((state.epics || []).find((e) => e && e.id === scope.epic) || {}).decisions, epicId: scope.epic, attributed, tracking }) } : {}),
+scripts/lib/spend-analysis.mjs:288:  // decision-cost-log owns this section: the epic's decisions as `decisions <epic>` prints them; none, no section.
+scripts/lib/spend-analysis.mjs:289:  const decisionLines = a.decisions && a.decisions.length ? ["", `Decisions (${a.decisions.length}):`, ...renderDecisionLines(a.decisions).map((l) => `  ${l}`)] : [];
+scripts/lib/spend-analysis.mjs:368:  // The epic's decisions are this invocation's own record (a linked worktree keeps its own state.json); the ledger and
+scripts/lib/spend-analysis.mjs:370:  const decisions = epic !== undefined ? (loadState().epics.find((e) => e.id === epic) || {}).decisions || [] : undefined;
+scripts/lib/spend-analysis.mjs:377:    const empty = analyze({ attributed: [], state, tracking: trackingInfo, ingest: { ran: false, reason: "tracking is off" }, scope, decisions });
+scripts/lib/spend-analysis.mjs:391:  const out = analyze({ attributed, state, tracking: trackingInfo, ingest: ingestInfo, scope, decisions });
+scripts/lib/decision-log.mjs:2:// decision-cost-log -- the decisions an epic's work reached, and what reaching each one cost.
+scripts/lib/decision-log.mjs:7:// A decision is a RECORD OF THE WORK, so it lives on the epic (`epic.decisions`, in state.json) and survives a ledger
+scripts/lib/decision-log.mjs:72:    refuse(`record-decision is off while spend tracking is off: a decision's cost is computed from the spend ledger, which is not being kept. Run \`set-spend-tracking on\` to record decisions with their cost, or note this one with \`${notes}\`. Nothing was written.`);
+scripts/lib/decision-log.mjs:102:  const existing = Array.isArray(epic.decisions) ? epic.decisions : [];
+scripts/lib/decision-log.mjs:104:  epic.decisions = [...existing, { n, what, why, alternatives, phase, since: since.text, until: until.text, at }];
+scripts/lib/decision-log.mjs:108:    changed: `conductor: recorded decision ${n} on '${escapeControls(epicId)}'; its cost is computed from the spend ledger when read, never stored (the decisions verb prints it)`,
+scripts/lib/decision-log.mjs:121:  const d = (Array.isArray(epic.decisions) ? epic.decisions : []).find((x) => x && x.n === n);
+scripts/lib/decision-log.mjs:145:export function costDecisions({ decisions, epicId, attributed, tracking }) {
+scripts/lib/decision-log.mjs:147:  return [...(Array.isArray(decisions) ? decisions : [])]
+scripts/lib/decision-log.mjs:164:/** The lines `decisions` and the analysis's Decisions section both print (so the two cannot differ). */
+scripts/lib/decision-log.mjs:183:/** `decisions <epicId> [--json] [--no-ingest]` */
+scripts/lib/decision-log.mjs:184:export function decisionsVerb() {
+scripts/lib/decision-log.mjs:186:  const [epicId] = checkedPositionals("decisions");
+scripts/lib/decision-log.mjs:187:  if (!epicId) die("usage: conductor.mjs decisions <epicId> [--json] [--no-ingest]\n");
+scripts/lib/decision-log.mjs:189:  requireFlagValues("decisions", f);
+scripts/lib/decision-log.mjs:193:  if (!epic) refuse(`decisions: no epic '${escapeControls(String(epicId))}' is registered.`);
+scripts/lib/decision-log.mjs:194:  const decisions = Array.isArray(epic.decisions) ? epic.decisions : [];
+scripts/lib/decision-log.mjs:198:  if (main.reason) refuse(`decisions could not read the main working tree's state.json (${escapeControls(tree.main)}) — it is ${main.reason}.`);
+scripts/lib/decision-log.mjs:203:  // Nothing to cost (no decisions, or every one withdrawn) reads no ledger and ingests nothing.
+scripts/lib/decision-log.mjs:204:  if (enabled && decisions.some((d) => d && !d.withdrawnAt)) {
+scripts/lib/decision-log.mjs:215:  const entries = costDecisions({ decisions, epicId, attributed, tracking });
+scripts/lib/decision-log.mjs:217:    outStream().write(jsonText({ epic: epicId, tracking: { enabled }, decisions: entries, note: NOT_CAUSAL }, null, 2) + "\n");
+scripts/lib/decision-log.mjs:222:  if (!entries.length) L.push(`no decisions recorded for '${epicId}'`);
+
+## rg -n "remove-epic|removeEpic|splice|filter\(.*epics" scripts/lib/remove-epic.mjs (the REMOVE path)
+23:/** `remove-epic <id> [--cascade]` — hard-deletes an epic (splice from state.json;
+47:  const directChildren = state.epics.filter(e => e.parent === id);
+52:      const next = state.epics.filter(e => frontier.includes(e.parent));
+74:  const refs = epicReferences(state).filter(r => toRemove.has(r.epic));
+82:  const blocking = refs.filter(r => !r.drop);
+84:    const frames = blocking.filter(r => r.kind === "frame");
+85:    const owed = blocking.filter(r => r.kind === "owed-reconcile");
+94:        .filter(fr => fr && typeof fr === "object" &&
+99:        .filter(p => typeof p === "string" && p))];
+132:    state, state.epics.filter(e => toRemove.has(e.id)), "removed by remove-epic");
+134:  state.epics = state.epics.filter(e => !toRemove.has(e.id));
+
+## Conclusions
+- WRITERS of `epic.decisions`: `record-decision` only (append in recordDecision; the withdrawal mark in withdraw()). No other
+  verb writes it; `update-epic` cannot (the `decisions` registry row is engineWritten and set-only, so `--decisions` is an
+  unknown flag and `--clear decisions` is refused by name).
+- READERS: `decisions` (decisionsVerb) and `spend-analysis --epic` (analyze -> costDecisions), both through
+  `costDecisions`/`renderDecisionLines`, so the two outputs cannot differ. Neither stores a cost.
+- REMOVE path: `remove-epic` deletes the epic record and with it its decisions; nothing else holds a decision number (no other
+  record stores `n`, a decision id or a pointer to a decision), so no dangling reference is possible. The cost lives only in
+  the ledger and is recomputed on each read; `spend --clear` therefore removes costs but keeps the decisions (asserted in
+  scripts/test/assert/decision-log.test.mjs).
+- Ingest callers: `decisions` and `spend-analysis` both reach the ledger through `ingestForReport`, so developer-log capture is
+  decided in one place; with tracking off neither is called (asserted by observe-reads proofs on both rungs).
+- INVERSES. append <-> withdraw (shipped; withdraw marks and keeps, as an override revoke does). Not shipped, justified:
+  (a) an EDIT verb: a decision is a record of what was decided, a correction is a withdrawal plus a new entry (design D4);
+  (b) an UNWITHDRAW: a withdrawal is itself a record of a judgement, and re-entering the decision as a new numbered entry keeps
+  both visible; (c) no `--clear`: set-only by the registry row, with its reason.

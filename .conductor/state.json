@@ -13563,9 +13563,12 @@
       ],
       "reconcileNeeded": false,
       "description": "Rob 2026-10-06: log the decision-making process — that a specific decision was made and cost ~750,000 tokens — as self-reflection to find process improvements, not as raw spend. A verb to record a decision (what, why, alternatives considered, tokens spent reaching it, epic/phase) attached to the epic, rendered in the postmortem alongside the spend breakdown; likely built on the activity log. Off with the rest of the spend feature by default. Depends on the ledger.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "e05d91cc26f3b6f8884b3b60ad0c8d9f7f29bd09",
+        "3ed04972fa78ffe115f09314c4d3258287e9d4e2"
+      ],
       "createdAt": "2026-10-06T17:29:48.580Z",
-      "touchedAt": "2026-10-20T05:49:16.625Z",
+      "touchedAt": "2026-10-20T10:19:01.201Z",
       "release": "0.53.0",
       "notes": [
         {
@@ -14204,7 +14207,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2100,
+  "revision": 2102,
   "reviewMode": "standard",
   "releases": [
     {

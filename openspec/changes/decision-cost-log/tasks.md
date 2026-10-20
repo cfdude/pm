@@ -25,37 +25,39 @@
 
 ## 1. Record and withdraw
 
-- [ ] 1.1 TDD (UNIT): `record-decision` append, numbering (design D5), every refusal in "appends a
+- [x] 1.1 TDD (UNIT): `record-decision` append, numbering (design D5), every refusal in "appends a
       numbered decision", and the tracking-off refusal. Declare `--session` on it (epic-session-trail) and a
       set-only nullability marker for `epic.decisions` with its reason (epic-annotation). Register the verb, its flags in the shared
       allowlist, `verb-effects.mjs` (`mutates`), `USAGE`, and `commands/record-decision.md` with its
       parity-ledger claim in the same commit.
-- [ ] 1.2 TDD (UNIT): `--withdraw <n> --reason` (design D4), every scenario of the withdrawal requirement.
+- [x] 1.2 TDD (UNIT): `--withdraw <n> --reason` (design D4), every scenario of the withdrawal requirement.
 
 ## 2. Cost and render
 
-- [ ] 2.1 TDD (UNIT + FILE): `decisions <epicId> [--json] [--no-ingest]` through `spend`'s pipeline with a
+- [x] 2.1 TDD (UNIT + FILE): `decisions <epicId> [--json] [--no-ingest]` through `spend`'s pipeline with a
       window filter; the "not causal" sentence; no sum across decisions; tracking-off `not computed` and
       the observe-reads proof. Register the verb (`reads`), `commands/decisions.md` and its parity claim.
-- [ ] 2.2 TDD (UNIT): the Decisions section inside `spend-analysis --epic <id>`, text and JSON, absent
+- [x] 2.2 TDD (UNIT): the Decisions section inside `spend-analysis --epic <id>`, text and JSON, absent
       when the epic has none.
-- [ ] 2.3 Changeset fragment `.changesets/decision-cost-log.md`; `skills/conductor/SKILL.md` one paragraph
+- [x] 2.3 Changeset fragment `.changesets/decision-cost-log.md`; `skills/conductor/SKILL.md` one paragraph
       on when to record a decision (postmortem self-reflection, not every choice).
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "decisions" scripts/lib` lists every reader
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "decisions" scripts/lib` lists every reader
       and writer of `epic.decisions`; enumerate its REMOVE path (`remove-epic`) and confirm no other
       holder of a decision number exists. Inverses: append ↔ withdraw (shipped); no edit verb (justify:
       a decision is a record of what was decided; a correction is a withdrawal plus a new entry).
       Save as `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2.
 - [ ] R.7 **Route what the work taught you** (item 7). Record at least one real decision from this
       release's own build with `record-decision` (dogfood) and name what it showed.
+      NOTE (build agent, 2026-10-20): left for the orchestrator. The dogfood `record-decision` needs a real decision from the
+      release's own build and a recorded read-back; this agent did not write one into the record.
 
 ## G. Gate 2
 
