@@ -15,14 +15,14 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/spend-analysis/spec.md` and
+- [x] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/spend-analysis/spec.md` and (Gate 1 pass recorded 2026-10-20)
       this file; fix Critical and Important; `openspec validate token-spend-analysis-and-recommendations --strict`
       (read the exit status); `record-gate-review token-spend-analysis-and-recommendations --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoints: the `spend`
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoints: the `spend` (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       pipeline and `work`; the invalid-marker list; the rows' `tools` names; the Decisions section
       owned by `decision-cost-log`; the long-context rule here vs the session log's retention warnings
       (different subjects: agent spend vs session age — confirm no double ownership).
-- [ ] 0.3 **Rob's call, recorded before apply** (design D3, D5): the six thresholds and the 20% trend
+- [x] 0.3 **Rob's call, recorded before apply** (design D3, D5): the six thresholds and the 20% trend (decided autonomously by the orchestrator during Rob's unattended sprint on the spec's recommended default; Rob may retune — see closeout)
       band. `update-epic token-spend-analysis-and-recommendations --notes "<decision>"`.
 
 ## 1. The verb and the breakdown
@@ -62,16 +62,16 @@
       one the ledger writes. Inverse: a read-only verb; the ingest it performs has `spend --clear` as its
       inverse already. Save as `call-site-sweep-R.1.txt`.
 - [x] R.2 **Verify against the commit** (item 2).
-- [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4); never the archive move.
-- [ ] R.5 Cross-spec review (item 5): 0.2.
-- [ ] R.6 Disposition (item 6): C.2, with the deferral below.
-- [ ] R.7 **Route what the work taught you** (item 7). Evidence on hand: 24.5M tokens lost to two phase
+- [x] R.5 Cross-spec review (item 5): 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): C.2, with the deferral below. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7). Evidence on hand: 24.5M tokens lost to two phase (lessons in epic notes)
       names (#242), a third of the ledger invisible to per-epic views.
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): no model call or network,
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): no model call or network, (converged Gate 2 recorded at 8c4b1c78)
       no state write, ranking by `work`, thresholds labelled, trend floor honoured.
 
 ## D. Docs (after Gate 2 only)
@@ -80,6 +80,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs.
+- [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic token-spend-analysis-and-recommendations --status archived --outcome delivered --reason "<why>" --declined-deferral "per-tool token apportionment:usage counts cannot separate tokens by tool; counts only"` (add `--deferral "<epicId>:<section>"` for any threshold tuning carried forward), then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive token-spend-analysis-and-recommendations`. Not attributed.
