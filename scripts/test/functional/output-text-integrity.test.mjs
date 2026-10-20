@@ -1107,7 +1107,10 @@ recipe("rules --epic", { notRendered: "--epic selects the review mode the block 
 recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });
 recipe("triage <positional>", { notRendered: "triage's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["triage", v]) });
 recipe("suggest-lane --ask", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", "--ask", v]) });
-recipe("suggest-lane <positional>", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
+recipe("list --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["list", "--status", v]) });
+recipe("list --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["list", "--lane", v]) });
+recipe("list --linked-to", { notRendered: "--linked-to only filters the epics listed; the listing does not echo it", run: (c, v) => pm(c.cwd, ["list", "--linked-to", v]) });
+recipe("suggest-lane <positional>",{ notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
 recipe("verify-specs --root", { rendered: true, run: (c, v) => pm(c.cwd, ["verify-specs", "--root", v]) });
 recipe("purge-logs --kind", { exempt: EXEMPT.vocab("kind"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", v]) });
 recipe("purge-logs --keep", { exempt: EXEMPT.number("keep"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--keep", v]) });

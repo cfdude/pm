@@ -866,7 +866,7 @@ export const VERB_FLAGS = [
   // `--verbosity` here are the PROJECT/LANE-layer writers; the same names are EPIC_FLAGS rows for
   // add-epic/add-many/update-epic. `--model` and `--unset` repeat. `--lane` is also add-epic's
   // (an epic's own lane) but the rows are scoped per command, so neither reads the other.
-  { flag: "lane", commands: ["set-profile", "profile", "set-spend-guard"], placeholder: "openspec|superpowers|claude-code|decision|external" },
+  { flag: "lane", commands: ["set-profile", "profile", "set-spend-guard", "list"], placeholder: "openspec|superpowers|claude-code|decision|external" },
   { flag: "review", commands: ["set-profile"], placeholder: "off|standard|thorough" },
   { flag: "model", commands: ["set-profile"], repeats: true, placeholder: "role=model[:effort]" },
   { flag: "verbosity", commands: ["set-profile"], placeholder: "quiet|verbose" },
@@ -974,7 +974,11 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list"], valueless: true },
+  // `list` (#204), the read-only epic listing. `--status` and `--lane` FILTER here where the epic
+  // registry's rows SET, so they are scoped rows of their own (`--lane` joins the set-profile row above).
+  { flag: "status", commands: ["list"], placeholder: KNOWN_STATUSES.join("|") },
+  { flag: "linked-to", commands: ["list"], requires: "an epic id" },
   // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
@@ -1077,7 +1081,7 @@ export const VERB_POSITIONALS = {
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
   "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
   activity: P0, spend: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
-  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
+  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,

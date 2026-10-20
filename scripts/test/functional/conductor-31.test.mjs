@@ -93,6 +93,8 @@ const VERB_BASELINE = {
   "spend-guard": () => ["spend-guard", "e1"],
   "override-spend-guard": () => ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
   owners: () => ["owners"],
+  // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
+  list: () => ["list"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
   "plan-hierarchy": () => ["plan-hierarchy", "--parent", "e1"],
@@ -342,7 +344,8 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // token-spend-tracking-per-epic: `spend` shares --json/--yes and adds four booleans — `--clear` and
     // `--rebuild` (the ledger's two inverses), `--timeline` (qualifies --clear) and `--no-ingest`.
     "override-spend-guard --revoke",
-    "owners/activity/spend/spend-guard --json",
+    // gh-204: `list` shares --json (the same genuine boolean: a rendering).
+    "owners/activity/spend/spend-guard/list --json",
     "purge-logs --dry-run",
     "purge-logs/spend --yes",
     "push-detour --no-reconcile",

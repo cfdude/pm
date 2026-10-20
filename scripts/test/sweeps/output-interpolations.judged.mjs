@@ -436,6 +436,9 @@ x("gate-guard.mjs", "trackerBlockMessage", {
 x("git.mjs", "appendRetraction", {
   "line": 1,
 }, "not-output", "the detour log's file BODY; the line itself is built by the statement above and its values are escaped there");
+x("list.mjs", "list", {
+  "jsonText({ count: rows.length, epics: rows }, null, 2)": 1,
+}, "json", "one JSON document through jsonText()");
 x("git.mjs", "appendDetourLog", {
   "line": 1,
 }, "not-output", "the detour log's file BODY, same shape as appendRetraction's");
