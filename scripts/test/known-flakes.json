@@ -1,8 +1,1 @@
-[
-  {
-    "file": "scripts/test/functional/state-file-refuses-to-guess.test.mjs",
-    "test": "G2-C1/I2: an old directory at the lock or break path cannot be removed",
-    "owningEpic": "flake-owner-g2-c1-i2-2000ms-bound",
-    "note": "Asserts a refusal inside a fixed 2000 ms bound, which a loaded machine overruns. Not to be diagnosed; needs an owning epic."
-  }
-]
+[]
