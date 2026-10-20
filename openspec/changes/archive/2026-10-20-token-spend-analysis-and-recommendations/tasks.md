@@ -81,5 +81,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic token-spend-analysis-and-recommendations --status archived --outcome delivered --reason "<why>" --declined-deferral "per-tool token apportionment:usage counts cannot separate tokens by tool; counts only"` (add `--deferral "<epicId>:<section>"` for any threshold tuning carried forward), then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive token-spend-analysis-and-recommendations`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic token-spend-analysis-and-recommendations --status archived --outcome delivered --reason "<why>" --declined-deferral "per-tool token apportionment:usage counts cannot separate tokens by tool; counts only"` (add `--deferral "<epicId>:<section>"` for any threshold tuning carried forward), then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive token-spend-analysis-and-recommendations`. Not attributed.
