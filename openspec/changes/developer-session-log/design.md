@@ -44,7 +44,8 @@ warnings, off by default, with no new dependency and no new hot-path work.
   not share one flag.
 - **D7a — Main tree only, like spend tracking.** Ingest reads the switch from the main working tree's
   state; `set-dev-log` is refused elsewhere so an "off" is never written where capture does not look.
-  Per-session `work` is summed from the joined ledger rows' `work` (`gh-cfdude-pm-251`).
+  Per-session totals, `work` included, come from the shared totals builder `spend` uses
+  (`gh-cfdude-pm-251` defines `work` on totals objects; rows do not carry it), grouped by `sessionId`.
 - **D7 — Off stops capture, deletes nothing**; turning spend tracking off stops it too, and `dev-log`
   says which switch is off.
 

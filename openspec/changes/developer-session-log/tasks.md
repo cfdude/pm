@@ -31,13 +31,13 @@
 - [ ] 1.1 Read one real transcript (with the memory guard) to confirm the entry shapes D2 relies on
       (`tool_use_id` to tool name, attachment and system-reminder blocks) and whether a compaction
       boundary entry exists (D5). Save the field names only, no content, as `shapes-1.1.txt`.
-- [ ] 1.2 TDD (UNIT): `set-dev-log on|off`, the spend-tracking prerequisite, idempotence, the `OPT_INS`
-      `devLog` row. Register the verb, `commands/set-dev-log.md` and its parity-ledger claim.
+- [ ] 1.2 TDD (UNIT): `set-dev-log on|off`, the spend-tracking prerequisite, the main-tree refusal,
+      idempotence, the `OPT_INS` `devLog` row, and in the same commit `devLog`'s entries in `pm-overhead`'s
+      surface-to-feature map and its `--all-features` hypothetical. Register the verb, `commands/set-dev-log.md` and its parity-ledger claim.
 - [ ] 1.3 TDD (UNIT + FILE): the composition pass inside ingest, only while both switches are on;
       the sentinel test; idempotent re-ingest; no hook opens the file (observe-reads).
 - [ ] 1.4 TDD (UNIT): the `features` snapshot from `overhead`'s per-feature `on` and bytes (never `isSet`),
-      appended on change only. Add `devLog` to `pm-overhead`'s surface-to-feature map and to its
-      `--all-features` hypothetical in the same commit.
+      appended on change only.
 
 ## 2. Report and inverse
 
