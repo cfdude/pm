@@ -16,14 +16,14 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, both spec files and this file.
+- [x] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, both spec files and this file. (Gate 1 pass recorded 2026-10-20)
       Fix Critical and Important, re-run `openspec validate gh-cfdude-pm-251 --strict` reading its exit
       status, then `record-gate-review gh-cfdude-pm-251 --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Name the chokepoints this
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Name the chokepoints this (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       change shares: the `spend` totals object (`work`, read by the analysis, the session log and the
       decision log), `GUARD_FIELDS` and the `spend-guard` requirements also edited by
       `spend-guard-rules-section-follows-live-limits` (a different requirement; confirm no overlap).
-- [ ] 0.3 **Rob's call, recorded before apply** (design D1): absent basis = `total` (chosen) or a
+- [x] 0.3 **Rob's call, recorded before apply** (design D1): absent basis = `total` (chosen) or a (decided autonomously by the orchestrator during Rob's unattended sprint on the spec's recommended default; Rob may retune — see closeout)
       migration stamping existing ceilings `total` with `work` the default for new ones. Record with
       `update-epic gh-cfdude-pm-251 --notes "<decision>"`. If (b), amend the "absent basis" scenario and
       add a `MIGRATIONS` task before 2.1.
@@ -62,16 +62,16 @@
       of an override's `basis`. Inverses: `--token-basis` has `--unset token-basis`; the override's
       `basis` is removed only with the override record, which is never deleted (revoke marks it).
 - [x] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task.
-- [ ] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle"` lists C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle"` lists C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4), landing order; never the archive move.
-- [ ] R.5 Cross-spec review (item 5): satisfied by 0.2.
-- [ ] R.6 Disposition (item 6): satisfied by C.2.
-- [ ] R.7 **Route what the work taught you** (item 7), each lesson named as practice, tooling friction or
+- [x] R.5 Cross-spec review (item 5): satisfied by 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): satisfied by C.2. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7), each lesson named as practice, tooling friction or (lessons in epic notes)
       process failure, with evidence.
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): spec alignment, no 0.52
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): spec alignment, no 0.52 (converged Gate 2 recorded at 8c4b1c78)
       ceiling re-meant, one definition of `work`, the override basis rule. Record with
       `--base-sha`/`--head-sha` reaching every attributed commit.
 
@@ -82,6 +82,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs. Re-record, never withdraw.
+- [x] C.1 Re-record Gate 2 after docs. Re-record, never withdraw. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic gh-cfdude-pm-251 --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive gh-cfdude-pm-251`. The archive-move commit is NOT attributed.

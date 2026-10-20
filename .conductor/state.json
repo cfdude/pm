@@ -2741,9 +2741,14 @@
           "at": "2026-10-20T05:49:15.372Z",
           "actor": "agent",
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
+        },
+        {
+          "at": "2026-10-20T11:36:05.845Z",
+          "actor": "agent",
+          "text": "lessons: PROCESS FAILURE: the epicWriting guard test derived its verb set from a word match on the writes text and missed init and clear-active; fixed at Gate 2 by requiring every mutating non-hook verb to be epicWriting or named in NO_EPIC_CHANGE with a reason. PROCESS FAILURE: two agents disagreed about what had shipped until re-verified against HEAD (verify before acting). TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and re-recorded."
         }
       ],
-      "touchedAt": "2026-10-20T11:27:32.100Z",
+      "touchedAt": "2026-10-20T11:36:05.849Z",
       "release": "0.53.0",
       "attributedCommits": [
         "14fbe99c32af9262aeb7b936cfd59d3f191203d4",
@@ -13422,7 +13427,7 @@
         "9d43ae2949a4c1bb29e7cc2111ceb294af87c54b"
       ],
       "createdAt": "2026-10-06T17:29:46.271Z",
-      "touchedAt": "2026-10-20T11:27:35.384Z",
+      "touchedAt": "2026-10-20T11:36:06.712Z",
       "release": "0.53.0",
       "gateReview": {
         "gate1": {
@@ -13473,7 +13478,14 @@
           "lastVerdictAt": "2026-10-20T11:27:35.379Z",
           "lastPassAt": "2026-10-20T11:27:35.379Z"
         }
-      }
+      },
+      "notes": [
+        {
+          "at": "2026-10-20T11:36:06.708Z",
+          "actor": "agent",
+          "text": "lessons: TOOLING FRICTION: 24.5M tokens were lost to two invalid phase names (#242) and a third of the ledger was invisible to per-epic views; the unattributed section and invalid-marker flag now surface it. PROCESS FAILURE: the spec expected the trend to read insufficient data, but the ledger now holds two releases so it reads falling; the dogfood expectation was stale, thresholds and the dominant-agent noise are for Rob's call. DECISION: thresholds and the 20% trend band decided autonomously on the spec defaults. Also: Gate 1 verdicts for nine epics were dropped by the merge of state.json and re-recorded."
+        }
+      ]
     },
     {
       "id": "spend-budget-and-stuck-loop-guard",
@@ -14448,7 +14460,7 @@
         "42adc70e78ff1e27fc94cbf5f95ad013bb48e192"
       ],
       "createdAt": "2026-10-17T12:41:42.610Z",
-      "touchedAt": "2026-10-20T11:27:28.893Z",
+      "touchedAt": "2026-10-20T11:36:04.943Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:43.405Z",
@@ -14459,6 +14471,11 @@
           "at": "2026-10-20T05:49:10.305Z",
           "actor": "agent",
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
+        },
+        {
+          "at": "2026-10-20T11:36:04.939Z",
+          "actor": "agent",
+          "text": "lessons: PRACTICE: the token ceiling now has an explicit basis (total or work); a ceiling that counts cache-read measures session length, not work done (GitHub #251). DECISION: absent basis = total, chosen autonomously by the orchestrator in Rob's unattended sprint; Rob may retune. TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and had to be re-recorded."
         }
       ],
       "release": "0.53.0",
@@ -14903,7 +14920,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2143,
+  "revision": 2146,
   "reviewMode": "standard",
   "releases": [
     {
