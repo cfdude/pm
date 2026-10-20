@@ -45,9 +45,9 @@
       dispatch wrapper (covered by 1.2) or why not. Name any hook path that writes state (none is
       expected) and why it is excluded. Inverse: archive ↔ un-archive and add ↔ remove are both covered
       by the same comparison. Save as `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2.
 - [ ] R.7 **Route what the work taught you** (item 7). Candidate practice to name: "a section gated on

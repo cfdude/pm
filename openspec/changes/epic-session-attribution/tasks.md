@@ -50,9 +50,9 @@
       reference: `epic.sessions` holds identities, not ids, so no dangling-reference sweep is owed;
       enumerate its writer (one), readers and REMOVE path (`remove-epic`). Inverse: none shipped,
       justified by design D5. Save as `call-site-sweep-R.1.txt`.
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2.
 - [ ] R.7 **Route what the work taught you** (item 7). Weigh the epic's own history: two agents disagreed

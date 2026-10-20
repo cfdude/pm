@@ -2743,8 +2743,11 @@
           "text": "lane: openspec not routed — has OpenSpec change authored in 0.53.0 batch 1"
         }
       ],
-      "touchedAt": "2026-10-20T05:49:15.377Z",
-      "release": "0.53.0"
+      "touchedAt": "2026-10-20T07:22:27.986Z",
+      "release": "0.53.0",
+      "attributedCommits": [
+        "14fbe99c32af9262aeb7b936cfd59d3f191203d4"
+      ]
     },
     {
       "id": "cross-session-epic-assignment",
@@ -14188,7 +14191,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2090,
+  "revision": 2091,
   "reviewMode": "standard",
   "releases": [
     {

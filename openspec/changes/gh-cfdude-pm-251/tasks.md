@@ -56,14 +56,14 @@
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "tokenCeiling|GUARD_FIELDS|\.total\b" scripts/lib`:
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "tokenCeiling|GUARD_FIELDS|\.total\b" scripts/lib`:
       every reader of the ceiling and of an epic's `total`; state where the basis now applies and where
       `total` stays on purpose. Data references: every writer, reader and REMOVE path of `tokenBasis` and
       of an override's `basis`. Inverses: `--token-basis` has `--unset token-basis`; the override's
       `basis` is removed only with the override record, which is never deleted (revoke marks it).
-- [ ] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task.
+- [x] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task.
 - [ ] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle"` lists C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4), landing order; never the archive move.
+- [x] R.4 **Attribute every commit** (item 4), landing order; never the archive move.
 - [ ] R.5 Cross-spec review (item 5): satisfied by 0.2.
 - [ ] R.6 Disposition (item 6): satisfied by C.2.
 - [ ] R.7 **Route what the work taught you** (item 7), each lesson named as practice, tooling friction or

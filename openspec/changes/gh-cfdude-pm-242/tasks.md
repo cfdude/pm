@@ -37,15 +37,15 @@
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). `rg -n "invalid-marker" scripts/ commands/ skills/`
+- [x] R.1 **Call-site completeness sweep** (item 1). `rg -n "invalid-marker" scripts/ commands/ skills/`
       and `rg -n "KNOWN_SPEND_PHASES|KNOWN_JOB_ROLES" scripts/lib`: list every place the reason is
       produced, counted or printed (`spend`, `spend-guard`'s ledger-side rounds, `integrity` if it reads
       it) and state for each whether it now names the value, with the justification where it does not.
       Inverse: this change adds a report section, not a write; state that no inverse is owed.
-- [ ] R.2 **Verify against the commit** (item 2). For every task, `git show --stat <sha>` and assert every
+- [x] R.2 **Verify against the commit** (item 2). For every task, `git show --stat <sha>` and assert every
       claimed file is in THAT commit.
 - [ ] R.3 **Lifecycle marker** (item 3). `rg -n "pm:lifecycle" <this file>` lists C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4), in landing order. Never the archive move (C.3).
+- [x] R.4 **Attribute every commit** (item 4), in landing order. Never the archive move (C.3).
 - [ ] R.5 Cross-spec review (item 5). Satisfied by 0.2.
 - [ ] R.6 Disposition (item 6). Satisfied by C.2.
 - [ ] R.7 **Route what the work taught you** (item 7): practice, tooling friction or process failure,

@@ -41,9 +41,9 @@
       only). List engine-printed messages that keep the literal (`rg -n "openspec/changes" scripts/lib`
       restricted to string literals) and state why each is out of scope (the engine reads that path).
       Inverse: none owed (a text rule, not an operation).
-- [ ] R.2 **Verify against the commit** (item 2).
+- [x] R.2 **Verify against the commit** (item 2).
 - [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4); never the archive move.
+- [x] R.4 **Attribute every commit** (item 4); never the archive move.
 - [ ] R.5 Cross-spec review (item 5): 0.2.
 - [ ] R.6 Disposition (item 6): C.2, carrying the engine-path declined deferral.
 - [ ] R.7 **Route what the work taught you** (item 7). Evidence to weigh: the site count grew 4 → 27 while
