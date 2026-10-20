@@ -14163,7 +14163,7 @@
       "id": "pm-overhead-baseline",
       "title": "Measure pm's own baseline token overhead per session with all features on, and the downstream efficiency it buys",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -14181,7 +14181,7 @@
         "363d9603d25b31943e4f177af4e8ae2a6947e13d"
       ],
       "createdAt": "2026-10-14T04:57:23.063Z",
-      "touchedAt": "2026-10-20T11:43:13.952Z",
+      "touchedAt": "2026-10-20T11:43:48.693Z",
       "release": "0.53.0",
       "stories": [
         {
@@ -14241,7 +14241,28 @@
           "actor": "agent",
           "text": "lessons: PROCESS FAILURE: the assertion half went from 15.4 s to about 28 s between two measurements under different load (4.1 ran at load 6-16 with other sessions open); whether that is load or growth is unresolved, so the quiet-machine rerun is owed and carried to pm-overhead-calibration-and-feature-switches. PRACTICE: every overhead figure carries an estimate label until calibrated (3.2). TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and re-recorded. ROUTING OWED: 4.2 outcome to be recorded on store-owns-claude-md-managed-block at 0.54.0 grooming."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-20T11:43:48.688Z",
+        "reason": "overhead verb with --all-features: enumerated surfaces, surface-to-feature map, conditional surfaces, labels and downstream section, plus the baseline and commit-gate re-baseline measurement docs; built in rc/0.53.0 as c5257d07 1627b415 363d9603, converged Gate 2 at 8c4b1c78. Outstanding: 0.3, 3.2 and the 4.1 quiet rerun carried to pm-overhead-calibration-and-feature-switches; D.1 moved to release-0-53-0-cut",
+        "carriedTo": "pm-overhead-calibration-and-feature-switches"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-20T11:43:48.674Z",
+        "deferrals": [
+          {
+            "epic": "pm-overhead-calibration-and-feature-switches",
+            "section": "0.3 Rob's go and 3.2 headless calibration run, and the 4.1 quiet-machine rerun"
+          },
+          {
+            "epic": "release-0-53-0-cut",
+            "section": "README What pm costs a session and Mintlify (task D.1)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-10-20T11:43:48.688Z"
     },
     {
       "id": "feature-switches-audit",
@@ -15043,7 +15064,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2154,
+  "revision": 2155,
   "reviewMode": "standard",
   "releases": [
     {

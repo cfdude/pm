@@ -100,5 +100,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic pm-overhead-baseline --status archived --outcome delivered --reason "<why>"` with `--no-deferrals`, or, if 3.2's calibration or 3.3's A/B run is not done, `--declined-deferral "<what>:<why>"` or `--deferral "<epicId>:<section>"` for a registered epic; then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive pm-overhead-baseline`. Not attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic pm-overhead-baseline --status archived --outcome delivered --reason "<why>"` with `--no-deferrals`, or, if 3.2's calibration or 3.3's A/B run is not done, `--declined-deferral "<what>:<why>"` or `--deferral "<epicId>:<section>"` for a registered epic; then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive pm-overhead-baseline`. Not attributed.
