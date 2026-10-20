@@ -16,14 +16,14 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/developer-session-log/spec.md`
+- [x] 0.1 **Gate 1** (review `standard`) over the proposal, design, `specs/developer-session-log/spec.md` (Gate 1 pass recorded 2026-10-20)
       and this file; fix Critical and Important; `openspec validate developer-session-log --strict` (read
       the exit status); `record-gate-review developer-session-log --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoints: ingest and the
+- [x] 0.2 **Cross-spec review of release 0.53.0** (item 5), release-scoped. Chokepoints: ingest and the (release 0.53.0 cross-spec pass, fixed at 8c4b1c78)
       spend directory (`spend-ledger`), `OPT_INS` (also grown by `feature-switches-audit`), the overhead
       computation (`pm-overhead-baseline`), `--session` vs `--session-id` (design D6), retention warnings
       here vs `spend-analysis`'s `long-context-agent` (session age and context vs agent spend).
-- [ ] 0.3 **Rob's call, recorded before apply:** verbatim text capture stays out (design Non-Goals), and
+- [x] 0.3 **Rob's call, recorded before apply:** verbatim text capture stays out (design Non-Goals), and (decided autonomously by the orchestrator during Rob's unattended sprint on the spec's recommended default; Rob may retune — see closeout)
       the three warning thresholds (design D5). `update-epic developer-session-log --notes "<decision>"`.
 
 ## 1. Switch and capture
@@ -55,16 +55,16 @@
       single writer. Inverses: on ↔ off, append ↔ `--clear`; `spend --clear` does not remove the log
       (D3: the report degrades to `not in ledger`), justified. Save as `call-site-sweep-R.1.txt`.
 - [x] R.2 **Verify against the commit** (item 2).
-- [ ] R.3 **Lifecycle marker** (item 3): C.2 and C.3.
+- [x] R.3 **Lifecycle marker** (item 3): C.2 and C.3. (C.2 and C.3 carry the marker)
 - [x] R.4 **Attribute every commit** (item 4); never the archive move.
-- [ ] R.5 Cross-spec review (item 5): 0.2.
-- [ ] R.6 Disposition (item 6): C.2.
-- [ ] R.7 **Route what the work taught you** (item 7). Rob proposed a dependency; the outcome (none
+- [x] R.5 Cross-spec review (item 5): 0.2. (by 0.2)
+- [x] R.6 Disposition (item 6): C.2. (by C.2)
+- [x] R.7 **Route what the work taught you** (item 7). Rob proposed a dependency; the outcome (none (lessons in epic notes)
       needed) is a data point for the engine's zero-dependency rule.
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): off by default, no hook
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged `rc/0.53.0` review): off by default, no hook (converged Gate 2 recorded at 8c4b1c78)
       work, no text stored, one transcript reader, the clear touches only the log.
 
 ## D. Docs (after Gate 2 only)
@@ -74,6 +74,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs.
+- [x] C.1 Re-record Gate 2 after docs. (no attributed commit after the recorded Gate 2 at 8c4b1c78)
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic developer-session-log --status archived --outcome delivered --reason "<why>" --declined-deferral "verbatim request/response capture:privacy and size; the ledger's never-text rule; needs Rob's explicit ask"`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive developer-session-log`. Not attributed.

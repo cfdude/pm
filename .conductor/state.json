@@ -14357,7 +14357,7 @@
         "fa3e36c0e54a5d1872d5003dcf9ae397ed449b1e"
       ],
       "createdAt": "2026-10-14T04:57:24.708Z",
-      "touchedAt": "2026-10-20T11:27:33.707Z",
+      "touchedAt": "2026-10-20T11:41:52.302Z",
       "release": "0.53.0",
       "gateReview": {
         "gate1": {
@@ -14433,7 +14433,14 @@
           "lastVerdictAt": "2026-10-20T11:27:33.702Z",
           "lastPassAt": "2026-10-20T11:27:33.702Z"
         }
-      }
+      },
+      "notes": [
+        {
+          "at": "2026-10-20T11:41:52.298Z",
+          "actor": "agent",
+          "text": "lessons: PRACTICE: Rob proposed a dependency for the session log and none was needed; Node built-ins sufficed, a data point for the engine's zero-dependency rule. PROCESS FAILURE: fa3e36c0 fixed an append after a torn write that started mid-line; append paths need a torn-write case in the first test. DECISION: verbatim capture stays out and the three warning thresholds were decided autonomously on the spec defaults; Rob may retune. TOOLING FRICTION: Gate 1 verdicts for nine epics were dropped by the merge of state.json and re-recorded."
+        }
+      ]
     },
     {
       "id": "triage-surfaces-open-release-intents",
@@ -15007,7 +15014,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2151,
+  "revision": 2152,
   "reviewMode": "standard",
   "releases": [
     {
