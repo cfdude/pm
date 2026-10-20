@@ -920,7 +920,9 @@ it waits on.
   reads the ledger (it never turns tracking on) and ranks sub-agents by `work`, counts tool use, flags outliers and prints
   one recommendation per flag. See `commands/spend-analysis.md`.
 - A decision worth a postmortem (a design fork, a re-plan, a split)? `record-decision <epic> --what "…" --why "…" --since <iso>`
-  (spend tracking on; `--withdraw <n> --reason` marks one withdrawn and keeps it). See `commands/record-decision.md`.
+  (spend tracking on; `--withdraw <n> --reason` marks one withdrawn and keeps it). `decisions <epic>` prints each with its
+  cost, computed from the ledger (the epic's spend in the decision's window, not spend the decision caused). Record one
+  for postmortem self-reflection, not for every choice. See `commands/record-decision.md` and `commands/decisions.md`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —

@@ -142,7 +142,7 @@ import { overhead } from "./lib/overhead.mjs";
 import { setDevLog } from "./lib/dev-log.mjs";
 import { devLogVerb } from "./lib/dev-log-report.mjs";
 import { spendAnalysis } from "./lib/spend-analysis.mjs";
-import { recordDecision } from "./lib/decision-log.mjs";
+import { decisionsVerb, recordDecision } from "./lib/decision-log.mjs";
 import { currentArgv, currentEnv, errStream, installedInvocation, normalizeStdin, outStream, setInvocation, setInvocationSession, stdinSource } from "./lib/invocation.mjs";
 
 /** This module's own absolute path. `main()` hands it to the delegation handoff, the banner names
@@ -252,7 +252,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -495,6 +495,7 @@ function runInvocation(argv, io = {}) {
     spend,
     "spend-analysis": spendAnalysis,
     "record-decision": recordDecision,
+    decisions: decisionsVerb,
     "set-spend-guard": setSpendGuard,
     "spend-guard": spendGuard,
     "override-spend-guard": overrideSpendGuard,

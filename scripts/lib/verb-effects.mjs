@@ -142,8 +142,10 @@ export const VERB_EFFECTS = {
   // tracking on it runs the same ingest into the MAIN working tree's ignored .conductor/spend/, never state.json.
   "spend-analysis": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
   // decision-cost-log. `record-decision` writes an epic's decisions (append, or the withdrawal mark) and nothing else; its
-  // cost is never stored.
+  // cost is never stored. `decisions` reads them back: with tracking on it runs the same ingest `spend` runs (the reason
+  // `spend-analysis` is `mutates` + `detachedNoOp`), with tracking off it reads state only.
   "record-decision": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's decisions: one appended, or one marked withdrawn and kept), plus render()'s writes" },
+  decisions: { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree, only while tracking is on and a live decision exists (the same ingest `spend` runs; --no-ingest skips it) — never state.json and never a transcript" },
   // spend-budget-and-stuck-loop-guard. The limit cascade and the overrides are `state.json` writes; the managed
   // rules block is refreshed only when "a limit is configured" flips.
   "set-spend-guard": { effect: "mutates", epicWriting: true, writes: "state.json (the project, lane or epic spend-guard layer), CLAUDE.md (the rules block, only when a limit first appears or the last goes), plus render()'s writes" },

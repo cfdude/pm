@@ -79,6 +79,8 @@ const VERB_BASELINE = {
   "spend-guard": () => ["spend-guard", "e1"],
   "override-spend-guard": () => ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
   // decision-cost-log: recording is refused while spend tracking is off, so BASELINE_PRE below turns it on first.
+  // `decisions` with tracking off reads state only, so its bare baseline succeeds.
+  decisions: () => ["decisions", "e1"],
   "record-decision": () => ["record-decision", "e1", "--what", "x", "--why", "y", "--since", "2026-10-10T00:00:00Z"],
   owners: () => ["owners"],
   // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
@@ -342,7 +344,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "overhead --all-features",
     "override-spend-guard --revoke",
     // gh-204: `list` shares --json (the same genuine boolean: a rendering).
-    "owners/activity/spend/spend-guard/list/overhead/dev-log/spend-analysis --json",
+    "owners/activity/spend/spend-guard/list/overhead/dev-log/spend-analysis/decisions --json",
     "purge-logs --dry-run",
     "purge-logs/spend/dev-log --yes",
     "push-detour --no-reconcile",
@@ -355,7 +357,7 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "spend --rebuild",
     "spend --timeline",
     "spend/dev-log --clear",
-    "spend/spend-guard/dev-log/spend-analysis --no-ingest",
+    "spend/spend-guard/dev-log/spend-analysis/decisions --no-ingest",
     "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");

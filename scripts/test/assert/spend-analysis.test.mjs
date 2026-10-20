@@ -42,7 +42,7 @@ test("1.1 spend-analysis ingests as spend does, then analyses the attributed led
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(Buffer.compare(before, fs.readFileSync(statePath(sc.cwd))), 0, "state.json is byte-identical");
   const out = JSON.parse(r.stdout);
-  assert.deepEqual(Object.keys(out).sort(), ["agents", "breakdown", "coverage", "cost", "flags", "ingest", "scope", "tools", "tracking", "trend", "unattributed"].sort());
+  assert.deepEqual(Object.keys(out).sort(), ["agents", "breakdown", "coverage", "cost", "decisions", "flags", "ingest", "scope", "tools", "tracking", "trend", "unattributed"].sort());
   assert.equal(out.breakdown.totals.total, EXPECTED.main.total + EXPECTED.marked.total + EXPECTED.worktreeMarked.total);
   assert.deepEqual(out.agents.map((a) => [a.agentId, a.messages]), [["MARKED", 3]], "the marked sub-agent and its worktree session share one agent id");
   assert.ok(out.tools.byTool.some((t) => t.tool === "Bash" && t.count >= 1), "tool names come from the stored rows");

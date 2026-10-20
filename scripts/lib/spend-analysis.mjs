@@ -31,6 +31,8 @@ import { readLedger } from "./spend-ledger.mjs";
 import { attribute } from "./spend-attribution.mjs";
 import { COST_NOTE, NONE_KEY, buildReport, emptyTotals } from "./spend-report.mjs";
 import { ingestForReport, readMainState } from "./spend-command.mjs";
+import { costDecisions, renderDecisionLines } from "./decision-log.mjs";
+import { loadState } from "./state.mjs";
 
 const refuse = (msg) => die(`conductor: ${msg}\n`);
 
@@ -220,8 +222,9 @@ function buildTrend(state, reportEpics) {
 
 /** Analyse attributed rows (spend-attribution.mjs `attribute()`), pure.
  *    scope  { epic?, release? } -- at most one
- *    state  the record: its epics (and their `release`) and its releases */
-export function analyze({ attributed, state, tracking, ingest = null, scope = {} }) {
+ *    state  the record: its epics (and their `release`) and its releases
+ *    decisions  under --epic, that epic's stored decisions (default: the ones `state` holds) -- decision-cost-log owns the section */
+export function analyze({ attributed, state, tracking, ingest = null, scope = {}, decisions }) {
   const ids = scopeEpicIds(state, scope);
   const report = buildReport({ attributed, tracking, ingest });
   const inScope = (id) => ids === null || ids.has(id);
@@ -267,6 +270,7 @@ export function analyze({ attributed, state, tracking, ingest = null, scope = {}
     flags: raiseFlags({ agents, epicWork, reviewRounds, coverage: report.coverage, unattributed: report.unattributed }),
     trend: buildTrend(state, report.epics),
     cost: report.cost,
+    ...(scope.epic ? { decisions: costDecisions({ decisions: decisions !== undefined ? decisions : ((state.epics || []).find((e) => e && e.id === scope.epic) || {}).decisions, epicId: scope.epic, attributed, tracking }) } : {}),
   };
 }
 
@@ -281,9 +285,11 @@ export function renderAnalysis(a, { extra = [] } = {}) {
   const scopeText = s.kind === "epic" ? `epic ${s.epic}` : s.kind === "release" ? `release ${s.release}` : "the whole ledger";
   L.push(`spend-analysis — ${scopeText} · tracking ${a.tracking.enabled ? `on since ${a.tracking.enabledAt || "?"}` : "OFF"}`);
   for (const l of extra) L.push(l);
-  if (a.off) { L.push(a.off); return L.map(escapeControls); }
+  // decision-cost-log owns this section: the epic's decisions as `decisions <epic>` prints them; none, no section.
+  const decisionLines = a.decisions && a.decisions.length ? ["", `Decisions (${a.decisions.length}):`, ...renderDecisionLines(a.decisions).map((l) => `  ${l}`)] : [];
+  if (a.off) { L.push(a.off, ...decisionLines); return L.map(escapeControls); }
   const t = a.breakdown.totals;
-  if (a.coverage.total === 0) { L.push("the ledger holds no rows to analyse"); return L.map(escapeControls); }
+  if (a.coverage.total === 0) { L.push("the ledger holds no rows to analyse", ...decisionLines); return L.map(escapeControls); }
 
   L.push("", `breakdown (ranked by work; total printed beside it): ${n(t.messages)} messages`, `  ${classes(t)}`);
   for (const [label, key] of [["actor", "byActor"], ["tier", "byTier"], ["role", "byRole"], ["phase", "byPhase"]]) {
@@ -329,6 +335,7 @@ export function renderAnalysis(a, { extra = [] } = {}) {
     ? `  ${a.trend.reason}`
     : `  ${a.trend.verdict}: ${a.trend.latest} against ${a.trend.previous} (band ${pct(TREND_BAND)}, a proposal)`);
 
+  L.push(...decisionLines);
   L.push("", `cost: ${COST_NOTE}`);
   return L.map(escapeControls);
 }
@@ -358,13 +365,16 @@ export function spendAnalysis() {
     refuse(`spend-analysis --release '${escapeControls(release)}' — no release with that id is declared${tree.linked ? " in the main working tree" : ""}. Nothing was ingested.`);
   }
   const scope = { epic, release };
+  // The epic's decisions are this invocation's own record (a linked worktree keeps its own state.json); the ledger and
+  // the switch are the main tree's.
+  const decisions = epic !== undefined ? (loadState().epics.find((e) => e.id === epic) || {}).decisions || [] : undefined;
   const enabled = spendEnabled(state);
   const json = on("json");
   const trackingInfo = state.spendTracking;
 
   if (!enabled) {
     // Nothing under the spend or transcript directory is opened: the analysis of an empty set, plus the reason.
-    const empty = analyze({ attributed: [], state, tracking: trackingInfo, ingest: { ran: false, reason: "tracking is off" }, scope });
+    const empty = analyze({ attributed: [], state, tracking: trackingInfo, ingest: { ran: false, reason: "tracking is off" }, scope, decisions });
     empty.off = OFF_MESSAGE;
     outStream().write(json ? jsonText(empty, null, 2) + "\n" : renderAnalysis(empty).join("\n") + "\n");
     return;
@@ -378,7 +388,7 @@ export function spendAnalysis() {
   const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled: true, tree, readCtx, enabledAtMs, state });
   const ledger = readLedger(tree.main);
   const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, state);
-  const out = analyze({ attributed, state, tracking: trackingInfo, ingest: ingestInfo, scope });
+  const out = analyze({ attributed, state, tracking: trackingInfo, ingest: ingestInfo, scope, decisions });
   if (json) { outStream().write(jsonText(out, null, 2) + "\n"); return; }
   const extra = [`ingest: ${ingestInfo.ran ? `+${ingestInfo.rowsAdded} message(s)` : ingestInfo.reason}`];
   if (ledger.corrupt) extra.push(`ledger: ${ledger.corrupt} unreadable line(s) were skipped`);

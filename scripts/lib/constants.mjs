@@ -995,7 +995,7 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log", "spend-analysis"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log", "spend-analysis", "decisions"], valueless: true },
   // pm-overhead-baseline: compute the report over the named every-opt-in-on hypothetical, in memory, writing nothing.
   { flag: "all-features", commands: ["overhead"], valueless: true },
   // `list` (#204), the read-only epic listing. `--status` and `--lane` FILTER here where the epic
@@ -1031,7 +1031,7 @@ export const VERB_FLAGS = [
   // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
   // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
   { flag: "until", commands: ["spend", "dev-log", "record-decision"], requires: "an ISO-8601 timestamp" },
-  { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log", "spend-analysis"], valueless: true },
+  { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log", "spend-analysis", "decisions"], valueless: true },
   // developer-session-log: `dev-log --session-id` names a Claude Code TRANSCRIPT session, never pm's own `--session` identity.
   { flag: "session-id", commands: ["dev-log"], requires: "a Claude Code transcript session id" },
   // spend-budget-and-stuck-loop-guard. `set-spend-guard`'s three limits and its `--unset` (repeatable, its own
@@ -1132,7 +1132,7 @@ export const VERB_POSITIONALS = {
   "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // decision-cost-log: both take the epic the decisions belong to.
-  "record-decision": EPIC_ID,
+  "record-decision": EPIC_ID, decisions: EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },

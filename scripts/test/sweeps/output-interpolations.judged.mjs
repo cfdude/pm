@@ -225,6 +225,21 @@ x("decision-log.mjs", "withdraw", {
   "stray.join(\", --\")": 1,
   "n": 3,
 }, "engine", "registry flag names of the refused decision fields, and a decision number validated as a positive whole number");
+x("decision-log.mjs", "renderDecisionLines", {
+  "(d.cost.coverage * 100).toFixed(1)": 1,
+}, "engine", "a share the engine computed, formatted with toFixed");
+x("decision-log.mjs", "decisionsVerb", {
+  "main.reason": 1,
+}, "engine", "the engine's own reason word (absent|unreadable)");
+x("decision-log.mjs", "decisionsVerb", {
+  "jsonText({ epic: epicId, tracking: { enabled }, decisions: entries, note: NOT_CAUSAL }, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
+x("decision-log.mjs", "decisionsVerb", {
+  "epicId": 1,
+}, "sink-flow", "an epic id the record holds, pushed onto L and written through L.map(escapeControls)");
+x("spend-analysis.mjs", "renderAnalysis", {
+  "l": 1,
+}, "escaped", "a line renderDecisionLines() already returned through escapeControls, indented");
 x("spend-analysis.mjs", "refuse", {
   "msg": 1,
 }, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");

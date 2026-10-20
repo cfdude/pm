@@ -128,8 +128,8 @@
     },
     {
       "id": "decision-cost-log",
-      "artifacts": ["commands/record-decision.md"],
-      "platforms": { "claude-code": "slash command wrapping record-decision - a numbered decision on an epic (what, why, alternatives, phase, the window of work that reached it), withdrawn never deleted, with its cost computed from the spend ledger when read and never stored" }
+      "artifacts": ["commands/record-decision.md", "commands/decisions.md"],
+      "platforms": { "claude-code": "slash commands wrapping record-decision / decisions - a numbered decision on an epic (what, why, alternatives, phase, the window of work that reached it), withdrawn never deleted, with its cost computed from the spend ledger when read and never stored" }
     },
     {
       "id": "session-overhead",
