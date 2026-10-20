@@ -14,6 +14,7 @@ import { SENTINEL, buildTranscriptTree, walk } from "../fixtures/spend-transcrip
 import { ingest, rebuild } from "../../lib/spend-ledger.mjs";
 import { spendDir } from "../../lib/spend-tree.mjs";
 import { encodeProjectPath } from "../../lib/spend-reader.mjs";
+import { appendDevLog, readDevLog } from "../../lib/dev-log-capture.mjs";
 
 const NOW = Date.now();
 const iso = (sec) => new Date(NOW + sec * 1000).toISOString();
@@ -228,4 +229,19 @@ test("1.4 the snapshot takes `on` from `overhead`, never from an OPT_INS row's i
   const body = src.slice(src.indexOf("export function featuresSnapshot"), src.indexOf("export function devLogOptions"));
   assert.ok(body.includes("buildReport("));
   assert.equal(/isSet/.test(body), false);
+});
+
+test("1.3 an append after a torn write starts on its own line instead of gluing to the partial one", () => {
+  const repo = fs.realpathSync(tmpRepo());
+  const file = path.join(spendDir(repo), "devlog.jsonl");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const whole = JSON.stringify({ type: "features", at: iso(0), features: { a: 1 }, surfaces: {} });
+  fs.writeFileSync(file, whole + '\n{"type":"features","at":"torn');
+  const r = appendDevLog(repo, [], () => ({ features: { spendGuard: { on: true, bytes: 1 } }, surfaces: {} }));
+  assert.equal(r.snapshotAppended, true);
+  const lines = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
+  assert.equal(lines.length, 3, "whole line, torn line, the new entry");
+  assert.doesNotThrow(() => JSON.parse(lines[2]), "the new entry is a complete line of its own");
+  assert.equal(JSON.parse(lines[2]).features.spendGuard.bytes, 1);
+  assert.equal(readDevLog(repo).corrupt, 1, "only the torn line is unreadable");
 });

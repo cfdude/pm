@@ -228,9 +228,26 @@ export function appendDevLog(mainRoot, entries, snapshot, fsx = fs) {
   }
   if (fresh.length) {
     fsx.mkdirSync(spendDir(mainRoot), { recursive: true });
+    // A torn write leaves a last line with no newline; appending straight after it would glue the next entry
+    // onto the partial one and lose both. Start on a fresh line when the file's last byte is not one.
+    if (endsMidLine(devPath(mainRoot), fsx)) fsx.appendFileSync(devPath(mainRoot), "\n");
     fsx.appendFileSync(devPath(mainRoot), fresh.map((e) => JSON.stringify(e)).join("\n") + "\n");
   }
   return { appended: fresh.length - (snapshotAppended ? 1 : 0), snapshotAppended };
+}
+
+/** True when the file exists, is non-empty and its last byte is not a newline. */
+function endsMidLine(file, fsx) {
+  try {
+    const size = fsx.statSync(file).size;
+    if (size === 0) return false;
+    const fd = fsx.openSync(file, "r");
+    try {
+      const buf = Buffer.alloc(1);
+      fsx.readSync(fd, buf, 0, 1, size - 1);
+      return buf[0] !== 0x0a;
+    } finally { fsx.closeSync(fd); }
+  } catch { return false; }
 }
 
 /** `dev-log --clear`'s plan: the file's size, or null when there is none. */
