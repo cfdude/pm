@@ -1736,6 +1736,49 @@ included; an **output style applies to the main conversation only** and does not
 contract that lives only in an output style never arrives at a child executor or the reconciler —
 put it in CLAUDE.md if you want the whole hierarchy to honour it.
 
+## What each feature costs
+
+Everything pm injects into a session is re-read on every message, so it is worth knowing what it costs. Run
+`overhead` for the numbers on your repository (`overhead --all-features` for the every-opt-in-on case); nothing
+below is a promise about yours. Every figure is **bytes/4, an estimate**: the engine has no tokenizer, and the
+estimate has not yet been checked against real token counts. Measured 2026-10-20 on 0.53.0 (method and the
+reasoning for each decision: `docs/measurement/2026-10-feature-switch-audit.md`). This table does not claim that
+any of it saves downstream work; `overhead` says so too.
+
+A feature gets a switch only when it costs at least 1,000 estimated tokens per session (a proposal) and is not a
+safety or record-integrity rule, or when it is a developer feature that costs tokens itself. Developer features
+(spend tracking, the spend guard, the developer session log) are **off by default**; `init` and `upgrade` never
+turn them on. Spend tracking adds its own cost, listed below: `set-spend-tracking on`.
+
+| Surface | Feature | Est. cost per session | Switch |
+| --- | --- | --- | --- |
+| `rules:pm-conductor` | core | ~1,485 tokens | no switch: the detour, reconcile and state-of-record rules |
+| `rules:getting-help-with-pm` | core | ~181 tokens | no switch: below the threshold |
+| `rules:the-gate-procedure` | core | ~3,006 tokens | no switch: the required gate items are a record-integrity rule |
+| `rules:intake` | core | ~1,006 tokens | no switch yet: at the threshold by 6 tokens, a candidate awaiting a decision |
+| `rules:reporting` | core | ~714 tokens | no switch: below the threshold, and it forbids dropping a recorded fact |
+| `rules:epic-level-autonomy` | core | ~785 tokens | no switch: below the threshold, and it holds the safety stops |
+| `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
+| `rules:release-candidate` | core | ~294 tokens | no switch: below the threshold |
+| `rules:feedback` | core | ~194 tokens | no switch: below the threshold |
+| `rules:re-read-the-source-before-an-epic-becomes-the-work` | core | ~411 tokens | no switch: below the threshold |
+| `brief` | core | ~339 to ~2,061 tokens (grows with the record, capped at 16,384 bytes) | no switch: its size is the rules-block budget's to bound |
+| `snapshot` | core | not injected (written to `.conductor/brief.txt` on PreCompact) | no switch |
+| `hook:gate-guard` | core | ~139 tokens, only when it blocks | no switch: a mechanical safety block |
+| `hook:commit-nudge` | core | not measured; only after a commit | no switch |
+| `hook:lesson-advice` | core | ~125 tokens for pm's longest lesson, only on a match | no switch |
+| `rules:github-issue-sync` | tracker | ~1,378 tokens | `set-tracker` (0 with no tracker) |
+| `rules:secondary-tracker-sync` | tracker | ~1,399 tokens per secondary tracker | `set-tracker` |
+| `rules:sync-after-completing-tracker-linked-work` | tracker | ~116 tokens | `set-tracker` |
+| `rules:spend-tracking` | spendTracking | ~220 tokens | `set-spend-tracking on`, off by default |
+| `spend-marker` | spendTracking | ~15 tokens per dispatched sub-agent, while tracking is on | `set-spend-tracking on`, off by default |
+| `rules:spend-guard` | spendGuard | ~202 tokens | `set-spend-guard --max-failed-rounds <n>`, off until a limit is set |
+| `listing:*` | listings | ~1,923 tokens for the 41 command, skill and agent descriptions | no switch: the host reads the plugin's files, the engine cannot hide them |
+
+Features that inject nothing of their own: `reviewMode` (`set-review-mode`), `laneRouting` (`set-lane-routing`),
+`activityLog` (`set-activity-log`) and the developer session log (`set-dev-log on`, off by default, needs spend
+tracking).
+
 ## Guard & Automation
 
 <details>
