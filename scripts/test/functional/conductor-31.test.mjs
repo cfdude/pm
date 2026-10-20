@@ -95,6 +95,7 @@ const VERB_BASELINE = {
   owners: () => ["owners"],
   // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
   list: () => ["list"],
+  "log-detour": () => ["log-detour", "a baseline fix"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
   "plan-hierarchy": () => ["plan-hierarchy", "--parent", "e1"],

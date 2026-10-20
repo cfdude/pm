@@ -110,10 +110,20 @@ export function readDetourRows() {
   const read = storeOps().read(ARTIFACT.DETOURS_LOG);
   if (read.kind !== "ok") return [];
   return read.text.split("\n").filter(Boolean).map((raw) => {
-    const [when, sha, kind, epic, note] = raw.split("\t");
-    return { raw, when, sha, kind, epic, note };
+    // `target` is the SIXTH column and exists only on a RETRACTED-MINIMAL row: the `when` of the one
+    // MINIMAL row it retracts (gh-239). Absent (undefined) on every other kind.
+    const [when, sha, kind, epic, note, target] = raw.split("\t");
+    return { raw, when, sha, kind, epic, note, target };
   });
 }
+
+/** The kind of the row that retracts ONE MINIMAL row (gh-239). A distinct kind, not `RETRACTED`: that
+ *  kind retracts by SHA, so reusing it would also hide the AUTO-DETOUR / DETOUR-COMMIT rows of the same
+ *  commit -- and the whole point of the MINIMAL row at issue was that it sat on a commit with its own
+ *  row. A MINIMAL row is a declaration with no identity beyond its timestamp, so the retraction names
+ *  that timestamp. (An engine older than this one shows the row itself in PROJECT.md; it hides nothing
+ *  it should not.) */
+export const MINIMAL_RETRACTION = "RETRACTED-MINIMAL";
 
 /** Do two row shas name the same commit, as far as the rows alone can tell? Either is a prefix of
  *  the other. Used where no git is consulted (render, the already-retracted check): two different
@@ -127,8 +137,21 @@ export const rowShasOverlap = (a, b) =>
  *  dropped, and RETRACTED rows are never shown themselves. */
 export function visibleDetourRows(rows = readDetourRows()) {
   const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
-  return rows.filter(r => r.kind !== "RETRACTED" &&
-    !(COMMIT_DERIVED_KINDS.has(r.kind) && retracted.some(x => rowShasOverlap(x, r.sha))));
+  const minimalRetracted = rows.filter(r => r.kind === MINIMAL_RETRACTION);
+  return rows.filter(r => r.kind !== "RETRACTED" && r.kind !== MINIMAL_RETRACTION &&
+    !(COMMIT_DERIVED_KINDS.has(r.kind) && retracted.some(x => rowShasOverlap(x, r.sha))) &&
+    !(r.kind === "MINIMAL" && minimalRetracted.some(x => x.target === r.when && rowShasOverlap(x.sha, r.sha))));
+}
+
+/** Append a RETRACTED-MINIMAL row -- the inverse of `log-detour` (gh-239). `row` is the MINIMAL row it
+ *  retracts; the row stays in the log. `<iso>\t<sha>\tRETRACTED-MINIMAL\t<epic>\t<reason>\t<when of row>`.
+ *  Suppressed in a detached tree like the row it retracts; returns whether it was written. */
+export function appendMinimalRetraction(row, reason) {
+  if (isDetachedTree()) return false;
+  const line = [new Date().toISOString(), row.sha, MINIMAL_RETRACTION, escapeControls(row.epic || "-"),
+    escapeControls((reason || "").replace(/\s+/g, " ").trim()), row.when].join("\t");
+  storeOps().append(ARTIFACT.DETOURS_LOG, line + "\n");
+  return true;
 }
 
 /** Append a RETRACTED row — the inverse of an automatic commit-derived row, which is never removed

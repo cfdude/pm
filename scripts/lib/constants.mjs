@@ -956,6 +956,11 @@ export const VERB_FLAGS = [
   // `retract-detour` (commit-nudge-reads-the-whole-move) joins the row: a retraction's reason is held
   // to the same standard, and push-detour's semantics are untouched.
   { flag: "reason", commands: ["push-detour", "drop-detour", "retract-detour"], requires: REASON_REQUIRES },
+  // gh-239. `log-detour --sha` stamps the declaration on a named commit rather than HEAD (HEAD is the
+  // PREVIOUS commit when the one being described was refused by a hook); `retract-detour --minimal` is
+  // the inverse of `log-detour`, naming the declared row by its exact description.
+  { flag: "sha", commands: ["log-detour"], requires: "a commit sha in this repository" },
+  { flag: "minimal", commands: ["retract-detour"], requires: "the exact description of the MINIMAL row to retract" },
   // The reconcile decision is SAID, never defaulted — see pushDetour() in lib/detour-stack.mjs
   // for why, and KNOWN_STATUSES' neighbour `--no-deferrals` for the precedent.
   { flag: "reconcile", commands: ["push-detour"], valueless: true },
@@ -1113,7 +1118,7 @@ export const VERB_POSITIONALS = {
 };
 
 export const FLAGLESS_VERBS = [
-  "log-detour", "honcho-memory",
+  "honcho-memory",
   "reorder", "set-active", "clear-active", "set-gate-guard",
   "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
