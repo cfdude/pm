@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "release-0-53-0-cut",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -13400,8 +13400,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.877Z",
-      "touchedAt": "2026-10-20T12:51:58.863Z",
-      "release": "0.53.0",
+      "touchedAt": "2026-10-21T18:11:09.609Z",
       "notes": [
         {
           "at": "2026-10-20T12:51:58.858Z",
@@ -15044,7 +15043,7 @@
       "id": "release-0-53-0-cut",
       "title": "Cut pm 0.53.0: version bump, CHANGELOG from .changesets, README and one Mintlify pass, release PR, close the GitHub issues, fleet upgrade",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -15063,9 +15062,25 @@
         "82070c12a875993dc29f5ef34c27d38ff148817c"
       ],
       "createdAt": "2026-10-20T11:28:05.573Z",
-      "touchedAt": "2026-10-21T17:58:26.757Z",
+      "touchedAt": "2026-10-21T18:11:10.444Z",
       "release": "0.53.0",
-      "startedAt": "2026-10-20T11:28:22.992Z"
+      "startedAt": "2026-10-20T11:28:22.992Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-21T18:11:10.440Z",
+        "reason": "0.53.0 cut: PR #257 squash-merged to main as 0c5ac976, version bumped, CHANGELOG consolidated, README and Mintlify (pm-docs #60, #61) live, issues #204 #207 #228 #239 #242 #251 closed. Fleet upgrade and production deploy run in the separate pm-deployer session."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-21T18:11:10.439Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "fleet upgrade and production deploy of 0.53.0",
+            "reason": "run by the pm-deployer session outside this epic, recorded there"
+          }
+        ]
+      },
+      "completedAt": "2026-10-21T18:11:10.440Z"
     },
     {
       "id": "pm-overhead-calibration-and-feature-switches",
@@ -15113,7 +15128,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2162,
+  "revision": 2165,
   "reviewMode": "standard",
   "releases": [
     {
@@ -15736,7 +15751,13 @@
     {
       "id": "0.53.0",
       "intent": "Know where the tokens went, and keep the record honest: the first analysis over real ledger data, pm's own baseline overhead and feature switches, a developer-only session log, the follow-ups the 0.52 gates logged, the record and refusal bugs users hit, and the known flakes paid down. Nothing platform-shaped. (Rob approved the 16-epic scope and the three overhead epics 2026-10-13.)",
-      "deferred": [],
+      "deferred": [
+        {
+          "epic": "record-gate-review-fail-requires-shas",
+          "reason": "scoped to Gate 2 only by Rob 2026-10-20; needs re-scoping before it is built, so it moves to the next batch",
+          "recordedAt": "2026-10-21T18:11:09.604Z"
+        }
+      ],
       "crossSpecReview": {
         "verdict": "pass",
         "reviewedAt": "2026-10-20T11:27:37.083Z",
@@ -15787,6 +15808,9 @@
           }
         ],
         "reviewer": "opus fresh-context cross-spec reviewer 2026-10-20: 1 BLOCK (surface slug fork) fixed in 8c4b1c78, POLISH partly applied, not re-reviewed (one round)"
+      },
+      "delivered": {
+        "recordedAt": "2026-10-21T18:11:15.484Z"
       }
     },
     {
