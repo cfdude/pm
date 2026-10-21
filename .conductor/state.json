@@ -15057,9 +15057,12 @@
           "text": "lane: claude-code not none — release-cut mechanics follow the release-checklist skill, mirroring release-0-52-0-cut"
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "614480e0a6efa0b534e446656773b2f0b9059923",
+        "57374a527367e410383d54b8352c98a3ace8acc9"
+      ],
       "createdAt": "2026-10-20T11:28:05.573Z",
-      "touchedAt": "2026-10-20T11:28:23.001Z",
+      "touchedAt": "2026-10-21T17:47:24.568Z",
       "release": "0.53.0",
       "startedAt": "2026-10-20T11:28:22.992Z"
     },
@@ -15109,7 +15112,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2159,
+  "revision": 2161,
   "reviewMode": "standard",
   "releases": [
     {
