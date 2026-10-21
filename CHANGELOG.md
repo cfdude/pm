@@ -6,6 +6,145 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.53.0] — 2026-10-21
+
+Know where the tokens went, and keep the record honest. This release adds the read side of spend tracking (a
+postmortem report, a decision log, an overhead report and a developer session log, all read-only and all off
+or inert until you ask), lets a token ceiling count work instead of cache-read, and closes a run of places where
+the record could say something false: a minimal detour logged against the wrong commit, an epic with no trace of
+which sessions wrote it, a repeated attribution nothing reported, a rejected lesson matcher nobody was told
+about. 22 epics were members of this release: 20 built, this release's own cut, and one carried forward.
+Resolves #204, #207, #228, #239, #242 and #251. Run `/reload-plugins` after updating, then `/pm:upgrade` in each
+repo: the managed rules block changes (shipped instructions no longer pin an OpenSpec change to
+`openspec/changes/<id>/`, and the `## Spend guard` section now follows whether a limit is live). There is no
+`state.json` schema change, so no migration runs: the newest `MIGRATIONS` entry is still 0.44.0, and every field
+this release adds (`epic.sessions`, an epic's recorded decisions, `state.devLog`, a spend-guard `tokenBasis`) is
+optional.
+
+### Added
+
+* **`spend-analysis [--epic <id> | --release <id>] [--json] [--no-ingest]`: where the tokens went, which agents are
+  outliers, and what to change.** Reads the existing spend ledger through `spend`'s own ingest and attribution
+  (it never turns tracking on, writes nothing to `state.json`, opens no network connection and calls no model).
+  It keeps `input`, `cache-write`, `cache-read`, `output`, `work` and `total` apart, split by actor, model tier,
+  role and phase; ranks sub-agents by `work` with `total` beside it; gives the unattributed reasons and
+  ledger-wide coverage their own section; and counts tool use per tool name (messages that called the tool,
+  never a token figure). There is no money cost. Six outlier rules each print their evidence, threshold and one
+  rule-rendered recommendation: `long-context-agent` (at least 100 messages and 200,000 mean context per message),
+  `dominant-agent` (at least 50% of an epic's work, on an epic with 2 or more agents), `tier-mismatch`,
+  `review-loop` (3 or more distinct review rounds), `low-coverage` (under 90%) and `invalid-markers`; every
+  threshold is a named constant labelled a proposal, not a measurement. A cross-release trend gives mean `work`
+  per epic and a `growing`, `falling` or `flat` verdict (a 20% band) only when two releases each hold at least 3
+  epics with attributed rows, otherwise `insufficient data`. See `commands/spend-analysis.md`.
+* **`record-decision <epic> --what "<decision>" --why "<why>" --since <iso>` and `decisions <epic> [--json]
+  [--no-ingest]`: the decisions an epic's work reached, for a postmortem.** A numbered decision (per epic, from 1,
+  never reused) carries `what`, `why`, `--alternative` once per alternative, `--phase`, and the window of work
+  that reached it (`--since` to `--until`, defaulting to the record time). Recording is refused while spend
+  tracking is off, naming `set-spend-tracking on` and `update-epic <id> --notes`; an archived epic accepts one.
+  `--withdraw <n> --reason` marks a decision withdrawn and keeps it. A decision's cost is computed when read and
+  never typed or stored: the `work` and `total` the ledger attributes to the epic inside its window, plus that
+  window's coverage share. It is the epic's spend in the window, not spend the decision caused, and overlapping
+  windows are not summed. `spend-analysis --epic <id>` carries the same section. See `commands/record-decision.md`
+  and `commands/decisions.md`.
+* **`overhead [--all-features] [--json]`: what pm injects into a session, by surface and by feature.** Reports every
+  managed rules section, the SessionStart brief, the PreCompact snapshot, each hook's text and the shipped command,
+  skill and agent descriptions, each with its bytes and a `~N tokens (bytes/4, estimate)` figure and the one
+  feature that emits it. `--all-features` computes the every-opt-in-on case in memory and writes nothing. Read-only,
+  and it claims no downstream saving. The README gains "What each feature costs", one row per surface with its
+  estimated cost and the verb that switches it or `no switch` with the reason; a test holds the table to the same
+  surface map `overhead` reports. The audit behind it (`docs/measurement/2026-10-feature-switch-audit.md`) found one
+  candidate for a new switch, `rules:intake`, six tokens over the proposed 1,000-token line, and built none: that
+  line is a decision for the maintainer. See `commands/overhead.md`.
+* **`set-dev-log on|off`, `dev-log`: a developer-only session log, off by default.** Needs spend tracking; `on` is
+  refused while it is off and in a linked worktree or on a detached main HEAD. `init` and `upgrade` never turn it on
+  and list `devLog` among the opt-ins not adopted. While both are on, `spend`'s ingest (and `spend-guard`'s) appends
+  a composition entry per assistant message to `.conductor/spend/devlog.jsonl`: byte counts only (user text, tool
+  results per tool name, attachments, an image count, the response's text and thinking) and identifiers, never any
+  text; tokens are joined from the ledger at report time. `dev-log [--session-id <id>] [--since <iso>] [--until
+  <iso>] [--json] [--no-ingest]` reports per Claude Code session the message count, times, token classes and
+  `work`, the byte composition, the features snapshot in force, and three retention warnings each printed with
+  its evidence and a proposed threshold: `stale-session` (at least 7 days), `large-context` (a message with at
+  least 300,000 tokens of context) and `compacted`. `dev-log --clear [--yes]` removes only `devlog.jsonl`, printing
+  its plan first. `off` stops capture and deletes nothing. See `commands/set-dev-log.md` and `commands/dev-log.md`.
+* **`list [--status <status>] [--lane <lane>] [--linked-to <epicId>] [--json]`: which epics exist (#204).** Intake,
+  the tracker-sync dedup and a disposition's `--deferral "<epicId>:<section>"` all need that set, and the engine had
+  no verb for it: agents were told to run an `epic list` that did not exist and fell back to reading
+  `.conductor/state.json`. It prints one line per epic, or `{count, epics}` with `--json`; `--linked-to` is
+  incoming (the epics carrying a link to that id). Read-only. See `commands/list.md`.
+* **An epic records which named sessions wrote it, and `--session` works on every epic-writing verb.**
+  `--session <name>` (fallback `PM_SESSION`) was declared for `claim` and `unclaim` only. It is now accepted on every
+  verb whose save can change an epic. When a save changes an epic and an identity resolves, the same write appends
+  it to `epic.sessions`: one `{session, firstAt, lastAt}` entry per distinct name, in first-seen order. No identity,
+  no field; a no-op write records nothing; a hook's save never stamps. **Behaviour change on `claim` and
+  `unclaim`:** the identity is now validated for every non-hook verb before any write (non-blank, at most 128
+  characters, no control character), so a control character, which `claim` used to store, is refused.
+* **`log-detour --sha <sha>`, and `retract-detour <sha> --minimal "<exact description>" --reason "<why>"` (#239).**
+  A commit for a minimal detour blocked by a format hook left `log-detour` recording against the previous HEAD,
+  and the wrong row was permanent. `--sha` records against the named commit (refused, writing nothing, when it
+  names no commit here); with no `--sha`, when HEAD already carries a visible MINIMAL row the command says so and
+  names the repair. The retraction appends a `RETRACTED-MINIMAL` row naming the one target's timestamp, hides only
+  that row from `PROJECT.md`, keeps it in `.conductor/detours.log`, and leaves the commit's AUTO-DETOUR and
+  DETOUR-COMMIT rows alone. An engine older than this one shows the `RETRACTED-MINIMAL` row itself in `PROJECT.md`.
+  `log-detour` was flagless and now accepts `--sha`.
+* **`set-spend-guard --token-basis total|work`, and a `work` total (#251).** `spend` totals gain `work`
+  (`input + cacheCreation + output`), the one definition every consumer reads. `--token-basis` records the unit a
+  `--tokens` ceiling is counted in, at the project, a lane or an epic (`--unset token-basis` is its inverse). An
+  absent basis reads as `total`, so every ceiling set on 0.52 keeps its meaning. `spend-guard` always prints the
+  epic's four token classes plus `work` and `total` beside the token signal (`signals.tokens.basis` and
+  `.breakdown` in `--json`). A `total`-basis ceiling below 10,000,000 is recorded with a one-line note naming
+  `cache-read` and `--token-basis work` (the floor is the issue's suggestion, not a measurement). A tokens override
+  records the basis its baseline was counted in and is set aside, with a notice, when the epic now counts another.
+* **`spend` names the invalid `pm-spend:` markers it refused (#242).** A marker whose role, phase or round is invalid
+  surfaced only as tokens under `invalid-marker`. In this repository, 24.5M tokens (17% of a 141.2M ledger) of
+  real work were dispatched with `phase=spec` or `phase=gate-1` and went unseen until attribution read 68.1%. The
+  text report now prints one line per distinct `(field, value)` with the accepted set, the agent count and the
+  tokens, and `--json` carries `unattributed.invalidMarkers`. Validation stays strict: no alias is accepted.
+* **`integrity` reports `attributed-commits-hold-duplicates`.** An epic whose `attributedCommits` names one commit more
+  than once, written by an engine older than 0.52.0 or by hand: this repository holds seven such epics, the worst
+  with 58 entries for 35 distinct commits. The finding names the epic, the entry and distinct-commit counts and the
+  repeated commits, and prints no remedy on purpose: the gates read the set, and no verb removes one entry from the
+  append-only array. A read of `state.json` that repairs nothing.
+* **The SessionStart briefing reports a repo's own rejected lesson `detect:` (#228).** The `lesson-advice` hook must
+  stay silent, so a consumer repo with a broken `detect:` was told nothing and its lesson never fired. The briefing
+  now carries `⚠ N lesson matcher(s) rejected — the lesson-advice hook never fires it/them; fix the detect: in
+  docs/lessons/:` followed by `- <file>: <reason>` for up to five, and `(+N more in docs/lessons/)` past that. It is
+  printed only when N is above zero, on the SessionStart context only. The optional read-only lint verb was not added.
+
+### Changed
+
+* **Shipped instructions no longer pin an OpenSpec change to `openspec/changes/<id>/`.** OpenSpec resolves a change's
+  location itself (`changeRoot` in `openspec status --change <id> --json`). Every directive in the rules block,
+  `agents/reconciler.md`, `skills/conductor/SKILL.md`, five command docs and the README now names the change's
+  directory as OpenSpec reports it, and states the stock path as a default. A new sweep over every shipped document
+  and the rendered rules block and brief fails on any other `openspec/changes/` literal: 34 lines before, 13 after
+  (all stated defaults or the bare directory name). The engine's own path handling is unchanged on purpose.
+  Repositories pick up the emitted line on their next `upgrade` or `write-rules`.
+* **Contributor tooling and internal tests (nothing a plugin user installs or runs changes).** The pre-commit hook
+  deletes a leftover single-file `pm-suite-certification.json` with an idempotent `rm -f`, as 0.51.0 moved the record
+  to `pm-suite-certification.d/`. Test guards that read a value out of engine source now refuse an empty extraction,
+  through one helper (`scripts/test/fixtures/engine-extraction.mjs`) replacing five copies of the dispatch-table
+  reader. A flaky `unitTest()` failure is now retried like any other (the harness writes a `[unit-test-file: <path>]`
+  line the retry reads back). The `certify-index` SIGTERM guard and the G2-C1/I2 lock-refusal guard no longer flake
+  under load, and `scripts/test/known-flakes.json` is empty.
+
+### Fixed
+
+* **The rules block's `## Spend guard` section follows whether a limit is live, after any verb.** Whether a limit is
+  configured depends on epic status (an epic-layer limit counts only on an epic that is not archived), but only
+  `set-spend-guard` refreshed the block. Archiving or removing the only epic holding a limit left the "run
+  `spend-guard <epic>` before every review or fix dispatch" instruction in `CLAUDE.md`, and un-archiving it left it
+  absent. The dispatch wrapper now compares the block on disk with the live-limit state after any state-writing verb
+  and refreshes it only when they disagree. A hook never does this work; a failed refresh is a warning naming
+  `write-rules`, never a failed verb.
+* **A quoted free-text value that starts with `--` is no longer told to "quote the whole value" (#207).**
+  `suggest-lane '--limit=5 ignored'` was refused with that advice though the value WAS quoted: the shell removed the
+  quotes before the engine saw argv. When the refused token holds whitespace, the refusal now says so and names the
+  way out: the `=` form where the verb has one (`suggest-lane --ask='--limit=5 ignored'`), otherwise reword so the
+  text does not start with `--` (`log-detour`, `honcho-memory`, `triage` have no `=` form). An unquoted flag-shaped
+  word keeps the quoting hint. `triage` still has no `--ask=` form.
+
+---
+
 ## [0.52.0] — 2026-10-14
 
 Safe to leave running. This release stops runaway and stuck-loop token burn, stops hooks injecting large
