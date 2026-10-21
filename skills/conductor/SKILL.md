@@ -106,7 +106,7 @@ registry, so it cannot disagree with what the parser accepts. Use it instead of 
   whatever else the line carries. Only a flag's value position differs: `--title --help` is
   refused, because there the token is data.
 - A flag the verb does not declare is refused by name, with the flags it does accept. A shared
-  flag is no exception: `--session` belongs to `claim`/`unclaim` only (`PM_SESSION` elsewhere).
+  flag is no exception: `--session` is declared on the verbs whose save can change an epic (their `--help` lists it), with `PM_SESSION` as the fallback.
 - **Quote every multi-word value.** An unquoted `--title My Title` leaves `Title` as a surplus
   positional, and a surplus positional is refused (`If 'Title' belongs to --title's value, quote
   the whole value.`) — it used to store `My` and exit 0.
@@ -628,7 +628,9 @@ Fix → test → commit → push, then record it so it leaves a trail:
 `node "$ENGINE" log-detour "<what you fixed>"` (appends a
 timestamped line + commit SHA to `.conductor/detours.log`). Then resume. (An automatic
 AUTO-DETOUR or DETOUR-COMMIT row the commit hook wrote wrongly is corrected with
-`node "$ENGINE" retract-detour <sha> --reason "<why>"`, never by editing the log.) No proposal, no
+`node "$ENGINE" retract-detour <sha> --reason "<why>"`, never by editing the log. If the commit was blocked
+and HEAD is still the previous commit, name the right one: `log-detour --sha <sha> "<what>"`; a wrong MINIMAL row is
+`retract-detour <sha> --minimal "<exact description>" --reason "<why>"`.) No proposal, no
 stack entry. Rule of thumb: fits before the next compaction and doesn't change the shape of
 the current proposal.
 
@@ -828,7 +830,7 @@ it waits on.
 - Want to know what the index is HIDING? `integrity` — a read-only audit reporting records that
   cannot be true (an archived epic with nothing ticked, one change under two lanes, a verdict
   that does not reach the commits it cites, an archive directory with no epic, an epic in a status
-  the engine does not define — `epic-in-undefined-status`; also `tracker-item-held-by-two-epics`, `archived-change-also-live`, `late-failing-gate-review` and `archived-delivered-fails-delivered-obligation`). It reports every
+  the engine does not define — `epic-in-undefined-status`; also `attributed-commits-hold-duplicates` (an epic's `attributedCommits` names one commit twice; no remedy, the gates read the set), `tracker-item-held-by-two-epics`, `archived-change-also-live`, `late-failing-gate-review` and `archived-delivered-fails-delivered-obligation`). It reports every
   check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
   finding's remediation is a command you run.
 - An epic registered before pm carried a clock has NO registration date, and absence there means
@@ -880,7 +882,10 @@ it waits on.
   **It is advisory.** `claim`/`unclaim` are the only verbs that refuse because of a claim;
   everything else writes to a claimed epic exactly as before. A claim expires on its own stated
   TTL, so a session that died mid-epic shows as STALE rather than owning the work forever, and
-  `integrity`'s `advisory-claim-shape` check reports one without being asked.
+  `integrity`'s `advisory-claim-shape` check reports one without being asked. `--session <name>` (or
+  `PM_SESSION`) is accepted on every verb whose save can change an epic, and such a save appends the name to
+  `epic.sessions` (`{session, firstAt, lastAt}`, first-seen order): which sessions wrote the record, not who did
+  the work. No name, no field.
 - Want to know HOW this project got here, not just where it is? `set-activity-log on` starts an
   append-only record of conductor state transitions, and `activity` reads it back — time an epic
   waited before it went active, detour frequency, lane choices and re-routes, gate verdicts in
@@ -916,6 +921,19 @@ it waits on.
   record). Mark review dispatches `pm-spend: epic=<id> role=review phase=review round=<n>` so unrecorded rounds
   are counted. Never wire `spend-guard` into a hook (exit 2 blocks). A failed verdict is always recorded; the STOP
   is printed after it. See `commands/spend-guard.md`.
+- Which epics exist? `list [--status <s>] [--lane <l>] [--linked-to <id>] [--json]` (read-only; `--linked-to` is
+  incoming). Use it, never `.conductor/state.json`, for intake, tracker-sync dedup and a `--deferral` target. See
+  `commands/list.md`.
+- Token ceiling counting cache-read? `set-spend-guard --token-basis work` counts `input + cacheCreation + output`
+  (absent = `total`, as before); `spend` and `spend-guard` print `work` beside `total`. A `pm-spend:` marker with an
+  invalid role, phase or round is named in `spend`'s report (`unattributed.invalidMarkers` in `--json`) with the
+  accepted set; validation stays strict. The `## Spend guard` rules section follows whether a limit is live after any
+  state-writing verb.
+- What does pm itself inject into a session? `overhead [--all-features] [--json]` (read-only). A developer-only log of
+  per-session composition: `set-dev-log on|off` (needs spend tracking), read with `dev-log`. See `commands/overhead.md`,
+  `commands/set-dev-log.md`, `commands/dev-log.md`.
+- A rejected `detect:` in this repo's `docs/lessons/` is reported by the SessionStart briefing (`⚠ N lesson matcher(s)
+  rejected`), not by the hook; fix the named file.
 - Want to know where an epic's or a release's tokens went, not only how many? `spend-analysis [--epic <id> | --release <id>]`
   reads the ledger (it never turns tracking on) and ranks sub-agents by `work`, counts tool use, flags outliers and prints
   one recommendation per flag. See `commands/spend-analysis.md`.

@@ -518,8 +518,18 @@ removes nothing, and re-renders `PROJECT.md` without them — `detours.log` is g
 `PROJECT.md` is tracked, so hand-removing a line left the false row in what got committed. `<sha>` is
 a hexadecimal commit sha, not a ref (`HEAD` is refused); one whose commit was pruned must be at
 least 7 characters and match one commit's rows. It refuses, naming why and writing nothing, for no
-matching row, a `MINIMAL`-only row, an already-retracted commit, a missing or empty reason, and a
-detached tree. No un-retract: re-declare with `log-detour`.
+matching row, a `MINIMAL`-only row (without `--minimal`), an already-retracted commit, a missing or empty
+reason, and a detached tree. No un-retract: re-declare with `log-detour`.
+
+`log-detour --sha <sha> "<what you fixed>"` records the declaration against that commit instead of HEAD
+(refused, writing nothing, when the sha names no commit here). Without it the row is keyed to HEAD, and
+when HEAD already carries a visible MINIMAL row the command says so after writing and names the repair:
+a commit blocked by a format hook leaves HEAD on the previous commit, so a `log-detour` run in the same
+shell step records against the wrong one. The inverse for a MINIMAL row is `retract-detour <sha> --minimal
+"<exact description>" --reason "<why>"`: it appends a `RETRACTED-MINIMAL` row naming that one row's
+timestamp, hides only that row from `PROJECT.md`, keeps it in `.conductor/detours.log`, and leaves the
+commit's `AUTO-DETOUR` and `DETOUR-COMMIT` rows alone. An engine older than this one shows the
+`RETRACTED-MINIMAL` row itself in `PROJECT.md`.
 
 `honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
 line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
@@ -916,6 +926,11 @@ carrying a command, and an absent record leaves the guard dormant.
 <details>
 <summary><code>/pm:triage</code> — Screen an incoming ask against the whole backlog</summary>
 
+`list [--status <status>] [--lane <lane>] [--linked-to <epicId>] [--json]` answers "which epics exist" from the
+engine, so an agent no longer reads `.conductor/state.json` and guesses its shape: it prints one line per epic, or
+`{count, epics}` with `--json`, and `--linked-to` is incoming (the epics carrying a link to that id, which is the
+deferral-list question). Read-only; see `commands/list.md`. It filters fields; `triage` reads an ask.
+
 `triage "<the ask>"` runs BEFORE `add-epic`. The dedup the conductor already had is
 identity-based — same id, or the same `externalUrl` — which stops `/pm:sync` mirroring an issue
 twice and does nothing about *the same ask arriving under a different name*. This returns the
@@ -1139,6 +1154,13 @@ that never ended, a `github-issues` tracker whose recorded repo is not `[HOST/]o
 a `delivered` openspec epic whose archived spec deltas never reached `openspec/specs/`
 (`delivered-epic-spec-deltas-absent`), two epics holding one tracker item (`tracker-item-held-by-two-epics`), an epic whose Gate 1 verdict reads stale because a reviewed artifact was amended (`gate-1-verdict-stale`: names the changed files and `record-gate-review <id> --gate 1 …` to re-record; a legacy verdict with no digests is `unverifiable` and not reported), a change present both live and under `archive/` with identical content (`archived-change-also-live`), a failing gate verdict recorded after the merge (`late-failing-gate-review`), and an archived `delivered` epic that no longer meets what `delivered` requires (`archived-delivered-fails-delivered-obligation`). Each remedy is printed under `/pm:status`.
 
+Two more shapes it names: `attributed-commits-hold-duplicates`, an epic whose `attributedCommits` names one
+commit more than once (written by an engine older than 0.52.0, which made attribution once-only, or by hand;
+"the same commit" means equal spelling, or a short sha and the full name it abbreviates), with the epic, its
+entry and distinct-commit counts and the repeated commits, and no remedy, because the gates read the set and
+no verb removes one entry from the append-only array; and `gate-1-verdict-stale` above. A read of `state.json`
+that repairs nothing.
+
 **The spec-sync check reads git's INDEX.** For each `delivered` openspec epic whose change is
 archived, every ADDED/MODIFIED header (and RENAMED `TO`) of its archived delta specs must be under the
 main spec's `## Requirements`, and every REMOVED header (and RENAMED `FROM`) must not be — headers
@@ -1216,6 +1238,15 @@ node scripts/conductor.mjs owners  [--json]
 ```
 
 `--session` is required; `PM_SESSION` supplies it, and an explicit flag outranks the environment.
+
+**Which sessions wrote an epic.** `--session <name>` (fallback `PM_SESSION`) is accepted on every verb whose
+save can change an epic, not only `claim`. When such a save changes an epic and an identity resolves, the
+same write appends it to `epic.sessions`: one `{session, firstAt, lastAt}` entry per distinct name, in
+first-seen order, with only `lastAt` moving on a later write. It says which sessions wrote the record, not
+who did the work. No identity, no field; a write that changes nothing records nothing; a hook's save never
+stamps. The name must be non-blank, at most 128 characters, with no control character, and is now checked
+for every non-hook verb before any write, so a `claim` with a control character in it is refused where it
+used to be stored. `sessions` is engine-written history with no clear and needs no migration.
 
 **It is advisory, and that word is load-bearing.** `claim` and `unclaim` are the *only* verbs that
 refuse because of a claim — everything else writes to a claimed epic exactly as before. When two
@@ -1332,6 +1363,12 @@ phase=<phase> [round=<n>]` line that the rules block asks you to begin each disp
 everything else lands in an **unattributed** bucket, by reason, that the report always prints, with a
 coverage share. Spend made while tracking was off is never credited to an epic.
 
+**Invalid markers are named.** A marker whose `role`, `phase` or `round` is invalid lands under `invalid-marker`,
+and the text report now prints one line per distinct `(field, value)` (the first failing field in the order
+role, phase, round) with the accepted set, the agent count and the tokens; `--json` carries
+`unattributed.invalidMarkers`. Validation stays strict, so `phase=spec` or `phase=gate-1` is not aliased.
+Totals also carry `work` (`input + cacheCreation + output`, which leaves out `cache-read`) beside `total`.
+
 `record-decision <epic> --what … --why … --since <iso>` records a decision an epic's work reached (refused while tracking is off); its cost is the epic's attributed spend in the decision's window, computed when read and never stored (`decisions <epic>` prints them; `spend-analysis --epic` carries the same section). `spend-analysis [--epic <id> | --release <id>]` reads that ledger as a postmortem: token classes kept apart, sub-agents ranked by `work`, tool-call counts, outlier flags with one rule-rendered recommendation each, and a cross-release trend. It never turns tracking on and writes nothing.
 
 A developer-only companion, `set-dev-log on|off` (off by default, needs spend tracking), records per session which
@@ -1357,7 +1394,7 @@ A review loop that cannot converge keeps spending tokens until a person notices.
 it into limits you choose; **no limit is on by default**.
 
 ```bash
-node scripts/conductor.mjs set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>] [--tokens <n>] [--warn-at <pct>] [--unset max-failed-rounds|tokens|warn-at|all]
+node scripts/conductor.mjs set-spend-guard [--epic <id> | --lane <lane>] [--max-failed-rounds <n>] [--tokens <n>] [--token-basis total|work] [--warn-at <pct>] [--unset max-failed-rounds|tokens|warn-at|all]
 node scripts/conductor.mjs spend-guard <epicId> [--json] [--no-ingest]
 node scripts/conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --escalated-to user|<model> --reason "<why>"
 node scripts/conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --revoke --reason "<why>"
@@ -1373,7 +1410,18 @@ wrong and how to resolve it, then record the decision with `override-spend-guard
 while the signal is tripped, must rank at or above the target, and no autonomy grant covers it; `--revoke`
 keeps the record. A failed verdict is always recorded, and the STOP follows it on stderr. The brief carries one
 `STOP: spend guard —` line for a stuck active epic and the rules block a `## Spend guard` section, only while a
-limit is set. Never wire `spend-guard` into a hook: exit 2 is the hook block code.
+limit is set, and that section follows whether a limit is live after any state-writing verb: archiving or
+removing the only epic that held a limit removes it, and un-archiving restores it (a refused call touches
+nothing, a failed refresh is a warning naming `write-rules`). Never wire `spend-guard` into a hook: exit 2
+is the hook block code.
+
+**The token ceiling's unit.** `--tokens` counts `total` by default, which includes `cache-read`. `set-spend-guard
+--token-basis total|work` (with `--unset token-basis`) records the unit at the project, a lane or an epic, and
+`work` leaves `cache-read` out. An absent basis reads as `total`, so a ceiling set before this release keeps its
+meaning and no migration runs. `spend-guard` always prints the epic's four token classes plus `work` and `total`
+beside the token signal (`signals.tokens.basis` and `.breakdown` in `--json`), a `total`-basis ceiling below
+10,000,000 is recorded with a one-line note naming `cache-read` and `--token-basis work`, and a tokens override
+records the basis its baseline was counted in and is set aside, with a notice, when the epic now counts another.
 
 **Not detected:** repeated failing `certify` runs (bound to the index, not to an epic) and per-test failures.
 With tracking off the token ceiling is not checked and every surface says so. See `commands/spend-guard.md`,
@@ -1620,9 +1668,9 @@ usage: conductor.mjs set-autonomy <id> [flags]
 Nothing was written.
 ```
 
-A shared flag is not an exception: `--session` is declared on `claim` and `unclaim` only
-(`PM_SESSION` names the session for the activity log everywhere else), and `--diff-summary` on
-`render` only. An `add-many` batch key (`--external-id`) is not a command-line flag either.
+A shared flag is not an exception: `--session` is declared on the verbs whose save can change an
+epic (`add-epic`, `update-epic`, `set-active`, `claim`, `unclaim`, `record-decision`, `set-spend-guard` and
+the rest; each verb's `--help` lists it), not on read-only verbs, and `--diff-summary` on `render` only. An `add-many` batch key (`--external-id`) is not a command-line flag either.
 
 **Quote every multi-word value.** A token no declared flag consumed is a positional, and a
 positional beyond what the verb reads is refused, naming the first surplus token:
@@ -1680,7 +1728,7 @@ that used to be safe fails CI rather than someone else's checkout.
 
 | Effect | Verbs |
 |--------|-------|
-| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `unconsidered-outcomes` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `list` · `overhead` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `unconsidered-outcomes` · `verify-specs` · `verify-state` · `verify-worktrees` |
 | **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
 
 Want the current state without touching anything? Use **`brief`**, not `render`.
@@ -1794,7 +1842,7 @@ tracking).
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
 | PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps an observation record (`.conductor/commit-observe.json`, git-ignored) holding a **reflog anchor** — the byte size of HEAD's reflog and its last line, stored as bytes (`anchor.lineBase64`), since a reflog is not guaranteed to be UTF-8 — and the set of shas it has already reported. Each run reports every `commit…` reflog entry after the anchor, oldest first, whatever happened to HEAD afterwards, so `-m`, `-am`, `-F`, an editor commit, a commit inside a script, a commit followed by a `checkout`, several commits in one call and a commit inside a call that then failed are all noticed, while a command that merely *mentions* `git commit`, a rejected commit, a commit in another repo and a plain `checkout`/`reset` are silent. A commit reachable from no branch (rewritten by `pull --rebase`, reset away) is named as rewritten or abandoned and gets no row and no attribution command. Every report says the commits **landed since the last observation — this call, another terminal, or a parallel call**; the hook cannot tell which. The observation runs under an O_EXCL lock broken on **liveness**: at once when its holder is confirmed dead, after 10 s when liveness cannot be confirmed, never for age alone while the holder is confirmed alive (a 10-minute pid-reuse backstop aside); a run that cannot take it within 200 ms skips and the next run reports. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and never for a commit touching that epic's own artifacts or only pm's own generated files, compared from the conductor root). A wrong automatic row is corrected with `retract-detour`. An amend replaces: the replaced commit's row is retracted and, where it is attributed, the `update-epic <id> --withdraw-commit` to run first is printed. On an **observed** commit it also prints the attribution command for every **candidate** — the detour epic and each paused epic while a detour is live, otherwise the active epic — one runnable `update-epic <id> --attribute-commit <sha>…` each, stating that choosing is the agent's, so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while a lone candidate's `attributedCommits` is still empty and one line thereafter, and it is absent where the engine would be guessing: no candidate, an epic with no attribution array, or an unobserved commit. It never writes an attribution itself. A commit whose changed paths are only `.conductor/**`, `PROJECT.md` and/or a change moved into its archived directory is reported as "pm bookkeeping — needs no attribution" with no command, and where neither the subject nor the paths name the single candidate epic the nudge says the engine cannot tell whether the commit is that epic's work. |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Matched for `Bash` too, where it blocks only a member of a closed, documented list of write shapes (a redirection to a file, an in-place stream editor, `tee`, a copier, `git apply`, destroying the conductor record) and passes everything else; the list is incomplete by construction and the block says so. Also blocks while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown — with one carve-out that keeps the remedies runnable: an affirmed `Bash` call carrying command text is allowed whatever its shape. |
-| PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. A matcher that cannot work (not a JSON object, an unknown key, a regex that does not compile or repeats a group whose whole body is one repeated atom, like `(a+)+`) is rejected rather than guessed at. Each regex gets its own 50 ms budget and the whole regex phase at most 1 s, so a pathological matcher costs its own advice, never the tool call's time or another lesson's advice. |
+| PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. A matcher that cannot work (not a JSON object, an unknown key, a regex that does not compile or repeats a group whose whole body is one repeated atom, like `(a+)+`) is rejected rather than guessed at. Each regex gets its own 50 ms budget and the whole regex phase at most 1 s, so a pathological matcher costs its own advice, never the tool call's time or another lesson's advice. The hook itself stays silent about a rejected matcher; the SessionStart briefing reports it instead: `⚠ N lesson matcher(s) rejected — the lesson-advice hook never fires it/them; fix the detect: in docs/lessons/:` then `- <file>: <reason>` for up to five and `(+N more in docs/lessons/)` past that, printed only when N is above zero (`PROJECT.md` and the PreCompact snapshot do not carry it). |
 
 **Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
 CLI you upgrade by hand** — and `openspec update`, which regenerates the per-project instruction
