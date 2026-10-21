@@ -193,6 +193,11 @@ export function foldRows(rows) {
  *  counts already here. */
 export const rowTotal = (r) => r.input + r.cacheCreation + r.cacheRead + r.output;
 
+/** The WORK a row contributes: every token class except `cacheRead`, which is re-counted on every
+ *  assistant message and so tracks context size times message count, not the work done (#251). The one
+ *  definition of "work tokens"; every totals object reads it from here and no consumer sums it again. */
+export const rowWork = (r) => r.input + r.cacheCreation + r.output;
+
 // ───────────────────────────── what reaches disk ─────────────────────────────
 
 /** A row as it is stored: the allowlisted fields and nothing else. */

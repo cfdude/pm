@@ -2047,7 +2047,8 @@ test("record-gate-review's allowlist is the shared registry's projection, not a 
     // `artifact` joined the five in gh#177: Gate 1 reviews artifacts BY PATH, before any code
     // exists, so the sha pair it used to be forced to invent is Gate 2's evidence and this is
     // Gate 1's.
-    ["artifact", "base-sha", "gate", "head-sha", "reviewer", "verdict"],
+    // `session` joined in epic-session-attribution: it is declared on every epic-writing verb.
+    ["artifact", "base-sha", "gate", "head-sha", "reviewer", "session", "verdict"],
     "every flag record-gate-review accepts is declared in EPIC_FLAGS — there is no second, " +
     "parallel allowlist for a subset of them");
 });

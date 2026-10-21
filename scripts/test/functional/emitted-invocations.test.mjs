@@ -28,23 +28,8 @@ const lib = (name) => new URL(`../../lib/${name}`, import.meta.url).href;
 /** The dispatch table's verbs, read out of conductor.mjs exactly as verb-surface.test.mjs reads it. */
 export function dispatchedVerbs() {
   const src = fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
-  const start = src.indexOf("// ---------- dispatch ----------");
-  assert.notEqual(start, -1, "conductor.mjs must still carry its dispatch marker comment");
-  const body = src.slice(src.indexOf("({", src.indexOf("try {", start)));
-  const end = body.indexOf("}[cmd]");
-  assert.notEqual(end, -1, "the dispatch object must still be indexed as `}[cmd]`");
-  const table = body.slice(0, end);
-  const verbs = new Set();
-  // THE INDENT IS PART OF THE SHAPE, and 0.47.0 (task 2.3) moved the dispatch table two spaces to
-  // the right by wrapping conductor.mjs's module body in `main(argv, io)`. A reader pinned to
-  // EXACTLY two spaces found nothing, and the guard that exists to catch a missing VERB_EFFECTS
-  // row went green against an EMPTY set — caught by its own "the reader is broken, not the table"
-  // assertion, which is why that assertion exists. The band `2,4` accepts either shape and refuses
-  // anything deeper, so a table nested one level further down still fails rather than silently
-  // matching a handler's own line.
-  for (const m of table.matchAll(/^ {2,4}(?:"([a-z-]+)"|([a-z-]+))\s*:/gm)) verbs.add(m[1] || m[2]);
-  for (const m of table.matchAll(/^ {2,4}([a-z-]+),\s*$/gm)) verbs.add(m[1]);
-  return verbs;
+  // ONE READER, REFUSING AN EMPTY SET (engine-source-extraction-vacuity): fixtures/engine-extraction.mjs.
+  return dispatchedVerbsOf(src);
 }
 
 /** Every shipped document an agent reads, by class: commands/*.md, skills/**\/SKILL.md, agents/*.md
@@ -695,6 +680,7 @@ test("1.5 Layer A: every rules block (platform × tracker matrix), init's output
 import { fixtureCommits, fixtureGit, writeState } from "../fixtures/functional-harness.mjs";
 import { agentDisposition, engineStamp } from "../../lib/disposition.mjs";
 import { codeOnly } from "../fixtures/source-code.mjs";
+import { dispatchedVerbsOf } from "../fixtures/engine-extraction.mjs";
 
 /** How many registry entries may declare `unconstructable`. Raising it is a visible change. */
 const UNCONSTRUCTABLE = 0;
@@ -946,6 +932,20 @@ const INTEGRITY_BUILDERS = {
       return { repo, epicId: "vr" };
     },
     produce: integrityProducer("verdict-range-omits-cited-commits"),
+    reported: blockHas(),
+  },
+  // integrity-reports-legacy-duplicate-attributions. REPORT-ONLY: no verb removes one entry of the
+  // append-only array, so the finding prints no engine invocation (`prints: "none"`).
+  "attributed-commits-hold-duplicates": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      const [a] = repo.commits("one");
+      repo.write({ epics: [{ id: "dd", title: "dd", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [],
+        attributedCommits: [a, a] }] });
+      return { repo, epicId: "dd" };
+    },
+    produce: integrityProducer("attributed-commits-hold-duplicates"),
     reported: blockHas(),
   },
   "archived-with-no-gate-2-review": {
@@ -3006,6 +3006,26 @@ export function printedTemplates(verbs = dispatchedVerbs(), dir = path.join(REPO
  *  Layer A over it and asserts every template in the source was reached. `expect` is the fixture's
  *  own sanity check that it produced the printer it is named for. */
 const PRINTER_FIXTURES = {
+  "record-decision while spend tracking is off (decision-cost-log)"() {
+    // The refusal names the epic-note alternative as a runnable invocation.
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "dcl1", "--lane", "claude-code"]);
+    return [[repo.run(["record-decision", "dcl1", "--what", "w", "--why", "y", "--since", "2026-10-10T00:00:00Z"]), /update-epic dcl1 --notes/]];
+  },
+  "set-dev-log on while spend tracking is off (developer-session-log)"() {
+    // The refusal names the prerequisite switch as a runnable invocation.
+    const repo = remedyRepo();
+    const out = [[repo.run(["set-dev-log", "on"]), /set-spend-tracking on/]];
+    // dev-log's own off messages and the clear's refusal name the switch to run first.
+    out.push([repo.run(["dev-log"]), /set-spend-tracking on/]);
+    out.push([repo.run(["dev-log", "--clear", "--yes"]), /set-spend-tracking on/]);
+    repo.ok(["set-spend-tracking", "on"]);
+    out.push([repo.run(["dev-log"]), /set-dev-log on/]);
+    // and switching the log off names the verb that removes what it kept.
+    repo.ok(["set-dev-log", "on"]);
+    out.push([repo.run(["set-dev-log", "off"]), /dev-log --clear --yes/]);
+    return out;
+  },
   "reconcile owed: pop-detour, --clear-links, a bad --link, remove-epic, and moving the pointer off"() {
     const repo = remedyRepo();
     repo.ok(["add-epic", "--id", "rp", "--lane", "claude-code", "--title", "rp"]);

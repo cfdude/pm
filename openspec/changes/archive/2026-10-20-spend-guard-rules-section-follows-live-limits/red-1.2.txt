@@ -1,0 +1,122 @@
+✖ 1.2 archiving the only epic holding a limit removes the section (97.182042ms)
+✖ 1.2 removing the only epic holding a limit removes the section (85.24325ms)
+✖ 1.2 un-archiving restores the section (the inverse of archiving) (82.569834ms)
+✔ 1.2 a write that leaves liveness unchanged does not rewrite CLAUDE.md: bytes and mtime (93.718917ms)
+✔ 1.2 a refused invocation refreshes nothing (141.126959ms)
+✔ 1.2 set-spend-guard's own refresh is not repeated by the wrapper (one refresh line) (74.26025ms)
+✖ 1.2 a hook does no liveness comparison; the next non-hook write picks the drift up (84.399417ms)
+✖ 1.2 a refresh failure does not fail the write and names the remedy (90.601958ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 3
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 894.174583
+
+✖ failing tests:
+
+test at scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:30:1
+✖ 1.2 archiving the only epic holding a limit removes the section (97.182042ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:33:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:36:1
+✖ 1.2 removing the only epic holding a limit removes the section (85.24325ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:39:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:42:1
+✖ 1.2 un-archiving restores the section (the inverse of archiving) (82.569834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:45:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:78:1
+✖ 1.2 a hook does no liveness comparison; the next non-hook write picks the drift up (84.399417ms)
+  AssertionError [ERR_ASSERTION]: the next non-hook write refreshed the block
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:89:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:92:1
+✖ 1.2 a refresh failure does not fail the write and names the remedy (90.601958ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /warning .*Spend guard section could not be refreshed/. Input:
+  
+  'conductor: rendered /private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FnpCrX/PROJECT.md\n' +
+    "conductor: updated 'e1'\n"
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs:99:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered /private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FnpCrX/PROJECT.md\nconductor: updated 'e1'\n",
+    expected: /warning .*Spend guard section could not be refreshed/,
+    operator: 'match',
+    diff: 'simple'
+  }

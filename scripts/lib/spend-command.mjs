@@ -30,6 +30,7 @@ import {
 } from "./spend-ledger.mjs";
 import { attribute } from "./spend-attribution.mjs";
 import { buildReport, renderReport } from "./spend-report.mjs";
+import { devLogOptions } from "./dev-log.mjs";
 
 const refuse = (msg) => die(`conductor: ${msg}\n`);
 
@@ -67,11 +68,12 @@ const bytes = (n) => `${n.toLocaleString("en-US")} byte${n === 1 ? "" : "s"}`;
 /** Decide whether to ingest, and do it: the ingest summary the report echoes. SHARED with `spend-guard`
  *  (which must not re-derive when an ingest runs and when it says it did not). A held lock or a detached
  *  main HEAD reports from the existing ledger, it does not refuse. */
-export function ingestForReport({ noIngest, enabled, tree, readCtx, enabledAtMs }) {
+export function ingestForReport({ noIngest, enabled, tree, readCtx, enabledAtMs, state }) {
   if (noIngest) return { ran: false, reason: "--no-ingest: reporting from the existing ledger" };
   if (!enabled) return { ran: false, reason: "tracking is off: no transcript was read; totals are as of the last ingest" };
   if (mainTreeDetached(tree.main)) return { ran: false, reason: "did not ingest because the main working tree's HEAD is detached; reporting from what exists" };
-  const r = ingest({ ...readCtx, enabledAtMs });
+  // developer-session-log: capture rides THIS call, so spend, spend-guard and every other caller capture alike.
+  const r = ingest({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
   return r.busy ? { ran: false, busy: true, reason: "an ingest was already in progress; reporting from the existing ledger" } : r;
 }
 
@@ -110,10 +112,10 @@ export function spend() {
   }
 
   if (clear) return runClear(tree, { timeline, yes });
-  if (doRebuild) return runRebuild(tree, readCtx, { enabled, enabledAtMs, yes });
+  if (doRebuild) return runRebuild(tree, readCtx, { enabled, enabledAtMs, yes, state });
 
   // ── ingest, then report ──
-  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled, tree, readCtx, enabledAtMs });
+  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled, tree, readCtx, enabledAtMs, state });
 
   const ledger = readLedger(tree.main);
   const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, state);
@@ -171,7 +173,7 @@ function runClear(tree, { timeline, yes }) {
   outStream().write(done.map(escapeControls).join("\n") + "\n");
 }
 
-function runRebuild(tree, readCtx, { enabled, enabledAtMs, yes }) {
+function runRebuild(tree, readCtx, { enabled, enabledAtMs, yes, state }) {
   if (!enabled) refuse("spend --rebuild is refused while tracking is off: a rebuild reads transcripts, and nothing reads them while it is off. Run set-spend-tracking on first. Nothing was read or changed.");
   const plan = rebuildPlan(readCtx);
   const lines = [];
@@ -181,7 +183,7 @@ function runRebuild(tree, readCtx, { enabled, enabledAtMs, yes }) {
   outStream().write(lines.map(escapeControls).join("\n") + "\n");
   if (!yes) return;
   if (mainTreeDetached(tree.main)) refuse("spend --rebuild is refused: the main working tree's HEAD is detached, and ledger writes are suppressed there. Nothing was changed.");
-  const r = rebuild({ ...readCtx, enabledAtMs });
+  const r = rebuild({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
   if (r.busy) refuse("spend --rebuild is refused: an ingest is in progress (ingest.lock is held). Nothing was changed.");
   const done = [];
   done.push(`spend --rebuild: ${r.rowsAdded} message(s) re-derived from ${r.files.read} file(s); ${r.keptRows} kept because their transcript is gone`);

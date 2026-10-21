@@ -46,7 +46,7 @@ provenance, plus the change association below — no progress is read from it, n
 and it is deliberately **many-to-one**: a design too large for a single implementation plan
 enumerates N chunks, and every one of those epics carries the same `--spec`. That association is
 what makes "which design documents have no epic?" answerable at all; ask it with
-`verify-specs` (see `/pm:status`). A path inside an OpenSpec change (`openspec/changes/<name>/…` or `openspec/changes/archive/<dir>/…`) also
+`verify-specs` (see `/pm:status`). A path inside an OpenSpec change (the change's directory, `changeRoot` from `openspec status --change <name> --json`, by default `openspec/changes/<name>/…`, or its archived directory) also
 records which change the epic owns, whatever the epic is called: `integrity`'s
 `archive-directory-has-no-epic` and `sync`'s archive backfill both read it, so a change proposed under a
 different name than its premise epic is held by that epic instead of reported as unheld (or registered a
@@ -137,6 +137,15 @@ written:
   `.conductor/state.json`, not to any verb's parser, so it may stand anywhere on the line and is
   never read as an id. `add-epic`, `update-epic` and `claim` used to refuse it outright.
   `node "$ENGINE" <verb> --help` lists it under "Accepted on every mutating verb".
+- **`--session <name>` is accepted on every verb that can change an epic** (the verbs whose `--help` lists it:
+  `add-epic`, `update-epic`, `set-active`, `claim` and the rest), with `PM_SESSION` as the fallback. When such a
+  verb's save changes an epic and an identity resolves, the SAME write records it on that epic as `sessions`: one
+  `{session, firstAt, lastAt}` entry per distinct name, in first-seen order, only `lastAt` moving on a later
+  write. It says which sessions wrote the record, not who did the work. No identity, no field; a write that
+  changes nothing records nothing. The name is opaque (pm never derives or checks one) and must be non-blank, at
+  most 128 characters, with no control character; anything else is refused before any write, on `claim` and
+  `unclaim` as well. A hook never validates, refuses on or records an identity. `sessions` is engine-written
+  history with no clear: a mistyped name is a true record of what was typed.
 
 ## Ids are refused at input; free text is escaped on display
 
@@ -265,7 +274,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
 | `--external-url <url>` | `externalUrl` | the globally unique dedup key — one tracker item, one epic: setting a URL another epic holds (archived included) is refused naming it; `--clear external-url` on the holder frees it. Compared exactly after trimming surrounding whitespace — a trailing `/`, the host's case or a query string make a different URL, so record the tracker's canonical URL |
-| `--spec-deltas-waived "<why>"` | `specDeltasWaived` | records that a delivered change's archived spec deltas were **deliberately not applied** to the main specs (a change archived without applying its specs); the value IS the reason, so a blank one is refused. **Refused unless the epic is in the check's scope**: a delivered, openspec-lane epic whose change directory is archived under `openspec/changes/archive/` (the refusal names that scope and writes nothing). A waiver is listed, never silent: the briefing and the `render` verb's output print `SPEC DELTAS WAIVED (N)` with the epic ids. `integrity`'s `delivered-epic-spec-deltas-absent` and the briefing's spec-sync block then stop reporting the epic. It removes the epic from that report only: its archived change still discharges other epics' obligations. Inverse: `--clear spec-deltas-waived` (the epic is reported again; the clear is announced) |
+| `--spec-deltas-waived "<why>"` | `specDeltasWaived` | records that a delivered change's archived spec deltas were **deliberately not applied** to the main specs (a change archived without applying its specs); the value IS the reason, so a blank one is refused. **Refused unless the epic is in the check's scope**: a delivered, openspec-lane epic whose change directory is archived (moved by `/opsx:archive` into its archived directory) (the refusal names that scope and writes nothing). A waiver is listed, never silent: the briefing and the `render` verb's output print `SPEC DELTAS WAIVED (N)` with the epic ids. `integrity`'s `delivered-epic-spec-deltas-absent` and the briefing's spec-sync block then stop reporting the epic. It removes the epic from that report only: its archived change still discharges other epics' obligations. Inverse: `--clear spec-deltas-waived` (the epic is reported again; the clear is announced) |
 | `--gate1-waived "<why>"` | `gate1Waived` | records that an openspec-lane epic was **deliberately activated without a passing Gate 1** (spec review); the value IS the reason, so a blank one is refused, and it is refused on a non-openspec epic. Read by the activation guard (see "Set the active epic"); pass it WITH `--status active` and one call waives and activates. Inverse: `--clear gate1-waived` re-arms the guard (a `--clear` in the same call as the activation also removes it before the check) |
 | `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock — an ISO-8601 date-time WITH a zone (`…Z`, `…+00:00`, or Jira's `…+0000`); a bare date, a zoneless time or an impossible date is refused |
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order. Resolved at write time and stored as the FULL object name (`HEAD`, a short sha or an annotated tag records the commit it names now); a value that is not a commit in this clone refuses the whole invocation. A commit the array already holds (or one given twice in the call) is a **no-op**: exit 0, said on stderr, nothing written for it. Attributing a commit that turns a passing Gate 2 stale prints that, and names `--withdraw-commit` for lifecycle bookkeeping |
@@ -306,7 +315,7 @@ landing order, then attribute forward. The array is append-only, and **every att
 be reached by** a recorded Gate 2 `headSha` — equal to that head or an ancestor of it — whatever its
 position; one the head does not reach reads as a stale verdict and refuses the archive. Through
 0.43.0 only the LAST entry was compared, so an ancestor attributed after an uncovered descendant
-read fresh. **Never attribute the commit that moves `openspec/changes/<id>/` under `archive/`.**
+read fresh. **Never attribute the commit that moves the change's directory (its `changeRoot`, as OpenSpec resolves it) into its archive.**
 
 **The array is a SET read against the head, not a sequence** (gh#216). A catch-up of an earlier
 commit appends an ancestor after its descendants, so the last entry is not the tip, and nothing the
@@ -798,7 +807,7 @@ disagree. It rejects an unknown or archived id. `update-epic <id> --status activ
 sync too (it sets `.active`), and moving the active epic off `active` clears the pointer.
 
 **The Gate 1 activation guard.** Gate 1 (spec review) is recorded by `record-gate-review` and gates CODE, so an
-openspec-lane epic may not be moved INTO `active` while its change is on disk (`openspec/changes/<id>/`) and it
+openspec-lane epic may not be moved INTO `active` while its change is on disk (its directory, `changeRoot` from `openspec status --change <id> --json`) and it
 holds no passing Gate 1 verdict (absent, `fail` or withdrawn). It binds the transition, not the state: an epic
 already active is never refused, and an epic with NO change on disk is pre-propose (activating it is how the
 change gets written) and is never refused. Doors: `set-active`, `update-epic --status active`, and
@@ -851,9 +860,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
 # Gate 1 — the SPEC review: its evidence is the artifacts it read, by path
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
   --gate 1 --verdict pass|fail \
-  --artifact "openspec/changes/<id>/proposal.md" \
-  --artifact "openspec/changes/<id>/specs/<cap>/spec.md" --reviewer "<identity>"
+  --artifact "<changeRoot>/proposal.md" \
+  --artifact "<changeRoot>/specs/<cap>/spec.md" --reviewer "<identity>"
 ```
+
+`<changeRoot>` is the change's directory as OpenSpec resolves it (its `changeRoot`; by default `openspec/changes/<id>`).
 
 `--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
 records who (or what) performed it. A review of `a..b` on an epic that later shipped `b..c` used
@@ -905,7 +916,7 @@ at record time gets no digest (said on stderr) and reads `⚠ unverifiable`; a v
 digests existed renders as it always did (never stale, never `⚠ unverifiable`) — absence of evidence is
 never staleness. A live change's `tasks.md` is a progress ledger: listed, never digested, so ticking a
 checkbox does not stale the verdict. `/opsx:archive` moving the
-change under `archive/` is not an amendment: a recorded `openspec/changes/<id>/<file>` is found under
+change under `archive/` is not an amendment: a recorded `<changeRoot>/<file>` path is found under
 its archive directory. Gate 1 staleness is a signal on `/pm:status` and the brief; it does not
 block an archive (only Gate 2 does). A verdict is corrected by RECORDING IT AGAIN — the write
 supersedes and the prior entry stays readable under `superseded` — so there is deliberately no flag
@@ -991,7 +1002,7 @@ bullet reached 3/15.
    must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
    whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
    refuses the archive. **One exclusion:** the commit that moves
-   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+   the change's directory (`changeRoot` from `openspec status --change <id> --json`) into its archive, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
    the epic's own Gate 2 stale at the instant the archive gate reads it. The same holds for the

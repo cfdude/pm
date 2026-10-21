@@ -71,8 +71,19 @@ export function passAnchor(epic) {
 
 // ─────────────── D3: the limit cascade ───────────────
 
-export const GUARD_FIELDS = Object.freeze(["maxFailedRounds", "tokenCeiling", "warnAt"]);
+export const GUARD_FIELDS = Object.freeze(["maxFailedRounds", "tokenCeiling", "tokenBasis", "warnAt"]);
 export const DEFAULT_WARN_AT = 80;
+
+/** The unit a token ceiling is counted in (#251). `total` is every class, `cacheRead` included; `work` is
+ *  the ledger's own `work` (input + cacheCreation + output). An ABSENT basis reads as `total`, so a
+ *  ceiling configured on 0.52 keeps its meaning and nothing is migrated. */
+export const TOKEN_BASES = Object.freeze(["total", "work"]);
+export const DEFAULT_TOKEN_BASIS = "total";
+
+/** The lowest `total`-basis ceiling `set-spend-guard` accepts without a warning. It is the GitHub #251
+ *  reporter's suggestion, NOT a measurement: a total counts cache-read on every message, so a ceiling
+ *  below it is almost always a work-sized number in the wrong unit. Work-basis ceilings get no floor. */
+export const LOW_TOTAL_CEILING_FLOOR = 10_000_000;
 
 const positiveInt = (v) => Number.isInteger(v) && v > 0;
 
@@ -97,7 +108,11 @@ export function checkWarnAt(text) {
   return Number.isInteger(n) && n >= 1 && n <= 99 ? { ok: true, value: n }
     : { ok: false, message: `--warn-at '${escapeControls(String(text))}' must be a whole number from 1 to 99 (a percentage of the ceiling)` };
 }
-const CHECKS = { maxFailedRounds: checkMaxFailedRounds, tokenCeiling: checkTokenCeiling, warnAt: checkWarnAt };
+export function checkTokenBasis(text) {
+  return TOKEN_BASES.includes(text) ? { ok: true, value: text }
+    : { ok: false, message: `--token-basis '${escapeControls(String(text))}' must be one of ${TOKEN_BASES.join("|")}` };
+}
+const CHECKS = { maxFailedRounds: checkMaxFailedRounds, tokenCeiling: checkTokenCeiling, tokenBasis: checkTokenBasis, warnAt: checkWarnAt };
 
 /** The layers of the cascade, most specific first. A layer is `{source, spendGuard}` with the RAW
  *  stored object (a hand-edited one may be invalid; resolution checks each field). A detour holds
@@ -111,10 +126,10 @@ function guardLayers(state, epic, lane) {
   return layers;
 }
 
-/** Resolve the three fields for an epic (or a lane, or — with neither — the project). `resolveField` is
+/** Resolve the four fields for an epic (or a lane, or — with neither — the project). `resolveField` is
  *  the execution profile's own, passed in so the two cascades cannot fork. Returns, per field,
- *  `{value, source}` (`value: null, source: null` = no limit; `warnAt` defaults to 80 with source
- *  `default`) and `ignored: [{source, field, value}]` for stored values that failed their check. */
+ *  `{value, source}` (`value: null, source: null` = no limit; `warnAt` defaults to 80 and `tokenBasis` to
+ *  `total`, each with source `default`) and `ignored: [{source, field, value}]` for stored values that failed their check. */
 export function resolveGuard(state, { epicId, lane } = {}) {
   const s = state || {};
   const epic = epicId ? (Array.isArray(s.epics) ? s.epics.find((e) => e && e.id === epicId) : undefined) : undefined;
@@ -122,9 +137,9 @@ export function resolveGuard(state, { epicId, lane } = {}) {
   const layers = guardLayers(s, epic, useLane);
   const out = { ignored: [] };
   for (const field of GUARD_FIELDS) {
-    const dflt = field === "warnAt" ? DEFAULT_WARN_AT : null;
+    const dflt = field === "warnAt" ? DEFAULT_WARN_AT : field === "tokenBasis" ? DEFAULT_TOKEN_BASIS : null;
     const r = resolveField(layers, (l) => (isObj(l.guard) ? l.guard[field] : undefined), CHECKS[field], dflt);
-    out[field] = { value: r.value, source: field !== "warnAt" && r.value === null ? null : r.source };
+    out[field] = { value: r.value, source: r.value === null ? null : r.source };
     for (const ig of r.ignored || []) out.ignored.push({ source: ig.source, field, value: ig.value });
   }
   return out;
@@ -139,6 +154,13 @@ export function guardConfigured(state) {
   if (has(s.spendGuard)) return true;
   if (isObj(s.laneSpendGuards) && Object.values(s.laneSpendGuards).some(has)) return true;
   return (Array.isArray(s.epics) ? s.epics : []).some((e) => e && e.status !== "archived" && has(e.spendGuard));
+}
+
+/** Did a write change whether a limit is configured? True exactly when `guardConfigured()` differs between
+ *  the two record images. PURE. The dispatch wrapper compares the snapshot it already holds with one
+ *  after-image, so an archive, a removal or an un-archive moves the rules block whichever verb made it. */
+export function guardLivenessChanged(before, after) {
+  return guardConfigured(before) !== guardConfigured(after);
 }
 
 // ─────────────── D6: overrides ───────────────
@@ -211,22 +233,43 @@ export function roundsSignal(epic, resolved, ledger = { side: null }) {
  *  neither reads the ledger. */
 export const recordedRoundsSignal = (epic, resolved) => roundsSignal(epic, resolved, { side: null });
 
+/** The baseline a tokens override contributes under `basis` (#251). Only the LATEST live tokens override
+ *  governs; one recorded in another basis than the one resolved now applies NOTHING, and an older override
+ *  in the matching basis never revives (reviving would let a basis flip quietly restore a stale baseline).
+ *  An entry with no `basis` (written by 0.52) reads as `total`. */
+export function tokenBaseline(epic, basis) {
+  const live = liveOverrides(epic, "tokens");
+  const latest = live[live.length - 1];
+  if (!latest) return { baseline: 0, override: null, setAside: null };
+  const recorded = TOKEN_BASES.includes(latest.basis) ? latest.basis : DEFAULT_TOKEN_BASIS;
+  if (recorded !== basis) return { baseline: 0, override: latest, setAside: recorded };
+  return { baseline: Number.isFinite(latest.baseline) ? latest.baseline : 0, override: latest, setAside: null };
+}
+
 /** The token signal. `status` is `{ checked: false, why }` when it was not (or could not be) computed:
  *  `off` = tracking off (`not-checked`), `unread` = the ledger could not be read (`not-read`). When
- *  checked, `total` is the epic's attributed total; the baseline comes from the latest live override. */
+ *  checked, `status.total` and `status.work` are the epic's attributed counts and `status.breakdown` its
+ *  six classes; the count is taken in the resolved basis and the baseline comes from the latest live
+ *  override recorded in that same basis (tokenBaseline). */
 export function tokenSignal(epic, resolved, status) {
   const limit = resolved.tokenCeiling.value;
-  const { baseline } = overrideBaseline(epic, "tokens");
-  const base = { limit, source: resolved.tokenCeiling.source, baseline, warnAt: resolved.warnAt.value };
-  if (limit === null) return { ...base, state: "no-limit", count: status.checked ? status.total : null };
+  const basis = resolved.tokenBasis.value;
+  const { baseline, setAside } = tokenBaseline(epic, basis);
+  const base = {
+    limit, source: resolved.tokenCeiling.source, baseline, warnAt: resolved.warnAt.value,
+    basis, basisSource: resolved.tokenBasis.source, overrideSetAside: setAside,
+  };
+  const counted = (st) => (basis === "work" ? st.work : st.total);
+  if (limit === null) {
+    return { ...base, state: "no-limit", count: status.checked ? counted(status) : null, ...(status.checked && status.breakdown ? { breakdown: status.breakdown } : {}) };
+  }
   if (!status.checked) {
     return { ...base, state: status.kind === "unread" ? "not-read" : "not-checked", count: null, reason: status.why };
   }
-  const count = status.total;
-  if (limit === null) return { ...base, state: "no-limit", count };
+  const count = counted(status);
   const used = count - baseline;
   const state = used >= limit ? "tripped" : used * 100 >= limit * resolved.warnAt.value ? "warn" : "ok";
-  return { ...base, state, count, used };
+  return { ...base, state, count, used, ...(status.breakdown ? { breakdown: status.breakdown } : {}) };
 }
 
 // ─────────────── D7: the escalation target ───────────────

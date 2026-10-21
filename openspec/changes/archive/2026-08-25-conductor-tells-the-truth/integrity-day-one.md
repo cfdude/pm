@@ -201,3 +201,14 @@ attributed commit, and belongs to the orchestrator.
 
 Added 2026-10-07 by integrity-reports-stale-gate-1. An epic whose Gate 1 verdict carries artifact digests and a
 reviewed artifact was amended after the review. Zero here, measured 2026-10-07 against the disk. The check RAN.
+
+## `attributed-commits-hold-duplicates` — 7 findings
+
+Added 2026-10-20 by integrity-reports-legacy-duplicate-attributions (found in the B1 build, gh-cfdude-pm-237).
+Attribution became once-only in 0.52.0; an epic whose `attributedCommits` names one commit more than once was
+written before that, or by hand. Measured 2026-10-20 against the live record: `gh-161-strip-always-on-duplicated`,
+`gh-162-delegation-drops-stdout`, `gates-bind-to-verified-evidence`, `emitted-commands-run-as-written`,
+`functional-assertion-test-split` (58 entries for 35 distinct commits, the worst), `unit-rung-and-fixture-snapshots`
+and `certification-record-redesign`. The gates read the set, so none of the seven is blocked by it; no verb removes
+one entry from the append-only array, so the report prints no remedy. Reported so the overstatement is visible,
+not so someone hand-edits `state.json`.

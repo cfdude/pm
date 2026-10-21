@@ -131,13 +131,19 @@ import { activity } from "./lib/activity-report.mjs";
 import { purgeLogs } from "./lib/purge-logs.mjs";
 import { recordActiveChange, setSpendTracking, spendEnabled } from "./lib/spend-tracking.mjs";
 import { spend } from "./lib/spend-command.mjs";
-import { overrideSpendGuard, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
+import { overrideSpendGuard, refreshSpendGuardSection, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
 import { isInitialized } from "./lib/state.mjs";
-import { resolveSession } from "./lib/session-identity.mjs";
+import { resolveSession, resolveSessionChecked } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 import { recoverCreatedAt } from "./lib/created-at.mjs";
 import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
-import { currentArgv, currentEnv, errStream, installedInvocation, normalizeStdin, outStream, setInvocation, stdinSource } from "./lib/invocation.mjs";
+import { list } from "./lib/list.mjs";
+import { overhead } from "./lib/overhead.mjs";
+import { setDevLog } from "./lib/dev-log.mjs";
+import { devLogVerb } from "./lib/dev-log-report.mjs";
+import { spendAnalysis } from "./lib/spend-analysis.mjs";
+import { decisionsVerb, recordDecision } from "./lib/decision-log.mjs";
+import { currentArgv, currentEnv, errStream, installedInvocation, normalizeStdin, outStream, setInvocation, setInvocationSession, stdinSource } from "./lib/invocation.mjs";
 
 /** This module's own absolute path. `main()` hands it to the delegation handoff, the banner names
  *  its directory, and the tail compares it against `process.argv[1]` to decide whether this module
@@ -246,7 +252,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|spend|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -386,6 +392,19 @@ function runInvocation(argv, io = {}) {
   // EVERY call here is guarded. Observability must never break the run it observes — the rule
   // lib/write-conflicts.mjs opens with, for the same reason: a throw would convert a working
   // command into a visible failure, and would fire when the filesystem is already in trouble.
+  // epic-session-attribution D3/D4a: the identity the save stamps on every epic it changes. Resolved and
+  // VALIDATED here, before any write, and ONLY for a verb that is not a hook (the registry's `hook` set is
+  // derived from hooks/hooks.json): a hook's save is a self-heal, not work a session did, and a hook must
+  // never fail a tool call because of an environment variable. An invalid identity is a refusal that has
+  // written nothing.
+  if (VERB_EFFECTS[cmd] && VERB_EFFECTS[cmd].effect === "mutates" && VERB_EFFECTS[cmd].hook !== true) {
+    const who = resolveSessionChecked(parseFlags(currentArgv().slice(3)));
+    if (!who.ok) {
+      errStream().write(`conductor: ${escapeControls(who.message)}. Nothing was written.\n`);
+      return 1;
+    }
+    setInvocationSession(who.session);
+  }
   let activityBefore = null;
   let activitySession = null;
   // token-spend-tracking-per-epic D7: the spend timeline rides the SAME snapshot. `undefined` means
@@ -393,6 +412,11 @@ function runInvocation(argv, io = {}) {
   // The only thing this adds to an invocation is the after-image read in the `finally` below, and the
   // git probes behind recordActiveChange() run only once the pointer has actually moved.
   let spendActiveBefore;
+  // spend-guard-rules-section-follows-live-limits D1/D1a: whether a limit is configured depends on epic
+  // status, so ANY verb that writes state can move it. The comparison rides this same snapshot, for a
+  // verb the effects registry marks `mutates` and NOT `hook` (the registry's hook set is held equal to
+  // hooks/hooks.json by verb-surface.test.mjs; it is never typed here), so a hook adds no read.
+  let guardBefore = null;
   try {
     if (isInitialized()) {
       const snapshot = loadState();
@@ -401,6 +425,8 @@ function runInvocation(argv, io = {}) {
         activitySession = resolveSession(parseFlags(currentArgv().slice(3)));
       }
       if (spendEnabled(snapshot)) spendActiveBefore = snapshot.active || null;
+      const effects = VERB_EFFECTS[cmd];
+      if (effects && effects.effect === "mutates" && !effects.hook) guardBefore = snapshot;
     }
   } catch { /* including a state.json this process cannot read at all */ }
 
@@ -440,6 +466,8 @@ function runInvocation(argv, io = {}) {
     "set-lane-routing": setLaneRouting,
     "suggest-lane": suggestLane,
     triage,
+    list,
+    overhead,
     "set-autonomy": setAutonomy,
     "record-reconcile": recordReconcile,
     "record-gate-review": recordGateReview,
@@ -462,7 +490,12 @@ function runInvocation(argv, io = {}) {
     activity,
     "set-activity-log": setActivityLog,
     "set-spend-tracking": setSpendTracking,
+    "set-dev-log": setDevLog,
+    "dev-log": devLogVerb,
     spend,
+    "spend-analysis": spendAnalysis,
+    "record-decision": recordDecision,
+    decisions: decisionsVerb,
     "set-spend-guard": setSpendGuard,
     "spend-guard": spendGuard,
     "override-spend-guard": overrideSpendGuard,
@@ -536,7 +569,7 @@ function runInvocation(argv, io = {}) {
     // ONE line per invocation, on EVERY path — success, a refusal, and a re-thrown crash alike —
     // and it runs BEFORE main() returns, so an in-process caller can read the log the moment the
     // call is over rather than at some later process exit.
-    if (activityBefore || spendActiveBefore !== undefined) {
+    if (activityBefore || spendActiveBefore !== undefined || guardBefore) {
       let after = null;
       try { after = loadState(); } catch { /* never break the run being observed */ }
       if (after && activityBefore) {
@@ -550,6 +583,7 @@ function runInvocation(argv, io = {}) {
       }
       // Its own guard: a failing activity append must not skip the timeline, nor the reverse.
       if (after && spendActiveBefore !== undefined) recordActiveChange(spendActiveBefore, after);
+      if (after && guardBefore && after.revision !== guardBefore.revision) refreshSpendGuardSection(guardBefore, after);
     }
   }
   // The SUCCESS path, written rather than left to fall off the end, so that `main()` RETURNS a

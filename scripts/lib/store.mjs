@@ -70,7 +70,7 @@ import {
   briefPath, conductorDir, detoursLog, engineRoot, escapeControls, projectMd,
   renderStampPath, statePath, writeConflictsLog,
 } from "./constants.mjs";
-import { currentArgv, currentCwd, currentEnv, installedInvocation, invocation } from "./invocation.mjs";
+import { currentArgv, currentCwd, currentEnv, currentSession, installedInvocation, invocation } from "./invocation.mjs";
 
 // ─────────────────────────────── the artifact names ───────────────────────────────
 //
@@ -296,7 +296,7 @@ function comparableEpic(epic) {
  *  since an absent state file yields no pre-image at all and every epic correctly gets
  *  `createdAt == touchedAt`. A record carrying no usable id is stamped for a different reason: we
  *  cannot tell whether it changed, and "not touched" would be an assertion nothing measured. */
-function stampTouched(state, diskBody) {
+function stampTouched(state, diskBody, session = null) {
   const at = new Date().toISOString();
   const preImage = new Map();
   for (const e of Array.isArray(diskBody.epics) ? diskBody.epics : []) {
@@ -309,7 +309,20 @@ function stampTouched(state, diskBody) {
     const before = typeof e.id === "string" ? preImage.get(e.id) : undefined;
     if (before !== undefined && before === comparableEpic(e)) continue;
     e.touchedAt = at;
+    if (session) stampSession(e, session, at);
   }
+}
+
+/** epic-session-attribution: record the invocation's session identity on an epic the SAME save changed.
+ *  One entry per distinct identity, `{session, firstAt, lastAt}`, in first-seen order; only `lastAt` moves
+ *  on a later write, and an entry is never reordered or removed. Called only for an epic stampTouched has
+ *  already decided changed, after the no-op early return, so a write that changes nothing stays
+ *  byte-identical. */
+function stampSession(epic, session, at) {
+  const trail = Array.isArray(epic.sessions) ? epic.sessions : [];
+  const held = trail.find((s) => s && s.session === session);
+  if (held) epic.sessions = trail.map((s) => (s === held ? { ...s, lastAt: at } : s));
+  else epic.sessions = [...trail, { session, firstAt: at, lastAt: at }];
 }
 
 // ─────────────────────────── the write-conflict sidecar's line ───────────────────────────
@@ -763,7 +776,7 @@ export function diskStore(ctx = invocation()) {
 
         // AFTER the early return, never before it — see stampTouched(). `next` below is built from
         // `state` and therefore carries the stamps this mutates in place.
-        stampTouched(state, currentBody);
+        stampTouched(state, currentBody, currentSession(ctx));
 
         // Math.max(found, expected), not just expected: with --force, `expected` is the forcing
         // writer's STALE value, and a plain `expected + 1` can land BELOW what's already on disk
@@ -996,7 +1009,7 @@ export function memoryStore(seed = undefined) {
       if (JSON.stringify(currentBody) === JSON.stringify(nextBody)) {
         return { ok: true, revision: found, unchanged: true };
       }
-      stampTouched(state, currentBody);
+      stampTouched(state, currentBody, currentSession(invocation()));
       const next = { ...state, revision: Math.max(found, expected) + 1 };
       // A COPY, for the reason readRecord() gives: the record belongs to the store, and the caller's
       // object stays the caller's. `state.revision` is still kept usable for a subsequent save, which

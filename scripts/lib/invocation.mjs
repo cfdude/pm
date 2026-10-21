@@ -78,6 +78,15 @@ export function setInvocation(ctx) {
   return CURRENT;
 }
 
+/** The session identity this invocation acts as, or null (epic-session-attribution). Set once by `main()`
+ *  for a NON-hook verb after validating it; a hook verb never sets one, so a hook's save stamps nothing.
+ *  Held on the invocation's own context, never in module scope, so two invocations in one process cannot
+ *  see each other's. */
+export const currentSession = (ctx = invocation()) => ctx.session ?? null;
+export function setInvocationSession(session) {
+  if (CURRENT) CURRENT.session = session;
+}
+
 /** The root this invocation acts on: `CLAUDE_PROJECT_DIR` when the caller supplied it, else the
  *  invocation's working directory. `constants.mjs`'s path constants are functions of THIS by
  *  default — see `conductorDir(root = engineRoot())` and its siblings. */

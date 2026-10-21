@@ -49,7 +49,7 @@ function ledger(sc, rows) {
     if (r.marker !== false && r.marker !== undefined) markers[r.agent] = r.marker;
     return JSON.stringify({
       messageId: `m${i}`, sessionId: "s1", agentId: r.agent, actor: "subagent", source: "subagent", at: r.at,
-      model: "claude-opus-4-7", tier: "opus", input: 0, cacheCreation: 0, cacheRead: 0, output: r.output ?? 10, thinking: 0, tools: [],
+      model: "claude-opus-4-7", tier: "opus", input: r.input ?? 0, cacheCreation: r.cacheCreation ?? 0, cacheRead: r.cacheRead ?? 0, output: r.output ?? 10, thinking: 0, tools: [],
     });
   });
   fs.writeFileSync(path.join(dir, "rows.jsonl"), lines.join("\n") + "\n");
@@ -279,6 +279,66 @@ test("4.1 A tokens override baselines at the attributed total, and the guard tri
   assert.equal(guard(sc, "--no-ingest").status, 0);
   ledger(sc, tokenRows(2000));
   assert.equal(guard(sc, "--no-ingest").status, 2);
+});
+
+// ───────────────────────── gh-cfdude-pm-251: the token basis, end to end through the verbs ─────────────────────────
+
+/** One marked row of e1 with an explicit class split: `work` = input + cache-write + output, `total` adds cache-read. */
+const classRows = ({ input = 0, cacheCreation = 0, cacheRead = 0, output = 0 }) =>
+  [{ agent: "B1", at: at(1), input, cacheCreation, cacheRead, output, marker: review("e1", 1) }];
+const workScene = (ceiling = 1000) => {
+  const sc = scene({ on: true, limit: null, tokens: ceiling });
+  const r = invokeEngine(["set-spend-guard", "--token-basis", "work"], sc.opts);
+  assert.equal(r.status, 0, r.stderr);
+  return sc;
+};
+
+test("gh-251 A work-basis guard trips on work tokens and ignores cache-read, through spend-guard", () => {
+  const sc = workScene(1000);
+  ledger(sc, classRows({ input: 100, cacheCreation: 200, output: 400, cacheRead: 9000 }));
+  const below = guardJson(sc, "--no-ingest");
+  assert.deepEqual([below.j.signals.tokens.basis, below.j.signals.tokens.count, below.j.signals.tokens.state, below.status], ["work", 700, "ok", 0],
+    "9000 cache-read tokens would trip a total basis; the work basis counts 700");
+  ledger(sc, classRows({ input: 100, cacheCreation: 300, output: 600, cacheRead: 9000 }));
+  const at1000 = guardJson(sc, "--no-ingest");
+  assert.deepEqual([at1000.j.signals.tokens.count, at1000.j.signals.tokens.state, at1000.status], [1000, "tripped", 2]);
+});
+
+test("gh-251 The text form names the basis, its source and all six counts", () => {
+  const sc = workScene(1000);
+  ledger(sc, classRows({ input: 100, cacheCreation: 200, output: 400, cacheRead: 9000 }));
+  const out = guard(sc, "--no-ingest").stdout;
+  assert.match(out, /tokens: ok — 700 work attributed, ceiling 1000 \(project\)/);
+  assert.match(out, /basis: work \(project\) · input 100 · cache-write 200 · cache-read 9,000 · output 400 · work 700 · total 9,700/);
+});
+
+test("gh-251 A basis change sets the override aside and the text says which basis it was recorded in", () => {
+  const sc = scene({ on: true, limit: null, tokens: 1000 });
+  ledger(sc, classRows({ input: 100, cacheCreation: 200, output: 400, cacheRead: 9000 }));
+  assert.equal(guard(sc, "--no-ingest").status, 2, "tripped on the total basis");
+  const ov = invokeEngine(["override-spend-guard", "e1", "--signal", "tokens", "--escalated-to", "opus", "--reason", "x"], sc.opts);
+  assert.equal(ov.status, 0, ov.stderr);
+  assert.equal(guard(sc, "--no-ingest").status, 0, "the total-basis baseline applies while the basis is unchanged");
+  assert.doesNotMatch(guard(sc, "--no-ingest").stdout, /set aside/);
+  const sw = invokeEngine(["set-spend-guard", "--token-basis", "work"], sc.opts);
+  assert.equal(sw.status, 0, sw.stderr);
+  const out = guard(sc, "--no-ingest").stdout;
+  assert.match(out, /the latest tokens override is set aside: it was recorded in the total basis and this epic now counts work, so no baseline applies/);
+  assert.match(out, /tokens: ok — 700 work attributed/, "no baseline was subtracted from the work count");
+});
+
+test("gh-251 An override recorded under a work basis stores that basis and is not set aside while the basis is unchanged", () => {
+  const sc = workScene(1000);
+  ledger(sc, classRows({ input: 100, cacheCreation: 300, output: 600, cacheRead: 9000 }));
+  assert.equal(guard(sc, "--no-ingest").status, 2, "tripped on work tokens");
+  const ov = invokeEngine(["override-spend-guard", "e1", "--signal", "tokens", "--escalated-to", "opus", "--reason", "x"], sc.opts);
+  assert.equal(ov.status, 0, ov.stderr);
+  const stored = stateOf(sc.cwd).epics[0].spendGuardOverrides;
+  assert.equal(stored.length, 1);
+  assert.deepEqual([stored[0].signal, stored[0].basis, stored[0].baseline], ["tokens", "work", 1000]);
+  const r = guard(sc, "--no-ingest");
+  assert.equal(r.status, 0, "the work baseline applies: 1000 - 1000 is under the ceiling");
+  assert.doesNotMatch(r.stdout, /set aside/);
 });
 
 test("4.1 --no-ingest performs no ingest: a transcript that grew is not read", () => {

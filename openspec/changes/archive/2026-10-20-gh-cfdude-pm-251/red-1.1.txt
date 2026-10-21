@@ -1,0 +1,152 @@
+✖ 4.1 The JSON shape serves the dependent epics: every key the spec names (1.499375ms)
+✖ 4.1 input, cacheCreation, cacheRead and output are kept separate per agent (0.193709ms)
+✔ 4.1 byRound separates gate rounds: review round 1 and round 2 are different keys (0.113458ms)
+✔ 4.1 orchestrator rows land under `none` for role, phase and round (0.096167ms)
+✔ 4.1 The unattributed total is printed even at 0, by every reason (7.813958ms)
+✔ 4.1 unattributed spend is totalled by reason and the coverage share is the attributed fraction (0.27975ms)
+✔ 4.1 an empty window has a null coverage share and says n/a (0.15325ms)
+✔ 4.1 Filtering by epic and window: only rows attributed to e1 with T1 <= at < T2 are summed (0.110709ms)
+✔ 4.1 --epic narrows the per-epic section but not the unattributed bucket (0.076417ms)
+✔ 4.1 The cost line states that no cost is computed, tokens are the measure, and figures are notional (0.275708ms)
+✔ 4.1 a sub-agent's tier is the tier that carried most of its tokens (0.092709ms)
+✔ 4.1 the report is built from the rows it is given and never mutates them (0.064541ms)
+✖ 1.1 the work total excludes cache-read (the issue's numbers) (0.148958ms)
+✖ 1.1 every totals object and every dimension bucket carries work (0.116709ms)
+✖ 1.1 the text totals line names the work total beside the four classes (0.27775ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 10
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.158583
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 The JSON shape serves the dependent epics: every key the spec names (1.499375ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      cacheCreation: 20,
+      cacheRead: 200,
+      input: 2,
+      messages: 2,
+      output: 2000,
+      total: 2222,
+  -   work: 2022
+    }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:38:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { input: 2, cacheCreation: 20, cacheRead: 200, output: 2000, total: 2222, messages: 2 },
+    expected: { input: 2, cacheCreation: 20, cacheRead: 200, output: 2000, total: 2222, work: 2022, messages: 2 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 input, cacheCreation, cacheRead and output are kept separate per agent (0.193709ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      cacheCreation: 5,
+      cacheRead: 7,
+      input: 3,
+      messages: 1,
+      output: 11,
+      total: 26,
+  -   work: 19
+    }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:47:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { input: 3, cacheCreation: 5, cacheRead: 7, output: 11, total: 26, messages: 1 },
+    expected: { input: 3, cacheCreation: 5, cacheRead: 7, output: 11, total: 26, work: 19, messages: 1 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the work total excludes cache-read (the issue's numbers) (0.148958ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 7487
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:137:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 7487,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 every totals object and every dimension bucket carries work (0.116709ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 2022
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:151:32
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 2022,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the text totals line names the work total beside the four classes (0.27775ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /work 1,011/. Input:
+  
+  'epic e1: 1,111 tokens in 1 messages  (input 1 · cache-write 10 · cache-read 100 · output 1,000)'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:157:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'epic e1: 1,111 tokens in 1 messages  (input 1 · cache-write 10 · cache-read 100 · output 1,000)',
+    expected: /work 1,011/,
+    operator: 'match',
+    diff: 'simple'
+  }

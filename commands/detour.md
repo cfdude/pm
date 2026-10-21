@@ -19,10 +19,16 @@ Do NOT start fixing yet. Follow the `conductor` skill's detour protocol.
      Quote the text. The log is append-only, so the engine refuses a line it would record wrong
      rather than writing it: an unquoted word shaped like a flag is refused
      (`log-detour fixed --no-verify usage`<!-- pm:refused unknown-flag --> →
-     `conductor: unknown flag --no-verify for log-detour — it accepts: --force`, then
+     `conductor: unknown flag --no-verify for log-detour — it accepts: --sha, --force`, then
      `If '--no-verify' is part of the text, quote the whole value.`), and `--help` anywhere after
      the verb prints help instead of appending. `--force` is never part of the text:
      `log-detour fixed it --force` records `fixed it`.
+     **The row is stamped on HEAD.** If the commit you are describing did not land (a hook refused
+     it), HEAD is still the previous commit and the row lands on the wrong one. Declare against the
+     commit you mean with `log-detour --sha <sha> "<what you fixed>"` (the sha must name a commit in
+     this repository). When HEAD already carries a MINIMAL row the engine says so after writing, and
+     names the repair: `retract-detour <sha> --minimal "<the exact text>" --reason "<why>"` hides that
+     one row from `PROJECT.md` and keeps it in the log (see "A wrong automatic row" below).
      No proposal, no stack entry. If invoked as `/pm:detour --minimal "<what>"`, do exactly
      this and stop.
    - **Substantial** — needs its own design, changes shared behavior, or is multi-step →
@@ -130,7 +136,7 @@ call, and every commit of a call that made several.
   With no detour but an active epic, a small (≤3 files) `fix:`/`chore:` commit that does not name
   the active epic is logged as `AUTO-DETOUR` — a minimal detour nobody declared.
 - **When it does not.** A commit touching any of the active epic's own artifacts
-  (`openspec/changes/<id>/`, its plan path, its spec path) is that epic's work, not a detour. A
+  (the change's directory, `changeRoot` from `openspec status --change <id> --json`; its plan path, its spec path) is that epic's work, not a detour. A
   commit confined to a paused epic's own artifacts writes no `DETOUR-COMMIT`. A commit touching
   only pm's own generated files (`state.json`, `PROJECT.md`, `render-stamp.json`, the observation
   record) is bookkeeping — in a nested conductor too, because paths are compared from the
@@ -161,8 +167,15 @@ It appends one `RETRACTED` row covering every `AUTO-DETOUR` and `DETOUR-COMMIT` 
 removes nothing, and re-renders `PROJECT.md` without them. `<sha>` is a commit sha, not a ref
 (`HEAD` is refused — run `git rev-parse <ref>`); a sha whose commit has been pruned must be at least
 7 hex characters and match one commit's rows. It refuses, naming the reason and writing nothing: no
-matching row, a `MINIMAL`-only row (a declaration, not retractable), an already-retracted commit, a
+matching row, a `MINIMAL`-only row (a declaration, not retractable by sha alone), an already-retracted commit, a
 missing or empty `--reason`, and a detached tree. There is no un-retract: re-declare with
 `log-detour`.
+
+A wrong **declared** (`MINIMAL`) row is retracted by naming it: `retract-detour <sha> --minimal "<the
+exact description>" --reason "<why>"`. A declaration has no identity beyond its timestamp (two can
+share a sha), so the description picks the row, and when several visible rows share it the most
+recent is retracted. It appends one `RETRACTED-MINIMAL` row naming the target's timestamp, so it hides
+only that row: the commit's automatic rows are untouched, which a sha-keyed `RETRACTED` row would
+also hide. An engine older than this one shows the `RETRACTED-MINIMAL` row itself in `PROJECT.md`.
 
 When the detour is archived, use `/pm:resume` — do not skip the reconcile gate.

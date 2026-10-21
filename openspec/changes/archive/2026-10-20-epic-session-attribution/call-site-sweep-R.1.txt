@@ -1,0 +1,111 @@
+# R.1 call-site sweep (epic-session-attribution)
+
+## rg -n "resolveSession|PM_SESSION|flag: \"session\"" scripts/ (non-test)
+scripts/lib/session-identity.mjs:27:export function resolveSession(flags = {}) {
+scripts/lib/session-identity.mjs:31:  const fromEnv = currentEnv().PM_SESSION;
+scripts/lib/session-identity.mjs:56: *  `{ ok: false, message }`. Same precedence as resolveSession (an explicit flag beats PM_SESSION); a flag
+scripts/lib/session-identity.mjs:59:export function resolveSessionChecked(flags = {}) {
+scripts/lib/session-identity.mjs:64:  // stamp of whatever PM_SESSION happens to hold.
+scripts/lib/session-identity.mjs:69:  const fromEnv = currentEnv().PM_SESSION;
+scripts/lib/session-identity.mjs:71:    const c = checkSession(fromEnv, "PM_SESSION");
+scripts/lib/session-identity.mjs:80:  "name the session with --session <name>, or export PM_SESSION";
+scripts/lib/claims.mjs:49:import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
+scripts/lib/claims.mjs:152:  const session = resolveSession(f);
+scripts/lib/claims.mjs:236:  const session = resolveSession(f);
+scripts/lib/constants.mjs:768:  { flag: "session", key: null,
+scripts/lib/constants.mjs:771:    requires: "a session name — set PM_SESSION or pass --session <name>",
+scripts/conductor.mjs:136:import { resolveSession, resolveSessionChecked } from "./lib/session-identity.mjs";
+scripts/conductor.mjs:396:    const who = resolveSessionChecked(parseFlags(currentArgv().slice(3)));
+scripts/conductor.mjs:420:        activitySession = resolveSession(parseFlags(currentArgv().slice(3)));
+
+## Resolver calls and precedence
+- scripts/lib/session-identity.mjs resolveSession(flags): --session, else PM_SESSION, else null (unchanged). resolveSessionChecked(flags): the SAME order, validated (blank/control/over-128 refused; a present-but-valueless --session refused rather than falling through to PM_SESSION).
+- scripts/conductor.mjs: validates ONCE for a mutates, non-hook verb before the activity snapshot and dispatch; nothing has been written. Hook verbs (VERB_EFFECTS hook:true, derived from hooks/hooks.json by verb-surface.test.mjs) skip it entirely.
+- scripts/lib/claims.mjs:152,236 call resolveSession(f) and are now bound by the wrapper validation first (claim/unclaim are epicWriting); their own "requires a session" refusal for NO identity is unchanged.
+- scripts/conductor.mjs activity snapshot: resolveSession(...) feeds the activity log only; unchanged, and not a stamp site.
+
+## rg -n "saveState\(" scripts/lib : every save that can change an epic
+scripts/lib/active-pointer.mjs:112:  const saved = saveState(state);
+scripts/lib/active-pointer.mjs:131:  const saved = saveState(state);
+scripts/lib/activity-log.mjs:272:  // more than once — `update-epic` calls saveState() and then render() saves again — so an
+scripts/lib/activity-log.mjs:75:  const saved = saveState(state);
+scripts/lib/add-epic.mjs:512:  const saved = saveState(state);
+scripts/lib/add-many.mjs:255:  const saved = saveState(state);
+scripts/lib/argv-surface.mjs:158:  // text never contains `--force`, and saveState()'s `process.argv.includes("--force")` still sees it.
+scripts/lib/autonomy.mjs:215:  const saved = saveState(state);
+scripts/lib/claims.mjs:15://     issue (#83, optimistic concurrency on state.json, already shipped in saveState()).
+scripts/lib/claims.mjs:209:  const saved = saveState(state);
+scripts/lib/claims.mjs:21:// the holder check, saveState()'s revision guard catches the second — the two halves compose.
+scripts/lib/claims.mjs:273:  const saved = saveState(state);
+scripts/lib/constants.mjs:1162:// auto-bump chokepoint is saveState(), which does not know WHICH epic is being written, so an
+scripts/lib/constants.mjs:775:  // `--steal` is deliberately NOT `--force`. saveState() reads `--force` GLOBALLY off argv to
+scripts/lib/constants.mjs:861:// `argvLevel: true` at the end of this table: it belongs to the guarded state write (saveState()
+scripts/lib/created-at.mjs:171:  const saved = saveState(state, { verb: "recover-created-at" });
+scripts/lib/detour-stack.mjs:174:  const saved = saveState(state, { verb: "push-detour" });
+scripts/lib/detour-stack.mjs:256:  const saved = saveState(state, { verb: "pop-detour" });
+scripts/lib/detour-stack.mjs:387:  const saved = saveState(state, { verb: "drop-detour" });
+scripts/lib/gate-guard.mjs:72:  const saved = saveState(state);
+scripts/lib/gate-review-writeback.mjs:193:  const saved = saveState(state);
+scripts/lib/hook-write.mjs:30:const hookSave = (verb) => (s) => saveState(s, { onConflict: "skip", verb });
+scripts/lib/lane-routing.mjs:76:  const saved = saveState(state);
+scripts/lib/links.mjs:78: *  is not a duplicate" is REPORTED through saveState()'s whole-body `JSON.stringify` comparison,
+scripts/lib/migrations.mjs:237:  const saved = saveState(state);
+scripts/lib/migrations.mjs:94:  // pre-existing epic — saveState() excludes both timekeeping fields from its per-record
+scripts/lib/platform.mjs:109:  // always reports a change on a fresh repo and an unguarded saveState() here CREATES
+scripts/lib/platform.mjs:117:  if (switched && isInitialized()) saveState(state);
+scripts/lib/profile-verbs.mjs:35:  const saved = saveState(state);
+scripts/lib/rank.mjs:110:  const saved = saveState(state, { verb: "reorder" });
+scripts/lib/reconciler-writeback.mjs:109:  const saved = saveState(state);
+scripts/lib/releases.mjs:362:  const saved = saveState(state);
+scripts/lib/releases.mjs:418: *  A PURE READ: no `saveState()`, no `render()`. Both would rewrite files for an inspection, and
+scripts/lib/releases.mjs:618:  const saved = saveState(state);
+scripts/lib/remove-epic.mjs:136:  const saved = saveState(state);
+scripts/lib/render.mjs:415:  // `lastSave` belongs to saveState() (state.mjs recordEngineSave) and is carried through a render,
+scripts/lib/review-mode.mjs:30:  const saved = saveState(state);
+scripts/lib/save-report.mjs:13:// saveState()'s return and hand it here, and `scripts/test/save-report-surface.test.mjs` scans the
+scripts/lib/save-report.mjs:19:// SCOPE OF THE WORD "NOTHING". saveState()'s `unchanged` means `.conductor/state.json` was not
+scripts/lib/save-report.mjs:27: *  `saved` is saveState()'s return. A hook write that skipped on conflict returns
+scripts/lib/save-report.mjs:7:// exactly one verb: `update-epic` kept saveState()'s return, and twenty-odd sibling verbs threw it
+scripts/lib/spend-guard-verbs.mjs:164:  const saved = saveState(state);
+scripts/lib/spend-guard-verbs.mjs:403:    const saved = saveState(state);
+scripts/lib/spend-guard-verbs.mjs:431:  const saved = saveState(state);
+scripts/lib/spend-tracking.mjs:106:  const saved = saveState(state);
+scripts/lib/state.mjs:12:// WHY THE NAMES STAY, and why the 137 call sites of `loadState()`/`saveState()` are not edited.
+scripts/lib/state.mjs:191:export function saveState(state, opts = {}) {
+scripts/lib/subcommands.mjs:1156:  const saved = saveState(state);
+scripts/lib/subcommands.mjs:165:  // FIRST, before saveState(defaultState()): `init --platform bogus` used to create state.json and
+scripts/lib/subcommands.mjs:180:    saveState(defaultState());
+scripts/lib/subcommands.mjs:188:  { const s = loadState(); stampVersion(s); saveState(s); }
+scripts/lib/tracker-refresh-writeback.mjs:85:  const saved = saveState(state);
+scripts/lib/tracker.mjs:117:      const saved = saveState(state);
+scripts/lib/tracker.mjs:139:    const saved = saveState(state);
+scripts/lib/tracker.mjs:224:  const saved = saveState(state);
+scripts/lib/update-epic.mjs:1047:  // last outstanding story). Nothing between here and saveState() reads what it decides on: the
+scripts/lib/update-epic.mjs:1049:  // refusal still exits before saveState(), so a refused call writes nothing.
+scripts/lib/update-epic.mjs:1174:  // The save's OWN answer to "did anything change", kept rather than discarded. saveState()
+scripts/lib/update-epic.mjs:1180:  const saved = saveState(state);
+scripts/lib/update-epic.mjs:1203:  // writes the file again after saveState(), so a removal is exactly as vulnerable to being
+scripts/lib/update-epic.mjs:1221:  // file again after saveState(), so a removal can be silently undone after the save verified it.
+scripts/lib/update-epic.mjs:41: *  afterwards. saveState() now verifies its own bytes reached the disk, and that covers every
+scripts/lib/update-epic.mjs:42: *  verb — but this command does not END at saveState(): render() runs afterwards and writes
+scripts/lib/update-epic.mjs:838:  // refusal has had its turn, immediately before saveState().
+scripts/lib/verb-effects.mjs:103:  // record of one. Both go through saveState()'s normal path, so they inherit the write-conflict
+scripts/lib/worktree-hygiene.mjs:166:  // saveState() began stamping it, the last engine SAVE (`lastSave: {revision, mtimeMs}`) — the
+
+## How each is stamped
+- ONE chokepoint: stampTouched() in scripts/lib/store.mjs, called by BOTH stores (disk and memory) inside writeRecord after the no-op early return. Every saveState() above reaches it; none is listed individually because the stamp does not depend on the caller. A save that changes no epic (state.active only, a release, a lesson) stamps nothing: stampTouched compares each epic with its disk pre-image.
+- Hook paths (commit-nudge/render self-heal via reconcileArchived under onConflict:"skip"): main() sets no session for a hook verb, so currentSession() is null and nothing is stamped (design D4a).
+
+## Data reference: epic.sessions holds identities (opaque names), not ids, so no dangling-reference sweep is owed.
+- writer: stampSession() in store.mjs (one).
+- readers: none in the engine; the record and `list --json` expose it.
+- REMOVE path: remove-epic deletes the whole epic record and its trail with it (design D5).
+
+## Inverses
+- --session has no "unset": it is an input, not a stored setting. epic.sessions has no clear verb: declared set-only in EPIC_FLAGS (APPEND-ONLY history, design D5); a mistyped identity is a true record of what was typed.
+
+## Gate 2 fix: verbs that change an epic but were not marked (epicWriting)
+- init: its sync(true) registers existing openspec changes and plans as epics, so it changes epics. Now epicWriting (declares --session).
+- clear-active: demotes the epic the active pointer named (status active -> queued). Now epicWriting (declares --session).
+- Derivation is no longer a wording match on `writes`: scripts/test/unit/epic-session-trail.test.mjs requires every mutating non-hook verb to be epicWriting or named in NO_EPIC_CHANGE with a reason, so a new verb fails until classified.
+- render is listed as changing no epic: its only state save is the archived-epic self-heal that hooks also run (hook-wired verbs never stamp, D4a). A manual `render` still runs under PM_SESSION validation; declaring --session there is deliberately not done.

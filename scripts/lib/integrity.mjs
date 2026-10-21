@@ -1236,6 +1236,41 @@ export const CHECKS = [
     },
   },
   {
+    id: "attributed-commits-hold-duplicates",
+    title: "an epic whose attributedCommits names one commit more than once",
+    // integrity-reports-legacy-duplicate-attributions. Attribution is once-only now (a repeat of a
+    // recorded commit is a no-op), so a duplicate in the array was written by an engine older than
+    // that rule or by a hand-edit. The array is append-only and no verb removes one entry, so this
+    // REPORTS and prints no remedy: a sha-withdrawal removes one occurrence and records a withdrawal
+    // the epic never made. Harmless to the gates (they read the SET), but it overstates how much work
+    // the epic carries to anyone counting entries.
+    //
+    // "The same commit" is decided the way every other reader of this array decides it: equal spelling,
+    // or one hex value a prefix of the other (a short sha and the full name it abbreviates).
+    run(state) {
+      const out = [];
+      for (const e of state.epics || []) {
+        if (!e || !Array.isArray(e.attributedCommits)) continue;
+        const entries = e.attributedCommits.filter(v => typeof v === "string");
+        const groups = [];
+        for (const v of entries) {
+          const k = v.toLowerCase();
+          const g = groups.find(x => x.key === k || (isCommitNameShaped(k) && isCommitNameShaped(x.key) && (k.startsWith(x.key) || x.key.startsWith(k))));
+          if (g) g.count += 1; else groups.push({ key: k, label: v, count: 1 });
+        }
+        const dup = groups.filter(g => g.count > 1);
+        if (!dup.length) continue;
+        out.push({ epic: e.id, detail:
+          `attributedCommits holds ${entries.length} entries for ${groups.length} distinct commit(s); ` +
+          `repeated: ${dup.map(g => `${escapeControls(g.label.slice(0, 12))} x${g.count}`).join(", ")}. ` +
+          "Attribution is once-only now, so these were written before that rule (or by hand). The " +
+          "gates read the set, so nothing is blocked; no verb removes a single entry, so there is " +
+          "no remedy to run." });
+      }
+      return out;
+    },
+  },
+  {
     id: "advisory-claim-shape",
     title: "an advisory claim that cannot be true — expired, or held on an epic that has ended",
     // #84 — `owners` answers the question only when someone thinks to ask it, and a stale claim

@@ -221,7 +221,18 @@ function undeclaredFlagMessage(verb, flag, items) {
   // A free-text verb is where a flag-shaped WORD is likeliest to be text the caller did not quote —
   // `log-detour fixed --no-verify usage` — so the refusal carries surplusMessage()'s quoting hint.
   if (pos && pos.freeText) {
-    msg += `\n  If '${escapeControls(flag.token)}' is part of the text, quote the whole value.`;
+    if (/\s/.test(flag.token)) {
+      // gh-207: the token holds whitespace, so it reached the engine as ONE argv element -- the caller
+      // DID quote it, the shell removed the quotes, and "quote the whole value" cannot help. What helps
+      // is the `=` form where the verb has one (it binds the value to the flag whatever it starts with),
+      // else text that does not start with `--`.
+      msg += accepted.includes("ask") && !flag.token.includes("'")
+        ? `\n  '${escapeControls(flag.token)}' arrived as one quoted value, but it starts with --. Say it with the = form: ${verb} --ask='${escapeControls(flag.token)}'`
+        : `\n  '${escapeControls(flag.token)}' arrived as one quoted value, but it starts with --, which reads as a flag; quoting cannot change that. ` +
+          `${accepted.includes("ask") ? `Use ${verb} --ask=<the text>, or ` : "Reword "}so the text does not start with --.`;
+    } else {
+      msg += `\n  If '${escapeControls(flag.token)}' is part of the text, quote the whole value.`;
+    }
   }
   return msg + "\nNothing was written.";
 }

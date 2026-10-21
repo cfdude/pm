@@ -1,0 +1,99 @@
+# R.1 call-site completeness sweep, token-spend-analysis-and-recommendations (2026-10-20, derived mechanically)
+
+## rg -n "buildReport|attribute\(" scripts/lib
+scripts/lib/spend-analysis.mjs:32:import { COST_NOTE, NONE_KEY, buildReport, emptyTotals } from "./spend-report.mjs";
+scripts/lib/spend-analysis.mjs:221:/** Analyse attributed rows (spend-attribution.mjs `attribute()`), pure.
+scripts/lib/spend-analysis.mjs:226:  const report = buildReport({ attributed, tracking, ingest });
+scripts/lib/spend-analysis.mjs:380:  const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, state);
+scripts/lib/spend-command.mjs:32:import { buildReport, renderReport } from "./spend-report.mjs";
+scripts/lib/spend-command.mjs:121:  const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, state);
+scripts/lib/spend-command.mjs:122:  const report = buildReport({
+scripts/lib/spend-guard-verbs.mjs:30:import { buildReport, emptyTotals } from "./spend-report.mjs";
+scripts/lib/spend-guard-verbs.mjs:245:        const attributed = attribute(ledger.rows, ledger.markers, ledger.timeline, mainState);
+scripts/lib/spend-guard-verbs.mjs:246:        const report = buildReport({ attributed, tracking: mainState.spendTracking, ingest: ingestInfo, filters: { epic: epic.id } });
+scripts/lib/activity-report.mjs:139:export function buildReport(events, { currentRevision = null, malformed = 0 } = {}) {
+scripts/lib/activity-report.mjs:364:  // is UNKNOWN (null, which buildReport() already reads as "no out-of-band comparison") and so is
+scripts/lib/activity-report.mjs:372:  const report = buildReport(events, { currentRevision: state ? state.revision : null, malformed });
+scripts/lib/spend-guard.mjs:199: *  there is no anchor). `rows` are `attribute()`'s output; an unattributed row (unknown epic, invalid
+scripts/lib/spend-attribution.mjs:92:export function attribute(rows, markers, timeline, state, opts = {}) {
+scripts/lib/spend-report.mjs:39:/** Build the report object from attributed rows (spend-attribution.mjs `attribute()`).
+scripts/lib/spend-report.mjs:47:export function buildReport({ attributed, tracking, ingest, filters = {} }) {
+scripts/lib/dev-log.mjs:26:import { buildReport, hookVerbs, readListings } from "./overhead.mjs";
+scripts/lib/dev-log.mjs:88:  const report = buildReport(state, { listings: readListings(), hooks: hookVerbs(), lessons });
+scripts/lib/overhead.mjs:219:export function buildReport(state, inputs = {}) {
+scripts/lib/overhead.mjs:248:  const real = buildReport(state, inputs);
+scripts/lib/overhead.mjs:249:  const hyp = buildReport(hypotheticalState(state), inputs);
+scripts/lib/overhead.mjs:305:  const report = f["all-features"] === true ? buildHypotheticalReport(state, inputs) : buildReport(state, inputs);
+
+## rg -n "KNOWN_MODELS|tier" scripts/lib/spend*.mjs
+scripts/lib/spend-guard.mjs:285:  if (at === MODEL_RANK.length - 1) return { target: "user", from: model, source, why: `${model} is the top tier` };
+scripts/lib/spend-guard.mjs:318:  lines.push("Stop dispatching same-tier retries for this epic. Epic-level autonomy does not bypass this stop, and no autonomy grant covers continuing past it.");
+scripts/lib/spend-guard.mjs:373:    "not bypass: stop dispatching same-tier retries, hand the failure evidence to the escalation target it",
+scripts/lib/spend-report.mjs:83:    addTo(bucket(e.byTier, r.tier), r);
+scripts/lib/spend-report.mjs:87:      const a = (e.agents[r.agentId] ||= { role: r.role, phase: r.phase, round: r.round, tier: r.tier, totals: emptyTotals(), _byTier: {} });
+scripts/lib/spend-report.mjs:89:      a._byTier[r.tier] = (a._byTier[r.tier] || 0) + rowTotal(r);
+scripts/lib/spend-report.mjs:97:  // An agent's `tier` is the tier that carried most of its tokens (one agent can switch model).
+scripts/lib/spend-report.mjs:100:      a.tier = Object.entries(a._byTier).sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1))[0][0];
+scripts/lib/spend-report.mjs:143:    lines.push(`  by tier:  ${dim(e.byTier)}`);
+scripts/lib/spend-report.mjs:145:      lines.push(`  agent ${agentId}: role=${a.role} phase=${a.phase} round=${a.round} tier=${a.tier} — ${n(a.totals.total)} tokens`);
+scripts/lib/spend-reader.mjs:23:import { KNOWN_MODELS } from "./constants.mjs";
+scripts/lib/spend-reader.mjs:29:  "messageId", "sessionId", "agentId", "actor", "source", "at", "model", "tier",
+scripts/lib/spend-reader.mjs:99:/** `claude-sonnet-5-5` -> `sonnet`: the first KNOWN_MODELS token the id contains, else `other`. */
+scripts/lib/spend-reader.mjs:100:export function tierOf(model, models = KNOWN_MODELS) {
+scripts/lib/spend-reader.mjs:165:      agentId, actor, source: source.rel, at, model, tier: tierOf(model),
+scripts/lib/spend-guard-verbs.mjs:23:  KNOWN_LANES, KNOWN_MODELS, SPEND_GUARD_STOP_EXIT_CODE, escapeControls, jsonText,
+scripts/lib/spend-guard-verbs.mjs:387:  const accepted = ["user", ...KNOWN_MODELS];
+scripts/lib/spend-guard-verbs.mjs:426:      : `override-spend-guard: --escalated-to ${escapeControls(escalatedTo)} ranks below the escalation target; the lowest accepted model is ${escapeControls(target.target)} (or user). A same-tier retry is the loop this guard stops. Nothing was written.`);
+scripts/lib/spend-analysis.mjs:89:/** tier-mismatch: light roles on a top tier, heavy roles on a low tier. */
+scripts/lib/spend-analysis.mjs:133:    id: "tier-mismatch", status: "proposal",
+scripts/lib/spend-analysis.mjs:137:      .filter((g) => (TIER_MISMATCH.lightRoles.includes(g.role) && TIER_MISMATCH.topTiers.includes(g.tier))
+scripts/lib/spend-analysis.mjs:138:        || (TIER_MISMATCH.heavyRoles.includes(g.role) && TIER_MISMATCH.lowTiers.includes(g.tier)))
+scripts/lib/spend-analysis.mjs:139:      .map((g) => ({ subject: `agent ${g.agentId}`, values: { agentId: g.agentId, epic: g.epic, role: g.role, tier: g.tier, work: g.work, total: g.total } })),
+scripts/lib/spend-analysis.mjs:140:    evidence: (f) => `role=${f.values.role} ran on the ${f.values.tier} tier; work ${n(f.values.work)}, total ${n(f.values.total)}`,
+scripts/lib/spend-analysis.mjs:141:    recommend: (f) => `${f.subject} ran role=${f.values.role} on the ${f.values.tier} tier: set the role's model with set-profile --model ${f.values.role}=<model> (or --model on the epic).`,
+scripts/lib/spend-analysis.mjs:154:    recommend: (f) => `${f.subject} reached ${f.values.distinctRounds} distinct review rounds: if the rounds fail on the same finding, run ${orNoRemedy(() => `spend-guard ${printedId(f.values.epic)}`)} and escalate rather than retry at the same tier.`,
+scripts/lib/spend-analysis.mjs:240:        agentId, epic: epicId, role: a.role, phase: a.phase, round: a.round, tier: a.tier,
+scripts/lib/spend-analysis.mjs:289:  for (const [label, key] of [["actor", "byActor"], ["tier", "byTier"], ["role", "byRole"], ["phase", "byPhase"]]) {
+scripts/lib/spend-analysis.mjs:299:    L.push(`  agent ${g.agentId} (epic ${g.epic} role=${g.role} phase=${g.phase} round=${g.round} tier=${g.tier}): work ${n(g.work)} · total ${n(g.total)} · ${n(g.messages)} messages · context per message ${n(Math.round(g.contextPerMessage))} · cache-read ${n(g.cacheRead)}`);
+
+## ingest / transcript readers reachable from the new module (ingest, readLedger, readTranscripts)
+scripts/lib/dev-log-report.mjs:32:import { ingestForReport, readMainState } from "./spend-command.mjs";
+scripts/lib/dev-log-report.mjs:33:import { readLedger, withLedgerLock } from "./spend-ledger.mjs";
+scripts/lib/dev-log-report.mjs:187:  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled: true, tree, readCtx, enabledAtMs, state });
+scripts/lib/dev-log-report.mjs:188:  const ledger = readLedger(tree.main);
+scripts/lib/spend-ledger.mjs:287:export function ingest(opts, fsx = fs) {
+scripts/lib/spend-ledger.mjs:322:export function readLedger(mainRoot, fsx = fs) {
+scripts/lib/spend-ledger.mjs:371:  const { rawRows } = readLedger(mainRoot, fsx);
+scripts/lib/spend-ledger.mjs:382:export function rebuild(opts, fsx = fs) {
+scripts/lib/spend-ledger.mjs:392:    const { rawRows, markers } = readLedger(mainRoot, fsx);
+scripts/lib/spend-guard-verbs.mjs:27:import { ingestForReport, readMainState } from "./spend-command.mjs";
+scripts/lib/spend-guard-verbs.mjs:28:import { readLedger } from "./spend-ledger.mjs";
+scripts/lib/spend-guard-verbs.mjs:243:        ingestInfo = ingestForReport({ noIngest, enabled: true, tree, readCtx, enabledAtMs, state: mainState });
+scripts/lib/spend-guard-verbs.mjs:244:        const ledger = readLedger(tree.main);
+scripts/lib/spend-analysis.mjs:6:// READ-ONLY. It runs the SAME ingest -> attribute -> report pipeline `spend` runs (through `ingestForReport`, so
+scripts/lib/spend-analysis.mjs:30:import { readLedger } from "./spend-ledger.mjs";
+scripts/lib/spend-analysis.mjs:33:import { ingestForReport, readMainState } from "./spend-command.mjs";
+scripts/lib/spend-analysis.mjs:378:  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled: true, tree, readCtx, enabledAtMs, state });
+scripts/lib/spend-analysis.mjs:379:  const ledger = readLedger(tree.main);
+scripts/lib/spend-command.mjs:29:  clearLedger, clearPlan, ingest, ledgerExists, readLedger, rebuild, rebuildPlan,
+scripts/lib/spend-command.mjs:71:export function ingestForReport({ noIngest, enabled, tree, readCtx, enabledAtMs, state }) {
+scripts/lib/spend-command.mjs:76:  const r = ingest({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
+scripts/lib/spend-command.mjs:118:  const ingestInfo = ingestForReport({ noIngest: on("no-ingest"), enabled, tree, readCtx, enabledAtMs, state });
+scripts/lib/spend-command.mjs:120:  const ledger = readLedger(tree.main);
+scripts/lib/spend-command.mjs:186:  const r = rebuild({ ...readCtx, enabledAtMs, devLog: devLogOptions(state) });
+scripts/lib/dev-log.mjs:100: *  state, else null. The ONE place that decides, so every caller of `ingestForReport` captures or none does. */
+
+## Conclusions
+- Consumers of the report: `spend-command.mjs` (spend), `spend-guard-verbs.mjs` (spend-guard) and now `spend-analysis.mjs`.
+  (`activity-report.mjs` and `overhead.mjs` define unrelated functions of the same name.) The analysis calls
+  `buildReport` and `attribute` exactly as `spend` does and adds no transcript reader: its only ledger access is
+  `ingestForReport` (shared with spend, spend-guard and dev-log, so developer-log capture stays decided in one place) and
+  `readLedger`. With tracking off neither is called.
+- The tier mapping `tier-mismatch` reads is the ledger's: `tierOf()` (spend-reader.mjs:100) writes `row.tier` from
+  KNOWN_MODELS; `buildReport` picks an agent's majority tier; the rule reads that value and defines no second mapping. Its
+  own lists (TIER_MISMATCH) name tiers that are KNOWN_MODELS members.
+- Inverse: the verb is read-only and writes nothing to state.json. The ingest it performs has `spend --clear` /
+  `spend --rebuild` as inverses already; the developer log's `dev-log --clear` is unaffected. No new record is created, so
+  no inverse is owed.
+- Where the rules hold: low-coverage and invalid-markers are ledger-wide by design (an unattributed row has no epic);
+  the other four honour --epic / --release. The trend is ledger-wide. Stated in commands/spend-analysis.md.

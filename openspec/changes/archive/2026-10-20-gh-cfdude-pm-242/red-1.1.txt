@@ -1,0 +1,171 @@
+✔ 4.1 The JSON shape serves the dependent epics: every key the spec names (2.827458ms)
+✔ 4.1 input, cacheCreation, cacheRead and output are kept separate per agent (0.344667ms)
+✔ 4.1 byRound separates gate rounds: review round 1 and round 2 are different keys (0.259375ms)
+✔ 4.1 orchestrator rows land under `none` for role, phase and round (0.223583ms)
+✔ 4.1 The unattributed total is printed even at 0, by every reason (15.080084ms)
+✔ 4.1 unattributed spend is totalled by reason and the coverage share is the attributed fraction (0.448834ms)
+✔ 4.1 an empty window has a null coverage share and says n/a (0.200458ms)
+✔ 4.1 Filtering by epic and window: only rows attributed to e1 with T1 <= at < T2 are summed (0.175917ms)
+✔ 4.1 --epic narrows the per-epic section but not the unattributed bucket (0.101917ms)
+✔ 4.1 The cost line states that no cost is computed, tokens are the measure, and figures are notional (0.300458ms)
+✔ 4.1 a sub-agent's tier is the tier that carried most of its tokens (0.194375ms)
+✔ 4.1 the report is built from the rows it is given and never mutates them (0.118917ms)
+✔ 1.1 the work total excludes cache-read (the issue's numbers) (0.104417ms)
+✔ 1.1 every totals object and every dimension bucket carries work (0.180084ms)
+✔ 1.1 the text totals line names the work total beside the four classes (0.306583ms)
+✖ 1.1 resolveMarker names the first failing field (role, phase, round) and the rejected value (0.816083ms)
+✖ 1.2 a rejected phase is one entry with field, value, accepted set, agents and totals (0.151125ms)
+✖ 1.2 two dispatches with the same wrong value are one entry; a different value is another (0.097458ms)
+✖ 1.2 a rejected role names the job-role list (0.070917ms)
+✔ 1.2 no alias is accepted: phase=spec stays invalid-marker and nothing is attributed as plan (0.055791ms)
+✖ 1.2 a clean ledger has an empty invalidMarkers array (0.125667ms)
+✖ 1.3 the text line names field, value, accepted set, agent count and tokens (1.517ms)
+✖ 1.3 a control character in the value is escaped, never raw, and a long value is truncated and marked (0.700958ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 16
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 395.408375
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 resolveMarker names the first failing field (role, phase, round) and the rejected value (0.816083ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  -   accepted: [
+  -     'plan',
+  -     'implement',
+  -     'test',
+  -     'review',
+  -     'mechanical',
+  -     'rudimentary'
+  -   ],
+  -   field: 'role',
+      ok: false,
+      reason: 'invalid-marker',
+  -   value: 'architect'
+    }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:172:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { ok: false, reason: 'invalid-marker' },
+    expected: { ok: false, reason: 'invalid-marker', field: 'role', value: 'architect', accepted: [ 'plan', 'implement', 'test', 'review', 'mechanical', 'rudimentary' ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 a rejected phase is one entry with field, value, accepted set, agents and totals (0.151125ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  TypeError: Cannot read properties of undefined (reading 'length')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:183:46
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 two dispatches with the same wrong value are one entry; a different value is another (0.097458ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  TypeError: Cannot read properties of undefined (reading 'map')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:194:68
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 a rejected role names the job-role list (0.070917ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  TypeError: Cannot read properties of undefined (reading '0')
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:201:42
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.2 a clean ledger has an empty invalidMarkers array (0.125667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  
+  undefined !== []
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:214:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.3 the text line names field, value, accepted set, agent count and tokens (1.517ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'invalid pm-spend marker: phase "gate-1" is not one of plan|build|review|docs|release — 1 agents, 1,111 tokens'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:221:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'invalid pm-spend marker: phase "gate-1" is not one of plan|build|review|docs|release — 1 agents, 1,111 tokens',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.3 a control character in the value is escaped, never raw, and a long value is truncated and marked (0.700958ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /x{64}… \(truncated\)/. Input:
+  
+  'spend — tokens by epic · tracking on since 2026-10-09T10:00:00.000Z\n' +
+    'no epic has attributed spend in this window\n' +
+    '\n' +
+    'unattributed: 2,222 tokens in 2 messages  (tracking-off 0 · unmarked-subagent 0 · invalid-marker 2,222 · unknown-epic 0 · no-active-epic 0 · before-timeline 0)\n' +
+    'coverage: 0.0% of 2,222 tokens attributed to an epic\n' +
+    "cost: not computed — tokens are the measure. Claude Code's own cost figures are notional under subscription auth."
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-report.test.mjs:228:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "spend — tokens by epic · tracking on since 2026-10-09T10:00:00.000Z\nno epic has attributed spend in this window\n\nunattributed: 2,222 tokens in 2 messages  (tracking-off 0 · unmarked-subagent 0 · invalid-marker 2,222 · unknown-epic 0 · no-active-epic 0 · before-timeline 0)\ncoverage: 0.0% of 2,222 tokens attributed to an epic\ncost: not computed — tokens are the measure. Claude Code's own cost figures are notional under subscription auth.",
+    expected: /x{64}… \(truncated\)/,
+    operator: 'match',
+    diff: 'simple'
+  }

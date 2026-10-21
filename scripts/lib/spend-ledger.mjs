@@ -26,6 +26,7 @@ import {
   foldRows, parseEntry, sourceInfo, storedMarker, storedRow, transcriptDirs,
 } from "./spend-reader.mjs";
 import { spendDir } from "./spend-tree.mjs";
+import { appendDevLog, feedLine, finishRead, newCollector } from "./dev-log-capture.mjs";
 
 export const LEDGER_FILES = Object.freeze({
   rows: "rows.jsonl", cursor: "cursor.json", markers: "markers.json", timeline: "timeline.jsonl", lock: "ingest.lock",
@@ -184,7 +185,7 @@ function readLines(abs, startOffset, onLine, fsx, { maxLineBytes = MAX_LINE_BYTE
  *  `seed` is `rebuild`'s: the cursor, markers and rows to START from, held in memory. With a seed the
  *  three files are written ONLY here, at the end and each atomically, so a throw anywhere before then
  *  leaves the previous ledger exactly as it was. */
-function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LINE_BYTES }, fsx, seed = null) {
+function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LINE_BYTES, devLog = null }, fsx, seed = null) {
   const cursor = seed ? seed.cursor : readJson(at(mainRoot, "cursor"), {}, fsx);
   const markers = seed ? seed.markers : readJson(at(mainRoot, "markers"), {}, fsx);
   const found = discoverFiles(mainRoot, env, home, fsx);
@@ -194,6 +195,10 @@ function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LIN
     rowsAdded: 0, rowsBeforeEnabled: 0, skipped: found.nonFiles ? { [SKIP_NOT_FILE]: found.nonFiles } : {}, failedRels: [],
   };
   const collected = [];
+  // developer-session-log: `devLog` is `{ enabledAtMs, snapshot }` ONLY while both switches are on, handed in by
+  // the caller from the MAIN tree's state. Absent, no collector exists, no line is parsed beyond today's
+  // pre-filter, no file is read or written and the cursor keeps today's shape byte for byte.
+  const devEntries = [];
   let markersChanged = false;
   for (const f of found.files) {
     let st;
@@ -211,6 +216,7 @@ function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LIN
     let userSeen = resume ? !!c.userSeen : false;
     if (!resume && info.kind === "subagent" && markers[info.agentId]) { delete markers[info.agentId]; markersChanged = true; }
     const fileRows = [];
+    const col = devLog ? newCollector(resume ? c.devState : null, { actor: info.actor, agentId: info.agentId, sessionId: info.sessionId, enabledAtMs: devLog.enabledAtMs }) : null;
     const accept = (row) => {
       if (Date.parse(row.at) < enabledAtMs) result.rowsBeforeEnabled++;
       else fileRows.push(row);
@@ -218,6 +224,8 @@ function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LIN
     let consumed, size;
     try {
       ({ consumed, size } = readLines(f.abs, startOffset, (line) => {
+        // BEFORE the pre-filter below: composition needs the tool_result, attachment and system lines it drops.
+        if (col) feedLine(col, line);
         const needsUser = info.kind === "subagent" && !userSeen;
         // Cheap pre-filter: only an assistant entry can be a row, and a sub-agent's first user entry is
         // the one other line worth parsing. Everything else (tool results, attachments) is skipped
@@ -240,11 +248,18 @@ function ingestLocked({ mainRoot, env, home, enabledAtMs, maxLineBytes = MAX_LIN
     }
     collected.push(...fileRows);
     result.files.read++;
-    cursor[f.rel] = { offset: consumed, size, dev: st.dev, ino: st.ino, userSeen };
+    let devCarry;
+    if (col) { const r = finishRead(col); devEntries.push(...r.entries); devCarry = r.carry; }
+    cursor[f.rel] = { offset: consumed, size, dev: st.dev, ino: st.ino, userSeen, ...(devCarry ? { devState: devCarry } : {}) };
   }
   const folded = foldRows(collected);
   result.rowsAdded = folded.length;
   fsx.mkdirSync(spendDir(mainRoot), { recursive: true });
+  // The developer log is appended BEFORE the cursor write below (idempotent by message id, so a crash between the
+  // two re-reads and adds nothing twice). A failure here never fails the ledger it rides on: it is reported.
+  if (devLog) {
+    try { result.devLog = appendDevLog(mainRoot, devEntries, devLog.snapshot, fsx); } catch { result.devLog = { failed: true }; }
+  }
   const newText = folded.map((r) => JSON.stringify(storedRow(r))).join("\n") + (folded.length ? "\n" : "");
   if (seed) {
     // A transcript that could not be read keeps the rows (and the marker) the ledger already holds for
@@ -276,6 +291,16 @@ export function ingest(opts, fsx = fs) {
   const fd = acquireLock(lockPath, Date.now(), fsx);
   if (fd === null) return { ran: false, busy: true };
   try { return ingestLocked(opts, fsx); } finally { releaseLock(fd, lockPath, fsx); }
+}
+
+/** Run `fn` while holding the ingest lock, or report `{ busy: true }` when a live ingest holds it. For the
+ *  one writer outside this module that must not race an ingest: `dev-log --clear`. */
+export function withLedgerLock(mainRoot, fn, fsx = fs) {
+  fsx.mkdirSync(spendDir(mainRoot), { recursive: true });
+  const lockPath = at(mainRoot, "lock");
+  const fd = acquireLock(lockPath, Date.now(), fsx);
+  if (fd === null) return { busy: true };
+  try { return { busy: false, value: fn() }; } finally { releaseLock(fd, lockPath, fsx); }
 }
 
 // ───────────────────────────── reading the ledger back ─────────────────────────────

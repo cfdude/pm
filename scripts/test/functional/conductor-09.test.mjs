@@ -546,6 +546,32 @@ test("1.4 a COLLAPSED run — the index declares tests, the runner reports 0 —
     "a collapsed run was reported as an empty rung — the floor must be compared before that message");
 });
 
+test("1.6 the retired single-file certification record is removed from a clone that still holds one, and the per-run directory is left alone", () => {
+  // THE INVERSE OF THE OLD RUNNER'S WRITE (retire-single-file-certification-record, certification-record-
+  // redesign D5). Until 0.51.0 certify wrote one shared `pm-suite-certification.json` in the git common dir.
+  // Nothing reads or writes it now; one hook run must leave none behind, and must not touch the record that
+  // replaced it (`pm-suite-certification.d/`).
+  let legacy;
+  let kept;
+  const r = runHookAgainstFixture(
+    `test("a passing test", () => { assert.ok(true); });`,
+    {
+      setup: (cwd) => {
+        legacy = path.join(cwd, ".git", "pm-suite-certification.json");
+        fs.writeFileSync(legacy, "{}");
+        fs.mkdirSync(path.join(cwd, ".git", "pm-suite-certification.d", "functional"), { recursive: true });
+        kept = path.join(cwd, ".git", "pm-suite-certification.d", "functional", "k.json");
+        fs.writeFileSync(kept, "{}");
+      },
+    },
+  );
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.equal(r.status, 0, `the hook must pass a passing half: ${combined}`);
+  assert.ok(legacy, "the fixture's setup never ran, so there was no legacy file to remove");
+  assert.equal(fs.existsSync(legacy), false, `the hook left the retired single-file record behind at ${legacy}`);
+  assert.equal(fs.existsSync(kept), true, "and the hook must not remove an entry of the per-run record directory");
+});
+
 test("1.5 the retired probe's pm-isolation-flag is removed from a clone that still holds one", () => {
   // THE INVERSE OF THE OLD PROBE'S WRITE (0.49.0 task 1.5, design D3). Until 0.49.0 the hook cached
   // its isolation probe's answer in `$(git rev-parse --git-common-dir)/pm-isolation-flag`. The probe

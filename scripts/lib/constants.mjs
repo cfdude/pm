@@ -761,7 +761,13 @@ export const EPIC_FLAGS = [
   // that name is already this engine's version-release verb. One verb carrying two unrelated
   // meanings is how a `release --defer` would come to mean both "cut from a release" and "hand
   // the claim back".
-  { flag: "session", key: null, commands: ["claim", "unclaim"], write: "custom",
+  // epic-session-attribution: `--session` is declared for EVERY epic-writing verb, DERIVED from the effects
+  // registry's `epicWriting` marker (never typed here), so a verb added with the marker accepts it with no
+  // second edit. `claim` and `unclaim` are in that set. A hook verb is not: it never validates or stamps
+  // an identity (verb-effects.mjs).
+  { flag: "session", key: null,
+    commands: Object.entries(VERB_EFFECTS).filter(([, v]) => v.epicWriting === true).map(([verb]) => verb),
+    write: "custom",
     requires: "a session name — set PM_SESSION or pass --session <name>",
     placeholder: "a session name" },
   { flag: "ttl", key: null, commands: ["claim"], write: "custom",
@@ -798,6 +804,16 @@ export const EPIC_FLAGS = [
       "`recover-created-at` will attempt it again from this checkout's git history on its next run, which is " +
       "what makes clear-then-recover the correction path for a date the recovery got wrong (a reused id, a " +
       "wholesale state.json rewrite, a filter-branch or subtree split). Nothing else derives from it" },
+  // decision-cost-log: `epic.decisions` is written ONLY by `record-decision` (append, and the withdrawal mark).
+  { flag: "decisions", key: "decisions", commands: ["update-epic"], engineWritten: true,
+    setOnly: "a RECORD of what was decided, with the work window that reached it — a correction is a withdrawal (record-decision's " +
+      "--withdraw, which marks the decision withdrawn and keeps it) plus a new entry, and a bulk clear would erase the record a withdrawal exists to keep" },
+  // epic-session-attribution: `epic.sessions` is the ENGINE's trail of which named sessions wrote the record
+  // (stampTouched in store.mjs). Not typeable, and set-only for the reason below.
+  { flag: "sessions", key: "sessions", commands: ["update-epic"], engineWritten: true,
+    setOnly: "an APPEND-ONLY history of which named sessions changed this record, stamped by the engine in the " +
+      "save that changed it — removing an entry would edit history rather than clear a value, and a mistyped " +
+      "identity is a true record of what was typed (an epic removed with remove-epic takes its trail along)" },
   { flag: "touched-at", key: "touchedAt", commands: ["update-epic"], engineWritten: true,
     setOnly: "the engine stamps it on every write that changes the record (stampTouched in state.mjs), so " +
       "clearing it would be undone by the next real write — it answers no question a reader can ask, and an " +
@@ -866,7 +882,7 @@ export const VERB_FLAGS = [
   // `--verbosity` here are the PROJECT/LANE-layer writers; the same names are EPIC_FLAGS rows for
   // add-epic/add-many/update-epic. `--model` and `--unset` repeat. `--lane` is also add-epic's
   // (an epic's own lane) but the rows are scoped per command, so neither reads the other.
-  { flag: "lane", commands: ["set-profile", "profile", "set-spend-guard"], placeholder: "openspec|superpowers|claude-code|decision|external" },
+  { flag: "lane", commands: ["set-profile", "profile", "set-spend-guard", "list"], placeholder: "openspec|superpowers|claude-code|decision|external" },
   { flag: "review", commands: ["set-profile"], placeholder: "off|standard|thorough" },
   { flag: "model", commands: ["set-profile"], repeats: true, placeholder: "role=model[:effort]" },
   { flag: "verbosity", commands: ["set-profile"], placeholder: "quiet|verbose" },
@@ -956,6 +972,11 @@ export const VERB_FLAGS = [
   // `retract-detour` (commit-nudge-reads-the-whole-move) joins the row: a retraction's reason is held
   // to the same standard, and push-detour's semantics are untouched.
   { flag: "reason", commands: ["push-detour", "drop-detour", "retract-detour"], requires: REASON_REQUIRES },
+  // gh-239. `log-detour --sha` stamps the declaration on a named commit rather than HEAD (HEAD is the
+  // PREVIOUS commit when the one being described was refused by a hook); `retract-detour --minimal` is
+  // the inverse of `log-detour`, naming the declared row by its exact description.
+  { flag: "sha", commands: ["log-detour"], requires: "a commit sha in this repository" },
+  { flag: "minimal", commands: ["retract-detour"], requires: "the exact description of the MINIMAL row to retract" },
   // The reconcile decision is SAID, never defaulted — see pushDetour() in lib/detour-stack.mjs
   // for why, and KNOWN_STATUSES' neighbour `--no-deferrals` for the precedent.
   { flag: "reconcile", commands: ["push-detour"], valueless: true },
@@ -974,13 +995,28 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log", "spend-analysis", "decisions"], valueless: true },
+  // pm-overhead-baseline: compute the report over the named every-opt-in-on hypothetical, in memory, writing nothing.
+  { flag: "all-features", commands: ["overhead"], valueless: true },
+  // `list` (#204), the read-only epic listing. `--status` and `--lane` FILTER here where the epic
+  // registry's rows SET, so they are scoped rows of their own (`--lane` joins the set-profile row above).
+  { flag: "status", commands: ["list"], placeholder: KNOWN_STATUSES.join("|") },
+  { flag: "linked-to", commands: ["list"], requires: "an epic id" },
   // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
   // filters a log. What they agree on — that a value is required — is all the row carries.
-  { flag: "since", commands: ["activity", "spend"], requires: "an ISO-8601 timestamp" },
-  { flag: "epic", commands: ["activity", "spend"], requires: "an epic id" },
+  { flag: "since", commands: ["activity", "spend", "dev-log", "record-decision"], requires: "an ISO-8601 timestamp" },
+  { flag: "epic", commands: ["activity", "spend", "spend-analysis"], requires: "an epic id" },
+  // decision-cost-log: `record-decision`'s own flags. `--since`, `--until` and `--reason` are the rows beside this
+  // verb's neighbours (same meaning); `--alternative` repeats, one value per alternative considered.
+  { flag: "what", commands: ["record-decision"], requires: "the decision, in words" },
+  { flag: "why", commands: ["record-decision"], requires: "why it was decided" },
+  { flag: "alternative", commands: ["record-decision"], repeats: true, requires: "an alternative that was considered" },
+  { flag: "phase", commands: ["record-decision"], placeholder: "plan|build|review|docs|release" },
+  { flag: "withdraw", commands: ["record-decision"], requires: "a decision number" },
+  // token-spend-analysis-and-recommendations: `--release` scopes the analysis to the epics whose `release` is that id.
+  { flag: "release", commands: ["spend-analysis"], requires: "a release id" },
   // purge-logs. Its own `--keep`/`--over`/`--older-than` checks stay and run AFTER this rule,
   // on the precedent `triage --limit` set: neither is subsumed, because a value that is present
   // and unparseable is a different mistake from a value that is absent.
@@ -989,25 +1025,28 @@ export const VERB_FLAGS = [
   { flag: "over", commands: ["purge-logs"], requires: "a size like 500K, 10M or 1G" },
   { flag: "older-than", commands: ["purge-logs"], requires: "a non-negative number of days" },
   { flag: "dry-run", commands: ["purge-logs"], valueless: true },
-  { flag: "yes", commands: ["purge-logs", "spend"], valueless: true },
+  { flag: "yes", commands: ["purge-logs", "spend", "dev-log"], valueless: true },
   // token-spend-tracking-per-epic's `spend`. `--json`, `--since`, `--epic` and `--yes` are the rows
   // above (same meaning on each verb); these five are its own. `--until` is the half-open upper bound
   // `--since` is the lower one of. `--clear` / `--rebuild` are the ledger's two inverses and refuse each
   // other; `--timeline` only qualifies `--clear`; `--no-ingest` reports from the ledger as it stands.
-  { flag: "until", commands: ["spend"], requires: "an ISO-8601 timestamp" },
-  { flag: "no-ingest", commands: ["spend", "spend-guard"], valueless: true },
+  { flag: "until", commands: ["spend", "dev-log", "record-decision"], requires: "an ISO-8601 timestamp" },
+  { flag: "no-ingest", commands: ["spend", "spend-guard", "dev-log", "spend-analysis", "decisions"], valueless: true },
+  // developer-session-log: `dev-log --session-id` names a Claude Code TRANSCRIPT session, never pm's own `--session` identity.
+  { flag: "session-id", commands: ["dev-log"], requires: "a Claude Code transcript session id" },
   // spend-budget-and-stuck-loop-guard. `set-spend-guard`'s three limits and its `--unset` (repeatable, its own
   // placeholder: set-profile's `--unset` row lists different fields), then `override-spend-guard`'s four. Its
   // `--revoke` is VALUELESS here and value-bearing on `set-autonomy`; the rows are scoped per command.
   { flag: "max-failed-rounds", commands: ["set-spend-guard"], requires: "a positive whole number" },
   { flag: "tokens", commands: ["set-spend-guard"], requires: "a positive whole number" },
+  { flag: "token-basis", commands: ["set-spend-guard"], placeholder: "total|work" },
   { flag: "warn-at", commands: ["set-spend-guard"], requires: "a whole number from 1 to 99" },
-  { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|warn-at|all" },
+  { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|token-basis|warn-at|all" },
   { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
   { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
-  { flag: "reason", commands: ["override-spend-guard"], requires: REASON_REQUIRES },
+  { flag: "reason", commands: ["override-spend-guard", "record-decision"], requires: REASON_REQUIRES },
   { flag: "revoke", commands: ["override-spend-guard"], valueless: true },
-  { flag: "clear", commands: ["spend"], valueless: true },
+  { flag: "clear", commands: ["spend", "dev-log"], valueless: true },
   { flag: "rebuild", commands: ["spend"], valueless: true },
   { flag: "timeline", commands: ["spend"], valueless: true },
   // THE argv-level row (see the header above). On a mutating verb whose writes never reach the
@@ -1077,7 +1116,7 @@ export const VERB_POSITIONALS = {
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
   "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
   activity: P0, spend: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
-  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
+  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0, overhead: P0, "dev-log": P0, "spend-analysis": P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
@@ -1090,7 +1129,10 @@ export const VERB_POSITIONALS = {
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
+  // decision-cost-log: both take the epic the decisions belong to.
+  "record-decision": EPIC_ID, decisions: EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
@@ -1109,26 +1151,24 @@ export const VERB_POSITIONALS = {
 };
 
 export const FLAGLESS_VERBS = [
-  "log-detour", "honcho-memory",
-  "reorder", "set-active", "clear-active", "set-gate-guard",
-  "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
+  "honcho-memory",
+  // epic-session-attribution: `reorder`, `set-active`, `clear-active`, `upgrade`, `recover-created-at` and `pop-detour` are NOT
+  // here any more. Each can change an epic, so each declares `--session` (the `session` row's commands are
+  // derived from the effects registry's `epicWriting` marker), and a verb is claimed by exactly one declaration.
+  "set-gate-guard",
+  "verify-worktrees", "verify-state", "integrity", "changesets",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
   "set-activity-log",
   // token-spend-tracking-per-epic's switch: the POSITIONAL `on|off`, same shape as the toggle above.
   "set-spend-tracking",
-  // The registration-date recovery takes no arguments at all: it sweeps every epic that has
-  // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
-  "recover-created-at",
+  // developer-session-log's switch: the POSITIONAL `on|off` again.
+  "set-dev-log",
   // The unconsidered-outcome walker's ASK. Its population is a PREDICATE over the whole record
   // — an engine stamp carrying `unknown` — so there is nothing to select; a `--status` or
   // `--lane` filter would let a caller narrow the very set the question is "show me all of".
   "unconsidered-outcomes",
-  // `pop-detour` takes an OPTIONAL POSITIONAL assertion (the epic you expect to be on top) and
-  // no flags. The stack is LIFO, so a flag that SELECTED a frame would be a different verb; what
-  // the positional does is refuse when the top is not what the caller thinks it is.
-  "pop-detour",
 ];
 
 // ─────────────────── #84: advisory claim TTLs ───────────────────

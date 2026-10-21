@@ -34,7 +34,7 @@ unitTest("2.2 every invalid call is refused naming the offending value and what 
   assert.match(bad({ epic: "missing", tokens: "5" }).message, /--epic 'missing'/);
   assert.match(bad({ epic: "e1", lane: "openspec", tokens: "5" }).message, /--epic or --lane, not both/);
   assert.match(bad({ epic: "e1" }).message, /needs an operation/);
-  assert.match(bad({ unset: "model" }).message, /--unset 'model' is not one of max-failed-rounds\|tokens\|warn-at\|all/);
+  assert.match(bad({ unset: "model" }).message, /--unset 'model' is not one of max-failed-rounds\|tokens\|token-basis\|warn-at\|all/);
   assert.match(bad({ tokens: "5", unset: ["tokens"] }).message, /--tokens is both set and unset/);
   assert.equal(bad({ tokens: "5", unset: ["warn-at"] }).ok, true, "a different field is not a clash");
 });
@@ -44,7 +44,7 @@ unitTest("2.2 a good call parses into ops, and 'all' expands to every field", ()
   assert.equal(r.ok, false, "tokens set and unset-all clash");
   const ok = parseSetSpendGuard({ "max-failed-rounds": "3", "warn-at": "70" }, IDS);
   assert.deepEqual(ok.ops.sets, { maxFailedRounds: 3, warnAt: 70 });
-  assert.deepEqual(parseSetSpendGuard({ unset: ["all"] }, IDS).ops.unsets, ["maxFailedRounds", "tokenCeiling", "warnAt"]);
+  assert.deepEqual(parseSetSpendGuard({ unset: ["all"] }, IDS).ops.unsets, ["maxFailedRounds", "tokenCeiling", "tokenBasis", "warnAt"]);
 });
 
 // ───────────── 2.2 the pure write ─────────────
@@ -336,4 +336,54 @@ unitTest("3.5 a revoke falls back to the previous live override's baseline", () 
   const j = JSON.parse(engine.result(["spend-guard", "e1", "--json"]).stdout);
   assert.equal(j.signals.rounds.baseline, 1);
   assert.equal(j.overrides.length, 2, "both entries are still in the record");
+});
+
+// ───────────── gh-cfdude-pm-251: --token-basis, the low-ceiling notice, the override's basis ─────────────
+
+unitTest("2.1 --token-basis is validated, stored at its layer, and has an unset", () => {
+  assert.match(parseSetSpendGuard({ "token-basis": "cached" }, IDS).message, /--token-basis 'cached' must be one of total\|work/);
+  const s = { spendGuard: { maxFailedRounds: 3 }, epics: [epic("e1")] };
+  applyGuardOps(s, parseSetSpendGuard({ lane: "openspec", "token-basis": "work" }, IDS).ops);
+  assert.deepEqual(s.laneSpendGuards, { openspec: { tokenBasis: "work" } });
+  applyGuardOps(s, parseSetSpendGuard({ lane: "openspec", unset: "token-basis" }, IDS).ops);
+  assert.equal("laneSpendGuards" in s, false, "the emptied lane layer is removed");
+  assert.equal(parseSetSpendGuard({ "token-basis": "work", unset: "token-basis" }, IDS).ok, false, "set and unset clash");
+});
+
+unitTest("2.1 unsetting the project basis falls back to total (default)", () => {
+  const engine = seeded({ state: { spendGuard: { maxFailedRounds: 3, tokenBasis: "work" } } });
+  const basis = () => JSON.parse(engine.result(["spend-guard", "e1", "--json"]).stdout).signals.tokens.basis;
+  assert.equal(basis(), "work");
+  engine(["set-spend-guard", "--unset", "token-basis"]);
+  assert.equal(basis(), "total");
+});
+
+unitTest("2.4 a low total-basis ceiling is recorded and warns naming cache-read and --token-basis work", () => {
+  const engine = seeded({ state: { spendGuard: { maxFailedRounds: 3 } } });
+  const out = engine.combined(["set-spend-guard", "--tokens", "1500000"]);
+  assert.equal(rec(engine).spendGuard.tokenCeiling, 1500000);
+  assert.match(out, /cache-read/);
+  assert.match(out, /--token-basis work/);
+});
+
+unitTest("2.4 a work basis, or a value at the floor, prints no low-ceiling line", () => {
+  const a = seeded({ state: { spendGuard: { maxFailedRounds: 3 } } });
+  const outA = a.combined(["set-spend-guard", "--token-basis", "work", "--tokens", "1500000"]);
+  assert.deepEqual([rec(a).spendGuard.tokenCeiling, rec(a).spendGuard.tokenBasis], [1500000, "work"]);
+  assert.doesNotMatch(outA, /cache-read/);
+  const b = seeded({ state: { spendGuard: { maxFailedRounds: 3 } } });
+  assert.doesNotMatch(b.combined(["set-spend-guard", "--tokens", "300000000"]), /cache-read/);
+  assert.doesNotMatch(b.combined(["set-spend-guard", "--tokens", "10000000"]), /cache-read/, "exactly the floor does not warn");
+});
+
+unitTest("2.4 a lane that inherits no basis warns; a lane that sets work does not", () => {
+  const engine = seeded({ state: { spendGuard: { maxFailedRounds: 3, tokenBasis: "work" } } });
+  assert.doesNotMatch(engine.combined(["set-spend-guard", "--lane", "openspec", "--tokens", "1000"]), /cache-read/, "inherits work from the project");
+  assert.match(engine.combined(["set-spend-guard", "--lane", "superpowers", "--token-basis", "total", "--tokens", "1000"]), /cache-read/);
+});
+
+unitTest("2.1 a basis set alone is stored at the project layer (guardConfigured, tested in the core file, says it is no limit)", () => {
+  const engine = seeded({ state: { spendGuard: { maxFailedRounds: 3 } } });
+  engine(["set-spend-guard", "--token-basis", "work"]);
+  assert.equal(rec(engine).spendGuard.tokenBasis, "work");
 });

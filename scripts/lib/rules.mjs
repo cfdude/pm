@@ -298,7 +298,8 @@ export const GATE_PROCEDURE_ITEMS = [
       "   `headSha` (equal to that head or an ancestor of it), whatever position it holds: one the reviewed",
       "   head does not reach reads as a stale verdict and refuses the archive.",
       "   ONE EXCLUSION, and it is not a judgment call: the commit that moves",
-      "   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a",
+      "   the change's directory (`changeRoot` from `openspec status --change <id> --json`) into its archive,",
+      "   and any commit that only relocates or deletes a",
       "   change's artifacts rather than implementing its work, is lifecycle bookkeeping and",
       "   MUST NOT be attributed. That move lands after the reviewed range by construction, so",
       "   attributing it",
@@ -1185,6 +1186,17 @@ export function assertRulesBlockWritable(platform = "claude-code") {
   if (arrangement.kind === "ambiguous") {
     throw new RulesBlockAmbiguousError(target, arrangement.markers, { preflight: true });
   }
+}
+
+/** Does the managed rules block ON DISK carry a `## Spend guard` section? `null` when there is no block to
+ *  judge (no file, no markers, or an ambiguous arrangement): the wrapper that asks never creates a block,
+ *  and never throws on a file the user is mid-way through fixing. */
+export function rulesBlockShowsSpendGuard(platform = "claude-code") {
+  let existing;
+  try { existing = fs.readFileSync(rulesTarget(platform, engineRoot()), "utf8"); } catch { return null; }
+  const arrangement = rulesBlockArrangement(existing);
+  if (arrangement.kind !== "one") return null;
+  return arrangement.lines.slice(arrangement.i, arrangement.j + 1).some((l) => l.replace(/\r?\n$/, "") === "## Spend guard");
 }
 
 /** Write (or refresh) the managed rules block into whichever file `platform`'s precedence

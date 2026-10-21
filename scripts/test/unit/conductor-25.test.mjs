@@ -82,6 +82,8 @@ const ADD_EPIC_EXERCISE = {
       assert.equal(typeof e.notes.at(-1).at, "string");
     },
   },
+  // epic-session-attribution: honoured, not merely accepted — the epic the flag created carries the trail.
+  "session": { args: ["--session", "build-a"], check: (e) => assert.deepEqual(e.sessions.map((x) => x.session), ["build-a"]) },
   "add-story": { args: ["--add-story", "a milestone"], check: (e) => assert.equal(e.stories.at(-1).title, "a milestone") },
   // The epic layer of the execution profile (execution-profile-layered-settings 3.3).
   "review-mode": { args: ["--review-mode", "off"], check: (e) => assert.equal(e.reviewMode, "off") },

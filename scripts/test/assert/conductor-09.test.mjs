@@ -155,6 +155,10 @@ test(".githooks/pre-commit exists, is executable, and runs the assertion half an
   // task 1.4; the functional twin proves it on a fixture, task 1.5).
   assert.match(hookText, /^rm -f "\$\(git rev-parse --git-common-dir\)\/pm-isolation-flag"$/m,
     "the hook no longer removes the retired probe's pm-isolation-flag from existing clones");
+  // THE RETIRED SINGLE-FILE CERTIFICATION RECORD IS REMOVED THE SAME WAY (retire-single-file-certification-
+  // record; the functional twin proves it on a fixture). The per-run DIRECTORY is a different path and stays.
+  assert.match(hookText, /^rm -f "\$\(git rev-parse --git-common-dir\)\/pm-suite-certification\.json"$/m,
+    "the hook no longer removes the retired single-file certification record from existing clones");
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
   // A COUNT THAT CANNOT BE READ IS REFUSED, AND ONLY ONE FORMAT IS READ (0.49.0 task 1.2, design D4).
   // Until 0.49.0 an unparsed summary printed "tests passing (summary line not found)" and exited 0

@@ -1,0 +1,54 @@
+# R.1 call-site sweep (gh-cfdude-pm-251)
+
+## rg -n "tokenCeiling|GUARD_FIELDS|\.total" scripts/lib (readers of the ceiling and of an epic's total)
+scripts/lib/spend-report.mjs:27:  t.total += rowTotal(r); t.work += rowWork(r); t.messages += 1;
+scripts/lib/spend-report.mjs:95:    .sort((x, y) => (x.totals.total < y.totals.total ? 1 : x.totals.total > y.totals.total ? -1
+scripts/lib/spend-report.mjs:122:// place that subtracts `.total`, because that is how outstanding-work arithmetic forks.
+scripts/lib/spend-report.mjs:123:const byTotalDesc = (x, y) => (x[1].total < y[1].total ? 1 : x[1].total > y[1].total ? -1 : (x[0] < y[0] ? -1 : 1));
+scripts/lib/spend-report.mjs:125:  .map(([k, t]) => `${k} ${n(t.total)}`).join(" · ");
+scripts/lib/spend-report.mjs:137:    lines.push("", `epic ${id}: ${n(e.totals.total)} tokens in ${n(e.totals.messages)} messages  (${parts(e.totals)})`);
+scripts/lib/spend-report.mjs:145:      lines.push(`  agent ${agentId}: role=${a.role} phase=${a.phase} round=${a.round} tier=${a.tier} — ${n(a.totals.total)} tokens`
+scripts/lib/spend-report.mjs:149:  lines.push("", `unattributed: ${n(u.totals.total)} tokens in ${n(u.totals.messages)} messages` +
+scripts/lib/spend-report.mjs:150:    `  (${UNATTRIBUTED_REASONS.map((k) => `${k} ${n(u.byReason[k].total)}`).join(" · ")})`);
+scripts/lib/spend-report.mjs:155:    lines.push(`invalid pm-spend marker: ${m.field} "${value}" ${expect} — ${n(m.agents)} agents, ${n(m.totals.total)} tokens`);
+scripts/lib/spend-report.mjs:158:  lines.push(`coverage: ${c.share === null ? "n/a (no spend in this window)" : `${(c.share * 100).toFixed(1)}%`} of ${n(c.total)} to
+scripts/lib/spend-guard.mjs:74:export const GUARD_FIELDS = Object.freeze(["maxFailedRounds", "tokenCeiling", "tokenBasis", "warnAt"]);
+scripts/lib/spend-guard.mjs:115:const CHECKS = { maxFailedRounds: checkMaxFailedRounds, tokenCeiling: checkTokenCeiling, tokenBasis: checkTokenBasis, warnAt: checkWa
+scripts/lib/spend-guard.mjs:131: *  `{value, source}` (`value: null, source: null` = no limit; `warnAt` defaults to 80 and `tokenBasis` to
+scripts/lib/spend-guard.mjs:139:  for (const field of GUARD_FIELDS) {
+scripts/lib/spend-guard.mjs:140:    const dflt = field === "warnAt" ? DEFAULT_WARN_AT : field === "tokenBasis" ? DEFAULT_TOKEN_BASIS : null;
+scripts/lib/spend-guard.mjs:148:/** Is any LIMIT configured — `maxFailedRounds` or `tokenCeiling` valid at the project, at any lane, or
+scripts/lib/spend-guard.mjs:153:  const has = (g) => isObj(g) && (checkMaxFailedRounds(g.maxFailedRounds).ok || checkTokenCeiling(g.tokenCeiling).ok);
+scripts/lib/spend-guard.mjs:251: *  checked, `status.total` and `status.work` are the epic's attributed counts and `status.breakdown` its
+scripts/lib/spend-guard.mjs:255:  const limit = resolved.tokenCeiling.value;
+scripts/lib/spend-guard.mjs:256:  const basis = resolved.tokenBasis.value;
+scripts/lib/spend-guard.mjs:259:    limit, source: resolved.tokenCeiling.source, baseline, warnAt: resolved.warnAt.value,
+scripts/lib/spend-guard.mjs:260:    basis, basisSource: resolved.tokenBasis.source, overrideSetAside: setAside,
+scripts/lib/spend-guard.mjs:262:  const counted = (st) => (basis === "work" ? st.work : st.total);
+scripts/lib/opt-ins.mjs:71:    // spend-budget-and-stuck-loop-guard. A limit is `maxFailedRounds` or `tokenCeiling` at the project, at any
+scripts/lib/spend-guard-verbs.mjs:32:  GUARD_FIELDS, GUARD_SIGNALS, SIGNAL_ROLE, checkMaxFailedRounds, checkTokenBasis, checkTokenCeiling, checkWarnAt,
+scripts/lib/spend-guard-verbs.mjs:45:const UNSET_FIELD = { "max-failed-rounds": "maxFailedRounds", tokens: "tokenCeiling", "token-basis": "tokenBasis", "warn-at": "w
+scripts/lib/spend-guard-verbs.mjs:47:const FLAG_OF = { maxFailedRounds: "--max-failed-rounds", tokenCeiling: "--tokens", tokenBasis: "--token-basis", warnAt: "--warn
+scripts/lib/spend-guard-verbs.mjs:67:    ["tokenCeiling", f.tokens, checkTokenCeiling],
+scripts/lib/spend-guard-verbs.mjs:68:    ["tokenBasis", f["token-basis"], checkTokenBasis],
+scripts/lib/spend-guard-verbs.mjs:82:    for (const field of u === "all" ? GUARD_FIELDS : [UNSET_FIELD[u]]) if (!unsets.includes(field)) unsets.push(field);
+scripts/lib/spend-guard-verbs.mjs:134:  const n = ops.sets.tokenCeiling;
+scripts/lib/spend-guard-verbs.mjs:136:  const basis = resolveGuard(state, { epicId: ops.epic, lane: ops.lane }).tokenBasis.value;
+scripts/lib/spend-guard-verbs.mjs:172:  if (parsed.ops.sets.tokenCeiling !== undefined && !spendEnabled(state)) {
+scripts/lib/spend-guard-verbs.mjs:173:    outStream().write("conductor: note — tokenCeiling is recorded but will not be checked until you run set-spend-tracking on; 
+scripts/lib/spend-guard-verbs.mjs:249:          checked: true, total: t.total, work: t.work,
+scripts/lib/spend-guard-verbs.mjs:250:          breakdown: { input: t.input, cacheCreation: t.cacheCreation, cacheRead: t.cacheRead, output: t.output, work: t.work, 
+scripts/lib/spend-guard-verbs.mjs:317:    lines.push(`  basis: ${t.basis} (${t.basisSource}) · input ${c(b.input)} · cache-write ${c(b.cacheCreation)} · cache-read $
+
+## Where the basis applies and where total stays on purpose
+- APPLIES: tokenSignal() (spend-guard.mjs) counts status.work or status.total by the resolved tokenBasis and takes its baseline from tokenBaseline(epic, basis). It is the ONLY reader of the ceiling besides resolveGuard()/guardConfigured() (which treat tokenCeiling as a limit and tokenBasis as no limit) and the verbs.
+- STAYS total ON PURPOSE: spend-report.mjs coverage.attributed/total and the byX dimension sort (conductor-13 forbids a second sum of .total; they describe the ledger, not a ceiling); rowTotal() itself; the `spend` text header line.
+- ONE definition of work: rowWork() in spend-reader.mjs, summed once in addTo(); no consumer re-sums it.
+
+## Data references: tokenBasis on state.spendGuard / state.laneSpendGuards[lane] / epic.spendGuard, and basis on a tokens override entry
+- WRITERS of tokenBasis: applyGuardOps() (set-spend-guard) only. READERS: resolveGuard() (via CHECKS.tokenBasis), lowCeilingNotice(), the rules/brief emit nothing from it (a basis alone is not a limit, guardConfigured ignores it).
+- REMOVE paths of tokenBasis: set-spend-guard --unset token-basis (per layer) and --unset all (GUARD_FIELDS now includes it); an emptied layer is deleted; remove-epic takes epic.spendGuard along.
+- WRITER of override.basis: overrideSpendGuard() (tokens only), from sig.basis. READER: tokenBaseline(). REMOVE: an override is never deleted; --revoke marks revokedAt and keeps it (the entry and its basis stay).
+
+## Inverses
+- --token-basis has --unset token-basis (and --unset all). An override has --revoke (existing). The low-ceiling notice is output, not state: no inverse.

@@ -567,3 +567,71 @@ tracking is off. `--clear` and `--rebuild` SHALL NOT combine, and `--timeline` n
 
 - **WHEN** `upgrade` runs in a repository whose `.gitignore` lacks `.conductor/spend/`
 - **THEN** `.gitignore` afterwards contains the line `.conductor/spend/`
+
+### Requirement: An invalid marker is reported with the rejected value and the accepted set
+
+`spend` SHALL report each distinct `(field, value)` that made a stored marker invalid: the first
+failing field in the order `role`, `phase`, `round`, the rejected value, the accepted set read from
+the constant the check uses (`positive integer` for `round`), the agent count and those agents' totals. Validation SHALL stay strict.
+
+#### Scenario: A rejected phase is named with the accepted set
+
+- **WHEN** a sub-agent's stored marker is `pm-spend: epic=e1 role=review phase=gate-1`
+- **AND** `spend --no-ingest` runs
+- **THEN** the text report contains `invalid pm-spend marker: phase "gate-1" is not one of plan|build|review|docs|release`
+- **AND** that line names the agent count and the tokens
+
+#### Scenario: The JSON form lists the invalid markers
+
+- **WHEN** `spend --json --no-ingest` runs over the same ledger
+- **THEN** `unattributed.invalidMarkers` is an array whose entry holds `field: "phase"`, `value: "gate-1"`,
+  `accepted` equal to `KNOWN_SPEND_PHASES`, `agents: 1` and a `totals` object
+
+#### Scenario: Two dispatches with the same wrong value are one entry
+
+- **WHEN** two sub-agents carry `phase=spec` with valid roles
+- **THEN** `unattributed.invalidMarkers` holds one entry for `phase` / `spec` with `agents: 2`
+
+#### Scenario: A rejected role names the job-role list
+
+- **WHEN** a stored marker carries `role=architect phase=plan`
+- **THEN** the entry's field is `role`, its value is `architect`, and its accepted set equals `KNOWN_JOB_ROLES`
+
+#### Scenario: No alias is accepted
+
+- **WHEN** a stored marker carries `phase=spec`
+- **THEN** its rows stay unattributed with reason `invalid-marker`
+- **AND** no row is attributed with `phase=plan`
+
+#### Scenario: A clean ledger prints no invalid-marker list
+
+- **WHEN** no row is unattributed with reason `invalid-marker`
+- **THEN** the text report prints no `invalid pm-spend marker` line
+- **AND** `unattributed.invalidMarkers` is an empty array
+
+#### Scenario: A marker value is printed inert
+
+- **WHEN** a stored marker's phase value holds a control character
+- **THEN** the printed line carries it escaped, never raw
+
+### Requirement: Every totals object carries a work total
+
+Every totals object `spend` reports SHALL carry `work`, defined as `input + cacheCreation + output`:
+every token class except `cacheRead`. It is the one definition of "work tokens"; every consumer SHALL
+read it from the totals object rather than summing the classes itself.
+
+#### Scenario: The work total excludes cache-read
+
+- **WHEN** an epic's rows sum to input 10, cacheCreation 5,366, cacheRead 1,123,665 and output 2,111
+- **THEN** its totals object holds `work: 7487` and `total: 1131152`
+
+#### Scenario: Every totals object has it
+
+- **WHEN** `spend --json` runs
+- **THEN** `epics.<id>.totals`, each `agents.<agentId>.totals` and `unattributed.totals` all hold `work`
+- **AND** every bucket of `byActor`, `byRole`, `byPhase`, `byTier` and `byRound` holds `work`
+
+#### Scenario: The text report prints it
+
+- **WHEN** `spend` prints an epic's totals line
+- **THEN** the line names the work total beside the four token classes

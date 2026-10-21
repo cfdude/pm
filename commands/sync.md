@@ -72,7 +72,7 @@ An epic id is pasted into every command the engine prints and into PROJECT.md's 
 `sync` registers an entry only under an id `add-epic` itself would accept: `^[a-z0-9][a-z0-9._-]*$`
 (lowercase letters, digits, `.`, `_`, `-`). Every registration path — change directories, plan
 files, the archive backfill — asks the same validator `add-epic` and `add-many` do. A change
-directory under `openspec/changes/`, a plan file, or an archive directory whose name fails it
+directory under the change root (`changeRoot` from `openspec status --change <id> --json`; by default `openspec/changes/`), a plan file, or an archive directory whose name fails it
 (`x|y`, `.hidden`, `My Plan.md`, `MASTER-plan.md`, a name holding a newline) is **not registered**:
 `sync` registers everything else in the same run and prints one stderr line naming the entry, with
 its control characters escaped:
@@ -97,9 +97,9 @@ registration is refused. An archive directory is additionally reported by `integ
 `archive-directory-has-no-epic`, whose detail says it must be renamed rather than that `/pm:sync`
 registers it.
 
-## The archive backfill — `openspec/changes/archive/`
+## The archive backfill — the archived changes directory
 
-`sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for
+`sync` also walks the archived changes directory (where `/opsx:archive` moves a change; by default `openspec/changes/archive/`). An archived change the conductor holds no epic for
 is registered as an epic **already in `archived` status**, so the record covers what a repository
 actually shipped rather than only what it happened to register while the work was in flight. The
 audit that motivated this release measured the gap: the conductor saw **49 of 87** archived
@@ -116,7 +116,7 @@ checks exclude it for the same reason.
 
 ## An archive older than the epic is not its archive
 
-The drift heal archives an epic whose change sits under `openspec/changes/archive/` — but a
+The drift heal archives an epic whose change sits in its archived directory (where `/opsx:archive` moved it) — but a
 **name is not an identity**. An archive directory dated (`YYYY-MM-DD-<id>`) more than a day before
 a LIVE epic's `createdAt` is some older, unrelated change that happens to share the name, so it
 **neither ends the epic nor clears its active pointer**, and `set-active` still accepts the epic.

@@ -1,0 +1,97 @@
+conductor: engine 0.52.0 @ /Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts
+spend-analysis — the whole ledger · tracking on since 2026-10-09T22:28:28.347Z
+ingest: --no-ingest: reporting from the existing ledger
+
+breakdown (ranked by work; total printed beside it): 1,030 messages
+  input 2,172 · cache-write 8,624,833 · cache-read 201,512,457 · output 793,242 · work 9,420,247 · total 210,932,704
+  by actor:
+    subagent: input 1,852 · cache-write 8,052,903 · cache-read 178,130,050 · output 741,326 · work 8,796,081 · total 186,926,131 · 910 messages
+    orchestrator: input 320 · cache-write 571,930 · cache-read 23,382,407 · output 51,916 · work 624,166 · total 24,006,573 · 120 messages
+  by tier:
+    sonnet: input 1,542 · cache-write 6,139,267 · cache-read 155,826,128 · output 476,127 · work 6,616,936 · total 162,443,064 · 724 messages
+    opus: input 630 · cache-write 2,485,566 · cache-read 45,686,329 · output 317,115 · work 2,803,311 · total 48,489,640 · 306 messages
+  by role:
+    implement: input 1,192 · cache-write 5,485,453 · cache-read 129,688,503 · output 414,349 · work 5,900,994 · total 135,589,497 · 589 messages
+    plan: input 368 · cache-write 1,173,742 · cache-read 28,831,509 · output 226,332 · work 1,400,442 · total 30,231,951 · 177 messages
+    review: input 222 · cache-write 962,034 · cache-read 16,288,974 · output 85,536 · work 1,047,792 · total 17,336,766 · 109 messages
+    none: input 320 · cache-write 571,930 · cache-read 23,382,407 · output 51,916 · work 624,166 · total 24,006,573 · 120 messages
+    mechanical: input 70 · cache-write 431,674 · cache-read 3,321,064 · output 15,109 · work 446,853 · total 3,767,917 · 35 messages
+  by phase:
+    build: input 984 · cache-write 4,147,404 · cache-read 115,147,572 · output 357,654 · work 4,506,042 · total 119,653,614 · 486 messages
+    plan: input 400 · cache-write 1,383,296 · cache-read 30,353,976 · output 233,903 · work 1,617,599 · total 31,971,575 · 193 messages
+    release: input 176 · cache-write 1,222,890 · cache-read 11,343,812 · output 46,883 · work 1,269,949 · total 12,613,761 · 88 messages
+    review: input 222 · cache-write 962,034 · cache-read 16,288,974 · output 85,536 · work 1,047,792 · total 17,336,766 · 109 messages
+    none: input 320 · cache-write 571,930 · cache-read 23,382,407 · output 51,916 · work 624,166 · total 24,006,573 · 120 messages
+    docs: input 70 · cache-write 337,279 · cache-read 4,995,716 · output 17,350 · work 354,699 · total 5,350,415 · 34 messages
+
+sub-agents (ranked by work):
+  agent ad8f953038e6443aa (epic spend-budget-and-stuck-loop-guard role=implement phase=build round=1 tier=sonnet): work 1,350,569 · total 60,496,699 · 156 messages · context per message 386,619 · cache-read 59,146,130
+  agent a589ccaaf3ce60732 (epic execution-profile-planning-and-light-roles role=implement phase=build round=1 tier=sonnet): work 1,020,418 · total 13,535,573 · 80 messages · context per message 168,673 · cache-read 12,515,155
+  agent adcae62bd862683d7 (epic gh-cfdude-pm-204 role=implement phase=build round=1 tier=sonnet): work 963,639 · total 28,363,596 · 125 messages · context per message 226,340 · cache-read 27,399,957
+  agent a5bdfe29b574813ae (epic pm-overhead-baseline role=plan phase=plan round=1 tier=opus): work 770,465 · total 16,887,292 · 95 messages · context per message 176,318 · cache-read 16,116,827
+  agent a1f90315061cfc8c8 (epic flake-owner-certify-index-sigterm role=implement phase=build round=1 tier=sonnet): work 666,353 · total 9,817,624 · 64 messages · context per message 152,942 · cache-read 9,151,271
+  agent a00a8b4992ebc7b97 (epic release-0-52-0-cut role=implement phase=release round=1 tier=sonnet): work 550,670 · total 7,043,144 · 44 messages · context per message 159,500 · cache-read 6,492,474
+  agent a3105521c5e514a04 (epic release-0-52-0-cut role=implement phase=release round=1 tier=sonnet): work 489,583 · total 3,542,324 · 25 messages · context per message 141,125 · cache-read 3,052,741
+  agent ac7d4005f7eaa8ddd (epic release-0-52-0-cut role=implement phase=docs round=1 tier=sonnet): work 354,699 · total 5,350,415 · 34 messages · context per message 156,855 · cache-read 4,995,716
+  agent a23e100f78f5038ee (epic token-spend-analysis-and-recommendations role=review phase=review round=1 tier=opus): work 249,991 · total 3,865,633 · 22 messages · context per message 174,267 · cache-read 3,615,642
+  agent ad1a6af7ab1f2360e (epic token-spend-analysis-and-recommendations role=plan phase=plan round=1 tier=opus): work 231,480 · total 4,297,088 · 25 messages · context per message 170,627 · cache-read 4,065,608
+  agent afde9a061eabefb42 (epic retire-single-file-certification-record role=implement phase=build round=1 tier=sonnet): work 225,362 · total 1,934,190 · 16 messages · context per message 120,463 · cache-read 1,708,828
+  agent ab7643b073e181cae (epic token-spend-tracking-per-epic role=review phase=review round=1 tier=opus): work 222,230 · total 6,967,933 · 40 messages · context per message 173,690 · cache-read 6,745,703
+  agent adf4f1b27038e5d76 (epic backlog-grooming-pass role=plan phase=plan round=1 tier=opus): work 216,890 · total 5,438,450 · 34 messages · context per message 159,045 · cache-read 5,221,560
+  agent a557b1a86d0547f43 (epic spend-budget-and-stuck-loop-guard role=review phase=review round=1 tier=opus): work 198,027 · total 2,831,612 · 18 messages · context per message 156,464 · cache-read 2,633,585
+  agent aebe84a54bd25b990 (epic spend-budget-and-stuck-loop-guard role=plan phase=plan round=1 tier=opus): work 181,607 · total 3,609,121 · 23 messages · context per message 155,748 · cache-read 3,427,514
+  agent a4bb2c32ab79bfea7 (epic execution-profile-planning-and-light-roles role=implement phase=build round=1 tier=sonnet): work 170,757 · total 3,986,703 · 32 messages · context per message 123,953 · cache-read 3,815,946
+  agent af1894055fdcbb685 (epic execution-profile-planning-and-light-roles role=review phase=review round=1 tier=opus): work 147,587 · total 1,884,379 · 15 messages · context per message 125,094 · cache-read 1,736,792
+  agent a0566769406625b54 (epic spend-budget-and-stuck-loop-guard role=review phase=review round=1 tier=opus): work 125,544 · total 1,348,138 · 10 messages · context per message 134,062 · cache-read 1,222,594
+  agent ab082d0cb0af13635 (epic store-owns-claude-md-managed-block role=mechanical phase=plan round=1 tier=sonnet): work 122,135 · total 1,104,948 · 10 messages · context per message 110,057 · cache-read 982,813
+  agent a2953781309f0a5b4 (epic release-0-52-0-cut role=mechanical phase=release round=1 tier=sonnet): work 120,964 · total 1,197,813 · 11 messages · context per message 108,395 · cache-read 1,076,849
+  agent a66a0d2cf0390cb8e (epic release-0-52-0-cut role=implement phase=build round=1 tier=sonnet): work 108,944 · total 1,519,229 · 13 messages · context per message 116,527 · cache-read 1,410,285
+  agent a34afa418be7b2699 (epic release-0-52-0-cut role=mechanical phase=release round=1 tier=sonnet): work 108,732 · total 830,480 · 8 messages · context per message 103,552 · cache-read 721,748
+  agent a8108210c82c14f18 (epic spend-budget-and-stuck-loop-guard role=review phase=review round=1 tier=opus): work 104,413 · total 439,071 · 4 messages · context per message 109,088 · cache-read 334,658
+  agent a9808399c809462e5 (epic gh-114-lane-routing-blind-to-product role=mechanical phase=plan round=1 tier=sonnet): work 95,022 · total 634,676 · 6 messages · context per message 105,248 · cache-read 539,654
+
+unattributed: 68,325,538 tokens in 344 messages  (tracking-off 0 · unmarked-subagent 0 · invalid-marker 24,509,352 · unknown-epic 0 · no-active-epic 43,816,186 · before-timeline 0)
+coverage: 75.5% of 279,258,242 tokens attributed to an epic (ledger-wide)
+
+tools (messages that called each tool):
+  Bash 1,020 · Write 79 · Read 78 · Edit 60 · StructuredOutput 31 · Agent 24 · SendMessage 18 · Monitor 16 · Skill 12 · ToolSearch 6 · ListAgents 5 · mcp__Mintlify__search 2 · mcp__mcp-datetimeday__get_datetime 2 · Grep 1 · mcp__Mintlify__checkout 1 · mcp__Mintlify__discard_session 1 · mcp__Mintlify__list_nodes 1 · mcp__Mintlify__read 1
+  orchestrator: Bash 143 · Agent 20 · SendMessage 18 · StructuredOutput 15 · Skill 10 · Read 8 · ListAgents 5 · Monitor 3 · ToolSearch 3 · Edit 2 · Write 2 · mcp__mcp-datetimeday__get_datetime 1
+  subagent: Bash 877 · Write 77 · Read 70 · Edit 58 · StructuredOutput 16 · Monitor 13 · Agent 4 · ToolSearch 3 · Skill 2 · mcp__Mintlify__search 2 · Grep 1 · mcp__Mintlify__checkout 1 · mcp__Mintlify__discard_session 1 · mcp__Mintlify__list_nodes 1 · mcp__Mintlify__read 1 · mcp__mcp-datetimeday__get_datetime 1
+  counts are messages that called each tool (a ledger row stores a message's tool names once); tokens are not apportioned to tools, because a message's usage is one number for everything in it
+
+outliers:
+  FLAG long-context-agent — agent ad8f953038e6443aa: 156 messages (threshold 100), mean context 386,619 per message (threshold 200,000); work 1,350,569, total 60,496,699
+    recommendation: agent ad8f953038e6443aa carried about 386,619 tokens of context on each of 156 messages: split the batch or hand off to a fresh context before the context passes 200,000 per message.
+  FLAG long-context-agent — agent adcae62bd862683d7: 125 messages (threshold 100), mean context 226,340 per message (threshold 200,000); work 963,639, total 28,363,596
+    recommendation: agent adcae62bd862683d7 carried about 226,340 tokens of context on each of 125 messages: split the batch or hand off to a fresh context before the context passes 200,000 per message.
+  FLAG dominant-agent — agent a23e100f78f5038ee: 51.9% of epic token-spend-analysis-and-recommendations's work (249,991 of 481,471) across 2 agents (threshold 50.0% on at least 2)
+    recommendation: agent a23e100f78f5038ee did 51.9% of epic token-spend-analysis-and-recommendations's work: the plan left one executor too much to decide, so sharpen the plan or split the epic into stories dispatched separately.
+  FLAG dominant-agent — agent a589ccaaf3ce60732: 76.2% of epic execution-profile-planning-and-light-roles's work (1,020,418 of 1,338,762) across 3 agents (threshold 50.0% on at least 2)
+    recommendation: agent a589ccaaf3ce60732 did 76.2% of epic execution-profile-planning-and-light-roles's work: the plan left one executor too much to decide, so sharpen the plan or split the epic into stories dispatched separately.
+  FLAG dominant-agent — agent ad8f953038e6443aa: 68.9% of epic spend-budget-and-stuck-loop-guard's work (1,350,569 of 1,960,160) across 5 agents (threshold 50.0% on at least 2)
+    recommendation: agent ad8f953038e6443aa did 68.9% of epic spend-budget-and-stuck-loop-guard's work: the plan left one executor too much to decide, so sharpen the plan or split the epic into stories dispatched separately.
+  FLAG low-coverage — ledger: 75.5% of 279,258,242 tokens attributed to an epic (threshold 90.0%); the unattributed reasons are printed above
+    recommendation: Only 75.5% of the ledger is attributed: begin each sub-agent dispatch prompt with the pm-spend marker line and keep an epic active (set-active) so orchestrator turns are credited.
+  FLAG invalid-markers — ledger: 24,509,352 tokens in 155 messages under markers the ledger refused (phase "spec", phase "gate-1")
+    recommendation: 24,509,352 tokens sit under phase or role names outside the accepted lists: fix the names in the dispatch prompts (each invalid pm-spend marker line `spend` prints names the value and the accepted set).
+  (thresholds are proposals, not measurements)
+
+trend (mean work per epic, newest release first):
+  0.54.0: 1 epics, mean work 216,890
+  0.53.0: 5 epics, mean work 624,498
+  0.52.0: 4 epics, mean work 1,465,928
+  falling: 0.53.0 against 0.52.0 (band 20.0%, a proposal)
+
+cost: not computed — tokens are the measure. Claude Code's own cost figures are notional under subscription auth.
+
+----
+NOTES (3.1, recorded 2026-10-20 against the ledger as it stood, --no-ingest, nothing ingested)
+- long-context-agent: ad8f953038e6443aa (60,496,699 total, 156 messages) is flagged. Its per-message context is 386,619
+  (input + cache-write + cache-read); assessment section 6's "about 379K" is its cache-read alone (59,146,130 / 156 = 379,141).
+  The two figures agree: the rule's measure deliberately adds cache-write.
+- invalid-markers: raised, 24,509,352 tokens (assessment: 24.5M), phases "spec" and "gate-1".
+- DISAGREEMENT with the task text: the trend reads `falling`, not `insufficient data`. Cause: the ledger has grown since
+  assessment section 6 (4 epics, 1 release). It now holds 0.52.0 (4 epics with attributed rows) and 0.53.0 (5 epics, an
+  in-flight build). Both meet the floor, so the verdict compares a finished release with an unfinished one. The rule is
+  implemented as D5 specifies; the in-flight release problem is a concern for Rob's call (D5 thresholds), not patched here.
+- dominant-agent also fires on a 2-agent epic whose second agent is a reviewer (51.9%): at n this small the 50% proposal is noisy.

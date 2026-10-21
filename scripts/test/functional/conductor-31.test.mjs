@@ -30,6 +30,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "../fixtures/functional-harness.mjs";
 import { engineCode } from "../fixtures/source-code.mjs";
+import { dispatchedVerbsOf } from "../fixtures/engine-extraction.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -45,23 +46,8 @@ const stateOf = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.jso
  *  dispatch table's shape fails loudly in both places rather than silently in neither. */
 function dispatchedVerbs() {
   const src = fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
-  const start = src.indexOf("// ---------- dispatch ----------");
-  assert.notEqual(start, -1, "conductor.mjs must still carry its dispatch marker comment");
-  const body = src.slice(src.indexOf("({", src.indexOf("try {", start)));
-  const end = body.indexOf("}[cmd]");
-  assert.notEqual(end, -1, "the dispatch object must still be indexed as `}[cmd]`");
-  const table = body.slice(0, end);
-  const verbs = new Set();
-  // THE INDENT IS PART OF THE SHAPE, and 0.47.0 (task 2.3) moved the dispatch table two spaces to
-  // the right by wrapping conductor.mjs's module body in `main(argv, io)`. A reader pinned to
-  // EXACTLY two spaces found nothing, and the guard that exists to catch a missing VERB_EFFECTS
-  // row went green against an EMPTY set — caught by its own "the reader is broken, not the table"
-  // assertion, which is why that assertion exists. The band `2,4` accepts either shape and refuses
-  // anything deeper, so a table nested one level further down still fails rather than silently
-  // matching a handler's own line.
-  for (const m of table.matchAll(/^ {2,4}(?:"([a-z-]+)"|([a-z-]+))\s*:/gm)) verbs.add(m[1] || m[2]);
-  for (const m of table.matchAll(/^ {2,4}([a-z-]+),\s*$/gm)) verbs.add(m[1]);
-  return verbs;
+  // ONE READER, REFUSING AN EMPTY SET (engine-source-extraction-vacuity): fixtures/engine-extraction.mjs.
+  return dispatchedVerbsOf(src);
 }
 
 // ═══════════════ #152: the flag-value rule, bound to the dispatch table ═══════════════
@@ -92,7 +78,18 @@ const VERB_BASELINE = {
   "set-spend-guard": () => ["set-spend-guard", "--max-failed-rounds", "2"],
   "spend-guard": () => ["spend-guard", "e1"],
   "override-spend-guard": () => ["override-spend-guard", "e1", "--signal", "rounds", "--escalated-to", "user", "--reason", "x"],
+  // decision-cost-log: recording is refused while spend tracking is off, so BASELINE_PRE below turns it on first.
+  // `decisions` with tracking off reads state only, so its bare baseline succeeds.
+  decisions: () => ["decisions", "e1"],
+  "record-decision": () => ["record-decision", "e1", "--what", "x", "--why", "y", "--since", "2026-10-10T00:00:00Z"],
   owners: () => ["owners"],
+  // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
+  list: () => ["list"],
+  overhead: () => ["overhead"],
+  // developer-session-log: with the log off `dev-log` reads nothing, so the valueless sweep reaches its flags cheaply.
+  "dev-log": () => ["dev-log"],
+  "spend-analysis": () => ["spend-analysis"],
+  "log-detour": () => ["log-detour", "a baseline fix"],
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
   "plan-hierarchy": () => ["plan-hierarchy", "--parent", "e1"],
@@ -264,6 +261,7 @@ const BASELINE_PRE = {
   "record-reconcile": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"], ["pop-detour", "e1"]],
   "drop-detour": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"]],
   "override-spend-guard": [["set-spend-guard", "--max-failed-rounds", "1"], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"]],
+  "record-decision": [["set-spend-tracking", "on"]],
 };
 
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {
@@ -341,10 +339,14 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // widening it is a line in a diff somebody has to justify.
     // token-spend-tracking-per-epic: `spend` shares --json/--yes and adds four booleans — `--clear` and
     // `--rebuild` (the ledger's two inverses), `--timeline` (qualifies --clear) and `--no-ingest`.
+    // pm-overhead-baseline: `overhead --all-features` computes the report over the every-opt-in-on hypothetical in
+    // memory; a genuine boolean (a mode), like --json.
+    "overhead --all-features",
     "override-spend-guard --revoke",
-    "owners/activity/spend/spend-guard --json",
+    // gh-204: `list` shares --json (the same genuine boolean: a rendering).
+    "owners/activity/spend/spend-guard/list/overhead/dev-log/spend-analysis/decisions --json",
     "purge-logs --dry-run",
-    "purge-logs/spend --yes",
+    "purge-logs/spend/dev-log --yes",
     "push-detour --no-reconcile",
     "push-detour --reconcile",
     "remove-epic --cascade",
@@ -352,10 +354,10 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     "rules --sections",
     "set-lane-routing --clear",
     "set-tracker --remove",
-    "spend --clear",
     "spend --rebuild",
     "spend --timeline",
-    "spend/spend-guard --no-ingest",
+    "spend/dev-log --clear",
+    "spend/spend-guard/dev-log/spend-analysis/decisions --no-ingest",
     "sync --dry-run",
     "verify-specs --headers",
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");

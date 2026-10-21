@@ -10,7 +10,7 @@ conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --escalated-t
 conductor.mjs override-spend-guard <epicId> --signal rounds|tokens --revoke --reason "<why>"
 ```
 
-An override appends `{signal, baseline, escalatedTo, reason, at}` to `epic.spendGuardOverrides`. The
+An override appends `{signal, baseline, escalatedTo, reason, at}` (a `tokens` entry also records `basis`, the unit its baseline was counted in; an entry without one reads as `total`) to `epic.spendGuardOverrides`. The
 `baseline` is the signal's count at that moment, so the guard trips again after `limit` more rounds, or
 after another ceiling's worth of tokens.
 

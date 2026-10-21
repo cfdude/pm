@@ -13,9 +13,10 @@
         "commands/status.md",
         "commands/next.md",
         "commands/sync.md",
-        "commands/triage.md"
+        "commands/triage.md",
+        "commands/list.md"
       ],
-      "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync, /pm:triage)" }
+      "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync, /pm:triage, /pm:list)" }
     },
     {
       "id": "disposition-audit",
@@ -119,6 +120,26 @@
       "id": "spend-guard",
       "artifacts": ["commands/spend-guard.md", "commands/set-spend-guard.md", "commands/override-spend-guard.md"],
       "platforms": { "claude-code": "slash commands wrapping spend-guard / set-spend-guard / override-spend-guard — an opt-in stuck-loop and token-ceiling guard: a gate-round counter, a check verb that exits 2 with a STOP naming the escalation target, and a recorded, revocable override" }
+    },
+    {
+      "id": "spend-analysis",
+      "artifacts": ["commands/spend-analysis.md"],
+      "platforms": { "claude-code": "slash command wrapping the read-only spend-analysis verb - the spend ledger as a postmortem: token classes kept apart, sub-agents ranked by work, tool-call counts, rule-based outlier flags with one recommendation each, and a cross-release trend with a data floor" }
+    },
+    {
+      "id": "decision-cost-log",
+      "artifacts": ["commands/record-decision.md", "commands/decisions.md"],
+      "platforms": { "claude-code": "slash commands wrapping record-decision / decisions - a numbered decision on an epic (what, why, alternatives, phase, the window of work that reached it), withdrawn never deleted, with its cost computed from the spend ledger when read and never stored" }
+    },
+    {
+      "id": "session-overhead",
+      "artifacts": ["commands/overhead.md"],
+      "platforms": { "claude-code": "slash command wrapping the read-only overhead verb — what pm injects into a session, by surface and by feature, each figure labelled bytes/4 (an estimate), with an in-memory every-opt-in-on case" }
+    },
+    {
+      "id": "developer-session-log",
+      "artifacts": ["commands/set-dev-log.md", "commands/dev-log.md"],
+      "platforms": { "claude-code": "slash commands wrapping set-dev-log / dev-log — an opt-in, developer-only, per-session log of which pm features were on and the composition of each request and response, captured by the spend ledger's own ingest" }
     },
     {
       "id": "session-lifecycle-hooks",

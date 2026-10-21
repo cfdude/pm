@@ -163,6 +163,114 @@ x("activity-log.mjs", "setActivityLog", {
 x("spend-tracking.mjs", "setSpendTracking", {
   "arg": 4,
 }, "engine", "arg is validated on|off before these lines (token-spend-tracking-per-epic; the same shape as setActivityLog above); the main tree's path in the refusals is escaped");
+// ── developer-session-log
+x("dev-log.mjs", "setDevLog", {
+  "arg": 4,
+}, "engine", "arg is validated on|off before these lines (the same shape as setSpendTracking above); the main tree's path in the refusals is escaped");
+x("dev-log-capture.mjs", "keyOf", {
+  "e.messageId": 1,
+  "e.sessionId": 1,
+  "e.at": 1,
+}, "not-output", "an in-memory de-duplication key built from a stored entry's identifiers; it is compared and never printed");
+x("dev-log-capture.mjs", "appendDevLog", {
+  "fresh.map((e) => JSON.stringify(e)).join(\"\\n\")": 1,
+}, "not-output", "devlog.jsonl's file BODY, one JSON object per line built from the stored-entry allowlist");
+j("dev-log-report.mjs", "featuresLine", ALL, "sink-flow", "called only inside renderDevLog's L.push(...), which returns L.map(escapeControls)");
+x("dev-log-report.mjs", "buildSessions", {
+  "notInLedger": 1,
+}, "engine", "a count of messages (a number the engine computed) inside a fixed phrase");
+x("dev-log-report.mjs", "renderDevLog", {
+  "k": 1,
+}, "sink-flow", "a tool name from the log, interpolated into the `tools` string that is pushed onto L and returned through L.map(escapeControls)");
+x("dev-log-report.mjs", "renderDevLog", {
+  "n(v)": 1,
+}, "engine", "a byte count formatted with toLocaleString");
+x("dev-log-report.mjs", "devLogVerb", {
+  "ingestInfo.reason": 1,
+  "log.corrupt": 1,
+  "[...lines, ...extra.map(escapeControls)].join(\"\\n\")": 1,
+}, "escaped", "renderDevLog() returns lines already through L.map(escapeControls), the extra lines are mapped through escapeControls here, and ingestInfo.reason is one of ingestForReport's fixed phrases");
+x("dev-log-report.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any stored or typed value where it is built");
+x("dev-log-report.mjs", "devLogVerb", {
+  "reportFlags.join(\", --\")": 1,
+  "flag": 1,
+  "r.reason": 1,
+}, "engine", "registry flag names and the engine's own reason word (absent|unreadable); the typed value in the refusal beside `flag` is escaped");
+x("dev-log-report.mjs", "devLogVerb", {
+  "jsonText(report, null, 2)": 2,
+}, "json", "--json: the whole stdout is one JSON document");
+j("spend-analysis.mjs", "RULES", ALL, "sink-flow", "every rule's describe/evidence/recommend text is consumed only by renderAnalysis(), whose L is returned through L.map(escapeControls), and by --json, which is one JSON document; agent ids and marker values are stored text and reach no other sink; the one epic id in a printed command goes through orNoRemedy(printedId())");
+x("spend-analysis.mjs", "pct", {
+  "(x * 100).toFixed(1)": 1,
+}, "engine", "a share the engine computed, formatted with toFixed");
+x("spend-analysis.mjs", "buildTrend", {
+  "releases.reduce((s, r) => s + r.epics, 0)": 1,
+}, "engine", "a count of epics the engine computed, inside the fixed `insufficient data` phrase");
+x("decision-log.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");
+x("decision-log.mjs", "recordDecision", {
+  "flag": 3,
+  "[...text].length.toLocaleString(\"en-US\")": 1,
+  "DECISION_TEXT_MAX.toLocaleString(\"en-US\")": 1,
+  "main.reason": 1,
+  "n": 1,
+}, "engine", "registry flag names (what|why|alternative|reason|since|until), a character or decision count formatted with toLocaleString, the engine's reason word (absent|unreadable) and the decision number the engine assigned");
+x("decision-log.mjs", "recordDecision", {
+  "notes": 1,
+}, "escaped", "the `update-epic <id> --notes` command built by orNoRemedy(printedId()), which shell-quotes the id or prints the no-remedy message");
+x("decision-log.mjs", "withdraw", {
+  "stray.join(\", --\")": 1,
+  "n": 3,
+}, "engine", "registry flag names of the refused decision fields, and a decision number validated as a positive whole number");
+x("decision-log.mjs", "renderDecisionLines", {
+  "(d.cost.coverage * 100).toFixed(1)": 1,
+}, "engine", "a share the engine computed, formatted with toFixed");
+x("decision-log.mjs", "decisionsVerb", {
+  "main.reason": 1,
+}, "engine", "the engine's own reason word (absent|unreadable)");
+x("decision-log.mjs", "decisionsVerb", {
+  "jsonText({ epic: epicId, tracking: { enabled }, decisions: entries, note: NOT_CAUSAL }, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
+x("decision-log.mjs", "decisionsVerb", {
+  "epicId": 1,
+}, "sink-flow", "an epic id the record holds, pushed onto L and written through L.map(escapeControls)");
+x("spend-analysis.mjs", "renderAnalysis", {
+  "l": 1,
+}, "escaped", "a line renderDecisionLines() already returned through escapeControls, indented");
+x("spend-analysis.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "each call site's message, which escapes any typed or stored value where it is built");
+x("spend-analysis.mjs", "classes", {
+  "n(t.input)": 1,
+  "n(t.cacheCreation)": 1,
+  "n(t.cacheRead)": 1,
+  "n(t.output)": 1,
+  "n(t.work)": 1,
+  "n(t.total)": 1,
+}, "engine", "token counts formatted with toLocaleString");
+x("spend-analysis.mjs", "renderAnalysis", {
+  "s.epic": 1,
+  "s.release": 1,
+}, "sink-flow", "the scope's epic or release id, pushed onto L and returned through L.map(escapeControls)");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "r.reason": 1,
+  "ingestInfo.rowsAdded": 1,
+  "ledger.corrupt": 1,
+}, "engine", "the engine's own reason word (absent|unreadable) and counts");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "ingestInfo.ran ? `+${ingestInfo.rowsAdded} message(s)` : ingestInfo.reason": 1,
+}, "sink-flow", "an `extra` line handed to renderAnalysis, which returns every line through L.map(escapeControls); ingestInfo.reason is one of ingestForReport's fixed phrases");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "jsonText(empty, null, 2)": 1,
+  "jsonText(out, null, 2)": 1,
+}, "json", "--json: the whole stdout is one JSON document");
+x("spend-analysis.mjs", "spendAnalysis", {
+  "renderAnalysis(empty).join(\"\\n\")": 1,
+  "renderAnalysis(out, { extra }).join(\"\\n\")": 1,
+}, "escaped", "renderAnalysis() returns its lines already through L.map(escapeControls)");
 x("spend-tracking.mjs", "TIMELINE", {
   "ARTIFACT.SPEND_PREFIX": 1,
 }, "engine", "a LOGICAL artifact-name prefix handed to the store, never a path");
@@ -316,7 +424,7 @@ x("argv-surface.mjs", "surplusMessage", {
   "prev.name": 2,
 }, "engine", "verb, registry arity form, and a declared flag's name (undeclared flags are refused first)");
 x("argv-surface.mjs", "undeclaredFlagMessage", {
-  "verb": 4,
+  "verb": 6,
   "f": 1,
   "pos.form": 1,
   "msg": 1,
@@ -436,6 +544,35 @@ x("gate-guard.mjs", "trackerBlockMessage", {
 x("git.mjs", "appendRetraction", {
   "line": 1,
 }, "not-output", "the detour log's file BODY; the line itself is built by the statement above and its values are escaped there");
+x("git.mjs", "appendMinimalRetraction", {
+  "line": 1,
+}, "not-output", "the detour log's file BODY, same shape as appendRetraction's; the target's timestamp is a log-written ISO string");
+j("overhead.mjs", "overheadText", ALL, "sink-flow", "every line is pushed onto L and the text is returned through L.map(escapeControls)");
+x("overhead.mjs", "tok", {
+  "estimateTokens(bytes)": 1,
+}, "engine", "a number computed from a byte count; no workspace text");
+x("overhead.mjs", "readListings", {
+  "f": 2,
+  "d": 1,
+}, "not-output", "builds paths from directory entries of the plugin's own commands/, skills/ and agents/ to read them; the result reaches output only as a listing id inside overheadText's escaped lines or jsonText");
+x("overhead.mjs", "collectSurfaces", {
+  "slug(sec.heading)": 1,
+  "base": 1,
+  "n": 1,
+  "l.file": 1,
+  "l.name": 1,
+  "l.description": 1,
+  "plain": 1,
+}, "sink-flow", "surface ids and sizes: they reach output only through overheadText's L.map(escapeControls) join or jsonText(); `plain` is concatenated to measure its byte length and never printed");
+x("overhead.mjs", "overhead", {
+  "jsonText(report, null, 2)": 1,
+}, "json", "one JSON document through jsonText()");
+x("list.mjs", "list", {
+  "jsonText({ count: rows.length, epics: rows }, null, 2)": 1,
+}, "json", "one JSON document through jsonText()");
+x("subcommands.mjs", "retractDetour", {
+  "wanted": 2,
+}, "escaped", "wanted = escapeControls(the --minimal description), computed where it is declared and printed twice");
 x("git.mjs", "appendDetourLog", {
   "line": 1,
 }, "not-output", "the detour log's file BODY, same shape as appendRetraction's");

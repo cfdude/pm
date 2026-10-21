@@ -12,6 +12,7 @@ import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "../fixtures/functional-harness.mjs";
 import { engineCode } from "../fixtures/source-code.mjs";
+import { dispatchedVerbsOf } from "../fixtures/engine-extraction.mjs";
 
 const CONSTANTS = new URL("../../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -65,23 +66,8 @@ const hookVerbsInConfig = () => new Set(hookCommandLines().map(l => {
  *  hoisting it would edit a file every test module imports. */
 function dispatchedVerbs() {
   const src = fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
-  const start = src.indexOf("// ---------- dispatch ----------");
-  assert.notEqual(start, -1, "conductor.mjs must still carry its dispatch marker comment");
-  const body = src.slice(src.indexOf("({", src.indexOf("try {", start)));
-  const end = body.indexOf("}[cmd]");
-  assert.notEqual(end, -1, "the dispatch object must still be indexed as `}[cmd]`");
-  const table = body.slice(0, end);
-  const verbs = new Set();
-  // THE INDENT IS PART OF THE SHAPE, and 0.47.0 (task 2.3) moved the dispatch table two spaces to
-  // the right by wrapping conductor.mjs's module body in `main(argv, io)`. A reader pinned to
-  // EXACTLY two spaces found nothing, and the guard that exists to catch a missing VERB_EFFECTS
-  // row went green against an EMPTY set — caught by its own "the reader is broken, not the table"
-  // assertion, which is why that assertion exists. The band `2,4` accepts either shape and refuses
-  // anything deeper, so a table nested one level further down still fails rather than silently
-  // matching a handler's own line.
-  for (const m of table.matchAll(/^ {2,4}(?:"([a-z-]+)"|([a-z-]+))\s*:/gm)) verbs.add(m[1] || m[2]);
-  for (const m of table.matchAll(/^ {2,4}([a-z-]+),\s*$/gm)) verbs.add(m[1]);
-  return verbs;
+  // ONE READER, REFUSING AN EMPTY SET (engine-source-extraction-vacuity): fixtures/engine-extraction.mjs.
+  return dispatchedVerbsOf(src);
 }
 
 // ═══════════════ 1.1 — positional arity is declared for every dispatched verb ═══════════════
@@ -453,6 +439,15 @@ const DISPATCH_BASELINE = {
   spend: { args: ["spend"] },
   "set-activity-log": { args: ["set-activity-log", "on"] },
   "set-spend-tracking": { args: ["set-spend-tracking", "on"] },
+  // developer-session-log: the log is refused while spend tracking is off, so it seeds the prerequisite.
+  // developer-session-log: reports from the ledger; with the log off it prints which switch is off and reads nothing.
+  "dev-log": { args: ["dev-log"] },
+  // token-spend-analysis-and-recommendations: with tracking off it prints that and reads nothing.
+  "spend-analysis": { args: ["spend-analysis"] },
+  "set-dev-log": { pre: [["set-spend-tracking", "on"]], args: ["set-dev-log", "on"] },
+  // decision-cost-log: recording is refused while spend tracking is off, so it seeds the prerequisite.
+  decisions: { args: ["decisions", "e1"] },
+  "record-decision": { pre: [["set-spend-tracking", "on"]], args: ["record-decision", "e1", "--what", "x", "--why", "y", "--since", "2026-10-10T00:00:00Z"] },
   // spend-budget-and-stuck-loop-guard. `override-spend-guard` is accepted only while a signal is tripped, so it
   // seeds one: a round limit of 1, then one recorded failed verdict.
   "set-spend-guard": { args: ["set-spend-guard", "--max-failed-rounds", "2"] },
@@ -472,6 +467,8 @@ const DISPATCH_BASELINE = {
   changesets: { args: ["changesets"] },
   "recover-created-at": { args: ["recover-created-at"] },
   "unconsidered-outcomes": { args: ["unconsidered-outcomes"] },
+  list: { args: ["list"] },
+  overhead: { args: ["overhead"] },
   upgrade: { args: ["upgrade"] },
   changelog: { args: ["changelog", "--since", "0.0.1"] },
   rules: { args: ["rules"] },
@@ -698,8 +695,8 @@ const POSITIONAL_COUNTS = {
   "log-detour": 1, "retract-detour": 1, "push-detour": 1, "drop-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
-  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1,
-  "spend-guard": 1, "override-spend-guard": 1,
+  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1, "set-dev-log": 1,
+  "spend-guard": 1, "override-spend-guard": 1, "record-decision": 1, decisions: 1,
 };
 for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;
 
@@ -996,15 +993,27 @@ test("remove-epic --help names its positional form on the first line", () => {
   assert.match(first, /remove-epic <id>/, `the first line must show the positional form: ${first}`);
 });
 
-test("set-active --help says it has no flags of its own before listing --force", () => {
+test("set-gate-guard --help says it has no flags of its own before listing --force", () => {
+  // set-active used to be this example; epic-session-attribution gave it `--session`, and then clear-active, so the
+  // verb with no epic flags is now set-gate-guard. set-active's own help is asserted separately below.
   const cwd = initialized();
-  const out = run(["set-active", "--help"], { cwd });
+  const out = run(["set-gate-guard", "--help"], { cwd });
   const own = out.search(/no flags of its own/);
   const force = out.indexOf("--force");
-  assert.notEqual(own, -1, `set-active --help must say it has no flags of its own:\n${out}`);
+  assert.notEqual(own, -1, `set-gate-guard --help must say it has no flags of its own:\n${out}`);
   assert.notEqual(force, -1, "…and still list the argv-level flag it accepts");
   assert.ok(own < force, "the statement comes before the argv-level flag");
   assert.doesNotMatch(out, /takes no flags/, "it accepts --force, so it does not take NO flags");
+});
+
+test("set-active --help lists its own --session before the argv-level --force", () => {
+  const cwd = initialized();
+  const out = run(["set-active", "--help"], { cwd });
+  const session = out.indexOf("--session");
+  const force = out.indexOf("--force");
+  assert.notEqual(session, -1, `set-active --help must list --session:\n${out}`);
+  assert.ok(force > session, "its own flag comes before the argv-level flag");
+  assert.doesNotMatch(out, /no flags of its own/);
 });
 
 test("REGRESSION GUARD: A read-only verb's help does not offer --force", () => {

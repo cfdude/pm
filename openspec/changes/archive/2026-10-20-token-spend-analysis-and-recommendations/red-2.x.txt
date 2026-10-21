@@ -1,0 +1,27 @@
+file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/rc-0-53-0/scripts/test/unit/spend-analysis.test.mjs:117
+  DOMINANT_AGENT_MIN_AGENTS, DOMINANT_AGENT_SHARE, LONG_CONTEXT_MIN_MESSAGES, LONG_CONTEXT_MIN_PER_MESSAGE,
+  ^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '../../lib/spend-analysis.mjs' does not provide an export named 'DOMINANT_AGENT_MIN_AGENTS'
+    at ModuleJobSync.instantiateSync (node:internal/modules/esm/module_job:635:19)
+    at node:internal/modules/esm/loader:375:11
+    at TracingChannel.traceSync (node:diagnostics_channel:557:14)
+    at ModuleLoader.importForEntryPoint (node:internal/modules/esm/loader:372:21)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:184:34)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v26.12.0
+✖ scripts/test/unit/spend-analysis.test.mjs (112.844042ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 116.090875
+
+✖ failing tests:
+
+test at scripts/test/unit/spend-analysis.test.mjs:1:1
+✖ scripts/test/unit/spend-analysis.test.mjs (112.844042ms)
+  'test failed'

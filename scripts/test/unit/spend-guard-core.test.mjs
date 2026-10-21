@@ -73,7 +73,8 @@ unitTest("2.1 guardConfigured: a limit at any layer counts; warnAt alone and an 
 
 // ───────────── 3.1 the rounds signal ─────────────
 
-const resolvedWith = (maxFailedRounds, tokenCeiling = null, warnAt = 80) => ({
+const resolvedWith = (maxFailedRounds, tokenCeiling = null, warnAt = 80, tokenBasis = "total") => ({
+  tokenBasis: { value: tokenBasis, source: "default" },
   maxFailedRounds: { value: maxFailedRounds, source: maxFailedRounds === null ? null : "project" },
   tokenCeiling: { value: tokenCeiling, source: tokenCeiling === null ? null : "project" },
   warnAt: { value: warnAt, source: "default" },
@@ -318,4 +319,76 @@ unitTest("5.3 the Spend guard section carries the check, exit 2, the autonomy se
   assert.match(text, /`override-spend-guard <epic> --signal rounds\|tokens --escalated-to <target> --reason "<why>"`/);
   assert.match(text, /No\s+autonomy grant covers `override-spend-guard`/);
   assert.ok(text.includes("`pm-spend: epic=<id> role=review phase=review round=<n>`"));
+});
+
+// ───────────── gh-cfdude-pm-251: the token basis ─────────────
+
+import { LOW_TOTAL_CEILING_FLOOR, tokenBaseline, checkTokenBasis } from "../../lib/spend-guard.mjs";
+
+const COUNTS = { checked: true, total: 1131152, work: 7487, breakdown: { input: 10, cacheCreation: 5366, cacheRead: 1123665, output: 2111, work: 7487, total: 1131152 } };
+
+unitTest("2.1 an absent basis reads as total (default), and nothing is rewritten", () => {
+  const state = { spendGuard: { tokenCeiling: 300000000 }, epics: [{ id: "E", lane: "openspec" }] };
+  const before = JSON.stringify(state);
+  const r = resolveGuard(state, { epicId: "E" });
+  assert.deepEqual(r.tokenBasis, { value: "total", source: "default" });
+  assert.equal(JSON.stringify(state), before);
+});
+
+unitTest("2.1 a lane can count work while the project counts total", () => {
+  const state = {
+    spendGuard: { tokenCeiling: 300000000 },
+    laneSpendGuards: { openspec: { tokenBasis: "work", tokenCeiling: 20000000 } },
+    epics: [{ id: "A", lane: "openspec" }, { id: "B", lane: "superpowers" }],
+  };
+  const a = resolveGuard(state, { epicId: "A" }), b = resolveGuard(state, { epicId: "B" });
+  assert.deepEqual([a.tokenBasis.value, a.tokenBasis.source, a.tokenCeiling.value], ["work", "lane:openspec", 20000000]);
+  assert.deepEqual([b.tokenBasis.value, b.tokenBasis.source, b.tokenCeiling.value, b.tokenCeiling.source], ["total", "default", 300000000, "project"]);
+});
+
+unitTest("2.1 an invalid stored basis is ignored and reported, falling through to the default", () => {
+  const r = resolveGuard({ spendGuard: { tokenBasis: "cached", tokenCeiling: 5 }, epics: [] }, {});
+  assert.equal(r.tokenBasis.value, "total");
+  assert.deepEqual(r.ignored.map((i) => i.field), ["tokenBasis"]);
+  assert.equal(checkTokenBasis("cached").ok, false);
+  assert.match(checkTokenBasis("cached").message, /--token-basis 'cached' must be one of total\|work/);
+});
+
+unitTest("2.1 a basis alone is not a limit", () => {
+  assert.equal(guardConfigured({ spendGuard: { tokenBasis: "work" }, epics: [] }), false);
+  assert.equal(guardConfigured({ spendGuard: { tokenBasis: "work", tokenCeiling: 5 }, epics: [] }), true);
+});
+
+unitTest("2.2 a work basis ignores cache-read; a total basis counts it", () => {
+  const work = tokenSignal({}, resolvedWith(null, 1000000, 80, "work"), COUNTS);
+  assert.deepEqual([work.state, work.count, work.basis], ["ok", 7487, "work"]);
+  const total = tokenSignal({}, resolvedWith(null, 1000000, 80, "total"), COUNTS);
+  assert.deepEqual([total.state, total.count], ["tripped", 1131152]);
+});
+
+unitTest("2.3 the signal carries basis and the six-count breakdown only when checked", () => {
+  const on = tokenSignal({}, resolvedWith(null, 1000000, 80, "work"), COUNTS);
+  assert.deepEqual(Object.keys(on.breakdown).sort(), ["cacheCreation", "cacheRead", "input", "output", "total", "work"]);
+  assert.equal(on.basisSource, "default");
+  const off = tokenSignal({}, resolvedWith(null, 1000000), { checked: false, kind: "off", why: "x" });
+  assert.equal("breakdown" in off, false);
+  assert.equal(off.basis, "total");
+});
+
+unitTest("2.5 a tokens override applies only in the basis it was recorded in; an older one never revives; 0.52 entries read as total", () => {
+  const at = (n) => `2026-10-09T0${n}:00:00.000Z`;
+  const mk = (...os) => ({ spendGuardOverrides: os.map((o, i) => ({ signal: "tokens", escalatedTo: "user", at: at(i + 1), ...o })) });
+  const single = tokenBaseline(mk({ basis: "total", baseline: 900 }), "work");
+  assert.deepEqual([single.baseline, single.setAside], [0, "total"]);
+  const older = tokenBaseline(mk({ basis: "work", baseline: 5 }, { basis: "total", baseline: 900 }), "work");
+  assert.deepEqual([older.baseline, older.setAside], [0, "total"], "the older work override does not revive");
+  const legacy = tokenBaseline(mk({ baseline: 900 }), "total");
+  assert.deepEqual([legacy.baseline, legacy.setAside], [900, null]);
+  const sig = tokenSignal(mk({ basis: "total", baseline: 900 }), resolvedWith(null, 1000, 80, "work"), { checked: true, total: 5000, work: 950 });
+  assert.deepEqual([sig.baseline, sig.overrideSetAside, sig.state], [0, "total", "warn"]);
+  assert.equal(tokenBaseline({}, "work").setAside, null);
+});
+
+unitTest("2.4 the floor is a named constant of 10,000,000", () => {
+  assert.equal(LOW_TOTAL_CEILING_FLOOR, 10000000);
 });

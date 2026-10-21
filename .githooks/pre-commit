@@ -174,6 +174,14 @@ fi
 # nothing.
 rm -f "$(git rev-parse --git-common-dir)/pm-isolation-flag"
 
+# THE RETIRED SINGLE-FILE CERTIFICATION RECORD, same inverse (retire-single-file-certification-record,
+# certification-record-redesign D5). Until 0.51.0 `certify` rewrote one shared `pm-suite-certification.json`
+# here. 0.51.0 moved the record to `pm-suite-certification.d/` and left the old file in place so a
+# mixed-version worktree kept working; no pre-0.51.0 branch is live now, so nothing reads or writes it and an
+# untracked file whose only writer is gone reads as a live mechanism. The DIRECTORY is the live record and is
+# never touched here. `rm -f` is idempotent. PERMANENT, like the line above.
+rm -f "$(git rev-parse --git-common-dir)/pm-suite-certification.json"
+
 # ─────────── THE RUNNER'S COMMAND LINE CARRIES THE TWO RUNG GLOBS (0.49.0, design D5) ───────────
 # 0.48.x resolved the globs here with a `[ -f ]` loop, because `/bin/sh` leaves a pattern that matches
 # NOTHING as a literal and Node 18 REFUSED such a literal (`Could not find …`, exit 1) where Node 26

@@ -1,0 +1,39 @@
+# R.1 call-site completeness sweep, feature-switches-audit (2026-10-20)
+
+No switch was built, so the per-switch sweeps (a section heading's emitters; a default-on row in every registry reader) are not owed.
+What follows is what WAS derived mechanically for the table and its test.
+
+## rg -n "OPT_INS" scripts/lib  (the registry readers, none of which a default-off row changes)
+scripts/lib/overhead.mjs:27:import { OPT_INS } from "./opt-ins.mjs";
+scripts/lib/overhead.mjs:75:/** Feature ids a surface may carry: core, listings, or an OPT_INS id. */
+scripts/lib/overhead.mjs:76:export const featureIds = () => [CORE, LISTINGS, ...OPT_INS.map(o => o.id)];
+scripts/lib/overhead.mjs:221:  const on = (id) => id === CORE || id === LISTINGS || OPT_INS.some(o => o.id === id && o.isSet(state || {}));
+scripts/lib/dev-log.mjs:83: *  the per-surface bytes, all as `overhead` computes them (never an OPT_INS row's `isSet`). Reads the plugin's own
+scripts/lib/opt-ins.mjs:30:export const OPT_INS = [
+scripts/lib/opt-ins.mjs:101:  const set = OPT_INS.filter(o => o.isSet(s));
+scripts/lib/opt-ins.mjs:102:  const unset = OPT_INS.filter(o => !o.isSet(s));
+
+## rg -n "SURFACE_FEATURES|featureOf|featureIds" scripts  (every reader of the surface map)
+scripts/lib/overhead.mjs:18:// ONE FEATURE PER SURFACE (design D2). `SURFACE_FEATURES` is keyed by surface id; `feature-switches-audit`
+scripts/lib/overhead.mjs:49:export const SURFACE_FEATURES = {
+scripts/lib/overhead.mjs:76:export const featureIds = () => [CORE, LISTINGS, ...OPT_INS.map(o => o.id)];
+scripts/lib/overhead.mjs:79:export function featureOf(id) {
+scripts/lib/overhead.mjs:80:  if (Object.hasOwn(SURFACE_FEATURES, id)) return SURFACE_FEATURES[id];
+scripts/lib/overhead.mjs:91:  id, feature: featureOf(id), bytes, estimatedTokens: bytes === null ? null : estimateTokens(bytes), method: METHOD,
+scripts/lib/overhead.mjs:223:  for (const id of featureIds()) features[id] = { on: on(id), bytes: 0, estimatedTokens: 0, surfaces: [] };
+scripts/test/unit/dev-log-switch.test.mjs:10:import { featureIds } from "../../lib/overhead.mjs";
+scripts/test/unit/dev-log-switch.test.mjs:64:  assert.ok(featureIds().includes("devLog"));
+scripts/test/assert/feature-cost-table.test.mjs:14:  SURFACE_FEATURES, collectSurfaces, hookVerbs, hypotheticalState, readListings, featureOf,
+scripts/test/assert/feature-cost-table.test.mjs:41:  return new Set([...Object.keys(SURFACE_FEATURES), ...live].map((id) => (id.startsWith("listing:") ? "listing:*" : id)));
+scripts/test/assert/feature-cost-table.test.mjs:74:  for (const id of mapIds()) assert.notEqual(id === "listing:*" ? "listings" : featureOf(id), null, id);
+scripts/test/assert/overhead.test.mjs:13:import { hookVerbs, readListings, featureOf, collectSurfaces } from "../../lib/overhead.mjs";
+scripts/test/assert/overhead.test.mjs:60:    for (const s of collectSurfaces(state, { listings, hooks, lessons: [] })) assert.notEqual(featureOf(s.id), null, `surface ${s.id} has no feature`);
+
+## rg -n "'rules:|^## " the README table rows vs the map (checked by assert/feature-cost-table.test.mjs, which fails naming the id)
+58
+
+## Inverse
+No operation was added: the table is documentation checked by a test and the audit is a document. The inverse of a switch (on <-> off) is not owed because no switch ships; the three developer opt-ins keep their existing pairs (set-spend-tracking on|off, set-spend-guard --unset, set-dev-log on|off).
+
+## Candidate not built
+rules:intake (1,006 estimated tokens vs the proposed 1,000). Building it needs 2.0 first (amend the spec, re-run Gate 1 and the release cross-spec review) and Rob's call on D1/D2 (task 0.3).

@@ -269,7 +269,9 @@ test("3.4 Line separators other than LF are escaped too", () => {
 test("3.4a A session name cannot forge a line in the owners report", () => {
   const cwd = initRepo();
   ok(cwd, ["add-epic", "--id", "e1", "--lane", "claude-code"]);
-  ok(cwd, ["claim", "e1", "--session", "s" + LF + "FORGED"]);
+  // epic-session-attribution D3: a control character in a session name is now REFUSED at input, so the
+  // hostile stored claim this surface still has to print safely is a LEGACY one, written before the rule.
+  legacyWrite(cwd, s => { s.epics.find(e => e.id === "e1").claim = { session: "s" + LF + "FORGED", claimedAt: new Date().toISOString(), ttlMinutes: 60 }; });
   const r = ok(cwd, ["owners"]);
   assert.deepEqual(linesBeginning(r.stdout, "FORGED"), [], `owners prints no line beginning FORGED:\n${r.stdout}`);
 });
@@ -872,6 +874,7 @@ test("5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's ep
   const READERS = {
     "git.mjs:visibleDetourRows": "filters rows by kind and sha only",
     "render.mjs:render": "displays each row through tableRow()",
+    "subcommands.mjs:logDetour": "filters the visible rows by kind and sha only, to warn that HEAD already has a MINIMAL row",
     "subcommands.mjs:retractDetour": "copies the matched row's epic field into the RETRACTED row it appends",
     "subcommands.mjs:supersedeAmended": "copies the matched row's epic field into the RETRACTED row it appends",
   };
@@ -1100,6 +1103,11 @@ recipe("activity --epic", { notRendered: "--epic only filters the events read; t
 recipe("spend --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["spend", "--since", v]) });
 recipe("spend --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => pm(c.cwd, ["spend", "--until", v]) });
 recipe("spend --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["spend", "--epic", v]) });
+recipe("spend-analysis --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["spend-analysis", "--epic", v]) });
+recipe("spend-analysis --release", { exempt: "--release must name a declared release; anything else is refused, the value echoed escaped, and nothing is ingested", run: (c, v) => pm(c.cwd, ["spend-analysis", "--release", v]) });
+recipe("dev-log --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["dev-log", "--since", v]) });
+recipe("dev-log --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => pm(c.cwd, ["dev-log", "--until", v]) });
+recipe("dev-log --session-id", { notRendered: "--session-id only filters the sessions listed; the report does not echo it", run: (c, v) => pm(c.cwd, ["dev-log", "--session-id", v]) });
 recipe("sync --only", { exempt: "--only must name a candidate change, plan or archived change or an existing epic; anything else is refused, the value echoed escaped, and nothing is written", run: (c, v) => pm(c.cwd, ["sync", "--only", v]) });
 recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and anything else is refused", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
@@ -1107,7 +1115,10 @@ recipe("rules --epic", { notRendered: "--epic selects the review mode the block 
 recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });
 recipe("triage <positional>", { notRendered: "triage's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["triage", v]) });
 recipe("suggest-lane --ask", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", "--ask", v]) });
-recipe("suggest-lane <positional>", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
+recipe("list --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["list", "--status", v]) });
+recipe("list --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["list", "--lane", v]) });
+recipe("list --linked-to", { notRendered: "--linked-to only filters the epics listed; the listing does not echo it", run: (c, v) => pm(c.cwd, ["list", "--linked-to", v]) });
+recipe("suggest-lane <positional>",{ notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
 recipe("verify-specs --root", { rendered: true, run: (c, v) => pm(c.cwd, ["verify-specs", "--root", v]) });
 recipe("purge-logs --kind", { exempt: EXEMPT.vocab("kind"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", v]) });
 recipe("purge-logs --keep", { exempt: EXEMPT.number("keep"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--keep", v]) });
@@ -1115,9 +1126,46 @@ recipe("purge-logs --over", { exempt: "--over must be a size like 500K", run: (c
 recipe("purge-logs --older-than", { exempt: EXEMPT.number("older-than"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--older-than", v]) });
 
 // ── claims ──
-recipe("claim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl", "--session", v]) });
+// epic-session-attribution D3: a session name holding a control character is refused before any write, on
+// every epic-writing verb including these two; a hostile STORED claim session is the legacy recipes' subject.
+const SESSION_REFUSED = "--session is validated at input: a control character is refused before any write (epic-session-attribution D3)";
+recipe("claim --session", { exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, ["claim", "cl", "--session", v]) });
 recipe("claim --ttl", { exempt: EXEMPT.number("ttl"), run: (c, v) => pm(c.cwd, ["claim", "cl2", "--session", "s", "--ttl", v]) });
-recipe("unclaim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["unclaim", "cl2", "--session", v]) });
+recipe("unclaim --session", { exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, ["unclaim", "cl2", "--session", v]) });
+// Every other epic-writing verb, DERIVED from the effects registry: a verb added with the marker and no
+// invocation here fails loudly rather than going unswept.
+{
+  const { VERB_EFFECTS } = await import(lib("verb-effects.mjs"));
+  const SESSION_INVOCATION = {
+    "add-epic": ["add-epic", "--id", "sess-a", "--lane", "claude-code"],
+    "add-many": ["add-many", "--from", "none.json"],
+    "update-epic": ["update-epic", "base", "--notes", "x"],
+    "remove-epic": ["remove-epic", "k5"],
+    reorder: ["reorder", "k1", "k2"],
+    "set-active": ["set-active", "k3"],
+    "clear-active": ["clear-active"],
+    init: ["init"],
+    "set-autonomy": ["set-autonomy", "k4", "--level", "off"],
+    "push-detour": ["push-detour", "k1", "--detour", "k2", "--reason", "r", "--no-reconcile"],
+    "pop-detour": ["pop-detour", "k1"],
+    "drop-detour": ["drop-detour", "k1"],
+    "record-reconcile": ["record-reconcile", "k1", "--detour", "k2", "--verdict", "valid", "--amendments", "none"],
+    "record-gate-review": ["record-gate-review", "k1", "--gate", "1", "--verdict", "pass", "--artifact", "x.md", "--reviewer", "r"],
+    "record-tracker-refresh": ["record-tracker-refresh", "k1", "--verdict", "unchanged", "--external-updated-at", "2026-01-01T00:00:00Z"],
+    release: ["release", "rel1", "--intent", "x"],
+    "set-spend-guard": ["set-spend-guard", "--max-failed-rounds", "3"],
+    "override-spend-guard": ["override-spend-guard", "k1", "--signal", "rounds", "--escalated-to", "user", "--reason", "r"],
+    "record-decision": ["record-decision", "k1", "--withdraw", "1", "--reason", "r"],
+    sync: ["sync"],
+    upgrade: ["upgrade"],
+    "recover-created-at": ["recover-created-at"],
+  };
+  for (const [verb, v] of Object.entries(VERB_EFFECTS)) {
+    if (v.epicWriting !== true || verb === "claim" || verb === "unclaim") continue;
+    if (!SESSION_INVOCATION[verb]) throw new Error(`${verb} is epicWriting but has no --session invocation in the poison recipes`);
+    recipe(`${verb} --session`, { exempt: SESSION_REFUSED, run: (c, val) => pm(c.cwd, [...SESSION_INVOCATION[verb], "--session", val]) });
+  }
+}
 
 // ── update-epic ──
 recipe("update-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--title", v]) });
@@ -1228,6 +1276,7 @@ recipe("set-spend-guard --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => 
 recipe("set-spend-guard --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--epic", v, "--tokens", "5"]) });
 recipe("set-spend-guard --max-failed-rounds", { exempt: EXEMPT.number("max-failed-rounds"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--max-failed-rounds", v]) });
 recipe("set-spend-guard --tokens", { exempt: EXEMPT.number("tokens"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--tokens", v]) });
+recipe("set-spend-guard --token-basis", { exempt: EXEMPT.vocab("token-basis"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--token-basis", v]) });
 recipe("set-spend-guard --warn-at", { exempt: EXEMPT.number("warn-at"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--warn-at", v]) });
 recipe("set-spend-guard --unset", { exempt: EXEMPT.vocab("unset"), run: (c, v) => pm(c.cwd, ["set-spend-guard", "--unset", v]) });
 recipe("override-spend-guard --signal", { exempt: EXEMPT.vocab("signal"), run: (c, v) => pm(c.cwd, ["override-spend-guard", "base", "--signal", v, "--escalated-to", "user", "--reason", "r"]) });
@@ -1238,6 +1287,27 @@ recipe("override-spend-guard --reason", { notRendered: "an override's reason is 
   ok(c.cwd, ["set-spend-guard", "--epic", id, "--max-failed-rounds", "1"]);
   ok(c.cwd, ["record-gate-review", id, "--gate", "1", "--verdict", "fail"]);
   return pm(c.cwd, ["override-spend-guard", id, "--signal", "rounds", "--escalated-to", "user", "--reason", v]);
+} });
+// decision-cost-log. A decision's text is stored and printed by no surface at record time (`decisions` prints it
+// escaped); the timestamps, the phase and the number are validated before anything is written.
+const decideBase = (c) => {
+  const id = fresh("dc");
+  ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code"]);
+  ok(c.cwd, ["set-spend-tracking", "on"]);
+  return id;
+};
+const decide = (c, over = []) => pm(c.cwd, ["record-decision", decideBase(c), "--what", "w", "--why", "y", "--since", "2026-10-10T00:00:00Z", ...over]);
+recipe("record-decision --what", { notRendered: "a decision's text is stored and printed by no text surface at record time", run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--what", v, "--why", "y", "--since", "2026-10-10T00:00:00Z"]) });
+recipe("record-decision --why", { notRendered: "a decision's text is stored and printed by no text surface at record time", run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--what", "w", "--why", v, "--since", "2026-10-10T00:00:00Z"]) });
+recipe("record-decision --alternative", { notRendered: "a decision's text is stored and printed by no text surface at record time", run: (c, v) => decide(c, ["--alternative", v]) });
+recipe("record-decision --since", { exempt: EXEMPT.timestamp("since"), run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--what", "w", "--why", "y", "--since", v]) });
+recipe("record-decision --until", { exempt: EXEMPT.timestamp("until"), run: (c, v) => decide(c, ["--until", v]) });
+recipe("record-decision --phase", { exempt: EXEMPT.vocab("phase"), run: (c, v) => decide(c, ["--phase", v]) });
+recipe("record-decision --withdraw", { exempt: EXEMPT.number("withdraw"), run: (c, v) => pm(c.cwd, ["record-decision", decideBase(c), "--withdraw", v, "--reason", "r"]) });
+recipe("record-decision --reason", { notRendered: "a withdrawal's reason is stored in the record and printed by no text surface", run: (c, v) => {
+  const id = decideBase(c);
+  ok(c.cwd, ["record-decision", id, "--what", "w", "--why", "y", "--since", "2026-10-10T00:00:00Z"]);
+  return pm(c.cwd, ["record-decision", id, "--withdraw", "1", "--reason", v]);
 } });
 recipe("profile --epic", { exempt: EXEMPT.knownEpic("epic"), run: (c, v) => pm(c.cwd, ["profile", "--epic", v]) });
 recipe("set-tracker --role", { exempt: EXEMPT.vocab("role"), run: (c, v) => pm(c.cwd, ["set-tracker", "--role", v, "--system", "jira"]) });
@@ -1266,7 +1336,13 @@ recipe("drop-detour --reason", { notRendered: "a drop's reason is stored on the 
   return out;
 } });
 recipe("log-detour <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["log-detour", v]) });
-recipe("honcho-memory <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
+recipe("log-detour --sha", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["log-detour", "--sha", v, "a described fix"]) });
+recipe("retract-detour --minimal", { rendered: true, run: (c, v) => {
+  const sha = c.repo.commit({ [`src/${fresh("f")}.txt`]: "x" }, "fix: a declared detour");
+  ok(c.cwd, ["log-detour", "--sha", sha, v]);
+  return pm(c.cwd, ["retract-detour", sha, "--minimal", v, "--reason", "the wrong row"]);
+} });
+recipe("honcho-memory <positional>",{ rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
 recipe("retract-detour --reason", { notRendered: "render drops RETRACTED rows, and the verb does not echo the reason", run: (c, v) => {
   const sha = c.repo.commit({ [`src/${fresh("f")}.txt`]: "x" }, "fix: a detour commit");
   c.repo.observe("PostToolUse", "git commit -m x");
@@ -1306,7 +1382,7 @@ export const SOURCE_RECIPES = [
       "\ndetect: {\"tool\":\"Bash\",\"commandMatches\":\"poison-me\"}\n---\n\nbody\n");
     return pm(c.cwd, ["lesson-advice", "--platform", "claude-code"], { input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "poison-me" } }) });
   } },
-  { key: "PM_SESSION", rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl3"], { env: { PM_SESSION: v } }) },
+  { key: "PM_SESSION", exempt: SESSION_REFUSED, run: (c, v) => pm(c.cwd, ["claim", "cl3"], { env: { PM_SESSION: v } }) },
 ];
 
 // ── Gate 2 T-S1: the SUCCESS paths over what an older engine could have stored. Every argv recipe above

@@ -46,6 +46,7 @@ test("emitted-invocations: every OPT_INS row's printed command runs as written",
     // And the engine is the oracle: the runnable form exits 0 in an initialized repo.
     const cwd = tmpRepo();
     run(["init"], { cwd });
+    for (const pre of o.before || []) run(pre, { cwd });
     const r = invokeEngine(o.example, { cwd });
     assert.equal(r.status, 0, `${o.id}: ${o.example.join(" ")} must run\n${r.stdout}${r.stderr}`);
   }

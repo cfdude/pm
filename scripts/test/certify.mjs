@@ -25,7 +25,7 @@
 // of this clone, never committed. The manifest is read through drift's `indexManifest()` over the
 // run's index COPY — the same function drift judges a commit with. A fresh clone having no record is
 // correct behaviour: the first commit that stages a subject path demands a run. The superseded
-// single-file record `pm-suite-certification.json` is neither written nor removed (D5).
+// single-file record `pm-suite-certification.json` is retired: nothing writes or reads it, and the pre-commit hook removes it.
 //
 // A FAILED RUN WRITES NOTHING. A record is a claim about a PASS; recording a failure would let the
 // next commit read it as a result. The exit status is the runner's own, so a caller can gate on it.
