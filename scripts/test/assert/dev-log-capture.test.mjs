@@ -33,7 +33,12 @@ function scene() {
   const cfg = fs.realpathSync(tmpRepo());
   const file = path.join(cfg, "projects", encodeProjectPath(repo), "sA.jsonl");
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const append = (lines) => fs.appendFileSync(file, lines.join("\n") + "\n");
+  // The transcript's mtime follows NOW, not the real clock: under the CI step that shifts Date.now() forward
+  // the file would otherwise predate `enabledAtMs` and ingest would skip it as written before capture began.
+  const append = (lines) => {
+    fs.appendFileSync(file, lines.join("\n") + "\n");
+    fs.utimesSync(file, new Date(NOW), new Date(NOW));
+  };
   const opts = (devLog = { enabledAtMs: NOW - 60_000, snapshot: snapshot(false) }) =>
     ({ mainRoot: repo, env: { CLAUDE_CONFIG_DIR: cfg }, home: "/no/such/home", enabledAtMs: NOW - 60_000, ...(devLog ? { devLog } : {}) });
   const log = () => {
