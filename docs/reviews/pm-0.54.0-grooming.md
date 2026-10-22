@@ -234,3 +234,17 @@ Bookkeeping, if approved. The orchestrator does all of it; none was done here:
 - Decline `gh-cfdude-pm-208`, with its reason.
 - Note G1 and G2's single-item build on both epics.
 - Widen P6's scope note to include the Codex fact refresh.
+
+## 10. Section 7 re-check outcome (2026-10-22, after the 0.53.0 deploy)
+
+| Row | Outcome |
+| --- | --- |
+| #204 `list` | Shipped (`--status --lane --linked-to --json`). No `--release`/`--priority`/text filter, so B1 must filter output itself or add a flag. Never read `state.json` raw. |
+| #207 `--ask=` | NOT shipped. 0.53.0 only improved the refusal text. `triage` still takes one positional (`scripts/lib/triage.mjs:205-221`). The "B2 after #207" wording in §2 and §6 is wrong; B2 may add `--ask=` itself. |
+| store-owns re-baseline | Gate reads met (`docs/measurement/2026-10-commit-gate-rebaseline.md`: write-reaching tests ~26-28s wall-equivalent, load 6-16). Quiet-machine rerun and sizing of movable tests (of 525) still owed. Verdict recorded on the epic; it stays out of the core 19 until sized. |
+| Overhead per-session | `overhead --all-features`: 14,504 est. tokens unconditional (core 10,592; gate procedure 3,006; intake 1,006; tracker 1,476; spend-guard 202). Estimates only (bytes/4). G0's ceiling is provisional until the calibration run. |
+| `feature-switches-audit` | Audit shipped, zero switches built. #248 stays G0's vehicle; the calibration epic carries the remaining switch work. G0's first question: `rules:intake` switch or shrink under 1,000. |
+| dehardcode + live-limits | Merged (`rules.mjs:301`, `:114`, `:1191-1199`). G and P1 text must say "the change's directory as OpenSpec reports it"; the dispatch wrapper refreshes the block after any state-writing verb. |
+| #242, #251, #252 | #242 and #251 shipped in 0.53.0 (drop from §4). #252 open: stays G6. |
+
+Membership change: `pm-overhead-calibration-and-feature-switches` added as a Wave-0 item. Its run count and token ceiling need Rob's confirmation before any run.

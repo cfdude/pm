@@ -11276,7 +11276,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-10-14T23:49:33.927Z",
+      "touchedAt": "2026-10-22T17:05:35.000Z",
       "notes": [
         {
           "at": "2026-09-25T21:14:34.648Z",
@@ -11292,6 +11292,11 @@
           "at": "2026-10-14T23:49:33.923Z",
           "actor": "agent",
           "text": "2026-10-14: NOT declined. Loose run (load 4.6-5.5) shows the assertion half at ~28s, up from 15.4s at the 09-25 profile; the file rung ~26.7s. writeRules still writes to disk (rules.mjs:1201-1240). Decision gate moved to a story on pm-overhead-baseline: build only if disk-write tests carry >=10s of the file rung (threshold is a proposal, not measured). Decide at 0.54.0 grooming."
+        },
+        {
+          "at": "2026-10-22T17:05:34.995Z",
+          "actor": "agent",
+          "text": "re-baseline 2026-10-22 (0.54.0 recheck): D7 10s gate reads MET on docs/measurement/2026-10-commit-gate-rebaseline.md (write-reaching file-rung tests 312-328s summed, ~26-28s wall-equivalent; load 6-16). Not decided: quiet-machine rerun and sizing of movable tests among 525 still owed (owner: pm-overhead-calibration-and-feature-switches 4.1). Stays out of 0.54.0 core until sized."
         }
       ],
       "startedAt": "2026-10-05T22:07:30.403Z"
@@ -15117,7 +15122,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-20T11:28:06.603Z",
-      "touchedAt": "2026-10-20T12:53:26.371Z"
+      "touchedAt": "2026-10-22T17:05:44.653Z",
+      "release": "0.54.0"
     }
   ],
   "detourStack": [],
@@ -15128,7 +15134,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2166,
+  "revision": 2168,
   "reviewMode": "standard",
   "releases": [
     {
