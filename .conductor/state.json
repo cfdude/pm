@@ -15108,7 +15108,7 @@
       "priority": "P2",
       "status": "planned",
       "role": "epic",
-      "lane": "decision",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -15133,11 +15133,16 @@
           "at": "2026-10-20T12:53:26.366Z",
           "actor": "agent",
           "text": "Rob 2026-10-20 (artifact thread): approved a SMALL CAPPED calibration (headless claude -p, pm on vs off) and keeping the 1,000-token line as the working threshold. No run count or token ceiling set yet: propose both at epic start and get Rob's OK on the ceiling BEFORE any run. Never-switch list and the rules:intake decision follow the measured numbers."
+        },
+        {
+          "at": "2026-10-23T13:23:58.171Z",
+          "actor": "agent",
+          "text": "2026-10-23 Rob: DROP the headless calibration runs and the 150k ceiling. Why: the runs measure an empty fixture, cost cannot be bounded from the repo, and /context from 8 pm-managed repos already shows the real picture (base 54-98k, memory files 15-57k, messages 52-620k; pm rules block ~10.6k est in this repo). Replacement: (1) read-only comparison of render's rules-block estimate against each repo's /context memory number, zero new spend; (2) spend tracking + dev log in real repos; (3) trim rules:intake ~10 tokens instead of building a switch. lane: superpowers not decision — no spend left to approve."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-20T11:28:06.603Z",
-      "touchedAt": "2026-10-22T17:05:44.653Z",
+      "touchedAt": "2026-10-23T13:23:58.175Z",
       "release": "0.54.0"
     },
     {
@@ -15208,6 +15213,42 @@
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
       ]
+    },
+    {
+      "id": "fresh-session-and-model-per-role-dispatch",
+      "title": "Epic work starts in its own session or a subagent, and every dispatch carries a model chosen for its job role",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "execution-profile-layered-settings",
+          "reason": "the profile already defines per-role models; this makes the choice binding on dispatch"
+        },
+        {
+          "type": "relates-to",
+          "epic": "execution-profile-planning-and-light-roles",
+          "reason": "defined the rudimentary/haiku role that no session has used"
+        },
+        {
+          "type": "relates-to",
+          "epic": "token-spend-analysis-and-recommendations",
+          "reason": "the flag rules are where a same-model-as-parent dispatch would be raised"
+        }
+      ],
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-10-23T13:23:59.176Z",
+          "actor": "agent",
+          "text": "Rob 2026-10-23, from /context of 8 pm-managed repos across two machines: messages are 5%-62% of the window and are the real spend driver; he keeps appending epic work to one interactive session. Subagents mostly inherit the interactive model; haiku-5.5 is effectively unused (5.5k input, 71 output in one session's /usage; 0 elsewhere). Asks: (a) emitted instruction recommends starting each epic in a fresh session; (b) subagent dispatch REQUIRES a model chosen per role from the profile, never inherited; (c) a spend-analysis flag when a dispatch ran on the parent's model although its role names a cheaper one. lane: openspec — new emitted rules text (shared chokepoint with the budget) plus a new flag. Triage found no duplicate; nearest are the archived profile epics, linked."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-10-23T13:23:59.176Z",
+      "touchedAt": "2026-10-23T13:23:59.181Z"
     }
   ],
   "detourStack": [],
@@ -15218,7 +15259,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2178,
+  "revision": 2180,
   "reviewMode": "standard",
   "releases": [
     {
