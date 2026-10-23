@@ -16,10 +16,16 @@
 import { KNOWN_LANES, KNOWN_STATUSES, escapeControls, jsonText, isOpenspecLane } from "./constants.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState } from "./state.mjs";
+import { outcomeOf } from "./disposition.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, outStream } from "./invocation.mjs";
 
-/** One epic as the listing reports it. Pure. */
+/** A string field as the row reports it: the string itself (an empty one stays ""), else null. Never a
+ *  guess -- `createdAt` in particular is absent on epics older than epic-registration-clock. */
+const strOrNull = v => (typeof v === "string" ? v : null);
+
+/** One epic as the listing reports it. Pure. `release`, `createdAt`, `description` and `outcome` are
+ *  copies of fields the epic already holds (backlog-grooming-pass); filtering on them is the reader's. */
 export function listRow(e) {
   return {
     id: e.id,
@@ -28,6 +34,10 @@ export function listRow(e) {
     lane: isOpenspecLane(e) ? "openspec" : e.lane,
     priority: e.priority || null,
     links: (Array.isArray(e.links) ? e.links : []).map(l => ({ type: l.type, epic: l.epic })),
+    release: strOrNull(e.release),
+    createdAt: strOrNull(e.createdAt),
+    description: strOrNull(e.description),
+    outcome: e.disposition ? outcomeOf(e) : null,  // the one reader of an outcome; null = no disposition recorded
   };
 }
 

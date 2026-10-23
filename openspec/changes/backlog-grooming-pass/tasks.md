@@ -26,13 +26,13 @@
 
 ## 1. The list row
 
-- [ ] 1.1 RED (UNIT): `listRow()` reports `release`, `createdAt`, `description`, `outcome`, with `null`
+- [x] 1.1 RED (UNIT): `listRow()` reports `release`, `createdAt`, `description`, `outcome`, with `null`
       for absent or non-string values (an empty-string `description` reports `""`); `list --json` keeps
       `{count, epics}`; the text form is unchanged. UPDATE `scripts/test/unit/list-verb.test.mjs:38-45`,
       the only consumer that deep-compares a whole row, to the wider shape. Regression guard: `list
       --release` and `--priority` are already refused as unknown flags; the requirement is that NO
       registry row is added. Save `red-1.1.txt`.
-- [ ] 1.2 GREEN: widen `listRow()` in `scripts/lib/list.mjs`; `filterEpics` and `listText` untouched.
+- [x] 1.2 GREEN: widen `listRow()` in `scripts/lib/list.mjs`; `filterEpics` and `listText` untouched.
 
 ## 2. The procedure
 
