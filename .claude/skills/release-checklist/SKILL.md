@@ -65,7 +65,7 @@ skip straight to the branch dance at the bottom.
    that's a human/agent judgment call every time.
 
 4. **Mintlify site — content pages, the Changelog page, and Introduction's "Real Numbers."**
-   Follow the `mintlify-doc-sync` skill for the mechanics (checkout, escaping gotcha, merge +
+   Follow the `mintlify-doc-sync` skill for the mechanics (create_branch, escaping gotcha, merge +
    verify live, branch cleanup). Two release-specific additions on top of that skill's
    procedure:
    - **The Changelog page** (`/changelog`, under Guides) gets the new version's entry prepended
