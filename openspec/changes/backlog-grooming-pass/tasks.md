@@ -57,11 +57,11 @@
       undone LOSSILY: reopen B with `update-epic B --status untriaged`, then clear A's links with
       `--clear-links` and re-add the ones to keep with their reasons, because no single-link removal
       exists) and justify each not shipped.
-- [ ] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task; every file the
+- [x] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task; every file the
       task claims appears in THAT commit, not only in the working tree.
 - [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/backlog-grooming-pass/tasks.md`
       lists C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4): `update-epic backlog-grooming-pass --attribute-commit <sha>`
+- [x] R.4 **Attribute every commit** (item 4): `update-epic backlog-grooming-pass --attribute-commit <sha>`
       in landing order, never the archive move.
 - [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.2; record the verdict against the release.
 - [ ] R.6 **Disposition** (item 6): satisfied by C.2.

@@ -6128,7 +6128,9 @@
       "reconcileNeeded": false,
       "attributedCommits": [
         "f7de6753ed629f647969d47e2ec8507d864a7a84",
-        "4ca5631d84b97c779735241b03ea47f6a8094cf1"
+        "4ca5631d84b97c779735241b03ea47f6a8094cf1",
+        "b2c22ac91266601dcf5786bd77b64c3683db952d",
+        "2e40b8d81fcf092909d5a63ced9eea6cdc09e1b9"
       ],
       "notes": [
         {
@@ -6148,7 +6150,7 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-10-23T13:42:15.945Z",
+      "touchedAt": "2026-10-23T15:57:22.645Z",
       "release": "0.54.0",
       "gateReview": {
         "gate1": {
@@ -15320,7 +15322,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2187,
+  "revision": 2189,
   "reviewMode": "standard",
   "releases": [
     {

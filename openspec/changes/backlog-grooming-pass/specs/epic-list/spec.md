@@ -3,7 +3,7 @@
 ### Requirement: A list row reports release, createdAt, description and outcome
 
 Each epic `list` reports SHALL carry `release`, `createdAt`, `description` and `outcome` (the recorded
-disposition outcome) besides its existing fields. An absent or non-string value SHALL report `null`
+disposition outcome) besides its existing fields. An absent or non-string value SHALL report `null` (an `outcome` outside the known vocabulary reports `"unknown"`)
 (an empty-string `description` reports `""`), and the engine SHALL NOT infer one. The
 `--json` shape `{count, epics}` and the text form SHALL be unchanged, and no `--release` or
 `--priority` flag SHALL be added.
