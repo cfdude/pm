@@ -19,6 +19,14 @@
       "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync, /pm:triage, /pm:list)" }
     },
     {
+      "id": "backlog-grooming",
+      "artifacts": [
+        "commands/backlog-grooming.md",
+        "skills/backlog-grooming/SKILL.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:backlog-grooming) entering a skill-carried pass that reads the open backlog via `list` and `triage` and proposes dispositions" }
+    },
+    {
       "id": "disposition-audit",
       "artifacts": [
         "commands/unconsidered-outcomes.md"

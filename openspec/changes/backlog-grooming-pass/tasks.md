@@ -36,20 +36,20 @@
 
 ## 2. The procedure
 
-- [ ] 2.1 RED (file rung): `skills/backlog-grooming/SKILL.md` and `commands/backlog-grooming.md` exist;
+- [x] 2.1 RED (file rung): `skills/backlog-grooming/SKILL.md` and `commands/backlog-grooming.md` exist;
       the ledger claims them in exactly one capability (`scripts/test/parity.test.mjs` fails first);
       the skill names the per-status `list --status <s> --json` first read, `triage`, the disposition order
       of design D5, and the no-line-number rule. The doc assertion ADDITIONALLY asserts that the skill
       states: null `createdAt` means age unknown; a re-report of delivered work is found by reading
       archived epics; an unfinished consolidation is reported; the report names what it left alone;
       nothing is written before the user confirms; no direct read of `state.json`. Save `red-2.1.txt`.
-- [ ] 2.2 GREEN: write the skill and the command doc; add the capability to `docs/parity-ledger.json`
+- [x] 2.2 GREEN: write the skill and the command doc; add the capability to `docs/parity-ledger.json`
       in the same commit; update the JSON shape line in `commands/list.md`; add
       `.changesets/backlog-grooming-pass.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1): `rg -n "listRow|filterEpics" scripts` and
+- [x] R.1 **Call-site completeness sweep** (item 1): `rg -n "listRow|filterEpics" scripts` and
       `rg -n "list --json|list\b.*--json" commands skills scripts/lib/rules.mjs` derived mechanically;
       state where the wider row is read and why `listText` stays as it is. Data references: the three
       new row fields are copies of epic fields, written nowhere by this change. **Inverse question:**
@@ -59,7 +59,7 @@
       exists) and justify each not shipped.
 - [ ] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task; every file the
       task claims appears in THAT commit, not only in the working tree.
-- [ ] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/backlog-grooming-pass/tasks.md`
+- [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/backlog-grooming-pass/tasks.md`
       lists C.2 and C.3.
 - [ ] R.4 **Attribute every commit** (item 4): `update-epic backlog-grooming-pass --attribute-commit <sha>`
       in landing order, never the archive move.

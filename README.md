@@ -930,6 +930,15 @@ carrying a command, and an absent record leaves the guard dormant.
 engine, so an agent no longer reads `.conductor/state.json` and guesses its shape: it prints one line per epic, or
 `{count, epics}` with `--json`, and `--linked-to` is incoming (the epics carrying a link to that id, which is the
 deferral-list question). Read-only; see `commands/list.md`. It filters fields; `triage` reads an ask.
+Each `--json` row also carries `release`, `createdAt`, `description` and `outcome` (copies of the epic's own fields,
+`null` when absent, never inferred), so a pass can ask how long an epic has sat and what finished ones delivered.
+
+`/pm:backlog-grooming` is the sprint-planning pass `triage` is not: `triage` screens one ask at registration, this
+re-reads the whole OPEN backlog (one `list --status <s> --json` per open status), runs `triage` on suspects, and
+proposes merges, declines and dead-premise findings, naming the epics it judged alive. It writes nothing until you
+confirm, then records each consolidation as a disposition (`--outcome superseded|declined`, a `supersedes` link on the
+survivor), never `remove-epic`. Findings cite epic ids, verb output and shas, never line numbers. No new verb or flag;
+see `skills/backlog-grooming/SKILL.md`.
 
 `triage "<the ask>"` runs BEFORE `add-epic`. The dedup the conductor already had is
 identity-based — same id, or the same `externalUrl` — which stops `/pm:sync` mirroring an issue
