@@ -13394,7 +13394,7 @@
       "priority": "P3",
       "status": "planned",
       "role": "epic",
-      "lane": "claude-code",
+      "lane": "superpowers",
       "links": [
         {
           "type": "relates-to",
@@ -13405,12 +13405,17 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T01:44:10.877Z",
-      "touchedAt": "2026-10-21T18:11:09.609Z",
+      "touchedAt": "2026-10-23T01:48:07.697Z",
       "notes": [
         {
           "at": "2026-10-20T12:51:58.858Z",
           "actor": "agent",
           "text": "Rob 2026-10-20 (artifact thread): approved scoping to Gate 2 only — a Gate 2 fail requires --base-sha/--head-sha; a Gate 1 fail keeps taking --artifact. Re-scope the epic's spec accordingly before building (touches fewer than ~12 tests)."
+        },
+        {
+          "at": "2026-10-23T01:48:07.693Z",
+          "actor": "agent",
+          "text": "lane: superpowers not claude-code — it changes a gate verb's refusal contract; scope per Rob 2026-10-20: Gate 2 fail requires --base-sha/--head-sha, Gate 1 fail keeps --artifact; no verb for a Gate 1 range"
         }
       ]
     },
@@ -15134,7 +15139,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2168,
+  "revision": 2169,
   "reviewMode": "standard",
   "releases": [
     {
