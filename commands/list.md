@@ -20,7 +20,7 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 | `--status <status>` | epics with that status (`untriaged`, `queued`, `active`, `paused`, `later`, `blocked`, `planned`, `archived`) |
 | `--lane <lane>` | epics in that lane; an epic with no lane counts as `openspec`, as everywhere else |
 | `--linked-to <epicId>` | epics that carry a link whose target is `<epicId>` (INCOMING: "which epics point at this one"). What an epic itself links to is in its own `links` in `--json` |
-| `--json` | machine-readable: `{count, epics: [{id, title, status, lane, priority, links: [{type, epic}]}]}` |
+| `--json` | machine-readable: `{count, epics: [{id, title, status, lane, priority, links: [{type, epic}], release, createdAt, description, outcome}]}`. The last four are copies of the epic's own fields, `null` when absent (never inferred; a null `createdAt` means age unknown), and filtering on them is the reader's: there is no `--release` or `--priority` flag |
 
 Filters combine (all must match). Epics come back in record order. A `--status` or `--lane` outside
 the vocabulary is refused naming the accepted values; a filter with no value is refused.

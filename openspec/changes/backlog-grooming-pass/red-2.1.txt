@@ -1,0 +1,84 @@
+✖ backlog-grooming: the skill and the command doc exist, and the ledger claims both in exactly one capability (0.92025ms)
+✖ backlog-grooming: the skill names the first read, triage, the disposition order and the no-line-number rule (0.12425ms)
+✖ backlog-grooming: the skill states the stances the spec requires (0.080417ms)
+✖ backlog-grooming: the command doc states the read-only stance and points at the skill (0.060416ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 977.329458
+
+✖ failing tests:
+
+test at scripts/test/assert/backlog-grooming-doc.test.mjs:21:1
+✖ backlog-grooming: the skill and the command doc exist, and the ledger claims both in exactly one capability (0.92025ms)
+  AssertionError [ERR_ASSERTION]: skills/backlog-grooming/SKILL.md
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:22:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/backlog-grooming-doc.test.mjs:30:1
+✖ backlog-grooming: the skill names the first read, triage, the disposition order and the no-line-number rule (0.12425ms)
+  Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/skills/backlog-grooming/SKILL.md'
+      at Object.readFileSync (node:fs:624:20)
+      at read (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:19:22)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:31:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/skills/backlog-grooming/SKILL.md'
+  }
+
+test at scripts/test/assert/backlog-grooming-doc.test.mjs:44:1
+✖ backlog-grooming: the skill states the stances the spec requires (0.080417ms)
+  Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/skills/backlog-grooming/SKILL.md'
+      at Object.readFileSync (node:fs:624:20)
+      at read (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:19:22)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:45:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/skills/backlog-grooming/SKILL.md'
+  }
+
+test at scripts/test/assert/backlog-grooming-doc.test.mjs:54:1
+✖ backlog-grooming: the command doc states the read-only stance and points at the skill (0.060416ms)
+  Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/commands/backlog-grooming.md'
+      at Object.readFileSync (node:fs:624:20)
+      at read (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:19:22)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/assert/backlog-grooming-doc.test.mjs:55:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/commands/backlog-grooming.md'
+  }

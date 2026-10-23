@@ -1,0 +1,105 @@
+✔ list: no filter returns every epic, in record order (2.894083ms)
+✔ list: --status, --lane and --linked-to narrow, and compose (1.641459ms)
+✔ list: an epic with no lane is reported in openspec, as every other reader treats it (0.304791ms)
+✖ list: --json rows carry id, title, status, lane, priority, links, release, createdAt, description and outcome (0.918167ms)
+✖ list: a registered epic reports release, createdAt, description and its recorded outcome (0.430625ms)
+✖ list: absent or non-string values report null, and an empty description stays an empty string (0.342416ms)
+✔ list: the new fields add no filter flag -- --release and --priority stay refused (0.540125ms)
+✔ list: the text form is one line per epic, and says so when none match (0.465041ms)
+✔ list: an unknown --status or --lane value is refused, naming the vocabulary (0.438916ms)
+✔ list: a valueless filter is refused and an undeclared flag is refused (0.420833ms)
+✔ list: it is READ-ONLY -- the record's bytes do not move (0.418084ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 8
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 430.993083
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ list: --json rows carry id, title, status, lane, priority, links, release, createdAt, description and outcome (0.918167ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/unit/list-verb.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+  -   createdAt: null,
+  -   description: null,
+      id: 'b',
+      lane: 'superpowers',
+      links: [
+        {
+          epic: 'a',
+  ...
+      ],
+  -   outcome: null,
+      priority: 'P2',
+  -   release: null,
+      status: 'later',
+      title: 'Title of b'
+    }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/unit/list-verb.test.mjs:41:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { id: 'b', title: 'Title of b', status: 'later', lane: 'superpowers', priority: 'P2', links: [ [Object] ] },
+    expected: { id: 'b', title: 'Title of b', status: 'later', lane: 'superpowers', priority: 'P2', links: [ [Object] ], release: null, createdAt: null, description: null, outcome: null },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ list: a registered epic reports release, createdAt, description and its recorded outcome (0.430625ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/unit/list-verb.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - '0.54.0'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/unit/list-verb.test.mjs:54:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: '0.54.0',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ list: absent or non-string values report null, and an empty description stays an empty string (0.342416ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/unit/list-verb.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - null
+  
+      at file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/unit/list-verb.test.mjs:65:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/.claude/worktrees/agent-ae3d7d46ee3863950/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
