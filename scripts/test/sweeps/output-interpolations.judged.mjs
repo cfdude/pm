@@ -918,7 +918,7 @@ x("subcommands.mjs", "honchoMemory", {
   "note": 1,
 }, "escaped", "deferralNote() escapes the detour ids (Gate 2 T-I5)");
 x("gate-review-writeback.mjs", "recordGateReview", {
-  "missingEvidence.join(\" and \")": 1,
+  "missingEvidence.join(\" and \")": 2,
   "baseSha": 1,
   "headSha": 1,
   "gate": 4,
