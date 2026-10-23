@@ -15139,6 +15139,75 @@
       "createdAt": "2026-10-20T11:28:06.603Z",
       "touchedAt": "2026-10-22T17:05:44.653Z",
       "release": "0.54.0"
+    },
+    {
+      "id": "gh-cfdude-pm-254",
+      "title": "Release close step does not follow a superseded epic to the epic that delivered it, leaving tracker issues open",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "254",
+      "externalUrl": "https://github.com/cfdude/pm/issues/254",
+      "externalUpdatedAt": "2026-10-17T12:43:17Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-23T04:24:32.655Z",
+      "touchedAt": "2026-10-23T04:24:40.506Z",
+      "notes": [
+        {
+          "at": "2026-10-23T04:24:40.502Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-255",
+      "title": "gate-guard re-arms 'owes a tracker refresh' after every attribute-commit on a tracker-linked epic, and blocks the next write",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "255",
+      "externalUrl": "https://github.com/cfdude/pm/issues/255",
+      "externalUpdatedAt": "2026-10-20T06:26:11Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-23T04:24:34.688Z",
+      "touchedAt": "2026-10-23T04:24:42.592Z",
+      "notes": [
+        {
+          "at": "2026-10-23T04:24:42.587Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-256",
+      "title": "An openspec epic can build for a week with no Gate 1 verdict on record; nothing flags it until set-active",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "256",
+      "externalUrl": "https://github.com/cfdude/pm/issues/256",
+      "externalUpdatedAt": "2026-10-20T22:07:02Z",
+      "attributedCommits": [],
+      "createdAt": "2026-10-23T04:24:38.029Z",
+      "touchedAt": "2026-10-23T04:24:44.414Z",
+      "notes": [
+        {
+          "at": "2026-10-23T04:24:44.404Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -15149,7 +15218,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2172,
+  "revision": 2178,
   "reviewMode": "standard",
   "releases": [
     {
