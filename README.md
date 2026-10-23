@@ -643,8 +643,8 @@ implementation range in existence when its verdict is truthful — it requires `
 there produced a required field satisfiable only with a value of the wrong kind, and the artifact
 commits typed into it read as an implementation range to every consumer that treats the field as
 one. The sha pair is still accepted on Gate 1 (every prior invocation and every recorded verdict
-keeps working); a Gate 1 pass carrying a range and no artifacts says so on stderr. A `fail` needs
-neither. `--gate 1 --artifact` also stores a sha-256 per readable artifact as `artifactDigests`: amending a reviewed artifact reads `⚠ stale` on `/pm:status` and the brief, and an unreadable one reads `⚠ unverifiable`. A live change's `tasks.md` stays in the list but is never digested, because `/opsx:apply` ticks it constantly; a verdict recorded before this carries no digests and renders as before, and the archive move never reads as staleness.
+keeps working); a Gate 1 pass carrying a range and no artifacts says so on stderr. A Gate 1 `fail` needs
+neither; a Gate 2 `fail` requires `--base-sha` and `--head-sha`. `--gate 1 --artifact` also stores a sha-256 per readable artifact as `artifactDigests`: amending a reviewed artifact reads `⚠ stale` on `/pm:status` and the brief, and an unreadable one reads `⚠ unverifiable`. A live change's `tasks.md` stays in the list but is never digested, because `/opsx:apply` ticks it constantly; a verdict recorded before this carries no digests and renders as before, and the archive move never reads as staleness.
 
 An archive that reached `archived` without any review at all now records **`verdict: "ungated"`**
 instead of nothing. That is a standing condition, reported by the brief and by `integrity` until a
