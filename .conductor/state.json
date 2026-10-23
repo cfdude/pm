@@ -15251,11 +15251,16 @@
           "at": "2026-10-23T13:31:35.777Z",
           "actor": "agent",
           "text": "Rob 2026-10-23 (effort): the profile defaults only ever reach low/medium/high, so xhigh, max and ultracode are accepted (constants.mjs:1571 KNOWN_EFFORTS) but never suggested; pm holds no guidance on when to choose them. Scope: (1) when-to-use guidance per effort level, SOURCED from the official per-level table in code.claude.com/docs/en/model-config.md ('Choose an effort level'), not invented; (2) an escalation rule tied to a signal pm already measures — a failed review round / spend-guard stop (spend-guard already names an escalation target) retries one effort level up instead of repeating the same tier; (3) FIX a verified contradiction: official docs list Haiku 5.5 with low..max and default medium, but constants.mjs:1572 MODELS_WITHOUT_EFFORT=['haiku'] makes the profile refuse haiku:<effort> — check whether that is right per model generation and make support per-model, not per-family; (4) xhigh and max verified valid on Opus 5.5, Sonnet 5.5 and Haiku 5.5 (docs table); 'ultracode' is NOT in the docs table fetched (first 100k chars of 121k read) — verify before keeping it in KNOWN_EFFORTS; (5) dispatch carries effort per role via the Agent tool effort parameter and subagent frontmatter effort (precedence: CLAUDE_CODE_EFFORT_LEVEL env beats both). Rob default: Sonnet 5.5 medium; open call: whether plan/review (Opus high) should drop, and whether pm should suggest Opus medium as its default."
+        },
+        {
+          "at": "2026-10-23T13:37:19.242Z",
+          "actor": "agent",
+          "text": "VERIFIED 2026-10-23 against code.claude.com/docs/en/model-config.md: ultracode is NOT an effort level — 'a Claude Code setting rather than a model effort level' that plans a dynamic workflow per substantive task at whatever effort the session runs; '--effort ultracode' turns it on AND sets xhigh; persisted effortLevel and CLAUDE_CODE_EFFORT_LEVEL do not accept it; 'max' is also not accepted by the persisted effortLevel key. So KNOWN_EFFORTS (constants.mjs:1571) is wrong to list ultracode as a level: model it as a separate workflow switch. Official per-level guidance (use verbatim as the source, cite the page): low = quick exchanges you review, e.g. rename; medium = default on Opus/Sonnet/Haiku 5.5, day-to-day work with clear scope; high = verification matters or edge cases likely, e.g. bug fix in existing codebase; xhigh = deeper reasoning at higher token spend; max = hard problems worked without you, e.g. security vulnerabilities — diminishing returns, prone to overthinking, test before broad use. A Perplexity-sourced preset table (Rob, 2026-10-23: Sonnet low=micro-tasks, medium=clear tickets, high=bugs/multi-file; Opus high=domain-complex, xhigh=architecture/deep review, max=security/incident/migration; Opus+xhigh+ultracode=decomposable feature delivery; escalate effort before model, reset effort when changing model, never carry max forward) is third-party: use it as input to the role table, never cite it as the spec source."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-23T13:23:59.176Z",
-      "touchedAt": "2026-10-23T13:31:35.785Z"
+      "touchedAt": "2026-10-23T13:37:19.249Z"
     }
   ],
   "detourStack": [],
@@ -15266,7 +15271,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2182,
+  "revision": 2183,
   "reviewMode": "standard",
   "releases": [
     {
