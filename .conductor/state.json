@@ -15312,6 +15312,43 @@
       "attributedCommits": [],
       "createdAt": "2026-10-23T13:23:59.176Z",
       "touchedAt": "2026-10-23T13:37:19.249Z"
+    },
+    {
+      "id": "release-planning-mission-and-milestone",
+      "title": "Release planning: a stated mission, a milestone where it is met, release-ordered plans with rationale, and a rule that new work cannot jump the queue",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "backlog-grooming-pass",
+          "reason": "supplies dedup, validation and trim; this epic consumes its output and adds mission and milestone"
+        },
+        {
+          "type": "relates-to",
+          "epic": "triage-surfaces-open-release-intents",
+          "reason": "release intent visible at intake; this epic gives it a mission"
+        },
+        {
+          "type": "relates-to",
+          "epic": "epic-registration-clock",
+          "reason": "growth-over-time view needs createdAt"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Rob's feedback 2026-10-23 (verbatim in docs/feedback/2026-10-23-release-planning-mission-and-milestone.md): pm prioritizes P0-P3 but does no release planning. Each epic spawns several more (test findings, close-out epics), so backlogs grow faster than they ship (market-intelligence: 140 epics, 107 kept after a reassessment; six months with no trading). Needs: recorded mission, milestone with numbered exit criteria, planned releases with rationale, backlog-growth visibility without an external tracker, blocker ranking against the mission, an anti-spawn rule bounding autonomous mode to the planned releases, and a human-readable plan artifact. Reference: https://claude.ai/artifact/S421GrdRG1hp47DRb9grb2",
+      "notes": [
+        {
+          "at": "2026-10-23T16:46:24.208Z",
+          "actor": "agent",
+          "text": "lane: openspec (new capability, >8h). P2 per Rob. Dedup/validate/trim passes are backlog-grooming-pass; this epic adds mission, milestone, release rationale, anti-spawn. Spec brief: docs/feedback/2026-10-23-release-planning-mission-and-milestone.md. Not yet in any release."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-10-23T16:46:24.209Z",
+      "touchedAt": "2026-10-23T16:46:24.214Z"
     }
   ],
   "detourStack": [],
@@ -15322,7 +15359,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2189,
+  "revision": 2190,
   "reviewMode": "standard",
   "releases": [
     {
