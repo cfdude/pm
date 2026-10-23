@@ -24,7 +24,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
-import { escapeControls, isFlagToken, jsonText } from "./constants.mjs";
+import { escapeControls, isFlagToken, jsonText, releaseMembers } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, outStream } from "./invocation.mjs";
@@ -186,6 +186,9 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
       // it learns to skip.
       shared: shared.sort((a, b) => weight(b) - weight(a) || a.localeCompare(b)),
       superseded: superseded.has(e.id),
+      // The release this epic is a member of, read from the one-way pointer (`epic.release`), or
+      // null. Surfaced so a candidate already scoped into a release reads as such.
+      release: typeof e.release === "string" && e.release ? e.release : null,
     });
   }
   return out
@@ -194,7 +197,32 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
     .slice(0, Math.max(0, limit));
 }
 
-/** `triage "<free text>" [--limit N]`
+/** The OPEN releases (no `delivered` marker) with how much vocabulary each shares with the ask.
+ *  Pure. Membership comes from releaseMembers() (constants.mjs), the one derivation PROJECT.md and
+ *  the briefing read, so a count here cannot disagree with them. `sharedTokens` are drawn from the
+ *  release id and intent, minus words the whole backlog uses (the same idf cutoff candidates get).
+ *  Ranked by shared-token count, then id; a release sharing nothing is still listed, because an
+ *  intent worth reading is not always lexically close to the ask. Computes no verdict. */
+export function openReleases(state, epics, ask) {
+  const releases = Array.isArray(state && state.releases) ? state.releases : [];
+  const askTokens = new Set(tokenize(ask));
+  const { weight } = idfMap(epics);
+  const keep = epics.length ? (t) => weight(t) > 0 : () => true;
+  return releases
+    .filter(r => r && typeof r.id === "string" && !r.delivered)
+    .map(r => {
+      const own = new Set([...tokenize(r.id), ...tokenize(r.intent)]);
+      return {
+        id: r.id,
+        intent: typeof r.intent === "string" ? r.intent : "",
+        memberCount: releaseMembers(epics, r.id).length,
+        sharedTokens: [...own].filter(t => askTokens.has(t) && keep(t)).sort(),
+      };
+    })
+    .sort((a, b) => b.sharedTokens.length - a.sharedTokens.length || a.id.localeCompare(b.id));
+}
+
+/** `triage "<free text>" | --ask=<text> [--limit N]`
  *
  *  READ-ONLY. Prints one JSON object: the ask, the lane the repo's own routing picks for it
  *  (`suggest-lane`'s answer, carried here so intake is one call and not two), the backlog's
@@ -203,7 +231,18 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
 export function triage() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   // The check's classified positional, never `process.argv[3]` (see suggest-lane's reader).
-  const [ask] = checkedPositionals("triage");
+  const [positional] = checkedPositionals("triage");
+  // `--ask=<text>` carries the text as a flag VALUE (the suggest-lane contract), so an ask that
+  // starts with a dash is not reclassified as a flag. The pre-dispatch check leaves flags after the
+  // positional when there is one, and AT index 3 when there is not — read from where they are.
+  const f = parseFlags(currentArgv().slice(typeof positional === "string" ? 4 : 3));
+  requireFlagValues("triage", f);
+  const flagAsk = typeof f.ask === "string" ? f.ask : undefined;
+  if (flagAsk !== undefined && typeof positional === "string") {
+    die(`conductor: triage takes ONE text — '${escapeControls(positional)}' is an extra argument ` +
+      "it does not read, because --ask already gave the text. Nothing was written.\n");
+  }
+  const ask = flagAsk !== undefined ? flagAsk : positional;
   // gh-186. The old test was `ask.startsWith("--")`, which refused any ask whose own words begin
   // with a flag name — and CLAUDE.md makes this call STEP 1 of intake, "the ask, in its own
   // words", before any add-epic. A bug report ABOUT a flag is titled that way; this tracker had
@@ -214,11 +253,10 @@ export function triage() {
   // reading `--limit` as one returns a scored, confident, meaningless result. `isFlagToken` is
   // the same predicate gh-182 shipped for flag VALUES — it matches a token shaped exactly like a
   // flag, so a bare `--limit` is still a flag while "--story <n> is 1-indexed" is text.
-  if (typeof ask !== "string" || !ask.trim() || isFlagToken(ask)) {
-    die("usage: conductor.mjs triage \"<free text>\" [--limit N]\n");
+  if (typeof ask !== "string" || !ask.trim() || (flagAsk === undefined && isFlagToken(ask))) {
+    // (A flag-VALUE ask is never reclassified as a flag: that is what `--ask=` exists for.)
+    die("usage: conductor.mjs triage \"<free text>\" | --ask=<text> [--limit N]\n");
   }
-  const f = parseFlags(currentArgv().slice(4));
-  requireFlagValues("triage", f);
   // An unrecognized flag is refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) (VERB_FLAGS' `--limit` row):
   // parseFlags reads whatever it is handed, so without it a typo is dropped in silence and the caller
   // gets a confident answer to a question they did not ask.
@@ -253,6 +291,9 @@ export function triage() {
       active: typeof state.active === "string" ? state.active : null,
     },
     candidates: candidateSet(epics, ask, { limit }),
+    // Open releases and their intents, so an ask that SERVES a committed release reads as such.
+    // Information only: which release (if any) the work belongs to is the agent's call.
+    releases: openReleases(state, epics, ask),
     // Stated, not implied. The engine surfaces what is worth reading; deciding whether any of
     // it is the SAME ask is judgment, and judgment is recorded by the agent with `--link
     // supersedes:<id>`, `--link relates-to:<id>`, or an `--outcome declined` disposition.
