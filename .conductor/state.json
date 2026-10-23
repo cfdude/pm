@@ -6126,7 +6126,9 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f7de6753ed629f647969d47e2ec8507d864a7a84"
+      ],
       "notes": [
         {
           "at": "2026-09-08T06:27:30.787Z",
@@ -6145,7 +6147,7 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-10-23T13:30:12.510Z",
       "release": "0.54.0"
     },
     {
@@ -15259,7 +15261,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2180,
+  "revision": 2181,
   "reviewMode": "standard",
   "releases": [
     {
