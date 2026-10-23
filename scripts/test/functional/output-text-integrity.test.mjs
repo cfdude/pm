@@ -1113,6 +1113,7 @@ recipe("changelog --since", { exempt: "--since must be a pm version (x.y.z), and
 recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
 recipe("rules --epic", { notRendered: "--epic selects the review mode the block states and is not echoed", run: (c, v) => pm(c.cwd, ["rules", "--epic", v]) });
 recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });
+recipe("triage --ask", { notRendered: "triage's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["triage", "--ask", v]) });
 recipe("triage <positional>", { notRendered: "triage's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["triage", v]) });
 recipe("suggest-lane --ask", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", "--ask", v]) });
 recipe("list --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["list", "--status", v]) });

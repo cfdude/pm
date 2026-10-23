@@ -383,3 +383,75 @@ unitTest("a Latin ask's candidates are untouched by the CJK threshold", async ()
   // Two generic shared words still surface a Latin candidate, exactly as before the CJK rule.
   assert.deepEqual(candidateSet(epics, "add a new export feature", { limit: 5 }).map(c => c.id), ["new-login-feature"]);
 });
+
+// ─────────────── open-release intents and membership (triage-surfaces-open-release-intents) ───────────────
+
+/** A repo whose record also carries `releases`. */
+function repoWithReleases(epics, releases) {
+  const engine = repoWith(epics);
+  engine.store.record().releases = releases;
+  return engine;
+}
+
+unitTest("each candidate carries its release id, or null; releases[] lists OPEN releases with the tokens they share with the ask", () => {
+  const engine = repoWithReleases(
+    [
+      { id: "link-validation", title: "Validate link types against a known set", release: "0.54.0" },
+      { id: "unrelated-thing", title: "Quokka rendering" },
+    ],
+    [
+      { id: "0.54.0", intent: "Make link validation stricter and surface release intents", deferred: [] },
+      { id: "0.53.0", intent: "Link validation groundwork", delivered: { recordedAt: "2026-10-17T00:00:00Z" } },
+      { id: "0.55.0", intent: "Quokka tooling", deferred: [] },
+    ],
+  );
+  const out = triage(engine, "validate link types");
+  const byId = Object.fromEntries(out.candidates.map(c => [c.id, c]));
+  assert.equal(byId["link-validation"].release, "0.54.0");
+  assert.deepEqual(out.releases.map(r => r.id).sort(), ["0.54.0", "0.55.0"], "a delivered release is not open");
+  const open = out.releases.find(r => r.id === "0.54.0");
+  assert.equal(open.intent, "Make link validation stricter and surface release intents");
+  assert.equal(open.memberCount, 1);
+  assert.ok(open.sharedTokens.includes("link"), `got ${JSON.stringify(open.sharedTokens)}`);
+  assert.deepEqual(out.releases[0].id, "0.54.0", "the release sharing the most vocabulary ranks first");
+  assert.equal(out.verdict, null, "surfacing release intents decides nothing");
+});
+
+unitTest("a candidate outside every release has release: null, and a record with no releases yields releases: []", () => {
+  const engine = repoWith([{ id: "alpha-thing", title: "Alpha widget calibration" }]);
+  const out = triage(engine, "alpha widget");
+  assert.equal(out.candidates[0].release, null);
+  assert.deepEqual(out.releases, []);
+});
+
+// ─────────────── --ask= (same contract as suggest-lane) ───────────────
+
+unitTest("triage --ask=<text> reads the ask with NO positional (flag sits at index 3), --limit after it still applies", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  const out = JSON.parse(engine(["triage", "--ask=Epic-Hierarchy Orchestration Implementation Plan", "--limit", "1"]));
+  assert.equal(out.ask, "Epic-Hierarchy Orchestration Implementation Plan");
+  assert.equal(out.candidates.length, 1, "--limit is read when --ask replaces the positional");
+});
+
+unitTest("triage --ask= carries an ask that starts with a dash; the positional form of a flag-shaped text is still refused", () => {
+  const engine = repoWith([{ id: "story-index", title: "--story <n> is 1-indexed in the story flag" }]);
+  const out = JSON.parse(engine(["triage", "--ask=--limit=5 ignored story flag"]));
+  assert.equal(out.ask, "--limit=5 ignored story flag");
+  assert.ok(out.candidates.some(c => c.id === "story-index"));
+  const bare = engine.combined(["triage", "--limit", "5"]);
+  assert.match(bare, /usage/);
+  assert.doesNotMatch(bare, /"candidates"/);
+  assert.match(engine.combined(["triage", "--limit=5 ignored"]), /--ask/, "the refusal offers the --ask= form");
+  const prose = JSON.parse(engine(["triage", "--story <n> is 1-indexed"]));
+  assert.equal(prose.ask, "--story <n> is 1-indexed", "a non-flag-shaped dash text is still accepted positionally");
+});
+
+unitTest("triage refuses --ask together with a positional text, and --ask with no value", () => {
+  const engine = repoWith(LIVE_PAIRS);
+  const both = engine.combined(["triage", "an ask", "--ask=another ask"]);
+  assert.match(both, /ONE text/);
+  assert.doesNotMatch(both, /"candidates"/);
+  const empty = engine.combined(["triage", "--ask"]);
+  assert.match(empty, /--ask/);
+  assert.doesNotMatch(empty, /"candidates"/);
+});

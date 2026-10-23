@@ -935,8 +935,9 @@ deferral-list question). Read-only; see `commands/list.md`. It filters fields; `
 identity-based — same id, or the same `externalUrl` — which stops `/pm:sync` mirroring an issue
 twice and does nothing about *the same ask arriving under a different name*. This returns the
 existing epics that share **distinctive** vocabulary with the ask (each with the shared words
-that put it there, and a flag for the ones already superseded), the lane this repo's routing
-picks, and the backlog's current shape.
+that put it there, a flag for the ones already superseded, and the release each belongs to), the
+lane this repo's routing picks, the backlog's current shape, and the open releases with their
+intents. `triage --ask=<text>` takes an ask that starts with a dash, as `suggest-lane --ask=` does.
 
 It emits `verdict: null` and means it: the engine computes what is worth READING and never
 decides whether two asks are the same — that is judgment, and judgment is the agent's. Record

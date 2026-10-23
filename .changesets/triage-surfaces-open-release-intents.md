@@ -1,0 +1,3 @@
+* **`triage` shows the open releases and which release each candidate belongs to.** Output gains `releases[]` (id, intent, memberCount, and the words the release shares with the ask) for every release not yet delivered, and each candidate gains `release` (its release id, or null). `verdict` is still always null: the engine shows what is worth reading and never decides.
+* **`triage --ask=<text>` takes an ask that starts with a dash**, the same form `suggest-lane` already had. Giving both `--ask` and a positional text is refused. The intake step in the rules block names the form (+38 bytes).
+* **`commands/lane-routing.md` no longer says pm holds no release context.** It does hold releases; `suggest-lane` just does not read them.

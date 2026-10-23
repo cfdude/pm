@@ -25,6 +25,15 @@ different names. Identity dedup found none of them; a human reading the backlog 
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" triage "<the ask, in its own words>"
 ```
 
+An ask that begins with `-` (a bug report titled after a flag) cannot be passed positionally when it
+is shaped like a flag; say it with `--ask=<the ask>` instead, exactly as `suggest-lane --ask=` does:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" triage --ask='--limit=5 is ignored by triage'
+```
+
+Give the ask positionally or with `--ask=`, never both (refused as an extra argument).
+
 Optional: `--limit N` (default 5) bounds how many candidates come back. It must be a positive
 integer — a valueless or non-numeric `--limit` is refused rather than coerced, and any other
 flag is rejected by name. A wrong bound on a recall device silently hides the twin the whole
@@ -47,7 +56,11 @@ line (shown expanded below for reading; parse it, do not match its layout):
   "candidates": [
     { "id": "gh-cfdude-pm-100", "title": "link types have no known set",
       "status": "queued", "lane": "openspec", "priority": "P2",
-      "score": 0.71, "shared": ["link", "types", "set"], "superseded": false }
+      "score": 0.71, "shared": ["link", "types", "set"], "superseded": false, "release": "0.54.0" }
+  ],
+  "releases": [
+    { "id": "0.54.0", "intent": "Make link validation stricter", "memberCount": 6,
+      "sharedTokens": ["link"] }
   ],
   "verdict": null
 }
@@ -63,6 +76,11 @@ line (shown expanded below for reading; parse it, do not match its layout):
   reworded ask still shares tokens with the epic it matches. Because a long CJK ask carries one
   such token per character, an epic that shares ONLY those needs at least two of them, and at
   least one for every ten in the ask — so common words like 新的 "new" do not fill the list.
+- **`release`** (on each candidate) — the id of the release that epic is a member of, or `null`.
+- **`releases`** — every OPEN release (no delivered marker) with its `intent`, `memberCount` and the
+  `sharedTokens` its id and intent share with the ask, ranked by how many. A release sharing nothing
+  is still listed: an intent worth reading is not always lexically close to the ask. Whether the ask
+  serves one of them, and whether to `release <id> --member` it, is your call; the engine only shows them.
 - **`superseded: true`** — some other epic already holds a `supersedes` link to this one. It is
   already dead; do not consolidate a fourth ask into it.
 - **`lane`** — the repo's own `suggest-lane` answer, carried here so intake is one call, not two.

@@ -926,7 +926,7 @@ export const VERB_FLAGS = [
   // like a flag (`--limit=5 ignored`) is classified as a flag even inside shell quotes when passed
   // positionally; `--ask=<text>` is one token whose value is never reclassified, so the emitted
   // lane-routing step routes any item title (emitted-commands-run-as-written, Decision 3).
-  { flag: "ask", commands: ["suggest-lane"], requires: "the text to route" },
+  { flag: "ask", commands: ["suggest-lane", "triage"], requires: "the text to route" },
   // record-reconcile and record-tracker-refresh. `--verdict` is spelled the same on four verbs
   // and means four different vocabularies, so it is four scoped rows and not one shared one;
   // what they agree on — that it takes a value — is what the row carries.
@@ -1136,7 +1136,7 @@ export const VERB_POSITIONALS = {
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
-  triage: { min: 1, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
+  triage: { min: 0, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
   "pop-detour": { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
   "set-gate-guard": { min: 0, max: 1, form: "[on|off]", idFirst: false, freeText: false },
   claim: { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },

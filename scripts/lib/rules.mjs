@@ -441,7 +441,7 @@ export const intakeLines = (platform = "claude-code") => [
   "different names, and identity dedup found none of them.",
   "",
   "1. **Get the candidate set mechanically.** Before any `add-epic`, run",
-  `   \`${pmCmd(platform, "triage")} "<the ask, in its own words>"\`. It returns the existing epics that share`,
+  `   \`${pmCmd(platform, "triage")} "<the ask, in its own words>"\` (\`--ask=<ask>\` if it starts with \`-\`). It returns the existing epics that share`,
   "   distinctive vocabulary with the ask (each with the shared tokens that put it there), the",
   "   lane this repo's routing picks, and the backlog's current shape. It returns",
   "   `verdict: null` and that is not a placeholder: the engine computes what is WORTH READING",
