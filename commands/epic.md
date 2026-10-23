@@ -903,7 +903,7 @@ shas. Gate 1 requires `--artifact <path>` (repeatable) instead: Gate 1 is the sp
 *before* `/opsx:apply`, so at the moment its verdict is truthful there is no implementation range
 in existence — demanding one produced a required field satisfiable only with a value of the wrong
 kind, and the artifact commits that got typed into it then read as an implementation range to
-every consumer that treats the field as one. A `fail` may omit both.
+every consumer that treats the field as one. A Gate 2 `fail` requires both too (a failing retrospective review still covered a range; the refusal names the missing flag), while a Gate 1 `fail` may omit them. A Gate 2 `fail` recorded without a range before this rule still loads unchanged.
 
 The sha pair is still ACCEPTED on Gate 1, so every invocation that worked before still works and
 every verdict already recorded still loads — but a Gate 1 pass carrying a range and no artifacts

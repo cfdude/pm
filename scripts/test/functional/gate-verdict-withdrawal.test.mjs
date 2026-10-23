@@ -489,7 +489,7 @@ function briefWithdrawnBlock(brief, id) {
 function archivedFailedThenWithdrawn(id, reason) {
   const cwd = metOpenspec(id);
   accepted(cwd, ["update-epic", id, ...ARCHIVE_DELIVERED]);
-  run(["record-gate-review", id, "--gate", "2", "--verdict", "fail"], { cwd });
+  run(["record-gate-review", id, "--gate", "2", "--verdict", "fail", "--base-sha", "HEAD", "--head-sha", "HEAD"], { cwd });
   accepted(cwd, ["update-epic", id, "--withdraw-gate-review", "2", "--withdrawal-reason", reason]);
   return cwd;
 }

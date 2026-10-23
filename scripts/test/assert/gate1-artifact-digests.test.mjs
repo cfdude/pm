@@ -100,10 +100,11 @@ test("198.6 a stale Gate 1 never blocks the archive: only Gate 2 is read by the 
   assert.equal(readState(cwd).epics[0].status, "archived");
 });
 
-test("198.7 a Gate 2 verdict carrying --artifact records no digests (the commit range is its evidence)", () => {
+test("198.7 a Gate 2 verdict is never evidenced by --artifact alone: it is refused and records no digests (the commit range is its evidence)", () => {
   const cwd = repoWithChange();
-  run(["record-gate-review", "e", "--gate", "2", "--verdict", "fail", "--artifact", "openspec/changes/e/proposal.md"], { cwd });
-  assert.equal(readState(cwd).epics[0].gateReview.gate2.artifactDigests, undefined);
+  const err = expectFail(() => run(["record-gate-review", "e", "--gate", "2", "--verdict", "fail", "--artifact", "openspec/changes/e/proposal.md"], { cwd }));
+  assert.match(String(err.stderr || err.message), /a gate 2 'fail' requires the commit range/);
+  assert.equal(readState(cwd).epics[0].gateReview?.gate2, undefined);
 });
 
 test("232.4 --plan and --spec naming a directory that exists are refused on both write paths; a file is accepted", () => {

@@ -211,7 +211,7 @@ const archiveOnDisk = (cwd, id) =>
 
 test("3.11 regression guard: a record that already failed Gate 2 is not locked", () => {
   const { cwd } = archivedDeliveredOpenspec("g11");
-  run(["record-gate-review", "g11", "--gate", "2", "--verdict", "fail"], { cwd });
+  run(["record-gate-review", "g11", "--gate", "2", "--verdict", "fail", "--base-sha", "HEAD", "--head-sha", "HEAD"], { cwd });
   const later = descendant(cwd);
   accepted(cwd, ["update-epic", "g11", "--attribute-commit", later]);
   assert.equal(epicOf(cwd, "g11").attributedCommits.at(-1), later);
@@ -450,7 +450,7 @@ test("3.10 the printed invocation runs", () => {
 
 test("3.10a the ratchet: restoring a record the check accepted is judged like any other change", () => {
   const { cwd } = archivedDeliveredOpenspec("r10a");
-  run(["record-gate-review", "r10a", "--gate", "2", "--verdict", "fail"], { cwd });
+  run(["record-gate-review", "r10a", "--gate", "2", "--verdict", "fail", "--base-sha", "HEAD", "--head-sha", "HEAD"], { cwd });
   accepted(cwd, ["update-epic", "r10a", "--lane", "claude-code"]);
   const r = refused(cwd, ["update-epic", "r10a", "--lane", "openspec"]);
   assert.match(r.stderr, /Gate 2 demand/);

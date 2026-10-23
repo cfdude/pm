@@ -1009,12 +1009,25 @@ test("a pass with no recorded range is refused, naming the missing evidence", ()
     "a refused verdict writes nothing");
 });
 
-test("a fail verdict may omit the range — there is no shipped work to have covered", () => {
+test("a gate 2 fail verdict requires the range it covered, naming the missing flag; gate 1 fail is unchanged", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
-  assert.equal(readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2.verdict, "fail");
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  for (const [flags, missing] of [[[], "--base-sha and --head-sha"], [["--base-sha", base], "--head-sha"], [["--head-sha", head], "--base-sha"]]) {
+    const err = expectFail(() => run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", ...flags], { cwd }));
+    assert.match(String(err.stderr || err.message), new RegExp(`a gate 2 'fail' requires the commit range.*missing ${missing}`));
+    assert.match(String(err.stderr || err.message), /Gate 2 fail carries a range/);
+  }
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "a refused verdict writes nothing");
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", "--base-sha", base, "--head-sha", head], { cwd });
+  const g2 = readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2;
+  assert.equal(g2.verdict, "fail");
+  assert.equal(g2.baseSha, base);
+  assert.equal(g2.headSha, head);
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "fail"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate1.verdict, "fail");
 });
 
 // A verdict recorded before the evidence fields existed carries a free-text note. It stays
@@ -1131,7 +1144,7 @@ test("supersession preserves ANY prior entry and never nests a second level", ()
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
   const [a, b, c] = fixtureCommits(cwd, ["a", "b", "c"]);
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", "--base-sha", a, "--head-sha", a], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
     "--base-sha", a, "--head-sha", b], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",

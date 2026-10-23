@@ -400,7 +400,7 @@ test("5.2 With no limit configured the hooks pay nothing: no spend path, and no 
 test("5.2 A stuck active epic puts one STOP line in the brief, from state alone", () => {
   const sc = scene({ on: true, limit: 1 });
   run(["set-active", "e1"], sc.opts);
-  run(["record-gate-review", "e1", "--gate", "2", "--verdict", "fail"], sc.opts);
+  run(["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"], sc.opts);
   const seen = hotPaths(sc);
   const ctx = JSON.parse(seen.brief.result.stdout).hookSpecificOutput.additionalContext;
   const lines = ctx.split("\n").filter((l) => l.startsWith("STOP: spend guard —"));

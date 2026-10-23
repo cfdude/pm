@@ -160,9 +160,13 @@ unitTest("update-epic blocks archiving an openspec-lane epic without a passing g
 unitTest("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdict", () => {
   const engine = memoryEngine(emptyRecord());
   engine(["add-epic", "--id", "spec-epic", "--lane", "openspec"]);
-  // A FAIL verdict needs no evidence (the same asymmetry a passing Gate 2 has, in reverse), so this
-  // is reachable without a commit range.
-  engine(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"]);
+  // A Gate 2 fail now carries a range, and recording one needs resolvable commits (functional rung), so
+  // this rung INSTALLS the record the verb would have written.
+  const rec = structuredClone(engine.store.record());
+  rec.epics.find(e => e.id === "spec-epic").gateReview = { gate2: { verdict: "fail", reviewedAt: "2026-10-09T00:00:00.000Z" } };
+  const live = engine.store.record();
+  for (const k of Object.keys(live)) delete live[k];
+  Object.assign(live, rec);
   assert.ok(expectFail(() => engine(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"])));
 });
 unitTest("update-epic archiving a non-openspec-lane epic is unaffected by gate-review enforcement", () => {

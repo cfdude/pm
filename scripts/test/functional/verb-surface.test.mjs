@@ -420,7 +420,7 @@ const DISPATCH_BASELINE = {
   triage: { args: ["triage", "a caching bug"] },
   "set-autonomy": { args: ["set-autonomy", "e1", "--level", "off"] },
   "record-reconcile": { pre: [PUSH, ["pop-detour"]], args: ["record-reconcile", "e1", "--detour", "other", "--verdict", "valid"] },
-  "record-gate-review": { args: ["record-gate-review", "e1", "--gate", "2", "--verdict", "fail"] },
+  "record-gate-review": { args: ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"] },
   "record-cross-spec-review": { pre: [["release", "r1", "--intent", "x", "--member", "xs"]],
     args: ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me"] },
   "record-tracker-refresh": { args: ["record-tracker-refresh", "ext", "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"] },
@@ -664,7 +664,7 @@ test("--force is not refused on a mutating verb that validates its own flags", (
     [[], ["add-epic", "--id", "f1", "--lane", "claude-code", "--force"]],
     [[], ["update-epic", "e1", "--title", "x", "--force"]],
     [[], ["release", "r1", "--intent", "x", "--force"]],
-    [[], ["record-gate-review", "e1", "--gate", "2", "--verdict", "fail", "--force"]],
+    [[], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail", "--force"]],
     [[["release", "r1", "--intent", "x", "--member", "xs"]],
       ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me", "--force"]],
   ];

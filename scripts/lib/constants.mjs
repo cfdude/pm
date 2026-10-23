@@ -522,9 +522,9 @@ export const EPIC_FLAGS = [
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
   // rather than on a top-level epic key, so the command owns the write.
   { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom",
-    placeholder: "a sha — REQUIRED for a gate 2 pass, optional otherwise" },
+    placeholder: "a sha — REQUIRED for a gate 2 verdict (pass or fail), optional otherwise" },
   { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom",
-    placeholder: "a sha — REQUIRED for a gate 2 pass, optional otherwise" },
+    placeholder: "a sha — REQUIRED for a gate 2 verdict (pass or fail), optional otherwise" },
   // GATE 1's evidence, and the reason the sha pair above stopped being unconditional (gh#177).
   // Gate 1 is the SPEC review and runs before `/opsx:apply`, so at the moment its verdict is
   // truthful there is by construction no implementation range to point at — the emitted procedure

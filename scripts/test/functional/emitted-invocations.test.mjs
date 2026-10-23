@@ -1273,7 +1273,11 @@ const INTEGRITY_BUILDERS = {
       setup() {
         const repo = remedyRepo();
         openspecEpic(repo, "lf", 1);
-        repo.ok(["record-gate-review", "lf", "--gate", "2", "--verdict", "fail", "--reviewer", "audit"]);
+        // The verb no longer records a range-less Gate 2 fail (record-gate-review-fail-requires-shas), but
+        // records written before that rule still hold one, and this finding exists to report them: install it.
+        const st = repo.state();
+        st.epics.find(e => e.id === "lf").gateReview = { gate2: { verdict: "fail", reviewedAt: new Date().toISOString(), reviewer: "audit" } };
+        repo.write(st);
         return { repo, epicId: "lf" };
       },
       produce: integrityProducer("late-failing-gate-review"),
