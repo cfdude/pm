@@ -14,20 +14,21 @@ procedure.
 
 `list` cannot support it today. `listRow()` (`scripts/lib/list.mjs`) reports id, title, status, lane,
 priority and links, so a pass cannot ask how long an epic has sat (`createdAt`, delivered by
-`epic-registration-clock`), which release it is in, or what it says it is for (`description`) without
-reading `.conductor/state.json`, the file the rules forbid hand-reading and hand-editing.
+`epic-registration-clock`), which release it is in, what it says it is for (`description`), or what a
+finished epic's recorded outcome was (`outcome`) without reading `.conductor/state.json`, a file the
+rules forbid hand-EDITING (this pass does not read it directly either, so the engine stays the one reader).
 
 ## What Changes
 
-- **`list` rows gain three fields**, additively: `release`, `createdAt`, `description`. Existing
+- **`list` rows gain four fields**, additively: `release`, `createdAt`, `description`, `outcome`. Existing
   `{count, epics}` consumers keep working. Filtering on them is done by the reader of `--json`; this
   change adds NO `--release` or `--priority` flag (a flag earns its place on a measured case).
 - **A procedure skill, `skills/backlog-grooming/SKILL.md`, and a command doc,
-  `commands/backlog-grooming.md`** (`/pm:backlog-grooming`). The skill reads the open backlog as a set
-  (`list --json`), runs `triage` per suspicious epic, and PROPOSES merges, declines and dead-premise
+  `commands/backlog-grooming.md`** (`/pm:backlog-grooming`). The skill reads the OPEN backlog as a set
+  (one `list --status <s> --json` per open status; archived epics are read only on demand), runs `triage` per suspicious epic, and PROPOSES merges, declines and dead-premise
   findings. It records nothing unasked.
 - **Every consolidation records a disposition**: `--outcome superseded|declined` with `--reason` and a
-  `supersedes` link; the survivor receives the superseded epic's context BEFORE the disposition is
+  `supersedes` link; the survivor receives a note citing the superseded epic BEFORE the disposition is
   recorded. Never `remove-epic`.
 - **Evidence is cited so it does not rot**: epic ids, verb output and commit shas, never line numbers.
 - Parity ledger: a new capability claims both new files, in the same commit.
@@ -49,5 +50,5 @@ None.
 - Engine (Node built-ins only): `scripts/lib/list.mjs` (`listRow` only; `filterEpics` unchanged).
 - Docs: `commands/list.md` (JSON shape), new `commands/backlog-grooming.md`, new
   `skills/backlog-grooming/SKILL.md`, `docs/parity-ledger.json`, a changeset fragment.
-- State: none. No new field is written; `release`, `createdAt` and `description` already exist on epics.
+- State: none. No new field is written; `release`, `createdAt`, `description` and `outcome` already exist on epics.
 - No new verb, no new flag, no migration.

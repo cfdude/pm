@@ -10,7 +10,8 @@ same stance: a procedure the agent runs, with the engine supplying fields, never
 ## Goals / Non-Goals
 
 **Goals:** a pass anyone can repeat from the skill alone; every consolidation leaves a disposition;
-the pass can answer "how long has this sat", "what release is it in" and "what is it for" from `list`.
+the pass can answer "how long has this sat", "what release is it in", "what is it for" and "how did it
+end" from `list`.
 
 **Non-Goals:**
 - A verb that finds duplicates or decides anything. `triage` already computes overlap.
@@ -21,13 +22,21 @@ the pass can answer "how long has this sat", "what release is it in" and "what i
 ## Decisions
 
 - **D1 — Option B: widen the row, filter client-side.** `listRow()` adds `release`, `createdAt`,
-  `description`. Alternative A (new `--release`/`--priority`/`--older-than` flags) rejected: no measured
-  case needs a server-side filter, the 2026-09-10 pass read 38 epics in one `--json` listing, and a flag
-  costs a registry row in `constants.mjs`, a command-doc row and a verb-surface test each. Additive:
-  `{count, epics}` is unchanged and old readers ignore new keys.
+  `description`, `outcome`. Alternative A (new `--release`/`--priority`/`--older-than` flags) rejected:
+  no measured case needs a server-side filter, and a flag costs a registry row in `constants.mjs`, a
+  command-doc row and a verb-surface test each. Additive: `{count, epics}` is unchanged and old readers
+  ignore new keys. **Read cost, measured at Gate 1:** `list --json` is 162,780 B for 343 epics today and
+  the widened row is 238,375 B (+46%); descriptions total 41,457 chars over 61 epics (max 1,733); the
+  open set is 35 epics, about 20 KB. So the skill's first read NARROWS to open epics: `--status` takes
+  ONE value per call (verified with `list --help`: `--lane`, `--json`, `--status`, `--linked-to`), so it
+  runs one `list --status <s> --json` for each of `untriaged`, `queued`, `active`, `paused`, `later`,
+  `blocked`, `planned`. An archived epic is read only on demand: `list --linked-to <id> --json` for the
+  epics tied to one id, or `list --status archived --json` once when a re-report needs the delivered
+  set. There is no single-epic read verb; the skill uses no other read path.
 - **D2 — Absent reads as null.** `createdAt` is absent on epics registered before
   `epic-registration-clock` and not always recoverable (`recover-created-at`). The row reports `null` for
-  any absent, null or non-string `createdAt`, never a guessed date; likewise `release` and `description`.
+  any absent, null or non-string `createdAt`, never a guessed date; likewise `release`, `description`
+  and `outcome`. An empty-string `description` is a string and reports `""`, not `null`.
   The pass treats a null `createdAt` as "age unknown", never as "old".
 - **D3 — Delivered as a skill plus a command doc, no new verb.** The procedure is judgment over several
   reads; a verb would either decide or be a thin wrapper over `list` and `triage`. A skill carries a
@@ -42,8 +51,10 @@ the pass can answer "how long has this sat", "what release is it in" and "what i
   rules. `tracker-sync` and `conductor-record` mention `createdAt` and triage but own neither the row
   nor the pass. `epic-registration-clock` has no spec under `openspec/specs/` either; its behaviour is
   cited from the CHANGELOG and `scripts/lib/created-at.mjs`.
-- **D5 — Dispositions, in order.** For a pair A (survivor) and B (superseded): (1) carry B's context
-  (description, notes, links) onto A with `update-epic A --notes ...`; (2) record
+- **D5 — Dispositions, in order.** For a pair A (survivor) and B (superseded): (1) write A a note
+  citing B's id with `update-epic A --notes ...`; the agent reads B's `description` from the row and
+  carries nothing else (notes and link reasons are NOT in the row, and the pass does not read
+  `state.json` for them); (2) record
   `supersedes:B:<why>` on A; (3) `update-epic B --status archived --outcome superseded --reason "<what
   replaced it>" --no-deferrals`. A decline is `--outcome declined --reason`. Context first, because
   once B is archived the merge is easy to forget.
@@ -55,8 +66,11 @@ the pass can answer "how long has this sat", "what release is it in" and "what i
 `rg -n "listRow|filterEpics" scripts` finds both defined in `scripts/lib/list.mjs` and used only there
 (`listRow` mapped over the filtered epics in `list()`; no import elsewhere). The row widening therefore
 has one call site and one output shape: `list --json`. `listText()` prints id, status, lane, priority,
-title and is unchanged on purpose: three long fields would break one line per epic. The consumers the
+title and is unchanged on purpose: four long fields would break one line per epic. The consumers the
 emitted procedures name (tracker-sync dedup, intake, deferral ids) read `id`, `status` and `links`, and
 ignore extra keys. Inverse: widening the row has no inverse to ship (nothing is written); the skill's
-operations (supersede, decline) have their reopen path in the existing `update-epic <id> --status
-untriaged` on an archived holder, owned by `epic-disposition`, and no new inverse is needed.
+operations (supersede, decline) have a LOSSY undo and a missing one. Reopening B with `update-epic B
+--status untriaged` leaves A's `supersedes:B` link, so `triage` keeps marking B superseded, and
+`update-epic` offers only `--clear-links`, which drops ALL of A's links. The real undo is: clear A's
+links, then re-add each one to keep with its reason. The missing single-link removal is a tooling gap,
+filed under R.7 as `/pm:feedback feature` ("update-epic --unlink <type>:<epic>"), not built here.

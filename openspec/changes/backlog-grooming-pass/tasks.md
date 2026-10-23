@@ -20,22 +20,29 @@
       or more spec files (this change alone has two), so invoke the `cross-spec-review` skill before
       `/opsx:apply` and after any concurrent amendment, then
       `record-cross-spec-review <releaseId> --verdict pass|fail --reviewer "<identity>"`. Name the shared
-      chokepoints: `docs/parity-ledger.json` (new commands elsewhere in the release) and
-      `scripts/lib/constants.mjs` (this change adds no flag; confirm).
+      chokepoints: `docs/parity-ledger.json` (new commands elsewhere in the release),
+      `scripts/lib/constants.mjs` (this change adds no flag; confirm), and the epic
+      `triage-surfaces-open-release-intents`, which also touches the triage surface this pass calls.
 
 ## 1. The list row
 
-- [ ] 1.1 RED (UNIT): `listRow()` reports `release`, `createdAt`, `description`, with `null` for absent
-      or non-string values; `list --json` keeps `{count, epics}`; the text form is unchanged;
-      `--release` and `--priority` are refused. Save `red-1.1.txt`.
+- [ ] 1.1 RED (UNIT): `listRow()` reports `release`, `createdAt`, `description`, `outcome`, with `null`
+      for absent or non-string values (an empty-string `description` reports `""`); `list --json` keeps
+      `{count, epics}`; the text form is unchanged. UPDATE `scripts/test/unit/list-verb.test.mjs:38-45`,
+      the only consumer that deep-compares a whole row, to the wider shape. Regression guard: `list
+      --release` and `--priority` are already refused as unknown flags; the requirement is that NO
+      registry row is added. Save `red-1.1.txt`.
 - [ ] 1.2 GREEN: widen `listRow()` in `scripts/lib/list.mjs`; `filterEpics` and `listText` untouched.
 
 ## 2. The procedure
 
 - [ ] 2.1 RED (file rung): `skills/backlog-grooming/SKILL.md` and `commands/backlog-grooming.md` exist;
       the ledger claims them in exactly one capability (`scripts/test/parity.test.mjs` fails first);
-      the skill names `list --json`, `triage`, the disposition order of design D5, and the no-line-number
-      rule. Save `red-2.1.txt`.
+      the skill names the per-status `list --status <s> --json` first read, `triage`, the disposition order
+      of design D5, and the no-line-number rule. The doc assertion ADDITIONALLY asserts that the skill
+      states: null `createdAt` means age unknown; a re-report of delivered work is found by reading
+      archived epics; an unfinished consolidation is reported; the report names what it left alone;
+      nothing is written before the user confirms; no direct read of `state.json`. Save `red-2.1.txt`.
 - [ ] 2.2 GREEN: write the skill and the command doc; add the capability to `docs/parity-ledger.json`
       in the same commit; update the JSON shape line in `commands/list.md`; add
       `.changesets/backlog-grooming-pass.md`.
@@ -47,7 +54,9 @@
       state where the wider row is read and why `listText` stays as it is. Data references: the three
       new row fields are copies of epic fields, written nowhere by this change. **Inverse question:**
       name the inverse of each operation added (a wider row has none to ship; supersede and decline are
-      undone by the existing `update-epic <id> --status untriaged`) and justify each not shipped.
+      undone LOSSILY: reopen B with `update-epic B --status untriaged`, then clear A's links with
+      `--clear-links` and re-add the ones to keep with their reasons, because no single-link removal
+      exists) and justify each not shipped.
 - [ ] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` per task; every file the
       task claims appears in THAT commit, not only in the working tree.
 - [ ] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/backlog-grooming-pass/tasks.md`
@@ -57,7 +66,9 @@
 - [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.2; record the verdict against the release.
 - [ ] R.6 **Disposition** (item 6): satisfied by C.2.
 - [ ] R.7 **Route what the work taught you** (item 7): name each lesson as a practice, tooling friction
-      or process failure, with evidence. Candidate: the brief named `epic-index` and `list` specs that
+      or process failure, with evidence. File `/pm:feedback feature "update-epic --unlink
+      <type>:<epic>"` (tooling friction: undoing one `supersedes` link today costs `--clear-links` plus
+      re-adding every other link). Candidate: the brief named `epic-index` and `list` specs that
       do not exist on disk; if the spec set has no owner for `list`, file that.
 
 ## G. Gate 2
