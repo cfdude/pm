@@ -14616,11 +14616,18 @@
           "at": "2026-10-14T23:49:24.861Z",
           "actor": "agent",
           "text": "lane: superpowers (single subsystem, under 8h). Carved out of gh-114 2026-10-14."
+        },
+        {
+          "at": "2026-10-23T14:49:34.895Z",
+          "actor": "agent",
+          "text": "built 31fb34d0 (merged b16fa16e): releases[] + per-candidate release + triage --ask= (scope added by orchestrator). Open: rules block, skill and README still say pm holds no milestone/product context (test conductor-34.2 pins the phrase) - revisit in 0.54.0 RC review; Mintlify triage page owes releases[], release, --ask=; on-disk rules block regenerates on /pm:upgrade (+38 bytes)."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "31fb34d065040fc4148e5e9934ab04189a6a7e6b"
+      ],
       "createdAt": "2026-10-14T23:49:24.862Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-10-23T14:49:34.901Z",
       "release": "0.54.0"
     },
     {
@@ -15313,7 +15320,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2185,
+  "revision": 2187,
   "reviewMode": "standard",
   "releases": [
     {
