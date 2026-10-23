@@ -15246,11 +15246,16 @@
           "at": "2026-10-23T13:23:59.176Z",
           "actor": "agent",
           "text": "Rob 2026-10-23, from /context of 8 pm-managed repos across two machines: messages are 5%-62% of the window and are the real spend driver; he keeps appending epic work to one interactive session. Subagents mostly inherit the interactive model; haiku-5.5 is effectively unused (5.5k input, 71 output in one session's /usage; 0 elsewhere). Asks: (a) emitted instruction recommends starting each epic in a fresh session; (b) subagent dispatch REQUIRES a model chosen per role from the profile, never inherited; (c) a spend-analysis flag when a dispatch ran on the parent's model although its role names a cheaper one. lane: openspec — new emitted rules text (shared chokepoint with the budget) plus a new flag. Triage found no duplicate; nearest are the archived profile epics, linked."
+        },
+        {
+          "at": "2026-10-23T13:31:35.777Z",
+          "actor": "agent",
+          "text": "Rob 2026-10-23 (effort): the profile defaults only ever reach low/medium/high, so xhigh, max and ultracode are accepted (constants.mjs:1571 KNOWN_EFFORTS) but never suggested; pm holds no guidance on when to choose them. Scope: (1) when-to-use guidance per effort level, SOURCED from the official per-level table in code.claude.com/docs/en/model-config.md ('Choose an effort level'), not invented; (2) an escalation rule tied to a signal pm already measures — a failed review round / spend-guard stop (spend-guard already names an escalation target) retries one effort level up instead of repeating the same tier; (3) FIX a verified contradiction: official docs list Haiku 5.5 with low..max and default medium, but constants.mjs:1572 MODELS_WITHOUT_EFFORT=['haiku'] makes the profile refuse haiku:<effort> — check whether that is right per model generation and make support per-model, not per-family; (4) xhigh and max verified valid on Opus 5.5, Sonnet 5.5 and Haiku 5.5 (docs table); 'ultracode' is NOT in the docs table fetched (first 100k chars of 121k read) — verify before keeping it in KNOWN_EFFORTS; (5) dispatch carries effort per role via the Agent tool effort parameter and subagent frontmatter effort (precedence: CLAUDE_CODE_EFFORT_LEVEL env beats both). Rob default: Sonnet 5.5 medium; open call: whether plan/review (Opus high) should drop, and whether pm should suggest Opus medium as its default."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-23T13:23:59.176Z",
-      "touchedAt": "2026-10-23T13:23:59.181Z"
+      "touchedAt": "2026-10-23T13:31:35.785Z"
     }
   ],
   "detourStack": [],
@@ -15261,7 +15266,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2181,
+  "revision": 2182,
   "reviewMode": "standard",
   "releases": [
     {
