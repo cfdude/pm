@@ -162,14 +162,14 @@ source, README is in the functional subject); B's files sit outside both subject
       the run's spend from every assistant message in its transcript (`rowTotal`), not the first alone. Installed pm
       ids resolved from `claude plugin list` (check its JSON flag with `--help` at build time; refuse to run if
       none is found, since an installed pm left on would double the hooks in the pm-on arm and leak into pm-off). The real runner is NOT in any test bucket. Commit `feat(measure): reduced calibration pair`.
-- [ ] B5. RUN the pair (Rob approved it on 2026-10-29 under these caps; no further go needed). Record per run: model,
+- [x] B5. RUN the pair (Rob approved it on 2026-10-29 under these caps; no further go needed). Record per run: model,
       `input`, `cacheCreation`, `cacheRead`, `output`, run total, Claude Code version, pm version, date; the
       pm-on fixture's `overhead --json` `total.estimatedTokens`; the delta on the total prompt and, separately, on
       the archived method's `input + cacheCreation`; the measured-to-estimate ratio. A stop at either cap is a
       recorded result, not a failure. Write section 2 of the calibration doc; mark section 2 of
       `docs/measurement/2026-10-pm-overhead-baseline.md` RUN with a pointer. The `overhead` verb's label stays an
       estimate whatever the ratio (baseline protocol step 5). Commit `docs(measurement): calibration pair result`.
-- [ ] B6. Compare, against the threshold Rob sets in Q4, written into the doc BEFORE B5 runs. Material → stop and
+- [x] B6. Compare, against the threshold Rob sets in Q4, written into the doc BEFORE B5 runs. Material → stop and
       put the 3+3 request (500k cap) in the report; do not run it. Not material, or no project holds both sides →
       say so; the pair stands. Section 3 of the calibration doc. Commit with B5 if it lands in the same session.
 

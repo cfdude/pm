@@ -339,46 +339,37 @@ measured across one audited repository, a rule carried by a mandatory task secti
 
 ## Intake — triage an ask against the whole backlog BEFORE registering it
 
-The ask is the ONLY moment the whole backlog is cheap to consider: after registration nothing
-ever re-reads it as a set, so an ask that duplicates existing work in another shape becomes a
-permanent second epic. The dedup that already exists is IDENTITY-based — same id, or the same
-`externalUrl` — which catches a re-run of sync and nothing else. Measured in this plugin's own
-repository: four live pairs are one change registered twice under different lanes and
-different names, and identity dedup found none of them.
+The ask is the ONLY moment the whole backlog is cheap to consider: afterwards nothing re-reads it
+as a set, so an ask that duplicates existing work in another shape becomes a permanent second
+epic. The dedup that exists is IDENTITY-based (same id, or the same `externalUrl`) and catches a
+re-run of sync and nothing else. (Evidence: the conductor skill, Intake.)
 
 1. **Get the candidate set mechanically.** Before any `add-epic`, run
-   `/pm:triage "<the ask, in its own words>"`. It returns the existing epics that share
-   distinctive vocabulary with the ask (each with the shared tokens that put it there), the
-   lane this repo's routing picks, and the backlog's current shape. It returns
-   `verdict: null` and that is not a placeholder: the engine computes what is WORTH READING
-   and never decides. Nothing about a lexical overlap is a claim that two asks are the same.
+   `/pm:triage "<the ask, in its own words>"` (`--ask=<ask>` if it starts with `-`). It returns the epics that share
+   distinctive vocabulary with the ask (with the shared tokens), the lane this repo's routing
+   picks, and the backlog's shape. Its `verdict: null` is not a placeholder: the engine computes
+   what is WORTH READING and never decides. A lexical overlap is not a claim that two asks are one.
 2. **READ the candidates — do not skim the scores.** Open each one that could plausibly be
    the same work. A high score with unrelated intent is a miss; a low score on an epic whose
-   description turns out to cover the ask is a hit. This is the judgment the surface exists
-   to make cheap, and it is yours.
+   description covers the ask is a hit. That judgment is yours.
 3. **Record the relationship you found**, rather than leaving it in the conversation:
    `add-epic … --link "relates-to:<id>:<why>"` where the two asks inform each other;
    `--link "supersedes:<id>:<why>"` where this ask REPLACES an existing epic — then end the
    superseded one with its own disposition (`--outcome superseded --reason "<what replaced
-   it>"`), because a consolidation that leaves both epics open has consolidated nothing.
-   A candidate `triage` marks `superseded: true` is already dead — do not consolidate into it.
-4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you and
-   its answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and
-   nothing else. It cannot ask what a person would ask, whether this work SERVES something
-   already committed to, because pm holds no milestone or product context to weigh and the
-   engine will not invent one. The suggestion is an input; the lane is your call.
-   THE TIE-BREAK IS ASYMMETRIC, and it is not a matter of taste. `claude-code` means no spec,
-   no plan, no gate and no stories — right for a genuine sub-2-hour tweak, and the reason a
-   misrouted epic leaves no record of what it was FOR. Over-processing costs hours;
-   under-processing costs the record permanently, and nothing later can reconstruct it. So an
-   unresolved routing question resolves AWAY from `claude-code`, never into it.
+   it>"`): a consolidation that leaves both epics open has consolidated nothing. A candidate
+   `triage` marks `superseded: true` is already dead — do not consolidate into it.
+4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane`; its answer
+   reads THE ASK (the words, the size, this repo's `laneRouting` overrides) and nothing else. It
+   cannot ask whether this work SERVES something already committed to: pm holds no milestone or product context to weigh. The suggestion is an input;
+   the lane is your call. THE TIE-BREAK IS ASYMMETRIC: `claude-code` means no spec,
+   no plan, no gate and no stories — right for a sub-2-hour tweak, and a misrouted epic leaves
+   no record of what it was FOR. Over-processing costs hours; under-processing costs the record
+   permanently. So an unresolved routing question resolves AWAY from `claude-code`, never into it.
    Whenever you register in a lane other than the one routing suggested, say why on the epic:
-   `update-epic <id> --notes "lane: <chosen> not <routed> — <why>"`. The tracker-sync
-   procedures below already demand that line; it binds every path that registers an epic,
-   this one included. Measured in pm's OWN repository, not necessarily yours: 83% of epics sat
-   in `claude-code`, 51 of them already archived, none carrying an artifact link.
-5. **Say no out loud when the answer is no.** Not every ask should be taken on, and declining
-   by never registering it destroys the record that anybody considered it. Register it, then
+   `update-epic <id> --notes "lane: <chosen> not <routed> — <why>"`. It binds every path
+   that registers an epic, the tracker-sync procedures below included.
+5. **Say no out loud when the answer is no.** Declining by never registering destroys the
+   record that anybody considered it. Register it, then
    `update-epic <id> --status archived --outcome declined --reason "<why not>" --no-deferrals`.
    Two commands, deliberately: creating an epic directly at `archived` stamps an engine record
    carrying no reason, which is the silence this step removes.
