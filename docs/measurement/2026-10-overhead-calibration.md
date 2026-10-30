@@ -1,8 +1,9 @@
 # pm overhead calibration, 2026-10-30
 
 Epic `pm-overhead-calibration-and-feature-switches`. Plan: `docs/superpowers/plans/2026-10-30-pm-overhead-calibration.md`.
-Sources: `docs/measurement/2026-10-overhead-pair.json`, `docs/measurement/2026-10-overhead-survey.json`.
-Every figure below is read from those two files or the plan.
+Sources: `docs/measurement/2026-10-overhead-pair.json`, `docs/measurement/2026-10-overhead-pair-unpinned.json`,
+`docs/measurement/2026-10-overhead-survey.json`.
+Every figure below is read from those files or the plan.
 
 ## 1. Transcript survey of first-message size
 
@@ -10,7 +11,7 @@ Method: for each session transcript, the first main-chain assistant message's `i
 its model id, and one boolean (pm's SessionStart brief hook present before that message). Nothing else is read.
 Headline population: SessionStart source `startup`, entrypoint `cli` or `sdk-cli`, project not excluded. Percentiles
 are nearest-rank. Code: `scripts/measure/overhead-survey-core.mjs`, `scripts/measure/overhead-survey.mjs`.
-Claude Code 2.1.314 and pm 0.53.0 (versions as recorded in the pair file, run 2026-10-30).
+Claude Code 2.1.314 and pm 0.53.0 (versions as recorded in the pair files, run 2026-10-30).
 
 | Measure | Value |
 | --- | --- |
@@ -31,38 +32,48 @@ within-project side has too few sessions.
 
 ## 2. Reduced pair
 
+Two pairs ran on 2026-10-30. The first (`2026-10-overhead-pair-unpinned.json`) had its arms on different models
+(opus off, sonnet on) and is confounded. The second (`2026-10-overhead-pair.json`) pinned both arms to
+`claude-sonnet-5-5` and is the evidence. Both on Claude Code 2.1.314, pm 0.53.0, estimate 10,908 tokens.
+
+| Measure | Same-model pair (evidence) | Unpinned pair (confounded) |
+| --- | --- | --- |
+| pm-off model / total prompt | `claude-sonnet-5-5` / 30,616 | `claude-opus-5-5` / 30,719 |
+| pm-on model / total prompt | `claude-sonnet-5-5` / 43,658 | `claude-sonnet-5-5` / 43,658 |
+| Measured delta, total prompt (`promptDelta`) | 13,042 | 12,939 |
+| Delta on the archived method (`input + cacheCreation`) | 11,962 | 12,940 |
+| `overhead` verb estimate (`pmEstimate`) | 10,908 | 10,908 |
+| Measured / estimate (`ratio`) | 1.196 | 1.186 |
+| `sameModel` | true | false |
+| Spend against the 150,000 cap (per-run cap 100,000) | 74,274 | 74,377 |
+| `void` | null | null |
+
+Other measures:
+
 | Measure | Value | Source |
 | --- | --- | --- |
-| pm-off run (opus, `claude-opus-5-5`), total prompt | 30,719 tokens | pair.json |
-| pm-on run (sonnet, `claude-sonnet-5-5`), total prompt | 43,658 tokens | pair.json |
-| Measured delta, total prompt | 12,939 tokens | pair.json `promptDelta` |
-| Delta on the archived method (`input + cacheCreation`) | 12,940 tokens | pair.json `archivedMethodDelta` |
-| `overhead` verb estimate for the pm-on fixture | 10,908 tokens | pair.json `pmEstimate` |
-| Measured / estimate | 1.186 (measured 18.6% above) | pair.json `ratio` |
 | Q4 threshold (fixed before the run) | 25% | plan Q4 |
-| Pair spend against cap | 74,377 of 150,000 (per-run cap 100,000) | pair.json |
 | Survey within-project pairs | 2 projects, 0 with 5+ sessions per side | survey.json |
 | Survey within-project median delta (sonnet-5-5) | -4,663.5 total; -3,280 `input + cacheCreation` | survey.json |
 | `rules:intake` after the shrink | about 834 tokens, was about 1,006; no switch built | README overhead table; plan A3 |
 
-## Confound: the arms ran on different models
-
-`sameModel` is `false`. The pm-off arm ran on opus and the pm-on arm on sonnet. The delta therefore mixes pm's
-overhead with whatever differs between the two models' system prompts and tool sets. The pair does not isolate
-pm, and 12,939 is not a clean measurement of it. It is one data point that happens to land near the estimate.
+Confound history: the first pair ran opus against sonnet, so its 12,939 mixed pm's overhead with model differences;
+`runPair` now voids a model mismatch and `--model <id>` pins both arms, which is how the second pair ran.
 
 ## Comparison against the Q4 threshold
 
-- The ratio is 1.186, inside the 25% threshold, but the arms ran on different models, so this is INDICATIVE ONLY.
-  It is NOT evidence that the estimate is right, and nothing here supports closing the question or declining the
-  3+3 request. The pair is VOID as a calibration under the same-model rule now enforced in
-  `scripts/measure/overhead-pair-core.mjs` (`runPair` voids on a model mismatch; `--model <id>` pins both arms).
-- **Open item:** a same-model rerun (about 75k tokens, under the 150k ceiling) needs Rob's confirmation before it
-  is spent. Until it runs, B5 and B6 in the plan are not met.
+- On the same-model pair the measured delta is 13,042 tokens against an estimate of 10,908: ratio 1.196, so the
+  measured figure is 19.6% above the estimate, equivalently the estimate is about 16% low (10,908 / 13,042 = 0.836).
+  The confounded pair gave 1.186. Both sit inside the 25% threshold, and the same-model pair is the one that counts.
+- Result: not material. The 3+3 request (500k cap) is not raised. B5 and B6 are met.
+- Limit: this is one pair, n=1 per arm, so no run-to-run variance is known. The result says the estimate is within
+  about 20% on this fixture and run, not that 20% is its error bar.
+- The warm-cache split moved the archived-method figure: 11,962 on `input + cacheCreation` against 13,042 on the
+  total, because the pm-on arm read 1,080 more cached tokens than pm-off (12,471 vs 11,391).
 - The threshold as written in Q4 compares the survey's within-project delta (5 or more sessions per side) with the
   pair's. The survey cannot supply that side: it has 2 within-project pairs and none with 5+ per side, and its
-  median delta is negative, which is noise at n=2 rather than a finding. So the survey cannot isolate pm's overhead
-  and the Q4 test could not be run as written. The pair stands, with the model confound stated above.
+  median delta is negative, which is noise at n=2 rather than a finding. The Q4 test could not be run as written;
+  the same-model pair stands on its own.
 - The `overhead` verb's label stays an estimate whatever the ratio (baseline protocol step 5).
 
 ## The `rules:intake` shrink

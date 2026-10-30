@@ -1801,7 +1801,7 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 Everything pm injects into a session is re-read on every message, so it is worth knowing what it costs. Run
 `overhead` for the numbers on your repository (`overhead --all-features` for the every-opt-in-on case); nothing
 below is a promise about yours. Every figure is **bytes/4, an estimate**: the engine has no tokenizer, and the
-estimate has not been validated against real token counts: one indicative pair exists, but its two arms ran on different models (`docs/measurement/2026-10-overhead-calibration.md`). Measured 2026-10-20 on 0.53.0 (method and the
+estimate was checked against real token counts once: one same-model pair (n=1 per arm) measured 13,042 tokens against an estimate of 10,908, so the estimate ran about 16% low, inside the 25% threshold; no variance is known (`docs/measurement/2026-10-overhead-calibration.md`). Measured 2026-10-20 on 0.53.0 (method and the
 reasoning for each decision: `docs/measurement/2026-10-feature-switch-audit.md`). This table does not claim that
 any of it saves downstream work; `overhead` says so too.
 
