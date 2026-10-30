@@ -30,8 +30,8 @@ during the read or while proposals are being drafted.
    score with unrelated intent is a miss, a low score on an epic whose description covers the ask is a hit.
 4. **Find re-reports of delivered work by reading archived epics.** When an open epic's ask overlaps an
    archived epic whose row shows `outcome: "delivered"`, YOU decide, after reading both, whether it is a
-   re-report. If it is, propose a dead-premise decline naming the delivering epic's id, carrying a
-   `relates-to` link to it.
+   re-report. If it is, propose a dead-premise decline of the open epic naming the delivering epic's id;
+   the declined epic carries a `relates-to` link to the epic that holds the work.
 5. **Propose, with evidence.** For each finding report: the epic ids, the evidence, and the proposed
    disposition (merge A over B, decline C, rescope, reprioritize, or leave alone).
 6. **Cite evidence that does not rot.** Cite epic ids, verb output and commit shas. NEVER cite a line
@@ -50,9 +50,9 @@ during the read or while proposals are being drafted.
      archived --outcome superseded --reason "<what replaced it>" --no-deferrals`. Context first: once B
      is archived the merge is easy to forget.
    - **Decline**: `update-epic C --status archived --outcome declined --reason "<why not>" --no-deferrals`.
-   - **Unfinished consolidation**: a superseded epic archived without a `supersedes` link on its
-     survivor, or without a reason, is reported as unfinished, not done. (The engine requires `--reason`
-     for `superseded` on new writes, so this appears only in legacy data.)
+   - **Unfinished consolidation**: a superseded epic that is not archived with outcome `superseded`, or
+     one archived that way with no `supersedes` link on any survivor, is reported as unfinished, not done
+     (read from each row's `status`, `outcome` and `links`).
 
 ## Undoing a consolidation (lossy)
 

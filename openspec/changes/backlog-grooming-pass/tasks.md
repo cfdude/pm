@@ -16,6 +16,8 @@
 - [ ] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, both spec files and this file.
       Fix Critical and Important, re-run `openspec validate backlog-grooming-pass --strict`, then
       `record-gate-review backlog-grooming-pass --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
+      Note: Gate 1 was recorded retroactively, after tasks 1.1-2.2 landed (commits b2c22ac9, 2e40b8d8);
+      the review covers the landed code. Cause: the build began before the gate was recorded.
 - [ ] 0.2 **Cross-spec review** (item 5), release-scoped: the release holding this change carries two
       or more spec files (this change alone has two), so invoke the `cross-spec-review` skill before
       `/opsx:apply` and after any concurrent amendment, then
@@ -27,7 +29,8 @@
 ## 1. The list row
 
 - [x] 1.1 RED (UNIT): `listRow()` reports `release`, `createdAt`, `description`, `outcome`, with `null`
-      for absent or non-string values (an empty-string `description` reports `""`); `list --json` keeps
+      for absent or non-string values (an empty-string `description` reports `""`, and an `outcome`
+      outside the known vocabulary reports `"unknown"`); `list --json` keeps
       `{count, epics}`; the text form is unchanged. UPDATE `scripts/test/unit/list-verb.test.mjs:38-45`,
       the only consumer that deep-compares a whole row, to the wider shape. Regression guard: `list
       --release` and `--priority` are already refused as unknown flags; the requirement is that NO
@@ -51,7 +54,7 @@
 
 - [x] R.1 **Call-site completeness sweep** (item 1): `rg -n "listRow|filterEpics" scripts` and
       `rg -n "list --json|list\b.*--json" commands skills scripts/lib/rules.mjs` derived mechanically;
-      state where the wider row is read and why `listText` stays as it is. Data references: the three
+      state where the wider row is read and why `listText` stays as it is. Data references: the four
       new row fields are copies of epic fields, written nowhere by this change. **Inverse question:**
       name the inverse of each operation added (a wider row has none to ship; supersede and decline are
       undone LOSSILY: reopen B with `update-epic B --status untriaged`, then clear A's links with

@@ -29,7 +29,7 @@ contribute no verdict and no new verb.
 
 - **WHEN** an open epic's ask overlaps an archived epic whose row shows `outcome: "delivered"`
 - **THEN** the AGENT decides, after reading both epics, whether it is a re-report; the engine and the `triage` score never decide (`verdict: null`)
-- **AND** if it is, the pass proposes a dead-premise decline naming the delivering epic id, and that decline carries a `relates-to` link to the delivering epic
+- **AND** if it is, the pass proposes a dead-premise decline of the open epic, naming the delivering epic id, and the declined epic carries a `relates-to` link to the epic that holds the work
 
 ### Requirement: Every consolidation records a disposition
 
@@ -51,12 +51,12 @@ use `remove-epic` for either, because deletion removes the record of projected w
 - **WHEN** the user confirms a decline of epic C
 - **THEN** C has status `archived`, outcome `declined` and a non-empty reason
 - **AND** `remove-epic` was not run
+- **AND** if the decline is for a dead premise, C carries a `relates-to` link to the epic that holds the work
 
-#### Scenario: A consolidation without a link or reason is reported unfinished
+#### Scenario: A consolidation left half-done is reported unfinished
 
-- **WHEN** a superseded epic is archived without a `supersedes` link on its survivor, or without a reason
+- **WHEN** a superseded epic is not archived with outcome `superseded`, or is archived with that outcome while no survivor carries a `supersedes` link to it (both read from the `list` rows' `status`, `outcome` and `links`)
 - **THEN** the pass reports the consolidation as unfinished rather than done
-- **AND** this occurs only in legacy data on new writes (the engine requires `--reason` for `superseded`), so its test hand-seeds such a record
 
 ### Requirement: Findings cite evidence that does not rot
 

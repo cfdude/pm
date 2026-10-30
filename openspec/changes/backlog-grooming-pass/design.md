@@ -37,6 +37,8 @@ end" from `list`.
   `epic-registration-clock` and not always recoverable (`recover-created-at`). The row reports `null` for
   any absent, null or non-string `createdAt`, never a guessed date; likewise `release`, `description`
   and `outcome`. An empty-string `description` is a string and reports `""`, not `null`.
+  An `outcome` string outside the known vocabulary reports `"unknown"`, so a reader can tell "recorded
+  but unrecognised" from "no disposition" (`null`).
   The pass treats a null `createdAt` as "age unknown", never as "old".
 - **D3 — Delivered as a skill plus a command doc, no new verb.** The procedure is judgment over several
   reads; a verb would either decide or be a thin wrapper over `list` and `triage`. A skill carries a

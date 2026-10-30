@@ -3,8 +3,9 @@
 ### Requirement: A list row reports release, createdAt, description and outcome
 
 Each epic `list` reports SHALL carry `release`, `createdAt`, `description` and `outcome` (the recorded
-disposition outcome) besides its existing fields. An absent or non-string value SHALL report `null` (an `outcome` outside the known vocabulary reports `"unknown"`)
-(an empty-string `description` reports `""`), and the engine SHALL NOT infer one. The
+disposition outcome) besides its existing fields. An absent or non-string value SHALL report `null`,
+except that an empty-string `description` reports `""` and an `outcome` outside the known vocabulary
+reports `"unknown"`; the engine SHALL NOT infer a value. The
 `--json` shape `{count, epics}` and the text form SHALL be unchanged, and no `--release` or
 `--priority` flag SHALL be added.
 
@@ -30,6 +31,11 @@ disposition outcome) besides its existing fields. An absent or non-string value 
 - **WHEN** epic E ended with `--outcome delivered` and `list --status archived --json` runs
 - **THEN** E's row has `outcome: "delivered"`
 - **AND** an epic with no recorded disposition reports `outcome: null`
+
+#### Scenario: An outcome outside the vocabulary reports unknown
+
+- **WHEN** epic E's recorded outcome is a string that is not in the known outcome vocabulary and `list --json` runs
+- **THEN** E's row has `outcome: "unknown"`, not the raw string and not `null`
 
 #### Scenario: An empty description reports an empty string
 

@@ -6150,18 +6150,18 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-10-23T15:57:22.645Z",
+      "touchedAt": "2026-10-30T01:27:49.561Z",
       "release": "0.54.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-10-23T13:42:11.047Z",
+          "reviewedAt": "2026-10-30T01:27:49.553Z",
           "artifacts": [
             "openspec/changes/backlog-grooming-pass/proposal.md",
             "openspec/changes/backlog-grooming-pass/design.md",
-            "openspec/changes/backlog-grooming-pass/tasks.md",
+            "openspec/changes/backlog-grooming-pass/specs/backlog-grooming/spec.md",
             "openspec/changes/backlog-grooming-pass/specs/epic-list/spec.md",
-            "openspec/changes/backlog-grooming-pass/specs/backlog-grooming/spec.md"
+            "openspec/changes/backlog-grooming-pass/tasks.md"
           ],
           "artifactDigests": [
             {
@@ -6170,29 +6170,66 @@
             },
             {
               "path": "openspec/changes/backlog-grooming-pass/design.md",
-              "sha256": "fee30737368e3547a5fc95014d0129b2252d66975119d9774b54f92746ad068e"
-            },
-            {
-              "path": "openspec/changes/backlog-grooming-pass/specs/epic-list/spec.md",
-              "sha256": "717552bc2b38b10d1ff607ecff9c9df1c5bb4685e0cf1e50779c5e6c7fe2f602"
+              "sha256": "20df7cd0ed45398fa24e06471838e2ff124b87c97174db07ea500bc461e52ab0"
             },
             {
               "path": "openspec/changes/backlog-grooming-pass/specs/backlog-grooming/spec.md",
-              "sha256": "87b5a5729ac992ce000e3f3a09998b564a4037fc2be37906a9fad81e1ab4364c"
+              "sha256": "89cf5541959a5acae0da658f1c3f81f60a6db98834388fa86289b2ab3ac397eb"
+            },
+            {
+              "path": "openspec/changes/backlog-grooming-pass/specs/epic-list/spec.md",
+              "sha256": "adc608fcac3f0e9d7e7a9c55ae28edfea6a43fdf7fe4599a8a533db4645fe17d"
             }
           ],
-          "reviewer": "opus fresh-context (1 round: 0 Critical, 4 Important, all fixed in 4ca5631d, re-validated --strict and checked by orchestrator, not re-reviewed per the one-round cap)"
+          "reviewer": "opus fresh-context, 1 capped round 2026-10-30 on the post-1.15.0 artifacts: 0 Critical, 2 Important and 4 Minor, all fixed and re-validated --strict by the orchestrator, not re-reviewed per the one-round cap. RETROACTIVE: recorded after tasks 1.1-2.2 landed (b2c22ac9, 2e40b8d8); the review covered the landed code",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-23T13:42:11.047Z",
+            "artifacts": [
+              "openspec/changes/backlog-grooming-pass/proposal.md",
+              "openspec/changes/backlog-grooming-pass/design.md",
+              "openspec/changes/backlog-grooming-pass/tasks.md",
+              "openspec/changes/backlog-grooming-pass/specs/epic-list/spec.md",
+              "openspec/changes/backlog-grooming-pass/specs/backlog-grooming/spec.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/backlog-grooming-pass/proposal.md",
+                "sha256": "e9bc02dc6d5f60d286373714f7ab8db935fdd9633577ec918cb097dff215ecdb"
+              },
+              {
+                "path": "openspec/changes/backlog-grooming-pass/design.md",
+                "sha256": "fee30737368e3547a5fc95014d0129b2252d66975119d9774b54f92746ad068e"
+              },
+              {
+                "path": "openspec/changes/backlog-grooming-pass/specs/epic-list/spec.md",
+                "sha256": "717552bc2b38b10d1ff607ecff9c9df1c5bb4685e0cf1e50779c5e6c7fe2f602"
+              },
+              {
+                "path": "openspec/changes/backlog-grooming-pass/specs/backlog-grooming/spec.md",
+                "sha256": "87b5a5729ac992ce000e3f3a09998b564a4037fc2be37906a9fad81e1ab4364c"
+              }
+            ],
+            "reviewer": "opus fresh-context (1 round: 0 Critical, 4 Important, all fixed in 4ca5631d, re-validated --strict and checked by orchestrator, not re-reviewed per the one-round cap)"
+          }
         }
       },
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 1,
+          "passes": 2,
           "failStreak": 0,
-          "lastVerdictAt": "2026-10-23T13:42:11.047Z",
-          "lastPassAt": "2026-10-23T13:42:11.047Z"
+          "lastVerdictAt": "2026-10-30T01:27:49.553Z",
+          "lastPassAt": "2026-10-30T01:27:49.553Z"
         }
-      }
+      },
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-10-30T01:27:49.561Z",
+          "lastAt": "2026-10-30T01:27:49.561Z"
+        }
+      ]
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -15359,7 +15396,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2190,
+  "revision": 2191,
   "reviewMode": "standard",
   "releases": [
     {
