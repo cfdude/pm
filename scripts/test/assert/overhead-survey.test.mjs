@@ -31,7 +31,7 @@ function tmpTree() {
   const dir = tmpRepo();
   fs.mkdirSync(path.join(dir, "root"));
   fs.mkdirSync(path.join(dir, "out", ".raw"), { recursive: true });
-  return { dir, root: path.join(dir, "root"), out: path.join(dir, "out", "agg.json"), rows: path.join(dir, "out", ".raw", "rows.json") };
+  return { dir, rawDir: path.join(dir, "out", ".raw"), root: path.join(dir, "root"), out: path.join(dir, "out", "agg.json"), rows: path.join(dir, "out", ".raw", "rows.json") };
 }
 const put = (root, proj, file, lines) => {
   fs.mkdirSync(path.join(root, proj), { recursive: true });
@@ -50,7 +50,7 @@ test("B2 a project dir named with a leading dash is walked, and a session is cou
   const t = tmpTree();
   try {
     put(t.root, "--tmp-claude-501-proj", "s1.jsonl", [hook(), asst(), usr()]);
-    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows });
+    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, rawDir: t.rawDir });
     assert.equal(r.stats.filesRead, 1);
     assert.equal(r.aggregate.population.headlineSessions, 1);
     assert.equal(r.aggregate.groups[0].briefPresent, true);
@@ -62,7 +62,7 @@ test("B2 a subagents/ file is not read", async () => {
   try {
     put(t.root, "-p", "s1.jsonl", [hook(), asst(), usr()]);
     put(t.root, path.join("-p", "s1", "subagents"), "agent-x.jsonl", [hook(), asst("sub"), usr()]);
-    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows });
+    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, rawDir: t.rawDir });
     assert.equal(r.stats.filesRead, 1);
     assert.equal(r.aggregate.population.headlineSessions, 1);
   } finally { done(t); }
@@ -72,7 +72,7 @@ test("B2 bytes after the first message are never parsed: garbage there still yie
   const t = tmpTree();
   try {
     put(t.root, "-p", "s1.jsonl", [hook(), asst(), usr(), "}{ garbage \u0000\u0001 not json", "x".repeat(200000)]);
-    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows });
+    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, rawDir: t.rawDir });
     assert.equal(r.aggregate.population.headlineSessions, 1);
     assert.equal(r.aggregate.excluded.byReason["oversize-line"], undefined);
   } finally { done(t); }
@@ -82,7 +82,7 @@ test("B2 an oversize line BEFORE the first message voids the session with a coun
   const t = tmpTree();
   try {
     put(t.root, "-p", "s1.jsonl", [hook(), "y".repeat(5000), asst(), usr()]);
-    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, maxLineChars: 1000 });
+    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, rawDir: t.rawDir, maxLineChars: 1000 });
     assert.equal(r.aggregate.population.headlineSessions, 0);
     assert.equal(r.aggregate.excluded.byReason["oversize-line"], 1);
   } finally { done(t); }
@@ -95,7 +95,7 @@ test("B2 Highway and employer-hosted project dirs are never opened; they are cou
     put(t.root, "-Users-x-Documents-Repos-highway-llm", "s1.jsonl", [hook(), asst(), usr()]);
     put(t.root, "-Users-x-Servers-zendesk-mcp", "s1.jsonl", [hook(), asst(), usr()]);
     put(t.root, "-Users-x-Documents-Repos-pm", "s1.jsonl", [hook(), asst(), usr()]);
-    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows });
+    const r = await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, rawDir: t.rawDir });
     assert.equal(r.stats.filesRead, 1);
     assert.equal(r.aggregate.excluded.byReason["project-highway"], 2);
     assert.equal(r.aggregate.excluded.byReason["project-employer-repo"], 1);
@@ -109,7 +109,7 @@ test("B2 neither output file contains any fixture text; the aggregate names no p
   try {
     put(t.root, "-Users-x-Repos-pm", "SECRET-FILE-NAME.jsonl", [hook(), asst(), usr()]);
     put(t.root, "-Users-x-Repos-other", "s2.jsonl", [asst("m1", 10, "sdk-py"), usr()]);
-    await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows });
+    await runSurvey({ root: t.root, out: t.out, rowsOut: t.rows, rawDir: t.rawDir });
     for (const f of [t.out, t.rows]) {
       const text = fs.readFileSync(f, "utf8");
       assert.doesNotMatch(text, /SECRET/, f);
@@ -122,12 +122,21 @@ test("B2 neither output file contains any fixture text; the aggregate names no p
   } finally { done(t); }
 });
 
+test("B2 a directory merely NAMED .raw is not the repo's .raw: default rawDir refuses it", async () => {
+  const t = tmpTree();
+  try {
+    put(t.root, "-p", "s1.jsonl", [hook(), asst(), usr()]);
+    await assert.rejects(runSurvey({ root: t.root, out: t.out, rowsOut: t.rows }), /\.raw/);
+    assert.equal(fs.existsSync(t.rows), false);
+  } finally { done(t); }
+});
+
 test("B2 the rows file never lands outside a .raw/ directory", async () => {
   const t = tmpTree();
   try {
     put(t.root, "-p", "s1.jsonl", [hook(), asst(), usr()]);
     await assert.rejects(
-      runSurvey({ root: t.root, out: t.out, rowsOut: path.join(t.dir, "out", "rows.json") }),
+      runSurvey({ root: t.root, out: t.out, rowsOut: path.join(t.dir, "out", "rows.json"), rawDir: t.rawDir }),
       /\.raw/,
     );
     assert.equal(fs.existsSync(path.join(t.dir, "out", "rows.json")), false);
@@ -137,7 +146,7 @@ test("B2 the rows file never lands outside a .raw/ directory", async () => {
 test("B2 a missing root fails loudly and writes nothing", async () => {
   const t = tmpTree();
   try {
-    await assert.rejects(runSurvey({ root: path.join(t.dir, "nope"), out: t.out, rowsOut: t.rows }), /transcript root/);
+    await assert.rejects(runSurvey({ root: path.join(t.dir, "nope"), out: t.out, rowsOut: t.rows, rawDir: t.rawDir }), /transcript root/);
     assert.equal(fs.existsSync(t.out), false);
   } finally { done(t); }
 });

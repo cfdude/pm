@@ -65,11 +65,11 @@ source, README is in the functional subject); B's files sit outside both subject
 
 ### Group A — `rules:intake` under the threshold
 
-- [ ] A1. RED (UNIT). `scripts/test/unit/overhead.test.mjs`: a new `unitTest` asserting `rules:intake`'s
+- [x] A1. RED (UNIT). `scripts/test/unit/overhead.test.mjs`: a new `unitTest` asserting `rules:intake`'s
       `estimatedTokens <= 900` (the 3,600-byte target) from the `overhead` verb over `memoryEngine(emptyRecord())`, and, for every key of
       `PLATFORM_COMMAND_PREFIX`, `estimateTokens(byteLength(intakeLines(p).join("\n")))` <= 900. Watch it fail at
       ~1,015. A budget assertion, so the section cannot creep back over the line unseen.
-- [ ] A2. GREEN. `scripts/lib/rules.mjs` `intakeLines` (and its JSDoc above `:433`) to <= 3,600 bytes on every
+- [x] A2. GREEN. `scripts/lib/rules.mjs` `intakeLines` (and its JSDoc above `:433`) to <= 3,600 bytes on every
       platform. KEEP verbatim, because tests pin them (sweep G1 lists each holder):
       the heading `## Intake — triage an ask against the whole backlog BEFORE registering it`; five numbered items
       running 1..5 with no gap; the bold `**Decide the lane; do not inherit it.**`; the phrases `reads THE ASK`,
@@ -87,7 +87,7 @@ source, README is in the functional subject); B's files sit outside both subject
       `unit/triage.test.mjs`, `unit/managed-rules-block.test.mjs`, `unit/positional-and-help-tokens.test.mjs`,
       `assert/dev-log-capture.test.mjs`. If an interpolation inside `intakeLines` changed, re-judge its row in
       `scripts/test/sweeps/output-interpolations.judged.mjs:65`.
-- [ ] A3. Follow-ons, same commit. `README.md:1818` row (new estimate; "no switch: below the threshold after the
+- [x] A3. Follow-ons, same commit. `README.md:1818` row (new estimate; "no switch: below the threshold after the
       shrink"); a dated addendum at the end of `docs/measurement/2026-10-feature-switch-audit.md` (do not rewrite
       its 4,021 / 1,006 rows: they were true when measured); `docs/rules-block-session-cost.md:40,61` byte figures;
       changeset `.changesets/pm-overhead-calibration-and-feature-switches.md` (emitted text changed, no new flag).
@@ -98,7 +98,7 @@ source, README is in the functional subject); B's files sit outside both subject
 
 ### Group B — measurement
 
-- [ ] B1. TDD (UNIT). `scripts/measure/overhead-survey-core.mjs`, Node built-ins plus imports from
+- [x] B1. TDD (UNIT). `scripts/measure/overhead-survey-core.mjs`, Node built-ins plus imports from
       `scripts/lib/spend-reader.mjs` only.
       FIRST, validate the detection rule before coding it: over this repo's transcripts
       (`~/.claude/projects/-Users-robsherman-Documents-Repos-pm/*.jsonl`), tally `entrypoint x SessionStart source x
@@ -127,7 +127,7 @@ source, README is in the functional subject); B's files sit outside both subject
       `resume`, `compact` and `sdk-py` sessions are outside the headline but counted; the serialised aggregate's
       keys are an allowlist and no fixture string (prompt text, project name, session id) appears in it. Commit
       `feat(measure): survey core`.
-- [ ] B2. TDD (FILE). `scripts/measure/overhead-survey.mjs`, the walk and CLI. Lists `<root>/*/*.jsonl` (top level
+- [x] B2. TDD (FILE). `scripts/measure/overhead-survey.mjs`, the walk and CLI. Lists `<root>/*/*.jsonl` (top level
       only; `<session>/subagents/` is not read), root from `transcriptRoot(process.env, os.homedir())`. Streams
       each file with `node:readline` and CLOSES it once the first message is folded (the corpus is 3.9 GB). Writes
       the aggregate to `docs/measurement/2026-10-overhead-survey.json` and per-session rows to
@@ -137,13 +137,13 @@ source, README is in the functional subject); B's files sit outside both subject
       leading `-` is walked; a `subagents/` file is not read; a file whose bytes after the first message are garbage still parses
       (the early close); neither output file contains any fixture text; the rows file never lands outside
       `.raw/`. Commit `feat(measure): transcript survey walk`.
-- [ ] B3. RUN the survey (zero model tokens). `/usr/bin/time -l node scripts/measure/overhead-survey.mjs` with
+- [x] B3. RUN the survey (zero model tokens). `/usr/bin/time -l node scripts/measure/overhead-survey.mjs` with
       output redirected; record wall-clock and peak RSS; a run over 3 minutes or 1 GB peak is a defect to fix, not
       to accept. Before staging, `rg -i "highway|robsherman|listreports"` and `rg` for three sampled session ids over
       the committed JSON must find nothing. Write section 1 of `docs/measurement/2026-10-pm-overhead-calibration.md`
       (new): method, date, Claude Code and pm versions, the aggregate table, every exclusion with its count. Commit
       `docs(measurement): transcript survey of first-message size`.
-- [ ] B4. TDD (UNIT, real-run split). `scripts/measure/overhead-pair.mjs`. Pure parts in the core module, each
+- [x] B4. TDD (UNIT, real-run split). `scripts/measure/overhead-pair.mjs`. Pure parts in the core module, each
       unit-tested in `scripts/test/unit/overhead-pair.test.mjs`: `fixtureSettings(arm, home, pmIds)` (the same keys
       as `evals/fixtures.py:140-151`, absolute paths, installed pm ids `false` in BOTH arms);
       `nextRunAllowed(spent, last, caps, pmEstimate)` with caps `{perRun: 100000, pair: 150000}`: stop when
@@ -162,14 +162,14 @@ source, README is in the functional subject); B's files sit outside both subject
       the run's spend from every assistant message in its transcript (`rowTotal`), not the first alone. Installed pm
       ids resolved from `claude plugin list` (check its JSON flag with `--help` at build time; refuse to run if
       none is found, since an installed pm left on would double the hooks in the pm-on arm and leak into pm-off). The real runner is NOT in any test bucket. Commit `feat(measure): reduced calibration pair`.
-- [x] B5. RUN the pair (Rob approved it on 2026-10-29 under these caps; no further go needed). Record per run: model,
+- [ ] B5. RUN the pair (Rob approved it on 2026-10-29 under these caps; no further go needed). Record per run: model,
       `input`, `cacheCreation`, `cacheRead`, `output`, run total, Claude Code version, pm version, date; the
       pm-on fixture's `overhead --json` `total.estimatedTokens`; the delta on the total prompt and, separately, on
       the archived method's `input + cacheCreation`; the measured-to-estimate ratio. A stop at either cap is a
       recorded result, not a failure. Write section 2 of the calibration doc; mark section 2 of
       `docs/measurement/2026-10-pm-overhead-baseline.md` RUN with a pointer. The `overhead` verb's label stays an
       estimate whatever the ratio (baseline protocol step 5). Commit `docs(measurement): calibration pair result`.
-- [x] B6. Compare, against the threshold Rob sets in Q4, written into the doc BEFORE B5 runs. Material → stop and
+- [ ] B6. Compare, against the threshold Rob sets in Q4, written into the doc BEFORE B5 runs. Material → stop and
       put the 3+3 request (500k cap) in the report; do not run it. Not material, or no project holds both sides →
       say so; the pair stands. Section 3 of the calibration doc. Commit with B5 if it lands in the same session.
 

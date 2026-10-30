@@ -80,9 +80,9 @@ const jsonlIn = (dir) => { try { return fs.readdirSync(dir).filter((f) => f.ends
 const readLines = (file) => fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
 
 /** One real `claude -p` run in `fixture`. A watcher kills it the moment its transcript passes the per-run cap. */
-async function realRun(arm, fixture) {
+async function realRun(arm, fixture, { model = null, killAt = CAPS.perRun } = {}) {
   const dir = transcriptDirOf(fixture);
-  const child = spawn("claude", claudeArgs(arm, REPO), { cwd: fixture, env: { ...process.env, HONCHO_ENABLED: "false" }, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn("claude", claudeArgs(arm, REPO, model), { cwd: fixture, env: { ...process.env, HONCHO_ENABLED: "false" }, stdio: ["ignore", "pipe", "pipe"] });
   let stdout = "";
   child.stdout.on("data", (d) => { stdout += d; });
   child.stderr.on("data", () => {});
@@ -91,7 +91,7 @@ async function realRun(arm, fixture) {
     const files = jsonlIn(dir);
     if (files.length !== 1) return;
     try {
-      if (runTotalOfLines(readLines(path.join(dir, files[0]))) > CAPS.perRun) { aborted = "run-cap"; child.kill("SIGTERM"); }
+      if (runTotalOfLines(readLines(path.join(dir, files[0]))) > killAt) { aborted = "run-cap"; child.kill("SIGTERM"); }
     } catch { /* the file is being written; try next tick */ }
   }, POLL_MS);
   const timeout = setTimeout(() => { aborted = aborted || "timeout"; child.kill("SIGTERM"); }, RUN_TIMEOUT_MS);
@@ -140,7 +140,7 @@ async function main() {
       return;
     }
     const caps = { perRun: CAPS.perRun, pair: args.ceiling };
-    const outcome = await runPair({ runner: (arm) => realRun(arm, fixtures[arm]), caps, pmEstimate });
+    const outcome = await runPair({ runner: (arm, ctx) => realRun(arm, fixtures[arm], { model: args.model, killAt: ctx.killAt }), caps, pmEstimate });
     const off = outcome.runs.find((r) => r.arm === "pm-off");
     const on = outcome.runs.find((r) => r.arm === "pm-on");
     const sha = sh("git", ["rev-parse", "HEAD"], { cwd: REPO }).stdout.trim();

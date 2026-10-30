@@ -83,13 +83,19 @@ async function firstMessageOfFile(file, cap) {
   return scanner.result();
 }
 
-const insideRaw = (file) => path.basename(path.dirname(path.resolve(file))) === ".raw";
+/** The rows file must resolve INSIDE `rawDir` (default: this repo's gitignored docs/measurement/.raw), so an
+ *  arbitrary directory that happens to be named `.raw` cannot receive the per-session rows. */
+const insideRaw = (file, rawDir) => {
+  const rel = path.relative(path.resolve(rawDir), path.resolve(file));
+  return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+};
 
-export async function runSurvey({ root, out, rowsOut, maxLineChars = DEFAULT_MAX_LINE_CHARS, env = process.env } = {}) {
+export async function runSurvey({ root, out, rowsOut, rawDir, maxLineChars = DEFAULT_MAX_LINE_CHARS, env = process.env } = {}) {
   const d = defaultPaths();
   const outFile = out || d.out;
   const rowsFile = rowsOut || d.rowsOut;
-  if (!insideRaw(rowsFile)) throw new Error(`the per-session rows file must sit inside a .raw/ directory: ${rowsFile}`);
+  const rawRoot = rawDir || path.dirname(d.rowsOut);
+  if (!insideRaw(rowsFile, rawRoot)) throw new Error(`the per-session rows file must sit inside the .raw/ directory ${rawRoot}: ${rowsFile}`);
   const base = root || transcriptRoot(env, os.homedir());
   let dirents;
   try { dirents = fs.readdirSync(base, { withFileTypes: true }); } catch {

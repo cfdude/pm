@@ -70,6 +70,12 @@ export function nextRunAllowed(spent, last, caps, pmEstimate) {
   return { allowed: true, reason: null };
 }
 
+/** The token count at which a run is killed: the per-run cap, or what is left of the pair ceiling when
+ *  that is smaller, so the ceiling binds DURING a run and not only between runs. */
+export function runKillAt(caps, spent) {
+  return Math.max(1, Math.min(caps.perRun, caps.pair - spent));
+}
+
 /** The whole orchestration over an INJECTED `runner(arm) -> result`. pm-off runs first (the smaller run:
  *  its total sets the estimate for the next). Nothing runs after a stop, and a run whose pm brief hook is
  *  not what its arm requires (present in pm-on, absent in pm-off) voids the pair and stops it. */
@@ -80,7 +86,7 @@ export async function runPair({ runner, caps = CAPS, pmEstimate }) {
   for (const arm of ARMS) {
     const gate = nextRunAllowed(spent, last, caps, pmEstimate);
     if (!gate.allowed) return { runs, spent, stopped: { before: arm, reason: gate.reason }, void: null };
-    const r = await runner(arm);
+    const r = await runner(arm, { killAt: runKillAt(caps, spent) });
     const run = { arm, ...r };
     runs.push(run);
     spent += Number.isFinite(r.total) ? r.total : 0;
@@ -91,6 +97,11 @@ export async function runPair({ runner, caps = CAPS, pmEstimate }) {
     if (r.instructionsUserScope > 0) {
       return { runs, spent, stopped: { before: ARMS[ARMS.indexOf(arm) + 1] || null, reason: "void" }, void: { arm, reason: "user-memory-loaded" } };
     }
+  }
+  const off = runs.find((r) => r.arm === "pm-off");
+  const on = runs.find((r) => r.arm === "pm-on");
+  if (off && on && off.model !== on.model) {
+    return { runs, spent, stopped: null, void: { arm: "pm-on", reason: "model-mismatch" } };
   }
   return { runs, spent, stopped: null, void: null };
 }
@@ -132,9 +143,9 @@ export function pairSummary(off, on, pmEstimate) {
 /** The argv `claude` is spawned with. Built-in tools stay ON (the skill and command listings are part of
  *  pm's cost); `--strict-mcp-config` cuts the shared MCP base identically in both arms; only pm-on adds
  *  `--plugin-dir`, and always the SAME checkout. */
-export function claudeArgs(arm, checkout) {
+export function claudeArgs(arm, checkout, model = null) {
   if (!ARMS.includes(arm)) throw new Error(`unknown arm: ${arm}`);
-  const base = ["-p", PROMPT, "--output-format", "json", "--strict-mcp-config"];
+  const base = ["-p", PROMPT, "--output-format", "json", "--strict-mcp-config", ...(model ? ["--model", model] : [])];
   return arm === "pm-on" ? [...base, "--plugin-dir", checkout] : base;
 }
 
@@ -142,16 +153,17 @@ export function claudeArgs(arm, checkout) {
  *  a cap nobody typed. It may be lowered, never raised past the pair's hard cap. `--prepare-only` builds
  *  the fixtures and prints pm's estimate without spawning `claude`, so it needs no ceiling. */
 export function parsePairArgs(argv) {
-  const o = { ceiling: null, out: null, prepareOnly: false, keepTranscripts: false };
+  const o = { ceiling: null, out: null, model: null, prepareOnly: false, keepTranscripts: false };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--prepare-only") { o.prepareOnly = true; continue; }
     if (a === "--keep-transcripts") { o.keepTranscripts = true; continue; }
-    if (a === "--ceiling" || a === "--out") {
+    if (a === "--ceiling" || a === "--out" || a === "--model") {
       const v = argv[i + 1];
       if (v === undefined || v.startsWith("--")) return { error: `${a} needs a value` };
       i += 1;
       if (a === "--out") { o.out = v; continue; }
+      if (a === "--model") { o.model = v; continue; }
       if (!/^\d+$/.test(v)) return { error: `--ceiling must be a whole number of tokens, got ${v}` };
       o.ceiling = Number(v);
       continue;

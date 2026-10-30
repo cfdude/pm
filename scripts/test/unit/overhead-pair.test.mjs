@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
 import {
   ARMS, CAPS, PROMPT, claudeArgs, fixtureSettings, nextRunAllowed, pairSummary, parsePairArgs,
-  pmIdsFromPluginList, runPair, runRecord, runTotalOfLines,
+  pmIdsFromPluginList, runKillAt, runPair, runRecord, runTotalOfLines,
 } from "../../measure/overhead-pair-core.mjs";
 
 const HOME = "/Users/someone";
@@ -193,4 +193,37 @@ unitTest("B4 parsePairArgs: --prepare-only spawns no model run, so it needs no c
 
 unitTest("B4 the caps are the ones Rob set", () => {
   assert.deepEqual({ ...CAPS }, { perRun: 100000, pair: 150000 });
+});
+
+unitTest("B4 runKillAt: the pair ceiling binds inside a run; the per-run cap still applies", () => {
+  assert.equal(runKillAt({ perRun: 100000, pair: 150000 }, 0), 100000);
+  assert.equal(runKillAt({ perRun: 100000, pair: 150000 }, 70000), 80000);
+  assert.equal(runKillAt({ perRun: 100000, pair: 90000 }, 0), 90000);
+  assert.equal(runKillAt({ perRun: 100000, pair: 150000 }, 150000), 1);
+});
+
+unitTest("B4 runPair hands each run its kill threshold from what is spent so far", async () => {
+  const seen = [];
+  const runner = async (arm, ctx) => { seen.push(ctx.killAt); return result({ briefPresent: arm === "pm-on", total: 50000 }); };
+  await runPair({ runner, caps: CAPS, pmEstimate: 100 });
+  assert.deepEqual(seen, [100000, 100000]);
+  const seen2 = [];
+  const runner2 = async (arm, ctx) => { seen2.push(ctx.killAt); return result({ briefPresent: arm === "pm-on", total: 50000 }); };
+  await runPair({ runner: runner2, caps: { perRun: 100000, pair: 120000 }, pmEstimate: 100 });
+  assert.deepEqual(seen2, [100000, 70000]);
+});
+
+unitTest("B4 runPair VOIDS the pair when the arms ran on different models, and still records the data", async () => {
+  const runner = async (arm) => result({ briefPresent: arm === "pm-on", model: arm === "pm-on" ? "opus" : "sonnet" });
+  const out = await runPair({ runner, caps: CAPS, pmEstimate: 100 });
+  assert.deepEqual(out.void, { arm: "pm-on", reason: "model-mismatch" });
+  assert.equal(out.runs.length, 2);
+  assert.ok(out.spent > 0);
+});
+
+unitTest("B4 claudeArgs --model pins both arms; parsePairArgs carries --model", () => {
+  assert.deepEqual(claudeArgs("pm-off", "/repo", "m1").slice(-2), ["--model", "m1"]);
+  assert.deepEqual(claudeArgs("pm-on", "/repo", "m1"), [...claudeArgs("pm-off", "/repo", "m1"), "--plugin-dir", "/repo"]);
+  assert.equal(parsePairArgs(["--ceiling", "9", "--model", "m1"]).model, "m1");
+  assert.match(parsePairArgs(["--ceiling", "9", "--model"]).error, /needs a value/);
 });

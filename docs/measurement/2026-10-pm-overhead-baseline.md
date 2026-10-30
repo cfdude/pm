@@ -54,11 +54,14 @@ Reading it:
 - A feature that changes a value inside a section (reviewMode inside `rules:execution-profile`) or a count
   inside the brief shows as 0 bytes on its own row; the difference lands in `core` (see the +107 above).
 
-## 2. Calibration protocol (task 3.1) - NOT RUN
+## 2. Calibration protocol (task 3.1) - one indicative pair, model-confounded
 
 Question: how far is bytes/4 from the real token count of what pm adds to a first message?
 
 Spends real model tokens, so it needs Rob's go (task 0.3) before any run.
+
+Result: one reduced pair ran 2026-10-30, see `docs/measurement/2026-10-overhead-calibration.md`. Its arms ran on
+different models, so it is indicative only; a same-model rerun is the open item.
 
 1. Fixture: an empty directory outside any repository, isolated from user memory (`claudeMdExcludes` for
    the user and parent CLAUDE.md files and `autoMemoryEnabled: false` in the fixture's own settings; NOT
