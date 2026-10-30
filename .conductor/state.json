@@ -15231,9 +15231,14 @@
           "text": "2026-10-23 Rob: DROP the headless calibration runs and the 150k ceiling. Why: the runs measure an empty fixture, cost cannot be bounded from the repo, and /context from 8 pm-managed repos already shows the real picture (base 54-98k, memory files 15-57k, messages 52-620k; pm rules block ~10.6k est in this repo). Replacement: (1) read-only comparison of render's rules-block estimate against each repo's /context memory number, zero new spend; (2) spend tracking + dev log in real repos; (3) trim rules:intake ~10 tokens instead of building a switch. lane: superpowers not decision — no spend left to approve."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "a3d7fdcc1e4a6a105831d6d3153c3267d3e8867c",
+        "0466ab4330572001e17f686d7562abd60e94af16",
+        "c7c17d5cf20a902ebb249a4206927eb18e2315b7",
+        "7bb2f5ca35980e12d73f9f75906b9282ce7607a6"
+      ],
       "createdAt": "2026-10-20T11:28:06.603Z",
-      "touchedAt": "2026-10-23T13:23:58.175Z",
+      "touchedAt": "2026-10-30T02:23:34.401Z",
       "release": "0.54.0"
     },
     {
@@ -15397,7 +15402,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2192,
+  "revision": 2196,
   "reviewMode": "standard",
   "releases": [
     {
