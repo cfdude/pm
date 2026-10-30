@@ -15197,7 +15197,7 @@
       "id": "pm-overhead-calibration-and-feature-switches",
       "title": "Headless calibration runs for the overhead estimate, and the real feature switches the audit justifies",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -15240,11 +15240,32 @@
         "fa530a5c2a0d73efe45456174d088615e0e8e012",
         "8b0a32012f74087885352e7371893ee991040395",
         "aaa1d625e8d8042d415297ff8eabff7508555c2a",
-        "02fdfd5602e7833511d27652efc8af933f63dab2"
+        "02fdfd5602e7833511d27652efc8af933f63dab2",
+        "43d9b74857ae7a3635f61eb42e12721bd3a11763"
       ],
       "createdAt": "2026-10-20T11:28:06.603Z",
-      "touchedAt": "2026-10-30T15:38:32.639Z",
-      "release": "0.54.0"
+      "touchedAt": "2026-10-30T22:23:08.724Z",
+      "release": "0.54.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-10-30T22:23:08.719Z",
+        "reason": "transcript survey (102 headline sessions) and a model-matched pm-off/pm-on pair recorded: pm adds 13,042 tokens at session start vs the 10,908 estimate (ratio 1.196, inside the 25% threshold, n=1 pair); rules:intake shrunk from ~1,006 to ~834 tokens"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-10-30T22:23:08.718Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "3+3 calibration run",
+            "reason": "the single matched pair agrees with the estimate within the 25% threshold, so the 500k escalation was not needed"
+          },
+          {
+            "what": "feature switches",
+            "reason": "rules:intake fell under 1,000 tokens; rules:the-gate-procedure (~3,006 tokens) stays unconditional because it carries the required task items, and a switch on it was not scoped here"
+          }
+        ]
+      },
+      "completedAt": "2026-10-30T22:23:08.719Z"
     },
     {
       "id": "gh-cfdude-pm-254",
@@ -15407,7 +15428,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2201,
+  "revision": 2203,
   "reviewMode": "standard",
   "releases": [
     {
