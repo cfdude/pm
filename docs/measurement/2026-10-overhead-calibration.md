@@ -20,7 +20,7 @@ Claude Code 2.1.314 and pm 0.53.0 (versions as recorded in the pair file, run 20
 | Median total, brief present | 98,500 (opus-5-5, n=48); 92,832.5 (sonnet-5-5, n=28); 84,836 (sonnet-5, n=1) |
 | Median total, brief absent | 96,970 (opus-5-5, n=5); 99,521 (sonnet-5-5, n=5); 85,201.5 (opus-5, n=8) |
 | Within-project pairs | 2 projects, 0 with 5+ sessions per side; median delta -4,663.5 total |
-| Wall-clock / peak memory | 2.4 s / 117 MB (from the B3 run output; not stored in a committed file) |
+| Wall-clock / peak memory | 2.2 s / 117 MB max RSS (re-measured 2026-10-30 with `/usr/bin/time -l`, 94 projects read, 3,584 files; the original B3 run read 93 projects) |
 
 B1 brief detection (`overhead-survey-core.mjs:18-20`), validated 2026-10-29 over this repo's 99 transcripts: every
 `startup` session from `cli` / `sdk-cli` showed the hook, every `clear` session did not (pm's matcher is
