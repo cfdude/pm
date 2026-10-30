@@ -7,7 +7,7 @@ compatibility: Requires openspec CLI.
 metadata:
   author: openspec
   version: "1.0"
-  generatedBy: "1.13.2"
+  generatedBy: "1.15.0"
 ---
 
 Archive a completed change in the experimental workflow.
@@ -146,6 +146,17 @@ In both branches, never create the root as a side effect: do not run `openspec i
    change CLI behavior, or copy the rule text into any output file.
 
    Then run the `openspec-sync-specs` workflow inline (agent-driven intelligent merge) for change '<name>', passing the delta spec analysis and the fetched specs-rule snapshot from above, and wait for it to finish. The inline sync must reuse that snapshot without fetching `specs` instructions again. Do not delegate it to a background task — step 5 would move `changeRoot` out from under a sync that is still reading it, leaving the change archived and the main specs never updated. If your agent can only run it by delegation, delegate synchronously and wait for the result.
+
+   If the sync reports any stop or blocking condition, treat the sync as failed.
+   Stop the archive immediately. Do not perform the post-sync content comparison and do not move its `changeRoot`.
+   Nothing has moved, so the user can fix the blocking condition or re-run the sync.
+
+   After the sync writes each main spec, verify its structure against the canonical sync contract:
+   - A new main spec starts with a `# <capability> Specification` title. An existing main spec keeps its title exactly as it is.
+   - Preserve existing `## Purpose` sections completely untouched for established main specs.
+   - For a new main spec, copy the delta `## Purpose` verbatim. Warn only if the purpose text is shorter than standard validation expects. Do not regenerate or rewrite existing authored purpose. If no usable `## Purpose` is provided, use the existing TBD Purpose behavior and warning.
+   - Verify that no delta-style section headers (`## ADDED Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`, `## RENAMED Requirements`) remain in the main spec, adhering strictly to the sync workflow formatting rules.
+   - Requirement blocks the sync wrote or changed use `### Requirement:` headings, and their scenarios use `#### Scenario:` headings, under the spec's `## Requirements` section. Leave content the delta does not mention exactly as it is.
 
    Then re-run the comparison from the top of this step, including the explicitly retired, missing-spec case, against every capability that has a delta spec in `artifactPaths.specs.existingOutputPaths` — not only the ones the sync reports it touched. A successful sync leaves nothing left to apply, so each capability must now read as already synced:
    - ADDED requirements present
