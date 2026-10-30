@@ -81,3 +81,13 @@ pays 2,892 tokens for them.
 - The error of bytes/4 against real tokens (the calibration in `2026-10-pm-overhead-baseline.md` has not run).
 - `hook:commit-nudge`'s size.
 - What an agent loses by missing a switched-off section; there is no measurement of downstream effect.
+
+## Addendum, 2026-10-29: the intake candidate is closed by shrinking it
+
+The rows above were true when measured (engine 0.53.0, `rules:intake` at 4,021 B, 1,006 tokens) and are left as
+they were. Rob decided on 2026-10-29 to shrink the section under the line instead of building a switch for it.
+The two measured-evidence sentences moved to the `conductor` skill's Intake section (they were already there),
+and the wording of the rest was tightened. `overhead --all-features` now reports `rules:intake` at **3,336 B,
+834 tokens**, and `unit/overhead.test.mjs` fails if it passes 900 tokens on any platform, so it cannot creep back
+over the line unseen. Decision: no switch for `rules:intake`. The other core surfaces at or above 1,000 tokens
+(`rules:pm-conductor`, `rules:the-gate-procedure`) stay un-switched for the reasons in their rows (D2).
