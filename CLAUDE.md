@@ -659,6 +659,24 @@ building against a partial plan. This is an obligation and not a command: pm nam
 invocation for it, because how to check belongs to the OpenSpec you have installed.
 <!-- END pm-conductor rules -->
 
+### ⛔ OpenSpec 1.15 workflows that fight pm's gates
+
+These guardrails live HERE, outside the managed block above and outside the generated
+`.claude/` files, because `openspec update` rewrites those in place and loses local edits
+silently. A conflict between OpenSpec's generated files and pm's rules is fixed in this file,
+never by editing a generated one.
+
+- **Never run `/opsx:onboard` in this repo.** It is a tutorial that ends in
+  `openspec archive "<name>" --yes`: propose, apply and archive with no prompt, no Gate 1, no
+  Gate 2 and no disposition.
+- **`/opsx:verify` raises one CRITICAL per incomplete task**, so it flags every correctly marked
+  `<!-- pm:lifecycle -->` task. That is a FALSE POSITIVE (the collision gate item 3 documents for
+  `openspec validate --archived`, in a second command; filed as #261). Never tick the task or
+  drop the marker to silence it.
+- **`/opsx:bulk-archive` archives N changes under ONE confirmation and records no dispositions.**
+  Afterwards run one `update-epic <id> --status archived --outcome … --reason … --no-deferrals`
+  per member. `/opsx:ff` is not a bypass: it stops at "Run /opsx:apply".
+
 ### 🔗 Cross-spec review — now a shipped gate, not a repo practice
 
 **#126 landed it in the product.** The procedure lives in the shipped `skills/cross-spec-review/`
