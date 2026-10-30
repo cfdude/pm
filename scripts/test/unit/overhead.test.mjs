@@ -10,7 +10,9 @@ import {
   featureIds, featureOf, frontmatterDescription, hypotheticalState, overheadText, rulesBlockFor, slug,
 } from "../../lib/overhead.mjs";
 import { OPT_INS } from "../../lib/opt-ins.mjs";
-import { measureRulesBlock } from "../../lib/session-cost.mjs";
+import { byteSize, estimateTokens, measureRulesBlock } from "../../lib/session-cost.mjs";
+import { PLATFORM_COMMAND_PREFIX } from "../../lib/constants.mjs";
+import { intakeLines } from "../../lib/rules.mjs";
 
 const base = () => ({ version: 1, revision: 1, active: null, detourStack: [], epics: [] });
 const listings = [
@@ -177,4 +179,21 @@ unitTest("frontmatterDescription reads plain, quoted and folded-block descriptio
   assert.equal(frontmatterDescription("---\ndescription: \"Quoted\"\n---\n"), "Quoted");
   assert.equal(frontmatterDescription("---\ndescription: >\n  folded\n  text\nmodel: x\n---\n"), "folded text");
   assert.equal(frontmatterDescription("no frontmatter"), "");
+});
+
+// pm-overhead-calibration-and-feature-switches A1. `rules:intake` sat at ~1,006 tokens, 6 over the audit's 1,000-token
+// switch line (docs/measurement/2026-10-feature-switch-audit.md). The budget is 900, so a 100-token margin keeps it
+// from creeping back over the line unseen. Its bytes vary by platform through the command prefix.
+const INTAKE_BUDGET_TOKENS = 900;
+
+unitTest("A1 rules:intake stays within its 900-token budget in the overhead report", () => {
+  const intake = byId(buildReport(base(), inputs))["rules:intake"];
+  assert.ok(intake.estimatedTokens <= INTAKE_BUDGET_TOKENS, `rules:intake is ${intake.estimatedTokens} tokens`);
+});
+
+unitTest("A1 the intake section stays within its 900-token budget on every platform", () => {
+  for (const p of Object.keys(PLATFORM_COMMAND_PREFIX)) {
+    const tokens = estimateTokens(byteSize(intakeLines(p).join("\n")));
+    assert.ok(tokens <= INTAKE_BUDGET_TOKENS, `${p}: intake is ${tokens} tokens`);
+  }
 });

@@ -1815,7 +1815,7 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:pm-conductor` | core | ~1,485 tokens | no switch: the detour, reconcile and state-of-record rules |
 | `rules:getting-help-with-pm` | core | ~181 tokens | no switch: below the threshold |
 | `rules:the-gate-procedure` | core | ~3,006 tokens | no switch: the required gate items are a record-integrity rule |
-| `rules:intake` | core | ~1,006 tokens | no switch yet: at the threshold by 6 tokens, a candidate awaiting a decision |
+| `rules:intake` | core | ~834 tokens | no switch: below the threshold after the shrink (it was ~1,006), and held under 900 by a test |
 | `rules:reporting` | core | ~714 tokens | no switch: below the threshold, and it forbids dropping a recorded fact |
 | `rules:epic-level-autonomy` | core | ~785 tokens | no switch: below the threshold, and it holds the safety stops |
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
