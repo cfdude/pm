@@ -152,7 +152,7 @@ const notHeadlineReason = (r) => {
  *  an included project) is summarised, per `briefPresent x model`; every other class is COUNTED by reason.
  *  No project name and no session id leaves this function: projects are used as grouping keys and
  *  dropped. `extra.skipped` is `{reason: count}` for sessions the walk could not fold;
- *  `extra.excludedProjects` is `{reason: count}` of SESSIONS FILES NOT READ because of their project. */
+ *  `extra.excludedProjects` is `{reason: count}` of project DIRECTORIES never opened (so a `project-*` count is directories, not sessions). */
 export function aggregate(rows, extra = {}) {
   const head = rows.filter(isHeadline);
   const byReason = {};
@@ -205,7 +205,10 @@ export function aggregate(rows, extra = {}) {
   return {
     schema: 1,
     method: "first main-chain assistant message of each session; headline = SessionStart source startup, entrypoint cli or sdk-cli, project not excluded; total = input + cacheCreation + cacheRead; percentiles are nearest-rank",
-    population: { headline: "startup sessions from cli and sdk-cli", headlineSessions: head.length, sessionsRead: rows.length },
+    population: {
+      headline: "startup sessions from cli and sdk-cli", headlineSessions: head.length, sessionsRead: rows.length,
+      ...(Number.isInteger(extra.projectsRead) ? { projectsRead: extra.projectsRead } : {}),
+    },
     groups,
     withinProject: { overall: summarise(pairs), byModel: models.map((m) => ({ model: m, ...summarise(pairs.filter((p) => p.model === m)) })) },
     excluded: { byReason },
