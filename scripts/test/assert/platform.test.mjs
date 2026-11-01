@@ -271,3 +271,27 @@ test("a switch never touches a file that has no pm block, or an ambiguous one", 
   assert.equal(fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8"),
     "# keep\n<!-- BEGIN pm-conductor rules (x) -->\nno end marker\n", "ambiguous markers: never guess, never write");
 });
+
+// ────────────── a switch never retires a file that IS the target under another name ──────────────
+// retireOrphanedRulesBlocks() once compared path STRINGS: with CLAUDE.md -> AGENTS.md (or a hard link) the
+// "other" file is the target itself, and the block writeRules() had just written was stripped.
+
+test("a symlinked CLAUDE.md -> AGENTS.md keeps the block writeRules just wrote", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "AGENTS.md"), "# Agents\n\nRule.\n");
+  fs.symlinkSync("AGENTS.md", path.join(cwd, "CLAUDE.md"));
+  run(["write-rules", "--platform", "codex"], { cwd });
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.equal(agents.match(/BEGIN pm-conductor rules/g)?.length, 1, "the freshly written block survives");
+  assert.ok(fs.lstatSync(path.join(cwd, "CLAUDE.md")).isSymbolicLink(), "the link is left in place");
+});
+
+test("a hard-linked CLAUDE.md and AGENTS.md keep the block writeRules just wrote", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "AGENTS.md"), "# Agents\n\nRule.\n");
+  fs.linkSync(path.join(cwd, "AGENTS.md"), path.join(cwd, "CLAUDE.md"));
+  run(["write-rules", "--platform", "codex"], { cwd });
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.equal(agents.match(/BEGIN pm-conductor rules/g)?.length, 1, "the freshly written block survives");
+  assert.ok(fs.existsSync(path.join(cwd, "CLAUDE.md")), "the second name is not deleted");
+});

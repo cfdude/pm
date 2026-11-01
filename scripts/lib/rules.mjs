@@ -1255,11 +1255,19 @@ export function writeRules(platform = "claude-code") {
  *  never touched (no guessing, no throw -- the target was already written). The target itself is
  *  never a candidate, so platforms that share a file (hermes -> CLAUDE.md) leave it alone. */
 function retireOrphanedRulesBlocks(target) {
+  /** The same file under another name: equal realpath (symlink) or equal device+inode (hard link). */
+  const sameFile = (a, b) => {
+    try {
+      if (fs.realpathSync(a) === fs.realpathSync(b)) return true;
+      const sa = fs.statSync(a), sb = fs.statSync(b);
+      return sa.dev === sb.dev && sa.ino === sb.ino;
+    } catch { return false; }
+  };
   const root = path.dirname(target);
   const names = [...new Set(Object.values(PLATFORM_RULES_CHAIN).flat())];
   for (const name of names) {
     const file = path.join(root, name);
-    if (file === target) continue;
+    if (file === target || sameFile(file, target)) continue;
     let text;
     try { text = fs.readFileSync(file, "utf8"); } catch { continue; }
     const arrangement = rulesBlockArrangement(text);
