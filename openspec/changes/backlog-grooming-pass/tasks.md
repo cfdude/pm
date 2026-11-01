@@ -13,12 +13,12 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, both spec files and this file.
+- [x] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, both spec files and this file.
       Fix Critical and Important, re-run `openspec validate backlog-grooming-pass --strict`, then
       `record-gate-review backlog-grooming-pass --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
       Note: Gate 1 was recorded retroactively, after tasks 1.1-2.2 landed (commits b2c22ac9, 2e40b8d8);
       the review covers the landed code. Cause: the build began before the gate was recorded.
-- [ ] 0.2 **Cross-spec review** (item 5), release-scoped: the release holding this change carries two
+- [x] 0.2 **Cross-spec review** (item 5), release-scoped: the release holding this change carries two
       or more spec files (this change alone has two), so invoke the `cross-spec-review` skill before
       `/opsx:apply` and after any concurrent amendment, then
       `record-cross-spec-review <releaseId> --verdict pass|fail --reviewer "<identity>"`. Name the shared
@@ -66,9 +66,9 @@
       lists C.2 and C.3.
 - [x] R.4 **Attribute every commit** (item 4): `update-epic backlog-grooming-pass --attribute-commit <sha>`
       in landing order, never the archive move.
-- [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.2; record the verdict against the release.
-- [ ] R.6 **Disposition** (item 6): satisfied by C.2.
-- [ ] R.7 **Route what the work taught you** (item 7): name each lesson as a practice, tooling friction
+- [x] R.5 **Cross-spec review** (item 5): satisfied by 0.2; record the verdict against the release.
+- [x] R.6 **Disposition** (item 6): satisfied by C.2.
+- [x] R.7 **Route what the work taught you** (item 7): name each lesson as a practice, tooling friction
       or process failure, with evidence. File `/pm:feedback feature "update-epic --unlink
       <type>:<epic>"` (tooling friction: undoing one `supersedes` link today costs `--clear-links` plus
       re-adding every other link). Candidate: the brief named `epic-index` and `list` specs that
@@ -76,17 +76,17 @@
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (or the converged release-candidate review): spec alignment,
+- [x] G.1 **Gate 2** over `BASE..HEAD` (or the converged release-candidate review): spec alignment,
       additive row, no new verb or flag, disposition order in the skill. Record with
       `--base-sha`/`--head-sha` reaching every attributed commit.
 
 ## D. Docs (after Gate 2 only)
 
-- [ ] D.1 README and Mintlify: the new skill and command and the wider `list --json` row, per the
+- [x] D.1 README and Mintlify: the new skill and command and the wider `list --json` row, per the
       `mintlify-doc-sync` skill, or carried to the release cut.
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after docs. Re-record, never withdraw.
+- [x] C.1 Re-record Gate 2 after docs. Re-record, never withdraw.
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic backlog-grooming-pass --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive backlog-grooming-pass`. The archive-move commit is NOT attributed.

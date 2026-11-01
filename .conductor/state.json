@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "backlog-grooming-pass",
+  "active": "triage-surfaces-open-release-intents",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6115,7 +6115,7 @@
       "id": "backlog-grooming-pass",
       "title": "Nothing ever re-reads the backlog as a SET after intake. /pm:triage runs once, at registration; after that no surface asks whether an epic still matters, duplicates another, or was already delivered under a different name. The sprint-planning role is unfilled: nobody prunes, dedupes, merges a P2's context into the P0 that supersedes it, or catches an epic whose premise died. Consolidation must record a disposition (--outcome superseded --reason plus a supersedes link), never delete — deletion removes the record of projected work, which is what a disposition exists to preserve. Measured 2026-09-06: all three newly-synced issues overlapped archived epics, and one was a straight re-report of work recorded delivered.",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6132,7 +6132,9 @@
         "b2c22ac91266601dcf5786bd77b64c3683db952d",
         "2e40b8d81fcf092909d5a63ced9eea6cdc09e1b9",
         "72dc84714cad8704b2236520700a0f47171a28a8",
-        "f0b56fa8e1590bb87e47c7142a4c90a0206569cc"
+        "f0b56fa8e1590bb87e47c7142a4c90a0206569cc",
+        "619999c01d6ac16d787926258534df58d4bfbc6b",
+        "406569f757d6bf8fdc104c11c8b0d7719c588824"
       ],
       "notes": [
         {
@@ -6152,7 +6154,7 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-11-01T16:21:57.880Z",
+      "touchedAt": "2026-11-01T16:46:00.354Z",
       "release": "0.54.0",
       "gateReview": {
         "gate1": {
@@ -6214,6 +6216,13 @@
             ],
             "reviewer": "opus fresh-context, 1 capped round 2026-10-30 on the post-1.15.0 artifacts: 0 Critical, 2 Important and 4 Minor, all fixed and re-validated --strict by the orchestrator, not re-reviewed per the one-round cap. RETROACTIVE: recorded after tasks 1.1-2.2 landed (b2c22ac9, 2e40b8d8); the review covered the landed code"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T16:45:45.260Z",
+          "baseSha": "0c5ac9761a55cea491bbdab3530fad31076a1261",
+          "headSha": "406569f757d6bf8fdc104c11c8b0d7719c588824",
+          "reviewer": "opus fresh-context, 1 capped round 2026-11-01: 0 Critical, 3 Important (ENGINE never set, untrusted text in double quotes, docs omit outcome unknown) and 3 Minor tests, all fixed in 406569f7 and re-tested by the fix agent (full hook 2505/2505, certify functional 0), not re-reviewed per the one-round cap"
         }
       },
       "gateRounds": {
@@ -6223,6 +6232,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-11-01T16:21:57.872Z",
           "lastPassAt": "2026-11-01T16:21:57.872Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T16:45:45.260Z",
+          "lastPassAt": "2026-11-01T16:45:45.260Z"
         }
       },
       "sessions": [
@@ -6239,7 +6255,23 @@
           "reason": "bookkeeping commit (archive records of another epic), attributed by mistake",
           "withdrawnAt": "2026-11-01T16:21:49.776Z"
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T16:46:00.349Z",
+        "reason": "backlog-grooming skill and command, wider list --json row (outcome, release, createdAt); cross-spec pass for 0.54.0, Gate 2 pass at 406569f7; ships in 0.54.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T16:46:00.332Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Mintlify pages for the skill, command and list row",
+            "reason": "the site documents the latest release and this ships in 0.54.0, so the pages change in the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T16:46:00.349Z"
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -14683,7 +14715,7 @@
       "id": "triage-surfaces-open-release-intents",
       "title": "triage shows open-release intents and each candidate's release membership",
       "priority": "P3",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -14711,8 +14743,9 @@
         "31fb34d065040fc4148e5e9934ab04189a6a7e6b"
       ],
       "createdAt": "2026-10-14T23:49:24.862Z",
-      "touchedAt": "2026-10-23T14:49:34.901Z",
-      "release": "0.54.0"
+      "touchedAt": "2026-11-01T16:46:18.484Z",
+      "release": "0.54.0",
+      "startedAt": "2026-11-01T16:46:18.480Z"
     },
     {
       "id": "gh-cfdude-pm-253",
@@ -15472,7 +15505,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2212,
+  "revision": 2218,
   "reviewMode": "standard",
   "releases": [
     {
@@ -16163,7 +16196,7 @@
       "deferred": [],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-11-01T16:21:31.349Z",
+        "reviewedAt": "2026-11-01T16:33:09.664Z",
         "specs": [
           {
             "key": "backlog-grooming-pass/specs/backlog-grooming/spec.md",
@@ -16174,7 +16207,22 @@
             "sha256": "adc608fcac3f0e9d7e7a9c55ae28edfea6a43fdf7fe4599a8a533db4645fe17d"
           }
         ],
-        "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 77f0e83548b41695824232d3c0258ba3642750a8, round 2 no BLOCKS, live run of the combined call exit 0"
+        "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 619999c0, round 2 no BLOCKS, live run of the combined call exit 0",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T16:21:31.349Z",
+          "specs": [
+            {
+              "key": "backlog-grooming-pass/specs/backlog-grooming/spec.md",
+              "sha256": "60b2d1a53113c0e54632f915cfeee44a44dff4bca7c30379cf8011baa7847434"
+            },
+            {
+              "key": "backlog-grooming-pass/specs/epic-list/spec.md",
+              "sha256": "adc608fcac3f0e9d7e7a9c55ae28edfea6a43fdf7fe4599a8a533db4645fe17d"
+            }
+          ],
+          "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 77f0e83548b41695824232d3c0258ba3642750a8, round 2 no BLOCKS, live run of the combined call exit 0"
+        }
       }
     }
   ],
