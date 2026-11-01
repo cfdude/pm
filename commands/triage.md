@@ -77,10 +77,13 @@ line (shown expanded below for reading; parse it, do not match its layout):
   such token per character, an epic that shares ONLY those needs at least two of them, and at
   least one for every ten in the ask — so common words like 新的 "new" do not fill the list.
 - **`release`** (on each candidate) — the id of the release that epic is a member of, or `null`.
-- **`releases`** — every OPEN release (no delivered marker) with its `intent`, `memberCount` and the
+- **`releases`** — every OPEN release (no delivered marker and at least one non-archived member; a markerless release
+  whose members are all archived, or that has none, is history and is not listed) with its `intent`, `memberCount` and the
   `sharedTokens` its id and intent share with the ask, ranked by how many. A release sharing nothing
   is still listed: an intent worth reading is not always lexically close to the ask. Whether the ask
-  serves one of them, and whether to `release <id> --member` it, is your call; the engine only shows them.
+  serves one of them, and whether to `release <id> --member` it, is your call; the engine only shows them. An ask that
+  names a version ("0.54.0") does not match a release by its id: version ids are shorter than the
+  three-character word minimum, so only the intent's words are compared.
 - **`superseded: true`** — some other epic already holds a `supersedes` link to this one. It is
   already dead; do not consolidate a fourth ask into it.
 - **`lane`** — the repo's own `suggest-lane` answer, carried here so intake is one call, not two.

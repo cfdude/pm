@@ -397,7 +397,7 @@ unitTest("each candidate carries its release id, or null; releases[] lists OPEN 
   const engine = repoWithReleases(
     [
       { id: "link-validation", title: "Validate link types against a known set", release: "0.54.0" },
-      { id: "unrelated-thing", title: "Quokka rendering" },
+      { id: "unrelated-thing", title: "Quokka rendering", release: "0.55.0" },
     ],
     [
       { id: "0.54.0", intent: "Make link validation stricter and surface release intents", deferred: [] },
@@ -415,6 +415,25 @@ unitTest("each candidate carries its release id, or null; releases[] lists OPEN 
   assert.ok(open.sharedTokens.includes("link"), `got ${JSON.stringify(open.sharedTokens)}`);
   assert.deepEqual(out.releases[0].id, "0.54.0", "the release sharing the most vocabulary ranks first");
   assert.equal(out.verdict, null, "surfacing release intents decides nothing");
+});
+
+unitTest("a markerless release is open only while it has a live (non-archived) member; a delivered marker closes it regardless", () => {
+  const engine = repoWithReleases(
+    [
+      { id: "old-done", title: "Old finished work", release: "0.40.0", status: "archived" },
+      { id: "in-flight", title: "Queued work item", release: "0.54.0", status: "queued" },
+      { id: "late-member", title: "Straggler item", release: "0.53.0", status: "queued" },
+    ],
+    [
+      { id: "0.40.0", intent: "Historic release", deferred: [] },
+      { id: "0.54.0", intent: "Current release", deferred: [] },
+      { id: "0.53.0", intent: "Marked delivered", deferred: [], delivered: { recordedAt: "2026-10-17T00:00:00Z" } },
+      { id: "0.60.0", intent: "Empty planned release", deferred: [] },
+    ],
+  );
+  const out = triage(engine, "queued work item");
+  assert.deepEqual(out.releases.map(r => r.id), ["0.54.0"],
+    "archived-only, memberless and marked-delivered releases are not open; one with a live member is");
 });
 
 unitTest("a candidate outside every release has release: null, and a record with no releases yields releases: []", () => {
