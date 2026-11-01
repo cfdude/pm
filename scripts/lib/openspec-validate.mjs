@@ -24,15 +24,29 @@ import fs from "node:fs";
 import path from "node:path";
 import { engineRoot, escapeControls } from "./constants.mjs";
 import { currentEnv } from "./invocation.mjs";
+import { die } from "./command-exit.mjs";
 import { runOpenspecValidate } from "./tool-currency.mjs";
 
 const LIVE_CHANGE = /^openspec\/changes\/(?!archive(?:\/|$))([^/]+)(?:\/.*)?$/;
 /** An id safe to hand to argv: no leading `-` (it would read as a flag), no path separator. */
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const VALIDATE_TIMEOUT_MS = 60000;
 const MAX_OUTPUT_LINES = 25;
 
-const normalize = (p) => String(p).trim().replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "");
+/** Repo-relative, forward-slash form. An ABSOLUTE path inside the engine root is made relative to it first,
+ *  so `/abs/repo/openspec/changes/<id>/x` names the same change as `openspec/changes/<id>/x`. */
+const real = (p) => { try { return fs.realpathSync(p); } catch { return p; } };
+const normalize = (p) => {
+  let t = String(p).trim().replace(/\\/g, "/");
+  if (path.posix.isAbsolute(t)) {
+    const root = engineRoot();
+    // Both spellings of each side: a tmp or symlinked checkout reaches the same file as /var and /private/var.
+    for (const [a, b] of [[root, t], [real(root), t], [root, real(t)], [real(root), real(t)]]) {
+      const rel = path.relative(a, b).replace(/\\/g, "/");
+      if (rel !== "" && !rel.startsWith("..") && !path.posix.isAbsolute(rel)) { t = rel; break; }
+    }
+  }
+  return t.replace(/^\.\//, "").replace(/\/+$/, "");
+};
 
 /** The distinct LIVE change ids a list of recorded artifact paths names, in first-seen order. A path inside an
  *  archived change, or outside `openspec/changes/`, names none. */
@@ -45,6 +59,14 @@ export function liveChangeIdsOf(artifacts) {
   return ids;
 }
 
+/** The change ids a Gate 1 pass must validate: those its artifacts name, else (a legacy range-only pass names no
+ *  artifact) the epic's own change, so the verdict is not recorded with validate never run. */
+export function validationTargets(artifacts, epicId) {
+  const ids = liveChangeIdsOf(artifacts);
+  if (!ids.length && !(artifacts || []).length && typeof epicId === "string" && epicId !== "") ids.push(epicId);
+  return ids;
+}
+
 /** `{ state: "pass" }`, `{ state: "fail", output }` or `{ state: "unknown" }` for one change.
  *  `PM_OPENSPEC_VALIDATE` is the test seam (`pass`, `unknown`, or `fail:<text>`), the family
  *  `PM_OPENSPEC_VERSION` belongs to. */
@@ -53,7 +75,9 @@ export function validateChange(id) {
   if (seam !== undefined) {
     if (seam === "pass") return { state: "pass" };
     if (seam.startsWith("fail:")) return { state: "fail", output: seam.slice(5) };
-    return { state: "unknown" };
+    if (seam === "unknown") return { state: "unknown" };
+    // An unrecognised value must not silently disable the guard (a typo would read as "cannot tell").
+    die(`conductor: PM_OPENSPEC_VALIDATE='${escapeControls(seam)}' is not recognised (expected pass, unknown or fail:<text>)\n`);
   }
   if (!SAFE_ID.test(id)) return { state: "unknown" };
   return runOpenspecValidate(id);
@@ -66,8 +90,8 @@ const hasOpenspecProject = () => fs.existsSync(path.join(engineRoot(), "openspec
 /** The refusal text when a Gate 1 PASS names a live change that does not validate, else `null`.
  *  Only the first failing change is reported; the verdict is refused as a whole. Output is control-escaped and
  *  capped, because it is a foreign tool's text echoed into the terminal. */
-export function gate1ValidateRefusal(artifacts) {
-  const ids = liveChangeIdsOf(artifacts);
+export function gate1ValidateRefusal(artifacts, epicId) {
+  const ids = validationTargets(artifacts, epicId);
   if (!ids.length || !hasOpenspecProject()) return null;
   for (const id of ids) {
     if (!fs.existsSync(path.join(engineRoot(), "openspec", "changes", id))) continue;

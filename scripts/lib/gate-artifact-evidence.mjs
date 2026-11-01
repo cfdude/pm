@@ -30,7 +30,7 @@ import { engineRoot, gateArtifacts } from "./constants.mjs";
 import { archivedChangeDir } from "./epic-progress.mjs";
 
 // `rest` is empty when the recorded path names the change DIRECTORY itself (gh#252).
-const LIVE_CHANGE_FILE = /^openspec\/changes\/(?!archive\/)([^/]+)(?:\/(.*))?$/;
+const LIVE_CHANGE_FILE = /^openspec\/changes\/(?!archive(?:\/|$))([^/]+)(?:\/(.*))?$/;
 
 const normalize = (p) => String(p).trim().replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "");
 

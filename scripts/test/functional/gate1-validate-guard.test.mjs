@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { run, tmpRepo } from "../fixtures/functional-harness.mjs";
+import { run, tmpRepo, fixtureCommits } from "../fixtures/functional-harness.mjs";
 
 function repoWithFakeOpenspec(script) {
   const cwd = tmpRepo();
@@ -60,4 +60,14 @@ test("243.10 validate is spawned with telemetry disabled even when the user's en
   fs.writeFileSync(path.join(bin, "openspec"), `#!/bin/sh\necho "T=$OPENSPEC_TELEMETRY D=$DO_NOT_TRACK" >> "${envLog}"\nexit 0\n`, { mode: 0o755 });
   run(G1, { cwd, env: { ...env, OPENSPEC_TELEMETRY: "1", DO_NOT_TRACK: "0" } });
   assert.match(fs.readFileSync(envLog, "utf8"), /T=0 D=1/);
+});
+
+test("243.12 a range-only Gate 1 pass (no --artifact) validates the epic's own live change", () => {
+  const { cwd, env } = repoWithFakeOpenspec("echo bad >&2\nexit 1");
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
+  let err;
+  try { run(["record-gate-review", "e", "--gate", "1", "--verdict", "pass", "--reviewer", "r", "--base-sha", base, "--head-sha", head], { cwd, env: { ...env, PATH: `${env.PATH}:${process.env.PATH}` } }); } catch (e) { err = e; }
+  assert.ok(err, "refused");
+  assert.match(stderrOf(err), /a gate 1 'pass' cannot be recorded/);
+  assert.equal(gate1(cwd), undefined);
 });

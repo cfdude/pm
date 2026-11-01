@@ -141,7 +141,7 @@ export function recordGateReview() {
   // did not validate. The engine asks, unpiped, and reads the exit status. A `fail` is never refused (it is evidence
   // of a failed review), and where validate cannot be run the question is not asked (see openspec-validate.mjs).
   if (gate === "1" && verdict === "pass") {
-    const invalid = gate1ValidateRefusal(artifacts);
+    const invalid = gate1ValidateRefusal(artifacts, id);
     if (invalid !== null) { die(invalid); }
   }
   // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and

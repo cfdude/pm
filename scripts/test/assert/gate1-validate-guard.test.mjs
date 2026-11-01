@@ -105,3 +105,24 @@ test("243.10 validate is spawned with telemetry disabled whatever the user's env
   assert.equal(bare.OPENSPEC_TELEMETRY, "0");
   assert.equal(bare.DO_NOT_TRACK, "1");
 });
+test("243.11 an absolute artifact path inside the live change still names it", () => {
+  const cwd = repo();
+  const abs = fs.realpathSync(cwd) + "/openspec/changes/e/proposal.md";
+  const err = expectFail(() => run(["record-gate-review", "e", "--gate", "1", "--verdict", "pass", "--artifact", abs],
+    { cwd, env: { PM_OPENSPEC_VALIDATE: "fail:bad" } }));
+  assert.ok(err, "refused");
+});
+
+test("243.12 an artifact-less Gate 1 pass (the legacy range-only shape) validates the epic's own live change", async () => {
+  const { validationTargets } = await import("../../lib/openspec-validate.mjs");
+  assert.deepEqual(validationTargets([], "e"), ["e"], "no artifact: the epic's own change");
+  assert.deepEqual(validationTargets(["docs/plan.md"], "e"), [], "an artifact outside any change names none, and is not second-guessed");
+  assert.deepEqual(validationTargets(["openspec/changes/other/proposal.md"], "e"), ["other"], "an artifact wins over the epic id");
+});
+
+test("243.13 an unrecognised PM_OPENSPEC_VALIDATE value fails loudly instead of silently disabling the guard", () => {
+  const cwd = repo();
+  const err = expectFail(() => run(G1(), { cwd, env: { PM_OPENSPEC_VALIDATE: "bogus" } }));
+  assert.ok(err);
+  assert.match(stderrOf(err), /PM_OPENSPEC_VALIDATE/);
+});

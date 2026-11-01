@@ -872,9 +872,9 @@ its files in sorted order, so adding, removing or editing any of them reads the 
 `unverifiable`.
 
 **A Gate 1 `pass` is refused while the change it names fails OpenSpec's strict validation.** When an `--artifact` lies inside
-a live change directory and the project has `openspec/config.yaml`, the engine runs that validate itself, unpiped, and
-reads its EXIT STATUS: a non-zero exit refuses the verdict, prints validate's output (capped) and writes nothing. (A
-a piped validate (`... | tail -1`) reports `tail`'s status and hides the failure; that is how a Gate 1 was once recorded against a
+a live change directory (an absolute path is read relative to the repo), or a range-only pass names no artifact and the epic has a
+live change of its own (a change directory named for the epic id), and the project has `openspec/config.yaml`, the engine runs that validate itself, unpiped, and
+reads its EXIT STATUS: a non-zero exit refuses the verdict, prints validate's output (capped) and writes nothing. (Piping validate (`... | tail -1`) reports `tail`'s status and hides the failure; that is how a Gate 1 was once recorded against a
 spec that did not validate.) Where validate cannot be run or answered (no `openspec` on PATH, a timeout, a signal) the check is
 skipped, never treated as a failure. A Gate 1 `fail`, a Gate 2 verdict and artifacts outside a live change are not checked. The
 run is local and read-only, and validate is spawned with telemetry disabled (`OPENSPEC_TELEMETRY=0`, `DO_NOT_TRACK=1`), so pm opens no network connection of its own.
