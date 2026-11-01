@@ -13477,7 +13477,7 @@
       "id": "record-gate-review-fail-requires-shas",
       "title": "record-gate-review --verdict fail should require --base-sha/--head-sha so a failing retrospective review carries its range",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -13490,10 +13490,11 @@
       "reconcileNeeded": false,
       "attributedCommits": [
         "478911e2003b6f008ee46338ba2dba39e610be9d",
-        "33773d32e27ce9918bdf6f9b51d6b1d9d6677a19"
+        "33773d32e27ce9918bdf6f9b51d6b1d9d6677a19",
+        "7935eb0f1cd3b50400e0f3a959553ab6f42d59de"
       ],
       "createdAt": "2026-10-05T01:44:10.877Z",
-      "touchedAt": "2026-10-23T02:34:27.100Z",
+      "touchedAt": "2026-11-01T16:08:16.316Z",
       "notes": [
         {
           "at": "2026-10-20T12:51:58.858Z",
@@ -13512,7 +13513,41 @@
           "reason": "merge commit, not implementation work; the build commit 478911e2 is the work",
           "withdrawnAt": "2026-10-23T02:19:35.508Z"
         }
-      ]
+      ],
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T16:08:00.811Z",
+          "baseSha": "0c5ac9761a55cea491bbdab3530fad31076a1261",
+          "headSha": "7935eb0f1cd3b50400e0f3a959553ab6f42d59de",
+          "reviewer": "opus fresh-context, 1 capped round 2026-11-01: 0 Critical, 1 Important (gate-integrity spec sentence) fixed in 7935eb0f and checked by orchestrator, 3 Minor (comment fixed; docs-site page and unresolvable-SHA test noted)"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T16:08:00.811Z",
+          "lastPassAt": "2026-11-01T16:08:00.811Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T16:08:16.311Z",
+        "reason": "Gate 2 fail now requires --base-sha and --head-sha (478911e2, 33773d32, 7935eb0f); Gate 2 pass recorded; ships in 0.54.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T16:08:16.310Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Mintlify /commands/epic.mdx wording",
+            "reason": "the site documents the latest release and this ships in 0.54.0, so the page changes in the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T16:08:16.311Z"
     },
     {
       "id": "planning-completeness-orient-and-autonomy-boundary",
@@ -15429,7 +15464,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2204,
+  "revision": 2207,
   "reviewMode": "standard",
   "releases": [
     {
