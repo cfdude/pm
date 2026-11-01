@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "edd-corpus-expansion-nondeterministic-surfaces",
+  "active": "gh-cfdude-pm-246",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1903,8 +1903,15 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "createdAt": "2026-07-28T19:25:39-07:00",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
-      "release": "0.54.0"
+      "touchedAt": "2026-11-01T18:54:10.957Z",
+      "release": "0.54.0",
+      "notes": [
+        {
+          "at": "2026-11-01T18:54:10.951Z",
+          "actor": "agent",
+          "text": "Idea: a Hermes rules-parity eval (same instruction text, one existing evals/ scenario) is the first real use of the EDD harness; see parked edd-corpus-expansion-nondeterministic-surfaces."
+        }
+      ]
     },
     {
       "id": "edd-observe-hardcodes-claude-md",
@@ -2547,7 +2554,7 @@
       "id": "edd-corpus-expansion-nondeterministic-surfaces",
       "title": "EDD corpus covers ONE scenario; expand to the judgment-dependent surfaces where drift actually hides",
       "priority": "P2",
-      "status": "active",
+      "status": "later",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -2578,9 +2585,14 @@
           "at": "2026-09-28T22:29:15.334Z",
           "actor": "agent",
           "text": "lane: superpowers not claude-code — several mutation-tested scenarios with real design work (triage 2026-09-28)"
+        },
+        {
+          "at": "2026-11-01T18:54:09.257Z",
+          "actor": "agent",
+          "text": "Parked 2026-11-01 at Rob's call: pm only targets Claude Code, nothing is drifting, build sized over 8h plus paid live runs. Trigger to revive: first non-Claude platform build (Hermes). Prefer a Hermes rules-parity eval over this corpus expansion."
         }
       ],
-      "touchedAt": "2026-11-01T17:36:10.739Z",
+      "touchedAt": "2026-11-01T18:54:09.262Z",
       "release": "0.54.0",
       "startedAt": "2026-11-01T17:36:10.732Z"
     },
@@ -15072,7 +15084,7 @@
       "id": "gh-cfdude-pm-246",
       "title": "NEXT UP silently omits a queued openspec epic with no change on disk",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -15082,7 +15094,7 @@
       "externalUpdatedAt": "2026-10-14T22:02:28Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:50.796Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-01T18:54:07.337Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:51.618Z",
@@ -15090,7 +15102,9 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "startedAt": "2026-11-01T18:54:07.332Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-245",
@@ -15543,7 +15557,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2224,
+  "revision": 2227,
   "reviewMode": "standard",
   "releases": [
     {
