@@ -417,7 +417,7 @@ unitTest("each candidate carries its release id, or null; releases[] lists OPEN 
   assert.equal(out.verdict, null, "surfacing release intents decides nothing");
 });
 
-unitTest("a markerless release is open only while it has a live (non-archived) member; a delivered marker closes it regardless", () => {
+unitTest("a markerless release is open unless all its members are archived; a memberless one is a fresh intent; a delivered marker closes it regardless", () => {
   const engine = repoWithReleases(
     [
       { id: "old-done", title: "Old finished work", release: "0.40.0", status: "archived" },
@@ -432,8 +432,8 @@ unitTest("a markerless release is open only while it has a live (non-archived) m
     ],
   );
   const out = triage(engine, "queued work item");
-  assert.deepEqual(out.releases.map(r => r.id), ["0.54.0"],
-    "archived-only, memberless and marked-delivered releases are not open; one with a live member is");
+  assert.deepEqual(out.releases.map(r => r.id).sort(), ["0.54.0", "0.60.0"],
+    "archived-only and marked-delivered releases are not open; a live-member release and a memberless fresh intent are");
 });
 
 unitTest("a candidate outside every release has release: null, and a record with no releases yields releases: []", () => {

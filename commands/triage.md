@@ -77,8 +77,8 @@ line (shown expanded below for reading; parse it, do not match its layout):
   such token per character, an epic that shares ONLY those needs at least two of them, and at
   least one for every ten in the ask — so common words like 新的 "new" do not fill the list.
 - **`release`** (on each candidate) — the id of the release that epic is a member of, or `null`.
-- **`releases`** — every OPEN release (no delivered marker and at least one non-archived member; a markerless release
-  whose members are all archived, or that has none, is history and is not listed) with its `intent`, `memberCount` and the
+- **`releases`** — every OPEN release (no delivered marker, and not a release whose members are all archived: a markerless release
+  whose members are all archived is history and is not listed; one with no members yet is a fresh intent and is) with its `intent`, `memberCount` and the
   `sharedTokens` its id and intent share with the ask, ranked by how many. A release sharing nothing
   is still listed: an intent worth reading is not always lexically close to the ask. Whether the ask
   serves one of them, and whether to `release <id> --member` it, is your call; the engine only shows them. An ask that

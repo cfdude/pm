@@ -198,9 +198,9 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
 }
 
 /** The OPEN releases with how much vocabulary each shares with the ask.
- *  Open = no `delivered` marker AND at least one live (non-archived) member: markers
- *  exist only from 0.51.0, so a markerless release whose members are all archived (or that has none)
- *  is history, not an intent. Pure. Membership comes from releaseMembers() (constants.mjs), the one derivation PROJECT.md and
+ *  Open = no `delivered` marker AND not (members exist and all are archived): markers
+ *  exist only from 0.51.0, so a markerless release whose members are all archived is history, not an
+ *  intent. A release with NO members yet is a fresh intent and stays open. Pure. Membership comes from releaseMembers() (constants.mjs), the one derivation PROJECT.md and
  *  the briefing read, so a count here cannot disagree with them. `sharedTokens` are drawn from the
  *  release id and intent, minus words the whole backlog uses (the same idf cutoff candidates get).
  *  Ranked by shared-token count, then id; a release sharing nothing is still listed, because an
@@ -213,7 +213,7 @@ export function openReleases(state, epics, ask) {
   return releases
     .filter(r => r && typeof r.id === "string" && !r.delivered)
     .map(r => ({ r, members: releaseMembers(epics, r.id) }))
-    .filter(({ members }) => members.some(e => e.status !== "archived"))
+    .filter(({ members }) => members.length === 0 || members.some(e => e.status !== "archived"))
     .map(({ r, members }) => {
       const own = new Set([...tokenize(r.id), ...tokenize(r.intent)]);
       return {
