@@ -2509,9 +2509,10 @@
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-11-01T20:37:22.382Z",
+      "touchedAt": "2026-11-01T21:17:25.700Z",
       "attributedCommits": [
-        "878a28bef0f61b3c1fe36f660e080029aec7737a"
+        "878a28bef0f61b3c1fe36f660e080029aec7737a",
+        "7d2709c04422ae791a70285ac5ef581d167f26a0"
       ]
     },
     {
@@ -15171,10 +15172,12 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/243",
       "externalUpdatedAt": "2026-10-14T15:38:03Z",
       "attributedCommits": [
-        "9014bb6c6ae6cd857649d94e141880f0283df8c4"
+        "9014bb6c6ae6cd857649d94e141880f0283df8c4",
+        "e700db7ebb3e7d002922a7b0e87948b7bfa80aa6",
+        "423d3b27fc074e9c676f01264602e356aabda4c7"
       ],
       "createdAt": "2026-10-17T12:41:54.053Z",
-      "touchedAt": "2026-11-01T19:41:59.655Z",
+      "touchedAt": "2026-11-01T21:52:49.604Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:54.863Z",
@@ -15593,7 +15596,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2237,
+  "revision": 2240,
   "reviewMode": "standard",
   "releases": [
     {
