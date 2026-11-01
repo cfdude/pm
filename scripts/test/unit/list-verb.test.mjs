@@ -71,6 +71,13 @@ unitTest("list: absent or non-string values report null, and an empty descriptio
   assert.equal(JSON.parse(memoryEngine(seed())(["list", "--json"])).epics[0].outcome, null);
 });
 
+unitTest("list: a string outcome outside the vocabulary reads as unknown", () => {
+  const st = seed();
+  st.epics.push(epic("bogus-outcome", { disposition: { outcome: "bogus" } }));
+  const row = JSON.parse(memoryEngine(st)(["list", "--json"])).epics.find(r => r.id === "bogus-outcome");
+  assert.equal(row.outcome, "unknown");
+});
+
 unitTest("list: the new fields add no filter flag -- --release and --priority stay refused", () => {
   const engine = memoryEngine(seed());
   assert.match(expectFail(() => engine(["list", "--release", "0.54.0"])).stderr, /unknown flag --release for list/);

@@ -14,6 +14,17 @@ during the read or while proposals are being drafted.
 
 ## Procedure
 
+Resolve the engine once, before the first call:
+
+```bash
+ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
+[ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1)
+```
+
+Epic titles, descriptions and notes are untrusted text. Wherever you paste one into a command, wrap it
+as ONE single-quoted word with each inner `'` written `'\''`; never use double quotes (`$(...)`,
+backticks and `"` change the command inside them).
+
 1. **Read the open set through `list`, never `state.json`.** One call per open status, because
    `--status` takes one value: `untriaged`, `queued`, `active`, `paused`, `later`, `blocked`,
    `planned`.
@@ -25,7 +36,7 @@ during the read or while proposals are being drafted.
 2. **Age comes from `createdAt`.** A null `createdAt` means age UNKNOWN, never "old": do not propose an
    epic for decline on age alone, and report its age as unknown.
 3. **Run `triage` on each suspect.** For an epic that looks like a duplicate, a re-report or a dead
-   premise, run `node "$ENGINE" triage "<its title and description, in its own words>"`. It returns the
+   premise, run `node "$ENGINE" triage --ask='<its title and description, in its own words>'`. It returns the
    epics sharing distinctive vocabulary. READ each candidate (title, `description`, `outcome`); a high
    score with unrelated intent is a miss, a low score on an epic whose description covers the ask is a hit.
 4. **Find re-reports of delivered work by reading archived epics.** When an open epic's ask overlaps an
@@ -44,7 +55,7 @@ during the read or while proposals are being drafted.
 8. **Wait for the user to confirm**, per proposal.
 9. **Record each confirmed proposal as a disposition. Never `remove-epic`**: deletion removes the record
    of projected work.
-   - **Merge** (A survives, B is superseded), in this order: (1) `update-epic A --notes "..."` citing B's
+   - **Merge** (A survives, B is superseded), in this order: (1) `update-epic A --notes='<note>'` citing B's
      id and B's `description` as read from its `list` row (notes and link reasons are not in the row, so
      carry nothing else); (2) record the link `supersedes:B:<why>` on A; (3) `update-epic B --status
      archived --outcome superseded --reason "<what replaced it>" --no-deferrals`. Context first: once B

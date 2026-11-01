@@ -38,7 +38,10 @@ test("backlog-grooming: the skill names the first read, triage, the disposition 
   const note = s.indexOf("--notes"), link = s.indexOf("supersedes:B"), done = s.indexOf("--outcome superseded");
   assert.ok(note > -1 && link > note && done > link, "note, then link, then archive");
   assert.match(s, /NEVER cite a line\s+number/);
-  assert.match(s, /remove-epic/);
+  assert.match(s, /Never `remove-epic`/);
+  assert.match(s, /--link "relates-to:<X>:<why>"/);
+  assert.match(s, /ENGINE=/);
+  assert.match(s, /`'\\''`/);
 });
 
 test("backlog-grooming: the skill states the stances the spec requires", () => {

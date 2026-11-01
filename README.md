@@ -930,8 +930,8 @@ carrying a command, and an absent record leaves the guard dormant.
 engine, so an agent no longer reads `.conductor/state.json` and guesses its shape: it prints one line per epic, or
 `{count, epics}` with `--json`, and `--linked-to` is incoming (the epics carrying a link to that id, which is the
 deferral-list question). Read-only; see `commands/list.md`. It filters fields; `triage` reads an ask.
-Each `--json` row also carries `release`, `createdAt`, `description` and `outcome` (copies of the epic's own fields,
-`null` when absent, never inferred), so a pass can ask how long an epic has sat and what finished ones delivered.
+Each `--json` row also carries `release`, `createdAt`, `description` and `outcome` (copies of the epic's own fields, never inferred:
+`null` when absent, except `outcome`, which is `null` with no disposition and `"unknown"` when the recorded outcome is outside the known vocabulary or not a string), so a pass can ask how long an epic has sat and what finished ones delivered.
 
 `/pm:backlog-grooming` is the sprint-planning pass `triage` is not: `triage` screens one ask at registration, this
 re-reads the whole OPEN backlog (one `list --status <s> --json` per open status), runs `triage` on suspects, and

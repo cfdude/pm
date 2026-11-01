@@ -5,5 +5,5 @@
   `supersedes` link on the survivor, a note on the survivor first), never `remove-epic`. Findings cite epic ids,
   verb output and shas, never line numbers. No new verb and no new flag.
 * **`list` rows gain `release`, `createdAt`, `description` and `outcome`.** Copies of the epic's own fields,
-  `null` when absent or not a string (never inferred; a null `createdAt` means age unknown). `{count, epics}`
+  `null` when absent or not a string (never inferred; a null `createdAt` means age unknown), except `outcome`: `null` with no disposition, `"unknown"` when the recorded outcome is outside the known vocabulary or not a string. `{count, epics}`
   and the text form are unchanged, and there is still no `--release` or `--priority` flag: filter the `--json`.
