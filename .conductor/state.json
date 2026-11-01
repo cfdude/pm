@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-246",
+  "active": "mutation-pass-is-a-required-task-item",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -2486,7 +2486,7 @@
       "id": "platform-switch-orphans-old-rules-block",
       "title": "a platform switch leaves the previous platform's rules block live but unmanaged",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2500,20 +2500,54 @@
       "stories": [
         {
           "title": "writeRules() writes only the newly-resolved target, so switching claude-code -> codex creates AGENTS.md and leaves a frozen CLAUDE.md block an agent may still read -- a STALE-INSTRUCTIONS hazard distinct from 'recreate the artifact tree'",
-          "done": false
+          "done": true
         },
         {
           "title": "unreachable today (no Hermes/Codex hooks ship, needs a hand-passed --platform), but must be resolved before either port",
-          "done": false
+          "done": true
         }
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-11-01T21:17:25.700Z",
+      "touchedAt": "2026-11-01T21:54:59.065Z",
       "attributedCommits": [
         "878a28bef0f61b3c1fe36f660e080029aec7737a",
         "7d2709c04422ae791a70285ac5ef581d167f26a0"
-      ]
+      ],
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T21:54:00.210Z",
+          "baseSha": "3300ac46cc43eca30391b22e5c50555cd3d5fa1c",
+          "headSha": "423d3b27fc074e9c676f01264602e356aabda4c7",
+          "reviewer": "opus fresh-context converged review of 5 epics 2026-11-01 (round 1: 2 Critical + 1 Important, all fixed in 7d2709c0 e700db7e 423d3b27, fixes verified by orchestrator via tests, not re-reviewed per one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T21:54:00.210Z",
+          "lastPassAt": "2026-11-01T21:54:00.210Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T21:54:59.060Z",
+        "reason": "built in 878a28be, symlink Critical fixed in 7d2709c0, Gate 2 pass at 423d3b27"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T21:54:59.059Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "README and Mintlify platform pages",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T21:54:59.060Z"
     },
     {
       "id": "autodetour-parser-misses-am-and-f",
@@ -10947,7 +10981,7 @@
       "id": "mutation-pass-is-a-required-task-item",
       "title": "Required task items demand a call-site sweep and an inverse enumeration, and neither asks whether a new guard CAN fail — make the mutation pass a numbered required item with a durable artifact",
       "priority": "P2",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10961,7 +10995,7 @@
       "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
       "attributedCommits": [],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-01T21:54:09.214Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -10969,7 +11003,8 @@
           "text": "lane: superpowers not <none routed> — suggest-lane returned no lane for this ask. Routed AWAY from claude-code deliberately, per the asymmetric tie-break: this is a new required task item in the emitted rules block plus its three mirrors and a load-bearing-claim entry, which is a gate/discipline change with a durable record, not a sub-2-hour tweak. superpowers over openspec because it modifies one subsystem (the gate procedure's item list) rather than adding a capability."
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "startedAt": "2026-11-01T21:54:09.190Z"
     },
     {
       "id": "functional-assertion-test-split",
@@ -14833,7 +14868,7 @@
       "id": "gh-cfdude-pm-252",
       "title": "record-gate-review --artifact <directory> records no digest, so Gate 1 always reads unverifiable",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -14845,7 +14880,7 @@
         "2e6abd10007fc03cb1f56167f6ac3c650facc429"
       ],
       "createdAt": "2026-10-17T12:41:40.986Z",
-      "touchedAt": "2026-11-01T19:20:53.295Z",
+      "touchedAt": "2026-11-01T21:54:11.232Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:41.788Z",
@@ -14858,7 +14893,41 @@
         "verdict": "unchanged",
         "recordedAt": "2026-11-01T19:20:53.292Z",
         "externalUpdatedAt": "2026-10-16T01:28:17Z"
-      }
+      },
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T21:53:52.924Z",
+          "baseSha": "3300ac46cc43eca30391b22e5c50555cd3d5fa1c",
+          "headSha": "423d3b27fc074e9c676f01264602e356aabda4c7",
+          "reviewer": "opus fresh-context converged review of 5 epics 2026-11-01 (round 1: 2 Critical + 1 Important, all fixed in 7d2709c0 e700db7e 423d3b27, fixes verified by orchestrator via tests, not re-reviewed per one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T21:53:52.924Z",
+          "lastPassAt": "2026-11-01T21:53:52.924Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T21:54:11.223Z",
+        "reason": "built, Gate 2 pass at 423d3b27 (converged review, 2 Critical + 1 Important fixed)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T21:54:11.222Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "README and Mintlify pages for this fix",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T21:54:11.224Z"
     },
     {
       "id": "gh-cfdude-pm-251",
@@ -15029,7 +15098,7 @@
       "id": "gh-cfdude-pm-249",
       "title": "update-epic --status active silently moves the active pointer and demotes the active epic",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -15041,7 +15110,7 @@
         "254be093f2ea2969b1faffafa144f93ce26de29f"
       ],
       "createdAt": "2026-10-17T12:41:45.870Z",
-      "touchedAt": "2026-11-01T20:13:05.034Z",
+      "touchedAt": "2026-11-01T21:54:16.215Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:46.681Z",
@@ -15054,7 +15123,41 @@
         "verdict": "unchanged",
         "recordedAt": "2026-11-01T19:42:30.947Z",
         "externalUpdatedAt": "2026-10-14T22:56:07Z"
-      }
+      },
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T21:53:58.439Z",
+          "baseSha": "3300ac46cc43eca30391b22e5c50555cd3d5fa1c",
+          "headSha": "423d3b27fc074e9c676f01264602e356aabda4c7",
+          "reviewer": "opus fresh-context converged review of 5 epics 2026-11-01 (round 1: 2 Critical + 1 Important, all fixed in 7d2709c0 e700db7e 423d3b27, fixes verified by orchestrator via tests, not re-reviewed per one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T21:53:58.439Z",
+          "lastPassAt": "2026-11-01T21:53:58.439Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T21:54:16.210Z",
+        "reason": "built, Gate 2 pass at 423d3b27 (converged review, 2 Critical + 1 Important fixed)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T21:54:16.209Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "README and Mintlify pages for this fix",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T21:54:16.210Z"
     },
     {
       "id": "gh-cfdude-pm-248",
@@ -15107,7 +15210,7 @@
       "id": "gh-cfdude-pm-246",
       "title": "NEXT UP silently omits a queued openspec epic with no change on disk",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -15119,7 +15222,7 @@
         "ee3f9ec9f01f4005a8e9d7a6322269320b6f6249"
       ],
       "createdAt": "2026-10-17T12:41:50.796Z",
-      "touchedAt": "2026-11-01T19:56:13.866Z",
+      "touchedAt": "2026-11-01T21:54:14.870Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:51.618Z",
@@ -15134,7 +15237,41 @@
         "recordedAt": "2026-11-01T19:42:30.014Z",
         "externalUpdatedAt": "2026-10-14T22:02:28Z"
       },
-      "trackerRefreshNeeded": true
+      "trackerRefreshNeeded": true,
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T21:53:56.515Z",
+          "baseSha": "3300ac46cc43eca30391b22e5c50555cd3d5fa1c",
+          "headSha": "423d3b27fc074e9c676f01264602e356aabda4c7",
+          "reviewer": "opus fresh-context converged review of 5 epics 2026-11-01 (round 1: 2 Critical + 1 Important, all fixed in 7d2709c0 e700db7e 423d3b27, fixes verified by orchestrator via tests, not re-reviewed per one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T21:53:56.515Z",
+          "lastPassAt": "2026-11-01T21:53:56.515Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T21:54:14.865Z",
+        "reason": "built, Gate 2 pass at 423d3b27 (converged review, 2 Critical + 1 Important fixed)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T21:54:14.864Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "README and Mintlify pages for this fix",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T21:54:14.865Z"
     },
     {
       "id": "gh-cfdude-pm-245",
@@ -15163,7 +15300,7 @@
       "id": "gh-cfdude-pm-243",
       "title": "Gate 1 can be recorded while openspec validate --strict fails (hidden by a piped tail)",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -15177,7 +15314,7 @@
         "423d3b27fc074e9c676f01264602e356aabda4c7"
       ],
       "createdAt": "2026-10-17T12:41:54.053Z",
-      "touchedAt": "2026-11-01T21:52:49.604Z",
+      "touchedAt": "2026-11-01T21:54:13.272Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:54.863Z",
@@ -15190,7 +15327,41 @@
         "verdict": "unchanged",
         "recordedAt": "2026-11-01T19:20:54.221Z",
         "externalUpdatedAt": "2026-10-14T15:38:03Z"
-      }
+      },
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T21:53:54.705Z",
+          "baseSha": "3300ac46cc43eca30391b22e5c50555cd3d5fa1c",
+          "headSha": "423d3b27fc074e9c676f01264602e356aabda4c7",
+          "reviewer": "opus fresh-context converged review of 5 epics 2026-11-01 (round 1: 2 Critical + 1 Important, all fixed in 7d2709c0 e700db7e 423d3b27, fixes verified by orchestrator via tests, not re-reviewed per one-round rule)"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T21:53:54.705Z",
+          "lastPassAt": "2026-11-01T21:53:54.705Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T21:54:13.264Z",
+        "reason": "built, Gate 2 pass at 423d3b27 (converged review, 2 Critical + 1 Important fixed)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T21:54:13.263Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "README and Mintlify pages for this fix",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T21:54:13.264Z"
     },
     {
       "id": "gh-cfdude-pm-242",
@@ -15596,7 +15767,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2240,
+  "revision": 2253,
   "reviewMode": "standard",
   "releases": [
     {
