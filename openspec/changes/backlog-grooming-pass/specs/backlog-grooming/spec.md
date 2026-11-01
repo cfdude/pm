@@ -51,7 +51,7 @@ use `remove-epic` for either, because deletion removes the record of projected w
 - **WHEN** the user confirms a decline of epic C
 - **THEN** C has status `archived`, outcome `declined` and a non-empty reason
 - **AND** `remove-epic` was not run
-- **AND** if the decline is for a dead premise, C carries a `relates-to` link to the epic that holds the work
+- **AND** if the decline is for a dead premise, the pass writes that link in the same `update-epic` call, as `--link "relates-to:<X>:<why>"`, so C carries a `relates-to` link to the epic X that holds the work
 
 #### Scenario: A consolidation left half-done is reported unfinished
 

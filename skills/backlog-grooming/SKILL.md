@@ -50,6 +50,8 @@ during the read or while proposals are being drafted.
      archived --outcome superseded --reason "<what replaced it>" --no-deferrals`. Context first: once B
      is archived the merge is easy to forget.
    - **Decline**: `update-epic C --status archived --outcome declined --reason "<why not>" --no-deferrals`.
+     For a dead-premise decline add `--link "relates-to:<X>:<why>"` to the same call, `X` being the epic
+     that holds the work (step 4). A decline for any other reason needs no link.
    - **Unfinished consolidation**: a superseded epic that is not archived with outcome `superseded`, or
      one archived that way with no `supersedes` link on any survivor, is reported as unfinished, not done
      (read from each row's `status`, `outcome` and `links`).
