@@ -1027,7 +1027,7 @@ candidate already flagged `superseded: true` is dead — never consolidate into 
 **4. Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you, and its
 answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and nothing
 else. It cannot ask what a person would ask, whether this work SERVES something already committed
-to, because pm holds no milestone or product context to weigh and the engine will not invent one.
+to, because pm holds no milestone or product context to weigh beyond the release records `triage` lists, and the engine will not invent one.
 The suggestion is an input; the lane is your call.
 
 **The tie-break is asymmetric**, and it is not a matter of taste. `claude-code` means no spec, no

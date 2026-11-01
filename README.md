@@ -969,7 +969,7 @@ passing both is refused. The emitted tracker recipes use `--ask=`.
 
 **It is an input, not an answer.** Routing reads THE ASK — words, size, the overrides recorded
 here — and nothing else; it cannot ask whether the work serves something the project already
-committed to, because pm holds no milestone or product context to weigh. So the tie-break is
+committed to, because pm holds no milestone or product context to weigh beyond the release records `triage` lists. So the tie-break is
 asymmetric: `claude-code` means no spec, no plan, no gate and no stories, over-processing costs
 hours and under-processing costs the record permanently, and an unresolved routing question
 therefore resolves **away** from `claude-code`, never into it. Departing from the suggestion is

@@ -460,7 +460,7 @@ export const intakeLines = (platform = "claude-code") => [
   "   `triage` marks `superseded: true` is already dead — do not consolidate into it.",
   "4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane`; its answer",
   "   reads THE ASK (the words, the size, this repo's `laneRouting` overrides) and nothing else. It",
-  "   cannot ask whether this work SERVES something already committed to: pm holds no milestone or product context to weigh. The suggestion is an input;",
+  "   cannot ask whether this work SERVES something already committed to: pm holds no milestone or product context to weigh beyond the release records `triage` lists. The suggestion is an input;",
   "   the lane is your call. THE TIE-BREAK IS ASYMMETRIC: `claude-code` means no spec,",
   "   no plan, no gate and no stories — right for a sub-2-hour tweak, and a misrouted epic leaves",
   "   no record of what it was FOR. Over-processing costs hours; under-processing costs the record",
