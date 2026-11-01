@@ -24,7 +24,7 @@ import path from "node:path";
 import {
   DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
   KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
-  PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
+  PLATFORM_COMMAND_PREFIX, PLATFORM_RULES_CHAIN, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
@@ -1242,5 +1242,35 @@ export function writeRules(platform = "claude-code") {
     errStream().write(`conductor: created ${name} with rules block (platform: ${platform})\n`);
   }
   fs.writeFileSync(target, next);
+  retireOrphanedRulesBlocks(target);
   return target;
+}
+
+/** The INVERSE of writeRules()'s write: when the platform moves, the previous platform's file still
+ *  carries a managed block nothing will ever refresh again -- stale instructions an agent may still
+ *  read. After the new target is written, every OTHER file named in any platform's chain is searched
+ *  for exactly one well-formed block, and that block (only) is removed: every byte outside the marker
+ *  lines is kept, the one blank separator writeRules() added before it goes with it, and a file left
+ *  holding nothing but pm's own `# <name>` header is deleted. An ambiguous or absent arrangement is
+ *  never touched (no guessing, no throw -- the target was already written). The target itself is
+ *  never a candidate, so platforms that share a file (hermes -> CLAUDE.md) leave it alone. */
+function retireOrphanedRulesBlocks(target) {
+  const root = path.dirname(target);
+  const names = [...new Set(Object.values(PLATFORM_RULES_CHAIN).flat())];
+  for (const name of names) {
+    const file = path.join(root, name);
+    if (file === target) continue;
+    let text;
+    try { text = fs.readFileSync(file, "utf8"); } catch { continue; }
+    const arrangement = rulesBlockArrangement(text);
+    if (arrangement.kind !== "one") continue;
+    const { i, j, lines } = arrangement;
+    const before = lines.slice(0, i);
+    if (before.length && before[before.length - 1].trim() === "") before.pop();
+    const rest = before.join("") + lines.slice(j + 1).join("");
+    const bare = rest.trim();
+    if (bare === "" || (bare.startsWith("# ") && bare.slice(2) === name)) fs.unlinkSync(file);
+    else fs.writeFileSync(file, rest);
+    errStream().write(`conductor: removed the orphaned rules block from ${escapeControls(name)} (platform moved to ${escapeControls(path.basename(target))})\n`);
+  }
 }
