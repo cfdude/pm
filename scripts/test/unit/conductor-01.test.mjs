@@ -108,14 +108,32 @@ unitTest("non-openspec epic appears in NEXT UP", () => {
   assert.match(brief, /NEXT UP/);
   assert.match(brief, /`sp1` \(P1, superpowers, queued\)/);
 });
-unitTest("missing openspec change is marked and excluded from NEXT UP", () => {
+unitTest("246: a queued openspec epic with no change on disk is listed in NEXT UP with its state, in priority order", () => {
     const engine = memoryEngine({ version: 1, active: null, detourStack: [], epics: [
+    { id: "other", title: "other", priority: "P2", status: "queued", role: "epic", lane: "superpowers",
+      stories: [{ title: "x", done: false }], links: [] },
     { id: "ghost", title: "ghost", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [] },
   ]});
   engine(["render"]);
   assert.match(projectMd(engine), /no change on disk/);
   const brief = parseBrief(engine);
-  assert.doesNotMatch(brief, /`ghost`/);
+  assert.match(brief, /`ghost` \(P1, openspec, queued\).*no change on disk — needs \/opsx:propose/);
+  assert.ok(brief.indexOf("`ghost`") < brief.indexOf("`other`"), "the P1 is listed before the P2");
+});
+unitTest("246: when only change-less epics are queued the lanes rollup is not printed empty", () => {
+  const engine = memoryEngine({ version: 1, active: null, detourStack: [], epics: [
+    { id: "ghost", title: "ghost", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [] },
+  ]});
+  const brief = parseBrief(engine);
+  assert.match(brief, /`ghost`/);
+  assert.doesNotMatch(brief, /lanes:\s*$/m);
+});
+unitTest("246: the no-change marker appears only on the epic that lacks its change", () => {
+  const engine = memoryEngine({ version: 1, active: null, detourStack: [], epics: [
+    { id: "sp1", title: "sp1", priority: "P1", status: "queued", role: "epic", lane: "superpowers",
+      stories: [{ title: "x", done: false }], links: [] },
+  ]});
+  assert.doesNotMatch(parseBrief(engine), /needs \/opsx:propose/);
 });
 unitTest("an archived openspec epic is never flagged as missing its change, even if its change dir is gone", () => {
     const engine = memoryEngine({ version: 1, active: null, detourStack: [], epics: [

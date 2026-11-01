@@ -259,13 +259,17 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
   }
 
   const NEXT_CAP = 5;
-  const queuedByPriority = epics.filter(e => ["queued", "untriaged"].includes(e.status) && !missing(e));
+  // gh#246: a queued openspec epic with no change on disk is still the work the user queued, often
+  // the top priority. Dropping it made NEXT UP start at a lower-priority epic while PROJECT.md showed
+  // the P1 with its warning, so the one view re-injected every session disagreed with the table. It is
+  // listed with its state; the lanes rollup below still counts only epics whose change exists.
+  const queuedByPriority = epics.filter(e => ["queued", "untriaged"].includes(e.status));
   const { ordered: queued, notes: starvationNotes } = orderQueueWithDependencies(queuedByPriority);
   if (queued.length) {
     L.push("NEXT UP (by priority, then lane):");
     for (const e of queued.slice(0, NEXT_CAP)) {
       const pa = e.parent ? `, parent: \`${e.parent}\`` : "";
-      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}${staleMarker(e)}`);
+      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}${staleMarker(e)}${missing(e) ? " ⚠ no change on disk — needs /opsx:propose" : ""}`);
     }
     if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
     for (const note of starvationNotes) L.push(`  ⚠ ${note}`);
@@ -273,7 +277,7 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
     for (const e of epics) if (!missing(e) && e.status !== "planned") counts[e.lane] = (counts[e.lane] || 0) + 1;
     const ordered = KNOWN_LANES.filter(l => counts[l]).map(l => `${l} ${counts[l]}`);
     const unknown = Object.keys(counts).filter(l => !KNOWN_LANES.includes(l)).sort().map(l => `${l} ${counts[l]}`);
-    L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
+    if (ordered.length || unknown.length) L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
     L.push("");
   }
 
