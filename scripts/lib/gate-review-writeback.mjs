@@ -11,6 +11,7 @@ import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream } from "./invocation.mjs";
 import { recordArtifactDigests } from "./gate-artifact-evidence.mjs";
+import { gate1ValidateRefusal } from "./openspec-validate.mjs";
 import { recordedStopLines, tallyVerdict } from "./spend-guard.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
@@ -135,6 +136,14 @@ export function recordGateReview() {
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
+  // gh#243 — a Gate 1 PASS is refused while the change it names fails `openspec validate --strict`. Two sessions
+  // piped validate through `tail -1` (exit status = tail's, failure hidden) and recorded a pass against a spec that
+  // did not validate. The engine asks, unpiped, and reads the exit status. A `fail` is never refused (it is evidence
+  // of a failed review), and where validate cannot be run the question is not asked (see openspec-validate.mjs).
+  if (gate === "1" && verdict === "pass") {
+    const invalid = gate1ValidateRefusal(artifacts);
+    if (invalid !== null) { die(invalid); }
+  }
   // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and
   // refusing it a verdict here would leave it permanently unable to satisfy the archive
   // gate that (also normalizing) binds it.

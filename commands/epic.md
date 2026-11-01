@@ -871,6 +871,14 @@ its files in sorted order, so adding, removing or editing any of them reads the 
 `tasks.md` is a progress ledger and stays exempt. A directory with no digestable file records no digest and reads
 `unverifiable`.
 
+**A Gate 1 `pass` is refused while the change it names fails OpenSpec's strict validation.** When an `--artifact` lies inside
+a live change directory and the project has `openspec/config.yaml`, the engine runs that validate itself, unpiped, and
+reads its EXIT STATUS: a non-zero exit refuses the verdict, prints validate's output (capped) and writes nothing. (A
+a piped validate (`... | tail -1`) reports `tail`'s status and hides the failure; that is how a Gate 1 was once recorded against a
+spec that did not validate.) Where validate cannot be run or answered (no `openspec` on PATH, a timeout, a signal) the check is
+skipped, never treated as a failure. A Gate 1 `fail`, a Gate 2 verdict and artifacts outside a live change are not checked. The
+run is local and read-only: pm still opens no network connection.
+
 `--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
 records who (or what) performed it. A review of `a..b` on an epic that later shipped `b..c` used
 to be byte-identical in `state.json` to one that covered everything; recorded as fields, the two

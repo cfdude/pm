@@ -156,6 +156,7 @@ test("gateway: the non-git spawns are EXACTLY the two named omissions — the li
   assert.deepEqual(others, [
     "scripts/lib/self-hosting.mjs: process.execPath",
     'scripts/lib/tool-currency.mjs: "openspec"',
+    'scripts/lib/tool-currency.mjs: "openspec"',   // the second site is the read-only `validate <id> --strict` (gh#243)
   ],
     "the engine's non-git spawns are the delegation handoff (self-hosting.mjs spawns THIS process's " +
     "own node, by absolute path — not a git call and not behind a gateway over git) and " +
