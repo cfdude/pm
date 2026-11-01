@@ -8,7 +8,7 @@
 import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import fs from "node:fs";
 import path from "node:path";
-import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -511,6 +511,7 @@ export function addEpic() {
   }
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
+  movedActiveNotice(state, previousActive);
   render();
   reportSave(saved, {
     changed: `conductor: added epic '${escapeControls(id)}' (${lane}, ${status})`,

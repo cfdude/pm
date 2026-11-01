@@ -50,6 +50,25 @@ export function activate(state, id, { freshlyRead = false } = {}) {
   state.active = id;
 }
 
+/** gh#249: say it when the active pointer moves from one epic to ANOTHER. `activate()` demotes whatever else
+ *  was active to queued without a word, so "both are in flight" silently dropped the first epic and left
+ *  the spend ledger charging the wrong one. A NOTICE, not a refusal -- the same precedent as
+ *  `owedReconcileNotice`; a refusal would leave no verb route for a legitimate switch.
+ *
+ *  Called at the sites that move the pointer by naming an epic: set-active, update-epic, add-epic and
+ *  add-many creating at active. Not at the detour PUSH/POP (they announce their own move) nor
+ *  clear-active (it prints "active cleared"). Its inverse is `clear-active`/`set-active <old>`; the
+ *  notice names the demoted epic so the way back is visible. */
+export function movedActiveNotice(state, previousActiveId) {
+  if (typeof previousActiveId !== "string" || !previousActiveId) return;
+  if (!state.active || state.active === previousActiveId) return;
+  const prev = (state.epics || []).find(x => x && x.id === previousActiveId);
+  const now = prev ? `now ${escapeControls(String(prev.status))}` : "no longer active";
+  errStream().write(
+    `conductor: moved active from '${escapeControls(previousActiveId)}' (${escapeControls(now)}) to '${escapeControls(state.active)}' -- ` +
+    `to keep '${escapeControls(previousActiveId)}' as the active epic, \`set-active ${printedId(previousActiveId)}\` again.\n`);
+}
+
 /** The warning every verb that moves `state.active` OFF an epic owing a reconcile prints after its
  *  save (gates-bind-to-verified-evidence Decision 4). A WARNING, not a refusal — precedent
  *  pop-detour's unarchived-detour warning: refusing would leave no CLI route to set work aside,
@@ -111,6 +130,7 @@ export function setActive() {
   activate(state, id);
   const saved = saveState(state);
   owedReconcileNotice(state, previous);
+  movedActiveNotice(state, previous);
   render();
   reportSave(saved, {
     changed: `conductor: active is now '${escapeControls(id)}'`,

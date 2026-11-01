@@ -6,7 +6,7 @@ import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES,
   CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, isOpenspecLane, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
-import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
 import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
@@ -1179,6 +1179,7 @@ export function updateEpic() {
   // INSTANCES of it, not its scope.
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
+  movedActiveNotice(state, previousActive);
   render();
 
   // The success message is printed only after the record on disk is READ BACK and confirmed to

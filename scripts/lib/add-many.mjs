@@ -5,7 +5,7 @@
 import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import fs from "node:fs";
 import path from "node:path";
-import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
 import { die } from "./command-exit.mjs";
 import { newStory, parentError, sourceArtifactPathError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
@@ -254,6 +254,7 @@ export function addMany() {
   }
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
+  movedActiveNotice(state, previousActive);
   render();
   reportSave(saved, {
     changed: `conductor: add-many added ${incoming.length} epic(s)`,

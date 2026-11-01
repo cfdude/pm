@@ -19,6 +19,7 @@ import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
 import { briefGuardLines } from "./spend-guard.mjs";
+import { spendEnabled } from "./spend-switch.mjs";
 
 /** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
  *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
@@ -206,6 +207,11 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {
     L.push("NOW: (no active epic set)");
+  }
+  // gh#249: with no active epic, every orchestrator token lands in `no-active-epic`. Said only while
+  // spend tracking is on, so a repo that never opted in gains no byte.
+  if (!active && spendEnabled(state)) {
+    L.push("  ⚠ spend tracking is on and no epic is active — orchestrator tokens go unattributed; `set-active <id>`.");
   }
   L.push("");
 
