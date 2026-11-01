@@ -877,7 +877,7 @@ reads its EXIT STATUS: a non-zero exit refuses the verdict, prints validate's ou
 a piped validate (`... | tail -1`) reports `tail`'s status and hides the failure; that is how a Gate 1 was once recorded against a
 spec that did not validate.) Where validate cannot be run or answered (no `openspec` on PATH, a timeout, a signal) the check is
 skipped, never treated as a failure. A Gate 1 `fail`, a Gate 2 verdict and artifacts outside a live change are not checked. The
-run is local and read-only: pm still opens no network connection.
+run is local and read-only, and validate is spawned with telemetry disabled (`OPENSPEC_TELEMETRY=0`, `DO_NOT_TRACK=1`), so pm opens no network connection of its own.
 
 `--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
 records who (or what) performed it. A review of `a..b` on an epic that later shipped `b..c` used

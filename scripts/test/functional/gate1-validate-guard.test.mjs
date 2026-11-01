@@ -53,3 +53,11 @@ test("243.9 a validate killed by a signal is cannot-tell, never a refusal", () =
   run(G1, { cwd, env });
   assert.equal(gate1(cwd).gate1.verdict, "pass");
 });
+
+test("243.10 validate is spawned with telemetry disabled even when the user's environment enables it", () => {
+  const { cwd, env, bin } = repoWithFakeOpenspec("exit 0");
+  const envLog = path.join(bin, "env.log");
+  fs.writeFileSync(path.join(bin, "openspec"), `#!/bin/sh\necho "T=$OPENSPEC_TELEMETRY D=$DO_NOT_TRACK" >> "${envLog}"\nexit 0\n`, { mode: 0o755 });
+  run(G1, { cwd, env: { ...env, OPENSPEC_TELEMETRY: "1", DO_NOT_TRACK: "0" } });
+  assert.match(fs.readFileSync(envLog, "utf8"), /T=0 D=1/);
+});

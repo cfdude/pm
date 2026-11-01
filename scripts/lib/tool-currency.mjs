@@ -86,6 +86,14 @@ const spawnTimeoutMs = () => {
 // either side of a timeout is exactly what made the drift line flap (gh#196).
 const spawnAnswers = new Map();
 
+/** The environment `openspec validate` is spawned with: the caller's, with OpenSpec's telemetry switched off.
+ *  `validate` runs OpenSpec's preAction hook, which POSTs usage telemetry unless `OPENSPEC_TELEMETRY=0` or
+ *  `DO_NOT_TRACK=1` (or `CI`) is set. pm is an instruction layer and opens no network connection, so it sets
+ *  both, overriding whatever the user's shell says. (The old `--version` probe never ran that hook.) */
+export function validateSpawnEnv(env) {
+  return { ...env, OPENSPEC_TELEMETRY: "0", DO_NOT_TRACK: "1" };
+}
+
 /** Does `openspec validate <id> --strict` pass? `{state:"pass"}`, `{state:"fail", output}` (validate ANSWERED with a
  *  non-zero exit status) or `{state:"unknown"}` (no CLI, a timeout, a signal: could not tell, never a failure).
  *  The SECOND and last argv the engine passes to `openspec` (gh#243): a local, read-only check of files on disk,
@@ -94,8 +102,8 @@ const spawnAnswers = new Map();
 export function runOpenspecValidate(id) {
   try {
     execFileSync("openspec", ["validate", id, "--strict"], {
-      cwd: engineRoot(), encoding: "utf8", timeout: VALIDATE_TIMEOUT_MS, stdio: ["ignore", "pipe", "pipe"],
-      env: currentEnv(),
+      cwd: engineRoot(), encoding: "utf8", timeout: spawnTimeoutMs(), stdio: ["ignore", "pipe", "pipe"],
+      env: validateSpawnEnv(currentEnv()),
     });
     return { state: "pass" };
   } catch (e) {
@@ -105,7 +113,6 @@ export function runOpenspecValidate(id) {
     return { state: "unknown" };
   }
 }
-const VALIDATE_TIMEOUT_MS = 60000;
 
 /** The first executable named `openspec` on `PATH`, or `null`. A READ — no spawn. */
 function openspecOnPath() {

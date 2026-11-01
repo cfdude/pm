@@ -7,8 +7,9 @@
 //
 // ARCHITECTURAL LAW, restated because this file is the second place in the engine that runs `openspec`.
 // pm is an INSTRUCTION layer, never an INTEGRATION layer: it opens no network connection and calls no
-// external system. `openspec validate` is a LOCAL, READ-ONLY check of files on disk, the same class as
-// tool-currency.mjs's `--version` read; it writes nothing and contacts nothing. The ONLY argv this file passes
+// external system. `openspec validate` is a LOCAL, READ-ONLY check of files on disk; it writes nothing. It DOES run
+// OpenSpec's preAction hook, which sends telemetry unless disabled, so the spawn sets OPENSPEC_TELEMETRY=0 and
+// DO_NOT_TRACK=1 (tool-currency.mjs validateSpawnEnv). The ONLY argv this file passes
 // to the `openspec` binary besides `--version` is `validate <change-id> --strict`, and it is spawned from
 // tool-currency.mjs, the ONE module that owns the `openspec` spawn allowlist (conductor-35). The source scans in
 // scripts/test/assert/tool-currency.test.mjs and scripts/test/functional/tool-currency.test.mjs name exactly

@@ -94,3 +94,14 @@ test("243.9 validate's output is control-escaped and capped before it reaches th
   assert.match(text, /more lines omitted/);
   assert.doesNotMatch(text, /\u001b\[31m/);
 });
+
+test("243.10 validate is spawned with telemetry disabled whatever the user's environment says", async () => {
+  const { validateSpawnEnv } = await import("../../lib/tool-currency.mjs");
+  const env = validateSpawnEnv({ PATH: "/bin", OPENSPEC_TELEMETRY: "1", DO_NOT_TRACK: "0" });
+  assert.equal(env.OPENSPEC_TELEMETRY, "0");
+  assert.equal(env.DO_NOT_TRACK, "1");
+  assert.equal(env.PATH, "/bin", "the rest of the environment is passed through");
+  const bare = validateSpawnEnv({});
+  assert.equal(bare.OPENSPEC_TELEMETRY, "0");
+  assert.equal(bare.DO_NOT_TRACK, "1");
+});
