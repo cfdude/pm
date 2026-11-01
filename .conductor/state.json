@@ -14832,9 +14832,11 @@
       "externalId": "252",
       "externalUrl": "https://github.com/cfdude/pm/issues/252",
       "externalUpdatedAt": "2026-10-16T01:28:17Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "2e6abd10007fc03cb1f56167f6ac3c650facc429"
+      ],
       "createdAt": "2026-10-17T12:41:40.986Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-01T19:20:53.295Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:41.788Z",
@@ -14842,7 +14844,12 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-01T19:20:53.292Z",
+        "externalUpdatedAt": "2026-10-16T01:28:17Z"
+      }
     },
     {
       "id": "gh-cfdude-pm-251",
@@ -15021,9 +15028,11 @@
       "externalId": "249",
       "externalUrl": "https://github.com/cfdude/pm/issues/249",
       "externalUpdatedAt": "2026-10-14T22:56:07Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "254be093f2ea2969b1faffafa144f93ce26de29f"
+      ],
       "createdAt": "2026-10-17T12:41:45.870Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-01T20:13:05.034Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:46.681Z",
@@ -15031,7 +15040,12 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-01T19:42:30.947Z",
+        "externalUpdatedAt": "2026-10-14T22:56:07Z"
+      }
     },
     {
       "id": "gh-cfdude-pm-248",
@@ -15092,9 +15106,11 @@
       "externalId": "246",
       "externalUrl": "https://github.com/cfdude/pm/issues/246",
       "externalUpdatedAt": "2026-10-14T22:02:28Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "ee3f9ec9f01f4005a8e9d7a6322269320b6f6249"
+      ],
       "createdAt": "2026-10-17T12:41:50.796Z",
-      "touchedAt": "2026-11-01T18:54:07.337Z",
+      "touchedAt": "2026-11-01T19:56:13.866Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:51.618Z",
@@ -15104,6 +15120,11 @@
       ],
       "release": "0.54.0",
       "startedAt": "2026-11-01T18:54:07.332Z",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-01T19:42:30.014Z",
+        "externalUpdatedAt": "2026-10-14T22:02:28Z"
+      },
       "trackerRefreshNeeded": true
     },
     {
@@ -15141,9 +15162,11 @@
       "externalId": "243",
       "externalUrl": "https://github.com/cfdude/pm/issues/243",
       "externalUpdatedAt": "2026-10-14T15:38:03Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "9014bb6c6ae6cd857649d94e141880f0283df8c4"
+      ],
       "createdAt": "2026-10-17T12:41:54.053Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-01T19:41:59.655Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:54.863Z",
@@ -15151,7 +15174,12 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-01T19:20:54.221Z",
+        "externalUpdatedAt": "2026-10-14T15:38:03Z"
+      }
     },
     {
       "id": "gh-cfdude-pm-242",
@@ -15557,7 +15585,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2227,
+  "revision": 2235,
   "reviewMode": "standard",
   "releases": [
     {
