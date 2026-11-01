@@ -2509,7 +2509,10 @@
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-10-17T12:42:17.936Z"
+      "touchedAt": "2026-11-01T20:37:22.382Z",
+      "attributedCommits": [
+        "878a28bef0f61b3c1fe36f660e080029aec7737a"
+      ]
     },
     {
       "id": "autodetour-parser-misses-am-and-f",
@@ -12382,8 +12385,13 @@
       "externalUpdatedAt": "2026-09-18T03:05:04Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:09.453Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
-      "release": "0.54.0"
+      "touchedAt": "2026-11-01T20:37:27.673Z",
+      "release": "0.54.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-01T20:37:27.669Z",
+        "externalUpdatedAt": "2026-09-18T03:05:04Z"
+      }
     },
     {
       "id": "gh-cfdude-pm-210",
@@ -15585,7 +15593,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2235,
+  "revision": 2237,
   "reviewMode": "standard",
   "releases": [
     {
