@@ -64,7 +64,7 @@ export function recordGateReview() {
   // A `pass` MUST carry the range it covered. Without it, `record-gate-review <id> --gate 2
   // --verdict pass` is one command with no evidence requirement at all, and a review of `a..b`
   // on an epic that later ships `b..c` is byte-identical in the record to one that covered
-  // everything. (A Gate 2 `fail` carries its range too — refused above; only a Gate 1 `fail` may omit it.)
+  // everything. (A Gate 2 `fail` carries its range too — refused below; only a Gate 1 `fail` may omit it.)
   // gh#177 — WHICH evidence a pass requires depends on WHICH GATE it is, because the two gates
   // review different things. Gate 2 reads an implementation range and must record it. Gate 1 is
   // the SPEC review and runs before `/opsx:apply`, so at the moment its verdict is truthful there

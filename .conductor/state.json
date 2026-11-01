@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "backlog-grooming-pass",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6115,7 +6115,7 @@
       "id": "backlog-grooming-pass",
       "title": "Nothing ever re-reads the backlog as a SET after intake. /pm:triage runs once, at registration; after that no surface asks whether an epic still matters, duplicates another, or was already delivered under a different name. The sprint-planning role is unfilled: nobody prunes, dedupes, merges a P2's context into the P0 that supersedes it, or catches an epic whose premise died. Consolidation must record a disposition (--outcome superseded --reason plus a supersedes link), never delete — deletion removes the record of projected work, which is what a disposition exists to preserve. Measured 2026-09-06: all three newly-synced issues overlapped archived epics, and one was a straight re-report of work recorded delivered.",
       "priority": "P1",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6151,7 +6151,7 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-10-30T01:39:02.550Z",
+      "touchedAt": "2026-11-01T15:59:59.753Z",
       "release": "0.54.0",
       "gateReview": {
         "gate1": {
@@ -6230,7 +6230,8 @@
           "firstAt": "2026-10-30T01:27:49.561Z",
           "lastAt": "2026-10-30T01:27:49.561Z"
         }
-      ]
+      ],
+      "startedAt": "2026-11-01T15:59:59.750Z"
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -15428,7 +15429,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2203,
+  "revision": 2204,
   "reviewMode": "standard",
   "releases": [
     {
