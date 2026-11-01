@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "triage-surfaces-open-release-intents",
+  "active": "edd-corpus-expansion-nondeterministic-surfaces",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -2547,7 +2547,7 @@
       "id": "edd-corpus-expansion-nondeterministic-surfaces",
       "title": "EDD corpus covers ONE scenario; expand to the judgment-dependent surfaces where drift actually hides",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -2580,8 +2580,9 @@
           "text": "lane: superpowers not claude-code — several mutation-tested scenarios with real design work (triage 2026-09-28)"
         }
       ],
-      "touchedAt": "2026-10-17T12:42:17.936Z",
-      "release": "0.54.0"
+      "touchedAt": "2026-11-01T17:36:10.739Z",
+      "release": "0.54.0",
+      "startedAt": "2026-11-01T17:36:10.732Z"
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -14715,7 +14716,7 @@
       "id": "triage-surfaces-open-release-intents",
       "title": "triage shows open-release intents and each candidate's release membership",
       "priority": "P3",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -14740,12 +14741,49 @@
         }
       ],
       "attributedCommits": [
-        "31fb34d065040fc4148e5e9934ab04189a6a7e6b"
+        "31fb34d065040fc4148e5e9934ab04189a6a7e6b",
+        "48cea6f0b6e632df087d83c3dbef872fd373a50f",
+        "e340101ab7472c39c2adadf2eb63b98f6fa07b03",
+        "30b693101bfcf8f45d6d41a23207162bde3a2b83"
       ],
       "createdAt": "2026-10-14T23:49:24.862Z",
-      "touchedAt": "2026-11-01T16:46:18.484Z",
+      "touchedAt": "2026-11-01T17:36:02.406Z",
       "release": "0.54.0",
-      "startedAt": "2026-11-01T16:46:18.480Z"
+      "startedAt": "2026-11-01T16:46:18.480Z",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-01T17:36:01.171Z",
+          "baseSha": "0c5ac9761a55cea491bbdab3530fad31076a1261",
+          "headSha": "30b693101bfcf8f45d6d41a23207162bde3a2b83",
+          "reviewer": "opus fresh-context, 1 capped round 2026-11-01: 0 Critical, 1 Important (already-shipped releases listed as open) and 3 Minor; fixed in e340101a and 30b69310 (the first over-hid memberless releases, corrected by the orchestrator) and re-tested (hook 2506/2506, certify functional and sweeps 0), not re-reviewed per the one-round cap"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-01T17:36:01.171Z",
+          "lastPassAt": "2026-11-01T17:36:01.171Z"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-01T17:36:02.400Z",
+        "reason": "triage lists open releases (releases[], per-candidate release, --ask=) and the routing wording no longer claims pm holds no release context; commits 31fb34d0, 48cea6f0, e340101a, 30b69310; Gate 2 pass; ships in 0.54.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-01T17:36:02.400Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Mintlify triage page (releases[], release, --ask=)",
+            "reason": "the site documents the latest release and this ships in 0.54.0, so the page changes in the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-01T17:36:02.401Z"
     },
     {
       "id": "gh-cfdude-pm-253",
@@ -15505,7 +15543,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2218,
+  "revision": 2224,
   "reviewMode": "standard",
   "releases": [
     {
