@@ -88,5 +88,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 after docs. Re-record, never withdraw.
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic backlog-grooming-pass --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive backlog-grooming-pass`. The archive-move commit is NOT attributed.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic backlog-grooming-pass --status archived --outcome delivered --reason "<why>" --no-deferrals`, then `/pm:status`.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive backlog-grooming-pass`. The archive-move commit is NOT attributed.
