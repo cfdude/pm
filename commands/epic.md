@@ -866,6 +866,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
 
 `<changeRoot>` is the change's directory as OpenSpec resolves it (its `changeRoot`; by default `openspec/changes/<id>`).
 
+`--artifact` takes a file OR a directory. A directory (e.g. `--artifact "<changeRoot>"`) is digested recursively over
+its files in sorted order, so adding, removing or editing any of them reads the verdict `⚠ stale`; the change's top-level
+`tasks.md` is a progress ledger and stays exempt. A directory with no digestable file records no digest and reads
+`unverifiable`.
+
 `--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
 records who (or what) performed it. A review of `a..b` on an epic that later shipped `b..c` used
 to be byte-identical in `state.json` to one that covered everything; recorded as fields, the two
