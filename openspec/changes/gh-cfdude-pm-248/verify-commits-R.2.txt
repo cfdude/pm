@@ -1,0 +1,176 @@
+verify-commits-R.2 — git show --stat for every commit of this change's code and evidence (gh-cfdude-pm-248 item 2: the commit, not the working tree)
+claim = what the task says it changes; each claimed file must appear below in THAT commit
+
+ce9b47d75f069a22359f93de44083989e00147ac feat(rules): rulesUsage predicate pair for usage-conditioned sections (gh-cfdude-pm-248 1.1)
+ openspec/changes/gh-cfdude-pm-248/red-1.1.txt | 178 ++++++++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md    |   2 +-
+ scripts/lib/rules-usage.mjs                   |  30 +++++
+ scripts/test/unit/rules-usage.test.mjs        |  88 +++++++++++++
+ 4 files changed, 297 insertions(+), 1 deletion(-)
+
+72ec9ec009ac34ef625e2608c032037272f8a1d4 test(rules): mutation evidence for rulesUsage (gh-cfdude-pm-248 1.2)
+ openspec/changes/gh-cfdude-pm-248/mutation-1.2.txt | 9 +++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         | 2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+380001754c7b7e1816595cc7a4e579de59710652 docs(openspec): caller enumeration and D7 evidence for usage-conditioned sections (gh-cfdude-pm-248 2.1)
+ openspec/changes/gh-cfdude-pm-248/callers-2.1.txt | 102 ++++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md        |   2 +-
+ 2 files changed, 103 insertions(+), 1 deletion(-)
+
+c1ca6050291474bc1ce00f9c59501ebd65ab1634 chore(conductor): gate 1 re-recorded and commit attributions for gh-cfdude-pm-248
+ .conductor/render-stamp.json | 10 +++---
+ .conductor/state.json        | 77 +++++++++++++++++++++++++++++++++++++-------
+ PROJECT.md                   | 10 +++---
+ 3 files changed, 75 insertions(+), 22 deletions(-)
+
+135e82983076d5a244ad758de5665c29608fdf31 feat(rules): usage parameter, always-on pointer and swept usage-off renders (gh-cfdude-pm-248 2.2, 2.5)
+ openspec/changes/gh-cfdude-pm-248/red-2.2.txt      | 250 +++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         |   2 +-
+ scripts/lib/rules.mjs                              |  32 ++-
+ scripts/test/assert/emitted-invocations.test.mjs   |  18 ++
+ scripts/test/fixtures/helpers.mjs                  |   5 +
+ .../test/functional/emitted-invocations.test.mjs   |  10 +
+ scripts/test/unit/rules-usage-emission.test.mjs    | 175 +++++++++++++++
+ 7 files changed, 490 insertions(+), 2 deletions(-)
+
+75356b1be2e9cda2f064a45d02e0b5e262e1eb2c feat(overhead): count the usage-conditioned sections at full usage under --all-features (gh-cfdude-pm-248 4.1)
+ README.md                                       |   1 +
+ openspec/changes/gh-cfdude-pm-248/red-4.1.txt   | 176 ++++++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md      |   2 +-
+ scripts/lib/overhead.mjs                        |  16 ++-
+ scripts/test/assert/feature-cost-table.test.mjs |   8 ++
+ scripts/test/unit/overhead-usage.test.mjs       |  75 ++++++++++
+ 6 files changed, 272 insertions(+), 6 deletions(-)
+
+31108557c1bccfc3c80e4ff79a54ecadfdaa769a feat(rules): writeRules and the rules verb render with the usage answers read from state (gh-cfdude-pm-248 2.3)
+ openspec/changes/gh-cfdude-pm-248/red-2.3.txt      | 56 ++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         |  2 +-
+ scripts/conductor.mjs                              |  4 +-
+ scripts/lib/rules.mjs                              | 11 ++-
+ scripts/test/assert/conductor-05.test.mjs          |  3 +
+ .../assert/release-candidate-emission.test.mjs     |  2 +
+ scripts/test/assert/rules-usage-write.test.mjs     | 86 ++++++++++++++++++++++
+ scripts/test/assert/spend-guard.test.mjs           |  6 +-
+ scripts/test/functional/conductor-14.test.mjs      |  5 ++
+ scripts/test/functional/conductor-15.test.mjs      |  6 ++
+ scripts/test/unit/autonomy-revocation.test.mjs     |  2 +
+ scripts/test/unit/conductor-02.test.mjs            |  9 ++-
+ 12 files changed, 183 insertions(+), 9 deletions(-)
+
+e59920ab9cc2f5bf38ab1fa88574bd466d331c5d test(rules): mutation evidence for task 2.4 (gh-cfdude-pm-248 2.4)
+ openspec/changes/gh-cfdude-pm-248/mutation-2.4.txt | 14 ++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         |  2 +-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+fa4977569973671a634cefb6cc715e18e3a437e1 test(rules): mutation evidence for task 4.2 (gh-cfdude-pm-248 4.2)
+ openspec/changes/gh-cfdude-pm-248/mutation-4.2.txt | 8 ++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         | 2 +-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+2c747b5939d5b44411af0c14ca28c865391b3de5 feat(rules): one refresh and one appearance notice for every conditional section (gh-cfdude-pm-248 3.1, 3.2, 3.3)
+ openspec/changes/gh-cfdude-pm-248/red-3.2.txt      | 456 +++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         |   6 +-
+ scripts/conductor.mjs                              |   4 +-
+ scripts/lib/rules-usage.mjs                        |  18 +-
+ scripts/lib/rules.mjs                              |  35 +-
+ scripts/lib/spend-guard-verbs.mjs                  |  38 +-
+ .../test/assert/rules-conditional-refresh.test.mjs | 242 +++++++++++
+ scripts/test/assert/rules-headings.test.mjs        |  46 +++
+ .../test/sweeps/output-interpolations.judged.mjs   |   8 +-
+ 9 files changed, 823 insertions(+), 30 deletions(-)
+
+33b7b6b79c9cf6f93788a4b7a384fbfca0d985ea test(rules): coverage guard for the conditional-sections table and mutation evidence (gh-cfdude-pm-248 2.5, 3.4, 3.5)
+ openspec/changes/gh-cfdude-pm-248/mutation-3.5.txt | 19 +++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         |  6 +--
+ .../test/unit/rules-conditional-coverage.test.mjs  | 59 ++++++++++++++++++++++
+ 3 files changed, 81 insertions(+), 3 deletions(-)
+
+0ed06a24c73d5040e16b9af840d32c9185ca1534 docs(rules): shipped mirrors state the conditional sections (gh-cfdude-pm-248 5.1)
+ commands/epic.md                           |  5 +++++
+ commands/overhead.md                       |  2 +-
+ commands/upgrade.md                        |  7 +++++++
+ docs/parity-ledger.json                    |  2 +-
+ docs/rules-block-session-cost.md           |  8 ++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md |  2 +-
+ skills/conductor/SKILL.md                  | 12 ++++++++++--
+ 7 files changed, 33 insertions(+), 5 deletions(-)
+
+3104bad4d0e7143622c7c0dfdbc4f70dafd78611 docs(changeset): gh-cfdude-pm-248 fragment (gh-cfdude-pm-248 5.2)
+ .changesets/gh-cfdude-pm-248.md            | 5 +++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+0d3440b2fe47f8e9734a58737eeaf7d6d53970c7 test(rules): measure a fresh repo against one in use (gh-cfdude-pm-248 6.1)
+ openspec/changes/gh-cfdude-pm-248/measure-6.1.txt | 31 +++++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md        |  2 +-
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
+4a523e90e9a0e0324195b6ddeefba10542c1f91d docs(openspec): call-site completeness sweep and inverses (gh-cfdude-pm-248 R.1)
+ .../gh-cfdude-pm-248/call-site-sweep-R.1.txt       | 108 +++++++++++++++++++++
+ openspec/changes/gh-cfdude-pm-248/tasks.md         |   2 +-
+ 2 files changed, 109 insertions(+), 1 deletion(-)
+
+CLAIMED-FILE CHECK (each line asserts the file is in that commit's own file list):
+  ok   ce9b47d7 scripts/lib/rules-usage.mjs
+  ok   ce9b47d7 scripts/test/unit/rules-usage.test.mjs
+  ok   ce9b47d7 openspec/changes/gh-cfdude-pm-248/red-1.1.txt
+  ok   ce9b47d7 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   72ec9ec0 openspec/changes/gh-cfdude-pm-248/mutation-1.2.txt
+  ok   72ec9ec0 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   38000175 openspec/changes/gh-cfdude-pm-248/callers-2.1.txt
+  ok   38000175 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   135e8298 scripts/lib/rules.mjs
+  ok   135e8298 scripts/test/unit/rules-usage-emission.test.mjs
+  ok   135e8298 openspec/changes/gh-cfdude-pm-248/red-2.2.txt
+  ok   135e8298 scripts/test/functional/emitted-invocations.test.mjs
+  ok   135e8298 scripts/test/assert/emitted-invocations.test.mjs
+  ok   135e8298 scripts/test/fixtures/helpers.mjs
+  ok   135e8298 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   75356b1b scripts/lib/overhead.mjs
+  ok   75356b1b scripts/test/unit/overhead-usage.test.mjs
+  ok   75356b1b README.md
+  ok   75356b1b openspec/changes/gh-cfdude-pm-248/red-4.1.txt
+  ok   75356b1b scripts/test/assert/feature-cost-table.test.mjs
+  ok   75356b1b openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   31108557 scripts/lib/rules.mjs
+  ok   31108557 scripts/conductor.mjs
+  ok   31108557 scripts/test/assert/rules-usage-write.test.mjs
+  ok   31108557 openspec/changes/gh-cfdude-pm-248/red-2.3.txt
+  ok   31108557 scripts/test/functional/conductor-14.test.mjs
+  ok   31108557 scripts/test/functional/conductor-15.test.mjs
+  ok   31108557 scripts/test/unit/conductor-02.test.mjs
+  ok   31108557 scripts/test/assert/conductor-05.test.mjs
+  ok   31108557 scripts/test/unit/autonomy-revocation.test.mjs
+  ok   31108557 scripts/test/assert/release-candidate-emission.test.mjs
+  ok   31108557 scripts/test/assert/spend-guard.test.mjs
+  ok   31108557 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   e59920ab openspec/changes/gh-cfdude-pm-248/mutation-2.4.txt
+  ok   e59920ab openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   fa497756 openspec/changes/gh-cfdude-pm-248/mutation-4.2.txt
+  ok   fa497756 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   2c747b59 scripts/lib/rules.mjs
+  ok   2c747b59 scripts/lib/rules-usage.mjs
+  ok   2c747b59 scripts/lib/spend-guard-verbs.mjs
+  ok   2c747b59 scripts/conductor.mjs
+  ok   2c747b59 scripts/test/assert/rules-headings.test.mjs
+  ok   2c747b59 scripts/test/assert/rules-conditional-refresh.test.mjs
+  ok   2c747b59 scripts/test/sweeps/output-interpolations.judged.mjs
+  ok   2c747b59 openspec/changes/gh-cfdude-pm-248/red-3.2.txt
+  ok   2c747b59 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   33b7b6b7 scripts/test/unit/rules-conditional-coverage.test.mjs
+  ok   33b7b6b7 openspec/changes/gh-cfdude-pm-248/mutation-3.5.txt
+  ok   33b7b6b7 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   0ed06a24 skills/conductor/SKILL.md
+  ok   0ed06a24 commands/epic.md
+  ok   0ed06a24 commands/upgrade.md
+  ok   0ed06a24 commands/overhead.md
+  ok   0ed06a24 docs/parity-ledger.json
+  ok   0ed06a24 docs/rules-block-session-cost.md
+  ok   0ed06a24 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   3104bad4 .changesets/gh-cfdude-pm-248.md
+  ok   3104bad4 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   0d3440b2 openspec/changes/gh-cfdude-pm-248/measure-6.1.txt
+  ok   0d3440b2 openspec/changes/gh-cfdude-pm-248/tasks.md
+  ok   4a523e90 openspec/changes/gh-cfdude-pm-248/call-site-sweep-R.1.txt
+  ok   4a523e90 openspec/changes/gh-cfdude-pm-248/tasks.md

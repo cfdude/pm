@@ -183,7 +183,7 @@
 - [x] 6.1 Measure. Init a fresh scratch repo and run `rules --sections`, then add an autonomy record and
       a release and run it again. Verify: both tables are saved as `measure-6.1.txt`, and the saving
       is at least 3,910 B (design D3). This re-measures the 34,094 B baseline rather than trusting it.
-- [ ] 6.2 Full verification. Run the assertion half once
+- [x] 6.2 Full verification. Run the assertion half once
       (`node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`), then
       `certify.mjs functional` and `sweeps` as drift names them. Verify: the counts and exit codes
       are recorded in the commit message of the last code commit.
@@ -219,16 +219,16 @@
         or revokes and never deletes `epic.autonomy`. That is the same justification (a safety
         record is kept), covered by archive and `remove-epic`. The appearance notice has no
         inverse line, by design D5.
-- [ ] R.2 **Verify against the commit** (item 2). For every task commit, run `git show --stat <sha>`
+- [x] R.2 **Verify against the commit** (item 2). For every task commit, run `git show --stat <sha>`
       and assert that each file the task claims is in that commit.
-- [ ] R.3 **Lifecycle marker** (item 3). C.2 and C.3 carry `<!-- pm:lifecycle -->` on their own task
+- [x] R.3 **Lifecycle marker** (item 3). C.2 and C.3 carry `<!-- pm:lifecycle -->` on their own task
       lines.
-- [ ] R.4 **Attribute every commit** (item 4). Run `update-epic gh-cfdude-pm-248 --attribute-commit <sha>`
+- [x] R.4 **Attribute every commit** (item 4). Run `update-epic gh-cfdude-pm-248 --attribute-commit <sha>`
       as each commit lands. Never attribute the archive move or the post-Gate-2 lifecycle commits.
 - [ ] R.5 **Cross-spec review** (item 5). Done by 0.2. Re-run it if any spec in release 0.54.0 is
       amended after 0.2.
 - [ ] R.6 **Disposition** (item 6). Done by C.2.
-- [ ] R.7 **Route what the work taught you** (item 7). Name each lesson's kind out loud.
+- [x] R.7 **Route what the work taught you** (item 7). Name each lesson's kind out loud.
       - Candidate practice: "a section gated on derived state is refreshed by comparing disk with
         state, not before with after", with the hand-edit evidence from 3.5.
       - Candidate friction: the tasks instruction from OpenSpec says to keep archive steps out of
