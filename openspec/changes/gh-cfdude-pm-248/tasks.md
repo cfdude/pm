@@ -153,7 +153,7 @@
         so.
       - The feature-switches README-table test forces the row into the same commit.
       Verify: the unit tests and the README-table test pass; `red-4.1.txt` saved.
-- [ ] 4.2 Mutation evidence for 4.1. Mutate: pass the real usage to the hypothetical (the "counted
+- [x] 4.2 Mutation evidence for 4.1. Mutate: pass the real usage to the hypothetical (the "counted
       under the hypothetical" scenario must die); drop the map row. Verify: `mutation-4.2.txt`.
 
 ## 5. Shipped mirrors and the changeset
