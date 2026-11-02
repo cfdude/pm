@@ -12414,20 +12414,28 @@
       "status": "untriaged",
       "role": "epic",
       "lane": "superpowers",
-      "links": [],
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "mutation-pass-is-a-required-task-item",
+          "reason": "the new required item carries the task-relative RED-note rule and the re-run at task start"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "211",
       "externalUrl": "https://github.com/cfdude/pm/issues/211",
       "externalUpdatedAt": "2026-09-18T03:05:04Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:09.453Z",
-      "touchedAt": "2026-11-01T20:37:27.673Z",
+      "touchedAt": "2026-11-02T23:00:34.542Z",
       "release": "0.54.0",
       "trackerRefresh": {
         "verdict": "unchanged",
-        "recordedAt": "2026-11-01T20:37:27.669Z",
+        "summary": "Re-read #211 2026-11-02: open, no comments, body unchanged since filing; asks a task-relative RED note form or an apply-time re-run.",
+        "recordedAt": "2026-11-02T23:00:33.400Z",
         "externalUpdatedAt": "2026-09-18T03:05:04Z"
-      }
+      },
+      "description": "A task list's RED notes ('fails today') are written against the release baseline, and earlier tasks of the same change land before the later task runs, so the note goes stale as its own change lands (measured: the-guard-covers-every-write-path task 2.7 stale after 2.4). Ask: a task-relative form ('fails after 2.4' / 'fails at baseline'), or an apply-time re-run of each RED task's named assertion when that task starts. Covered by the mutation-pass required task item, whose RED-note clause does both."
     },
     {
       "id": "gh-cfdude-pm-210",
@@ -15985,7 +15993,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2285,
+  "revision": 2287,
   "reviewMode": "standard",
   "releases": [
     {
