@@ -30,6 +30,11 @@ See proposal.md for the motivation. Current state, verified on disk 2026-11-02 a
 - `sync` matches an openspec change to an epic by id only (`subcommands.mjs:1020`). The change id is
   therefore the epic id, `gh-cfdude-pm-248`, so no duplicate epic is registered.
 
+**Vocabulary.** The *usage-conditioned sections* are the two this change makes conditional:
+Epic-level autonomy and Release candidate. The *conditional sections* are those two plus Spend
+tracking and Spend guard: the four rows of `CONDITIONAL_SECTIONS`, refreshed and announced as one
+set. The pointer belongs to neither set.
+
 ## Goals / Non-Goals
 
 **Goals:** each conditional section appears and disappears with its condition, after any verb, any
@@ -40,6 +45,8 @@ render of `rulesBlock()` stays byte-identical.
 emission of the gate procedure, intake or reporting: these are record-integrity rules, and
 `feature-switches` already declines to switch them. A hierarchy section: the block has none today.
 Re-loading `CLAUDE.md` into a live session: the host does not do that, and the engine cannot.
+Costing `upgrade`'s `NOT SET` opt-in nudge, the issue's incentive point: that is the follow-up epic
+`opt-in-nudge-shows-running-cost`.
 
 ## Decisions
 
@@ -131,6 +138,12 @@ sections are counted and the pointer is absent. `SURFACE_FEATURES` gains
 `"rules:procedures-emitted-on-use": CORE`. Its README cost therefore comes from a fresh repo's real
 `overhead` (feature-switches delta). The two sections keep `core`: they are not switchable, only
 absent while unused.
+
+**D6a. The emitted-instruction sweep owns the usage-off renders.** The live `emitted-instructions`
+requirement names the rules-block renders the invocation sweep must cover. The change amends it
+(MODIFIED delta) to add the autonomy-off, release-candidate-off and both-off renders, so the
+pointer's spans are owned by the capability that already owns "runnable as written". The
+managed-rules-block scenario states only the outcome.
 
 **D7. The upgrade invariant holds for migrations, and the self-heal is named.** `rules.mjs:695–708`
 cites conductor-15 7.2: the block a repo reads is identical before and after an upgrade. No

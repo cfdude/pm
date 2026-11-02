@@ -2,7 +2,7 @@
 
 ### Requirement: The autonomy section follows non-archived autonomy records
 
-The rules block SHALL carry `## Epic-level autonomy` exactly while some epic whose status is not `archived` has an autonomy record, at any level. An autonomy record at level `off` counts, because the grants it keeps are what re-arming restores. Every inverse of the condition SHALL retire or restore the section on the same write: archiving, `remove-epic` and un-archiving.
+The rules block SHALL carry `## Epic-level autonomy` exactly while some epic whose status is not `archived` has an autonomy record, at any level. An autonomy record at level `off` counts, because the grants it keeps are what re-arming restores. Every inverse made by a non-hook verb (archiving, `remove-epic`, un-archiving) SHALL retire or restore the section in the same invocation; a hook's archive self-heal is caught by the next non-hook write (managed-rules-block).
 
 #### Scenario: The first record adds the section
 

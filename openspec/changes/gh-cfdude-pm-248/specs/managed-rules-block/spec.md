@@ -2,7 +2,7 @@
 
 ### Requirement: A usage-conditioned section is emitted only while its feature is in use
 
-The block SHALL carry `## Epic-level autonomy` only while a non-archived epic has an autonomy record, and `## Release candidate` only while a release lacks a delivered marker. Each condition SHALL be one predicate over the state record, read by every path that renders the block from state (`write-rules`, `rules`, `overhead`'s real report, the refresh). Every other section's presence is unchanged.
+The **usage-conditioned sections** SHALL be `## Epic-level autonomy`, carried only while a non-archived epic has an autonomy record, and `## Release candidate`, carried only while a release lacks a delivered marker. Each condition is one predicate over state, read by every path rendering the block from state. The gate procedure, Intake and Reporting sections SHALL be emitted under every usage answer.
 
 #### Scenario: A fresh repo carries neither section
 
@@ -23,7 +23,7 @@ The block SHALL carry `## Epic-level autonomy` only while a non-archived epic ha
 
 ### Requirement: The conditional sections are one named set
 
-The **conditional sections** SHALL be exactly `## Spend tracking`, `## Spend guard`, `## Epic-level autonomy` and `## Release candidate`, each with one presence predicate over state. The refresh and the appearance notice SHALL both use this set. The pointer `## Procedures emitted on use` is not in it, because its presence is derived from two members. Tracker sections are not in it either; the tracker verbs refresh the block themselves.
+The **conditional sections** SHALL be exactly the two usage-conditioned sections plus `## Spend tracking` and `## Spend guard`, each with one presence predicate over state. The refresh and the appearance notice SHALL both use this set. The pointer `## Procedures emitted on use` is not in it, because its presence is derived from two members. Tracker sections are not in it either; the tracker verbs refresh the block themselves.
 
 #### Scenario: The set is declared once
 

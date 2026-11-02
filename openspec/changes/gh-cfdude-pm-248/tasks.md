@@ -22,18 +22,18 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, `tasks.md` and the four delta
+- [ ] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, `tasks.md` and the six delta
       specs under `specs/`. Fix Critical and Important findings. Then run
       `openspec validate gh-cfdude-pm-248 --strict` and read its exit status, and record
       `record-gate-review gh-cfdude-pm-248 --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.54.0** (required item 5). This change adds four spec files
+- [ ] 0.2 **Cross-spec review of release 0.54.0** (required item 5). This change adds six spec files
       to the release, which marks any prior verdict stale. Name the shared chokepoints: `scripts/lib/rules.mjs`
       `rulesBlock()` and `GATE_PROCEDURE_ITEMS` (also edited by
       `mutation-pass-is-a-required-task-item`), the `managed-rules-block` spec, and the
       `spend-guard` liveness refresh this change generalises. Record
       `record-cross-spec-review 0.54.0 --verdict pass|fail --reviewer "<identity>"`.
 
-## 1. One predicate per usage condition
+## 1. One predicate per usage-conditioned section
 
 - [ ] 1.1 TDD (UNIT). Add a pure `rulesUsage(state)` returning `{ autonomy, releaseCandidate }`
       (design D2). Cover the following:
@@ -94,6 +94,7 @@
       - Add judged entries in `scripts/test/sweeps/output-interpolations.judged.mjs` for the
         pointer's line builder and the appearance-notice string.
       - Certify `functional` and `sweeps` over the staged index.
+      Covers the MODIFIED `emitted-instructions` scenario "The usage-off renders are swept".
       Verify: both certify runs pass, and the drift check accepts the twin.
 
 ## 3. One refresh for every conditional section

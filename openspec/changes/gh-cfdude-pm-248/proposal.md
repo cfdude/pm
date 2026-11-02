@@ -26,7 +26,8 @@ item to the gate procedure, and it only fits once this change has freed that spa
   `release-candidate` skill before the first `release`. It lists only the procedures that are
   absent, and it disappears when none is.
 - The existing liveness refresh that keeps `## Spend guard` current becomes one table-driven refresh
-  covering every usage-conditioned section. After any non-hook verb that wrote state, the block on
+  covering every conditional section: the two usage-conditioned sections above plus spend tracking
+  and spend guard. After any non-hook verb that wrote state, the block on
   disk is rewritten only when a conditional section's presence disagrees with state. A hand-edit of
   `state.json` is therefore corrected by the next engine write.
 - When any write of an existing block ADDS a conditional section, the engine prints a notice that the session's loaded copy of the
@@ -34,8 +35,12 @@ item to the gate procedure, and it only fits once this change has freed that spa
   otherwise act without the decision rule.
 - `overhead --all-features` renders its hypothetical's block at full usage, so the every-feature-on
   figure still counts both sections without seeding fake records.
-- No new `OPT_INS` id and no new dial. The gate procedure (12,023 B) and every other section stay
-  unconditional.
+- No new `OPT_INS` id and no new dial. The gate procedure (12,023 B), Intake and Reporting stay
+  emitted under every usage answer. Spend and tracker sections keep their existing conditions.
+- **Non-goal: the opt-in nudge's running cost.** The issue also notes that `upgrade`'s `NOT SET` lines
+  (`scripts/lib/opt-ins.mjs` `optInLines`, ≈ line 105) nudge adoption without showing what each
+  opt-in adds to every session. That is out of scope here and registered as the follow-up epic
+  `opt-in-nudge-shows-running-cost` (later, P3).
 - Existing repos lose both sections at their next `upgrade` or state write, unless they use the
   features. This is a user-visible change, so it gets a changeset.
 
@@ -54,6 +59,7 @@ None.
 - `release-candidate-review`: the rules block carries the Release candidate section only while an
   undelivered release exists (`--deliver` retires it, `--undeliver` restores it).
 - `pm-overhead`: `--all-features` renders the block at full usage; the real report reads the repo's.
+- `emitted-instructions`: the swept population includes the usage-off renders of the rules block.
 - `feature-switches`: the pointer's README cost row comes from a fresh repo's `overhead`, because
   `--all-features` never produces the pointer.
 
