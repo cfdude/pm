@@ -45,7 +45,7 @@
       - one release with `delivered`, and one without;
       - a `state.releases` that is absent or not an array.
       Verify: the new unit file passes, and its RED run is saved as `red-1.1.txt`.
-- [ ] 1.2 Mutation evidence for 1.1. Drop the archived filter, swap presence for
+- [x] 1.2 Mutation evidence for 1.1. Drop the archived filter, swap presence for
       `level === "autonomous"`, and drop the `delivered` check. Each mutant must die. Verify:
       `mutation-1.2.txt` lists every mutant and its result.
 
