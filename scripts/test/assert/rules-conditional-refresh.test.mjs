@@ -153,11 +153,50 @@ test("3.2 a hook that WRITES state (snapshot's archive self-heal) does no compar
   assert.ok(!md(cwd).includes(AUTONOMY), "the next non-hook write retired it");
 });
 
-test("3.2 a repo with no managed block is not given one", () => {
+test("3.2 a repo with no managed block is not given one, and the missing block is not a warning", () => {
   const cwd = withRecord();
   fs.unlinkSync(mdPath(cwd));
-  run(["update-epic", "e1", ...ARCHIVE], { cwd });
+  const r = invokeEngine(["update-epic", "e1", ...ARCHIVE], { cwd });
+  assert.equal(r.status, 0, r.stderr);
   assert.equal(fs.existsSync(mdPath(cwd)), false);
+  assert.doesNotMatch(r.stderr, /warning/);
+});
+
+test("3.2 a rules file with no markers is left byte-identical and the engine does not warn", () => {
+  const cwd = withRecord();
+  const text = "# mine\n\n## Epic-level autonomy\n\nhand-written text, no markers\n";
+  fs.writeFileSync(mdPath(cwd), text);
+  const r = invokeEngine(["update-epic", "e1", ...ARCHIVE], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(md(cwd), text);
+  assert.doesNotMatch(r.stderr, /warning/);
+});
+
+test("M2 a failed write of the block prints neither the refreshed line nor an appearance notice, only the warning", () => {
+  const cwd = fresh();
+  run(["add-epic", "--id", "f", "--title", "f", "--lane", "claude-code"], { cwd });
+  const s = JSON.parse(fs.readFileSync(stateFile(cwd), "utf8"));
+  s.epics.find((e) => e.id === "e1").autonomy = { level: "off" };
+  writeState(cwd, s);
+  fs.chmodSync(mdPath(cwd), 0o444);
+  try {
+    // The wrapper's refresh would ADD the section; the file cannot be written.
+    const r = invokeEngine(["update-epic", "f", "--notes", "x"], { cwd });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stderr, /warning .*Epic-level autonomy section could not be refreshed/);
+    assert.doesNotMatch(r.stderr, /refreshed rules block/);
+    assert.doesNotMatch(r.stderr, APPEARS);
+  } finally {
+    fs.chmodSync(mdPath(cwd), 0o644);
+  }
+});
+
+test("M2 a successful refresh still prints the refreshed line before the notices", () => {
+  const cwd = fresh();
+  const r = invokeEngine(["set-autonomy", "e1", "--context", "x"], { cwd });
+  const at = r.stderr.indexOf("refreshed rules block");
+  const notice = r.stderr.search(APPEARS);
+  assert.ok(at !== -1 && notice !== -1 && at < notice, r.stderr);
 });
 
 test("3.2 a refresh failure does not fail the write; the warning names the section and write-rules, in non-spend wording", () => {

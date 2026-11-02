@@ -1,0 +1,59 @@
+✔ 3.2 the first autonomy record adds the section (82.468792ms)
+✔ 3.2 level off keeps the section (62.830084ms)
+✔ 3.2 archiving the last holder retires the section, and un-archiving restores it (80.606583ms)
+✔ 3.2 removing the last holder retires the section (90.856708ms)
+✔ 3.2 an archived holder alone does not emit it, even from write-rules (116.033083ms)
+✔ 3.2 an outward tracker's autonomy paragraph arrives with the first record (114.310875ms)
+✔ 3.2 the first release adds the Release candidate section; --deliver retires it; --undeliver restores it (132.889541ms)
+✔ 3.2 a write that changes no condition rewrites nothing: bytes and mtime (101.110833ms)
+✔ 3.2 a hand-edit of state is corrected by the NEXT engine write (disk against state, not before against after) (96.308625ms)
+✔ 3.2 a refused invocation refreshes nothing (74.734208ms)
+✔ 3.2 a hook does no comparison (including a commit-nudge archive self-heal); the next non-hook write catches up (91.242334ms)
+✔ 3.2 a hook that WRITES state (snapshot's archive self-heal) does no comparison; the next non-hook write catches up (135.823792ms)
+✔ 3.2 a repo with no managed block is not given one, and the missing block is not a warning (99.84075ms)
+✔ 3.2 a rules file with no markers is left byte-identical and the engine does not warn (97.2355ms)
+✖ M2 a failed write of the block prints neither the refreshed line nor an appearance notice, only the warning (96.557625ms)
+✔ M2 a successful refresh still prints the refreshed line before the notices (89.025042ms)
+✔ 3.2 a refresh failure does not fail the write; the warning names the section and write-rules, in non-spend wording (99.765833ms)
+✔ 3.3 the first autonomy grant announces the section: one line naming it and `rules` (71.483291ms)
+✔ 3.3 a verb that writes the block itself announces too (set-spend-guard) (71.829042ms)
+✔ 3.3 init's create and append announce nothing (89.13175ms)
+✔ 3.3 a retirement is silent, even when the pointer appears (113.581416ms)
+✔ 3.3 a removal-only refresh prints no appearance line (100.826083ms)
+✔ 3.3 a tracker heading is not announced (64.466791ms)
+✔ 3.3 two sections added by one write are two lines, and no other heading is announced (57.746833ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 23
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2403.966625
+
+✖ failing tests:
+
+test at scripts/test/assert/rules-conditional-refresh.test.mjs:175:1
+✖ M2 a failed write of the block prints neither the refreshed line nor an appearance notice, only the warning (96.557625ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /refreshed rules block/. Input:
+  
+  'conductor: PROJECT.md unchanged (skipped rewrite)\n' +
+    "conductor: updated 'f'\n" +
+    'conductor: refreshed rules block in CLAUDE.md (platform: claude-code)\n' +
+    'conductor: "## Epic-level autonomy" is now carried by the managed block in CLAUDE.md — a session or agent that loaded it earlier does not have it; run `rules` to print the block.\n' +
+    "conductor: warning — the rules block on disk disagrees with the record, but the Epic-level autonomy section could not be refreshed (EACCES: permission denied, open '/private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8HllcJ/CLAUDE.md'). Run `write-rules` to refresh the rules block.\n"
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/rules-conditional-refresh.test.mjs:187:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: PROJECT.md unchanged (skipped rewrite)\nconductor: updated \'f\'\nconductor: refreshed rules block in CLAUDE.md (platform: claude-code)\nconductor: "## Epic-level autonomy" is now carried by the managed block in CLAUDE.md — a session or agent that loaded it earlier does not have it; run `rules` to print the block.\nconductor: warning — the rules block on disk disagrees with the record, but the Epic-level autonomy section could not be refreshed (EACCES: permission denied, open \'/private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8HllcJ/CLAUDE.md\'). Run `write-rules` to refresh the rules block.\n',
+    expected: /refreshed rules block/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

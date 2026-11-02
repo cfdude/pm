@@ -776,11 +776,6 @@ applies to the main conversation only** and does not reach one. So a user's cont
 only in an output style never arrives at a `hierarchy-child-executor` or the `reconciler` — carry
 it into the dispatch prompt yourself, or the child cannot honour a preference it was never given.
 
-The same applies to a rules-block section that appeared during this session. If the engine printed the notice that
-the block "is now carried" a section (the first `set-autonomy` adds `## Epic-level autonomy`, the first `release`
-adds `## Release candidate`), your own copy of the block predates it: run `rules` and carry that section's rules into
-the dispatch prompt rather than relying on a copy loaded earlier.
-
 ## Delegate discovery — your context is the scarce resource
 
 **If you do not already know the file path, do not go looking yourself.** A subagent's transcript
@@ -1272,6 +1267,11 @@ not just one epic.
    when the batch has more than one epic, since batch membership already means they have no
    dependency on each other. Do **not** start the next batch until every dispatch in the current
    batch has reported back AND its worktree has merged (see below).
+   - **Carry a section that appeared this session into the dispatch prompt.** If the engine printed the
+     notice that the rules block "is now carried" a section (the first `set-autonomy` adds
+     `## Epic-level autonomy`, the first `release` adds `## Release candidate`), your own copy of the
+     block predates it: run `node "$ENGINE" rules` and put that section's rules in each dispatch prompt
+     rather than relying on a copy loaded earlier.
    - **Children never write `.conductor/state.json` themselves** — they only return their fixed
      report. You (the orchestrator) are the sole writer of state transitions, applied in one pass
      after the batch (mark each merged child `archived`), not interleaved with dispatch. This is

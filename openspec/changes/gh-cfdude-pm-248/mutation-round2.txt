@@ -1,0 +1,9 @@
+mutation evidence — round 2 (Gate 2 M1/M2): refreshConditionalSections' no-block guard and writeRules' report-after-write
+tests: scripts/test/assert/rules-conditional-refresh.test.mjs scripts/test/assert/spend-guard.test.mjs scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs
+
+baseline: exit 0 (must be 0)
+M1 delete `if (onDisk === null) return;`: KILLED (exit 1) e.g. ✖ 3.2 a repo with no managed block is not given one, and the missing block is not a warning | ✖ 3.2 a rules file with no markers is left byte-identical and the engine does not warn | ✖ 3.2 a repo with no managed block is not given one, and the missing block is not a warning
+M1b treat a missing block as agreeing-by-writing (write it anyway): KILLED (exit 1) e.g. ✖ 3.2 a repo with no managed block is not given one, and the missing block is not a warning | ✖ 3.2 a rules file with no markers is left byte-identical and the engine does not warn | ✖ 3.2 a repo with no managed block is not given one, and the missing block is not a warning
+M2 print the report lines before the write again: KILLED (exit 1) e.g. ✖ M2 a failed write of the block prints neither the refreshed line nor an appearance notice, only the warning | ✖ M2 a failed write of the block prints neither the refreshed line nor an appearance notice, only the warning
+
+killed 3, survived 0

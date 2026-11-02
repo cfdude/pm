@@ -22,8 +22,10 @@ be given:
 
 Build this epic to completion using its lane's normal workflow — OpenSpec
 propose→apply→archive, Superpowers TDD (red→green→refactor), or direct claude-code work,
-whichever fits. Work through it exactly as the epic-level-autonomy decision rule (documented in
-the `conductor` skill's "Epic-level autonomy" section) specifies:
+whichever fits. Work through it exactly as the epic-level-autonomy decision rule specifies. The rule
+lives in the rules block's `## Epic-level autonomy` section of CLAUDE.md, which the block carries only
+while a non-archived epic has an autonomy record; if your copy lacks it, run `node "$ENGINE" rules` and
+read it there (the `conductor` skill's "Epic-level autonomy" section holds the preflight scan, not the rule):
 
 **If this epic is in the `openspec` lane:** the two mandatory gates (Gate 1 — spec review
 before code; Gate 2 — implementation review before docs/archive) are mechanically enforced —

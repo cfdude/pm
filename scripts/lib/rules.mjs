@@ -1267,13 +1267,16 @@ export function writeRules(platform = "claude-code") {
 
   const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage());
   let next;
+  // What this write says about itself, printed only AFTER the file is written: a write that fails must not
+  // have claimed it refreshed the block or announced a section (gh-cfdude-pm-248 Gate 2 M2).
+  const said = [];
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and
     // the block takes the BEGIN line's terminator so a CRLF file never becomes mixed.
     const { i, j, lines } = arrangement;
     const body = lines[i].endsWith("\r\n") ? block.split("\n").join("\r\n") : block;
     next = lines.slice(0, i).join("") + body + lines.slice(j + 1).join("");
-    errStream().write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
+    said.push(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
     // gh-cfdude-pm-248 D5: a conditional section that APPEARS in an existing block is announced, here and not
     // in the dispatch wrapper's refresh, because several verbs call writeRules() themselves and would otherwise
     // find disk and state already agreeing. Only the conditional-sections table is announced: not the pointer,
@@ -1283,7 +1286,7 @@ export function writeRules(platform = "claude-code") {
     const now = headingsOfLines(block.split(/(?<=\n)/));
     for (const row of CONDITIONAL_SECTIONS) {
       if (now.has(row.heading) && !was.has(row.heading)) {
-        errStream().write(`conductor: "## ${row.heading}" is now carried by the managed block in ${name} — a session or agent that loaded it earlier does not have it; run \`rules\` to print the block.\n`);
+        said.push(`conductor: "## ${row.heading}" is now carried by the managed block in ${name} — a session or agent that loaded it earlier does not have it; run \`rules\` to print the block.\n`);
       }
     }
   } else if (existing.trim()) {
@@ -1296,12 +1299,13 @@ export function writeRules(platform = "claude-code") {
     } else {
       next = existing.replace(/\n*$/, "\n\n") + block;
     }
-    errStream().write(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
+    said.push(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
   } else {
     next = `# ${name}\n\n` + block;
-    errStream().write(`conductor: created ${name} with rules block (platform: ${platform})\n`);
+    said.push(`conductor: created ${name} with rules block (platform: ${platform})\n`);
   }
   fs.writeFileSync(target, next);
+  for (const line of said) errStream().write(line);
   retireOrphanedRulesBlocks(target);
   return target;
 }
