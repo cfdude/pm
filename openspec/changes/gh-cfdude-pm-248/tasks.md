@@ -180,7 +180,7 @@
 
 ## 6. Integration
 
-- [ ] 6.1 Measure. Init a fresh scratch repo and run `rules --sections`, then add an autonomy record and
+- [x] 6.1 Measure. Init a fresh scratch repo and run `rules --sections`, then add an autonomy record and
       a release and run it again. Verify: both tables are saved as `measure-6.1.txt`, and the saving
       is at least 3,910 B (design D3). This re-measures the 34,094 B baseline rather than trusting it.
 - [ ] 6.2 Full verification. Run the assertion half once
