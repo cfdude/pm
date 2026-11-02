@@ -247,7 +247,7 @@
 
 ## D. Docs (after Gate 2 only)
 
-- [ ] D.1 README: update the "What each feature costs" rows for `rules:epic-level-autonomy` and
+- [x] D.1 README: update the "What each feature costs" rows for `rules:epic-level-autonomy` and
       `rules:release-candidate` ("core, emitted only while in use"), and any README description of
       the rules block's sections. Mintlify (`pm-plugin.dev`): hand to the orchestrator per the
       `mintlify-doc-sync` skill. Verify: the README-table test passes, and the orchestrator is
@@ -257,4 +257,4 @@
 
 - [x] C.1 Re-record Gate 2 if anything was attributed after it.
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** Run `update-epic gh-cfdude-pm-248 --status archived --outcome delivered --reason "<why>" --no-deferrals` (or the deferral flags that apply), then `/pm:status`.
-- [ ] C.3 <!-- pm:lifecycle --> **Archive.** Run `/opsx:archive gh-cfdude-pm-248`. Do not attribute it.
+- [x] C.3 <!-- pm:lifecycle --> **Archive.** Run `/opsx:archive gh-cfdude-pm-248`. Do not attribute it.
