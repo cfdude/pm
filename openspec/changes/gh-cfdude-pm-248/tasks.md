@@ -190,7 +190,7 @@
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–7)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). Derive every list with `rg` and save it as
+- [x] R.1 **Call-site completeness sweep** (item 1). Derive every list with `rg` and save it as
       `call-site-sweep-R.1.txt`.
       - (a) Every `rulesBlock(` caller: state which ones pass usage and which rely on the full
         default, and why. Every `writeRules(` caller (`rg -n "writeRules\("`): confirm that each one
