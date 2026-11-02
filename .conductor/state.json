@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "mutation-pass-is-a-required-task-item",
+  "active": "gh-cfdude-pm-248",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10981,7 +10981,7 @@
       "id": "mutation-pass-is-a-required-task-item",
       "title": "Required task items demand a call-site sweep and an inverse enumeration, and neither asks whether a new guard CAN fail — make the mutation pass a numbered required item with a durable artifact",
       "priority": "P2",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10995,7 +10995,7 @@
       "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
       "attributedCommits": [],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-11-01T21:54:09.214Z",
+      "touchedAt": "2026-11-02T18:58:13.965Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -15163,25 +15163,51 @@
       "id": "gh-cfdude-pm-248",
       "title": "Lighter rules block: emit sections only for features the repo uses",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
-      "lane": "superpowers",
-      "links": [],
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "pm-overhead-calibration-and-feature-switches",
+          "reason": "same overhead lens — feature switches justified by measured rules-block cost"
+        },
+        {
+          "type": "relates-to",
+          "epic": "mutation-pass-is-a-required-task-item",
+          "reason": "mutation item only fits after this frees >= 558 bytes"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "248",
       "externalUrl": "https://github.com/cfdude/pm/issues/248",
       "externalUpdatedAt": "2026-10-15T17:22:35Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "f1cc8af29c991c0801739c5a23600d3270c8fb78"
+      ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-02T19:09:03.917Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
+        },
+        {
+          "at": "2026-11-02T18:58:11.481Z",
+          "actor": "agent",
+          "text": "lane: openspec not superpowers — touches the emitted rules block contract; ~11h; a spec record is wanted"
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "Re-read issue 248 + its one comment (weekly-product-updates data point: autonomy 3,137 B and release-candidate 1,173 B unconditional; spend sections already conditional). No change since registration.",
+        "recordedAt": "2026-11-02T18:58:09.729Z",
+        "externalUpdatedAt": "2026-10-15T17:22:35Z"
+      },
+      "startedAt": "2026-11-02T18:58:13.960Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-247",
@@ -15767,7 +15793,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2253,
+  "revision": 2257,
   "reviewMode": "standard",
   "releases": [
     {
