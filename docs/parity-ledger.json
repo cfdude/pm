@@ -80,6 +80,11 @@
       "platforms": { "claude-code": "slash command (/pm:cross-spec-review) driving the release-scope review, recorded via `record-cross-spec-review`" }
     },
     {
+      "id": "guard-mutation-pass",
+      "artifacts": ["skills/mutation-pass/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name; the method behind required gate-procedure item 8 (mutate every guard the change adds, keep mutation-evidence.txt, write RED notes task-relative), whose obligation is also emitted into the managed rules block" }
+    },
+    {
       "id": "release-candidate-procedure",
       "artifacts": ["skills/release-candidate/SKILL.md"],
       "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block while an undelivered release exists (with none, the block's always-on pointer names the skill)" }

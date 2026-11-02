@@ -412,6 +412,21 @@ export const GATE_PROCEDURE_ITEMS = [
       "   never gets built, and a product gap written down as a lesson never gets fixed.",
     ],
   },
+  {
+    title: "Prove every guard can fail.",
+    // mutation-pass-is-a-required-task-item (+ #211). The first five claims are the obligation and its
+    // durable artifact; the last two are the RED-note rule, which is the half a mirror is likeliest to
+    // drop because it reads like style advice.
+    mustSay: ["MUTATE it", "mutation-evidence.txt", "A SURVIVING mutant is a finding to fix",
+      "task-relative", "fails after 2.4", "when the task that depends on it starts"],
+    lines: [
+      "For each guard this change adds, MUTATE it — remove or invert its",
+      "   condition — and run the tests: one must fail. Save the run as `mutation-evidence.txt`",
+      "   beside the change or plan. A SURVIVING mutant is a finding to fix, not a test to delete.",
+      "   Write every RED note task-relative (\"fails after 2.4\"), never a bare \"fails today\", and",
+      "   re-run its assertion when the task that depends on it starts.",
+    ],
+  },
 ];
 
 /** The items, rendered as a numbered markdown list, in the PLATFORM's command form.

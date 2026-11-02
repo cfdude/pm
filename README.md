@@ -390,11 +390,12 @@ first and then exit 1, ending pm's dormancy in a repo whose init had failed.
 
 For an OpenSpec-lane epic the emitted rules (under "Re-read the source before an epic becomes the work") direct the agent to confirm planning is complete before applying: every artifact the project's OpenSpec schema requires exists and they agree. It states the obligation and names no OpenSpec command; `/pm:upgrade` refreshes the block.
 
-The rules block carries a **gate procedure of seven numbered, required task items** — the call-site
+The rules block carries a **gate procedure of eight numbered, required task items** — the call-site
 completeness sweep (which since 0.40.0 also obliges the INVERSE of every operation the change
 adds), commit-based verification, the lifecycle-marker declaration, commit attribution, the
-release-scope cross-spec review, ending work by recording a disposition, and routing what the work
-taught you. They are numbered items rather than prose bullets on purpose: measured across an audit
+release-scope cross-spec review, ending work by recording a disposition, routing what the work
+taught you, and proving every guard the change adds can fail (a mutation pass saved as
+`mutation-evidence.txt`, with RED notes written task-relative). They are numbered items rather than prose bullets on purpose: measured across an audit
 of 8 repositories, a rule carried by a mandatory task section reached **14/14** adoption in
 subsequent changes, and the same rule as a prose bullet reached **3/15**.
 

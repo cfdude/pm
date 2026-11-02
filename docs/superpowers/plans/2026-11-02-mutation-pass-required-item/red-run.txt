@@ -1,0 +1,141 @@
+✖ mutation-pass: every mirror carries the item NUMBERED with each claim inside its own body (0.542292ms)
+✖ mutation-pass: the skill exists, names the artifact and the RED-note rule, and the ledger claims it once (0.1105ms)
+✖ mutation-pass: the lesson that states the habit names the item and the skill as its mechanism (0.106917ms)
+✖ mutation-pass: the item is a numbered gate-procedure item that comes AFTER the existing seven (0.772667ms)
+✖ mutation-pass: the rendered block carries the item NUMBERED, with every claim inside its own body (0.114583ms)
+✖ mutation-pass: the item declares every claim in mustSay, so a mirror cannot drop or reverse it (0.125833ms)
+✖ mutation-pass: the item stays inside its byte budget (every session pays for the rules block) (0.077458ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 0
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 135.878833
+
+✖ failing tests:
+
+test at scripts/test/assert/mutation-pass.test.mjs:29:1
+✖ mutation-pass: every mirror carries the item NUMBERED with each claim inside its own body (0.542292ms)
+  AssertionError [ERR_ASSERTION]: the item must exist in the generator
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/mutation-pass.test.mjs:31:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/mutation-pass.test.mjs:40:1
+✖ mutation-pass: the skill exists, names the artifact and the RED-note rule, and the ledger claims it once (0.1105ms)
+  Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/skills/mutation-pass/SKILL.md'
+      at Object.readFileSync (node:fs:624:20)
+      at shipped (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/mutation-pass.test.mjs:13:29)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/mutation-pass.test.mjs:42:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/Users/robsherman/Documents/Repos/pm/skills/mutation-pass/SKILL.md'
+  }
+
+test at scripts/test/assert/mutation-pass.test.mjs:52:1
+✖ mutation-pass: the lesson that states the habit names the item and the skill as its mechanism (0.106917ms)
+  AssertionError [ERR_ASSERTION]: enforced_in must name the required item
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/mutation-pass.test.mjs:55:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ mutation-pass: the item is a numbered gate-procedure item that comes AFTER the existing seven (0.772667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs]
+  AssertionError [ERR_ASSERTION]: the gate procedure must carry "Prove every guard can fail."
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs:39:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ mutation-pass: the rendered block carries the item NUMBERED, with every claim inside its own body (0.114583ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs]
+  AssertionError [ERR_ASSERTION]: the item must exist before its body can be sliced
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs:47:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ mutation-pass: the item declares every claim in mustSay, so a mirror cannot drop or reverse it (0.125833ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs]
+  AssertionError [ERR_ASSERTION]: the item must exist before its claims can be checked
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs:57:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ mutation-pass: the item stays inside its byte budget (every session pays for the rules block) (0.077458ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs]
+  AssertionError [ERR_ASSERTION]: the item must exist before it can be measured
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs:65:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

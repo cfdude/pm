@@ -1,0 +1,49 @@
+mutation-pass-is-a-required-task-item: mutation run of the guards this change adds
+tests under mutation: scripts/test/unit/mutation-pass.test.mjs + scripts/test/assert/mutation-pass.test.mjs
+baseline (no mutant): exit 0, no failures
+
+mutant 1 delete the item from GATE_PROCEDURE_ITEMS (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (5 failing: every mirror carries the item NUMBERED with each claim insid; the item declares every claim in mustSay, so a mirror cannot; the item is a numbered gate-procedure item that comes AFTER ; the item stays inside its byte budget; the rendered block carries the item NUMBERED, with every cla)
+
+mutant 2 reorder: insert the item BEFORE the routing item (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (2 failing: every mirror carries the item NUMBERED with each claim insid; the item is a numbered gate-procedure item that comes AFTER )
+
+mutant 3 drop the RED-note re-run clause from the generator lines (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the rendered block carries the item NUMBERED, with every cla)
+
+mutant 4 drop mustSay claim 'fails after 2.4' from the generator (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the item declares every claim in mustSay, so a mirror cannot)
+
+mutant 5 drop 'task-relative' from the status.md mirror body (commands/status.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: every mirror carries the item NUMBERED with each claim insid)
+
+mutant 6 drop 'mutation-evidence.txt' from the epic.md mirror body (commands/epic.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: every mirror carries the item NUMBERED with each claim insid)
+
+mutant 7 drop the conductor SKILL.md mirror's item 8 title (skills/conductor/SKILL.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: every mirror carries the item NUMBERED with each claim insid)
+
+mutant 8 unclaim the skill in the parity ledger (docs/parity-ledger.json)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the skill exists, names the artifact and the RED-note rule, )
+
+mutant 9 revert the lesson enforced_in to 'habit ... no mechanism'
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the lesson that states the habit names the item and the skil)
+
+mutant 10 bloat the item past the byte budget (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the item stays inside its byte budget)
+
+mutant 11 skill loses the RED-note rule (skills/mutation-pass/SKILL.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the skill exists, names the artifact and the RED-note rule, )
+
+11 mutants: 11 killed, 0 survived
