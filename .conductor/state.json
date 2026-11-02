@@ -15183,10 +15183,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/248",
       "externalUpdatedAt": "2026-10-15T17:22:35Z",
       "attributedCommits": [
-        "f1cc8af29c991c0801739c5a23600d3270c8fb78"
+        "f1cc8af29c991c0801739c5a23600d3270c8fb78",
+        "32b615eb984e930cf48d1b23d8a7c6c47ade56e3"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T19:09:03.917Z",
+      "touchedAt": "2026-11-02T19:13:29.394Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15793,7 +15794,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2257,
+  "revision": 2258,
   "reviewMode": "standard",
   "releases": [
     {
