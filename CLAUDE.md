@@ -346,8 +346,8 @@ re-run of sync and nothing else. (Evidence: the conductor skill, Intake.)
 
 1. **Get the candidate set mechanically.** Before any `add-epic`, run
    `/pm:triage "<the ask, in its own words>"` (`--ask=<ask>` if it starts with `-`). It returns the epics that share
-   distinctive vocabulary with the ask (with the shared tokens), the lane this repo's routing
-   picks, and the backlog's shape. Its `verdict: null` is not a placeholder: the engine computes
+   distinctive vocabulary with the ask (with the shared tokens), the open `releases[]`, the lane
+   this repo's routing picks, and the backlog's shape. Its `verdict: null` is not a placeholder: the engine computes
    what is WORTH READING and never decides. A lexical overlap is not a claim that two asks are one.
 2. **READ the candidates — do not skim the scores.** Open each one that could plausibly be
    the same work. A high score with unrelated intent is a miss; a low score on an epic whose
@@ -360,7 +360,7 @@ re-run of sync and nothing else. (Evidence: the conductor skill, Intake.)
    `triage` marks `superseded: true` is already dead — do not consolidate into it.
 4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane`; its answer
    reads THE ASK (the words, the size, this repo's `laneRouting` overrides) and nothing else. It
-   cannot ask whether this work SERVES something already committed to: pm holds no milestone or product context to weigh. The suggestion is an input;
+   cannot ask whether this work SERVES something already committed to: pm holds no milestone or product context to weigh beyond the release records `triage` lists. The suggestion is an input;
    the lane is your call. THE TIE-BREAK IS ASYMMETRIC: `claude-code` means no spec,
    no plan, no gate and no stories — right for a sub-2-hour tweak, and a misrouted epic leaves
    no record of what it was FOR. Over-processing costs hours; under-processing costs the record
@@ -416,46 +416,11 @@ gate, or a recorded disposition.
    only in an output style, carry it into the dispatch prompt yourself — otherwise the child
    cannot honour a preference it was never given.
 
-## Epic-level autonomy
+## Procedures emitted on use
 
-An epic's `autonomy` block (`.conductor/state.json`) can grant it broad execution trust —
-`level: "off"` by default (today's behavior, unchanged). Setting `level: "autonomous"`
-removes the need to ask before each phase transition, but NEVER removes a genuine safety stop.
-This is development-time only — it never covers actions with irreversible EXTERNAL side
-effects (sending email/Slack, deploying to production, third-party API calls, pushing to a
-shared branch); those are out of scope regardless of autonomy level.
+- Before `set-autonomy <id> --context "<note>"`, load the `conductor` skill's "Epic-level autonomy — the preflight scan".
 
-1. **Preflight before flipping the switch** — see the `conductor` skill's
-   "Epic-level autonomy — the preflight scan" section for the full process. In short: read
-   the epic's full source, produce a short batch of destructive-risk-points +
-   genuine-unknowns questions, get the user's answers, THEN record them:
-   `set-autonomy <id> --preauthorize "<action>:<reason>"` / `--context "<note>"`, and only
-   then `set-autonomy <id> --level autonomous`. For routine, repeated categories of action
-   instead of enumerating each one, use the shorthand
-   `--preauthorize "category:<filesystem|network|schema|external-api>:<reason>"` — see the
-   `conductor` skill's "Epic-level autonomy" section for the exact keyword heuristic each
-   category matches at decision-rule time.
-2. **Execution-time decision rule** — check every destructive action against these, in
-   order, before treating it as a stop:
-   a. Already pre-authorized in the preflight — either an exact `action` match or the
-      action falls under a granted `category` (per the category heuristic)? → proceed,
-      record via `--notify`. A REVOKED grant covers NOTHING, and neither does a grant that
-      names nothing — an empty action or category, which a state file written before the
-      revoke shipped can still hold and which no `--revoke` can name. Both authorise nothing
-      whatever the level says, and `set-autonomy <id> --level autonomous` prints the live
-      grants it is arming so you can read what is actually in force.
-   b. No backup/restore path exists? → STOP regardless of autonomy level.
-   c. Destructive but restorable (backed up first)? → WARN — `--notify` it immediately, proceed.
-   d. No context to act on? → STOP — a real gap, not a false stall.
-   e. Consequential and not yet notified? → `--notify` it immediately, then proceed.
-3. **Notify incrementally, not at the end** — `--notify` writes durably to `state.json`'s
-   `notifications[]` the moment a WARN-class (c) or consequential (e) decision is made. Do this
-   AS EACH DECISION HAPPENS, not batched — a session can be compacted or interrupted mid-epic,
-   and anything not yet `--notify`'d is lost when that happens.
-4. **End-of-epic report** — on completion, read back the accumulated `notifications[]` and
-   report what was asked, what was done, and the decisions made in the user's absence (drawn
-   from that log, not from memory), with an explicit "are you OK with these?" checkpoint, THEN
-   run tests. Leave room to iterate — including rewriting code — if the user is not satisfied.
+The omitted section joins this block once its feature is in use.
 
 ## Execution profile
 
