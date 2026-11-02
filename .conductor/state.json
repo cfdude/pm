@@ -15202,10 +15202,11 @@
         "0d3440b2fe47f8e9734a58737eeaf7d6d53970c7",
         "4a523e90e9a0e0324195b6ddeefba10542c1f91d",
         "baf6b037831144820c142eb9a15b443257230d0b",
-        "0976e0156b49c5f36e796f5d53181bc00d667c37"
+        "0976e0156b49c5f36e796f5d53181bc00d667c37",
+        "74073f4b55f0ad8bd582830a61c5474f649be0b8"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T22:44:19.025Z",
+      "touchedAt": "2026-11-02T22:52:45.965Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15330,10 +15331,17 @@
         },
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-02T22:44:19.020Z",
+          "reviewedAt": "2026-11-02T22:52:45.960Z",
           "baseSha": "d1c0fe1e750f037788e99c2979c669fecc04f9f6",
-          "headSha": "d24be23d4ae7de0cd07a8feb412806e6a401f651",
-          "reviewer": "opus fresh-context round 1 2026-11-02: 0 Critical, 1 Important (stale decision-rule pointer) + 2 Minor fixed in 0976e015 and verified by tests/mutation, not re-reviewed (one-round rule); M3 declined"
+          "headSha": "74073f4b55f0ad8bd582830a61c5474f649be0b8",
+          "reviewer": "opus fresh-context round 1 2026-11-02: 0 Critical, 1 Important + 2 Minor fixed in 0976e015, verified by tests/mutation, not re-reviewed (one-round rule); M3 declined; D.1 README rows added after, re-recorded at 74073f4b",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-11-02T22:44:19.020Z",
+            "baseSha": "d1c0fe1e750f037788e99c2979c669fecc04f9f6",
+            "headSha": "d24be23d4ae7de0cd07a8feb412806e6a401f651",
+            "reviewer": "opus fresh-context round 1 2026-11-02: 0 Critical, 1 Important (stale decision-rule pointer) + 2 Minor fixed in 0976e015 and verified by tests/mutation, not re-reviewed (one-round rule); M3 declined"
+          }
         }
       },
       "gateRounds": {
@@ -15346,10 +15354,10 @@
         },
         "gate2": {
           "fails": 0,
-          "passes": 1,
+          "passes": 2,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-02T22:44:19.020Z",
-          "lastPassAt": "2026-11-02T22:44:19.020Z"
+          "lastVerdictAt": "2026-11-02T22:52:45.960Z",
+          "lastPassAt": "2026-11-02T22:52:45.960Z"
         }
       }
     },
@@ -15957,7 +15965,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2280,
+  "revision": 2282,
   "reviewMode": "standard",
   "releases": [
     {
