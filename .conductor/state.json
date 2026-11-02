@@ -15185,10 +15185,11 @@
       "attributedCommits": [
         "f1cc8af29c991c0801739c5a23600d3270c8fb78",
         "32b615eb984e930cf48d1b23d8a7c6c47ade56e3",
-        "a9a1eee868eb11eb71a654fb06c4032f06631a82"
+        "a9a1eee868eb11eb71a654fb06c4032f06631a82",
+        "12dff9314d3e440fea4c8243035847de97a1a717"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T19:33:54.974Z",
+      "touchedAt": "2026-11-02T19:45:40.293Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15841,6 +15842,26 @@
       "attributedCommits": [],
       "createdAt": "2026-10-23T16:46:24.209Z",
       "touchedAt": "2026-10-23T16:46:24.214Z"
+    },
+    {
+      "id": "opt-in-nudge-shows-running-cost",
+      "title": "upgrade's NOT SET opt-in nudge shows each opt-in's running rules-block cost",
+      "priority": "P3",
+      "status": "later",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-248",
+          "reason": "issue #248's incentive point, declared a non-goal there"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Issue #248 (second comment): /pm:upgrade prints a NOT SET line nudging adoption of each opt-in (scripts/lib/opt-ins.mjs optInLines ~105), and adopting one raises the per-session and per-subagent rules-block tax (weekly-product-updates grew 34,654 -> 36,340 B after set-spend-tracking and set-spend-guard). Nothing tells the user the nudge has a running cost. Ask: each NOT SET line carries its estimated per-session cost from the overhead map.",
+      "attributedCommits": [],
+      "createdAt": "2026-11-02T19:43:54.999Z",
+      "touchedAt": "2026-11-02T19:43:55.006Z"
     }
   ],
   "detourStack": [],
@@ -15851,7 +15872,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2260,
+  "revision": 2262,
   "reviewMode": "standard",
   "releases": [
     {
