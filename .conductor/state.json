@@ -15205,7 +15205,7 @@
         "0976e0156b49c5f36e796f5d53181bc00d667c37"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T22:36:41.391Z",
+      "touchedAt": "2026-11-02T22:44:19.025Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15327,6 +15327,13 @@
             ],
             "reviewer": "opus fresh-context 2026-11-02; 0 Critical, 6 Important fixed in a9a1eee8 and verified by openspec validate --strict, not re-reviewed (one-round rule)"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-02T22:44:19.020Z",
+          "baseSha": "d1c0fe1e750f037788e99c2979c669fecc04f9f6",
+          "headSha": "d24be23d4ae7de0cd07a8feb412806e6a401f651",
+          "reviewer": "opus fresh-context round 1 2026-11-02: 0 Critical, 1 Important (stale decision-rule pointer) + 2 Minor fixed in 0976e015 and verified by tests/mutation, not re-reviewed (one-round rule); M3 declined"
         }
       },
       "gateRounds": {
@@ -15336,6 +15343,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-11-02T20:35:38.552Z",
           "lastPassAt": "2026-11-02T20:35:38.552Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-02T22:44:19.020Z",
+          "lastPassAt": "2026-11-02T22:44:19.020Z"
         }
       }
     },
@@ -15943,7 +15957,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2279,
+  "revision": 2280,
   "reviewMode": "standard",
   "releases": [
     {
