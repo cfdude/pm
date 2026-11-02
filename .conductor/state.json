@@ -15186,10 +15186,13 @@
         "f1cc8af29c991c0801739c5a23600d3270c8fb78",
         "32b615eb984e930cf48d1b23d8a7c6c47ade56e3",
         "a9a1eee868eb11eb71a654fb06c4032f06631a82",
-        "12dff9314d3e440fea4c8243035847de97a1a717"
+        "12dff9314d3e440fea4c8243035847de97a1a717",
+        "ce9b47d75f069a22359f93de44083989e00147ac",
+        "72ec9ec009ac34ef625e2608c032037272f8a1d4",
+        "380001754c7b7e1816595cc7a4e579de59710652"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T19:45:40.293Z",
+      "touchedAt": "2026-11-02T20:35:38.564Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15214,11 +15217,12 @@
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-02T19:33:54.968Z",
+          "reviewedAt": "2026-11-02T20:35:38.552Z",
           "artifacts": [
             "openspec/changes/gh-cfdude-pm-248/proposal.md",
             "openspec/changes/gh-cfdude-pm-248/design.md",
             "openspec/changes/gh-cfdude-pm-248/tasks.md",
+            "openspec/changes/gh-cfdude-pm-248/specs/emitted-instructions/spec.md",
             "openspec/changes/gh-cfdude-pm-248/specs/epic-autonomy/spec.md",
             "openspec/changes/gh-cfdude-pm-248/specs/feature-switches/spec.md",
             "openspec/changes/gh-cfdude-pm-248/specs/managed-rules-block/spec.md",
@@ -15228,15 +15232,19 @@
           "artifactDigests": [
             {
               "path": "openspec/changes/gh-cfdude-pm-248/proposal.md",
-              "sha256": "9a277c60f33a57486b370cd4176fc87b67819eb10d6639451349aa97a7d461a7"
+              "sha256": "76e1f02f3223356e7609011862467ad61906b2c2a7c8cbac9284b0225c02902d"
             },
             {
               "path": "openspec/changes/gh-cfdude-pm-248/design.md",
-              "sha256": "55f06bed94e418da97a875cff02b0822ac15272124c3ed70404992d669e452f3"
+              "sha256": "f1061ded5af11efaea56b63d6e44e1c98bf79252ed45efc9318905d5a6151d95"
+            },
+            {
+              "path": "openspec/changes/gh-cfdude-pm-248/specs/emitted-instructions/spec.md",
+              "sha256": "2eaefa6d913ba4b4185a8ecb36287ffa403b1dc81f6beeb94b37702da88e1eba"
             },
             {
               "path": "openspec/changes/gh-cfdude-pm-248/specs/epic-autonomy/spec.md",
-              "sha256": "45752f24599252585bb9a55620c8b451fe089a528bc0b560558f9c19b9c8da7c"
+              "sha256": "f9ae564d0cc37186cb53c573301daab8eee3f779afe938836ae330a729b17b5a"
             },
             {
               "path": "openspec/changes/gh-cfdude-pm-248/specs/feature-switches/spec.md",
@@ -15244,7 +15252,7 @@
             },
             {
               "path": "openspec/changes/gh-cfdude-pm-248/specs/managed-rules-block/spec.md",
-              "sha256": "93e7679caba14292fb3e2edac270fbb171cacf0b206ddcc05c3ac709714675d6"
+              "sha256": "829418e6d7ed728c47a1a50f976261f603ddd36ee58c2a435cdc02f50f580c36"
             },
             {
               "path": "openspec/changes/gh-cfdude-pm-248/specs/pm-overhead/spec.md",
@@ -15255,16 +15263,61 @@
               "sha256": "4fc85dcef841669d6b6d8ce7490ce986e1f521549bbaaf5f7998aa39f3039946"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-02; 0 Critical, 6 Important fixed in a9a1eee8 and verified by openspec validate --strict, not re-reviewed (one-round rule)"
+          "reviewer": "opus fresh-context 2026-11-02, re-recorded over artifacts as amended by 12dff931 (cross-spec BLOCK fix + polish); amendments verified by openspec validate --strict, not re-reviewed (one-round rule)",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-11-02T19:33:54.968Z",
+            "artifacts": [
+              "openspec/changes/gh-cfdude-pm-248/proposal.md",
+              "openspec/changes/gh-cfdude-pm-248/design.md",
+              "openspec/changes/gh-cfdude-pm-248/tasks.md",
+              "openspec/changes/gh-cfdude-pm-248/specs/epic-autonomy/spec.md",
+              "openspec/changes/gh-cfdude-pm-248/specs/feature-switches/spec.md",
+              "openspec/changes/gh-cfdude-pm-248/specs/managed-rules-block/spec.md",
+              "openspec/changes/gh-cfdude-pm-248/specs/pm-overhead/spec.md",
+              "openspec/changes/gh-cfdude-pm-248/specs/release-candidate-review/spec.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/proposal.md",
+                "sha256": "9a277c60f33a57486b370cd4176fc87b67819eb10d6639451349aa97a7d461a7"
+              },
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/design.md",
+                "sha256": "55f06bed94e418da97a875cff02b0822ac15272124c3ed70404992d669e452f3"
+              },
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/specs/epic-autonomy/spec.md",
+                "sha256": "45752f24599252585bb9a55620c8b451fe089a528bc0b560558f9c19b9c8da7c"
+              },
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/specs/feature-switches/spec.md",
+                "sha256": "e974e0166b11142ef89a7915d19ca34a559b3317fdb12e923fb46c06de4349d9"
+              },
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/specs/managed-rules-block/spec.md",
+                "sha256": "93e7679caba14292fb3e2edac270fbb171cacf0b206ddcc05c3ac709714675d6"
+              },
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/specs/pm-overhead/spec.md",
+                "sha256": "bd313dac7fb7e26fb93393822d3cdaf47b1c1c2ba838c047ec030a05d43393d6"
+              },
+              {
+                "path": "openspec/changes/gh-cfdude-pm-248/specs/release-candidate-review/spec.md",
+                "sha256": "4fc85dcef841669d6b6d8ce7490ce986e1f521549bbaaf5f7998aa39f3039946"
+              }
+            ],
+            "reviewer": "opus fresh-context 2026-11-02; 0 Critical, 6 Important fixed in a9a1eee8 and verified by openspec validate --strict, not re-reviewed (one-round rule)"
+          }
         }
       },
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 1,
+          "passes": 2,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-02T19:33:54.968Z",
-          "lastPassAt": "2026-11-02T19:33:54.968Z"
+          "lastVerdictAt": "2026-11-02T20:35:38.552Z",
+          "lastPassAt": "2026-11-02T20:35:38.552Z"
         }
       }
     },
@@ -15872,7 +15925,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2263,
+  "revision": 2267,
   "reviewMode": "standard",
   "releases": [
     {
