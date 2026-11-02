@@ -60,6 +60,12 @@ test("7.5: the checked-in 0.26.0 state carries none of this release's fields", (
 
 test("7.5: an un-upgraded 0.26.0 state emits byte-identically to 0.26.0 for a jira primary", () => {
   const cwd = repoAt0260();
+  // The outward section's autonomy paragraph is emitted only while a non-archived epic holds an autonomy
+  // record (gh-cfdude-pm-248); the 0.26.0 baseline carries it, so the comparison needs one.
+  const file = path.join(cwd, ".conductor", "state.json");
+  const state = JSON.parse(fs.readFileSync(file, "utf8"));
+  state.epics.find((e) => e.status !== "archived").autonomy = { level: "off" };
+  fs.writeFileSync(file, JSON.stringify(state, null, 2));
   const block = run(["rules"], { cwd });
   // BOTH sides through the same strip — see conductor-14's `baseline()`.
   const before = stripAlwaysOn(fs.readFileSync(path.join(FIXTURES, "rules-0.26.0-jira-scoped.txt"), "utf8"));

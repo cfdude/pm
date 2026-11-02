@@ -71,7 +71,7 @@
       equals the call with both flags true, and turning a flag off removes exactly that section
       (plus the tracker paragraph for autonomy) and adds the pointer. Verify: unit tests pass;
       `red-2.2.txt` saved.
-- [ ] 2.3 TDD (FILE). `writeRules()` and the `rules` verb pass `currentRulesUsage()`.
+- [x] 2.3 TDD (FILE). `writeRules()` and the `rules` verb pass `currentRulesUsage()`.
       `overhead.rulesBlockFor(state, platform, usage = rulesUsage(state))` takes usage as a parameter
       (design D6), so every render path reads the predicate when this task lands. Cover the
       following, then update every file 2.1 marked "changes":

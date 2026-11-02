@@ -1,0 +1,56 @@
+✖ 2.3 a fresh init writes neither usage-conditioned section and does write the pointer (1178.515167ms)
+✔ 2.3 write-rules for a state holding a record and an open release writes both sections and no pointer (1661.737042ms)
+✔ 2.3 `rules` and `write-rules` agree for the same state: fresh and in use (1183.044333ms)
+✔ 2.3 the gate procedure's bytes equal those of the default (full) render (444.095875ms)
+✖ 2.3 --sections lists the same sections the written block carries (fresh repo) (413.340833ms)
+✔ 2.3 a hand-written autonomy record is picked up by the next write-rules (622.936542ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6859.91
+
+✖ failing tests:
+
+test at scripts/test/assert/rules-usage-write.test.mjs:37:1
+✖ 2.3 a fresh init writes neither usage-conditioned section and does write the pointer (1178.515167ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!text.includes(AUTONOMY) && !text.includes(RC))
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/rules-usage-write.test.mjs:40:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/rules-usage-write.test.mjs:70:1
+✖ 2.3 --sections lists the same sections the written block carries (fresh repo) (413.340833ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(table.includes("Procedures emitted on use"))
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/rules-usage-write.test.mjs:73:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

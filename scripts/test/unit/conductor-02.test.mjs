@@ -53,14 +53,21 @@ unitTest("rules block is lane-agnostic, not openspec-only", () => {
   assert.match(out, /openspec \| superpowers \| claude-code/);
   assert.doesNotMatch(out, /becomes its own OpenSpec proposal/);
 });
-unitTest("rules block always includes the epic-level autonomy section, with the five-criteria decision rule", () => {
+unitTest("rules block includes the epic-level autonomy section, with the five-criteria decision rule, while an epic holds an autonomy record", () => {
   const engine = memoryEngine(emptyRecord());
+  engine(["add-epic", "--id", "a", "--lane", "claude-code"]);
+  engine(["set-autonomy", "a", "--context", "x"]);
   const out = engine(["rules"]);
   assert.match(out, /## Epic-level autonomy/);
   assert.match(out, /set-autonomy/);
   assert.match(out, /No backup\/restore path exists\? → STOP/);
   assert.match(out, /Destructive but restorable.*→ WARN/);
   assert.match(out, /irreversible EXTERNAL side/i);   // scope boundary called out explicitly
+});
+unitTest("rules block omits the epic-level autonomy section while no non-archived epic holds a record (gh-cfdude-pm-248)", () => {
+  const out = memoryEngine(emptyRecord())(["rules"]);
+  assert.doesNotMatch(out, /## Epic-level autonomy/);
+  assert.match(out, /## Procedures emitted on use/);
 });
 unitTest("render is a no-op when content is unchanged (no timestamp churn)", () => {
   const engine = memoryEngine(emptyRecord());

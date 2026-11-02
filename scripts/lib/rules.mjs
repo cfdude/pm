@@ -32,7 +32,7 @@ import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
-import { FULL_USAGE } from "./rules-usage.mjs";
+import { FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -117,6 +117,13 @@ export function currentSpendTracking() {
  *  unreadable file for the same reason they do. */
 export function currentSpendGuard() {
   try { return guardConfigured(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
+}
+
+/** The usage answers the rules block is rendered with: `rulesUsage()` over the loaded record. Falls back
+ *  to the FULL block (both true) when state cannot be consulted, the safe failure: over-emitting never
+ *  drops a rule. Rethrows an unreadable file for the same reason the other readers do. */
+export function currentRulesUsage() {
+  try { return rulesUsage(loadState()); } catch (e) { rethrowUnreadable(e); return FULL_USAGE; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -1247,7 +1254,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage());
   let next;
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and

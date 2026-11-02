@@ -261,6 +261,11 @@ const REMINDER_HEADING = "## Sync after completing tracker-linked work";
 function rulesFor(tracker, { secondaryTrackers } = {}) {
   const cwd = tmpRepo();
   run(["init"], { cwd });
+  // The outward section's "Epic-level autonomy on tracker-linked epics" paragraph is emitted only while a
+  // non-archived epic holds an autonomy record (gh-cfdude-pm-248), and the 0.26.0 baselines carry it. A record
+  // here keeps this helper comparing the SYNC sections, which is what its callers claim.
+  run(["add-epic", "--id", "autonomy-holder", "--title", "holds an autonomy record", "--lane", "claude-code"], { cwd });
+  run(["set-autonomy", "autonomy-holder", "--context", "x"], { cwd });
   const state = readState(cwd);
   if (tracker) state.tracker = tracker;
   if (secondaryTrackers) state.secondaryTrackers = secondaryTrackers;
