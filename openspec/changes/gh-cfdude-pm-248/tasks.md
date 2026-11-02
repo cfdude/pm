@@ -158,7 +158,7 @@
 
 ## 5. Shipped mirrors and the changeset
 
-- [ ] 5.1 Update the mirrors that describe these sections:
+- [x] 5.1 Update the mirrors that describe these sections:
       - `skills/conductor/SKILL.md`: the preflight section's "the decision rule … is in the rules
         block" (≈ line 1122) says the section is present only while a non-archived epic has an
         autonomy record, and that `rules` prints it. The hierarchy procedure carries the section

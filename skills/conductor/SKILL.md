@@ -776,6 +776,11 @@ applies to the main conversation only** and does not reach one. So a user's cont
 only in an output style never arrives at a `hierarchy-child-executor` or the `reconciler` — carry
 it into the dispatch prompt yourself, or the child cannot honour a preference it was never given.
 
+The same applies to a rules-block section that appeared during this session. If the engine printed the notice that
+the block "is now carried" a section (the first `set-autonomy` adds `## Epic-level autonomy`, the first `release`
+adds `## Release candidate`), your own copy of the block predates it: run `rules` and carry that section's rules into
+the dispatch prompt rather than relying on a copy loaded earlier.
+
 ## Delegate discovery — your context is the scarce resource
 
 **If you do not already know the file path, do not go looking yourself.** A subagent's transcript
@@ -1120,8 +1125,11 @@ surfaces the match for you to act on.
 An epic can be granted broad execution trust so it runs through phase transitions and
 destructive actions without a human present for each one — but ONLY after a preflight scan, and
 autonomy never removes a genuine safety stop. This section defines the scan; the decision rule
-and reporting obligations that consume its output are in the rules block re-injected into
-CLAUDE.md (see `/pm:epic` → `set-autonomy`).
+and reporting obligations that consume its output are in the rules block's `## Epic-level autonomy`
+section (see `/pm:epic` → `set-autonomy`). That section is present only while a non-archived epic has an
+autonomy record: the first `set-autonomy` adds it to CLAUDE.md and prints a one-line notice, and a session
+that loaded the block earlier does not have it until `rules` prints it. Until then the block's
+`## Procedures emitted on use` section points here.
 
 **When:** before setting any epic's `autonomy.level` to `"autonomous"` (see `set-autonomy` below).
 

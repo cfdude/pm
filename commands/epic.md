@@ -846,6 +846,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-autonomy <id> \
 APPENDS, it never clobbers prior entries. `--level` replaces (default `"off"` — today's
 behavior, unchanged). `PROJECT.md` and the session brief mark an autonomous epic with 🤖.
 
+The rules block carries its `## Epic-level autonomy` section (the decision rule) only while a non-archived
+epic has an autonomy record, at any level. The FIRST `set-autonomy` adds the section to the managed block and
+prints one line saying so; a session that loaded the block earlier does not have it, and `rules` prints it.
+Archiving or removing the last holder retires the section, and un-archiving restores it.
+
 ## Record a gate verdict — `record-gate-review`
 
 A gate review is recorded against the epic with the evidence a later reader can

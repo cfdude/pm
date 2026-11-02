@@ -79,3 +79,11 @@ Does: measures both costs, reports them in `/pm:upgrade` and `/pm:status` output
 fit 16,384 bytes with a visible marker and never cuts an obligation block, and prints the ranked table with `rules --sections`.
 
 Does not: change a byte of the rules block.
+
+## Update, gh-cfdude-pm-248: two sections now follow usage
+
+The tables above are dated measurements and are left as taken. Since this change the block emits `Epic-level
+autonomy` only while a non-archived epic has an autonomy record, and `Release candidate` only while a release has
+no delivered marker; `Procedures emitted on use` (at most 400 bytes) names the skill to load while either is
+absent. A repository using neither pays for neither section. The measurement is in
+`openspec/changes/gh-cfdude-pm-248/measure-6.1.txt`.

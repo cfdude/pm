@@ -82,7 +82,7 @@
     {
       "id": "release-candidate-procedure",
       "artifacts": ["skills/release-candidate/SKILL.md"],
-      "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block" }
+      "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block while an undelivered release exists (with none, the block's always-on pointer names the skill)" }
     },
     {
       "id": "process-lessons",
