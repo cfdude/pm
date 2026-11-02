@@ -51,7 +51,7 @@
 
 ## 2. Emission follows the usage answers
 
-- [ ] 2.1 Enumerate, mechanically and before editing, every test and fixture that asserts on a
+- [x] 2.1 Enumerate, mechanically and before editing, every test and fixture that asserts on a
       block rendered FROM STATE rather than from a direct `rulesBlock(` call. Run
       `rg -n "Epic-level autonomy|Release candidate|rules --sections|write-rules" scripts/test`
       plus `rg -c "rulesBlock\(" scripts/test`, which gives 61 calls in 15 files on 2026-11-02;
