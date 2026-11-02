@@ -15,8 +15,9 @@ const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..",
 const shipped = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8");
 const MUTATION_ITEM = "Prove every guard can fail.";
 const MIRRORS = ["skills/conductor/SKILL.md", "commands/epic.md", "commands/status.md"];
-const CLAIMS = ["MUTATE it", "mutation-evidence.txt", "A SURVIVING mutant is a finding to fix",
-  "task-relative", "fails after 2.4", "when the task that depends on it starts"];
+const CLAIMS = ["MUTATE it", "mutation-evidence.txt", "Save and commit the run",
+  "A SURVIVING mutant is a finding to fix", "No guard added", "task-relative", "fails after 2.4",
+  "when its own task starts", "mutation-pass"];
 const norm = (s) => s.replace(/[`*_]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
 
 const itemBody = (text, n, title) => {
@@ -43,7 +44,7 @@ test("mutation-pass: the skill exists, names the artifact and the RED-note rule,
   const skill = "skills/mutation-pass/SKILL.md";
   const text = shipped(skill);
   assert.match(text, /^name: mutation-pass$/m, "frontmatter name");
-  for (const claim of ["mutation-evidence.txt", "surviving mutant", "task-relative", "fails after"]) {
+  for (const claim of ["mutation-evidence.txt", "save and commit", "surviving mutant", "no guard added is a legitimate outcome", "task-relative", "fails after"]) {
     assert.ok(norm(text).includes(norm(claim)), `${skill} must carry "${claim}"`);
   }
   const ledger = JSON.parse(shipped("docs/parity-ledger.json"));

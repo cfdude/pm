@@ -26,7 +26,7 @@ See `docs/lessons/a-guard-can-check-the-wrong-half.md`.
 3. **Run the tests that claim to cover it** (the file, then the half). Record: mutant, command, result.
 4. **Restore.** `git checkout -- <file>` or `git stash`; confirm `git diff` is empty for that file before the
    next mutant. A mutant left in the tree is the worst outcome of this practice.
-5. **Save the run** as `mutation-evidence.txt` beside the change (the OpenSpec change directory) or the plan
+5. **Save and commit the run** as `mutation-evidence.txt` beside the change (the OpenSpec change directory) or the plan
    (the plan's folder). A named file lets the gate read the evidence instead of trusting a sentence.
 
 ## What counts as a surviving mutant
@@ -38,6 +38,13 @@ value that two different mechanisms both produce. Assert on the intermediate: th
 write itself, the first state rather than the healed one. Then re-run the mutant to prove it now dies.
 
 A mutant that dies for the wrong reason (a syntax error, a crash in setup) does not count. Read the failure.
+
+## A change that adds no guard
+
+No guard added is a legitimate outcome (a docs-only change, a rename, a pure deletion). It is not a skipped
+pass: say so, and why, in the task or the commit (`No guard added: only prose changed`) instead of an
+evidence file, exactly as an unguarded call site must be justified. Without that sentence a docs-only change
+and a pass nobody ran look identical.
 
 ## Evidence file shape
 
@@ -63,7 +70,7 @@ from the task text.
 - **Write the note relative to a task:** `fails after 2.4` (it fails once 2.4 has landed and not before the
   task that fixes it), or `fails at baseline` (it fails on the pre-change tree and nothing earlier in this
   change touches it). Never a bare "fails today".
-- **Re-run the note's named assertion at the START of the task that depends on it.** If it is already green,
+- **Re-run the note's named assertion when its own task starts.** If it is already green,
   the note is stale: say so in the commit, and either strengthen the test until it is a real RED or record
   that the earlier task delivered the behaviour. Do not weaken the test to turn it red again.
 

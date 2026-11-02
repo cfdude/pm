@@ -49,7 +49,7 @@ embeds the plain, unbounded text. Out of scope and unchanged: the PreCompact sna
 
 ## Candidates to move to on-demand skills (a later epic's call)
 
-Constraint, from the adoption evidence: the gate procedure's numbered items 1-7 stay in the block. A rule
+Constraint, from the adoption evidence: the gate procedure's numbered items (1-8 today) stay in the block. A rule
 carried by a required task item reached 14/14 changes; the same rule as a prose bullet reached 3/15. That
 section (29.8%) and the operating rules (14.8%) are not candidates.
 

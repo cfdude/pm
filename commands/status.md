@@ -565,9 +565,11 @@ bullet reached 3/15.
    gets built, and a product gap written down as a lesson never gets fixed.
 8. **Prove every guard can fail.** A green test distinguishes nothing unless it can go red, and both
    gates read a diff, so neither can see a test that cannot fail. For each guard this change adds,
-   MUTATE it — remove or invert its condition — and run the tests: one must fail. Save the run as
-   `mutation-evidence.txt` beside the change or plan, so the gate can read it rather than trust a
-   sentence. A SURVIVING mutant is a finding to fix, not a test to delete. Write every RED note
-   task-relative ("fails after 2.4"), never a bare "fails today", and re-run its assertion when the
-   task that depends on it starts: a RED note written against the release baseline goes stale as
-   its own change lands. The `mutation-pass` skill carries the procedure and a worked example.
+   MUTATE it — remove or invert its condition — and run the tests: one must fail. Save and commit the
+   run as `mutation-evidence.txt` beside the change or plan, so the gate can read it rather than
+   trust a sentence. A SURVIVING mutant is a finding to fix, not a test to delete. No guard added:
+   say so, and why, instead of an evidence file, exactly as an unguarded call site must be
+   justified; a docs-only change and a skipped pass must not look alike. Write every RED note
+   task-relative ("fails after 2.4"), never a bare "fails today"; re-run it when its own task
+   starts, because a RED note written against the release baseline goes stale as its own change
+   lands. The `mutation-pass` skill carries the method and a worked example.

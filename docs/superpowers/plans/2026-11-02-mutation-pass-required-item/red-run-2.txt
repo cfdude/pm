@@ -1,0 +1,87 @@
+✖ mutation-pass: every mirror carries the item NUMBERED with each claim inside its own body (1.101ms)
+✖ mutation-pass: the skill exists, names the artifact and the RED-note rule, and the ledger claims it once (0.48675ms)
+✔ mutation-pass: the lesson that states the habit names the item and the skill as its mechanism (0.145375ms)
+✔ mutation-pass: the item is a numbered gate-procedure item that comes AFTER the routing item (0.553458ms)
+✖ mutation-pass: the rendered block carries the item NUMBERED, with every claim inside its own body (2.809458ms)
+✖ mutation-pass: the item declares every claim in mustSay, so a mirror cannot drop or reverse it (0.124042ms)
+✔ mutation-pass: the item stays inside its byte budget (every session pays for the rules block) (0.553583ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 134.657416
+
+✖ failing tests:
+
+test at scripts/test/assert/mutation-pass.test.mjs:32:1
+✖ mutation-pass: every mirror carries the item NUMBERED with each claim inside its own body (1.101ms)
+  AssertionError [ERR_ASSERTION]: skills/conductor/SKILL.md item 8 is missing "Save and commit the run"
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/mutation-pass.test.mjs:38:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/mutation-pass.test.mjs:43:1
+✖ mutation-pass: the skill exists, names the artifact and the RED-note rule, and the ledger claims it once (0.48675ms)
+  AssertionError [ERR_ASSERTION]: skills/mutation-pass/SKILL.md must carry "save and commit"
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/mutation-pass.test.mjs:48:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ mutation-pass: the rendered block carries the item NUMBERED, with every claim inside its own body (2.809458ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs]
+  AssertionError [ERR_ASSERTION]: the rendered item 8 body is missing "Save and commit the run" — an obligation placed outside the numbered item is a prose bullet
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs:52:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ mutation-pass: the item declares every claim in mustSay, so a mirror cannot drop or reverse it (0.124042ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs]
+  AssertionError [ERR_ASSERTION]: mustSay must declare "Save and commit the run"
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/mutation-pass.test.mjs:61:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

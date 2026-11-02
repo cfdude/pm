@@ -16,10 +16,13 @@ const ROUTING_ITEM = "Route what the work taught you.";
 export const MUTATION_CLAIMS = [
   "MUTATE it",
   "mutation-evidence.txt",
+  "Save and commit the run",
   "A SURVIVING mutant is a finding to fix",
+  "No guard added",
   "task-relative",
   "fails after 2.4",
-  "when the task that depends on it starts",
+  "when its own task starts",
+  "mutation-pass",
 ];
 const norm = (s) => s.replace(/[`*_]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
 
@@ -34,12 +37,11 @@ const itemBody = (text, n, title) => {
 };
 const rendered = () => memoryEngine(emptyRecord())(["rules"]);
 
-unitTest("mutation-pass: the item is a numbered gate-procedure item that comes AFTER the existing seven", () => {
+unitTest("mutation-pass: the item is a numbered gate-procedure item that comes AFTER the routing item", () => {
   const titles = GATE_PROCEDURE_ITEMS.map(i => i.title);
   assert.ok(titles.includes(MUTATION_ITEM), `the gate procedure must carry "${MUTATION_ITEM}"`);
   assert.ok(titles.indexOf(MUTATION_ITEM) > titles.indexOf(ROUTING_ITEM),
     "appended, never inserted: tests, lessons and docs cite items 1-7 by number");
-  assert.equal(titles.indexOf(MUTATION_ITEM), titles.length - 1, "it is the LAST item");
 });
 
 unitTest("mutation-pass: the rendered block carries the item NUMBERED, with every claim inside its own body", () => {

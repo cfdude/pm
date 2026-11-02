@@ -47,3 +47,42 @@ run:    node --test (both mutation-pass files)
 result: KILLED (1 failing: the skill exists, names the artifact and the RED-note rule, )
 
 11 mutants: 11 killed, 0 survived
+
+ROUND 2 (after review fixes)
+mutant 12 (round 2) drop the 'No guard added' sentence from the generator (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the rendered block carries the item NUMBERED, with every cla)
+
+mutant 13 (round 2) drop the skill pointer from the generator lines (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the rendered block carries the item NUMBERED, with every cla)
+
+mutant 14 (round 2) 'Save and commit' becomes 'Save' in the generator (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: the rendered block carries the item NUMBERED, with every cla)
+
+mutant 15 (round 2) drop the no-guard sentence from the status.md mirror (commands/status.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: every mirror carries the item NUMBERED with each claim insid)
+
+mutant 16 (round 2) 'Save and commit the run' becomes 'Save the run' in epic.md (commands/epic.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: every mirror carries the item NUMBERED with each claim insid)
+
+mutant 17 (round 2) conductor SKILL.md mirror loses 'when its own task starts' (skills/conductor/SKILL.md)
+run:    node --test (both mutation-pass files)
+result: KILLED (1 failing: every mirror carries the item NUMBERED with each claim insid)
+
+mutant 18 (round 2) the skill loses its no-guard section (skills/mutation-pass/SKILL.md)
+run:    node --test (both mutation-pass files)
+result: SURVIVED (0 failing: none)
+
+mutant 19 (round 2) reinstate the old 'last item' restriction is NOT a guard; instead: item moved before the routing item (scripts/lib/rules.mjs)
+run:    node --test (both mutation-pass files)
+result: KILLED (2 failing: every mirror carries the item NUMBERED with each claim insid; the item is a numbered gate-procedure item that comes AFTER )
+
+8 mutants: 7 killed, 1 survived
+
+mutant 18 SURVIVED the first time (the skill's "No guard added" claim was also satisfied by an example string).
+action:   the skill claim is now "no guard added is a legitimate outcome"; re-run of mutant 18 -> KILLED (1 failing: the skill exists...).
+round 2 tally: 8 mutants, 8 killed after the fix (1 survived once, fixed, re-killed); overall 19 mutants, 19 killed, 1 survivor fixed.
