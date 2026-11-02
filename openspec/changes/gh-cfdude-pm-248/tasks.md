@@ -22,11 +22,11 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, `tasks.md` and the six delta
+- [x] 0.1 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, `tasks.md` and the six delta
       specs under `specs/`. Fix Critical and Important findings. Then run
       `openspec validate gh-cfdude-pm-248 --strict` and read its exit status, and record
       `record-gate-review gh-cfdude-pm-248 --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.2 **Cross-spec review of release 0.54.0** (required item 5). This change adds six spec files
+- [x] 0.2 **Cross-spec review of release 0.54.0** (required item 5). This change adds six spec files
       to the release, which marks any prior verdict stale. Name the shared chokepoints: `scripts/lib/rules.mjs`
       `rulesBlock()` and `GATE_PROCEDURE_ITEMS` (also edited by
       `mutation-pass-is-a-required-task-item`), the `managed-rules-block` spec, and the
@@ -225,7 +225,7 @@
       lines.
 - [x] R.4 **Attribute every commit** (item 4). Run `update-epic gh-cfdude-pm-248 --attribute-commit <sha>`
       as each commit lands. Never attribute the archive move or the post-Gate-2 lifecycle commits.
-- [ ] R.5 **Cross-spec review** (item 5). Done by 0.2. Re-run it if any spec in release 0.54.0 is
+- [x] R.5 **Cross-spec review** (item 5). Done by 0.2. Re-run it if any spec in release 0.54.0 is
       amended after 0.2.
 - [ ] R.6 **Disposition** (item 6). Done by C.2.
 - [x] R.7 **Route what the work taught you** (item 7). Name each lesson's kind out loud.
@@ -237,7 +237,7 @@
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD`, or the converged `rc/0.54.0` review. Check:
+- [x] G.1 **Gate 2** over `BASE..HEAD`, or the converged `rc/0.54.0` review. Check:
       - every predicate writer reaches the refresh;
       - no rewrite happens on a no-op write;
       - no hook does the comparison;
@@ -255,6 +255,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 if anything was attributed after it.
+- [x] C.1 Re-record Gate 2 if anything was attributed after it.
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** Run `update-epic gh-cfdude-pm-248 --status archived --outcome delivered --reason "<why>" --no-deferrals` (or the deferral flags that apply), then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** Run `/opsx:archive gh-cfdude-pm-248`. Do not attribute it.
