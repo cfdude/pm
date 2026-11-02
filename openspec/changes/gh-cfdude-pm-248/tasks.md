@@ -174,7 +174,7 @@
         section is always present.
       Verify: `rg -n "rules block" skills/conductor/SKILL.md commands/epic.md` shows no claim of
       unconditional presence; `parity.test.mjs` passes.
-- [ ] 5.2 Add changeset fragment `.changesets/gh-cfdude-pm-248.md`. It states the bytes saved on a fresh
+- [x] 5.2 Add changeset fragment `.changesets/gh-cfdude-pm-248.md`. It states the bytes saved on a fresh
       repo (from 6.1), that existing repos lose unused sections at their next upgrade or write, the
       pointer, and the notice. Verify: `changesets` reads it without error.
 
