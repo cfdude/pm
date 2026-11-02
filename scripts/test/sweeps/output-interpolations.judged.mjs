@@ -75,12 +75,16 @@ x("rules.mjs", "secondaryTrackerKey", {
   "entry.projectKey": 1,
 }, "not-output", "a match key for upsert/remove; never printed");
 x("rules.mjs", "writeRules", {
-  "name": 4,
+  "name": 5,
+  "row.heading": 1,
   "platform": 3,
   "existing.slice(0, end)": 1,
   "block.split(\"\\n\").join(\"\\r\\n\")": 1,
   "block": 1,
-}, "engine", "`name` is the rules file basename from PLATFORM_RULES_CHAIN, `platform` a validated vocabulary value; `block` is rulesBlock()'s sink-joined text written to the file; `existing.slice(0, end)` is the rules file's own text outside the managed block, written back as it was");
+}, "engine", "`name` is the rules file basename from PLATFORM_RULES_CHAIN, `platform` a validated vocabulary value; `block` is rulesBlock()'s sink-joined text written to the file; `existing.slice(0, end)` is the rules file's own text outside the managed block, written back as it was; `row.heading` is a CONDITIONAL_SECTIONS heading, the engine's own section vocabulary, printed by the appearance notice (gh-cfdude-pm-248 D5)");
+x("spend-guard-verbs.mjs", "refreshConditionalSections", {
+  "noun": 1,
+}, "engine", "the literal 'section' or 'sections' (gh-cfdude-pm-248 D4); the section names beside it go through escapeControls");
 x("rules.mjs", "rulesBlockAmbiguousMessage", {
   "shown": 2,
   "m.line": 1,

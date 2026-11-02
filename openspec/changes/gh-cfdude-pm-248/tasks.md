@@ -99,11 +99,11 @@
 
 ## 3. One refresh for every conditional section
 
-- [ ] 3.1 TDD (FILE). Replace `rulesBlockShowsSpendGuard()` with `rulesBlockHeadings(platform)`,
+- [x] 3.1 TDD (FILE). Replace `rulesBlockShowsSpendGuard()` with `rulesBlockHeadings(platform)`,
       which returns the set of `## ` headings inside the one managed block, or `null` when there is
       no block or an ambiguous one. Migrate its callers: `rg -n "rulesBlockShowsSpendGuard"`.
       Verify: assert tests pass, and `rg` finds no remaining caller of the old name.
-- [ ] 3.2 TDD (FILE). Generalise `refreshSpendGuardSection` into
+- [x] 3.2 TDD (FILE). Generalise `refreshSpendGuardSection` into
       `refreshConditionalSections(before, after)` over the `CONDITIONAL_SECTIONS` table (design D4),
       still called only from the dispatch wrapper's existing non-hook `guardBefore` branch. Cover
       the following:
@@ -119,7 +119,7 @@
       - the hand-edit-then-write case.
       Every existing spend-guard emission test must stay green unchanged. Verify: the assertion half
       passes; `red-3.2.txt` saved.
-- [ ] 3.3 TDD (FILE). Add the appearance notice inside `writeRules()` on its in-place refresh path
+- [x] 3.3 TDD (FILE). Add the appearance notice inside `writeRules()` on its in-place refresh path
       (design D5). Assert the following:
       - one stderr line per added heading in `CONDITIONAL_SECTIONS`, naming the heading and
         `rules`, and no line for any other heading: the pointer, a tracker heading added by

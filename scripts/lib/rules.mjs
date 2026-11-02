@@ -32,7 +32,7 @@ import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
-import { FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
+import { CONDITIONAL_SECTIONS, FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -1222,15 +1222,26 @@ export function assertRulesBlockWritable(platform = "claude-code") {
   }
 }
 
-/** Does the managed rules block ON DISK carry a `## Spend guard` section? `null` when there is no block to
- *  judge (no file, no markers, or an ambiguous arrangement): the wrapper that asks never creates a block,
- *  and never throws on a file the user is mid-way through fixing. */
-export function rulesBlockShowsSpendGuard(platform = "claude-code") {
+/** The heading texts (the text after `## `) of a managed block's lines. A `### ` line is not a heading here. */
+function headingsOfLines(lines) {
+  const out = new Set();
+  for (const l of lines) {
+    const m = /^## (.*?)\s*$/.exec(l.replace(/\r?\n$/, ""));
+    if (m) out.add(m[1]);
+  }
+  return out;
+}
+
+/** The set of `## ` headings inside the ONE managed rules block ON DISK, as heading texts, or `null` when there
+ *  is no block to judge (no file, no markers, or an ambiguous arrangement): the refresh that asks never creates
+ *  a block, and never throws on a file the user is mid-way through fixing. It answers for EVERY conditional
+ *  section at once (gh-cfdude-pm-248 D4); it replaced the Spend-guard-only reader. */
+export function rulesBlockHeadings(platform = "claude-code") {
   let existing;
   try { existing = fs.readFileSync(rulesTarget(platform, engineRoot()), "utf8"); } catch { return null; }
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind !== "one") return null;
-  return arrangement.lines.slice(arrangement.i, arrangement.j + 1).some((l) => l.replace(/\r?\n$/, "") === "## Spend guard");
+  return headingsOfLines(arrangement.lines.slice(arrangement.i, arrangement.j + 1));
 }
 
 /** Write (or refresh) the managed rules block into whichever file `platform`'s precedence
@@ -1263,6 +1274,18 @@ export function writeRules(platform = "claude-code") {
     const body = lines[i].endsWith("\r\n") ? block.split("\n").join("\r\n") : block;
     next = lines.slice(0, i).join("") + body + lines.slice(j + 1).join("");
     errStream().write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
+    // gh-cfdude-pm-248 D5: a conditional section that APPEARS in an existing block is announced, here and not
+    // in the dispatch wrapper's refresh, because several verbs call writeRules() themselves and would otherwise
+    // find disk and state already agreeing. Only the conditional-sections table is announced: not the pointer,
+    // a tracker heading or anything an upgrade adds. A removal prints nothing new. Create and append never
+    // reach this branch, so `init` does not list every section.
+    const was = headingsOfLines(lines.slice(i, j + 1));
+    const now = headingsOfLines(block.split(/(?<=\n)/));
+    for (const row of CONDITIONAL_SECTIONS) {
+      if (now.has(row.heading) && !was.has(row.heading)) {
+        errStream().write(`conductor: "## ${row.heading}" is now carried by the managed block in ${name} — a session or agent that loaded it earlier does not have it; run \`rules\` to print the block.\n`);
+      }
+    }
   } else if (existing.trim()) {
     // Append with the file's own line ending: its first terminator, LF when it has none.
     const firstLf = existing.indexOf("\n");

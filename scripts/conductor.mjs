@@ -131,7 +131,7 @@ import { activity } from "./lib/activity-report.mjs";
 import { purgeLogs } from "./lib/purge-logs.mjs";
 import { recordActiveChange, setSpendTracking, spendEnabled } from "./lib/spend-tracking.mjs";
 import { spend } from "./lib/spend-command.mjs";
-import { overrideSpendGuard, refreshSpendGuardSection, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
+import { overrideSpendGuard, refreshConditionalSections, setSpendGuard, spendGuard } from "./lib/spend-guard-verbs.mjs";
 import { isInitialized } from "./lib/state.mjs";
 import { resolveSession, resolveSessionChecked } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
@@ -583,7 +583,7 @@ function runInvocation(argv, io = {}) {
       }
       // Its own guard: a failing activity append must not skip the timeline, nor the reverse.
       if (after && spendActiveBefore !== undefined) recordActiveChange(spendActiveBefore, after);
-      if (after && guardBefore && after.revision !== guardBefore.revision) refreshSpendGuardSection(guardBefore, after);
+      if (after && guardBefore && after.revision !== guardBefore.revision) refreshConditionalSections(guardBefore, after);
     }
   }
   // The SUCCESS path, written rather than left to fall off the end, so that `main()` RETURNS a
