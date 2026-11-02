@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "mutation-pass-is-a-required-task-item",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10981,7 +10981,7 @@
       "id": "mutation-pass-is-a-required-task-item",
       "title": "Required task items demand a call-site sweep and an inverse enumeration, and neither asks whether a new guard CAN fail — make the mutation pass a numbered required item with a durable artifact",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10995,10 +10995,11 @@
       "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
       "attributedCommits": [
         "576d1153a3913e82d614fb040f174b0146900777",
-        "acfa8e01d1eb5e14afad7ecd0c351a77eea9f788"
+        "acfa8e01d1eb5e14afad7ecd0c351a77eea9f788",
+        "82e8b8b0236ab69b4c37b49c9f64516fdc245bf8"
       ],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-11-02T23:15:42.459Z",
+      "touchedAt": "2026-11-02T23:31:54.231Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -11007,7 +11008,23 @@
         }
       ],
       "release": "0.54.0",
-      "startedAt": "2026-11-01T21:54:09.190Z"
+      "startedAt": "2026-11-01T21:54:09.190Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-02T23:31:54.225Z",
+        "reason": "Delivered by required gate-procedure item 8 and the mutation-pass skill: acfa8e01, 82e8b8b0 (plan 576d1153); superpowers lane, round-1 review pass-with-fixes applied."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-02T23:31:54.225Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Mintlify and README pages",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-02T23:31:54.226Z"
     },
     {
       "id": "functional-assertion-test-split",
@@ -12414,7 +12431,7 @@
       "id": "gh-cfdude-pm-211",
       "title": "A RED note is written against the release baseline and goes stale as its own change lands; nothing says what it is relative to",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -12430,7 +12447,7 @@
       "externalUpdatedAt": "2026-09-18T03:05:04Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:09.453Z",
-      "touchedAt": "2026-11-02T23:00:34.542Z",
+      "touchedAt": "2026-11-02T23:31:35.737Z",
       "release": "0.54.0",
       "trackerRefresh": {
         "verdict": "unchanged",
@@ -12438,7 +12455,23 @@
         "recordedAt": "2026-11-02T23:00:33.400Z",
         "externalUpdatedAt": "2026-09-18T03:05:04Z"
       },
-      "description": "A task list's RED notes ('fails today') are written against the release baseline, and earlier tasks of the same change land before the later task runs, so the note goes stale as its own change lands (measured: the-guard-covers-every-write-path task 2.7 stale after 2.4). Ask: a task-relative form ('fails after 2.4' / 'fails at baseline'), or an apply-time re-run of each RED task's named assertion when that task starts. Covered by the mutation-pass required task item, whose RED-note clause does both."
+      "description": "A task list's RED notes ('fails today') are written against the release baseline, and earlier tasks of the same change land before the later task runs, so the note goes stale as its own change lands (measured: the-guard-covers-every-write-path task 2.7 stale after 2.4). Ask: a task-relative form ('fails after 2.4' / 'fails at baseline'), or an apply-time re-run of each RED task's named assertion when that task starts. Covered by the mutation-pass required task item, whose RED-note clause does both.",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-02T23:31:35.732Z",
+        "reason": "Delivered by required gate-procedure item 8 (task-relative RED notes, re-run at task start): acfa8e01, 82e8b8b0 (plan 576d1153)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-02T23:31:35.731Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Mintlify and README pages",
+            "reason": "held for the 0.54.0 release docs pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-02T23:31:35.732Z"
     },
     {
       "id": "gh-cfdude-pm-210",
@@ -15996,7 +16029,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2289,
+  "revision": 2292,
   "reviewMode": "standard",
   "releases": [
     {
