@@ -10993,9 +10993,12 @@
       ],
       "reconcileNeeded": false,
       "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "576d1153a3913e82d614fb040f174b0146900777",
+        "acfa8e01d1eb5e14afad7ecd0c351a77eea9f788"
+      ],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-11-02T22:58:12.158Z",
+      "touchedAt": "2026-11-02T23:15:42.459Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -15993,7 +15996,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2287,
+  "revision": 2289,
   "reviewMode": "standard",
   "releases": [
     {
