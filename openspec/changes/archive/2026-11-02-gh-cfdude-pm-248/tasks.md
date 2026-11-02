@@ -227,7 +227,7 @@
       as each commit lands. Never attribute the archive move or the post-Gate-2 lifecycle commits.
 - [x] R.5 **Cross-spec review** (item 5). Done by 0.2. Re-run it if any spec in release 0.54.0 is
       amended after 0.2.
-- [ ] R.6 **Disposition** (item 6). Done by C.2.
+- [x] R.6 **Disposition** (item 6). Done by C.2.
 - [x] R.7 **Route what the work taught you** (item 7). Name each lesson's kind out loud.
       - Candidate practice: "a section gated on derived state is refreshed by comparing disk with
         state, not before with after", with the hand-edit evidence from 3.5.
@@ -256,5 +256,5 @@
 ## C. Close
 
 - [x] C.1 Re-record Gate 2 if anything was attributed after it.
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** Run `update-epic gh-cfdude-pm-248 --status archived --outcome delivered --reason "<why>" --no-deferrals` (or the deferral flags that apply), then `/pm:status`.
+- [x] C.2 <!-- pm:lifecycle --> **Disposition.** Run `update-epic gh-cfdude-pm-248 --status archived --outcome delivered --reason "<why>" --no-deferrals` (or the deferral flags that apply), then `/pm:status`.
 - [x] C.3 <!-- pm:lifecycle --> **Archive.** Run `/opsx:archive gh-cfdude-pm-248`. Do not attribute it.

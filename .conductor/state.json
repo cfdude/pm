@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-248",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -15163,7 +15163,7 @@
       "id": "gh-cfdude-pm-248",
       "title": "Lighter rules block: emit sections only for features the repo uses",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -15206,7 +15206,7 @@
         "74073f4b55f0ad8bd582830a61c5474f649be0b8"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T22:52:45.965Z",
+      "touchedAt": "2026-11-02T22:57:00.210Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15359,7 +15359,27 @@
           "lastVerdictAt": "2026-11-02T22:52:45.960Z",
           "lastPassAt": "2026-11-02T22:52:45.960Z"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-02T22:57:00.205Z",
+        "reason": "Usage-conditioned rules block delivered: Epic-level autonomy and Release candidate are emitted only while in use, an always-on 299 B pointer names the absent procedures, every conditional section is refreshed and announced from one table. A fresh repo's block drops from 34,094 B to 30,083 B (4,011 B saved, measure-6.1.txt). Commits ce9b47d7 72ec9ec0 38000175 135e8298 75356b1b 31108557 e59920ab fa497756 2c747b59 33b7b6b7 0ed06a24 3104bad4 0d3440b2 4a523e90 baf6b037 0976e015 74073f4b; Gate 1 and Gate 2 recorded as pass."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-02T22:57:00.186Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "Mintlify pages and changelog for the usage-conditioned rules block",
+            "reason": "held for the 0.54.0 release docs pass"
+          },
+          {
+            "what": "opt-in nudge running cost",
+            "reason": "registered as epic opt-in-nudge-shows-running-cost"
+          }
+        ]
+      },
+      "completedAt": "2026-11-02T22:57:00.205Z"
     },
     {
       "id": "gh-cfdude-pm-247",
@@ -15965,7 +15985,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2282,
+  "revision": 2284,
   "reviewMode": "standard",
   "releases": [
     {
