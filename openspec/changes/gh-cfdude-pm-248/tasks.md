@@ -84,7 +84,7 @@
       paragraph ungated; emit the pointer always; have `writeRules` pass no usage; have
       `rulesBlockFor` ignore its usage. Verify: `mutation-2.4.txt`, with every mutant dead or
       explained.
-- [ ] 2.5 Emitted-instruction coverage.
+- [x] 2.5 Emitted-instruction coverage.
       - `renderedRulesBlocks()` in `scripts/test/functional/emitted-invocations.test.mjs` (≈ lines
         532–545) renders only the full default block. Add renders with autonomy off,
         release-candidate off and both off, so the pointer's code spans are checked "runnable as
@@ -130,13 +130,13 @@
         calls `writeRules()` itself adds one (`set-spend-guard --max-failed-rounds 2`);
       - no line on `init`'s create or append, and none on a removal-only refresh.
       Verify: tests pass; `red-3.3.txt` saved.
-- [ ] 3.4 TDD (UNIT). Add a coverage guard. Render `rulesBlock()` over every combination of the
+- [x] 3.4 TDD (UNIT). Add a coverage guard. Render `rulesBlock()` over every combination of the
       spend-tracking, spend-guard, autonomy and release-candidate inputs, with no tracker. Every
       heading present in some combination and absent in another must be a row of
       `CONDITIONAL_SECTIONS` or the pointer. Tracker sections are out of scope: their headings are
       parameterised, and the tracker verbs refresh the block through their own `writeRules()`
       calls (design D4). Verify: the test fails when a row is deleted (recorded in 3.5).
-- [ ] 3.5 Mutation evidence for 3.1–3.4. Mutate: compare `before`/`after` instead of disk/state (the
+- [x] 3.5 Mutation evidence for 3.1–3.4. Mutate: compare `before`/`after` instead of disk/state (the
       hand-edit case must die); drop one table row; skip the hook exclusion; print the notice on
       removal; move the notice into the refresh only (the `set-spend-guard` case must die).
       Verify: `mutation-3.5.txt`, with every mutant dead or explained.
