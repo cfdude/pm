@@ -54,8 +54,12 @@
 - [ ] 2.1 Enumerate, mechanically and before editing, every test and fixture that asserts on a
       block rendered FROM STATE rather than from a direct `rulesBlock(` call. Run
       `rg -n "Epic-level autonomy|Release candidate|rules --sections|write-rules" scripts/test`
-      plus `rg -c "rulesBlock\(" scripts/test`. Verify: the list is saved as `callers-2.1.txt` with
-      each file marked "unchanged (default full)" or "changes", with the reason.
+      plus `rg -c "rulesBlock\(" scripts/test`, which gives 61 calls in 15 files on 2026-11-02;
+      re-derive the count. Also confirm design D7: run
+      `rg -n "autonomy|status|releases" scripts/lib/migrations.mjs`, show that no `MIGRATIONS` entry
+      writes any of the three, and show that conductor-15's upgrade fixture heals no autonomy holder.
+      Verify: the list is saved as `callers-2.1.txt`, with each file marked "unchanged (default
+      full)" or "changes" and its reason, plus the D7 evidence.
 - [ ] 2.2 TDD (UNIT). Add `rulesBlock()`'s trailing `usage = FULL_USAGE` parameter (design D1). Each
       section is emitted only when its flag is true, and the outward-tracker "Epic-level autonomy on
       tracker-linked epics" paragraph follows `usage.autonomy`. `## Procedures emitted on use`
@@ -67,7 +71,9 @@
       equals the call with both flags true, and turning a flag off removes exactly that section
       (plus the tracker paragraph for autonomy) and adds the pointer. Verify: unit tests pass;
       `red-2.2.txt` saved.
-- [ ] 2.3 TDD (FILE). `writeRules()` and the `rules` verb pass `currentRulesUsage()`. Cover the
+- [ ] 2.3 TDD (FILE). `writeRules()` and the `rules` verb pass `currentRulesUsage()`.
+      `overhead.rulesBlockFor(state, platform, usage = rulesUsage(state))` takes usage as a parameter
+      (design D6), so every render path reads the predicate when this task lands. Cover the
       following, then update every file 2.1 marked "changes":
       - a fresh `init` writes neither section and does write the pointer;
       - `rules` and `write-rules` agree for the same state;
@@ -75,8 +81,20 @@
         relationally rather than against a stored count.
       Verify: assert tests pass; `red-2.3.txt` saved.
 - [ ] 2.4 Mutation evidence for 2.2–2.3. Mutate: emit autonomy unconditionally; leave the tracker
-      paragraph ungated; emit the pointer always; have `writeRules` pass no usage. Verify:
-      `mutation-2.4.txt`, with every mutant dead or explained.
+      paragraph ungated; emit the pointer always; have `writeRules` pass no usage; have
+      `rulesBlockFor` ignore its usage. Verify: `mutation-2.4.txt`, with every mutant dead or
+      explained.
+- [ ] 2.5 Emitted-instruction coverage.
+      - `renderedRulesBlocks()` in `scripts/test/functional/emitted-invocations.test.mjs` (≈ lines
+        532–545) renders only the full default block. Add renders with autonomy off,
+        release-candidate off and both off, so the pointer's code spans are checked "runnable as
+        written". A bare `release` span is the likely failure; write the span as the runnable form
+        the check accepts.
+      - Update its assertion twin of the same id in the same commit (diff coupling).
+      - Add judged entries in `scripts/test/sweeps/output-interpolations.judged.mjs` for the
+        pointer's line builder and the appearance-notice string.
+      - Certify `functional` and `sweeps` over the staged index.
+      Verify: both certify runs pass, and the drift check accepts the twin.
 
 ## 3. One refresh for every conditional section
 
@@ -88,7 +106,11 @@
       `refreshConditionalSections(before, after)` over the `CONDITIONAL_SECTIONS` table (design D4),
       still called only from the dispatch wrapper's existing non-hook `guardBefore` branch. Cover
       the following:
-      - every scenario of "The block on disk follows every usage condition…";
+      - every scenario of "The block on disk follows every conditional section…", including the
+        `commit-nudge` archive self-heal: no comparison in the hook, then the refresh on the next
+        non-hook write;
+      - the refresh-failure warning names the disagreeing section and `write-rules`, in wording
+        that is not specific to spend guard;
       - every scenario of the `epic-autonomy` requirement: first record, level off, archive,
         `remove-epic`, un-archive, archived holder alone;
       - every scenario of the MODIFIED `release-candidate-review` requirement: first release,
@@ -98,14 +120,21 @@
       passes; `red-3.2.txt` saved.
 - [ ] 3.3 TDD (FILE). Add the appearance notice inside `writeRules()` on its in-place refresh path
       (design D5). Assert the following:
-      - one stderr line per added heading, naming the heading and `rules`;
+      - one stderr line per added heading in `CONDITIONAL_SECTIONS`, naming the heading and
+        `rules`, and no line for any other heading: the pointer, a tracker heading added by
+        `set-tracker`, or a heading an upgrade adds;
+      - archiving the last autonomy holder while an undelivered release exists adds the pointer
+        and prints no appearance line;
       - a line both when the wrapper's refresh adds a section (`set-autonomy`) and when a verb that
         calls `writeRules()` itself adds one (`set-spend-guard --max-failed-rounds 2`);
       - no line on `init`'s create or append, and none on a removal-only refresh.
       Verify: tests pass; `red-3.3.txt` saved.
-- [ ] 3.4 TDD (UNIT). Add a coverage guard: every heading `rulesBlock()` emits under SOME usage, tracker
-      or spend combination and omits under another is a row of `CONDITIONAL_SECTIONS`. Verify: the
-      test fails when a row is deleted (recorded in 3.5).
+- [ ] 3.4 TDD (UNIT). Add a coverage guard. Render `rulesBlock()` over every combination of the
+      spend-tracking, spend-guard, autonomy and release-candidate inputs, with no tracker. Every
+      heading present in some combination and absent in another must be a row of
+      `CONDITIONAL_SECTIONS` or the pointer. Tracker sections are out of scope: their headings are
+      parameterised, and the tracker verbs refresh the block through their own `writeRules()`
+      calls (design D4). Verify: the test fails when a row is deleted (recorded in 3.5).
 - [ ] 3.5 Mutation evidence for 3.1–3.4. Mutate: compare `before`/`after` instead of disk/state (the
       hand-edit case must die); drop one table row; skip the hook exclusion; print the notice on
       removal; move the notice into the refresh only (the `set-spend-guard` case must die).
@@ -113,16 +142,18 @@
 
 ## 4. Overhead counts what the hypothetical uses
 
-- [ ] 4.1 TDD (UNIT). `rulesBlockFor()` passes `rulesUsage(state)`. `hypotheticalState()` seeds an
-      autonomy epic and an undelivered release only when absent, and `HYPOTHETICAL.description`
-      names both. `SURFACE_FEATURES` gains `rules:procedures-emitted-on-use: core`. Cover every
-      scenario of the MODIFIED `pm-overhead` requirement. Verify: unit tests and the README-table
-      test pass once README gains the pointer's row (same commit); `red-4.1.txt` saved. The
-      feature-switches README-table test forces this README edit into the code commit. A dispatched
-      implementer therefore needs the orchestrator's explicit leave to touch README here, because
-      `.claude/agent-startup.md` reserves README for the orchestrator.
-- [ ] 4.2 Mutation evidence for 4.1. Mutate: seed no autonomy epic; seed a delivered release; drop the
-      map row. Verify: `mutation-4.2.txt`.
+- [ ] 4.1 TDD (UNIT). `--all-features` renders the hypothetical's block with `FULL_USAGE` (design
+      D6). `hypotheticalState()` is unchanged, so no epic or release is seeded and the brief's bytes
+      do not move. `SURFACE_FEATURES` gains `rules:procedures-emitted-on-use: core`. Cover every
+      scenario of the MODIFIED `pm-overhead` and `feature-switches` requirements.
+      - **README is approved for this task**, limited to the new section's table row (the
+        orchestrator approved it on 2026-11-02, overriding `.claude/agent-startup.md` for this row
+        only). The row's cost comes from `overhead` in a freshly initialised repo, and the row says
+        so.
+      - The feature-switches README-table test forces the row into the same commit.
+      Verify: the unit tests and the README-table test pass; `red-4.1.txt` saved.
+- [ ] 4.2 Mutation evidence for 4.1. Mutate: pass the real usage to the hypothetical (the "counted
+      under the hypothetical" scenario must die); drop the map row. Verify: `mutation-4.2.txt`.
 
 ## 5. Shipped mirrors and the changeset
 
@@ -133,7 +164,8 @@
         into a dispatch when the appearance notice fired this session.
       - `commands/epic.md` `set-autonomy`: the first record adds the section, and the notice.
       - `commands/upgrade.md`: the `rules` row and the conditional sections.
-      - `commands/overhead.md`: the hypothetical's seeds.
+      - `commands/overhead.md`: `--all-features` counts both sections at full usage; the pointer
+        appears only in a real report.
       - `docs/parity-ledger.json`: the release-candidate description, "emitted while an undelivered
         release exists".
       - `docs/rules-block-session-cost.md`.
@@ -167,15 +199,25 @@
         archive moves), epic existence (`remove-epic`, `add-epic`, `add-many`, `sync`) and
         `state.releases`/`delivered` (`release` create, `--deliver`, `--undeliver`). For each one,
         state that it runs inside the dispatch wrapper's non-hook branch (`verb-effects.mjs`), or
-        why not. Name any hook that writes one (none expected) and why it is excluded.
+        why not.
+      - Hooks DO write one input. `reconcileArchived()` (`scripts/lib/epic-progress.mjs:204`) sets
+        `status = "archived"` from the `commit-nudge` hook (`scripts/lib/subcommands.mjs:854`), from
+        `render()`'s self-heal and from `upgrade` (`scripts/lib/migrations.mjs:235`). State for each
+        how the block catches up: the next non-hook write's refresh for the hooks, `writeRules()`
+        for upgrade. The exclusion of hooks from the comparison is justified by the spend-guard
+        precedent.
       - (c) Every referrer of the two sections in emitted text, skills, commands, agents and docs
-        (`rg -n "Epic-level autonomy|Release candidate|decision-rule"`). State whether each still
-        resolves while the section is absent.
+        (`rg -n -i "epic-level[- ]autonomy|release[- ]candidate|decision[- ]rule"`, which also
+        reaches `scripts/lib/spend-guard.mjs` ≈ 372–376 and `rules.mjs` ≈ 783). State whether each
+        still resolves while the section is absent.
       - (d) **Inverses.** Section added versus retired for each condition: autonomy (record added ↔
         epic archived or removed; un-archive restores) and release (created ↔ `--deliver`;
         `--undeliver` restores). Release REMOVAL has no verb, so name it as an unshipped inverse,
         justified by the disposition rule (records end, they are not deleted) and covered by the
-        hand-edit scenario. The appearance notice has no inverse line, by design D5.
+        hand-edit scenario. Removing an autonomy record has no verb either: `set-autonomy` appends
+        or revokes and never deletes `epic.autonomy`. That is the same justification (a safety
+        record is kept), covered by archive and `remove-epic`. The appearance notice has no
+        inverse line, by design D5.
 - [ ] R.2 **Verify against the commit** (item 2). For every task commit, run `git show --stat <sha>`
       and assert that each file the task claims is in that commit.
 - [ ] R.3 **Lifecycle marker** (item 3). C.2 and C.3 carry `<!-- pm:lifecycle -->` on their own task

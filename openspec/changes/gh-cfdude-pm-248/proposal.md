@@ -29,11 +29,11 @@ item to the gate procedure, and it only fits once this change has freed that spa
   covering every usage-conditioned section. After any non-hook verb that wrote state, the block on
   disk is rewritten only when a conditional section's presence disagrees with state. A hand-edit of
   `state.json` is therefore corrected by the next engine write.
-- When a refresh ADDS a section, the engine prints a notice that the session's loaded copy of the
+- When any write of an existing block ADDS a conditional section, the engine prints a notice that the session's loaded copy of the
   block predates it and that `rules` prints it. A session that has just granted autonomy would
   otherwise act without the decision rule.
-- `overhead --all-features` seeds an autonomy epic and an undelivered release in its hypothetical,
-  so the every-feature-on figure still counts both sections.
+- `overhead --all-features` renders its hypothetical's block at full usage, so the every-feature-on
+  figure still counts both sections without seeding fake records.
 - No new `OPT_INS` id and no new dial. The gate procedure (12,023 B) and every other section stay
   unconditional.
 - Existing repos lose both sections at their next `upgrade` or state write, unless they use the
@@ -53,15 +53,17 @@ None.
   inverses (archive, `remove-epic`, un-archive).
 - `release-candidate-review`: the rules block carries the Release candidate section only while an
   undelivered release exists (`--deliver` retires it, `--undeliver` restores it).
-- `pm-overhead`: the `--all-features` hypothetical seeds what the conditional sections need.
+- `pm-overhead`: `--all-features` renders the block at full usage; the real report reads the repo's.
+- `feature-switches`: the pointer's README cost row comes from a fresh repo's `overhead`, because
+  `--all-features` never produces the pointer.
 
 ## Impact
 
 - Engine: `scripts/lib/rules.mjs` (`rulesBlock`, `writeRules`, `rulesBlockShowsSpendGuard`),
   `scripts/lib/spend-guard-verbs.mjs` (`refreshSpendGuardSection`, generalised),
   `scripts/conductor.mjs` (the `rules` verb and the dispatch wrapper's refresh call),
-  `scripts/lib/overhead.mjs` (`rulesBlockFor`, `hypotheticalState`, `SURFACE_FEATURES`).
-- Tests: about 20 `rulesBlock(` callers keep the full block by default. Fixtures that assert on a
+  `scripts/lib/overhead.mjs` (`rulesBlockFor`, `SURFACE_FEATURES`).
+- Tests: 61 `rulesBlock(` calls in 15 test files keep the full block by default. Fixtures that assert on a
   freshly written block change. New unit and file-rung tests are added, and the functional test
   `emitted-invocations.test.mjs` and sweep `output-interpolations.judged.mjs` are re-certified.
 - Docs: `skills/conductor/SKILL.md` (preflight section's pointer to the decision rule),
