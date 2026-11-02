@@ -143,7 +143,7 @@
 
 ## 4. Overhead counts what the hypothetical uses
 
-- [ ] 4.1 TDD (UNIT). `--all-features` renders the hypothetical's block with `FULL_USAGE` (design
+- [x] 4.1 TDD (UNIT). `--all-features` renders the hypothetical's block with `FULL_USAGE` (design
       D6). `hypotheticalState()` is unchanged, so no epic or release is seeded and the brief's bytes
       do not move. `SURFACE_FEATURES` gains `rules:procedures-emitted-on-use: core`. Cover every
       scenario of the MODIFIED `pm-overhead` and `feature-switches` requirements.

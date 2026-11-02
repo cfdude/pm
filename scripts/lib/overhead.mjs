@@ -24,6 +24,7 @@ import { rulesBlock } from "./rules.mjs";
 import { profileContext } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { guardConfigured } from "./spend-guard.mjs";
+import { FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 import { OPT_INS } from "./opt-ins.mjs";
 import { BRIEF_BYTE_CAP, byteSize, estimateTokens, fitBrief, rulesBlockSections } from "./session-cost.mjs";
 import { buildBriefParts } from "./briefing.mjs";
@@ -53,6 +54,9 @@ export const SURFACE_FEATURES = {
   "rules:intake": CORE,
   "rules:reporting": CORE,
   "rules:epic-level-autonomy": CORE,
+  // Emitted while either usage-conditioned section is absent (gh-cfdude-pm-248 D3). --all-features never
+  // produces it (its hypothetical is rendered at full usage), so its README cost is a fresh repo's `overhead`.
+  "rules:procedures-emitted-on-use": CORE,
   // Emitted whatever the profile holds; only reviewMode changes a VALUE inside it (design D2a).
   "rules:execution-profile": CORE,
   "rules:spend-tracking": "spendTracking",
@@ -160,19 +164,19 @@ export function hookVerbs(root = pluginRoot()) {
 }
 
 /** The managed rules block for `state`, built from the record alone (no reads). */
-export function rulesBlockFor(state, platform = "claude-code") {
+export function rulesBlockFor(state, platform = "claude-code", usage = rulesUsage(state)) {
   const s = state || {};
   const tracker = s.tracker && s.tracker.system ? s.tracker : null;
   const mode = typeof s.reviewMode === "string" && s.reviewMode ? s.reviewMode : "standard";
   const secondary = Array.isArray(s.secondaryTrackers) ? s.secondaryTrackers : [];
-  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s));
+  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage);
 }
 
 /** Every surface for `state`. PURE over its inputs: `listings`, `hooks` and `lessons` are handed in. */
-export function collectSurfaces(state, { platform = "claude-code", listings = [], hooks = [], lessons = [] } = {}) {
+export function collectSurfaces(state, { platform = "claude-code", listings = [], hooks = [], lessons = [], usage = rulesUsage(state) } = {}) {
   const out = [];
   const seen = new Map();
-  for (const sec of rulesBlockSections(rulesBlockFor(state, platform))) {
+  for (const sec of rulesBlockSections(rulesBlockFor(state, platform, usage))) {
     const base = `rules:${slug(sec.heading)}`;
     const n = (seen.get(base) || 0) + 1;
     seen.set(base, n);
@@ -246,7 +250,9 @@ export function buildReport(state, inputs = {}) {
 /** `--all-features`: the same report over the hypothetical, plus each feature's delta against the real state. */
 export function buildHypotheticalReport(state, inputs = {}) {
   const real = buildReport(state, inputs);
-  const hyp = buildReport(hypotheticalState(state), inputs);
+  // gh-cfdude-pm-248 D6: the hypothetical counts the usage-conditioned sections at FULL usage WITHOUT seeding an
+  // epic or a release (which would also add RELEASES lines to the brief and move its bytes).
+  const hyp = buildReport(hypotheticalState(state), { ...inputs, usage: FULL_USAGE });
   hyp.hypothetical = { ...HYPOTHETICAL };
   for (const [id, f] of Object.entries(hyp.features)) {
     const r = real.features[id];

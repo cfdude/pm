@@ -1818,6 +1818,7 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:intake` | core | ~834 tokens | no switch: below the threshold after the shrink (it was ~1,006), and held under 900 by a test |
 | `rules:reporting` | core | ~714 tokens | no switch: below the threshold, and it forbids dropping a recorded fact |
 | `rules:epic-level-autonomy` | core | ~785 tokens | no switch: below the threshold, and it holds the safety stops |
+| `rules:procedures-emitted-on-use` | core | ~75 tokens, measured by `overhead` in a freshly initialised repo (not by `overhead --all-features`, which counts the sections it stands in for) | no switch: below the threshold; it points at the autonomy and release-candidate procedures while those sections are not in use |
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
 | `rules:release-candidate` | core | ~294 tokens | no switch: below the threshold |
 | `rules:feedback` | core | ~194 tokens | no switch: below the threshold |

@@ -1,0 +1,176 @@
+✖ 4.1 the pointer is a core surface in the map (1.068166ms)
+✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section (7.603ms)
+✔ 4.1 the real report reads the repo's usage: a record and an open release bring the sections and drop the pointer (2.695ms)
+✔ 4.1 --all-features counts both sections under the hypothetical and lists no pointer (3.898541ms)
+✔ 4.1 the hypothetical seeds no epic and no release, so the brief's bytes do not move (4.93025ms)
+✔ 4.1 the hypothetical ignores the real state's usage: a repo already using both reports the same two sections (6.162291ms)
+✖ 4.1 rulesBlockFor takes the usage as a parameter; the default is the state's own answers (0.529792ms)
+✔ 4.1 collectSurfaces accepts the usage in its inputs (1.710375ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 5
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 255.013125
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 the pointer is a core surface in the map (1.068166ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/overhead-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'core'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/overhead-usage.test.mjs:25:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'core',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section (7.603ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/overhead-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!ids(r).includes(AUTONOMY) && !ids(r).includes(RC))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/overhead-usage.test.mjs:30:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 4.1 rulesBlockFor takes the usage as a parameter; the default is the state's own answers (0.529792ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/overhead-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!fresh.includes("## Epic-level autonomy") && fresh.includes("## Procedures emitted on use"))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/overhead-usage.test.mjs:65:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+=== README-table RED (map row added, README row not yet) ===
+✖ 1.2 the README table covers exactly the surface ids the overhead map holds (16.0205ms)
+✖ 1.2 a surface missing from the table fails, naming the id (3.217459ms)
+✖ 1.2 a table row for an unknown surface fails, naming the id (5.699291ms)
+✔ 1.2 every map feature id is assigned and every table row names its feature and a switch decision (4.765709ms)
+✔ 1.2 the listings row says `no switch` and gives the reason (0.140959ms)
+✔ 1.2 a record-integrity rule is never switched: the gate procedure row says `no switch` with its reason (0.102166ms)
+✔ 1.2 the spend-tracking row names the real verb and its own cost; the table says every figure is an estimate (0.133458ms)
+✔ a new repo pays nothing for developer features: spend tracking, spend guard and the developer log are off at 0 bytes (110.987208ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 5
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 410.90325
+
+✖ failing tests:
+
+test at scripts/test/assert/feature-cost-table.test.mjs:53:1
+✖ 1.2 the README table covers exactly the surface ids the overhead map holds (16.0205ms)
+  AssertionError [ERR_ASSERTION]: surfaces the map holds with no README row: rules:procedures-emitted-on-use
+  + actual - expected
+  
+  + [
+  +   'rules:procedures-emitted-on-use'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/feature-cost-table.test.mjs:55:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'rules:procedures-emitted-on-use' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/feature-cost-table.test.mjs:59:1
+✖ 1.2 a surface missing from the table fails, naming the id (3.217459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'rules:a-section-added-later',
+  +   'rules:procedures-emitted-on-use'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/feature-cost-table.test.mjs:62:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'rules:a-section-added-later', 'rules:procedures-emitted-on-use' ],
+    expected: [ 'rules:a-section-added-later' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/feature-cost-table.test.mjs:65:1
+✖ 1.2 a table row for an unknown surface fails, naming the id (5.699291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'rules:feedback',
+  +   'rules:procedures-emitted-on-use'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/feature-cost-table.test.mjs:70:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'rules:feedback', 'rules:procedures-emitted-on-use' ],
+    expected: [ 'rules:feedback' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
