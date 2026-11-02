@@ -15872,7 +15872,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2262,
+  "revision": 2263,
   "reviewMode": "standard",
   "releases": [
     {
@@ -16563,7 +16563,7 @@
       "deferred": [],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-11-01T16:33:09.664Z",
+        "reviewedAt": "2026-11-02T19:47:16.322Z",
         "specs": [
           {
             "key": "backlog-grooming-pass/specs/backlog-grooming/spec.md",
@@ -16572,12 +16572,36 @@
           {
             "key": "backlog-grooming-pass/specs/epic-list/spec.md",
             "sha256": "adc608fcac3f0e9d7e7a9c55ae28edfea6a43fdf7fe4599a8a533db4645fe17d"
+          },
+          {
+            "key": "gh-cfdude-pm-248/specs/emitted-instructions/spec.md",
+            "sha256": "2eaefa6d913ba4b4185a8ecb36287ffa403b1dc81f6beeb94b37702da88e1eba"
+          },
+          {
+            "key": "gh-cfdude-pm-248/specs/epic-autonomy/spec.md",
+            "sha256": "f9ae564d0cc37186cb53c573301daab8eee3f779afe938836ae330a729b17b5a"
+          },
+          {
+            "key": "gh-cfdude-pm-248/specs/feature-switches/spec.md",
+            "sha256": "e974e0166b11142ef89a7915d19ca34a559b3317fdb12e923fb46c06de4349d9"
+          },
+          {
+            "key": "gh-cfdude-pm-248/specs/managed-rules-block/spec.md",
+            "sha256": "829418e6d7ed728c47a1a50f976261f603ddd36ee58c2a435cdc02f50f580c36"
+          },
+          {
+            "key": "gh-cfdude-pm-248/specs/pm-overhead/spec.md",
+            "sha256": "bd313dac7fb7e26fb93393822d3cdaf47b1c1c2ba838c047ec030a05d43393d6"
+          },
+          {
+            "key": "gh-cfdude-pm-248/specs/release-candidate-review/spec.md",
+            "sha256": "4fc85dcef841669d6b6d8ce7490ce986e1f521549bbaaf5f7998aa39f3039946"
           }
         ],
-        "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 619999c0, round 2 no BLOCKS, live run of the combined call exit 0",
+        "reviewer": "opus fresh-context 2026-11-02: 1 BLOCK (hook-vs-same-write contradiction) fixed in 12dff931, verified by validate --strict, not re-reviewed per one-round rule; the added emitted-instructions MODIFIED delta is unreviewed POLISH-class",
         "superseded": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-01T16:21:31.349Z",
+          "reviewedAt": "2026-11-01T16:33:09.664Z",
           "specs": [
             {
               "key": "backlog-grooming-pass/specs/backlog-grooming/spec.md",
@@ -16588,7 +16612,7 @@
               "sha256": "adc608fcac3f0e9d7e7a9c55ae28edfea6a43fdf7fe4599a8a533db4645fe17d"
             }
           ],
-          "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 77f0e83548b41695824232d3c0258ba3642750a8, round 2 no BLOCKS, live run of the combined call exit 0"
+          "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 619999c0, round 2 no BLOCKS, live run of the combined call exit 0"
         }
       }
     }
