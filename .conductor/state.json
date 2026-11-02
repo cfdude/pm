@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "mutation-pass-is-a-required-task-item",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -10981,7 +10981,7 @@
       "id": "mutation-pass-is-a-required-task-item",
       "title": "Required task items demand a call-site sweep and an inverse enumeration, and neither asks whether a new guard CAN fail — make the mutation pass a numbered required item with a durable artifact",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -10995,7 +10995,7 @@
       "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
       "attributedCommits": [],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-11-02T18:58:13.965Z",
+      "touchedAt": "2026-11-02T22:58:12.158Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -15985,7 +15985,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2284,
+  "revision": 2285,
   "reviewMode": "standard",
   "releases": [
     {
