@@ -35,7 +35,7 @@
 
 ## 1. One predicate per usage-conditioned section
 
-- [ ] 1.1 TDD (UNIT). Add a pure `rulesUsage(state)` returning `{ autonomy, releaseCandidate }`
+- [x] 1.1 TDD (UNIT). Add a pure `rulesUsage(state)` returning `{ autonomy, releaseCandidate }`
       (design D2). Cover the following:
       - no epics;
       - an autonomy record on a non-archived epic at level `autonomous` and at level `off`;
