@@ -32,6 +32,7 @@ import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
+import { FULL_USAGE } from "./rules-usage.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -690,7 +691,27 @@ function spendTrackingLines() {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false) {
+export const PROCEDURES_HEADING = "## Procedures emitted on use";
+
+/** The always-on pointer that stands in for an absent usage-conditioned section (gh-cfdude-pm-248 D3):
+ *  one line per ABSENT procedure, naming the skill to load before its first use, so a rule that governs
+ *  the first write ("before flipping the switch") is never first met after it. Empty while both
+ *  sections are carried. At most 400 bytes, held by a test. The command spans are written as the
+ *  runnable forms the emitted-invocation sweep accepts. */
+export function proceduresEmittedOnUseLines(usage = FULL_USAGE) {
+  if (usage.autonomy && usage.releaseCandidate) return [];
+  return [
+    PROCEDURES_HEADING,
+    "",
+    ...(usage.autonomy ? [] : ["- Before `set-autonomy <id> --context \"<note>\"`, load the `conductor` skill's \"Epic-level autonomy — the preflight scan\"."]),
+    ...(usage.releaseCandidate ? [] : ["- Before `release <id> --intent \"<why>\"`, load the `release-candidate` skill."]),
+    "",
+    "The omitted section joins this block once its feature is in use.",
+    "",
+  ];
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -810,6 +831,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...reportingLines(platform),
     "",
+    ...(usage.autonomy ? [
     "## Epic-level autonomy",
     "",
     "An epic's `autonomy` block (`.conductor/state.json`) can grant it broad execution trust —",
@@ -851,6 +873,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   from that log, not from memory), with an explicit \"are you OK with these?\" checkpoint, THEN",
     "   run tests. Leave room to iterate — including rewriting code — if the user is not satisfied.",
     "",
+    ] : []),
+    ...proceduresEmittedOnUseLines(usage),
     "## Execution profile",
     "",
     "How intensely to review, which model and effort each job role runs on, and how often you report.",
@@ -886,6 +910,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...(spend ? spendTrackingLines() : []),
     ...(guard ? spendGuardLines() : []),
+    ...(usage.releaseCandidate ? [
     "## Release candidate",
     "",
     "Building a release from several changes? Do not run a Gate 2 round per change: batch the work by",
@@ -905,6 +930,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "the last fix has merged. A verdict recorded before a fix is stale. `release show` reads whether the",
     "members converged.",
     "",
+    ] : []),
     "## Feedback — don't let friction stay silent",
     "",
     "If you hit a bug, a missing CLI verb, an unexpected limitation, or repeated friction",
@@ -948,6 +974,10 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         `- A parent epic → create it as a ${sys} epic and link its children.`,
         "The SessionStart brief lists epics not yet mirrored under `TRACKER SYNC`. Status-transition",
         "sync is your responsibility on every status change (the brief does not fabricate it).",
+      );
+      // The paragraph cites the autonomy decision rule's item (d), so it is emitted only while that
+      // section is (gh-cfdude-pm-248 D1): no line may point at an absent section.
+      if (usage.autonomy) lines.push(
         "",
         "**Epic-level autonomy on tracker-linked epics:** before running the preflight scan on a",
         `tracker-linked epic, pull the ${sys} issue + its child stories/subtasks with your own`,

@@ -1,0 +1,250 @@
+✔ 2.2 FULL_USAGE is the parameter's default: a call with no usage equals a call with both true (4.195667ms)
+✔ 2.2 the default render carries both sections and no pointer (0.412ms)
+✖ 2.2 autonomy off removes exactly the autonomy section and puts the pointer in its slot (1.127667ms)
+✖ 2.2 release candidate off removes exactly that section and adds the pointer (1.973542ms)
+✖ 2.2 both off: neither section, one pointer, every other section byte-identical (0.565667ms)
+✖ 2.2 the pointer sits after Reporting and before Execution profile (0.27825ms)
+✔ 2.2 the gate procedure, Intake and Reporting are emitted under every usage answer, byte-identical (1.0065ms)
+✖ 2.2 the pointer names only the absent procedures (0.125875ms)
+✖ 2.2 the pointer is absent when both sections are carried, and is at most 400 bytes otherwise (0.32825ms)
+✖ 2.2 the pointer ends with the line saying the omitted section joins the block when the feature is in use (0.119167ms)
+✖ 2.2 an outward tracker's autonomy paragraph follows usage.autonomy, and nothing else in the tracker section moves (0.582208ms)
+✔ 2.2 release candidate off leaves the tracker paragraph alone (0.195667ms)
+✔ 2.2 an inward-only tracker never carried the paragraph, under any usage (0.60775ms)
+✖ 2.2 no line emitted while the autonomy section is absent points at it (1.06ms)
+✖ 2.2 the usage answers are independent of the spend toggles (0.407208ms)
+✖ 2.2 every platform renders the pointer with its own command form and a single copy (0.32275ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 5
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 164.1785
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 autonomy off removes exactly the autonomy section and puts the pointer in its slot (1.127667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: the pointer takes the autonomy slot, nothing else moves
+  + actual - expected
+  
+    [
+      'PM Conductor — operating rules',
+      'Getting help with pm — two channels, and which one can lie',
+      'The gate procedure — required task items',
+      'Intake — triage an ask against the whole backlog BEFORE registering it',
+      'Reporting — pm owns what is recorded and what is said; you own how you say it',
+  +   'Epic-level autonomy',
+  -   'Procedures emitted on use',
+      'Execution profile',
+      'Release candidate',
+      "Feedback — don't let friction stay silent",
+      'Re-read the source before an epic becomes the work'
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:63:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'PM Conductor — operating rules', 'Getting help with pm — two channels, and which one can lie', 'The gate procedure — required task items', 'Intake — triage an ask against the whole backlog BEFORE registering it', 'Reporting — pm owns what is recorded and what is said; you own how you say it', 'Epic-level autonomy', 'Execution profile', 'Release candidate', "Feedback — don't let friction stay silent", 'Re-read the source before an epic becomes the work' ],
+    expected: [ 'PM Conductor — operating rules', 'Getting help with pm — two channels, and which one can lie', 'The gate procedure — required task items', 'Intake — triage an ask against the whole backlog BEFORE registering it', 'Reporting — pm owns what is recorded and what is said; you own how you say it', 'Procedures emitted on use', 'Execution profile', 'Release candidate', "Feedback — don't let friction stay silent", 'Re-read the source before an epic becomes the work' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 release candidate off removes exactly that section and adds the pointer (1.973542ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!oh.includes(RC) && oh.includes(POINTER))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:75:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 both off: neither section, one pointer, every other section byte-identical (0.565667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!off.has(AUTONOMY) && !off.has(RC) && off.has(POINTER))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:83:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 the pointer sits after Reporting and before Execution profile (0.27825ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  TypeError: Cannot read properties of undefined (reading 'startsWith')
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:91:22
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 the pointer names only the absent procedures (0.125875ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /set-autonomy/. Input:
+  
+  ''
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:103:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /set-autonomy/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 the pointer is absent when both sections are carried, and is at most 400 bytes otherwise (0.32825ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  TypeError: Cannot read properties of undefined (reading 'text')
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:120:56
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 the pointer ends with the line saying the omitted section joins the block when the feature is in use (0.119167ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /joins this block once its feature is in use/. Input:
+  
+  ''
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:128:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /joins this block once its feature is in use/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 an outward tracker's autonomy paragraph follows usage.autonomy, and nothing else in the tracker section moves (0.582208ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!off.includes(TRACKER_PARAGRAPH))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:135:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 no line emitted while the autonomy section is absent points at it (1.06ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!/## Epic-level autonomy/.test(off))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:158:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 the usage answers are independent of the spend toggles (0.407208ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(h.includes("Spend tracking") && h.includes("Spend guard") && h.includes(POINTER))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:166:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 2.2 every platform renders the pointer with its own command form and a single copy (0.32275ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs]
+  AssertionError [ERR_ASSERTION]: claude-code
+  
+  0 !== 1
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage-emission.test.mjs:173:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

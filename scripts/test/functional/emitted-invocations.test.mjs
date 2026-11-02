@@ -543,6 +543,16 @@ export async function renderedRulesBlocks() {
     // spend-budget-and-stuck-loop-guard: the Spend guard section, so `spend-guard <epic>` and the override
     // invocation are checked like every other shipped instruction.
     out.push({ label: `rules[${platform} · spend guard on]`, text: rulesBlock(null, "standard", [], platform, null, false, true) });
+    // gh-cfdude-pm-248: the usage-off renders, so the always-on pointer's code spans are checked
+    // "runnable as written" like every other shipped instruction. The default argument above is the full
+    // block; each of these omits one usage-conditioned section (or both) and carries the pointer instead.
+    for (const [name, usage] of [
+      ["autonomy off", { autonomy: false, releaseCandidate: true }],
+      ["release candidate off", { autonomy: true, releaseCandidate: false }],
+      ["both usage answers off", { autonomy: false, releaseCandidate: false }],
+    ]) {
+      out.push({ label: `rules[${platform} · ${name}]`, text: rulesBlock(null, "standard", [], platform, null, false, false, usage) });
+    }
   }
   return out;
 }

@@ -518,6 +518,11 @@ export const ALWAYS_ON_HEADINGS = [
   "## Review mode",
   // converged-release-candidate-review: an always-on pointer to the release-candidate skill.
   "## Release candidate",
+  // gh-cfdude-pm-248: the autonomy and release-candidate sections are emitted only while in use, and the
+  // always-on pointer stands in for an absent one. A fresh state carries the pointer and neither section
+  // while the frozen 0.26.0 fixtures carry both sections, so each side of a comparison drops them all.
+  "## Epic-level autonomy",
+  "## Procedures emitted on use",
 ];
 export const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 

@@ -60,7 +60,7 @@
       writes any of the three, and show that conductor-15's upgrade fixture heals no autonomy holder.
       Verify: the list is saved as `callers-2.1.txt`, with each file marked "unchanged (default
       full)" or "changes" and its reason, plus the D7 evidence.
-- [ ] 2.2 TDD (UNIT). Add `rulesBlock()`'s trailing `usage = FULL_USAGE` parameter (design D1). Each
+- [x] 2.2 TDD (UNIT). Add `rulesBlock()`'s trailing `usage = FULL_USAGE` parameter (design D1). Each
       section is emitted only when its flag is true, and the outward-tracker "Epic-level autonomy on
       tracker-linked epics" paragraph follows `usage.autonomy`. `## Procedures emitted on use`
       (design D3) names only the absent procedures, stays within 400 bytes, and is absent when both
