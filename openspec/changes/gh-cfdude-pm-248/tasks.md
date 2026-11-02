@@ -80,7 +80,7 @@
       - the gate procedure's bytes equal those in the default (full) render, compared
         relationally rather than against a stored count.
       Verify: assert tests pass; `red-2.3.txt` saved.
-- [ ] 2.4 Mutation evidence for 2.2–2.3. Mutate: emit autonomy unconditionally; leave the tracker
+- [x] 2.4 Mutation evidence for 2.2–2.3. Mutate: emit autonomy unconditionally; leave the tracker
       paragraph ungated; emit the pointer always; have `writeRules` pass no usage; have
       `rulesBlockFor` ignore its usage. Verify: `mutation-2.4.txt`, with every mutant dead or
       explained.
