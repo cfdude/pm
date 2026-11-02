@@ -8,7 +8,7 @@ The block SHALL carry `## Epic-level autonomy` only while a non-archived epic ha
 
 - **WHEN** `init` runs in an empty git repository and `rules --sections` is read
 - **THEN** neither `Epic-level autonomy` nor `Release candidate` is listed
-- **AND** `The gate procedure — required task items` is listed with the same bytes it had before this change
+- **AND** `The gate procedure — required task items` is listed with the same bytes as in the default (full) render
 
 #### Scenario: The printed block and the written block agree
 
@@ -18,7 +18,8 @@ The block SHALL carry `## Epic-level autonomy` only while a non-archived epic ha
 #### Scenario: A caller that supplies no usage answers renders the full block
 
 - **WHEN** the block is rendered with no usage answers supplied
-- **THEN** both usage-conditioned sections are present, byte-identical to the block before this change
+- **THEN** it is identical to the block rendered with both usage answers true
+- **AND** turning one answer off removes exactly that section (and, for autonomy, the outward-tracker paragraph) and adds the pointer
 
 ### Requirement: An absent procedure is named by an always-on pointer
 
@@ -55,7 +56,7 @@ No line emitted while a usage-conditioned section is absent SHALL refer to that 
 
 ### Requirement: The block on disk follows every usage condition after any non-hook write
 
-After a non-hook verb writes state, the engine SHALL compare the presence of every usage-conditioned section on disk with its predicate over the after-image, and rewrite the block only on a disagreement. It SHALL cover spend tracking, spend guard, autonomy and release candidate in one comparison. Hooks SHALL do no comparison.
+After a non-hook verb writes state, the engine SHALL compare the presence of every usage-conditioned section on disk with its predicate over the after-image, and rewrite the block only on a disagreement. It SHALL cover spend tracking, spend guard, autonomy and release candidate in one comparison. Hooks SHALL do no comparison. For Spend guard, the `spend-guard` spec's requirement governs; this one adds no rule to it.
 
 #### Scenario: A write that changes no condition rewrites nothing
 
@@ -89,12 +90,22 @@ After a non-hook verb writes state, the engine SHALL compare the presence of eve
 
 ### Requirement: A section that appears during a session is announced
 
-When a refresh adds a usage-conditioned section to the block on disk, the engine SHALL print one stderr line per added section. The line SHALL name the section, say that a session or agent that loaded the block earlier does not have it, and name `rules` as the command that prints it. A refresh that only removes sections SHALL print no such line.
+Whenever a write of an EXISTING managed block adds a usage-conditioned section, whichever verb made the write, the engine SHALL print one stderr line per added section. The line SHALL name the section, say that a session or agent that loaded the block earlier does not have it, and name `rules` as the command that prints it. A write that creates or appends the block, or only removes sections, SHALL print no such line.
 
 #### Scenario: The first autonomy grant announces the section
 
 - **WHEN** no non-archived epic has an autonomy record and `set-autonomy E --context "x"` runs
 - **THEN** stderr carries a line naming `Epic-level autonomy` and the `rules` command
+
+#### Scenario: A verb that writes the block itself announces too
+
+- **WHEN** no spend limit is configured and `set-spend-guard --max-failed-rounds 2` runs
+- **THEN** stderr carries a line naming `Spend guard` and the `rules` command
+
+#### Scenario: A first write announces nothing
+
+- **WHEN** `init` creates the rules file with its block
+- **THEN** no appearance line is printed
 
 #### Scenario: A retirement is silent
 

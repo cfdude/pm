@@ -86,9 +86,18 @@ ambiguous one. `refreshSpendGuardSection` becomes `refreshConditionalSections(be
 A test asserts that every heading `rulesBlock()` emits conditionally appears in the table, so a
 future conditional section cannot be left out of the refresh.
 
-**D5. The appearance notice.** When `refreshConditionalSections` rewrites, each heading present
-after the rewrite and absent before it gets one stderr line:
+**D5. The appearance notice lives in `writeRules()`, not in the refresh.** Several verbs call
+`writeRules()` themselves: `set-spend-guard`, `set-spend-tracking`, the tracker verbs,
+`set-review-mode`, the profile verbs and `upgrade`. When one of them adds a heading, the wrapper's
+refresh then finds disk and state already agreeing and would print nothing. A notice placed in the
+refresh would be a guard at one call site with its siblings left bare.
+
+`writeRules()` therefore diffs the `## ` headings of the old block against the new one, only on the
+in-place refresh path (arrangement `one`). Create and append announce nothing, so `init` does not
+list every section. Each heading present in the new block and absent from the old one gets one
+stderr line:
 `conductor: the rules block now carries "## <heading>" — a session or agent that loaded it earlier does not have it; run \`rules\` to print it.`
+
 Removal prints nothing new beyond the existing "refreshed rules block" line. The notice is the
 instruction-layer answer to a session that grants autonomy and keeps acting on its stale loaded copy.
 The `conductor` skill's hierarchy procedure gains one sentence: carry the section into a dispatch
@@ -118,6 +127,9 @@ effect, and the changeset says so.
 - [Sequencing with `mutation-pass-is-a-required-task-item`] → both edit `rules.mjs`'s
   `GATE_PROCEDURE_ITEMS` neighbourhood. This change lands first, and the cross-spec review (task
   0.2) names the chokepoint.
+- [A repo whose old releases were never marked delivered keeps the Release candidate section]
+  → accepted. This repo holds 16 of 19 releases without `delivered`. The saving is certain for
+  fresh repos and for repos that mark releases delivered. The changeset names `release <id> --deliver`.
 - [A fleet repo loses sections it never used, and a user may look for them] → the pointer names
   where they went, and the changeset states it.
 
