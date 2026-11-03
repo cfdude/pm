@@ -27,12 +27,29 @@ Hermes nearly got greenlit on its name alone.
     So the board stays current with no republish.
   - "Send my answers" only stamps `answers/_submitted`. Claude is not notified; the operator must say so.
   - Plan selector, "we are here" banner plus a marker line between releases, stale warning at 2+ days.
-- **Enterprise Portal Backlog** (`https://claude.ai/artifact/Q1zYe28pQxt8591562kGj6`): NOT read. It lives in
-  Rob's other organization, so the Artifact tool refuses it, and the public link sits behind a Cloudflare
-  human check (agent-browser, and the Chrome tool cannot read the sandboxed frame). The backlog design below is
-  therefore built from Rob's description (ranked list, drag to reorder, detail panel, editable notes, remove,
-  delivered and not-pursued at the bottom). To close the gap: save the page HTML into this folder, or send two
-  screenshots (list, detail panel).
+- **Enterprise Portal Backlog** (`https://claude.ai/artifact/Q1zYe28pQxt8591562kGj6`): the live page was not
+  readable from here (other organization, then a Cloudflare human check). Resolved: the other laptop documented
+  it in Notion, "Standard Backlog Artifact — Spec, Source & Recommendations"
+  (https://app.notion.com/p/40da73c68c7f81248f38d19192333ea7), with the HTML source attached
+  (`backlog-template.html`, `enterprise-portal-backlog.html`, `example-seed.json`, `seed_to_batch.py`,
+  `make_template.py`). The spec below is read from that page; the attached HTML files are not yet pulled.
+  Pattern, in short:
+  - One static page over the artifact database (`db` plus `user` capabilities). Collections `items/<ID>`,
+    `votes/<userId>`, `notes/<userId>`, `snapshots/<day>`. Rules: read `view`, write `admin`; votes and notes are
+    per-user documents writable at `interact`.
+  - Item fields: id, title, sum (summary), det (detail), cat, prio, rank (sparse, 1000 steps, midpoint on drop),
+    status, src, needs, deps[], docNotes[], effort, values[], ds, jira key, removed{reason,by,at}, log{by,via,at,what}.
+  - Behaviour worth copying: priority groups then rank; drag takes the target group's priority and never makes
+    Urgent; dependency-below-dependent warning; Delivered and Not pursuing tables; removal never deletes
+    (reasons: Won't do, Deferred, For consideration, Merged); "last change" tooltip with `via: claude`;
+    daily in-page snapshot; a CONFIG block so one template serves every project; a seed tool that chunks writes
+    in batches of 50.
+  - Rules that match pm: status past Open comes only from the tracker (there Jira, here gh issues and
+    state.json); removing is a disposition, not a delete (pm's `--outcome declined|superseded`).
+  - Known gotchas: component CSS class collisions; `invalid_argument` on a write means view-only access;
+    omit `capabilities` on republish to keep them; headless `claude -p` has no artifact-data tool.
+  - Its own unbuilt list names what pm also needs: keyboard and touch reorder, settings in the database,
+    owner and target release fields plus a release view (the release board), stale flag, CSV export.
 - **pm code** (subagent pass, pm 0.53.0), findings below.
 
 ## What pm already has
@@ -88,7 +105,8 @@ The board is a view, never the source of truth.
 
 ## Proposed build order (not started)
 
-1. Write the Enterprise Portal pattern notes once the page is readable.
+1. Pull the attached Enterprise Portal template and seed tool from Notion; base the backlog board on its CONFIG
+   template, mapping `prio`/`rank` to epic priority and `rank`, `jira` to `externalUrl`, `removed` to dispositions.
 2. Spec change `project-boards`: `board --json`, summary/why-now/theme/order fields, skill, command, opt-in row.
 3. Build pm-dev's two boards by hand from the skill draft as the proving run; keep the process notes.
 4. Gate, test, register the 0.55.0 release membership.
