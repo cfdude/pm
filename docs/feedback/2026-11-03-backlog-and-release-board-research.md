@@ -91,6 +91,15 @@ release id refused, error lacks the lowercase suggestion). All five fold into th
 Design point from that session: each artifact has its own database, so tying the two boards together needs one
 source of truth, and pm state is it. Shared epic ids across both boards is the join.
 
+The sibling session keeps a live field log at `~/Documents/Repos/iv-studio-dev/docs/backlog/INVENTED_FIELDS.md`;
+treat it as the field list for `board --json`. Beyond the list above it adds: `plan/state.hereText`, `nextText`
+and `head` (repo HEAD in the export); release-plan `log` entries (kind, ref, text, group; could come from pm
+activity and decisions, filtered per release); plan-level green-light `criteria`. Its db contract today:
+`epics/<id>` (with `outcome`, `outcomeReason`), `releases/<id>`, `plan/state`, plus `backlogMeta/<epicId>`
+`{removed, reason, note}` on the backlog page only, for Not pursuing marks on epics that have not ended. That
+page-local mark is deliberate: pm has dispositions only for ended epics, so the skill must not overwrite
+`backlogMeta` on re-seed.
+
 ## Recommendation
 
 **Division of labor, preserving the law that pm never opens a connection:**
