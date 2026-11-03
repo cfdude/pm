@@ -64,6 +64,33 @@ Hermes nearly got greenlit on its name alone.
 | Publishing | nothing mentions the Artifact tool; `docs/artifacts/artifacts.md` is a hand-kept index |
 | Opt-in registry | `scripts/lib/opt-ins.mjs`; every row is off until adopted, so default-on has no precedent |
 
+## Second reference: iv-studio-dev (built 2026-11-03, same day)
+
+A sibling session (`iv-studio-dev`, Rob's Mac port of hollisorg/iv-studio) built both boards against pm 0.53.0
+state and filed what it hit. Pages (Rob's account): release plan
+`https://claude.ai/artifact/XMmQFPJ1gEBJZ1dR1riy5K`, backlog `https://claude.ai/artifact/E7U8BdpwFhsTB9bpRUVi3q`
+(Enterprise Portal spec plus a target-release field). Feed script:
+`~/Documents/Repos/iv-studio-dev/docs/backlog/sync_from_conductor.py` (read; the two pages not yet opened).
+Contract: collections `epics/<id>` and `releases/<id>`, `plan/state` for "here", batches of 50, op `set`.
+
+What the script had to invent, which is the gap list for `board --json` and the release fields:
+- reads `state.json` directly (gh#269: no export verb);
+- release `order` is the array index and release `status` is derived by a heuristic over member statuses
+  (gh#268: no order, status, theme, scope, exit, size, "here");
+- `rank` is synthesized from priority then array position, ignoring `epic.rank`;
+- it copies `outcome` separately because `archived` alone reads as delivered (gh#270). The board export should
+  carry a derived `delivered` boolean;
+- link handling guesses the shape of `links[]`; the export should emit `dependsOn` already resolved;
+- `set` needs `if_version` on re-seed: the exporter should emit `update` ops, or the skill should read versions first.
+
+Filed against cfdude/pm by that session: gh#267 (init writes `.conductor/*` to a tracked `.gitignore` even when
+already ignored; fork PR pollution; `/pm:upgrade` may do the same), gh#268, gh#269, gh#270, gh#271 (uppercase
+release id refused, error lacks the lowercase suggestion). All five fold into the `project-boards` change except
+#267 and #271, which are independent fixes.
+
+Design point from that session: each artifact has its own database, so tying the two boards together needs one
+source of truth, and pm state is it. Shared epic ids across both boards is the join.
+
 ## Recommendation
 
 **Division of labor, preserving the law that pm never opens a connection:**
