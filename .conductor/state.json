@@ -11000,7 +11000,7 @@
         "82e8b8b0236ab69b4c37b49c9f64516fdc245bf8"
       ],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-11-02T23:31:54.231Z",
+      "touchedAt": "2026-11-03T16:08:23.180Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -11025,7 +11025,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-02T23:31:54.226Z"
+      "completedAt": "2026-11-02T23:31:54.226Z",
+      "planPath": "docs/superpowers/plans/2026-11-02-mutation-pass-required-item.md"
     },
     {
       "id": "functional-assertion-test-split",
@@ -16020,6 +16021,134 @@
       "attributedCommits": [],
       "createdAt": "2026-11-02T19:43:54.999Z",
       "touchedAt": "2026-11-02T19:43:55.006Z"
+    },
+    {
+      "id": "gh-cfdude-pm-266",
+      "title": "OpenSpec drift HOLD names every unarchived change, including ones with no build progress, so the update is held indefinitely",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "266",
+      "externalUrl": "https://github.com/cfdude/pm/issues/266",
+      "externalUpdatedAt": "2026-11-02T17:30:45Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:15.560Z",
+      "touchedAt": "2026-11-03T16:08:15.565Z"
+    },
+    {
+      "id": "gh-cfdude-pm-265",
+      "title": "add-epic accepts repeated --notes but silently keeps only the last one",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "265",
+      "externalUrl": "https://github.com/cfdude/pm/issues/265",
+      "externalUpdatedAt": "2026-11-01T15:49:37Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:16.627Z",
+      "touchedAt": "2026-11-03T16:08:16.632Z"
+    },
+    {
+      "id": "gh-cfdude-pm-264",
+      "title": "Auto-detour logs an epic's own fix commits (already attributed or naming an epic task) as detours; retracted 6 times in one epic",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "264",
+      "externalUrl": "https://github.com/cfdude/pm/issues/264",
+      "externalUpdatedAt": "2026-11-02T17:31:26Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:17.569Z",
+      "touchedAt": "2026-11-03T16:08:17.574Z"
+    },
+    {
+      "id": "gh-cfdude-pm-263",
+      "title": "Delta authoring: a MODIFIED block that drops a scenario is refused; pm guidance never mentions REMOVED plus ADDED under a new name",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "263",
+      "externalUrl": "https://github.com/cfdude/pm/issues/263",
+      "externalUpdatedAt": "2026-10-31T13:24:54Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:18.505Z",
+      "touchedAt": "2026-11-03T16:08:18.509Z"
+    },
+    {
+      "id": "gh-cfdude-pm-262",
+      "title": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases the edit",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "262",
+      "externalUrl": "https://github.com/cfdude/pm/issues/262",
+      "externalUpdatedAt": "2026-10-30T00:55:53Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:19.430Z",
+      "touchedAt": "2026-11-03T16:08:19.435Z"
+    },
+    {
+      "id": "gh-cfdude-pm-261",
+      "title": "The pm:lifecycle marker now collides with /opsx:verify too, not just openspec validate --archived",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "261",
+      "externalUrl": "https://github.com/cfdude/pm/issues/261",
+      "externalUpdatedAt": "2026-10-28T17:28:06Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:20.352Z",
+      "touchedAt": "2026-11-03T16:08:20.357Z"
+    },
+    {
+      "id": "gh-cfdude-pm-260",
+      "title": "Auto-detour re-logs a commit already recorded by a manual log-detour",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "260",
+      "externalUrl": "https://github.com/cfdude/pm/issues/260",
+      "externalUpdatedAt": "2026-10-27T15:14:43Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:21.307Z",
+      "touchedAt": "2026-11-03T16:08:21.312Z"
+    },
+    {
+      "id": "gh-cfdude-pm-259",
+      "title": "feature: update-epic --unlink <type>:<epic> to remove one link",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "259",
+      "externalUrl": "https://github.com/cfdude/pm/issues/259",
+      "externalUpdatedAt": "2026-10-23T15:57:39Z",
+      "attributedCommits": [],
+      "createdAt": "2026-11-03T16:08:22.247Z",
+      "touchedAt": "2026-11-03T16:08:22.252Z"
     }
   ],
   "detourStack": [],
@@ -16030,7 +16159,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2293,
+  "revision": 2306,
   "reviewMode": "standard",
   "releases": [
     {
@@ -16799,5 +16928,13 @@
   },
   "spendGuard": {
     "maxFailedRounds": 2
-  }
+  },
+  "syncIgnore": [
+    {
+      "path": "docs/superpowers/plans/2026-10-30-pm-overhead-calibration.md",
+      "at": "2026-11-03T16:08:44.813Z",
+      "removedEpic": "2026-10-30-pm-overhead-calibration",
+      "reason": "removed by remove-epic"
+    }
+  ]
 }
