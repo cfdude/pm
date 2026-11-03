@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "hermes-platform-support",
+  "active": "openspec-1-14-workflows-evaluation",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1874,8 +1874,8 @@
     {
       "id": "hermes-platform-support",
       "title": "Port pm to Hermes Agent (Nous Research) -- the FIRST non-Claude-Code platform, ahead of Codex, per maintainer preference (used more actively; CLI+GUI shape is a harder, more informative test of the architecture than Codex). Verified hands-on against Hermes Agent v0.19.0 (2026.7.20, git install at ~/.hermes/hermes-agent, docs vendored locally at website/docs/): hermes CLI exposes hooks/skills/plugins/mcp/project subcommands plus -z PROMPT for headless and --accept-hooks to bypass first-use consent. THREE hook systems exist; only SHELL HOOKS fit pm (CLI+Gateway, any language so Node is fine, can block AND inject context) -- Gateway hooks are gateway-only and Plugin hooks are Python-only. Shell hooks use a stdin/stdout JSON wire protocol with hook_event_name/tool_name/tool_input/session_id/cwd, and CRUCIALLY the docs state Claude-Code-style {decision:block,reason} is accepted and normalized internally. VALID_HOOKS includes pre_tool_call, post_tool_call, pre_llm_call, on_session_start/end/finalize/reset, subagent_start/stop, pre_verify. Mapping: gate-guard->pre_tool_call (direct), commit-nudge->post_tool_call (direct). TWO OPEN DESIGN PROBLEMS: (1) context injection appears bound to pre_llm_call which fires EVERY turn, not on_session_start, so the briefing would repeat unless the hook self-dedupes on session_id (available in the payload); (2) shell hooks are declared in user-level ~/.hermes/config.yaml rather than shipped in a plugin manifest, and Hermes plugin hooks are Python-only while pm's engine is Node -- so pm likely needs a thin Python shim shelling out to conductor.mjs, or an install step that writes config.yaml entries. Also no PreCompact equivalent found. Needs its own brainstorm before implementation. hermes plugins install takes a Git URL or owner/repo, same distribution model as Claude Code and Codex, so cfdude/pm can serve all three. Bonus: 'hermes hooks test <event>' fires hooks against a synthetic payload, which may let EDD test hook scenarios far cheaper than a full agent run.",
-      "priority": "P2",
-      "status": "active",
+      "priority": "P3",
+      "status": "later",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -1903,13 +1903,18 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "createdAt": "2026-07-28T19:25:39-07:00",
-      "touchedAt": "2026-11-02T23:33:19.249Z",
+      "touchedAt": "2026-11-03T16:45:09.349Z",
       "release": "0.54.0",
       "notes": [
         {
           "at": "2026-11-01T18:54:10.951Z",
           "actor": "agent",
           "text": "Idea: a Hermes rules-parity eval (same instruction text, one existing evals/ scenario) is the first real use of the EDD harness; see parked edd-corpus-expansion-nondeterministic-surfaces."
+        },
+        {
+          "at": "2026-11-03T16:45:09.345Z",
+          "actor": "agent",
+          "text": "Deprioritised 2026-11-03 by Rob: no pressing need; ranked just above codex-platform-support."
         }
       ],
       "startedAt": "2026-11-02T23:33:19.245Z"
@@ -14231,14 +14236,14 @@
       "id": "openspec-1-14-workflows-evaluation",
       "title": "Evaluate OpenSpec 1.14 workflows (new, continue, ff, bulk-archive, verify, onboard) against pm: where they overlap its gates, sync and archive handling, and what pm should instruct or leave alone",
       "priority": "P2",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-07T00:23:56.798Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-03T16:45:10.460Z",
       "notes": [
         {
           "at": "2026-10-07T00:23:57.541Z",
@@ -14251,7 +14256,8 @@
           "text": "2026-10-14: a git reset --hard on dev wiped the 9 tracked, modified OpenSpec 1.14 files (.claude/commands/opsx/{apply,archive,update}.md, .claude/skills/openspec-{apply-change,archive-change,explore,propose,sync-specs,update-change}/SKILL.md). They were generated, so regenerate with openspec update when this epic starts (Rob runs it, not the agent). The 12 untracked files remain."
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "startedAt": "2026-11-03T16:45:10.456Z"
     },
     {
       "id": "gh-cfdude-pm-239",
@@ -16159,7 +16165,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2306,
+  "revision": 2308,
   "reviewMode": "standard",
   "releases": [
     {
