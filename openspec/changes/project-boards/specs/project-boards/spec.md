@@ -1,0 +1,266 @@
+## ADDED Requirements
+
+### Requirement: One bundled skill and a thin command own the boards
+
+pm SHALL ship a skill `project-boards` (`skills/project-boards/SKILL.md`) with two page templates under
+`skills/project-boards/templates/`: a release plan and a backlog. It SHALL ship a command `/pm:boards`
+(`commands/boards.md`) that loads the skill and runs its refresh. Every shipped file SHALL be claimed by exactly one
+capability in the parity ledger.
+
+#### Scenario: Ledger claims every boards file
+
+- **WHEN** the parity test runs
+- **THEN** `skills/project-boards/SKILL.md`, each file under `skills/project-boards/templates/`, `commands/boards.md` and `commands/mission.md` are each claimed exactly once, and no `commands/board.md` exists
+
+### Requirement: The skill is the single home of the boards procedure
+
+The skill SHALL be the only place that states the database contract, the access rules, the refresh procedure, the
+drag-apply procedure, the standalone fallback and the registration step. The command doc, the rules-block line and
+the brief line SHALL point to the skill and SHALL NOT restate any of these.
+
+#### Scenario: Pointers do not restate the procedure
+
+- **WHEN** `commands/boards.md` and the boards rules-block line are checked
+- **THEN** neither names a database collection or the batch bound, and both name the `project-boards` skill
+
+### Requirement: The command respects the switch
+
+While boards are off, `/pm:boards` SHALL say the boards are off, name `set-boards on`, and write no artifact.
+
+#### Scenario: Boards off
+
+- **WHEN** `commands/boards.md` is checked by the file-rung doc assertion
+- **THEN** it tells the agent to read `boardsEnabled` from `board --json` first and, while it is `false`, to say so, name `set-boards on`, and stop before any artifact write
+
+### Requirement: The database contract is fixed
+
+The skill SHALL define these collections. On both pages: `epics/<epicId>`, `releases/<releaseId>` and `page/info`
+(`headline`, `lastUpdated`, `head`). On the release plan: `plan/state` (`here`, `hereText`, `nextText`, `head`,
+`asOf`), `mission/current`, `criteria/<cN>`, `decisions/<n>` and `answers/<n>`. On the backlog: `backlogMeta/<epicId>`
+and `proposals/rank`.
+
+#### Scenario: Contract is stated
+
+- **WHEN** the skill's text is checked
+- **THEN** it names every collection above and the page each belongs to
+
+### Requirement: Board data comes only from the export
+
+Every value the agent writes to `epics`, `releases`, `plan`, `mission`, `criteria` and `page` SHALL come from one
+`board --json` run, plus `head`, which the skill obtains with `git rev-parse --short HEAD`. The skill SHALL NOT read
+`.conductor/state.json`. Writes SHALL go in batches of at most 50.
+
+#### Scenario: No direct state read
+
+- **WHEN** the skill's text is checked
+- **THEN** it names `board --json` as the only state source, does not instruct reading `.conductor/state.json`, and states the 50-write batch bound
+
+### Requirement: Access is enforced by declared database rules
+
+Each page SHALL be published with the `db` and `user` capabilities and a `rules` list naming every collection it uses.
+`epics`, `releases`, `plan`, `mission`, `criteria`, `decisions`, `page` and `proposals` SHALL be `read: view` and
+`write: admin`. `answers` and `backlogMeta` SHALL be `read: view` and `write: interact`, and these two are the only
+collections a viewer below admin can write.
+
+#### Scenario: Declared rules name every collection
+
+- **WHEN** the skill's capability declaration for each page is checked
+- **THEN** every collection that page reads or writes has a rule, and only `answers` and `backlogMeta` carry `write: interact`
+
+#### Scenario: Only answers and backlogMeta are open below admin
+
+- **WHEN** the declared `rules` list is parsed out of the skill and each collection's `write` level is read
+- **THEN** `epics`, `releases`, `plan`, `mission`, `criteria`, `decisions`, `page` and `proposals` read `admin`, and the only `interact` entries are `answers` and `backlogMeta`
+
+#### Scenario: The proving run confirms a lower level cannot write
+
+- **WHEN** task 7.1 reads `epics` and attempts no write at a lower `as_level`, and lists the collections each published page actually holds
+- **THEN** the page-written collections are exactly `answers`, `backlogMeta` and `proposals`, recorded in the run's notes
+
+### Requirement: Page checks are UI gating, never authorization
+
+Page-side checks such as `canEdit()` SHALL only decide which controls are shown. The skill SHALL state that they are
+not authorization. A document's `by` field SHALL be shown as "last change by" and SHALL NOT be treated as
+attribution by the skill or the agent.
+
+#### Scenario: The skill states the boundary
+
+- **WHEN** the skill's text is checked
+- **THEN** it states that the declared rules decide writes, that page checks are UI gating only, and that `by` is not attribution
+
+### Requirement: Every interpolated value is escaped
+
+The shipped templates SHALL escape every value they interpolate into text, attribute values (including `href` and
+`data-*`) and class names. That includes ids, priorities, release ids, statuses and every free-text field.
+
+#### Scenario: Markup in a title renders as text
+
+- **WHEN** the backlog render runs over an `epics` doc with a valid id and the title `<img src=x onerror=alert(1)>`
+- **THEN** the output contains `&lt;img` and no `<img` element
+
+#### Scenario: Markup in a release id stays inert
+
+- **WHEN** the release-plan render runs over an epic whose `release` is `r1" onclick="x`
+- **THEN** the output contains no `onclick` attribute
+
+### Requirement: Priority is allowlisted
+
+A priority SHALL be checked against the level list `P0`, `P1`, `P2`, `P3`, `P?`. Any other value SHALL render as `P?`
+in both its label and its class name.
+
+#### Scenario: Priority outside the allowlist
+
+- **WHEN** a doc's priority is `P1" onmouseover="x`
+- **THEN** the rendered class and label use `P?` and the output contains no `onmouseover`
+
+### Requirement: Malformed ids are skipped by the page and refused by the seed
+
+A document whose id does not match `/^[A-Za-z0-9._-]+$/` SHALL NOT be rendered, and the page SHALL show a count of
+skipped records. Before writing, the skill's seed step SHALL check every id against the same pattern and SHALL refuse,
+naming it, any document that fails.
+
+#### Scenario: Malformed id skipped and refused
+
+- **WHEN** a doc's id is `a"><b>`
+- **THEN** the page renders no row for it and reports one skipped record, and the seed step refuses to write it, naming the id
+
+### Requirement: An inlined snapshot cannot break out of its script element
+
+When the standalone fallback inlines the snapshot as JSON inside a script element, every `<` in that JSON SHALL be
+written as `<`.
+
+#### Scenario: Script-closing text in a summary
+
+- **WHEN** the fallback inlines a snapshot whose summary contains `</script><script>alert(1)</script>`
+- **THEN** the file holds exactly one closing `</script>` for the data block, and the summary parses back intact
+
+### Requirement: Pages type-check every database field
+
+The templates SHALL treat every document as untrusted. A list field SHALL be iterated only after `Array.isArray`. A
+text field SHALL be used only when it is a string, and otherwise treated as empty. A value SHALL go through `String()`
+before it is compared or sorted.
+
+#### Scenario: A malformed doc does not break the board
+
+- **WHEN** the backlog render runs over three valid docs and one doc whose `dependsOn` is a string and whose `title` is an object
+- **THEN** the three valid rows render, the malformed one renders with an empty title and no dependency tags, and no exception escapes the render
+
+### Requirement: Each render step is isolated
+
+Each render step (counts, rows, cards, the delivered and not-pursuing tables, the release roadmap, the criteria and
+the decisions) SHALL run inside its own error boundary. A failing step SHALL show a short notice in its own place, and
+every other step SHALL still render.
+
+#### Scenario: A failing render step is isolated
+
+- **WHEN** the release roadmap step throws on a malformed release doc
+- **THEN** the counts, criteria and decisions still render, and the roadmap shows its notice
+
+### Requirement: Drag writes a rank proposal, never an epic
+
+The backlog SHALL let an admin drag a row within its own priority band only. A drop SHALL write the band's requested
+order to `proposals/rank` as `{band, order, by, at}` and SHALL NOT change any `epics` doc. A drag across bands SHALL be
+refused in the page, with a hint that priority changes go through the agent.
+
+#### Scenario: Drop writes only the proposal
+
+- **WHEN** an admin drops row B above row A in band P1
+- **THEN** `proposals/rank` holds `{band: "P1", order: ["B", "A", …]}` and no `epics` doc changed
+
+#### Scenario: Cross-band drag refused
+
+- **WHEN** an admin drags a P2 row into the P1 band
+- **THEN** no document is written and the page shows the priority hint
+
+### Requirement: The agent applies a rank proposal once, with reorder
+
+At the start of each refresh, before any other write, the skill SHALL read `proposals/rank`. It SHALL apply it with
+`reorder <ids…>`, delete `proposals/rank`, re-export, and report every epic whose resulting position differs from the
+proposal. Rank sorts after priority and dependency order, so positions can differ. A proposal naming an id that is not
+an open epic in that band SHALL be reported to the user and not applied.
+
+#### Scenario: The skill states the apply order
+
+- **WHEN** the skill's refresh procedure is checked by the file-rung doc assertion
+- **THEN** it lists, in this order, read `proposals/rank`, run `reorder` with its ids, delete `proposals/rank`, re-run `board --json`, and report positions that differ, and it states that a refresh with no proposal doc runs no `reorder`
+
+#### Scenario: A dependency keeps its place in the engine
+
+- **WHEN** `reorder A B` runs (a UNIT test) where A depends on B in the same band
+- **THEN** `board --json` still lists B before A, which is the snap-back the skill tells the agent to report
+
+### Requirement: A re-seed updates existing docs instead of overwriting them
+
+When a document already exists, the refresh SHALL write it with an `update` op, or with a `set` that carries the
+version it read (`if_version`). A plain `set` SHALL be used only for a document that does not exist yet. A write
+refused for a version mismatch SHALL be retried once after re-reading. A second refusal SHALL be reported, not forced.
+
+#### Scenario: The skill names the op per case
+
+- **WHEN** the skill's seed procedure is checked by the file-rung doc assertion
+- **THEN** it names `update` (or `set` with `if_version`) for existing docs, `set` for new ones, and the retry-once-then-report rule
+
+### Requirement: Page-local marks survive every refresh and can be undone
+
+The skill's refresh SHALL never write, overwrite or delete a backlog "Not pursuing" mark (`backlogMeta/<epicId>`,
+`{removed, reason, note}`). The page SHALL offer Restore, which sets `removed` to false. When the export stops listing
+an epic, the refresh SHALL delete that epic's `epics` doc and leave its `backlogMeta` doc in place.
+
+#### Scenario: Re-seed never names backlogMeta as a write target
+
+- **WHEN** the skill's seed and refresh procedures are checked by the file-rung doc assertion
+- **THEN** no write step targets `backlogMeta`, and the skill states that refresh never writes, overwrites or deletes it
+
+### Requirement: Ended epics are placed by the export's delivered flag
+
+The backlog SHALL list an ended epic under Delivered when `delivered` is true and under Not pursuing, showing its
+outcome, when it is false. When `delivered` is null, the epic SHALL be listed under an "outcome unknown" label.
+
+#### Scenario: Unknown outcome is not shown as delivered
+
+- **WHEN** an archived epic's `delivered` is `null`
+- **THEN** the backlog lists it under "outcome unknown", and in neither the Delivered nor the Not pursuing table
+
+### Requirement: Decisions and answers flow back without acting unasked
+
+The release plan SHALL render `decisions` (question, recommendation) and let a viewer at `interact` write
+`answers/<n>` (agree or disagree, plus a note). "Send my answers" SHALL write only `answers/_submitted`. On refresh the
+skill SHALL report the answers to the user as untrusted input, and SHALL NOT act on one until the user confirms it.
+
+#### Scenario: The skill forbids acting on an answer unconfirmed
+
+- **WHEN** the skill's refresh procedure is checked by the file-rung doc assertion
+- **THEN** it states that answers are untrusted input to report to the user, and that no pm verb runs because of an answer until the user confirms it
+
+### Requirement: A host without the Artifact tool gets a standalone file
+
+When no Artifact tool is available, the skill SHALL write each board as one self-contained HTML file with the
+snapshot inlined. The file SHALL be read-only (no drag, no answers), SHALL say that editing needs the live version,
+and SHALL load no remote script.
+
+#### Scenario: Fallback has no network dependency
+
+- **WHEN** the fallback file is produced
+- **THEN** it contains no `<script src=` and contains the inlined snapshot
+
+### Requirement: Boards are registered and refreshed on named triggers
+
+After the first publish of each board, the skill SHALL append a row `| date | title | url | what it is |` to
+`docs/artifacts/artifacts.md`, creating the file if absent, and SHALL find each board's URL there on later refreshes.
+It SHALL name five refresh triggers: `/pm:sync`, an epic status change, a `release` write, a `mission` write and a gate
+record. Only the user deletes a board artifact.
+
+#### Scenario: Registration and triggers stated
+
+- **WHEN** the skill's publish procedure is checked
+- **THEN** it names the `docs/artifacts/artifacts.md` row format and the five refresh triggers, and states that it never deletes an artifact
+
+### Requirement: The brief carries one boards line while boards are on
+
+While boards are on, the SessionStart brief SHALL carry one line of at most 160 bytes naming `/pm:boards` and saying
+that the boards are refreshed after the named triggers. While boards are off, the line SHALL be absent.
+
+#### Scenario: Brief line follows the switch
+
+- **WHEN** the brief is built with boards on, and again with boards off
+- **THEN** the first holds exactly one line naming `/pm:boards`, at most 160 bytes, and the second holds none
