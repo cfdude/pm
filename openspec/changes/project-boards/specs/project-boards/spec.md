@@ -74,8 +74,8 @@ collections a viewer below admin can write.
 
 #### Scenario: The proving run confirms a lower level cannot write
 
-- **WHEN** task 7.1 reads `epics` and attempts no write at a lower `as_level`, and lists the collections each published page actually holds
-- **THEN** the page-written collections are exactly `answers`, `backlogMeta` and `proposals`, recorded in the run's notes
+- **WHEN** task 7.1 attempts one `ArtifactData` write to `epics/probe` at `as_level: interact`, and lists the collections each published page holds
+- **THEN** the write is refused, no `epics/probe` doc exists afterwards, and the page-written collections are exactly `answers`, `backlogMeta` and `proposals`, all recorded in the run's notes
 
 ### Requirement: Page checks are UI gating, never authorization
 
@@ -202,8 +202,8 @@ in another band, the WHOLE proposal SHALL be refused, reported to the user and d
 
 #### Scenario: Within a merit band, rank decides
 
-- **WHEN** `reorder B A` runs (a UNIT test) over merit band P1 holding A and B with equal effective priority, where A depends on B
-- **THEN** `board --json` lists B before A, because `resolveEpics()` orders by effective priority, then merit, then rank, and applies no dependency pass
+- **WHEN** `reorder A B` runs (a UNIT test) over merit band P1 holding A and B with equal effective priority, where A depends on B
+- **THEN** `board --json` lists A before B, because `resolveEpics()` orders by effective priority, then merit, then rank, and applies no dependency pass
 
 #### Scenario: A stale proposal is refused whole
 

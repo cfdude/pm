@@ -98,19 +98,30 @@ remove the marker and both lines; it is valueless and takes no id. `release here
 
 ### Requirement: here is a reserved release id and a stale marker is reported
 
-`here` SHALL be a reserved release id, like `show`. `release here` used with release-amending flags and no target id
-SHALL be refused, saying `here` is reserved. When the release the marker names no longer exists, `board --json` SHALL
-report `plan.here` as `null` and list the stale id in `rejected` with the reason `here names no release`.
+`here` SHALL be a reserved release id, like `show`; `release here --intent x` with no id SHALL be refused saying so.
+`release here` SHALL accept only one release id, `--text`, `--next` and `--clear-here`; any other flag, or `--text`
+without an id, SHALL be refused naming what is accepted or missing. A marker naming a removed release SHALL read as
+`plan.here: null` in `board --json`, with a `rejected` entry (shape in `board-export`), reason `here names no release`.
 
 #### Scenario: here is reserved
 
 - **WHEN** `release here --intent "x"` runs
 - **THEN** it is refused, the message says `here` is a reserved release id, and no release `here` is created
 
+#### Scenario: here takes no release-amending flag
+
+- **WHEN** `release here r2 --intent "x"` runs
+- **THEN** it is refused naming `--text`, `--next` and `--clear-here`, and nothing is written
+
+#### Scenario: here needs an id to set
+
+- **WHEN** `release here --text "x"` runs with no id
+- **THEN** it is refused naming the missing release id, and nothing is written
+
 #### Scenario: Stale marker
 
 - **WHEN** the marker names `r9` and no release `r9` exists
-- **THEN** `board --json` reports `plan.here: null` and `rejected` names `r9`
+- **THEN** `board --json` reports `plan.here: null` and `rejected` holds `{kind: "plan", id: null, field: "plan.here", value: "r9", reason: "here names no release"}`
 
 ### Requirement: Release planning is visible in release show
 
@@ -131,11 +142,17 @@ appending the order, the derived status and the same critical-path mark.
 
 ### Requirement: /pm:status shows where the plan is
 
-While a `here` marker is set, `/pm:status` SHALL print `here: <id>`, followed by the "we are here" line when one is
-set. Without a marker it SHALL print no plan line. `PROJECT.md` SHALL NOT carry the marker or the critical-path marks
-in this release, because the boards are the planning view and `PROJECT.md` is regenerated in every pm repo.
+The `/pm:status` verb's own output (beside the spec-sync block, never written into `PROJECT.md`) SHALL print
+`here: <id>` and the "we are here" line while a marker is set, and one line per release marked `(critical path)` or
+`(off critical path)` while a mission milestone is set. The brief's RELEASES lines, which `PROJECT.md`'s Briefing
+copies, SHALL NOT carry either in this release.
 
 #### Scenario: Status names the marker
 
 - **WHEN** `release here r2 --text "Hardening the API"` has run and `/pm:status` renders
-- **THEN** its output contains `here: r2` and "Hardening the API"
+- **THEN** its output contains `here: r2` and "Hardening the API", and `PROJECT.md` does not contain `here: r2`
+
+#### Scenario: Status marks the critical path
+
+- **WHEN** a mission milestone r2 is set over releases r1, r2 (orders 1, 2) and r3 (order 3) and `/pm:status` runs
+- **THEN** its output marks r1 and r2 `(critical path)` and r3 `(off critical path)`

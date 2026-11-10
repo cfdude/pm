@@ -47,8 +47,10 @@ Out of scope, with where each goes (none of it is dropped):
 - brief item 8, cuts confirmed and recorded → already delivered by `backlog-grooming-pass`
 - brief item 9, the commit-time close check → follow-up epic `commit-time-close-check`
 - turning the `summary`/`whyNow` warning into a refusal one release later → follow-up epic `epic-summary-required-on-triage`
-- critical-path and `here` marks in `PROJECT.md` → not in this release: `release show`, `/pm:status` and the boards
-  carry them, and `PROJECT.md` regenerates in every pm repo
+- critical-path and `here` marks in the brief's RELEASES lines, and so in `PROJECT.md`'s Briefing copy → declined for
+  now. `release show`, the `/pm:status` verb's own output and the boards carry them, and the brief is capped and
+  re-injected every session. The default-on boards line and the mission line do reach `PROJECT.md` through Briefing,
+  and that is intended
 - the brief's "size weight" → declined (start lean); `--size` records the semver impact only
 - votes, effort, the data-science flag, the per-release log and CSV export → declined for now ("start lean")
 - #267 and #271 → independent fixes, not in this change

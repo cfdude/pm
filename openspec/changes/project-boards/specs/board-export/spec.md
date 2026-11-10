@@ -1,5 +1,18 @@
 ## ADDED Requirements
 
+### Requirement: rejected entries have one shape and a closed reason list
+
+Every `rejected` entry SHALL be `{kind, id, field, value, reason}`. `kind` is one of `epic`, `release`, `link`, `url`,
+`plan` or `milestone`. `id` is the record the entry concerns, escaped, or `null` for a plan-level field. `field` names
+the field. `value` holds the offending value, with control characters escaped. `reason` is one of `id format`,
+`dangling depends-on`, `url scheme`, `here names no release` or `milestone names no release`. No other spec SHALL add
+a reason without adding it here.
+
+#### Scenario: Every entry carries all five keys
+
+- **WHEN** a fixture produces one rejection of each reason
+- **THEN** `rejected` holds five entries, each with exactly the keys `kind`, `id`, `field`, `value` and `reason`
+
 ### Requirement: board is a read-only snapshot verb
 
 The engine SHALL provide a verb `board`. `board --json` SHALL print one JSON object. Plain `board` SHALL print a
@@ -50,7 +63,7 @@ increment `schemaVersion`.
 - **WHEN** a mission milestone r2 is set with criteria c1 (with a check) and c2 (needs human)
 - **THEN** `milestone` is `{release: "r2", criteria: [{id: "c1", …, needsHuman: false}, {id: "c2", check: null, needsHuman: true}]}`
 
-### Requirement: Open epics come in the render order
+### Requirement: Open epics come in the flat resolveEpics() order
 
 `epics` SHALL list the registered non-archived epics first, in the order `resolveEpics()` produces for `PROJECT.md`:
 effective priority, then merit priority, then rank, then lane, then id. That order applies no dependency pass. It is
@@ -152,7 +165,7 @@ is neither a positive integer nor `all` SHALL be refused, naming the accepted va
 
 `dependsOn` SHALL list the ids that the epic's `depends-on` links target, in link order, without duplicates, and only
 those of registered epics. A target that names no registered epic SHALL be left out and recorded in `rejected` with
-the reason `dangling depends-on`. Links of other types SHALL NOT appear.
+`kind: "link"`, `field: "dependsOn"`, the target as `value` and the reason `dangling depends-on`. Links of other types SHALL NOT appear.
 
 #### Scenario: A depends-on link resolves
 
@@ -162,14 +175,14 @@ the reason `dangling depends-on`. Links of other types SHALL NOT appear.
 #### Scenario: A dangling target is reported
 
 - **WHEN** epic A carries `depends-on:gone` and no epic `gone` exists
-- **THEN** A's `dependsOn` is `[]` and `rejected` holds an entry for A with the reason `dangling depends-on`, naming `gone`
+- **THEN** A's `dependsOn` is `[]` and `rejected` holds `{kind: "link", id: "A", field: "dependsOn", value: "gone", reason: "dangling depends-on"}`
 
 ### Requirement: Every emitted id passes the board id format
 
 Every id the snapshot emits SHALL match `/^[A-Za-z0-9._-]+$/`: epic, release and member ids, `dependsOn` targets, an
 epic's `release`, `plan.here`, `milestone.release` and criterion ids. A record with a failing id SHALL be omitted; a
-failing reference SHALL become `null` or leave its list. Each failure SHALL appear in `rejected` as
-`{kind, id, field, reason: "id format"}`, control characters escaped, and the verb SHALL still exit 0.
+failing reference SHALL become `null` or leave its list. Each failure SHALL appear in `rejected` with
+reason `id format`, control characters escaped, and the verb SHALL still exit 0.
 
 #### Scenario: A malformed epic id is excluded and named
 
@@ -194,7 +207,7 @@ SHALL be `null` and listed in `rejected` with the reason `url scheme`.
 #### Scenario: A javascript URL is not emitted
 
 - **WHEN** an epic's `externalUrl` is `javascript:alert(1)`
-- **THEN** its entry's `externalUrl` is `null` and `rejected` holds `{kind: "url", id: <that epic>, reason: "url scheme"}`
+- **THEN** its entry's `externalUrl` is `null` and `rejected` holds `{kind: "url", id: <that epic>, field: "externalUrl", value: "javascript:alert(1)", reason: "url scheme"}`
 
 #### Scenario: An https URL is emitted
 

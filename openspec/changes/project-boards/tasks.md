@@ -96,7 +96,9 @@
       - `release here` sets the marker, and `--clear-here` (a valueless registry row) clears it.
       - `release here` refuses an unknown id and refuses `here` as a release id.
       - `release show` prints the fields, `(here)` and the critical-path marks.
-      - `/pm:status` prints `here:`.
+      - `/pm:status` prints `here:` and the critical-path marks from the verb's own output, and neither appears in
+        `PROJECT.md`.
+      - `release here r2 --intent x` and `release here --text x` are refused.
 
       Save `red-3.1.txt`.
 - [ ] 3.2 GREEN: update `scripts/lib/releases.mjs`, the flag registry and the status render. Update the `release`
@@ -281,6 +283,7 @@
       - **Skill text:**
         - the declared-rules doc assertion: flip `epics` to `interact`
         - the re-seed op rule: make the skill text name a plain `set` for existing docs
+        - the answers-are-untrusted rule: drop the "no pm verb runs until the user confirms" line from the skill
 
       Save and commit the run as `openspec/changes/project-boards/mutation-evidence.txt`. A surviving mutant is a
       finding to fix.
@@ -314,5 +317,5 @@
 ## C. Close
 
 - [ ] C.1 Re-record Gate 2 after the docs, if the docs added commits. Re-record, never withdraw.
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic release-planning-mission-and-milestone --status archived --outcome delivered --reason "<why>" --deferral "<followUpEpicId>:proposal.md Out of scope" --declined-deferral "votes:start lean" --declined-deferral "effort field:start lean" --declined-deferral "data-science flag:start lean" --declined-deferral "per-release log:start lean" --declined-deferral "CSV export:start lean" --declined-deferral "size weight:start lean"`, with one `--deferral` per registered follow-up epic. Then run `/pm:status`.
+- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic release-planning-mission-and-milestone --status archived --outcome delivered --reason "<why>" --deferral "<followUpEpicId>:proposal.md Out of scope" --declined-deferral "votes:start lean" --declined-deferral "effort field:start lean" --declined-deferral "data-science flag:start lean" --declined-deferral "per-release log:start lean" --declined-deferral "CSV export:start lean" --declined-deferral "size weight:start lean" --declined-deferral "critical-path marks in the brief RELEASES lines:brief is capped; status and boards carry them"`, with one `--deferral` per registered follow-up epic. Then run `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive project-boards`. Do NOT attribute the archive-move commit.

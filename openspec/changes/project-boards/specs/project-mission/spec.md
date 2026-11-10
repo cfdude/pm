@@ -68,10 +68,10 @@ milestone naming no existing release SHALL be refused, writing nothing.
 
 ### Requirement: Critical path is derived from the mission milestone
 
-A release SHALL be critical path when a mission milestone is set and the release either is the milestone or has an
-`order` at most the milestone release's `order`. Every other release SHALL be off the critical path. With no
-milestone, or with a milestone release that has no order, every `criticalPath` SHALL be `null`. When the milestone
-release no longer exists, `board --json` SHALL report `milestone: null` and name the stale id in `rejected`.
+A release SHALL be critical path when a mission milestone is set and the release is the milestone or has an `order`
+at most the milestone's. Every other release SHALL be off it. With no milestone, or a milestone release with no order,
+every `criticalPath` SHALL be `null`. A milestone naming a removed release SHALL read as `milestone: null`, with a
+`rejected` entry (shape in `board-export`), field `milestone.release`, reason `milestone names no release`.
 
 #### Scenario: Critical path follows order
 

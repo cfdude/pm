@@ -45,7 +45,8 @@ standing price for every read-only verb, and this change adds no functional test
 
 **D4. `delivered` has three states, via the one reader.** `outcomeOf` returns `unknown` for engine stamps
 (`engineStamp`, `disposition.mjs`; stamped by `migrations.mjs`, `epic-progress.mjs` and `subcommands.mjs`), so an
-engine-stamped ending is `null`, never delivered. So is an archived epic with no disposition. This repo has 0 of the
+engine stamp with outcome `unknown` is `null`. An engine stamp CAN carry `delivered`: the migration writes it where a
+passing Gate 2 exists. Such an epic reads `true`, because `delivered` follows the outcome, never who stamped it. So is an archived epic with no disposition. This repo has 0 of the
 latter today (jq over `.conductor/state.json`, 2026-11-09). The research doc's "no outcome counts as delivered" rule
 is not adopted.
 
