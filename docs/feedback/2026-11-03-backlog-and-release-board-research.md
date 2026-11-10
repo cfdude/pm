@@ -121,6 +121,12 @@ by 50). Not pulled: the live Enterprise Portal source (Highway work product, and
 logic with every project string moved into CONFIG) and `make_template.py` (how the template was derived; not
 needed). No Highway-specific strings in the pulled files (checked with `rg`).
 
+**Security finding on the pulled template (automated review, 2026-11-09, MEDIUM).** `backlog-template.html` escapes
+titles with `esc()` but interpolates `it.id` and `it.prio` raw into `innerHTML` text, `href`, `data-*` and class
+names. Item docs live in a shared database, so a writer could inject markup. The reference copy stays verbatim; the
+shipped `project-boards` templates must escape every interpolated value, whitelist `prio` against the level list, and
+validate ids (`/^[A-Za-z0-9._-]+$/` for pm epic ids) in the page and in the seed/export step.
+
 ## Recommendation
 
 **Division of labor, preserving the law that pm never opens a connection:**
