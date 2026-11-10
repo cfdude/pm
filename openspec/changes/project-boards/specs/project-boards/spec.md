@@ -15,12 +15,12 @@ capability in the parity ledger.
 ### Requirement: The skill is the single home of the boards procedure
 
 The skill SHALL be the only place that states the database contract, the access rules, the refresh procedure, the
-drag-apply procedure, the standalone fallback and the registration step. The command doc, the rules-block line and
-the brief line SHALL point to the skill and SHALL NOT restate any of these.
+drag-apply procedure, the standalone fallback and the registration step. The command doc, the `## Boards` rules-block
+section and the brief line SHALL point to the skill and SHALL NOT restate any of these.
 
 #### Scenario: Pointers do not restate the procedure
 
-- **WHEN** `commands/boards.md` and the boards rules-block line are checked
+- **WHEN** `commands/boards.md` and the `## Boards` section are checked
 - **THEN** neither names a database collection or the batch bound, and both name the `project-boards` skill
 
 ### Requirement: The command respects the switch
@@ -103,6 +103,16 @@ The shipped templates SHALL escape every value they interpolate into text, attri
 - **WHEN** the release-plan render runs over an epic whose `release` is `r1" onclick="x`
 - **THEN** the output contains no `onclick` attribute
 
+### Requirement: Pages link only http and https URLs
+
+A template SHALL render a link from a document field only when the value parses as an absolute URL with an `http`
+or `https` scheme. Any other value SHALL render as plain escaped text with no `href`.
+
+#### Scenario: A javascript URL renders no link
+
+- **WHEN** a doc's `externalUrl` is `javascript:alert(1)`
+- **THEN** the rendered output contains no `href` carrying it and no `javascript:` inside any attribute
+
 ### Requirement: Priority is allowlisted
 
 A priority SHALL be checked against the level list `P0`, `P1`, `P2`, `P3`, `P?`. Any other value SHALL render as `P?`
@@ -127,7 +137,7 @@ naming it, any document that fails.
 ### Requirement: An inlined snapshot cannot break out of its script element
 
 When the standalone fallback inlines the snapshot as JSON inside a script element, every `<` in that JSON SHALL be
-written as `<`.
+written as the six-character escape `\u003c` (backslash, `u`, `0`, `0`, `3`, `c`).
 
 #### Scenario: Script-closing text in a summary
 
@@ -156,38 +166,49 @@ every other step SHALL still render.
 - **WHEN** the release roadmap step throws on a malformed release doc
 - **THEN** the counts, criteria and decisions still render, and the roadmap shows its notice
 
-### Requirement: Drag writes a rank proposal, never an epic
+### Requirement: Drag writes a whole-band rank proposal, never an epic
 
-The backlog SHALL let an admin drag a row within its own priority band only. A drop SHALL write the band's requested
-order to `proposals/rank` as `{band, order, by, at}` and SHALL NOT change any `epics` doc. A drag across bands SHALL be
-refused in the page, with a hint that priority changes go through the agent.
+The backlog SHALL band rows by `meritPriority`, the band `reorder` takes, and SHALL let an admin drag only within a
+band; a lifted blocker (`priority` differs from `meritPriority`) SHALL NOT be draggable. A drop SHALL write
+`{band, order, by, at}` to `proposals/rank`, `order` listing every open epic of that merit band, and SHALL change no
+`epics` doc. A cross-band drag SHALL be refused with a hint that priority changes go through the agent.
 
-#### Scenario: Drop writes only the proposal
+#### Scenario: Drop writes only the whole-band proposal
 
-- **WHEN** an admin drops row B above row A in band P1
-- **THEN** `proposals/rank` holds `{band: "P1", order: ["B", "A", …]}` and no `epics` doc changed
+- **WHEN** an admin drops row B above row A in merit band P1, which holds A, B and C
+- **THEN** `proposals/rank` holds `{band: "P1", order: ["B", "A", "C"]}` and no `epics` doc changed
 
 #### Scenario: Cross-band drag refused
 
 - **WHEN** an admin drags a P2 row into the P1 band
 - **THEN** no document is written and the page shows the priority hint
 
+#### Scenario: A lifted blocker is not draggable
+
+- **WHEN** a row's `priority` is P1 and its `meritPriority` is P3
+- **THEN** the page renders no drag handle for it
+
 ### Requirement: The agent applies a rank proposal once, with reorder
 
-At the start of each refresh, before any other write, the skill SHALL read `proposals/rank`. It SHALL apply it with
-`reorder <ids…>`, delete `proposals/rank`, re-export, and report every epic whose resulting position differs from the
-proposal. Rank sorts after priority and dependency order, so positions can differ. A proposal naming an id that is not
-an open epic in that band SHALL be reported to the user and not applied.
+At the start of each refresh, before any other write, the skill SHALL read `proposals/rank`. It SHALL check that
+`order` is exactly the set of open epics in that merit band, per a fresh `board --json`. If any id is missing, extra or
+in another band, the WHOLE proposal SHALL be refused, reported to the user and deleted. Otherwise the skill SHALL run
+`reorder <ids…>`, delete `proposals/rank` and re-export.
 
 #### Scenario: The skill states the apply order
 
 - **WHEN** the skill's refresh procedure is checked by the file-rung doc assertion
-- **THEN** it lists, in this order, read `proposals/rank`, run `reorder` with its ids, delete `proposals/rank`, re-run `board --json`, and report positions that differ, and it states that a refresh with no proposal doc runs no `reorder`
+- **THEN** it lists, in this order, read `proposals/rank`, check it against `board --json`, run `reorder` with its ids, delete `proposals/rank`, and re-run `board --json`; it states that one bad id refuses the whole proposal and that a refresh with no proposal doc runs no `reorder`
 
-#### Scenario: A dependency keeps its place in the engine
+#### Scenario: Within a merit band, rank decides
 
-- **WHEN** `reorder A B` runs (a UNIT test) where A depends on B in the same band
-- **THEN** `board --json` still lists B before A, which is the snap-back the skill tells the agent to report
+- **WHEN** `reorder B A` runs (a UNIT test) over merit band P1 holding A and B with equal effective priority, where A depends on B
+- **THEN** `board --json` lists B before A, because `resolveEpics()` orders by effective priority, then merit, then rank, and applies no dependency pass
+
+#### Scenario: A stale proposal is refused whole
+
+- **WHEN** `proposals/rank` lists an id that has since been archived
+- **THEN** the skill runs no `reorder`, reports the stale id, and deletes the proposal
 
 ### Requirement: A re-seed updates existing docs instead of overwriting them
 
@@ -221,16 +242,27 @@ outcome, when it is false. When `delivered` is null, the epic SHALL be listed un
 - **WHEN** an archived epic's `delivered` is `null`
 - **THEN** the backlog lists it under "outcome unknown", and in neither the Delivered nor the Not pursuing table
 
-### Requirement: Decisions and answers flow back without acting unasked
+### Requirement: Decisions are agent-sourced open questions
 
-The release plan SHALL render `decisions` (question, recommendation) and let a viewer at `interact` write
-`answers/<n>` (agree or disagree, plus a note). "Send my answers" SHALL write only `answers/_submitted`. On refresh the
-skill SHALL report the answers to the user as untrusted input, and SHALL NOT act on one until the user confirms it.
+`decisions/<n>` SHALL hold `{question, recommendation, askedAt}` for each open question the agent is putting to the
+user now. pm records no open-question object and `board --json` carries none, so the page SHALL label each one "asked
+by the agent" with its date. The skill SHALL delete a `decisions/<n>` doc once its question is answered or withdrawn.
+
+#### Scenario: The skill names the source and the inverse
+
+- **WHEN** the skill's text is checked by the file-rung doc assertion
+- **THEN** it names the agent as the source of `decisions` and states that a doc is deleted once its question is answered or withdrawn
+
+### Requirement: Answers flow back without being acted on unasked
+
+A viewer at `interact` SHALL be able to write `answers/<n>` (agree or disagree, plus a note). "Send my answers" SHALL
+write only `answers/_submitted`. On refresh the skill SHALL report answers to the user as untrusted input, SHALL NOT
+act on one until the user confirms it, and SHALL never delete an answer.
 
 #### Scenario: The skill forbids acting on an answer unconfirmed
 
 - **WHEN** the skill's refresh procedure is checked by the file-rung doc assertion
-- **THEN** it states that answers are untrusted input to report to the user, and that no pm verb runs because of an answer until the user confirms it
+- **THEN** it states that answers are untrusted input to report to the user, that no pm verb runs because of an answer until the user confirms it, and that answers are never deleted
 
 ### Requirement: A host without the Artifact tool gets a standalone file
 

@@ -12,16 +12,27 @@ it was not given.
 - **WHEN** `mission --statement "Stabilize the API" --reason "kickoff"` runs, and then `mission --statement "Ship trading" --reason "API locked"` runs
 - **THEN** `mission show` prints "Ship trading", and `mission show --history` lists "Stabilize the API" with its replacement time and the reason "API locked"
 
-### Requirement: Clearing the mission keeps the record
+### Requirement: Ending the mission keeps the record
 
 `mission --end --reason "<why>"` SHALL end the current mission and append it to history with that reason, leaving
 no current mission. A statement or an end without `--reason`, or with an empty statement, SHALL be refused and SHALL
-write nothing.
+write nothing. `--end` with no current mission SHALL be refused, naming that there is none. Recording a statement
+identical to the current one SHALL write nothing and say so.
 
-#### Scenario: Clear is an inverse that keeps the record
+#### Scenario: End is an inverse that keeps the record
 
 - **WHEN** `mission --end --reason "project paused"` runs on a repo with a mission
 - **THEN** `board --json` reports `mission: null`, and the history holds the cleared statement with that reason
+
+#### Scenario: Same statement twice writes nothing
+
+- **WHEN** `mission --statement "x" --reason "r"` runs twice
+- **THEN** the second run says nothing changed, the history gains no entry, and the state file is byte-identical to before it
+
+#### Scenario: End with no mission
+
+- **WHEN** `mission --end --reason "x"` runs with no current mission
+- **THEN** it exits non-zero saying there is no current mission and writes nothing
 
 #### Scenario: Reason required
 

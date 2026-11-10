@@ -4,7 +4,8 @@
 
 `release <id>` SHALL accept `--theme <text>`, `--rationale <text>`, `--exit <text>` (the runnable exit check),
 `--order <n>` (a non-negative integer) and `--size major|minor|patch`, on create or amend and alongside the existing
-flags. Setting a field again SHALL replace it. The existing `--intent` stays the release's scope statement.
+flags. Setting a field again SHALL replace it. `--intent` stays the scope statement. `--size` is the semver impact; the
+brief's separate size weight is not recorded.
 
 #### Scenario: Set and read back plan fields
 
@@ -45,10 +46,9 @@ clearable fields, and SHALL write nothing.
 
 ### Requirement: Release status is derived, never recorded
 
-A release's status SHALL be computed on read and never stored. It is `shipped` when delivery is recorded with
-`--deliver`. Otherwise it is `in-progress` when any derived member is `active`, `paused` or `blocked`, or when some,
-but not all, members are archived. Otherwise it is `planned`. `--undeliver` SHALL return the status to whatever the
-members imply. `release` SHALL NOT accept `--status`.
+A release's status SHALL be computed on read and never stored: `shipped` when `--deliver` is recorded; else
+`in-progress` when any member is `active`, `paused`, `blocked` or archived; else `planned` (always, with no members).
+`--undeliver` SHALL return it to what the members imply. `release` SHALL NOT accept `--status`.
 
 #### Scenario: Delivered release is shipped regardless of members
 
@@ -59,6 +59,16 @@ members imply. `release` SHALL NOT accept `--status`.
 
 - **WHEN** r1 is not delivered and one member is `active`
 - **THEN** r1's `status` is `in-progress`
+
+#### Scenario: All members archived without delivery
+
+- **WHEN** every member of r1 is archived and `--deliver` was never run
+- **THEN** r1's `status` is `in-progress`
+
+#### Scenario: No members
+
+- **WHEN** r1 has no members and no delivery
+- **THEN** r1's `status` is `planned`
 
 #### Scenario: Undeliver reverts to the derived value
 
@@ -73,12 +83,12 @@ members imply. `release` SHALL NOT accept `--status`.
 ### Requirement: The plan records where the project is, with an inverse
 
 `release here <id>` SHALL record `<id>` as the plan's current release. `--text <line>` SHALL set the "we are here"
-line and `--next <line>` the "next up" line, each one line of at most 200 characters. `release here --unset` SHALL
-remove the marker and both lines. `release here <id>` naming no existing release SHALL be refused, writing nothing.
+line and `--next <line>` the "next up" line, each one line of at most 200 characters. `release here --clear-here` SHALL
+remove the marker and both lines; it is valueless and takes no id. `release here <id>` naming no existing release SHALL be refused, writing nothing.
 
 #### Scenario: Set and clear the marker
 
-- **WHEN** `release here r2 --text "Hardening the API" --next "Cut r2"` runs, and then `release here --unset` runs
+- **WHEN** `release here r2 --text "Hardening the API" --next "Cut r2"` runs, and then `release here --clear-here` runs
 - **THEN** after the first, `plan` is `{here: "r2", hereText: "Hardening the API", nextText: "Cut r2"}`; after the second, every field is `null`
 
 #### Scenario: Unknown release refused
@@ -105,10 +115,27 @@ report `plan.here` as `null` and list the stale id in `rejected` with the reason
 ### Requirement: Release planning is visible in release show
 
 `release show <id>` SHALL print theme, rationale, exit check, order, size and the derived status when any is set,
-and SHALL mark the release `(here)` when it is the plan's current release. `release show` with no id SHALL keep one
-line per release, appending the order and the derived status.
+SHALL mark it `(here)` when it is the plan's current release, and SHALL mark it `(critical path)` or
+`(off critical path)` when `criticalPath` is not null. `release show` with no id SHALL keep one line per release,
+appending the order, the derived status and the same critical-path mark.
 
 #### Scenario: Show one release
 
 - **WHEN** r1 has theme "Lock the API" and order 1, and is the `here` release
 - **THEN** `release show r1` prints the theme, `order 1`, the derived status and `(here)`
+
+#### Scenario: Off the critical path is said where listed
+
+- **WHEN** a mission milestone r2 is set and r3 has order 3
+- **THEN** `release show` marks r3 `(off critical path)` and r2 `(critical path)`
+
+### Requirement: /pm:status shows where the plan is
+
+While a `here` marker is set, `/pm:status` SHALL print `here: <id>`, followed by the "we are here" line when one is
+set. Without a marker it SHALL print no plan line. `PROJECT.md` SHALL NOT carry the marker or the critical-path marks
+in this release, because the boards are the planning view and `PROJECT.md` is regenerated in every pm repo.
+
+#### Scenario: Status names the marker
+
+- **WHEN** `release here r2 --text "Hardening the API"` has run and `/pm:status` renders
+- **THEN** its output contains `here: r2` and "Hardening the API"

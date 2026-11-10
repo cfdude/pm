@@ -20,12 +20,12 @@ export. pm still never opens a connection itself.
 - **Release planning fields** on `release <id>`: `--theme`, `--rationale`, `--exit`, `--order`, `--size`,
   each with a `--clear <field>` inverse. Release status is derived (`planned | in-progress | shipped`) and
   never recorded, so it cannot disagree with the existing `--deliver`. A plan position comes from
-  `release here <id> [--text] [--next]` and is removed with `release here --unset`. `here` becomes a reserved
+  `release here <id> [--text] [--next]` and is removed with `release here --clear-here`. `here` becomes a reserved
   release id. Closes #268 (its `scope` maps to the existing `intent`).
 - **New verb `mission`**: records the mission statement and keeps a history of past statements, sets the
   milestone release, and adds and removes numbered exit criteria. Every one of these operations has a
   recorded inverse. Releases ordered at or before the milestone are critical path. The mission shows in
-  `/pm:status`, one SessionStart brief line and one managed rules-block line (brief §4 item 1).
+  `/pm:status`, one SessionStart brief line and a one-line `## Mission` rules-block section (brief §4 item 1).
 - **Epic `summary` and `whyNow`**: one-line fields on `add-epic`, `update-epic` and `add-many`, each clearable.
   When an epic leaves `untriaged` without them, a warning names the missing fields. The write still succeeds.
   The inward tracker recipe fills `summary` from the item.
@@ -37,8 +37,8 @@ export. pm still never opens a connection itself.
   so one bad record cannot break the board. Database rules declared with the page, not client checks, decide
   who writes what.
 - **Default-on switch**: an `OPT_INS` row for `set-boards on|off`, on unless turned off, plus a one-time
-  `upgrade` announcement. While boards are on, the managed rules block carries one pointer line and the brief
-  carries one refresh line. Both are absent while boards are off.
+  `upgrade` announcement. While boards are on, the managed rules block carries a short `## Boards` section and the
+  brief carries one refresh line. Both are absent while boards are off.
 
 Out of scope, with where each goes (none of it is dropped):
 - brief item 4, the backlog growth-over-time view → follow-up epic `backlog-trend-view`, which needs `epic-registration-clock`
@@ -47,6 +47,9 @@ Out of scope, with where each goes (none of it is dropped):
 - brief item 8, cuts confirmed and recorded → already delivered by `backlog-grooming-pass`
 - brief item 9, the commit-time close check → follow-up epic `commit-time-close-check`
 - turning the `summary`/`whyNow` warning into a refusal one release later → follow-up epic `epic-summary-required-on-triage`
+- critical-path and `here` marks in `PROJECT.md` → not in this release: `release show`, `/pm:status` and the boards
+  carry them, and `PROJECT.md` regenerates in every pm repo
+- the brief's "size weight" → declined (start lean); `--size` records the semver impact only
 - votes, effort, the data-science flag, the per-release log and CSV export → declined for now ("start lean")
 - #267 and #271 → independent fixes, not in this change
 
@@ -68,7 +71,8 @@ Out of scope, with where each goes (none of it is dropped):
 - `epic-annotation`: adds `summary` and `whyNow` to the shared epic flag surface, and the warning on leaving
   `untriaged`.
 - `feature-switches`: adds the default-on `boards` switch, its upgrade announcement and its cost-table rows.
-- `managed-rules-block`: adds the boards pointer line, conditioned on the switch.
+- `managed-rules-block`: adds the `## Boards` section (follows the switch) and the `## Mission` section (follows the
+  record), both verb-refreshed and outside the conditional-section set.
 - `tracker-sync`: the inward registration recipe carries a `summary`.
 
 ## Impact

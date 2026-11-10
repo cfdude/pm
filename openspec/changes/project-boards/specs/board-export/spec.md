@@ -4,8 +4,8 @@
 
 The engine SHALL provide a verb `board`. `board --json` SHALL print one JSON object. Plain `board` SHALL print a
 short text summary of the same snapshot: counts, the "here" release and the mission statement. `board` SHALL write
-nothing (no state file, no rules block, no log), SHALL be declared read-only in the verb registry, SHALL run no git
-command and SHALL open no network connection.
+nothing (no state file, no rules block, no log), SHALL be declared read-only in the verb registry with an
+`exercise` argument list, SHALL run no git command and SHALL open no network connection.
 
 #### Scenario: board writes nothing
 
@@ -15,7 +15,7 @@ command and SHALL open no network connection.
 #### Scenario: board is declared read-only
 
 - **WHEN** the verb registry is read
-- **THEN** `board` is present with a read-only effect, and the registry and dispatch-table equality test passes
+- **THEN** `board` is present with a read-only effect and an `exercise` list, and the registry and dispatch-table equality test passes
 
 #### Scenario: plain board prints a summary
 
@@ -25,8 +25,9 @@ command and SHALL open no network connection.
 ### Requirement: The snapshot has a stable versioned shape
 
 `board --json` SHALL emit `schemaVersion` (the integer 1 for this release), `pmVersion`, `asOf` (an ISO time),
-`boardsEnabled` (the boards switch, `true` when unset), `counts`, `mission`, `milestone`, `plan`, `releases`, `epics` and `rejected`. An unknown value SHALL be present as
-`null` or `[]`, never omitted. Changing the meaning of an existing key SHALL increment `schemaVersion`.
+`boardsEnabled` (`true` when the switch is unset), `counts`, `mission`, `milestone`, `plan`, `releases`, `epics` and
+`rejected`. An unknown value SHALL be `null` or `[]`, never omitted. A change in an existing key's meaning SHALL
+increment `schemaVersion`.
 
 #### Scenario: Every top-level key is present on an empty record
 
@@ -38,40 +39,63 @@ command and SHALL open no network connection.
 - **WHEN** `board --json` runs
 - **THEN** `schemaVersion` is the integer `1`
 
-### Requirement: Open epics come in engine order
+### Requirement: The mission and milestone objects have a fixed shape
 
-`epics` SHALL list every non-archived epic first, in the order the engine's shared epic ordering produces (the order
-`next` and `PROJECT.md` use). Each entry's `position` SHALL be its zero-based index in that order, and `priority`
-SHALL be the effective priority.
+`mission` SHALL be `null` or `{statement, setAt, reason}`. `milestone` SHALL be `null` or
+`{release, criteria: [{id, text, check, needsHuman}]}`, where `criteria` lists active criteria only, in id order.
+`plan` SHALL be `{here, hereText, nextText}`, with each field `null` when unset.
 
-#### Scenario: Order matches the engine ordering
+#### Scenario: Milestone shape
 
-- **WHEN** three open epics have priorities P2, P1 and P1 and ranks such that the engine orders them B, A, C
+- **WHEN** a mission milestone r2 is set with criteria c1 (with a check) and c2 (needs human)
+- **THEN** `milestone` is `{release: "r2", criteria: [{id: "c1", …, needsHuman: false}, {id: "c2", check: null, needsHuman: true}]}`
+
+### Requirement: Open epics come in the render order
+
+`epics` SHALL list the registered non-archived epics first, in the order `resolveEpics()` produces for `PROJECT.md`:
+effective priority, then merit priority, then rank, then lane, then id. That order applies no dependency pass. It is
+not the brief's NEXT UP order, which also runs `orderQueueWithDependencies` over queued and untriaged epics. An epic
+`resolveEpics()` invents for an unregistered on-disk change SHALL NOT be listed. `counts.unregisteredChanges` SHALL
+count those epics.
+
+#### Scenario: Order matches the render ordering
+
+- **WHEN** three open epics have merit priorities P2, P1 and P1, no dependencies, and ranks such that `resolveEpics()` orders them B, A, C
 - **THEN** `epics` lists B, A, C with `position` 0, 1, 2
+
+#### Scenario: An unregistered change is counted, not listed
+
+- **WHEN** a change directory exists on disk with no registered epic
+- **THEN** no entry for it appears in `epics` and `counts.unregisteredChanges` is 1
 
 ### Requirement: Each epic entry carries the board fields
 
-Each epic entry SHALL carry `id`, `title`, `summary`, `whyNow`, `description`, `lane`, `status`, `priority`, `rank`,
-`position`, `release`, `externalUrl`, `dependsOn`, `delivered`, `outcome`, `outcomeReason` and `updatedAt`. Any field
-the epic does not carry, or carries as a non-string where a string is expected, SHALL be `null`. `rank` SHALL be the
-recorded rank, or `null` if there is none.
+Each epic entry SHALL carry `id`, `title`, `summary`, `whyNow`, `description`, `lane`, `status`, `priority` (the
+effective priority), `meritPriority`, `rank` (the recorded rank, or `null`), `position`, `release`, `externalUrl`,
+`dependsOn`, `delivered`, `outcome`, `outcomeReason` and `updatedAt` (the epic's `touchedAt`, or `null`). A field the
+epic does not carry, or that is a non-string where a string is expected, SHALL be `null`.
 
 #### Scenario: Recorded rank is carried and an unranked epic reports null
 
 - **WHEN** epic A has rank 2 and epic B has no rank
 - **THEN** A's `rank` is 2 and B's `rank` is `null`
 
-#### Scenario: A non-string summary reads as null
+#### Scenario: A lifted blocker shows both priorities
 
-- **WHEN** an epic's stored `summary` is a number
-- **THEN** its entry's `summary` is `null`
+- **WHEN** merit-P3 epic B is a `depends-on` target of P1 epic A
+- **THEN** B's `priority` is `P1` and its `meritPriority` is `P3`
 
-### Requirement: delivered is derived once, in three states
+#### Scenario: updatedAt is touchedAt
 
-`delivered` SHALL be `true` for an archived epic whose disposition outcome is `delivered`. It SHALL be `false` for an
-archived epic with any other recorded outcome, and for any epic that is not archived. It SHALL be `null` for an
-archived epic with no recorded disposition, meaning unknown. It SHALL never be inferred from `status` alone.
-`outcome` and `outcomeReason` SHALL copy the disposition, or be `null` when there is none.
+- **WHEN** an epic has `touchedAt` "2026-11-01T00:00:00Z" and another has none
+- **THEN** their `updatedAt` values are that time and `null`
+
+### Requirement: delivered is derived from the one outcome reader, in three states
+
+`outcome` SHALL be the engine's single outcome reader (`outcomeOf`) applied to the epic when it carries a disposition,
+and `null` when it carries none, exactly as `list --json` reports it. `delivered` SHALL be `true` when the epic is
+archived and `outcome` is `delivered`. It SHALL be `null` when the epic is archived and `outcome` is `null` or
+`unknown`, which includes every engine stamp written with outcome `unknown`. It SHALL be `false` otherwise.
 
 #### Scenario: Archived with outcome delivered
 
@@ -83,10 +107,15 @@ archived epic with no recorded disposition, meaning unknown. It SHALL never be i
 - **WHEN** an archived epic's disposition outcome is `declined` with reason "out of scope"
 - **THEN** its `delivered` is `false`, `outcome` is `declined` and `outcomeReason` is "out of scope"
 
+#### Scenario: An engine stamp is unknown, not delivered
+
+- **WHEN** an archived epic carries an engine stamp `{outcome: "unknown", recordedBy: <an engine stamp token>}`
+- **THEN** its `outcome` is `unknown` and its `delivered` is `null`
+
 #### Scenario: Archived with no disposition
 
 - **WHEN** an archived epic carries no disposition
-- **THEN** its `delivered` is `null`
+- **THEN** its `outcome` and `delivered` are both `null`
 
 #### Scenario: Open epic
 
@@ -122,8 +151,8 @@ is neither a positive integer nor `all` SHALL be refused, naming the accepted va
 ### Requirement: dependsOn is resolved
 
 `dependsOn` SHALL list the ids that the epic's `depends-on` links target, in link order, without duplicates, and only
-those of epics that exist in the record. A target that names no existing epic SHALL be left out and recorded in
-`rejected` with the reason `dangling depends-on`. Links of other types SHALL NOT appear.
+those of registered epics. A target that names no registered epic SHALL be left out and recorded in `rejected` with
+the reason `dangling depends-on`. Links of other types SHALL NOT appear.
 
 #### Scenario: A depends-on link resolves
 
@@ -135,21 +164,42 @@ those of epics that exist in the record. A target that names no existing epic SH
 - **WHEN** epic A carries `depends-on:gone` and no epic `gone` exists
 - **THEN** A's `dependsOn` is `[]` and `rejected` holds an entry for A with the reason `dangling depends-on`, naming `gone`
 
-### Requirement: Ids that fail the board id format are rejected, not emitted
+### Requirement: Every emitted id passes the board id format
 
-Every epic id, release id and member id SHALL match `/^[A-Za-z0-9._-]+$/` before it is emitted. A record that fails
-SHALL be left out of `epics` or `releases` and listed in `rejected` as `{kind, id, reason: "id format"}`, with control
-characters in the id escaped. The rest of the snapshot SHALL still be emitted, and the exit code SHALL be 0.
+Every id the snapshot emits SHALL match `/^[A-Za-z0-9._-]+$/`: epic, release and member ids, `dependsOn` targets, an
+epic's `release`, `plan.here`, `milestone.release` and criterion ids. A record with a failing id SHALL be omitted; a
+failing reference SHALL become `null` or leave its list. Each failure SHALL appear in `rejected` as
+`{kind, id, field, reason: "id format"}`, control characters escaped, and the verb SHALL still exit 0.
 
 #### Scenario: A malformed epic id is excluded and named
 
 - **WHEN** the state holds an epic whose id is `a"><img src=x>` alongside a valid epic
 - **THEN** `epics` holds only the valid epic, `rejected` holds one entry of kind `epic` with reason `id format`, and the exit code is 0
 
+#### Scenario: A malformed reference is nulled
+
+- **WHEN** a valid epic's `release` is `r1"><b>` and `plan.here` holds the same value
+- **THEN** that epic's `release` and `plan.here` are `null`, and `rejected` names both fields
+
 #### Scenario: A malformed release member is excluded
 
 - **WHEN** a release's derived members include an id that fails the format
 - **THEN** that id is absent from the release's `members` and is listed in `rejected`
+
+### Requirement: externalUrl is emitted only with an http or https scheme
+
+`externalUrl` SHALL be emitted only when it parses as an absolute URL whose scheme is `http` or `https`. Otherwise it
+SHALL be `null` and listed in `rejected` with the reason `url scheme`.
+
+#### Scenario: A javascript URL is not emitted
+
+- **WHEN** an epic's `externalUrl` is `javascript:alert(1)`
+- **THEN** its entry's `externalUrl` is `null` and `rejected` holds `{kind: "url", id: <that epic>, reason: "url scheme"}`
+
+#### Scenario: An https URL is emitted
+
+- **WHEN** an epic's `externalUrl` is `https://github.com/o/r/issues/1`
+- **THEN** its entry carries that URL unchanged
 
 ### Requirement: Releases are listed in plan order with their plan fields
 
@@ -164,11 +214,12 @@ entry SHALL carry `id`, `intent`, `target`, `theme`, `rationale`, `exit`, `order
 
 ### Requirement: counts partition the record
 
-`counts` SHALL carry `open` and `byPriority` (keyed P0, P1, P2, P3 and `P?`), and `delivered`, `notPursued` and
-`unknownOutcome`, which count archived epics whose `delivered` is true, false and null respectively. It SHALL also
-carry `unassigned`, the number of open epics in no release. Counts SHALL cover the whole record, not only the window.
+`counts` SHALL carry `open`, `unregisteredChanges`, `unassigned` (open epics in no release) and `byPriority`, which is
+keyed P0, P1, P2, P3 and `P?` and counted by effective priority. `delivered`, `notPursued` and `unknownOutcome` SHALL
+count archived epics whose `delivered` is true, false and null respectively. Counts SHALL cover the whole record, not
+only the window.
 
 #### Scenario: Counts partition the archived epics
 
-- **WHEN** the record holds 3 archived epics delivered, 2 declined and 1 with no disposition
-- **THEN** `counts.delivered` is 3, `counts.notPursued` is 2 and `counts.unknownOutcome` is 1
+- **WHEN** the record holds 3 archived epics delivered, 2 declined, 1 engine-stamped `unknown` and 1 with no disposition
+- **THEN** `counts.delivered` is 3, `counts.notPursued` is 2 and `counts.unknownOutcome` is 2
