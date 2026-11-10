@@ -125,7 +125,10 @@ needed). No Highway-specific strings in the pulled files (checked with `rg`).
 titles with `esc()` but interpolates `it.id` and `it.prio` raw into `innerHTML` text, `href`, `data-*` and class
 names. Item docs live in a shared database, so a writer could inject markup. The reference copy stays verbatim; the
 shipped `project-boards` templates must escape every interpolated value, whitelist `prio` against the level list, and
-validate ids (`/^[A-Za-z0-9._-]+$/` for pm epic ids) in the page and in the seed/export step.
+validate ids (`/^[A-Za-z0-9._-]+$/` for pm epic ids) in the page and in the seed/export step. The commit review
+added two more: authorization rests on `canEdit()` in the client (the shipped skill must rely on the db capability
+rules, and treat page checks as UI gating only), and notes from other users are iterated unvalidated (the page must
+check types, use `Array.isArray`, and isolate each render step so one bad record cannot break the board).
 
 ## Recommendation
 
