@@ -16006,7 +16006,85 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-23T16:46:24.209Z",
-      "touchedAt": "2026-10-23T16:46:24.214Z"
+      "touchedAt": "2026-11-10T03:30:43.699Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-10T03:30:43.694Z",
+          "artifacts": [
+            "openspec/changes/project-boards/proposal.md",
+            "openspec/changes/project-boards/design.md",
+            "openspec/changes/project-boards/tasks.md",
+            "openspec/changes/project-boards/specs/board-export/spec.md",
+            "openspec/changes/project-boards/specs/epic-annotation/spec.md",
+            "openspec/changes/project-boards/specs/feature-switches/spec.md",
+            "openspec/changes/project-boards/specs/managed-rules-block/spec.md",
+            "openspec/changes/project-boards/specs/project-boards/spec.md",
+            "openspec/changes/project-boards/specs/project-mission/spec.md",
+            "openspec/changes/project-boards/specs/release-planning/spec.md",
+            "openspec/changes/project-boards/specs/tracker-sync/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/project-boards/proposal.md",
+              "sha256": "3539be2833f5a7e4ed55a2d7a0881fee8f0b0ccfa1cb0011285217c487e3a484"
+            },
+            {
+              "path": "openspec/changes/project-boards/design.md",
+              "sha256": "9add2a6528ac7b939bd985fd9d93229a57567d52a39c7f899d7796a298949868"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/board-export/spec.md",
+              "sha256": "7bd22f9ad1dcd69be4e28d1d21aa7e077ce939ab7f7747e124e2b1ff86d2dde1"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/epic-annotation/spec.md",
+              "sha256": "1359f103297fb5b6b6e490fa699ceaa009c33e9199e371eb2d60c2ef565429d0"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/feature-switches/spec.md",
+              "sha256": "0f8528f188cfc09081e5ffe8d8c04dbfb091c95f0f157d54b5ccc728e602c3fd"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/managed-rules-block/spec.md",
+              "sha256": "ee173f1d2719a066d469ba92f806a007925597551f6cfd94816ed7f25cdd353f"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/project-boards/spec.md",
+              "sha256": "13a2ff0006e9dff48abb3255f0f3ba4db5b7af41b82b92824c7d50f74c61bfe7"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/project-mission/spec.md",
+              "sha256": "4bd62026311bac1005cf9eb2d13bb560e59713b23df7ff292b4c4ac293fddcbd"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/release-planning/spec.md",
+              "sha256": "85cf130097b0c30033e56e1d1993f351c4c0f51056fce12aad8823813d35569a"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/tracker-sync/spec.md",
+              "sha256": "b597edcdfd1eb8f68f8e2d356c86343b69d7fab17797a8a4076721c1355ee767"
+            }
+          ],
+          "reviewer": "opus fresh-context: round 1 fail (2 Critical, 8 Important) fixed in 76f6c26b; round 2 pass, 2 Important fixed in 0dac5569 without re-review"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-10T03:30:43.694Z",
+          "lastPassAt": "2026-11-10T03:30:43.694Z"
+        }
+      },
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-11-10T03:30:43.699Z",
+          "lastAt": "2026-11-10T03:30:43.699Z"
+        }
+      ]
     },
     {
       "id": "opt-in-nudge-shows-running-cost",
@@ -16165,7 +16243,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2308,
+  "revision": 2309,
   "reviewMode": "standard",
   "releases": [
     {
