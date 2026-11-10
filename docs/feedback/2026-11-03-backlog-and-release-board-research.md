@@ -32,7 +32,7 @@ Hermes nearly got greenlit on its name alone.
   it in Notion, "Standard Backlog Artifact — Spec, Source & Recommendations"
   (https://app.notion.com/p/40da73c68c7f81248f38d19192333ea7), with the HTML source attached
   (`backlog-template.html`, `enterprise-portal-backlog.html`, `example-seed.json`, `seed_to_batch.py`,
-  `make_template.py`). The spec below is read from that page; the attached HTML files are not yet pulled.
+  `make_template.py`). The spec below is read from that page; the template, example seed and seed tool are now pulled (see "What the two iv-studio-dev pages show").
   Pattern, in short:
   - One static page over the artifact database (`db` plus `user` capabilities). Collections `items/<ID>`,
     `votes/<userId>`, `notes/<userId>`, `snapshots/<day>`. Rules: read `view`, write `admin`; votes and notes are
@@ -99,6 +99,27 @@ activity and decisions, filtered per release); plan-level green-light `criteria`
 `{removed, reason, note}` on the backlog page only, for Not pursuing marks on epics that have not ended. That
 page-local mark is deliberate: pm has dispositions only for ended epics, so the skill must not overwrite
 `backlogMeta` on re-seed.
+
+### What the two iv-studio-dev pages show (read 2026-11-09)
+
+Both are static HTML over the artifact database, read-only except where noted. Facts that shape the skill:
+- **Release plan** (`plan/state`, `releases`, `epics`, `log`, `criteria`, `decisions`, `answers`): capability
+  `db` with one rule (`read: view, write: admin`) plus `user`. Page writes only `answers`, and `answers/_submitted`
+  on "Send my answers". Banner shows `hereText`, `nextText`, `head`, and a stale warning at 2+ days.
+- **Backlog** (`epics`, `releases`, `backlogMeta`, `page/info`): declared `db` with no rules, so it runs on the
+  default rules. Page writes only `backlogMeta/<epicId>` (the page-local Not pursuing mark). `page/info` carries
+  `headline` and `lastUpdated`, one more invented doc for `board --json` to supply. Ranks come from the feed;
+  drag, votes and notes are listed as "planned for later".
+- **Delivered rule** is the one gh#270 asks for: ended and (not archived, or outcome absent, or `delivered`).
+  Anything else ended lands in Not pursuing with the outcome as the reason. The export should compute this once.
+- **Dependency warning** matches the Enterprise Portal rule: a `dependsOn` epic ranked below its dependent warns.
+
+Files pulled from the Notion write-up into
+`docs/feedback/reference/enterprise-portal-backlog-template/`: `backlog-template.html` (CONFIG block at
+line 161), `example-seed.json`, `seed_to_batch.py` (validates, renumbers ranks per priority group, chunks writes
+by 50). Not pulled: the live Enterprise Portal source (Highway work product, and the template carries the same
+logic with every project string moved into CONFIG) and `make_template.py` (how the template was derived; not
+needed). No Highway-specific strings in the pulled files (checked with `rg`).
 
 ## Recommendation
 
