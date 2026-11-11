@@ -8,3 +8,5 @@ Published readouts for this project. Artifacts live with the claude.ai account, 
 | 2026-09-28 | pm Backlog Triage | https://claude.ai/artifact/QWNBfNzwyBcq9GbtS7TWJC | All 65 open epics triaged against 0.50.0: closures, merges, 8 themes, chains, decisions, proposed 0.51.0 shape |
 | 2026-10-20 | 0.53.0 Build Readout | https://claude.ai/artifact/W5wYaxHN7hdXJm2wevHR52 | Morning closeout of the unattended 0.53.0 build: shipped, fixed, decisions, calls for Rob, next steps |
 | 2026-10-23 | MI Cutover Plan | https://claude.ai/artifact/S421GrdRG1hp47DRb9grb2 | Reference (from market-intelligence, not published here) for release-planning-mission-and-milestone: release table, cutover line, exit criteria, decisions |
+| 2026-11-11 | Project Backlog | https://claude.ai/artifact/96Suu2a3cnqFjRQ19b62vc | Live backlog board for pm-dev, built by the project-boards skill (proving run); epics by priority band, drag-rank within a band |
+| 2026-11-11 | Release Plan | https://claude.ai/artifact/FrEqabKJZPUiSUYeAXSRvB | Live release plan board for pm-dev, built by the project-boards skill (proving run); no mission set yet, so it shows releases only |
