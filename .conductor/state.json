@@ -16006,7 +16006,7 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-23T16:46:24.209Z",
-      "touchedAt": "2026-11-10T03:30:43.699Z",
+      "touchedAt": "2026-11-11T05:33:17.126Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -16082,9 +16082,10 @@
         {
           "session": "pm-dev",
           "firstAt": "2026-11-10T03:30:43.699Z",
-          "lastAt": "2026-11-10T03:30:43.699Z"
+          "lastAt": "2026-11-11T05:33:17.126Z"
         }
-      ]
+      ],
+      "release": "0.55.0"
     },
     {
       "id": "opt-in-nudge-shows-running-cost",
@@ -16233,6 +16234,114 @@
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:22.247Z",
       "touchedAt": "2026-11-03T16:08:22.252Z"
+    },
+    {
+      "id": "mission-anti-spawn-rule",
+      "title": "Mission anti-spawn rule",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "release-planning-mission-and-milestone",
+          "reason": "follow-up deferred out of the project-boards change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Follow-up to project-boards: use the project mission to refuse or flag epics that serve no mission (the epic -> new epics -> close epic spawn cycle).",
+      "attributedCommits": [],
+      "createdAt": "2026-11-11T05:33:23.603Z",
+      "touchedAt": "2026-11-11T05:33:23.608Z",
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-11-11T05:33:23.608Z",
+          "lastAt": "2026-11-11T05:33:23.608Z"
+        }
+      ]
+    },
+    {
+      "id": "backlog-trend-view",
+      "title": "Backlog trend view",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "release-planning-mission-and-milestone",
+          "reason": "follow-up deferred out of the project-boards change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Follow-up to project-boards: a trend view of backlog size and age over time on the backlog board.",
+      "attributedCommits": [],
+      "createdAt": "2026-11-11T05:33:24.676Z",
+      "touchedAt": "2026-11-11T05:33:24.682Z",
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-11-11T05:33:24.682Z",
+          "lastAt": "2026-11-11T05:33:24.682Z"
+        }
+      ]
+    },
+    {
+      "id": "commit-time-close-check",
+      "title": "Commit-time close check",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "release-planning-mission-and-milestone",
+          "reason": "follow-up deferred out of the project-boards change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Follow-up to project-boards: at commit time, check whether a commit closes or completes an epic and prompt for its disposition.",
+      "attributedCommits": [],
+      "createdAt": "2026-11-11T05:33:25.728Z",
+      "touchedAt": "2026-11-11T05:33:25.733Z",
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-11-11T05:33:25.733Z",
+          "lastAt": "2026-11-11T05:33:25.733Z"
+        }
+      ]
+    },
+    {
+      "id": "epic-summary-required-on-triage",
+      "title": "Epic summary required on triage",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "release-planning-mission-and-milestone",
+          "reason": "follow-up deferred out of the project-boards change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Follow-up to project-boards: require a one-line summary on an epic before it leaves untriaged.",
+      "attributedCommits": [],
+      "createdAt": "2026-11-11T05:33:26.841Z",
+      "touchedAt": "2026-11-11T05:33:26.847Z",
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-11-11T05:33:26.847Z",
+          "lastAt": "2026-11-11T05:33:26.847Z"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -16243,7 +16352,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2309,
+  "revision": 2314,
   "reviewMode": "standard",
   "releases": [
     {
@@ -16986,6 +17095,11 @@
           "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 619999c0, round 2 no BLOCKS, live run of the combined call exit 0"
         }
       }
+    },
+    {
+      "id": "0.55.0",
+      "intent": "Release planning and project boards: mission, milestone, release plan fields, a read-only board export, and a default-on release plan board and backlog board for every pm project",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z",
