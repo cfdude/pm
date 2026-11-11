@@ -208,7 +208,7 @@
 
 ## 7. Integration checks
 
-- [ ] 7.1 Proving run (research build order step 3): build pm-dev's two boards from the skill as written, using
+- [x] 7.1 Proving run (research build order step 3): build pm-dev's two boards from the skill as written, using
       `/pm:boards`, and keep the process notes. Run one `ArtifactData` list of each page-written collection, and one
       read at a lower `as_level`. Record that the page-written collections are exactly `answers`, `backlogMeta` and
       `proposals`. Every instruction from the skill that did not run as written is a filing (R.7).
