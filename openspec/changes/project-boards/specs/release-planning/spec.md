@@ -30,7 +30,7 @@ command SHALL write nothing.
 
 ### Requirement: Every plan field can be cleared
 
-`release <id> --clear <field>` (repeatable) SHALL remove `theme`, `rationale`, `exit`, `order` or `size`. Clearing an
+`release <id> --clear <field>` (repeatable) SHALL remove `theme`, `rationale`, `exit`, `order`, `size` or `target`. Clearing an
 absent field SHALL be a no-op, reported as such. A `--clear` naming any other field SHALL be refused, naming the
 clearable fields, and SHALL write nothing.
 
@@ -38,6 +38,11 @@ clearable fields, and SHALL write nothing.
 
 - **WHEN** `release r1 --clear theme` runs on a release with a theme
 - **THEN** `board --json` reports `theme: null` for r1 and its other fields are unchanged
+
+#### Scenario: Target is clearable
+
+- **WHEN** `release r1 --clear target` runs on a release with a target, and `release r1 --target x --clear target` runs
+- **THEN** the first removes `target` and the second is refused as a contradiction, writing nothing
 
 #### Scenario: Unknown clear field refused
 

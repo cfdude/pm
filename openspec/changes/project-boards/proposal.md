@@ -29,6 +29,12 @@ export. pm still never opens a connection itself.
 - **Epic `summary` and `whyNow`**: one-line fields on `add-epic`, `update-epic` and `add-many`, each clearable.
   When an epic leaves `untriaged` without them, a warning names the missing fields. The write still succeeds.
   The inward tracker recipe fills `summary` from the item.
+- **Board redesign, engine half (Rob feedback 2026-11-11).** A new verb `set-project --name <text> --key <KEY>` (each with an
+  `--unset <name|key>` inverse) records the project name and a two- or three-letter key. Every epic gains an integer `number`, assigned
+  at registration by the one creation sink (a tracker issue number where free, else a persisted counter), and a `MIGRATIONS` entry keyed
+  to 0.55.0 numbers the existing ones. `board --json` gains a top-level `project: {name, key}`, per-epic `number` and `key`
+  (`PM-256`, derived, `null` while the key is unset) and per-release `progress: {done, total}`; `schemaVersion` stays 1. The usage text
+  of `release` now names `release here` and the plan fields. The HTML templates and the skill follow in a later change.
 - **Bundled skill `skills/project-boards/`** with two page templates (release plan, backlog), the database
   contract and its access rules, the refresh procedure, drag-to-rank handling, the standalone-HTML fallback
   and the `docs/artifacts/artifacts.md` registration step. A thin `/pm:boards` command loads it.
@@ -68,6 +74,9 @@ Out of scope, with where each goes (none of it is dropped):
 - `project-boards`: the bundled skill and `/pm:boards`, both page templates, the database contract and its
   access rules, the refresh and drag-apply procedures, the standalone fallback, and page-side security.
 
+- `project-identity`: the project name and key (`set-project`), the per-epic number and its assignment rule, the 0.55.0 numbering
+  migration, and the derived display key.
+
 ### Modified Capabilities
 
 - `epic-annotation`: adds `summary` and `whyNow` to the shared epic flag surface, and the warning on leaving
@@ -76,6 +85,7 @@ Out of scope, with where each goes (none of it is dropped):
 - `managed-rules-block`: adds the `## Boards` section (follows the switch) and the `## Mission` section (follows the
   record), both verb-refreshed and outside the conditional-section set.
 - `tracker-sync`: the inward registration recipe carries a `summary`.
+- `board-export` (amended): the `project` object, epic `number` and `key`, release `progress`, and the `project` rejection kind.
 
 ## Impact
 
@@ -91,5 +101,5 @@ Out of scope, with where each goes (none of it is dropped):
   (there is no `commands/release.md`), `commands/list.md` (no change to `list --json`; says so), and the
   Mintlify site.
 - State: new optional `mission`, `releasePlan` and `boards` keys, new optional release and epic fields. All
-  additive. A state file written by 0.54.0 loads unchanged. No `MIGRATIONS` entry.
+  additive. A state file written by 0.54.0 loads unchanged. One `MIGRATIONS` entry keyed to 0.55.0 numbers every epic (board redesign, below); nothing else is transformed.
 - Release: a member of 0.55.0.

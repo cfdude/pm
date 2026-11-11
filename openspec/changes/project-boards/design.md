@@ -131,6 +131,26 @@ batches to every refresh. `--archived all` covers the one-off case.
 The release plan's decisions table holds the questions the agent is asking now, written by the agent and labelled as
 such. A pm-recorded open-question object would be a follow-up, and none is proposed here.
 
+**D20. Jira-style keys: store a number, derive the key (board redesign, 2026-11-11).** An epic stores only an integer `number`; the project
+stores `projectKey` and `projectName` (`set-project`) and a counter `nextEpicNumber`. The displayed key `PM-256` is derived on read, so
+changing the key renames nothing on disk. The rule lives in `pushEpic` (via `assignEpicNumber`), the one sink every registration path
+routes through, so a fifth path cannot skip it. An issue number becomes the epic number where it is free, so `PM-256` is issue 256;
+everything else takes the counter, skipping held numbers. The counter is persisted and only advances, so a number is never reused.
+`set-project` writes the record and re-renders only: it does not touch the managed rules block, so it adds no overhead row.
+
+**D21. `schemaVersion` stays 1.** The `project` object, the epic `number`/`key` and the release `progress` are additive keys, and the
+snapshot has not shipped (0.55.0 is unreleased), so there is no consumer to break and the "meaning of an existing key changed" rule
+does not fire. The export emits `project: {name: null, key: null}` while unset and never derives a name or key.
+
+**D22. Release progress reads the entries, not the records.** `progress` is computed from the epic entries the export already builds
+(`delivered`, `outcome`), over every member in the record, so it cannot disagree with an epic row and is not clipped by the ended-epic
+window. "Non-declined" is read literally: only outcome `declined` leaves the denominator; a killed or superseded member keeps the release
+below 100% until it is removed from it (`release --unmember`).
+
+**D23. Counter caveat, stated.** Backfilling gives the un-numbered epics the numbers after the largest tracker number, so in a repo whose
+issues run to about 270 the code-name epics take 271 and up. A later issue whose number is already held takes the counter instead, and
+its key then differs from its issue number. A higher counter floor would avoid it and is an open question for the owner.
+
 ## Inverses (gate item 1, enumerated here so the R.1 task can check them)
 
 | Operation | Inverse | Shipped |
@@ -142,6 +162,10 @@ such. A pm-recorded open-question object would be a follow-up, and none is propo
 | `mission --add-criterion` | `mission --remove-criterion` (marked, not deleted) | yes |
 | `--summary`, `--why-now` | `--clear summary`, `--clear why-now` | yes |
 | `set-boards off` | `set-boards on` | yes |
+| `set-project --name`, `--key` | `set-project --unset name`, `--unset key` | yes |
+| epic number assigned | none, by design: a number is never reassigned or freed, and `nextEpicNumber` only advances. `remove-epic` removes the epic and its number with it; the number can return only through a later epic whose `externalId` is that integer | **no**: deliberate |
+| `release <id> --target` | `release <id> --clear target` (added in 8.5; `target` had none) | yes |
+| `release <id> --intent` | none: `intent` has no `--clear`, because creating a release without one is refused | **no**: deliberate |
 | rank proposal written by drag | deleted by the agent after `reorder`; `reorder` again to undo the rank | yes |
 | backlogMeta Not-pursuing mark | page Restore | yes |
 | seed writes an `epics` doc | refresh deletes it when the export drops the epic | yes |
@@ -161,7 +185,7 @@ such. A pm-recorded open-question object would be a follow-up, and none is propo
 
 ## Migration Plan
 
-Additive. A 0.54.0 state file loads unchanged, because every new key is optional and absent means today's behaviour
+Additive, with one transform. A 0.54.0 state file loads unchanged, and a `MIGRATIONS` entry keyed to 0.55.0 numbers its epics (D20; the same function also runs on every `upgrade`), because every new key is optional and absent means today's behaviour
 (with boards on). Task 7.3 is the evidence: a unit test loads a 0.54.0-shaped fixture. Rollback is reinstalling the
 prior plugin version. Whether that version tolerates the new keys is NOT claimed or tested here. If it matters, it is
 a separate check at the release cut. Boards stay in the user's account until the user deletes them.

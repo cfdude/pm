@@ -2,9 +2,11 @@
 
 ### Requirement: rejected entries have one shape and a closed reason list
 
-Every `rejected` entry SHALL be `{kind, id, field, value, reason}`. `kind` is one of `epic`, `release`, `link`, `url`,
-`plan` or `milestone`. `id` is the record concerned (escaped) or `null`. `value` is the offending value, control characters escaped. `reason` is one of `id format`,
-`dangling depends-on`, `url scheme`, `here names no release` or `milestone names no release`. A field SHALL yield at most one entry. No other spec SHALL add a reason without adding it here.
+Every `rejected` entry SHALL be `{kind, id, field, value, reason}`. `kind` is one of `epic`, `release`, `link`, `url`, `plan`, `milestone` or
+`project`. `id` is the record concerned (escaped) or `null`; `value` is the offending value, escaped. `reason` is one of `id format`, `dangling depends-on`,
+`url scheme`, `here names no release`, `milestone names no release` or `project format`. A field SHALL yield at most one entry, and no
+other spec SHALL add a reason without adding it here.
+
 
 #### Scenario: Id format wins
 
@@ -14,7 +16,7 @@ Every `rejected` entry SHALL be `{kind, id, field, value, reason}`. `kind` is on
 #### Scenario: Every entry carries all five keys
 
 - **WHEN** a fixture produces one rejection of each reason
-- **THEN** `rejected` holds five entries, each with exactly the keys `kind`, `id`, `field`, `value` and `reason`
+- **THEN** `rejected` holds six entries, each with exactly the keys `kind`, `id`, `field`, `value` and `reason`
 
 ### Requirement: board is a read-only snapshot verb
 
@@ -249,3 +251,42 @@ only the window.
 
 - **WHEN** the record holds 3 archived epics delivered, 2 declined, 1 engine-stamped `unknown` and 1 with no disposition
 - **THEN** `counts.delivered` is 3, `counts.notPursued` is 2 and `counts.unknownOutcome` is 2
+
+### Requirement: The snapshot names the project, and each epic carries its number and key
+
+`board --json` SHALL emit a top-level `project` object `{name, key}` (each `null` when unset or invalid; an invalid stored value is named in
+`rejected[]` with reason `project format`) and, on each epic entry, `number` (or `null`) and `key` (`projectKey-number`, or `null`
+while either is missing). The export SHALL derive nothing. `schemaVersion` stays 1: the keys are additive and unreleased.
+
+
+#### Scenario: Unset project
+
+- **WHEN** `board --json` runs over a record with no `projectName` and no `projectKey`
+- **THEN** `project` is `{name: null, key: null}` and every epic's `key` is `null`
+
+#### Scenario: Set project and numbered epics
+
+- **WHEN** `projectKey` is "PM", `projectName` is "Project Manager", and epic a has number 256
+- **THEN** `project` is `{name: "Project Manager", key: "PM"}` and a's `number` is 256 and `key` is "PM-256"
+
+#### Scenario: An invalid stored value is rejected, not emitted
+
+- **WHEN** a hand-edited record holds `projectKey` "pm<x"
+- **THEN** `project.key` is `null`, every `key` is `null`, and `rejected[]` names it with reason `project format`
+
+### Requirement: Each release carries its progress
+
+Each release entry SHALL carry `progress: {done, total}` over its member epics, computed from the same `delivered` and
+`outcome` values the epic entries carry and over every member in the record, not only those inside the ended-epic window.
+`total` SHALL count every member whose outcome is not `declined`; `done` SHALL count those whose `delivered` is `true`. A
+release with no members SHALL report `{done: 0, total: 0}`.
+
+#### Scenario: Progress over mixed members
+
+- **WHEN** release r1 has members: two delivered, one open, one declined, one killed
+- **THEN** r1's `progress` is `{done: 2, total: 4}`
+
+#### Scenario: Progress ignores the window
+
+- **WHEN** `board --json --archived 1` runs and r1 has three delivered members that fall outside the window
+- **THEN** r1's `progress.done` is still 3

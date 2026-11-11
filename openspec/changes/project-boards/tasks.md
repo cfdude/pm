@@ -226,7 +226,7 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
 `specs/project-identity/spec.md` (new) and the "project, number and key" and "progress" requirements added to
 `specs/board-export/spec.md`. Design D20 to D23.
 
-- [ ] 8.0 Docs of record: the `project-identity` spec, the `board-export` additions, design D20 to D23 and its Inverses and
+- [x] 8.0 Docs of record: the `project-identity` spec, the `board-export` additions, design D20 to D23 and its Inverses and
       Migration Plan rows, the proposal bullets, this section. `openspec validate project-boards --strict` passes.
 - [x] 8.1 RED then GREEN (UNIT `epic-numbers.test.mjs`, FILE `epic-numbers-files.test.mjs`): every epic carries a number,
       assigned in `pushEpic` through `assignEpicNumber` (`scripts/lib/epic-number.mjs`). Tracker integer first, else the
@@ -252,7 +252,7 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
         `--summary ""` is refused, not a clear). No code change.
       The other gap was discoverability: the `release` usage text and its missing-id error never named `release here` or the plan
       fields. Fixed in the same commit. RED: `red-8.3.txt`, `red-8.4.txt`, `red-8.5.txt` (each fails before its own task).
-- [ ] 8.6 Required items for section 8 (CLAUDE.md "The gate procedure"):
+- [x] 8.6 Required items for section 8 (CLAUDE.md "The gate procedure"):
       - **Call-site sweep (item 1).** `rg -n "pushEpic\(" scripts/lib` lists the five creation call sites (`add-epic.mjs`,
         `add-many.mjs`, `subcommands.mjs` x3). The rule is bound inside `pushEpic`, so all five hold it; the source scan in
         `conductor-13.test.mjs` keeps a sixth from bypassing it. Readers of `number`: `board.mjs` (the export) and
@@ -262,8 +262,11 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
       - **Inverses (item 1).** `set-project --name|--key` against `--unset name|key`: shipped. A number is never reassigned and
         `nextEpicNumber` never goes back, by design (design Inverses). `release --target` has no clear: pre-existing, named.
       - **Lifecycle (item 3).** Nothing in section 8 is lifecycle bookkeeping; C.2 and C.3 keep their markers.
+      - **Verify against the commit (item 2).** `git show --stat` of `9cdbd672` (8.1, 8.2) and `3ae4f250` (8.3 to 8.5) lists every file the
+        tasks above claim, including the command doc, the ledger claim and the three functional test files.
       - **Attribute (item 4).** Each feature commit is attributed on landing, and the bookkeeping commit is not.
-      - **Guards proved (item 8).** Mutants 80 onwards in `mutation-evidence.txt`.
+      - **Guards proved (item 8).** Mutants 80 to 112b in `mutation-evidence.txt`: 33 mutants, 29 killed on first run, 4 survived (3 fixed by a
+        new test, 1 equivalent and redone on the real line).
       - **Cross-spec (item 5).** `project-identity` joins the 0.55.0 spec set and `board-export` changed, so the recorded cross-spec
         verdict is stale and must be re-run; Gate 2 is stale for the same reason.
 
