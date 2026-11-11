@@ -215,7 +215,7 @@
 - [ ] 7.2 Run the whole assertion half once:
       `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`. Then certify each bucket drift names.
       Report the counts and any unlisted flake.
-- [ ] 7.3 Backward compatibility: a unit test loads a 0.54.0-shaped state fixture, with no `mission`, `releasePlan`,
+- [x] 7.3 Backward compatibility: a unit test loads a 0.54.0-shaped state fixture, with no `mission`, `releasePlan`,
       `boards` or new epic fields. `board --json`, `release show` and `mission show` must all succeed on it. This
       states MIGRATIONS: none (additive), and the test is the evidence. Whether an older engine tolerates newer keys
       is not claimed (design, Migration Plan).
