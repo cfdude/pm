@@ -16,8 +16,8 @@
 - **Certify.** Engine source is a certify subject. Stage exactly, run `node scripts/test/drift.mjs --phase pre-commit`,
   certify each bucket it names, then commit plainly. Never use `--no-verify`.
 - **Commits.** One conventional commit per task, with explicit paths. After each commit, run `git show --stat <sha>`
-  (R.2) and `update-epic release-planning-mission-and-milestone --attribute-commit <sha>` (R.4).
-- **Changeset.** Each user-facing change adds to `.changesets/release-planning-mission-and-milestone.md`.
+  (R.2) and `update-epic project-boards --attribute-commit <sha>` (R.4).
+- **Changeset.** Each user-facing change adds to `.changesets/project-boards.md`.
   `CHANGELOG.md` is consolidated at the release cut (task V.3), not per task.
 
 ## 0. Before any code
@@ -28,9 +28,9 @@
 - [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, all eight spec files and this file. Fix every
       Critical and Important finding, then re-run `openspec validate project-boards --strict`; it must print "is
       valid". Then run
-      `record-gate-review release-planning-mission-and-milestone --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
+      `record-gate-review project-boards --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
 - [ ] 0.3 **Release membership.** Register or amend the release with
-      `release 0.55.0 --intent "<…>" --member release-planning-mission-and-milestone`, and verify it with
+      `release 0.55.0 --intent "<…>" --member project-boards`, and verify it with
       `release show 0.55.0`.
 - [ ] 0.4 **Cross-spec review** (gate item 5). This change alone holds eight spec files, so before `/opsx:apply`, and
       again after any concurrent amendment, invoke the `cross-spec-review` skill over the whole 0.55.0 spec set.
@@ -250,7 +250,7 @@
 - [ ] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/project-boards/tasks.md` must list
       C.2 and C.3.
 - [ ] R.4 **Attribute every commit** (item 4): run
-      `update-epic release-planning-mission-and-milestone --attribute-commit <sha>` in landing order. Never attribute
+      `update-epic project-boards --attribute-commit <sha>` in landing order. Never attribute
       the archive move, or a lifecycle commit made after Gate 2 is recorded.
 - [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4. Re-run it if any spec in the 0.55.0 set changes after the
       verdict.
@@ -316,7 +316,7 @@
 
 ## V. Release discipline (0.55.0, at the cut, per the `release-checklist` skill)
 
-- [ ] V.1 Confirm `.changesets/release-planning-mission-and-milestone.md` covers every user-facing change above.
+- [ ] V.1 Confirm `.changesets/project-boards.md` covers every user-facing change above.
 - [ ] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.55.0` as part of the release cut, not in this change.
 - [ ] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.55.0 entry, including the default-on boards
       announcement.
@@ -325,5 +325,5 @@
 ## C. Close
 
 - [ ] C.1 Re-record Gate 2 after the docs, if the docs added commits. Re-record, never withdraw.
-- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic release-planning-mission-and-milestone --status archived --outcome delivered --reason "<why>" --deferral "<followUpEpicId>:proposal.md Out of scope" --declined-deferral "votes:start lean" --declined-deferral "effort field:start lean" --declined-deferral "data-science flag:start lean" --declined-deferral "per-release log:start lean" --declined-deferral "CSV export:start lean" --declined-deferral "size weight:start lean" --declined-deferral "critical-path marks in the brief RELEASES lines:brief is capped; status and boards carry them"`, with one `--deferral` per registered follow-up epic. Then run `/pm:status`.
+- [ ] C.2 <!-- pm:lifecycle --> **Disposition.** First end the superseded brief epic: `update-epic release-planning-mission-and-milestone --status archived --outcome superseded --reason "built as project-boards" --no-deferrals`. Then `update-epic project-boards --status archived --outcome delivered --reason "<why>" --deferral "<followUpEpicId>:proposal.md Out of scope" --declined-deferral "votes:start lean" --declined-deferral "effort field:start lean" --declined-deferral "data-science flag:start lean" --declined-deferral "per-release log:start lean" --declined-deferral "CSV export:start lean" --declined-deferral "size weight:start lean" --declined-deferral "critical-path marks in the brief RELEASES lines:brief is capped; status and boards carry them"`, with one `--deferral` per registered follow-up epic. Then run `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive project-boards`. Do NOT attribute the archive-move commit.
