@@ -16398,12 +16398,12 @@
         "378831d99deeb0d7fbff8bbc20d95ad4b97b8bf8"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-11T08:13:10.670Z",
+      "touchedAt": "2026-11-11T08:13:47.233Z",
       "sessions": [
         {
           "session": "pm-dev",
           "firstAt": "2026-11-11T05:41:45.223Z",
-          "lastAt": "2026-11-11T08:13:10.670Z"
+          "lastAt": "2026-11-11T08:13:47.233Z"
         }
       ],
       "release": "0.55.0",
@@ -16467,6 +16467,13 @@
             }
           ],
           "reviewer": "opus fresh-context 2 rounds plus cross-spec review; first recorded on release-planning-mission-and-milestone, carried over when the epic was re-keyed to match the change dir"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-11T08:13:47.228Z",
+          "baseSha": "15a679154c8477486567a1323349e0eb2bf68140",
+          "headSha": "9852e3bfe656a9e1d2fd1a37deba476141c37536",
+          "reviewer": "opus fresh-context round 1: 0 Critical, 2 Important fixed in 378831d9 plus 3 Minors, re-tested (assertion 2782, sweeps 25, functional 1365), not re-reviewed per the one-round rule"
         }
       },
       "gateRounds": {
@@ -16476,6 +16483,13 @@
           "failStreak": 0,
           "lastVerdictAt": "2026-11-11T05:42:48.808Z",
           "lastPassAt": "2026-11-11T05:42:48.808Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-11T08:13:47.228Z",
+          "lastPassAt": "2026-11-11T08:13:47.228Z"
         }
       },
       "startedAt": "2026-11-11T05:43:32.637Z"
@@ -16489,7 +16503,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2330,
+  "revision": 2331,
   "reviewMode": "standard",
   "releases": [
     {
