@@ -15,4 +15,4 @@ body gives nothing to summarise, the recipe SHALL tell the agent to omit the fla
 #### Scenario: The recipe still runs as written
 
 - **WHEN** the emitted-invocations check fills every placeholder in that line with a quoted value
-- **THEN** the engine accepts the line
+- **THEN** the engine accepts the line, because the check's placeholder substitution (`fillRecipe` in `scripts/test/functional/emitted-invocations.test.mjs`) fills `<one-line summary>` like the other placeholders

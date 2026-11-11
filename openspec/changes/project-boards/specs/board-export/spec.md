@@ -3,10 +3,13 @@
 ### Requirement: rejected entries have one shape and a closed reason list
 
 Every `rejected` entry SHALL be `{kind, id, field, value, reason}`. `kind` is one of `epic`, `release`, `link`, `url`,
-`plan` or `milestone`. `id` is the record the entry concerns, escaped, or `null` for a plan-level field. `field` names
-the field. `value` holds the offending value, with control characters escaped. `reason` is one of `id format`,
-`dangling depends-on`, `url scheme`, `here names no release` or `milestone names no release`. No other spec SHALL add
-a reason without adding it here.
+`plan` or `milestone`. `id` is the record concerned (escaped) or `null`. `value` is the offending value, control characters escaped. `reason` is one of `id format`,
+`dangling depends-on`, `url scheme`, `here names no release` or `milestone names no release`. A field SHALL yield at most one entry. No other spec SHALL add a reason without adding it here.
+
+#### Scenario: Id format wins
+
+- **WHEN** `plan.here` holds a value that fails the id format and also names no release
+- **THEN** `rejected` holds one entry for `plan.here`, with reason `id format`
 
 #### Scenario: Every entry carries all five keys
 
@@ -85,7 +88,7 @@ count those epics.
 
 Each epic entry SHALL carry `id`, `title`, `summary`, `whyNow`, `description`, `lane`, `status`, `priority` (the
 effective priority), `meritPriority`, `rank` (the recorded rank, or `null`), `position`, `release`, `externalUrl`,
-`dependsOn`, `delivered`, `outcome`, `outcomeReason` and `updatedAt` (the epic's `touchedAt`, or `null`). A field the
+`dependsOn`, `delivered`, `outcome`, `outcomeReason`, `createdAt`, `endedAt` and `updatedAt`. A field the
 epic does not carry, or that is a non-string where a string is expected, SHALL be `null`.
 
 #### Scenario: Recorded rank is carried and an unranked epic reports null
@@ -97,6 +100,16 @@ epic does not carry, or that is a non-string where a string is expected, SHALL b
 
 - **WHEN** merit-P3 epic B is a `depends-on` target of P1 epic A
 - **THEN** B's `priority` is `P1` and its `meritPriority` is `P3`
+
+#### Scenario: Time fields come from the record
+
+- **WHEN** an epic is read
+- **THEN** `createdAt` is its `createdAt`, `endedAt` is the disposition's `recordedAt` else `completedAt`, and `updatedAt` is its `touchedAt`, each `null` when absent
+
+#### Scenario: createdAt and endedAt are carried
+
+- **WHEN** an archived epic has `createdAt` "2026-10-01T00:00:00Z" and a disposition `recordedAt` "2026-11-01T00:00:00Z"
+- **THEN** its `createdAt` and `endedAt` are those times, and an open epic's `endedAt` is `null`
 
 #### Scenario: updatedAt is touchedAt
 

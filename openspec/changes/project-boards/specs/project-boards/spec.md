@@ -35,7 +35,7 @@ While boards are off, `/pm:boards` SHALL say the boards are off, name `set-board
 ### Requirement: The database contract is fixed
 
 The skill SHALL define these collections. On both pages: `epics/<epicId>`, `releases/<releaseId>` and `page/info`
-(`headline`, `lastUpdated`, `head`). On the release plan: `plan/state` (`here`, `hereText`, `nextText`, `head`,
+(`lastUpdated`, the export's `asOf`, and `head`; there is no headline). On the release plan: `plan/state` (`here`, `hereText`, `nextText`, `head`,
 `asOf`), `mission/current`, `criteria/<cN>`, `decisions/<n>` and `answers/<n>`. On the backlog: `backlogMeta/<epicId>`
 and `proposals/rank`.
 
@@ -289,10 +289,15 @@ record. Only the user deletes a board artifact.
 
 ### Requirement: The brief carries one boards line while boards are on
 
-While boards are on, the SessionStart brief SHALL carry one line of at most 160 bytes naming `/pm:boards` and saying
+While boards are on, the SessionStart brief SHALL carry one line of at most 160 bytes, passed through `fitBrief` as an obligation string that is never shortened, naming `/pm:boards` and saying
 that the boards are refreshed after the named triggers. While boards are off, the line SHALL be absent.
 
 #### Scenario: Brief line follows the switch
 
 - **WHEN** the brief is built with boards on, and again with boards off
 - **THEN** the first holds exactly one line naming `/pm:boards`, at most 160 bytes, and the second holds none
+
+#### Scenario: The boards line survives fitting
+
+- **WHEN** the brief is fitted to `BRIEF_BYTE_CAP` with boards on
+- **THEN** the boards line is present and unshortened, and its bytes are measured on the fitted brief

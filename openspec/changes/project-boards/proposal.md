@@ -81,8 +81,9 @@ Out of scope, with where each goes (none of it is dropped):
 
 - Engine: new `scripts/lib/board.mjs` and `scripts/lib/mission.mjs`. Changes to `scripts/lib/releases.mjs`
   (fields, `here`), `scripts/lib/verb-effects.mjs`, `scripts/lib/constants.mjs` (flag registry, clearable
-  fields), `scripts/lib/opt-ins.mjs`, `scripts/lib/rules.mjs`, `scripts/lib/briefing.mjs`, `scripts/lib/add-epic.mjs`
-  and `scripts/lib/add-many.mjs`, plus dispatch in `scripts/conductor.mjs`. Zero runtime dependencies kept.
+  fields), `scripts/lib/opt-ins.mjs`, `scripts/lib/rules.mjs`, `scripts/lib/briefing.mjs`, `scripts/lib/add-epic.mjs`,
+  `scripts/lib/add-many.mjs` and `scripts/lib/update-epic.mjs`, and the other status writers the R.1 sweep finds
+  (`active-pointer.mjs`, `detour-stack.mjs`, `subcommands.mjs`, `epic-progress.mjs`), plus dispatch in `scripts/conductor.mjs`. Zero runtime dependencies kept.
 - Docs and ledger: `commands/boards.md` (documents `/pm:boards`, the `board` verb and `set-boards`, so no
   near-homophone `/pm:board` slash command exists) and `commands/mission.md`,
   `skills/project-boards/SKILL.md` and its `templates/`, all claimed in `docs/parity-ledger.json`. Also README

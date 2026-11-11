@@ -98,10 +98,10 @@ remove the marker and both lines; it is valueless and takes no id. `release here
 
 ### Requirement: here is a reserved release id and a stale marker is reported
 
-`here` SHALL be a reserved release id, like `show`; `release here --intent x` with no id SHALL be refused saying so.
-`release here` SHALL accept only one release id, `--text`, `--next` and `--clear-here`; any other flag, or `--text`
-without an id, SHALL be refused naming what is accepted or missing. A marker naming a removed release SHALL read as
-`plan.here: null` in `board --json`, with a `rejected` entry (shape in `board-export`), reason `here names no release`.
+`here` SHALL be a reserved release id, like `show`. `release here` SHALL accept only one release id, `--text`, `--next`
+and `--clear-here`, and SHALL refuse any other flag, `--text` without an id, or an id with `--clear-here`, naming what
+is accepted. A marker naming a removed release SHALL read as `plan.here: null`, with a `rejected` entry, reason
+`here names no release`.
 
 #### Scenario: here is reserved
 
@@ -112,6 +112,11 @@ without an id, SHALL be refused naming what is accepted or missing. A marker nam
 
 - **WHEN** `release here r2 --intent "x"` runs
 - **THEN** it is refused naming `--text`, `--next` and `--clear-here`, and nothing is written
+
+#### Scenario: here cannot set and clear at once
+
+- **WHEN** `release here r2 --clear-here` runs
+- **THEN** it is refused naming that `--clear-here` takes no id, and nothing is written
 
 #### Scenario: here needs an id to set
 
@@ -143,9 +148,8 @@ appending the order, the derived status and the same critical-path mark.
 ### Requirement: /pm:status shows where the plan is
 
 The `/pm:status` verb's own output (beside the spec-sync block, never written into `PROJECT.md`) SHALL print
-`here: <id>` and the "we are here" line while a marker is set, and one line per release marked `(critical path)` or
-`(off critical path)` while a mission milestone is set. The brief's RELEASES lines, which `PROJECT.md`'s Briefing
-copies, SHALL NOT carry either in this release.
+`here: <id>` and the "we are here" line while a marker is set, and a `(critical path)` or `(off critical path)` mark on
+each release whose `criticalPath` is not null, as `release show` does. The brief's RELEASES lines SHALL NOT carry either.
 
 #### Scenario: Status names the marker
 
@@ -156,3 +160,8 @@ copies, SHALL NOT carry either in this release.
 
 - **WHEN** a mission milestone r2 is set over releases r1, r2 (orders 1, 2) and r3 (order 3) and `/pm:status` runs
 - **THEN** its output marks r1 and r2 `(critical path)` and r3 `(off critical path)`
+
+#### Scenario: No marks when criticalPath is null
+
+- **WHEN** a mission milestone is set on a release with no `order`, and `/pm:status` runs
+- **THEN** its output carries neither mark on any release

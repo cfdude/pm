@@ -37,8 +37,9 @@
       Record the verdict with `record-cross-spec-review 0.55.0 --verdict pass|fail --reviewer "<identity>"`. Name the
       shared chokepoints:
       - the flag registry in `scripts/lib/constants.mjs` (new release, epic and mission flags, and the valueless
-        `clear-here`, `clear-milestone` and `end` rows)
-      - `scripts/lib/verb-effects.mjs`
+        `clear-here`, `clear-milestone`, `end`, `needs-human` and `history` rows; the `clear` row's command list gains
+        `release`)
+      - `scripts/lib/verb-effects.mjs` (the `release` row text notes that `release here` writes)
       - `docs/parity-ledger.json`
       - the overhead map (`scripts/lib/overhead.mjs`)
       - the rules-block sections
@@ -83,7 +84,8 @@
       Save `red-2.1.txt`.
 - [ ] 2.2 GREEN: add the fields to the flag registry in `scripts/lib/constants.mjs`, update
       `scripts/lib/add-epic.mjs` and `scripts/lib/add-many.mjs`, and add the warning at every status-write site that
-      R.1 enumerates. Update `commands/epic.md` and the changeset.
+      R.1 enumerates, including `scripts/lib/update-epic.mjs` and the other writers (`active-pointer.mjs`,
+      `detour-stack.mjs`, `subcommands.mjs`, `epic-progress.mjs`) wherever a write leaves `untriaged`. Update `commands/epic.md` and the changeset.
 
 ## 3. Release plan fields and the plan marker (spec: release-planning)
 
@@ -140,12 +142,17 @@
       - FILE: `overhead` reports `rules:boards` and `brief:boards` under `boards`, with `brief` excluding the line,
         and 0 bytes for `boards` when off.
       - FILE: the inward recipe carries the `--summary=` placeholder.
+      - FILE: `upgrade` prints `boards: on (default)` in its `optInLines` output (`scripts/lib/opt-ins.mjs`).
+      - FILE: the brief's boards and mission lines pass `fitBrief` (`BRIEF_BYTE_CAP`), are never shortened, and are
+        measured after fitting.
       - FILE: README rows exist for `rules:boards` and `brief:boards`.
 
       Save `red-5.1.txt`.
 - [ ] 5.2 GREEN: update `scripts/lib/opt-ins.mjs`, the `set-boards` verb and its `VERB_EFFECTS` row,
       `scripts/lib/rules.mjs` (the `## Boards` section, verb-refreshed, and the recipe flag), and
-      `scripts/lib/briefing.mjs`. Add the `brief:boards` surface in `scripts/lib/overhead.mjs`, the upgrade
+      `scripts/lib/briefing.mjs`. Add the `<one-line summary>` substitution to `fillRecipe` in
+      `scripts/test/functional/emitted-invocations.test.mjs` (~line 2378), which fills only known placeholders, with its
+      assertion twin, and run `node scripts/test/certify.mjs functional`. Add the `brief:boards` surface in `scripts/lib/overhead.mjs`, the upgrade
       announcement and the README cost rows. Extend `commands/boards.md` with `set-boards`. Add the changeset.
 
 ## 6. Skill, command and templates (spec: project-boards)
@@ -218,8 +225,9 @@
 - [ ] R.1 **Call-site completeness sweep** (item 1). Derive every call site mechanically with these searches:
       - `rg -n "resolveEpics|orderQueueWithDependencies|releaseSummaries|outcomeOf" scripts/lib`: the readers of
         order, membership and outcome.
-      - `rg -n "status" scripts/lib/add-epic.mjs scripts/lib/add-many.mjs scripts/conductor.mjs`: the status-write
-        sites that need the untriaged warning.
+      - `rg -n "\.status\s*=|status:" scripts/lib scripts/conductor.mjs`: the status-write sites that need the
+        untriaged warning (`add-epic`, `add-many`, `update-epic`, `active-pointer`, `detour-stack`, `subcommands`,
+        `epic-progress` and any other hit).
       - `rg -n "OPT_INS|SURFACE_FEATURES|CONDITIONAL_SECTIONS" scripts/lib`.
       - `rg -n "\"show\"" scripts/lib/releases.mjs`: the reserved-id sites that `here` must join.
       - `rg -n 'externalUrl' scripts/lib skills/project-boards`.

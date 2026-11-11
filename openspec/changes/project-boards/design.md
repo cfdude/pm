@@ -46,7 +46,7 @@ standing price for every read-only verb, and this change adds no functional test
 **D4. `delivered` has three states, via the one reader.** `outcomeOf` returns `unknown` for engine stamps
 (`engineStamp`, `disposition.mjs`; stamped by `migrations.mjs`, `epic-progress.mjs` and `subcommands.mjs`), so an
 engine stamp with outcome `unknown` is `null`. An engine stamp CAN carry `delivered`: the migration writes it where a
-passing Gate 2 exists. Such an epic reads `true`, because `delivered` follows the outcome, never who stamped it. So is an archived epic with no disposition. This repo has 0 of the
+passing Gate 2 exists. Such an epic reads `true`, because `delivered` follows the outcome, never who stamped it. An archived epic with no disposition reads `null`, like an `unknown` stamp, and is never `true`. This repo has 0 of the
 latter today (jq over `.conductor/state.json`, 2026-11-09). The research doc's "no outcome counts as delivered" rule
 is not adopted.
 
@@ -82,8 +82,9 @@ The collection is `proposals/rank`, writable only at `admin`. That makes it a th
 `answers` and `backlogMeta`, which are written at `interact`.
 - **Bands are merit priority**, because `reorder` takes a merit band and refuses a partial one (`rank.mjs`). The
   proposal therefore carries the whole band.
-- **A lifted blocker is not draggable.** Its effective priority differs from its merit priority, so it appears in a
-  higher band than the one `reorder` would rank it in.
+- **A lifted blocker is not draggable.** Its effective priority differs from its merit priority, so the board displays it at a
+  different effective position than the one `reorder` ranks it at. Bands use `meritPriority`, so the band is the same,
+  and a drag there would not land where the page shows it.
 - **Within a merit band, rank decides.** `resolveEpics()` has no dependency pass, so no snap-back follows a valid
   proposal. The page's dependency warning tells the human when a dependency is ranked below its dependent.
 - **One bad id refuses the whole proposal.** A partial apply would leave a rank no human asked for.

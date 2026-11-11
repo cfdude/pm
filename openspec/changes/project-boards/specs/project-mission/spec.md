@@ -19,6 +19,11 @@ no current mission. A statement or an end without `--reason`, or with an empty s
 write nothing. `--end` with no current mission SHALL be refused, naming that there is none. Recording a statement
 identical to the current one SHALL write nothing and say so.
 
+#### Scenario: End leaves the milestone and criteria in place
+
+- **WHEN** `mission --end --reason "x"` runs on a repo with milestone r2 and criteria
+- **THEN** `mission.milestoneRelease`, the criteria and every `criticalPath` mark are unchanged, and nothing else is cleared
+
 #### Scenario: End is an inverse that keeps the record
 
 - **WHEN** `mission --end --reason "project paused"` runs on a repo with a mission
@@ -33,6 +38,11 @@ identical to the current one SHALL write nothing and say so.
 
 - **WHEN** `mission --end --reason "x"` runs with no current mission
 - **THEN** it exits non-zero saying there is no current mission and writes nothing
+
+#### Scenario: Reason belongs to one operation
+
+- **WHEN** `mission --statement "x" --end --reason "r"` or `mission --end --remove-criterion c1 --reason "r"` runs
+- **THEN** it is refused naming that `--reason` serves exactly one of `--statement`, `--end` and `--remove-criterion`, and nothing is written
 
 #### Scenario: Reason required
 
@@ -52,8 +62,7 @@ SHALL be reserved, and `mission show` SHALL write nothing.
 
 ### Requirement: The mission milestone is a release, with an inverse
 
-`mission --milestone <releaseId>` SHALL record which release meets the mission. Every surface SHALL call it the
-"mission milestone", to keep it apart from a plan's story milestones. `mission --clear-milestone` SHALL remove it. A
+`mission --milestone <releaseId>` SHALL record which release meets the mission. Every human-readable surface (command output, docs, the brief, the rules block) SHALL call it the "mission milestone", to keep it apart from a plan's story milestones. JSON keys and `rejected` kind and reason tokens (`milestone`, `milestone names no release`) are exempt. `mission --clear-milestone` SHALL remove it. A
 milestone naming no existing release SHALL be refused, writing nothing.
 
 #### Scenario: Unknown release refused
@@ -87,7 +96,13 @@ every `criticalPath` SHALL be `null`. A milestone naming a removed release SHALL
 
 `mission --add-criterion "<text>"` SHALL append an exit criterion with the next stable id (`c1`, `c2`, …), and ids
 SHALL never be reused or renumbered. `--check "<how to check it>"` SHALL attach a mechanical check. `--needs-human`
-SHALL mark a criterion that needs a human-supplied number.
+SHALL mark a criterion that needs a human-supplied number. `--check` and `--needs-human` apply only to `--add-criterion`;
+`mission --check` without it, and `--check` together with `--needs-human`, SHALL be refused and write nothing.
+
+#### Scenario: Criteria without a milestone
+
+- **WHEN** a criterion is added while no mission milestone is set
+- **THEN** it is recorded, and `board --json` reports `milestone: null` (the criteria show in `mission show` only) until a milestone is set
 
 #### Scenario: Needs-human marker
 
@@ -107,9 +122,10 @@ Removing an unknown or already-removed id SHALL be refused, writing nothing.
 
 ### Requirement: The mission is surfaced in status and the brief, within budget
 
-While a current mission exists, `/pm:status` SHALL print it with the mission milestone and how many of its criteria
-remain. The SessionStart brief SHALL carry one mission line of at most 200 bytes, truncating the statement with an
-ellipsis. With no mission, neither surface SHALL print a mission line.
+While a current mission exists, `/pm:status` SHALL print it with the mission milestone and how many active criteria
+it has. The SessionStart brief SHALL carry one mission line of at most 200 bytes, truncating the statement with an
+ellipsis. The line passes through `fitBrief` as an obligation string that is never shortened, and its size is measured
+after fitting. With no mission, neither surface SHALL print a mission line.
 
 #### Scenario: Long statement truncated in the brief
 
