@@ -16402,7 +16402,7 @@
         "a2326b19a23f8fb8ad8599a38593fb96e337ad23"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-11T17:57:34.116Z",
+      "touchedAt": "2026-11-11T18:03:08.976Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16414,7 +16414,7 @@
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-11T17:51:55.764Z",
+          "reviewedAt": "2026-11-11T18:03:08.967Z",
           "artifacts": [
             "openspec/changes/project-boards/proposal.md",
             "openspec/changes/project-boards/design.md",
@@ -16475,10 +16475,10 @@
               "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-11, one round on the board redesign amendments (0 Critical, 4 Important fixed and re-tested, not re-reviewed)",
+          "reviewer": "opus fresh-context 2026-11-11, one round (0 Critical, Important fixed); tasks.md 8.14 commit claim corrected after Gate 2 delta review",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-11-11T05:42:48.808Z",
+            "reviewedAt": "2026-11-11T17:51:55.764Z",
             "artifacts": [
               "openspec/changes/project-boards/proposal.md",
               "openspec/changes/project-boards/design.md",
@@ -16488,6 +16488,7 @@
               "openspec/changes/project-boards/specs/feature-switches/spec.md",
               "openspec/changes/project-boards/specs/managed-rules-block/spec.md",
               "openspec/changes/project-boards/specs/project-boards/spec.md",
+              "openspec/changes/project-boards/specs/project-identity/spec.md",
               "openspec/changes/project-boards/specs/project-mission/spec.md",
               "openspec/changes/project-boards/specs/release-planning/spec.md",
               "openspec/changes/project-boards/specs/tracker-sync/spec.md"
@@ -16495,15 +16496,15 @@
             "artifactDigests": [
               {
                 "path": "openspec/changes/project-boards/proposal.md",
-                "sha256": "6a7f99d13af0657ca368219012f83d72238b0b5ec1d49e1e27a784b355625aaa"
+                "sha256": "91b591a01ca867b30724d8a51d91adfca8060d37537d251afb1dcd804dece190"
               },
               {
                 "path": "openspec/changes/project-boards/design.md",
-                "sha256": "3c6d19aa573d1fb79f50b0c9c1dc204f5bc6a0053c6314c7dc8090e128bd4e2c"
+                "sha256": "266fdfd65d9f672921a78f36928320f545e4c4a9d6bfa552e6869beef47e61c5"
               },
               {
                 "path": "openspec/changes/project-boards/specs/board-export/spec.md",
-                "sha256": "f56cb56797b9880d0e5544edfdf837275f54c4753719f9aa409b703d873cadc5"
+                "sha256": "39fa2b651a6440417025b6f348d17f1ef8dd6e5813be038121f6d3cc5385eb47"
               },
               {
                 "path": "openspec/changes/project-boards/specs/epic-annotation/spec.md",
@@ -16519,7 +16520,11 @@
               },
               {
                 "path": "openspec/changes/project-boards/specs/project-boards/spec.md",
-                "sha256": "627a88b0801a4114dece78b77def15522576563b7836fa84b2c21def8bee6810"
+                "sha256": "10fe7815525bd884c5bb19b5828a80538c1ffc369949b962e16e2b17b7425ddf"
+              },
+              {
+                "path": "openspec/changes/project-boards/specs/project-identity/spec.md",
+                "sha256": "5a0139338fb2a6b9982fa4c2727f245cd2dc839f85a4e8f33fc6ac43346eda89"
               },
               {
                 "path": "openspec/changes/project-boards/specs/project-mission/spec.md",
@@ -16527,14 +16532,14 @@
               },
               {
                 "path": "openspec/changes/project-boards/specs/release-planning/spec.md",
-                "sha256": "a6de2da4ce5164a294940df4b870a38b4e60c2dc8aa2eaf42ac7afc503c64a7e"
+                "sha256": "87444674fffc97feb835b9efaef69cb52e84d61dab266820423fe7c0382cbd7d"
               },
               {
                 "path": "openspec/changes/project-boards/specs/tracker-sync/spec.md",
                 "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
               }
             ],
-            "reviewer": "opus fresh-context 2 rounds plus cross-spec review; first recorded on release-planning-mission-and-milestone, carried over when the epic was re-keyed to match the change dir"
+            "reviewer": "opus fresh-context 2026-11-11, one round on the board redesign amendments (0 Critical, 4 Important fixed and re-tested, not re-reviewed)"
           }
         },
         "gate2": {
@@ -16548,10 +16553,10 @@
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 2,
+          "passes": 3,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-11T17:51:55.764Z",
-          "lastPassAt": "2026-11-11T17:51:55.764Z"
+          "lastVerdictAt": "2026-11-11T18:03:08.967Z",
+          "lastPassAt": "2026-11-11T18:03:08.967Z"
         },
         "gate2": {
           "fails": 0,
@@ -16572,7 +16577,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2337,
+  "revision": 2339,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17330,7 +17335,7 @@
       ],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-11-11T17:51:56.992Z",
+        "reviewedAt": "2026-11-11T18:03:10.220Z",
         "specs": [
           {
             "key": "project-boards/specs/board-export/spec.md",
@@ -17369,14 +17374,14 @@
             "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
           }
         ],
-        "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs (3 BLOCKS, all contradictions, fixed in the docs, not re-reviewed)",
+        "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs; tasks.md 8.14 wording corrected after",
         "superseded": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-11T05:41:52.124Z",
+          "reviewedAt": "2026-11-11T17:51:56.992Z",
           "specs": [
             {
               "key": "project-boards/specs/board-export/spec.md",
-              "sha256": "f56cb56797b9880d0e5544edfdf837275f54c4753719f9aa409b703d873cadc5"
+              "sha256": "39fa2b651a6440417025b6f348d17f1ef8dd6e5813be038121f6d3cc5385eb47"
             },
             {
               "key": "project-boards/specs/epic-annotation/spec.md",
@@ -17392,7 +17397,11 @@
             },
             {
               "key": "project-boards/specs/project-boards/spec.md",
-              "sha256": "627a88b0801a4114dece78b77def15522576563b7836fa84b2c21def8bee6810"
+              "sha256": "10fe7815525bd884c5bb19b5828a80538c1ffc369949b962e16e2b17b7425ddf"
+            },
+            {
+              "key": "project-boards/specs/project-identity/spec.md",
+              "sha256": "5a0139338fb2a6b9982fa4c2727f245cd2dc839f85a4e8f33fc6ac43346eda89"
             },
             {
               "key": "project-boards/specs/project-mission/spec.md",
@@ -17400,14 +17409,14 @@
             },
             {
               "key": "project-boards/specs/release-planning/spec.md",
-              "sha256": "a6de2da4ce5164a294940df4b870a38b4e60c2dc8aa2eaf42ac7afc503c64a7e"
+              "sha256": "87444674fffc97feb835b9efaef69cb52e84d61dab266820423fe7c0382cbd7d"
             },
             {
               "key": "project-boards/specs/tracker-sync/spec.md",
               "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
             }
           ],
-          "reviewer": "opus fresh-context round 1: 6 BLOCKS + polish fixed in 5dd1dab8; one-round rule"
+          "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs (3 BLOCKS, all contradictions, fixed in the docs, not re-reviewed)"
         }
       }
     }

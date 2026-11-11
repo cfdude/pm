@@ -306,7 +306,10 @@
         picking the other stance. Renaming the project changes the tab and H1 on the next refresh, the gallery title only on a
         republish (stated in the skill).
       - **Verify against the commit (item 2).** `git show --stat` of the 8.8 to 8.13 feature commit lists both templates,
-        SKILL.md, both test files and `specs/project-boards/spec.md`, and nothing else.
+        SKILL.md, both test files and `specs/project-boards/spec.md`. It also carries the 8.7 counter-floor engine change
+        (`scripts/lib/epic-number.mjs` and its three tests), the docs of record and the Gate 1 re-record in
+        `.conductor/state.json`: one commit `a2326b19` holds all of 8.7 to 8.14, because the pre-commit hook would not
+        accept either half until Gate 1 was re-recorded over the amended artifacts (Gate 2 delta review, 2026-11-11).
       - **Attribute (item 4).** The feature commit and this docs commit are attributed; the conductor bookkeeping commit is not.
       - **Lifecycle (item 3).** Nothing in 8.8 to 8.14 is lifecycle bookkeeping.
       - **Guards proved (item 8).** Mutants 116 to 131 in `mutation-evidence.txt`: 16 mutants, 15 killed on first run; 124 (an

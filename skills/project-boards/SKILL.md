@@ -181,7 +181,7 @@ Ask in this order, in the one batch:
 2. The mission in one line (at most 300 characters), and why it is the mission now.
 3. Which release meets the mission, its exit criteria with the check for each, and which of them need a person.
 4. Which release the work is heading toward now, where things stand, and what comes next (your draft to correct).
-5. For each open release: theme, rationale, exit check, size and target date (or "none"), with your proposal.
+5. For each open release: theme, rationale, exit check, size and target date (leave the target unset when there is none), with your proposal.
 6. The one-line summaries you drafted for epics with none: confirm or edit.
 7. Any decision the user wants on the release plan now, with your recommendation.
 
