@@ -16387,14 +16387,17 @@
       ],
       "reconcileNeeded": false,
       "description": "The openspec change that builds release-planning-mission-and-milestone's brief: release plan fields, mission and milestone, read-only board export, default-on release plan and backlog boards. Change dir openspec/changes/project-boards. Created because the engine maps an epic to its change dir by epic id, and the original epic id differs.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "e563df0779d86119a1d9d9d559d2ceb578b0ff09",
+        "820f08e031abb5d20a5cdd6cc3470a7b027add66"
+      ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-11T05:43:32.641Z",
+      "touchedAt": "2026-11-11T06:42:31.411Z",
       "sessions": [
         {
           "session": "pm-dev",
           "firstAt": "2026-11-11T05:41:45.223Z",
-          "lastAt": "2026-11-11T05:42:48.813Z"
+          "lastAt": "2026-11-11T06:42:31.411Z"
         }
       ],
       "release": "0.55.0",
@@ -16480,7 +16483,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2322,
+  "revision": 2324,
   "reviewMode": "standard",
   "releases": [
     {
