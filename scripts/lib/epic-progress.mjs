@@ -484,6 +484,13 @@ export function resolveEpics(state) {
         status: isArchived(e) ? "archived" : e.status, present: false });
     }
   }
+  return orderResolved(out);
+}
+
+/** THE effective-priority and ordering step of resolveEpics(), over an epic list, in place and pure: no disk, no
+ *  state. Extracted so `board` (lib/board.mjs) orders its snapshot by the SAME comparator PROJECT.md renders from,
+ *  with no copied comparator to drift. Attaches `effectivePriority` to each element and returns the list sorted. */
+export function orderResolved(out) {
   // EFFECTIVE priority, attached here and nowhere else. resolveEpics() is the ONE place the
   // whole record is assembled, and it has exactly two consumers — render() and buildBrief() —
   // so computing the closure here is what stops PROJECT.md and the brief from being able to

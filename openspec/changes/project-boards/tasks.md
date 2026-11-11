@@ -48,7 +48,7 @@
 
 ## 1. The export (spec: board-export)
 
-- [ ] 1.1 Refactor, with no behaviour change: extract `resolveEpics()`'s effective-priority and sort step into a pure
+- [x] 1.1 Refactor, with no behaviour change: extract `resolveEpics()`'s effective-priority and sort step into a pure
       exported function over an epic list, and call it from `resolveEpics()` (design D2). Verify that the existing
       ordering, render and brief tests pass unchanged; the commit carries no test edits.
 - [ ] 1.2 RED (UNIT, `boardSnapshot(state, resolved)` over fixtures): cover every scenario in
