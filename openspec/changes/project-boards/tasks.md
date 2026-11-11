@@ -298,7 +298,7 @@
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD`, or the converged 0.55.0 release-candidate review. Review:
+- [x] G.1 **Gate 2** over `BASE..HEAD`, or the converged 0.55.0 release-candidate review. Review:
       - spec alignment for all eight specs
       - `board` declared read-only
       - no network or git in the engine
