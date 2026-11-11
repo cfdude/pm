@@ -16360,15 +16360,86 @@
       "description": "The openspec change that builds release-planning-mission-and-milestone's brief: release plan fields, mission and milestone, read-only board export, default-on release plan and backlog boards. Change dir openspec/changes/project-boards. Created because the engine maps an epic to its change dir by epic id, and the original epic id differs.",
       "attributedCommits": [],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-11T05:41:46.542Z",
+      "touchedAt": "2026-11-11T05:42:48.813Z",
       "sessions": [
         {
           "session": "pm-dev",
           "firstAt": "2026-11-11T05:41:45.223Z",
-          "lastAt": "2026-11-11T05:41:46.542Z"
+          "lastAt": "2026-11-11T05:42:48.813Z"
         }
       ],
-      "release": "0.55.0"
+      "release": "0.55.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-11T05:42:48.808Z",
+          "artifacts": [
+            "openspec/changes/project-boards/proposal.md",
+            "openspec/changes/project-boards/design.md",
+            "openspec/changes/project-boards/tasks.md",
+            "openspec/changes/project-boards/specs/board-export/spec.md",
+            "openspec/changes/project-boards/specs/epic-annotation/spec.md",
+            "openspec/changes/project-boards/specs/feature-switches/spec.md",
+            "openspec/changes/project-boards/specs/managed-rules-block/spec.md",
+            "openspec/changes/project-boards/specs/project-boards/spec.md",
+            "openspec/changes/project-boards/specs/project-mission/spec.md",
+            "openspec/changes/project-boards/specs/release-planning/spec.md",
+            "openspec/changes/project-boards/specs/tracker-sync/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/project-boards/proposal.md",
+              "sha256": "6a7f99d13af0657ca368219012f83d72238b0b5ec1d49e1e27a784b355625aaa"
+            },
+            {
+              "path": "openspec/changes/project-boards/design.md",
+              "sha256": "3c6d19aa573d1fb79f50b0c9c1dc204f5bc6a0053c6314c7dc8090e128bd4e2c"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/board-export/spec.md",
+              "sha256": "f56cb56797b9880d0e5544edfdf837275f54c4753719f9aa409b703d873cadc5"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/epic-annotation/spec.md",
+              "sha256": "1359f103297fb5b6b6e490fa699ceaa009c33e9199e371eb2d60c2ef565429d0"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/feature-switches/spec.md",
+              "sha256": "0f8528f188cfc09081e5ffe8d8c04dbfb091c95f0f157d54b5ccc728e602c3fd"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/managed-rules-block/spec.md",
+              "sha256": "ee173f1d2719a066d469ba92f806a007925597551f6cfd94816ed7f25cdd353f"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/project-boards/spec.md",
+              "sha256": "627a88b0801a4114dece78b77def15522576563b7836fa84b2c21def8bee6810"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/project-mission/spec.md",
+              "sha256": "bae34e886f9d6471caeab115752648805c6ca85a9096d77825bb1811e212d12c"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/release-planning/spec.md",
+              "sha256": "a6de2da4ce5164a294940df4b870a38b4e60c2dc8aa2eaf42ac7afc503c64a7e"
+            },
+            {
+              "path": "openspec/changes/project-boards/specs/tracker-sync/spec.md",
+              "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
+            }
+          ],
+          "reviewer": "opus fresh-context 2 rounds plus cross-spec review; first recorded on release-planning-mission-and-milestone, carried over when the epic was re-keyed to match the change dir"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-11T05:42:48.808Z",
+          "lastPassAt": "2026-11-11T05:42:48.808Z"
+        }
+      }
     }
   ],
   "detourStack": [],
@@ -16379,7 +16450,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2317,
+  "revision": 2318,
   "reviewMode": "standard",
   "releases": [
     {
