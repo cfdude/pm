@@ -14236,14 +14236,14 @@
       "id": "openspec-1-14-workflows-evaluation",
       "title": "Evaluate OpenSpec 1.14 workflows (new, continue, ff, bulk-archive, verify, onboard) against pm: where they overlap its gates, sync and archive handling, and what pm should instruct or leave alone",
       "priority": "P2",
-      "status": "queued",
+      "status": "paused",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-07T00:23:56.798Z",
-      "touchedAt": "2026-11-11T05:43:32.641Z",
+      "touchedAt": "2026-11-11T06:09:13.912Z",
       "notes": [
         {
           "at": "2026-10-07T00:23:57.541Z",
@@ -14254,10 +14254,22 @@
           "at": "2026-10-14T23:49:34.601Z",
           "actor": "agent",
           "text": "2026-10-14: a git reset --hard on dev wiped the 9 tracked, modified OpenSpec 1.14 files (.claude/commands/opsx/{apply,archive,update}.md, .claude/skills/openspec-{apply-change,archive-change,explore,propose,sync-specs,update-change}/SKILL.md). They were generated, so regenerate with openspec update when this epic starts (Rob runs it, not the agent). The 12 untracked files remain."
+        },
+        {
+          "at": "2026-11-11T06:09:13.907Z",
+          "actor": "agent",
+          "text": "paused 2026-11-11 for the project-boards build (0.55.0); 0.54.0 is still in flight"
         }
       ],
       "release": "0.54.0",
-      "startedAt": "2026-11-03T16:45:10.456Z"
+      "startedAt": "2026-11-03T16:45:10.456Z",
+      "sessions": [
+        {
+          "session": "pm-dev",
+          "firstAt": "2026-11-11T06:09:13.912Z",
+          "lastAt": "2026-11-11T06:09:13.912Z"
+        }
+      ]
     },
     {
       "id": "gh-cfdude-pm-239",
@@ -16468,7 +16480,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2321,
+  "revision": 2322,
   "reviewMode": "standard",
   "releases": [
     {
