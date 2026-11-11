@@ -34,7 +34,7 @@ export. pm still never opens a connection itself.
   at registration by the one creation sink (a tracker issue number where free, else a persisted counter), and a `MIGRATIONS` entry keyed
   to 0.55.0 numbers the existing ones. `board --json` gains a top-level `project: {name, key}`, per-epic `number` and `key`
   (`PM-256`, derived, `null` while the key is unset) and per-release `progress: {done, total}`; `schemaVersion` stays 1. The usage text
-  of `release` now names `release here` and the plan fields. The HTML templates and the skill follow in a later change.
+  of `release` now names `release here` and the plan fields. The HTML templates and the skill follow in this same change (tasks 8.8 to 8.14).
 - **Bundled skill `skills/project-boards/`** with two page templates (release plan, backlog), the database
   contract and its access rules, the refresh procedure, drag-to-rank handling, the standalone-HTML fallback
   and the `docs/artifacts/artifacts.md` registration step. A thin `/pm:boards` command loads it.
@@ -72,7 +72,9 @@ Out of scope, with where each goes (none of it is dropped):
 - `project-mission`: the mission statement with history, the milestone release, numbered exit criteria, the
   critical-path designation, and where the mission is surfaced.
 - `project-boards`: the bundled skill and `/pm:boards`, both page templates, the database contract and its
-  access rules, the refresh and drag-apply procedures, the standalone fallback, and page-side security.
+  access rules, the refresh and drag-apply procedures, the standalone fallback, and page-side security. Six further requirements
+  cover the board redesign: titles that name the project, engine keys as ids, the Epics table with a Summary column,
+  human-readable timestamps, guided empty states, and the first-population batch.
 
 - `project-identity`: the project name and key (`set-project`), the per-epic number and its assignment rule, the 0.55.0 numbering
   migration, and the derived display key.
@@ -85,6 +87,7 @@ Out of scope, with where each goes (none of it is dropped):
 - `managed-rules-block`: adds the `## Boards` section (follows the switch) and the `## Mission` section (follows the
   record), both verb-refreshed and outside the conditional-section set.
 - `tracker-sync`: the inward registration recipe carries a `summary`.
+- `release-planning` (amended): `release --clear target`, the inverse of `--target`.
 - `board-export` (amended): the `project` object, epic `number` and `key`, release `progress`, and the `project` rejection kind.
 
 ## Impact

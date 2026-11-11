@@ -24,8 +24,8 @@ test("8.2 upgrade backfills numbers on a 0.54.0 record, and a second upgrade wri
   const after = readState(cwd);
   const n = Object.fromEntries(after.epics.map(e => [e.id, e.number]));
   assert.equal(n["issue-256"], 256);
-  assert.equal(n.plain, 257);
-  assert.equal(after.nextEpicNumber, 258);
+  assert.equal(n.plain, 1000);
+  assert.equal(after.nextEpicNumber, 1001);
   const bytes = fs.readFileSync(file);
   run(["upgrade"], { cwd });
   assert.deepEqual(fs.readFileSync(file), bytes);
@@ -54,6 +54,6 @@ test("8.2 backfilling numbers is a recovery, not a touch: an old epic's touchedA
   fs.writeFileSync(file, JSON.stringify(s, null, 2) + "\n");
   run(["upgrade"], { cwd });
   const old = readState(cwd).epics.find(e => e.id === "old");
-  assert.equal(old.number, 1);
+  assert.equal(old.number, 1000);
   assert.equal("touchedAt" in old, false, "a backfilled number must not read as last touched on upgrade day");
 });

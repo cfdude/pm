@@ -157,3 +157,37 @@ test("6.1 commands/boards.md names the skill, gates on boardsEnabled, and restat
   for (const t of leaks) assert.ok(!BOARDS_SECTION.includes(t), `the ## Boards section must not name ${t}`);
   assert.match(BOARDS_SECTION, /project-boards/);
 });
+
+// ---------------------------------------------------------------- board redesign (task 8.12)
+
+test("8.12 titles name the project: the old never-prefix rule is gone, the reason is given, and the gallery copy is escaped", () => {
+  const s = skill();
+  assert.doesNotMatch(s, /never prefix a title with the project name/i);
+  assert.match(s, /`<project name> Backlog` and `<project name> Release Plan`/);
+  assert.match(s, /This replaces the earlier rule that a title never carries the project name/);
+  assert.match(s, /`&` and `<` escaped/);
+  assert.match(s, /a refresh never republishes/);
+  const row = read(SKILL).split("\n").find(l => l.startsWith("| `page/info`"));
+  assert.match(row, /`project`/, "page/info carries the project for the render-time title");
+});
+
+test("8.12 First population: one batched question set, never invent, the exact verbs and who supplies each, then refresh", () => {
+  const raw = read(SKILL);
+  const i = raw.indexOf("## First population: what to fill and what to ask the user");
+  assert.ok(i > -1, "the section exists");
+  const sec = flat(raw.slice(i, raw.indexOf("\n## ", i + 5)));
+  assert.match(sec, /ONE batched question set/);
+  assert.match(sec, /Never invent a project name, key, mission or milestone/);
+  assert.match(sec, /re-run the refresh/);
+  for (const v of ['set-project --name "<name>" --key <KEY>', "/pm:upgrade", 'mission --statement "<one line>" --reason', "mission --milestone <releaseId>",
+    "mission --add-criterion", "--needs-human", 'release here <releaseId> --text "<where things stand>" --next', "--theme", "--rationale", "--exit",
+    "--order <n>", "--size", "--target", 'update-epic <id> --summary "<one line>"', "`decisions/<n>`"]) assert.ok(sec.includes(v), `names ${v}`);
+  for (const w of ["| the user |", "| the engine |", "you draft it from `board --json`; the user confirms", "the user confirms or edits them as a batch"]) assert.ok(sec.includes(w), `who: ${w}`);
+});
+
+test("8.12 the refresh-time stale check is stated, at two days, before any write", () => {
+  const s = skill();
+  assert.match(s, /### Stale check \(every refresh\)/);
+  assert.match(s, /Before you write, read `page\/info\.lastUpdated`/);
+  assert.match(s, /two or more days old/);
+});

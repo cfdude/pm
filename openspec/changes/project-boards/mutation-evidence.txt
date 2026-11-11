@@ -701,3 +701,157 @@ run:      node --test scripts/test/unit/board-export.test.mjs
 result:   KILLED (1 fail: 'release progress: delivered over every non-declined member, from the same values the epic rows carry')
 restored: yes
 (107b repeats 107 after the progressOf refactor required by conductor-13's outcomeOf rule; it is the same guard, killed again.)
+
+mutant 113 [8.7]: probe: a tracker number at or above the floor takes the counter
+mutation: epic-number.mjs: keepsTrackerNumber drops `ext < EPIC_NUMBER_FLOOR` (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (1 fail on the first run: 'number: a tracker number at or above the floor falls back to the counter'; the migration twin of the same helper survived on 1000 and was strengthened to 1500, then killed: 'migration: a tracker number at or above the floor takes the counter like any other epic')
+restored: yes
+
+mutant 114 [8.7]: probe: the counter has a floor
+mutation: epic-number.mjs: afterLargest returns max+1, or 1, with no floor (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (2 fails: 'number: assignEpicNumber keeps a number the epic already carries ...', 'migration: absent-tolerant ...')
+restored: yes
+
+mutant 115 [8.7]: probe: the migration backfill counter starts at the floor
+mutation: epic-number.mjs: stampEpicNumbers' counter starts at 1 instead of the floor (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (4 fails, all 'migration: ...')
+restored: yes
+
+3 mutants (113-115) for project-boards 8.7: 3 killed on first run (113 was also checked on its shared migration path, where the first test survived and was strengthened). Running total: 115 mutants, 105 killed on first run, 10 survived (9 fixed and re-killed, 1 equivalent).
+
+mutant 116 [8.11]: escaping of the new key field
+mutation: `<span class="key">${esc(e.key)}</span>` -> `<span class="key">${H(e.key)}</span>` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 117 [8.8]: the key format check (okKey)
+mutation: `const okKey=x=>typeof x==="string"&&KEY_RE.test(x);` -> `const okKey=x=>typeof x==="string";` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.8 backlog.html: projOf keeps only a name and key set-project would accept; okKey takes only KEY-n")
+restored: yes (git diff clean)
+
+mutant 118 [8.8]: the project-name rule (no `<`, no control character)
+mutation: `!/[\u0000-\u001f\u007f<]/.test(n)` -> `true` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "8.8 release-plan.html: projOf keeps only a name and key set-project would accept; okKey takes only KEY-n")
+restored: yes (git diff clean)
+
+mutant 119 [8.10]: empty-state condition: backlog project name
+mutation: `if(!proj.name)n.push(need("project-name"` -> `if(false)n.push(need("project-name"` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.10 backlog.html: an empty project gets a guided card per missing field, naming the command and to ask the user; command placeholders are text")
+restored: yes (git diff clean)
+
+mutant 120 [8.10]: empty-state condition: release plan marker card
+mutation: `${H(miss.length?need("here"` -> `${H(false?need("here"` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.10 release-plan.html: an empty project gets a guided card per missing field, naming the command and to ask the user; command placeholders are text")
+restored: yes (git diff clean)
+
+mutant 121 [8.10]: empty-state condition: an unshipped release's plan fields
+mutation: `if(r.status!=="shipped"){if(!theme)` -> `if(false){if(!theme)` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.10 release-plan.html: an empty project gets a guided card per missing field, naming the command and to ask the user; command placeholders are text")
+restored: yes (git diff clean)
+
+mutant 122 [8.9]: timestamp formatter: relative phrase only past one day
+mutation: `const rel=d<1?""` -> `const rel=d<0?""` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.9 backlog.html: when() gives "Nov 11, 2:10 PM", a relative tail only past one day, the year only across years, and nothing for a non-date")
+restored: yes (git diff clean)
+
+mutant 123 [8.9]: timestamp formatter: the year across years
+mutation: `if(!sameYear)opt.year="numeric";` -> `` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.9 release-plan.html: when() gives "Nov 11, 2:10 PM", a relative tail only past one day, the year only across years, and nothing for a non-date")
+restored: yes (git diff clean)
+
+mutant 124 [8.9]: timestamp formatter: an absent date says so
+mutation: `return w.abs?`<span class="when">` -> `return iso?`<span class="when">` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED
+restored: yes (git diff clean)
+
+mutant 125 [8.11]: escaping of a guided card's command
+mutation: `<code>${esc(cmd)}</code>` -> `<code>${H(cmd)}</code>` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.10 backlog.html: an empty project gets a guided card per missing field, naming the command and to ask the user; command placeholders are text")
+restored: yes (git diff clean)
+
+mutant 126 [8.11]: the concatenation source scan (a step notice drops esc)
+mutation: `'<div class="notice" role="status">'+esc(label)+'` -> `'<div class="notice" role="status">'+label+'` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.11 release-plan.html: a markup string is concatenated only with esc(), num(), H() or a finished render part")
+restored: yes (git diff clean)
+
+mutant 127 [8.11]: release.progress validation (done above total)
+mutation: `okN(p.total)&&p.done<=p.total)` -> `okN(p.total))` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.11 release plan: progress comes from release.progress (a bad one falls back to the members); the current release is open under a WE ARE HERE rule")
+restored: yes (git diff clean)
+
+mutant 128 [8.11]: escaping of the release theme in the banner
+mutation: `` · ${esc(hereRel.theme)}`` -> `` · ${hereRel.theme}`` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 release-plan.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 129 [8.10]: drag off while a filter is on
+mutation: `drag=admin&&!lifted&&!filtered` -> `drag=admin&&!lifted` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.10 backlog: matches() filters by find text, priority, status, release and lane; any filter turns drag off")
+restored: yes (git diff clean)
+
+mutant 130 [8.8]: cards only for an epic with a why-now or description
+mutation: `const hasCard=e=>!!(e.whyNow||e.description);` -> `const hasCard=e=>true;` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.8 backlog: a detail card only for an epic with a why-now or a description; the card hides empty fields")
+restored: yes (git diff clean)
+
+mutant 131 [8.12]: skill: the one-batch rule
+mutation: `put every question for the user in ONE batched question set` -> `put every question for the user in a question set` (skills/project-boards/SKILL.md)
+run:      node --test scripts/test/assert/project-boards-skill.test.mjs
+result:   KILLED (1 fail: "8.12 First population: one batched question set, never invent, the exact verbs and who supplies each, then refresh")
+restored: yes (git diff clean)
+
+mutant 124 fix: the 8.9 Updated-cell test now also renders an unparseable `updatedAt` ("not a date") and asserts two
+"unknown" cells and no empty `when` span.
+mutant 124 re-run [8.9]: timestamp formatter: an absent date says so
+mutation: `return w.abs?`<span class="when">` -> `return iso?`<span class="when">` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.9 backlog: every Updated cell is human; an absent date says so rather than printing nothing or ISO")
+restored: yes (git diff clean)
+
+16 mutants (116-131) for project-boards 8.8 to 8.12: 15 killed on first run, 1 survived (124) and was killed after its test was
+strengthened. Running total: 131 mutants.
+
+mutant 132 [review fix 6]: duplicate stored number keeps the earlier holder
+mutation: `if (validNumber(e.number) && !held.has(e.number)) held.add(e.number);` -> `if (validNumber(e.number)) held.add(e.number);` (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (2 fail, incl. the new "a duplicate stored number keeps the EARLIER holder in array order")
+restored: yes
+
+mutant 133 [review fix 9]: name length counts code points
+mutation: `[...raw].length<=60` -> `raw.length<=60` (both templates)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "8.8 <template>: projOf keeps only a name and key set-project would accept")
+restored: yes
+
+mutant 134 [review fix 10]: target hint names --clear target
+mutation: `(remove one with --clear target)` -> `(or none)` (release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "8.10 release-plan.html: an empty project gets a guided card per missing field")
+restored: yes
+
+mutant 135 [review fix 9]: whitespace-only name refused
+mutation: `n=raw.trim()` -> `n=raw` (both templates)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+first run: SURVIVED (the test used " \t ", which the control-character rule already refused); the test now uses three spaces.
+re-run:   KILLED (see the fail count above, run after the fix)
+restored: yes
+
+4 mutants (132-135) for the Gate 1 review fixes. Running total: 135 mutants.

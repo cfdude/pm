@@ -65,7 +65,7 @@ points to a release, and critical path derives from release `order`. Plan positi
 `state.releasePlan = {here, hereText, nextText}`.
 
 **D7. Vocabulary.** The engine already uses "milestones" for a Superpowers plan's stories (`add-epic.mjs`). Every new
-surface says "mission milestone", and the state key is `milestoneRelease`. The unset spellings follow one rule:
+surface says "mission milestone", and the state key is `milestoneRelease`. The unset spellings follow one rule, except that `set-project` and `set-profile` use `--unset <name>` (a value naming which field to remove):
 - `--clear <field>` removes a named field. It takes a value and matches `update-epic --clear`.
 - `--clear-<thing>` removes a singleton (`mission --clear-milestone`, `release here --clear-here`). It is valueless.
   It gets its own registry row, because a single verb cannot declare `--clear` both with and without a value
@@ -134,9 +134,9 @@ such. A pm-recorded open-question object would be a follow-up, and none is propo
 **D20. Jira-style keys: store a number, derive the key (board redesign, 2026-11-11).** An epic stores only an integer `number`; the project
 stores `projectKey` and `projectName` (`set-project`) and a counter `nextEpicNumber`. The displayed key `PM-256` is derived on read, so
 changing the key renames nothing on disk. The rule lives in `pushEpic` (via `assignEpicNumber`), the one sink every registration path
-routes through, so a fifth path cannot skip it. An issue number becomes the epic number where it is free, so `PM-256` is issue 256;
-everything else takes the counter, skipping held numbers. The counter is persisted and only advances, so a number is never reused.
-`set-project` writes the record and re-renders only: it does not touch the managed rules block, so it adds no overhead row.
+routes through, so a fifth path cannot skip it. An issue number below 1000 becomes the epic number where it is free, so `PM-256` is issue 256;
+everything else takes the counter, whose first value is 1000 (the floor), skipping held numbers. The counter is persisted and only advances, so a number is never reused.
+`set-project` writes the record only: it needs no render and does not touch the managed rules block, so it adds no overhead row.
 
 **D21. `schemaVersion` stays 1.** The `project` object, the epic `number`/`key` and the release `progress` are additive keys, and the
 snapshot has not shipped (0.55.0 is unreleased), so there is no consumer to break and the "meaning of an existing key changed" rule
@@ -147,9 +147,13 @@ does not fire. The export emits `project: {name: null, key: null}` while unset a
 window. "Non-declined" is read literally: only outcome `declined` leaves the denominator; a killed or superseded member keeps the release
 below 100% until it is removed from it (`release --unmember`).
 
-**D23. Counter caveat, stated.** Backfilling gives the un-numbered epics the numbers after the largest tracker number, so in a repo whose
-issues run to about 270 the code-name epics take 271 and up. A later issue whose number is already held takes the counter instead, and
-its key then differs from its issue number. A higher counter floor would avoid it and is an open question for the owner.
+**D23. Counter floor at 1000 (owner decision, 2026-11-11; it replaces the earlier max+1 counter).** The counter starts at 1000, not one past
+the largest number held, so local numbers (PM-1000 and up) can never meet an issue number below 1000: the collision the max+1 rule left
+open (backfill handing a code-name epic 271 in a repo whose issues ran to about 270, so a later issue 271 lost its own number) is closed
+by construction. A tracker number at or above 1000, or already held, falls back to the counter, so its key then differs from its issue
+number; that is the only remaining case. The rule is one function: `epic-number.mjs` (`EPIC_NUMBER_FLOOR`, `keepsTrackerNumber`), used by
+`pushEpic` and by the 0.55.0 backfill and `upgrade` renumbering alike. A stored counter below the floor (an unreleased 0.55.0 record) is
+raised to it; valid numbers already held are never changed (a duplicate is the one exception: `stampEpicNumbers` keeps the earlier holder in array order and renumbers the later).
 
 ## Inverses (gate item 1, enumerated here so the R.1 task can check them)
 
@@ -185,7 +189,7 @@ its key then differs from its issue number. A higher counter floor would avoid i
 
 ## Migration Plan
 
-Additive, with one transform. A 0.54.0 state file loads unchanged, and a `MIGRATIONS` entry keyed to 0.55.0 numbers its epics (D20; the same function also runs on every `upgrade`), because every new key is optional and absent means today's behaviour
-(with boards on). Task 7.3 is the evidence: a unit test loads a 0.54.0-shaped fixture. Rollback is reinstalling the
+Additive, with one transform. A 0.54.0 state file loads without error and keeps every existing value, because every new key is optional and absent means today's behaviour
+(with boards on); a `MIGRATIONS` entry keyed to 0.55.0 then adds a number to each epic (D20; the same function also runs on every `upgrade`). Task 7.3 is the evidence: a unit test loads a 0.54.0-shaped fixture. Rollback is reinstalling the
 prior plugin version. Whether that version tolerates the new keys is NOT claimed or tested here. If it matters, it is
 a separate check at the release cut. Boards stay in the user's account until the user deletes them.

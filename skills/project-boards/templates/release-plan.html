@@ -1,87 +1,125 @@
 <title>Release Plan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: a header, a summary band, then the board; one column at phone width. Data lives in the artifact db. */
+/* Layout: one reading column. Header with the Last updated pill, the mission, a plan bar, the dark "We are here" banner,
+   then collapsible release cards (the current one open, a WE ARE HERE rule above it), the milestone's exit criteria and
+   the decisions put to the owner. Guided cards name every field still to fill in. Data lives in the artifact db. */
 :root{
-  --bg:#F5F6F4; --surface:#FFFFFF; --fg:#1B2321; --muted:#5B6764; --line:#D9DEDB; --soft:#ECEFED;
-  --accent:#1D5C54; --accent-fg:#FFFFFF; --focus:#2A8A7E; --warn-bg:#FFF1D6; --warn-fg:#7A4B00; --err-fg:#9B1C14;
+  --bg:#F3F5F6; --surface:#FFFFFF; --fg:#18222A; --muted:#58656E; --line:#D6DDE2; --soft:#E9EEF1;
+  --accent:#0B6E66; --accent-fg:#FFFFFF; --accent-soft:#DFF0EE; --focus:#1D7FD0;
+  --here:#1D4F9C; --here-bg:#14305C; --here-fg:#FFFFFF; --here-sub:#CFE0FF; --here-tag:#A9C8FF;
+  --warn-bg:#FBEFD9; --warn-fg:#7A4B00; --err-fg:#A3262A; --err-bg:#F9E1E2;
+  --need-bg:#FFF8E8; --need-line:#E8C873; --need-fg:#5C4300;
   --p0-bg:#FBE3E1; --p0-fg:#9B1C14; --p1-bg:#FDEBD9; --p1-fg:#8A4300; --p2-bg:#FBF3CF; --p2-fg:#6B5600;
-  --p3-bg:#E5ECF3; --p3-fg:#2F4A63; --pq-bg:#E7E9E8; --pq-fg:#4A5552; --done-bg:#DFF1E6; --done-fg:#1C5E37;
+  --p3-bg:#E5ECF3; --p3-fg:#2F4A63; --pq-bg:#E7E9E8; --pq-fg:#4A5552;
   --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:ui-monospace,"SF Mono",Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101615; --surface:#171F1D; --fg:#E2EAE7; --muted:#9BAAA6; --line:#2A3835; --soft:#1E2927;
-  --accent:#6CC4B8; --accent-fg:#06201C; --focus:#86D6CB; --warn-bg:#3D2C0C; --warn-fg:#FFD27A; --err-fg:#FFB4AB;
+  --bg:#11171B; --surface:#192127; --fg:#E6EAED; --muted:#98A3AC; --line:#2C353D; --soft:#20292F;
+  --accent:#4CC2B6; --accent-fg:#062421; --accent-soft:#16312F; --focus:#7FB0FF;
+  --here:#7FB0FF; --here-bg:#1B3D78; --here-fg:#FFFFFF; --here-sub:#CFE0FF; --here-tag:#A9C8FF;
+  --warn-bg:#33270F; --warn-fg:#E0A84A; --err-fg:#F08A8D; --err-bg:#3A1A1C;
+  --need-bg:#2E260F; --need-line:#7A6224; --need-fg:#F5DC9A;
   --p0-bg:#4A1A16; --p0-fg:#FFB4AB; --p1-bg:#47290C; --p1-fg:#FFC58C; --p2-bg:#3D340B; --p2-fg:#F3DA6B;
-  --p3-bg:#1E2D3B; --p3-fg:#AFC6DC; --pq-bg:#27302E; --pq-fg:#B4C0BC; --done-bg:#163824; --done-fg:#9BE0B5; color-scheme:dark}}
+  --p3-bg:#1E2D3B; --p3-fg:#AFC6DC; --pq-bg:#27302E; --pq-fg:#B4C0BC; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#101615; --surface:#171F1D; --fg:#E2EAE7; --muted:#9BAAA6; --line:#2A3835; --soft:#1E2927;
-  --accent:#6CC4B8; --accent-fg:#06201C; --focus:#86D6CB; --warn-bg:#3D2C0C; --warn-fg:#FFD27A; --err-fg:#FFB4AB;
+  --bg:#11171B; --surface:#192127; --fg:#E6EAED; --muted:#98A3AC; --line:#2C353D; --soft:#20292F;
+  --accent:#4CC2B6; --accent-fg:#062421; --accent-soft:#16312F; --focus:#7FB0FF;
+  --here:#7FB0FF; --here-bg:#1B3D78; --here-fg:#FFFFFF; --here-sub:#CFE0FF; --here-tag:#A9C8FF;
+  --warn-bg:#33270F; --warn-fg:#E0A84A; --err-fg:#F08A8D; --err-bg:#3A1A1C;
+  --need-bg:#2E260F; --need-line:#7A6224; --need-fg:#F5DC9A;
   --p0-bg:#4A1A16; --p0-fg:#FFB4AB; --p1-bg:#47290C; --p1-fg:#FFC58C; --p2-bg:#3D340B; --p2-fg:#F3DA6B;
-  --p3-bg:#1E2D3B; --p3-fg:#AFC6DC; --pq-bg:#27302E; --pq-fg:#B4C0BC; --done-bg:#163824; --done-fg:#9BE0B5; color-scheme:dark}
+  --p3-bg:#1E2D3B; --p3-fg:#AFC6DC; --pq-bg:#27302E; --pq-fg:#B4C0BC; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);margin:0}
-.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:24px 56px}
-h1{font:650 28px/1.15 var(--body);margin:0;text-wrap:balance}
-h2{font:650 20px/1.2 var(--body);margin:0 0 12px;text-wrap:balance}
-h3{font:600 16px/1.3 var(--body);margin:0}
-.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
-.lede{color:var(--muted);margin:6px 0 0;max-width:68ch}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--body);margin:0}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:28px 56px}
+#body{display:flex;flex-direction:column;gap:20px;margin-top:16px}
+h1{font:680 30px/1.15 var(--body);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font:650 18px/1.25 var(--body);margin:0 0 8px;text-wrap:balance}
+h3{font:600 14.5px/1.3 var(--body);margin:12px 0 6px}
+p{margin:0 0 6px;max-width:72ch}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between}
+.top>div{min-width:0}
+.sub,.lede{color:var(--muted)}
+.lede{margin:8px 0 0;max-width:72ch}
 .live{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .live i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
-.live[data-s="ok"] i{background:var(--done-fg)}.live[data-s="err"] i{background:var(--err-fg)}
-.counts{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
-.count{padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;background:var(--soft);color:var(--fg)}
-.c-done{background:var(--done-bg);color:var(--done-fg)}
-.hint,.src,.s{font-size:13px;color:var(--muted)}
-.hint{margin:14px 0 8px}
-.tblw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;min-width:640px}
-th{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px;border-bottom:1px solid var(--line);background:var(--soft)}
-td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px;min-width:0}
-tbody.band th{text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg)}
-tbody.itm.drag{opacity:.4}
-tbody.itm.over td{box-shadow:inset 0 2px 0 var(--accent)}
-.hd{cursor:grab;color:var(--muted);user-select:none;font-size:16px;line-height:1;padding:2px 4px;border-radius:4px;background:none;border:0}
-.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.live[data-s="ok"] i{background:var(--accent)}.live[data-s="err"] i{background:var(--err-fg)}
+.lastup{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:6px;padding:5px 14px;border-radius:999px;background:var(--here-bg);color:var(--here-fg);font-weight:650;font-size:14px;font-variant-numeric:tabular-nums}
+.lastup .rel{color:var(--here-sub);font-weight:500;display:inline}
+section.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px max(16px,3vw);min-width:0}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mission p.st{font-size:17px;font-weight:600;margin:4px 0 6px}
+.planbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:14px}
+.planbar .sub{flex:1 1 260px;min-width:0}
+.here{background:var(--here-bg);color:var(--here-fg);border-radius:8px;padding:16px max(16px,3vw)}
+.here .htag{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:650;color:var(--here-tag)}
+.here .where{font-size:21px;font-weight:650;margin:2px 0 6px;text-wrap:balance;overflow-wrap:anywhere}
+.here p{color:var(--here-fg)}
+.here .hm{display:flex;flex-wrap:wrap;gap:4px 18px;color:var(--here-sub);font-size:13.5px;margin-top:8px}
+.here .hm b{color:var(--here-fg);font-weight:600}
+.here .need{margin-top:8px}
+.stale{margin-top:10px;padding:7px 11px;border-radius:6px;background:var(--warn-bg);color:var(--warn-fg);font-size:13.5px}
+.need{background:var(--need-bg);border:1px dashed var(--need-line);color:var(--need-fg);border-radius:8px;padding:10px 14px;font-size:13.5px;display:grid;gap:3px;min-width:0}
+.need b{font-weight:650}
+.need code{font:500 12.5px var(--mono);overflow-wrap:anywhere;color:inherit}
+.need .who{font-weight:600}
+.needs{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.counts{display:flex;flex-wrap:wrap;gap:8px}
+.count{padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;background:var(--soft);color:var(--fg)}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:650;white-space:nowrap;background:var(--soft);color:var(--muted)}
+.rs-shipped{background:var(--accent-soft);color:var(--accent)}.rs-in-progress{background:var(--warn-bg);color:var(--warn-fg)}.rs-planned,.rs-other{background:var(--soft);color:var(--muted)}
 .p-P0{background:var(--p0-bg);color:var(--p0-fg)}.p-P1{background:var(--p1-bg);color:var(--p1-fg)}.p-P2{background:var(--p2-bg);color:var(--p2-fg)}
 .p-P3{background:var(--p3-bg);color:var(--p3-fg)}.p-P\?{background:var(--pq-bg);color:var(--pq-fg)}
-.count.p-P0,.count.p-P1,.count.p-P2,.count.p-P3,.count.p-P\?{font-weight:600}
-.tag,.dep{font-size:12px;font-weight:600;border-radius:6px;padding:1px 7px;background:var(--soft);color:var(--muted);text-decoration:none;white-space:nowrap;margin-left:4px}
-.dep--warn{background:var(--warn-bg);color:var(--warn-fg)}
-.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.it b{display:block;font-weight:600;overflow-wrap:anywhere}
-.s{display:block;overflow-wrap:anywhere}
-.st{font-size:12.5px;font-weight:600;white-space:nowrap}
-.st-blocked{color:var(--err-fg)}.st-active{color:var(--accent)}
+.tag{font-size:11.5px;font-weight:650;border-radius:999px;padding:1px 8px;background:var(--soft);color:var(--fg);white-space:nowrap}
+.tag--crit{background:var(--err-bg);color:var(--err-fg)}
+.rm{display:flex;flex-direction:column;gap:8px}
+details.g{border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+details.g.cur{border:2px solid var(--here)}
+details.g>summary{cursor:pointer;list-style:none;display:grid;grid-template-columns:minmax(4.5rem,max-content) minmax(0,1fr) auto auto;gap:6px 14px;align-items:center;padding:10px 12px}
+details.g>summary::-webkit-details-marker{display:none}
+.gid{font:600 14px var(--mono)}
+.gth{min-width:0;overflow-wrap:anywhere}
+.gth i{color:var(--need-fg);font-style:normal;font-size:13px}
+.prog{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{width:72px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.gb{padding:6px 14px 14px;border-top:1px solid var(--line);display:grid;gap:6px}
+.gb p{margin:0}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:3px 12px;font-size:14px;margin:4px 0}
+.kv dt{color:var(--muted);font-weight:600}.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0}
+.chip{font-size:12.5px;padding:3px 8px;border-radius:5px;border:1px solid var(--line);background:var(--bg);display:inline-flex;gap:6px;align-items:center;max-width:100%;min-width:0}
+.chip .key{font:600 12.5px var(--mono);color:var(--accent)}
+.chip .key--none{color:var(--need-fg)}
+.chip small{color:var(--muted);font-size:11.5px;overflow-wrap:anywhere}
+.chip.s-done{border-color:var(--accent)}.chip.s-active{border-color:var(--warn-fg)}.chip.s-blocked{border-color:var(--err-fg)}
+.hereline{display:flex;align-items:center;gap:10px}
+.hereline::before,.hereline::after{content:"";flex:1;border-top:3px solid var(--here)}
+.hereline span{background:var(--here-bg);color:var(--here-fg);font-weight:650;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 14px;border-radius:999px;text-align:center}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:700}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.rec{color:var(--accent);font-weight:600}
+.ans{display:flex;flex-direction:column;gap:6px;min-width:200px}
+.ans .row{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:4px 11px;font:600 13px var(--body);cursor:pointer}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn--p{background:var(--here-bg);color:var(--here-fg);border-color:var(--here-bg);padding:7px 16px}
+textarea{font:13.5px/1.4 var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 7px;min-height:52px;resize:vertical;width:100%}
+.sendbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
+.s{font-size:13px;color:var(--muted);display:block}
+.when{white-space:nowrap;font-variant-numeric:tabular-nums}
+.rel{color:var(--muted);font-size:12px;margin-left:4px}
+.here .rel{color:var(--here-sub)}
 code,.mono{font:500 13px var(--mono)}
 a{color:var(--accent)}
-:is(button,select,a,input,textarea):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.sec{margin-top:36px}
-.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
-.card:target{outline:2px solid var(--accent)}
-.card__h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.card p{margin:8px 0 0;overflow-wrap:anywhere}
-.meta{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 12px;margin:10px 0 0;font-size:13.5px}
-.meta dt{color:var(--muted);font-weight:600}.meta dd{margin:0;overflow-wrap:anywhere}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
-.btn,select,textarea,input[type="text"]{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:5px 10px;font:600 13px var(--body)}
-.btn{cursor:pointer}.btn--p{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-textarea{width:100%;min-height:56px;font-weight:400;resize:vertical}
-.empty{padding:18px;color:var(--muted);text-align:center}
-.notice{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:13.5px}
-.warn{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:8px 12px;margin:12px 0;font-size:13.5px}
-.banner,.mission{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-top:16px}
-.lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.rel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-top:12px}
-.rel--here{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
-.rel__h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.rs-planned{background:var(--p3-bg);color:var(--p3-fg)}.rs-in-progress{background:var(--p1-bg);color:var(--p1-fg)}.rs-shipped{background:var(--done-bg);color:var(--done-fg)}.rs-other{background:var(--pq-bg);color:var(--pq-fg)}
-.list{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}
-.list li{font-size:13.5px;background:var(--soft);border-radius:6px;padding:8px 10px;overflow-wrap:anywhere}
-.msg{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;color:var(--muted);margin-top:18px}
-@media (max-width:640px){h1{font-size:24px}.meta{grid-template-columns:1fr}}
+:is(button,a,textarea,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.notice{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;font-size:13.5px}
+.msg{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;color:var(--muted)}
+@media (max-width:600px){h1{font-size:25px}details.g>summary{grid-template-columns:minmax(4.5rem,max-content) minmax(0,1fr)}.kv{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <div id="app"></div>
@@ -91,6 +129,7 @@ textarea{width:100%;min-height:56px;font-weight:400;resize:vertical}
 "use strict";
 /* pm:render-begin */
 const ID_RE=/^[A-Za-z0-9._-]+$/;
+const KEY_RE=/^[A-Z]{2,3}-[1-9][0-9]{0,8}$/;
 const LEVELS=["P0","P1","P2","P3","P?"];
 const STATUSES=["untriaged","queued","active","paused","later","blocked","planned","archived"];
 const RSTATUS=["planned","in-progress","shipped"];
@@ -100,6 +139,7 @@ const H=x=>String(x);
 const str=x=>typeof x==="string"?x:"";
 const arr=x=>Array.isArray(x)?x:[];
 const okId=x=>typeof x==="string"&&ID_RE.test(x);
+const okKey=x=>typeof x==="string"&&KEY_RE.test(x);
 const safeUrl=u=>(typeof u==="string"&&/^https?:\/\/[^\s"'<>`\\]+$/i.test(u))?u:"";
 const prioOf=p=>(typeof p==="string"&&LEVELS.indexOf(p)>=0)?p:"P?";
 const oneOf=(x,list)=>(typeof x==="string"&&list.indexOf(x)>=0)?x:"other";
@@ -107,80 +147,161 @@ const inlineJson=v=>{const j=JSON.stringify(v);return (j===undefined?"null":j).r
 const safe=(fn,dflt)=>{try{return fn();}catch(_){return dflt;}};
 const step=(label,fn)=>{try{return String(fn());}catch(_){return '<div class="notice" role="status">'+esc(label)+' could not be drawn. The rest of the board is unaffected.</div>';}};
 const byPos=(a,b)=>{const pa=a.position==null?1e15:a.position,pb=b.position==null?1e15:b.position;return pa-pb||String(a.id).localeCompare(String(b.id));};
+/** The project's name and key, checked the way set-project checks them; anything else reads as unset. */
+function projOf(p){
+  const o=(p&&typeof p==="object"&&!Array.isArray(p))?p:{};
+  const raw=str(o.name),n=raw.trim(),k=str(o.key);
+  return {name:(n&&[...raw].length<=60&&!/[\u0000-\u001f\u007f<]/.test(raw))?n:"",key:/^[A-Z]{2,3}$/.test(k)?k:""};
+}
+/** A human timestamp: absolute ("Nov 11, 2:10 PM", in the viewer's locale and time zone unless o pins them) and, past one day, relative. */
+function when(iso,o){
+  const O=(o&&typeof o==="object")?o:{};
+  const t=typeof iso==="string"?Date.parse(iso):NaN;
+  if(!isFinite(t))return {abs:"",rel:""};
+  const now=(typeof O.now==="number"&&isFinite(O.now))?O.now:Date.now();
+  const opt={month:"short",day:"numeric",hour:"numeric",minute:"2-digit"};
+  if(typeof O.timeZone==="string")opt.timeZone=O.timeZone;
+  const sameYear=safe(()=>new Date(t).toLocaleString(O.locale,{year:"numeric",timeZone:opt.timeZone})===new Date(now).toLocaleString(O.locale,{year:"numeric",timeZone:opt.timeZone}),true);
+  if(!sameYear)opt.year="numeric";
+  const abs=safe(()=>new Date(t).toLocaleString(O.locale,opt),"");
+  const d=Math.floor((now-t)/864e5);
+  const n=(v,u)=>v+" "+u+(v===1?"":"s")+" ago";
+  const rel=d<1?"":(d<14?n(d,"day"):(d<60?n(Math.floor(d/7),"week"):(d<730?n(Math.floor(d/30),"month"):n(Math.floor(d/365),"year"))));
+  return {abs:abs,rel:rel};
+}
+const whenHtml=(iso,o,none)=>{const w=when(iso,o);return w.abs?`<span class="when">${esc(w.abs)}</span>${H(w.rel?`<span class="rel">${esc(w.rel)}</span>`:"")}`:`<span class="s">${esc(none||"no date recorded")}</span>`;};
+/** A guided empty state: what is missing, the engine command that sets it, and who supplies it. */
+const need=(id,what,cmd,who)=>`<div class="need" data-need="${esc(id)}" role="note"><b>${esc(what)}</b><span>Set it with <code>${esc(cmd)}</code></span><span class="who">${esc(who)}</span></div>`;
+const ASK_USER="Ask the user: only the user knows this. Never invent it.";
+const AGENT_DRAFTS="The agent drafts it, then asks the user to confirm.";
 function normEpic(d){
   try{
     if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.id))return null;
     const n=v=>(typeof v==="number"&&isFinite(v))?v:null;
-    return {id:d.id,title:str(d.title),summary:str(d.summary),whyNow:str(d.whyNow),description:str(d.description),lane:str(d.lane),
+    return {id:d.id,key:okKey(d.key)?d.key:"",title:str(d.title),summary:str(d.summary),whyNow:str(d.whyNow),description:str(d.description),lane:str(d.lane),
       status:str(d.status),priority:prioOf(d.priority),meritPriority:prioOf(d.meritPriority),position:n(d.position),
       release:okId(d.release)?d.release:"",externalUrl:str(d.externalUrl),dependsOn:arr(d.dependsOn).filter(okId),
-      delivered:d.delivered===true?true:(d.delivered===false?false:null),outcome:str(d.outcome),outcomeReason:str(d.outcomeReason),endedAt:str(d.endedAt)};
+      delivered:d.delivered===true?true:(d.delivered===false?false:null),outcome:str(d.outcome),outcomeReason:str(d.outcomeReason),
+      endedAt:str(d.endedAt),updatedAt:str(d.updatedAt)};
   }catch(_){return null;}
 }
 const skippedNote=n=>n>0?`<p class="hint">Skipped ${num(n)} record${H(n===1?"":"s")} with an unusable id or shape.</p>`:"";
 const linkOrText=raw=>{const u=safeUrl(raw);return u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u)}</a>`:esc(str(raw));};
-const RELSTAT_LABEL={"planned":"planned","in-progress":"in progress","shipped":"shipped"};
+const keyHtml=e=>e.key?`<span class="key">${esc(e.key)}</span>`:'<span class="key key--none">no key</span>';
+const labelOf=e=>e.summary||e.title;
+const REASONS=["Won't do","Deferred","For consideration","Merged"];
+const RELSTAT_LABEL={"planned":"not started","in-progress":"in progress","shipped":"shipped"};
+const DONE=["archived"];
+function normRel(d){
+  if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.id))return null;
+  const p=d.progress,okN=v=>typeof v==="number"&&isFinite(v)&&v>=0;
+  return {id:d.id,intent:str(d.intent),theme:str(d.theme),rationale:str(d.rationale),exit:str(d.exit),size:str(d.size),target:str(d.target),
+    order:(typeof d.order==="number"&&isFinite(d.order))?d.order:null,status:str(d.status),critical:d.criticalPath===true,
+    progress:(p&&typeof p==="object"&&okN(p.done)&&okN(p.total)&&p.done<=p.total)?{done:p.done,total:p.total}:null};
+}
 function renderPlan(inp){
   const I=(inp&&typeof inp==="object")?inp:{};
   const canWrite=safe(()=>I.canWrite===true,false);
+  const tOpt=safe(()=>({now:typeof I.now==="number"?I.now:Date.now(),locale:typeof I.locale==="string"?I.locale:undefined,timeZone:typeof I.timeZone==="string"?I.timeZone:undefined}),{});
   const nowMs=safe(()=>(typeof I.now==="number"?I.now:Date.now()),Date.now());
+  const proj=safe(()=>projOf(I.project),projOf(null));
+  const title=proj.name?proj.name+" Release Plan":"Release Plan";
+  const openMap=safe(()=>(I.open&&typeof I.open==="object")?I.open:{},{});
   let skipped=0;const eps=[];
   safe(()=>{for(const d of arr(I.epics)){const e=normEpic(d);if(e)eps.push(e);else skipped++;}},0);
   const plan=safe(()=>(I.plan&&typeof I.plan==="object")?I.plan:{},{});
+  const info=safe(()=>(I.info&&typeof I.info==="object")?I.info:{},{});
   const here=safe(()=>okId(plan.here)?plan.here:"","");
+  const rels=[];let relErr=false;
+  safe(()=>{arr(I.releases).forEach(d=>{let r;try{r=normRel(d);}catch(_){relErr=true;return;}if(r)rels.push(r);else skipped++;});},0);
+  rels.sort((a,b)=>{const x=a.order==null?1e15:a.order,y=b.order==null?1e15:b.order;return x-y||String(a.id).localeCompare(String(b.id));});
+  const hereRel=rels.find(r=>r.id===here)||null;
+  const answered=new Map();safe(()=>{arr(I.answers).forEach(a=>{if(a&&typeof a==="object"&&okId(a.id))answered.set(a.id,a);});},0);
+  const decs=[];safe(()=>{arr(I.decisions).forEach(d=>{if(d&&typeof d==="object"&&okId(d.id))decs.push(d);else skipped++;});},0);
+  decs.sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
+  const stanceOf=id=>{const a=answered.get(id);return a?oneOf(a.stance,["agree","disagree"]):"other";};
+  const openDecs=decs.filter(d=>stanceOf(d.id)==="other").length;
   const parts={};
-  parts.banner=step("The banner",()=>{
-    const t=Date.parse(str(plan.asOf)),days=isFinite(t)?Math.floor((nowMs-t)/864e5):null;
-    return `<div class="banner"><span class="lbl">We are here</span><p>${esc(str(plan.hereText)||(here?"Release "+here:"Not set"))}</p><p class="s">Next: ${esc(str(plan.nextText)||"not set")} · head ${esc(str(plan.head))} · export ${esc(str(plan.asOf))}</p></div>${H(days!==null&&days>=2?`<p class="warn">Stale: this board was last refreshed ${num(days)} days ago. Ask the agent to refresh it.</p>`:"")}`;});
+  parts.info=step("The page info",()=>{const w=when(str(info.lastUpdated)||str(plan.asOf),tOpt);
+    return w.abs?`<div class="lastup">Last updated ${esc(w.abs)}${H(w.rel?`<span class="rel">· ${esc(w.rel)}</span>`:"")}</div>`:'<div class="lastup">Last updated: not yet refreshed</div>';});
+  parts.needs=step("The setup checklist",()=>{const n=[];
+    if(!proj.name)n.push(need("project-name","No project name: the title reads \"Release Plan\"","set-project --name \"<project name>\"",ASK_USER));
+    if(!proj.key)n.push(need("project-key","No project key: epic chips show \"no key\" instead of a key such as PM-256","set-project --key <2 or 3 capital letters>",ASK_USER));
+    return n.length?`<div class="needs" aria-label="Still to fill in">${H(n.join(""))}</div>`:"";});
   parts.mission=step("The mission",()=>{const m=(I.mission&&typeof I.mission==="object")?I.mission:null;
-    if(!m||!str(m.statement))return '<div class="mission"><span class="lbl">Mission</span><p class="s">No mission recorded.</p></div>';
-    return `<div class="mission"><span class="lbl">Mission</span><p>${esc(str(m.statement))}</p><p class="s">Mission milestone: ${esc(okId(m.milestoneRelease)?m.milestoneRelease:"none")} · set ${esc(str(m.setAt))} · ${esc(str(m.reason))}</p></div>`;});
+    if(!m||!str(m.statement))return `<section class="box mission"><span class="lbl">Mission</span>${H(need("mission","No mission recorded: what the project is for right now, in one line","mission --statement \"<one line>\" --reason \"<why this is the mission now>\"",ASK_USER))}</section>`;
+    const ms=okId(m.milestoneRelease)?m.milestoneRelease:"",set=when(str(m.setAt),tOpt);
+    return `<section class="box mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p>${H(str(m.reason)?`<p class="sub">Why now: ${esc(str(m.reason))}</p>`:"")}<p class="s">${H(ms?`Mission milestone: <b>${esc(ms)}</b>`:"No mission milestone yet")}${H(set.abs?` · set ${esc(set.abs)}`:"")}</p></section>`;});
+  parts.planbar=step("The plan bar",()=>{
+    const shipped=rels.filter(r=>r.status==="shipped").length,active=rels.some(r=>r.status==="in-progress");
+    const open=eps.filter(e=>e.status!=="archived").length;
+    const range=rels.length?esc(rels[0].id)+" to "+esc(rels[rels.length-1].id):"no releases yet";
+    return `<div class="planbar"><span class="lbl">Plan</span><b>${esc(proj.name||"This project")}, ${H(range)}</b><span class="pill ${H(active?"rs-in-progress":"rs-planned")}">${H(active?"active":"not started")}</span><span class="sub">${num(rels.length)} release${H(rels.length===1?"":"s")}, ${num(shipped)} shipped, ${num(open)} open epic${H(open===1?"":"s")}.</span></div>`;});
+  parts.banner=step("The banner",()=>{
+    const t=Date.parse(str(info.lastUpdated)||str(plan.asOf)),days=isFinite(t)?Math.floor((nowMs-t)/864e5):null;
+    const miss=[];if(!here)miss.push("the current release");if(!str(plan.hereText))miss.push("where things stand");if(!str(plan.nextText))miss.push("what comes next");
+    const cmd=["release here",here||"<release id>","--text \"<where things stand>\"","--next \"<what comes next>\""].join(" ");
+    const upd=when(str(plan.asOf),tOpt);
+    return `<div class="here" aria-live="polite"><div class="htag">We are here</div><div class="where">${H(here?`${esc(here)}${H(hereRel&&hereRel.theme?` · ${esc(hereRel.theme)}`:"")}`:"No current release marked")}</div>
+${H(str(plan.hereText)?`<p>${esc(str(plan.hereText))}</p>`:"")}${H(str(plan.nextText)?`<p><b>Next:</b> ${esc(str(plan.nextText))}</p>`:"")}
+${H(miss.length?need("here","Not recorded: "+miss.join(", "),cmd,AGENT_DRAFTS+" The agent reads board --json for it."):"")}
+<div class="hm"><span>Updated <b>${esc(upd.abs||"unknown")}</b>${H(upd.rel?`<span class="rel">${esc(upd.rel)}</span>`:"")}</span>${H(str(plan.head)?`<span>Repo head <b class="mono">${esc(str(plan.head))}</b></span>`:"")}<span>Decisions open <b>${num(openDecs)}</b></span></div>
+${H(days!==null&&days>=2?`<div class="stale">Stale: this board was last refreshed ${num(days)} days ago, so the marker may be out of date. Ask the agent to refresh it.</div>`:"")}</div>`;});
   parts.counts=step("The counts",()=>{const open=eps.filter(e=>e.status!=="archived").length;
-    return `<div class="counts"><span class="count">${num(open)} open epics</span><span class="count">${num(eps.length-open)} ended in the export</span><span class="count">${num(arr(I.releases).length)} releases</span></div>`;});
+    return `<div class="counts"><span class="count">${num(open)} open epics</span><span class="count">${num(eps.length-open)} ended in the export</span><span class="count">${num(rels.length)} release${H(rels.length===1?"":"s")}</span></div>`;});
   parts.roadmap=step("The roadmap",()=>{
-    const rels=[];
-    arr(I.releases).forEach(d=>{
-      if(!d||typeof d!=="object"||!okId(d.id)){skipped++;return;}
-      rels.push({id:d.id,intent:str(d.intent),theme:str(d.theme),rationale:str(d.rationale),exit:str(d.exit),size:str(d.size),
-        order:(typeof d.order==="number"&&isFinite(d.order))?d.order:null,status:str(d.status),critical:d.criticalPath===true});});
-    rels.sort((a,b)=>{const x=a.order==null?1e15:a.order,y=b.order==null?1e15:b.order;return x-y||String(a.id).localeCompare(String(b.id));});
-    const epicLi=e=>`<li data-epic="${esc(e.id)}"><span class="mono">${esc(e.id)}</span> <span class="pill p-${esc(e.priority)}">${esc(e.priority)}</span> ${esc(e.title)} <span class="st st-${esc(oneOf(e.status,STATUSES))}">${esc(e.status)}</span> ${H(linkOrText(e.externalUrl))}</li>`;
+    if(relErr)throw new Error("a release doc could not be read");
+    const chip=e=>{const st=DONE.indexOf(e.status)>=0?"s-done":(e.status==="active"?"s-active":(e.status==="blocked"?"s-blocked":""));
+      return `<span class="chip ${H(st)}" data-epic="${esc(e.id)}" title="${esc(e.title)}">${H(keyHtml(e))}<span class="pill p-${esc(e.priority)}">${esc(e.priority)}</span><small>${esc(e.status)} · ${esc(labelOf(e))}</small>${H(safeUrl(e.externalUrl)?` <a href="${esc(safeUrl(e.externalUrl))}" target="_blank" rel="noopener noreferrer">tracker</a>`:"")}</span>`;};
     const known=new Set(rels.map(r=>r.id));
-    const relHtml=r=>`<section class="rel${H(r.id===here?" rel--here":"")}" data-release="${esc(r.id)}"><div class="rel__h"><h3>${esc(r.id)}</h3><span class="pill rs-${esc(oneOf(r.status,RSTATUS))}">${esc(r.status)}</span>${H(r.id===here?'<span class="tag">we are here</span>':"")}${H(r.critical?'<span class="tag">critical path</span>':"")}<span class="s">${esc(r.theme)}</span></div>
-<p class="s">${esc(r.intent)}</p>${H(r.rationale?`<p>${esc(r.rationale)}</p>`:"")}${H(r.exit?`<p class="s">Exit: ${esc(r.exit)}</p>`:"")}${H(r.size?`<p class="s">Size: ${esc(r.size)}</p>`:"")}
-<ul class="list">${H(eps.filter(e=>e.release===r.id).sort(byPos).map(epicLi).join(""))}</ul></section>`;
-    const loose=eps.filter(e=>!known.has(e.release));
-    return rels.map(relHtml).join("")+(loose.length?`<section class="rel"><div class="rel__h"><h3>Not in a release</h3></div><ul class="list">${H(loose.sort(byPos).map(epicLi).join(""))}</ul></section>`:"");});
+    const relHtml=r=>{
+      const theme=r.theme;
+      const ms=eps.filter(e=>e.release===r.id).sort(byPos);
+      const pr=r.progress||{done:ms.filter(e=>e.delivered===true).length,total:ms.length};
+      const pct=pr.total>0?Math.max(0,Math.min(100,Math.round(100*pr.done/pr.total))):0;
+      const cur=r.id===here,isOpen=Object.prototype.hasOwnProperty.call(openMap,r.id)?openMap[r.id]===true:cur;
+      const miss=[];if(r.status!=="shipped"){if(!theme)miss.push("--theme \"<one line>\"");if(!r.exit)miss.push("--exit \"<the runnable exit check>\"");if(!r.rationale)miss.push("--rationale \"<why this release, why now>\"");if(!r.target)miss.push("--target \"<date>\" (remove one with --clear target)");}
+      const kv=[["Intent",r.intent],["Exit",r.exit],["Rationale",r.rationale],["Size",r.size],["Target",r.target]].filter(x=>x[1]).map(x=>`<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join("");
+      return `${H(cur?`<div class="hereline"><span>We are here · ${esc(r.id)}</span></div>`:"")}<details class="g${H(cur?" cur":"")}" data-release="${esc(r.id)}"${H(isOpen?" open":"")}><summary><span class="gid">${esc(r.id)}</span><span class="gth">${H(theme?`<b>${esc(theme)}</b>`:"<i>No theme yet</i>")}${H(r.critical?' <span class="tag tag--crit">critical path</span>':"")}</span><span class="prog"><span class="bar"><i style="width:${num(pct)}%"></i></span>${num(pr.done)}/${num(pr.total)}</span><span class="pill rs-${esc(oneOf(r.status,RSTATUS))}">${esc(RELSTAT_LABEL[oneOf(r.status,RSTATUS)]||r.status)}</span></summary>
+<div class="gb">${H(kv?`<dl class="kv">${H(kv)}</dl>`:"")}${H(miss.length?need("release-"+r.id,"Release "+r.id+" has no "+miss.map(m=>m.split(" ")[0].slice(2)).join(", "),"release "+r.id+" "+miss.join(" "),"Ask the user. The agent may propose wording first."):"")}
+<h3>Epics in ${esc(r.id)} (${num(ms.length)})</h3>${H(ms.length?`<div class="chips">${H(ms.map(chip).join(""))}</div>`:(pr.total>0?`<p class="empty">${num(pr.total)} member epic${H(pr.total===1?"":"s")}, all ended before the export's recent window, so none is listed here.</p>`:'<p class="empty">No epics in this release yet.</p>'))}</div></details>`;};
+    const loose=eps.filter(e=>!known.has(e.release)&&e.status!=="archived").sort(byPos);
+    if(!rels.length&&!loose.length)return '<p class="empty">No releases recorded yet. The agent creates one with release &lt;id&gt; --intent "&lt;what it is for&gt;".</p>';
+    return rels.map(relHtml).join("")+(loose.length?`<details class="g" data-release="-"${H(openMap["-"]===true?" open":"")}><summary><span class="gid">none</span><span class="gth"><b>Not in a release</b></span><span class="prog">${num(loose.length)} open</span><span></span></summary><div class="gb"><div class="chips">${H(loose.map(chip).join(""))}</div></div></details>`:"");});
   parts.criteria=step("The exit criteria",()=>{const cs=[];
+    const ms=safe(()=>{const m=(I.mission&&typeof I.mission==="object")?I.mission:null;return m&&okId(m.milestoneRelease)?m.milestoneRelease:"";},"");
     arr(I.criteria).forEach(d=>{if(d&&typeof d==="object"&&okId(d.id))cs.push(d);else skipped++;});
     cs.sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
-    return cs.length?`<ul class="list">${H(cs.map(c=>`<li data-criterion="${esc(c.id)}"><b>${esc(str(c.text))}</b> <span class="s">Check: ${esc(str(c.check))}</span>${H(c.needsHuman===true?'<span class="tag">needs a person</span>':"")}</li>`).join(""))}</ul>`:'<p class="empty">No exit criteria recorded.</p>';});
+    const head=ms?`<p class="sub">What "done" means for the mission milestone, <b>${esc(ms)}</b>.</p>`:need("milestone","No mission milestone: which release meets the mission","mission --milestone <release id>",ASK_USER);
+    if(!cs.length)return H(head)+need("criteria","No exit criteria for the milestone, with the check for each","mission --add-criterion \"<criterion>\" --check \"<how to check it>\" [--needs-human]",ASK_USER);
+    return `${H(head)}<div class="tw"><table><thead><tr><th>#</th><th>Criterion</th><th>Check</th><th>Who checks</th></tr></thead><tbody>${H(cs.map(c=>`<tr data-criterion="${esc(c.id)}"><td class="mono">${esc(c.id)}</td><td><b>${esc(str(c.text))}</b></td><td>${esc(str(c.check))}</td><td>${H(c.needsHuman===true?'<span class="tag tag--crit">needs a person</span>':'<span class="s">the agent</span>')}</td></tr>`).join(""))}</tbody></table></div>`;});
   parts.decisions=step("The decisions",()=>{
-    const answered=new Map();arr(I.answers).forEach(a=>{if(a&&typeof a==="object"&&okId(a.id))answered.set(a.id,a);});
-    const ds=[];arr(I.decisions).forEach(d=>{if(d&&typeof d==="object"&&okId(d.id))ds.push(d);else skipped++;});
-    ds.sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
-    if(!ds.length)return '<p class="empty">No open questions.</p>';
-    return `<ul class="list">${H(ds.map(d=>{const a=answered.get(d.id),st=a?oneOf(a.stance,["agree","disagree"]):"other";
-      return `<li data-decision="${esc(d.id)}"><b>${esc(str(d.question))}</b><span class="s">Recommendation: ${esc(str(d.recommendation))}</span><span class="s">asked by the agent · ${esc(str(d.askedAt))}</span>${H(st!=="other"?`<span class="s">Answer: ${esc(st)}</span>`:"")}${H(canWrite?`<div class="row"><button class="btn" type="button" data-answer="${esc(d.id)}" data-stance="agree">Agree</button><button class="btn" type="button" data-answer="${esc(d.id)}" data-stance="disagree">Disagree</button><textarea id="ans-${esc(d.id)}" maxlength="1000" placeholder="Note" aria-label="Note on question ${esc(d.id)}"></textarea></div>`:"")}</li>`;}).join(""))}</ul>${H(canWrite?'<div class="row"><button class="btn btn--p" type="button" id="send-answers">Send my answers</button></div>':"")}`;});
+    if(!decs.length)return '<p class="empty">No open questions. When the agent puts a question to you, it appears here with its recommendation.</p>';
+    return `<div class="tw"><table><thead><tr><th>#</th><th>Question</th><th>Recommendation</th><th>Your answer</th></tr></thead><tbody>${H(decs.map(d=>{const a=answered.get(d.id),st=stanceOf(d.id),asked=when(str(d.askedAt),tOpt),at=a?when(str(a.at),tOpt):{abs:""};
+      const btn=(v,l)=>`<button class="btn" type="button" data-answer="${esc(d.id)}" data-stance="${esc(v)}" aria-pressed="${H(st===v?"true":"false")}">${esc(l)}</button>`;
+      return `<tr data-decision="${esc(d.id)}"><td class="mono">${esc(d.id)}</td><td><b>${esc(str(d.question))}</b><span class="s">asked by the agent${H(asked.abs?` · ${esc(asked.abs)}`:"")}</span></td><td class="rec">${esc(str(d.recommendation))}</td><td>${H(canWrite?`<div class="ans"><div class="row">${H(btn("agree","Agree"))}${H(btn("disagree","Disagree"))}</div><textarea id="ans-${esc(d.id)}" maxlength="1000" placeholder="Notes (optional)" aria-label="Note on question ${esc(d.id)}"></textarea>${H(st!=="other"?`<span class="s">Saved: ${esc(st)}${H(at.abs?` · ${esc(at.abs)}`:"")}</span>`:"")}</div>`:(st!=="other"?`<span class="s">Answer: ${esc(st)}</span>`:'<span class="s">No answer yet</span>'))}</td></tr>`;}).join(""))}</tbody></table></div>${H(canWrite?'<div class="sendbar"><button class="btn btn--p" type="button" id="send-answers">Send my answers</button><span class="s">Each answer saves when you pick Agree or Disagree. Send tells the agent to read them on its next refresh.</span></div>':"")}`;});
   parts.skipped=skippedNote(skipped);
-  const html=[parts.skipped,parts.banner,parts.mission,parts.counts,'<section class="sec"><h2>Roadmap</h2>'+parts.roadmap+'</section>','<section class="sec"><h2>Exit criteria</h2>'+parts.criteria+'</section>','<section class="sec"><h2>Open questions</h2>'+parts.decisions+'</section>'].join("");
-  return {skipped,parts,html};
+  const html=[parts.skipped,'<div class="top"><div>'+parts.info+'</div></div>',parts.needs,parts.mission,parts.planbar,parts.banner,parts.counts,
+    '<section class="box"><h2>Roadmap</h2><p class="sub">Open a release to see its scope, exit check and epics. The current release starts open.</p><div class="rm">'+parts.roadmap+'</div></section>',
+    '<section class="box"><h2>Exit criteria</h2>'+parts.criteria+'</section>','<section class="box"><h2>Decisions for the owner</h2>'+parts.decisions+'</section>'].join("");
+  return {skipped,parts,html,title};
 }
 function fromSnapshot(s){
   const o=(s&&typeof s==="object")?s:{},pl=(o.plan&&typeof o.plan==="object")?o.plan:{},ms=(o.milestone&&typeof o.milestone==="object")?o.milestone:null,mi=(o.mission&&typeof o.mission==="object")?o.mission:null;
-  return {epics:arr(o.epics),releases:arr(o.releases),
+  return {epics:arr(o.epics),releases:arr(o.releases),project:(o.project&&typeof o.project==="object")?o.project:null,
     plan:{here:pl.here,hereText:pl.hereText,nextText:pl.nextText,head:str(o.head),asOf:str(o.asOf)},
     mission:mi?{statement:mi.statement,setAt:mi.setAt,reason:mi.reason,milestoneRelease:ms?ms.release:null}:null,
-    criteria:ms?arr(ms.criteria):[],decisions:[],answers:[],info:{},admin:false,canWrite:false};
+    criteria:ms?arr(ms.criteria):[],decisions:[],answers:[],info:{lastUpdated:str(o.asOf)},admin:false,canWrite:false};
 }
 /* pm:render-end */
 const app=document.getElementById("app");
-app.innerHTML='<div class="wrap"><div class="top"><div><h1>Release Plan</h1><p class="lede">Where the project stands against its mission, release by release. The agent refreshes this board from the engine export.</p></div><div class="live" id="live" data-s="busy" role="status"><i></i><span>Connecting…</span></div></div><div id="body"></div></div>';
-const liveEl=document.getElementById("live"),bodyEl=document.getElementById("body");
+app.innerHTML='<div class="wrap"><div class="top"><div><h1 id="ttl">Release Plan</h1><p class="lede">Where the project stands against its mission, release by release. The agent refreshes this board from the engine export.</p></div><div class="live" id="live" data-s="busy" role="status"><i></i><span>Connecting…</span></div></div><div id="body"></div></div>';
+const liveEl=document.getElementById("live"),bodyEl=document.getElementById("body"),ttlEl=document.getElementById("ttl");
 const setLive=(s,t)=>{liveEl.dataset.s=s;liveEl.querySelector("span").textContent=t;};
 const C=["epics","releases","plan","mission","criteria","decisions","answers","page"];
 const S={ready:false,standalone:false,snap:null};
 C.forEach(k=>{S[k]=[];});
+const OPEN={};
 let db=null,me="",canWrite=false,pending=false;
 const withId=snap=>snap.docs.map(x=>Object.assign({},x.data(),{id:x.id}));
 const docOf=(list,id)=>{const d=list.find(x=>x.id===id);return d||null;};
@@ -189,11 +310,17 @@ function paint(){
   const a=document.activeElement;
   if(a&&bodyEl.contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)){pending=true;return;}
   pending=false;
-  const input=S.standalone?fromSnapshot(S.snap):{epics:S.epics,releases:S.releases,plan:docOf(S.plan,"state")||{},mission:docOf(S.mission,"current"),criteria:S.criteria,decisions:S.decisions,answers:S.answers,info:docOf(S.page,"info")||{},canWrite:canWrite};
-  bodyEl.innerHTML=renderPlan(input).html;
+  const notes={};bodyEl.querySelectorAll("textarea[id^='ans-']").forEach(t=>{notes[t.id]=t.value;});
+  const info=docOf(S.page,"info")||{};
+  const input=S.standalone?fromSnapshot(S.snap):{epics:S.epics,releases:S.releases,plan:docOf(S.plan,"state")||{},mission:docOf(S.mission,"current"),criteria:S.criteria,decisions:S.decisions,answers:S.answers,info:info,project:info.project,canWrite:canWrite};
+  input.open=OPEN;
+  const out=renderPlan(input);
+  bodyEl.innerHTML=out.html;ttlEl.textContent=out.title;document.title=out.title;
+  Object.keys(notes).forEach(k=>{const t=document.getElementById(k);if(t)t.value=notes[k];});
   if(S.standalone)bodyEl.insertAdjacentHTML("afterbegin",'<div class="notice">Read-only copy. Editing and answering need the live version of this board.</div>');
 }
 bodyEl.addEventListener("focusout",()=>{if(pending)setTimeout(paint,0);});
+bodyEl.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details.g")){const id=d.getAttribute("data-release");if(id)OPEN[id]=d.open;}},true);
 async function put(path,data){try{await db.doc(path).set(data);return true;}catch(e){setLive("err",e&&e.code==="invalid_argument"?"Your access level cannot save answers.":"An answer did not save. Reload and try again.");return false;}}
 bodyEl.addEventListener("click",async e=>{
   if(!db||S.standalone||!e.target.closest)return;

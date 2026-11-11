@@ -49,13 +49,26 @@
 * **`set-project`: the project's name and key, and a number on every epic.** `set-project --name "<name>" --key <KEY>` records the project name
   (at most 60 characters, no `<`, no control character) and a two- or three-letter key; either alone, and `--unset name|key` removes one. The
   engine never invents either. Every epic now carries an integer `number`, assigned when it is registered (`add-epic`, `add-many` and `sync`):
-  a tracker issue number when the epic's `externalId` is a plain positive integer no other epic holds, otherwise the next number from a counter
-  that only moves forward. A number is never reassigned or freed by a plain registration. The key a board shows is `<KEY>-<number>` (`PM-256`),
+  a tracker issue number when the epic's `externalId` is a plain positive integer below 1000 that no other epic holds, otherwise the next number from a
+  counter that starts at 1000 and only moves forward (so a local epic can never collide with an issue number below 1000). A number is never reassigned or freed by a plain registration. The key a board shows is `<KEY>-<number>` (`PM-256`),
   computed on read, so changing the key renames them all. `upgrade` (a `MIGRATIONS` entry keyed to 0.55.0, also run on every `upgrade`) numbers the
-  epics that have none: tracker-linked ones by their issue number first, then the rest in registration order. A backfilled number is not a touch.
+  epics that have none by the same rule: tracker-linked ones by their issue number first, then the rest from the counter in registration order. A backfilled number is not a touch.
 * **`board --json` carries the project, each epic's key and each release's progress.** A top-level `project: {name, key}` (`null` while unset),
   each epic's `number` and `key` (`null` while the project key is unset), and each release's `progress: {done, total}` (members delivered over members
   not declined, over every member, not only the ended window). An invalid stored name or key is nulled and named in `rejected[]` as `project format`.
   `schemaVersion` stays 1.
 * **`release --clear target`, and `release --help` names every plan verb.** `--clear` now accepts `target` (the inverse of `--target`), and the
   `release` help text and its missing-id usage name `release here`, the plan fields and the clearable fields.
+* **The boards redrawn: project-named titles, keys as ids, human timestamps and a guided card for every missing field.** Both
+  pages now take their title from `set-project`'s name ("PM Plugin Backlog", "PM Plugin Release Plan"), set at render time from
+  `page/info.project`, which the refresh now writes; the skill publishes each page with that title, replacing the old rule against
+  a project name in a title. Every id shown is the engine key (`PM-256`), with the slug as small secondary text and "no key" where
+  there is none. Every timestamp reads "Nov 11, 2:10 PM" in the viewer's locale and time zone, plus "3 days ago" past a day; no
+  raw ISO remains. The backlog follows the Enterprise Portal layout: priority spine and band breaks, count pills, a P0-P3 legend,
+  a Find/Priority/Status/Release/Lane filter grid (drag is off while filtering), an "Epics" table whose text column is "Summary"
+  (the title, marked, while an epic has no summary), compact detail cards only for epics with a why-now or description, and
+  Delivered and Not pursuing tables. The release plan follows the Ivy layout: a Last updated pill, the mission, a plan bar, a dark
+  "We are here" banner with a two-day stale warning, collapsible release cards with progress bars and a WE ARE HERE rule, the
+  milestone's exit criteria and the decisions for the owner. Each field a page needs that is still null shows a card naming what is
+  missing, the command that sets it and whether to ask the user. The skill gains "First population: what to fill and what to ask
+  the user" (every verb, who supplies each field, one batched question set, never invent a mission) and a refresh-time stale check.

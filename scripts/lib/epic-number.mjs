@@ -7,16 +7,21 @@
 //
 // THE RULE, in the one creation sink (state.mjs pushEpic, through assignEpicNumber), so every path that registers an epic is bound
 // to it and a sixth path cannot omit it:
-//   * an epic whose `externalId` is a plain positive integer string, and whose number no other epic holds, takes that integer
-//     (issue #256 reads PM-256);
-//   * every other epic takes the counter, skipping any number already held.
-// Either way the counter ends up one past the number taken, so it only ever moves forward. A number is never reassigned: nothing
+//   * an epic whose `externalId` is a plain positive integer string BELOW the counter floor (1000), and whose number no other epic
+//     holds, takes that integer (issue #256 reads PM-256);
+//   * every other epic takes the counter, skipping any number already held. The counter's first value is the FLOOR, 1000, never
+//     max+1, so a local number (PM-1000 and up) can never collide with a tracker number below 1000. A tracker number at or above the
+//     floor, or already held, falls back to the counter like any other epic.
+// A counter number leaves the counter one past it, so it only ever moves forward; a tracker number below the floor leaves it alone. A number is never reassigned: nothing
 // rewrites it after registration (a changed `--external-id` does not renumber), an archived epic keeps its own, and removing an
 // epic does not free its number for a plain registration, because the counter does not go back. The ONE way a freed number returns
 // is an epic registered later with that externalId, which is the tracker's own number and so the honest reading of it.
 //
 // stampEpicNumbers() is the migration body (0.55.0): the same rule applied once over a record that predates the field. Pure over
 // `state`: it reads nothing else.
+
+/** The counter's first value, and the bound below which a tracker issue number is kept as the epic number. */
+export const EPIC_NUMBER_FLOOR = 1000;
 
 /** A plain positive integer: no sign, no leading zero, no fraction, and small enough to be exact. */
 const POSITIVE_INTEGER_TEXT = /^[1-9][0-9]*$/;
@@ -44,8 +49,11 @@ function heldNumbers(state) {
 /** The counter as stored: a positive integer, or null when absent or damaged. */
 const counterOf = (state) => (validNumber(state && state.nextEpicNumber) ? state.nextEpicNumber : null);
 
-/** One past the largest number held, or 1. */
-const afterLargest = (held) => (held.size ? Math.max(...held) + 1 : 1);
+/** The counter's lowest honest value: the floor, or one past the largest number held when that is higher. */
+const afterLargest = (held) => (held.size ? Math.max(EPIC_NUMBER_FLOOR, Math.max(...held) + 1) : EPIC_NUMBER_FLOOR);
+
+/** A tracker number that may be the epic's number: below the floor, so it cannot meet a counter number. */
+const keepsTrackerNumber = (ext, held) => ext !== null && ext < EPIC_NUMBER_FLOOR && !held.has(ext);
 
 /** Give `epic` its number under the rule above and advance `state.nextEpicNumber`. `epic` is not yet in `state.epics` (pushEpic
  *  calls this before the append), so the held set is everyone else's. An epic that already carries a valid number keeps it: a
@@ -57,15 +65,15 @@ export function assignEpicNumber(state, epic) {
     n = epic.number;
   } else {
     const ext = externalNumberOf(epic);
-    if (ext !== null && !held.has(ext)) {
+    if (keepsTrackerNumber(ext, held)) {
       n = ext;
     } else {
-      n = counterOf(state) ?? afterLargest(held);
+      n = Math.max(counterOf(state) ?? afterLargest(held), EPIC_NUMBER_FLOOR);
       while (held.has(n)) n++;
     }
   }
   epic.number = n;
-  state.nextEpicNumber = Math.max(counterOf(state) ?? 1, n + 1, afterLargest(held));
+  state.nextEpicNumber = Math.max(counterOf(state) ?? EPIC_NUMBER_FLOOR, afterLargest(held), n >= EPIC_NUMBER_FLOOR ? n + 1 : 0);
   return n;
 }
 
@@ -110,9 +118,9 @@ export function stampEpicNumbers(state) {
   const took = new Set();
   for (const e of pending) {
     const ext = externalNumberOf(e);
-    if (ext !== null && !held.has(ext)) { e.number = ext; held.add(ext); took.add(e); }
+    if (keepsTrackerNumber(ext, held)) { e.number = ext; held.add(ext); took.add(e); }
   }
-  let counter = Math.max(counterOf(state) ?? 1, afterLargest(held));
+  let counter = Math.max(counterOf(state) ?? EPIC_NUMBER_FLOOR, afterLargest(held));
   for (const e of pending) {
     if (took.has(e)) continue;
     while (held.has(counter)) counter++;

@@ -25,14 +25,14 @@
 - [ ] 0.1 **Re-read the source** (CLAUDE.md "Re-read the source before an epic becomes the work"). The epic has no
       `externalId`, so read in full the brief, the research doc and this change. Confirm with `gh issue view` that
       #268, #269 and #270 are still open, because this change folds them in.
-- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, all eight spec files and this file. Fix every
+- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, all nine spec files and this file. Fix every
       Critical and Important finding, then re-run `openspec validate project-boards --strict`; it must print "is
       valid". Then run
       `record-gate-review project-boards --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
 - [ ] 0.3 **Release membership.** Register or amend the release with
       `release 0.55.0 --intent "<…>" --member project-boards`, and verify it with
       `release show 0.55.0`.
-- [ ] 0.4 **Cross-spec review** (gate item 5). This change alone holds eight spec files, so before `/opsx:apply`, and
+- [ ] 0.4 **Cross-spec review** (gate item 5). This change alone holds nine spec files, so before `/opsx:apply`, and
       again after any concurrent amendment, invoke the `cross-spec-review` skill over the whole 0.55.0 spec set.
       Record the verdict with `record-cross-spec-review 0.55.0 --verdict pass|fail --reviewer "<identity>"`. Name the
       shared chokepoints:
@@ -222,15 +222,15 @@
 
 ## 8. Board redesign (Rob feedback 2026-11-11)
 
-The engine half only. The HTML templates and `skills/project-boards/SKILL.md` follow in a later change. Specs:
-`specs/project-identity/spec.md` (new) and the "project, number and key" and "progress" requirements added to
-`specs/board-export/spec.md`. Design D20 to D23.
+8.0 to 8.6 are the engine half; 8.8 to 8.14 redraw the two templates and the skill on top of it. Specs:
+`specs/project-identity/spec.md` (new), the "project, number and key" and "progress" requirements added to
+`specs/board-export/spec.md`, and the six board-redesign requirements added to `specs/project-boards/spec.md`. Design D20 to D23.
 
 - [x] 8.0 Docs of record: the `project-identity` spec, the `board-export` additions, design D20 to D23 and its Inverses and
       Migration Plan rows, the proposal bullets, this section. `openspec validate project-boards --strict` passes.
 - [x] 8.1 RED then GREEN (UNIT `epic-numbers.test.mjs`, FILE `epic-numbers-files.test.mjs`): every epic carries a number,
       assigned in `pushEpic` through `assignEpicNumber` (`scripts/lib/epic-number.mjs`). Tracker integer first, else the
-      counter, skipping held numbers; the counter only advances; a caller-supplied number is never honoured; remove and a
+      counter, skipping held numbers; the counter only advances; no flag or batch key sets a number (the number follows the tracker-number keep rule, else the counter); remove and a
       changed `--external-id` do not free or change a number. RED: `red-8.1.txt` (fails before 8.1, the module is absent).
 - [x] 8.2 RED then GREEN (UNIT `epic-numbers-migration.test.mjs`, FILE `epic-numbers-upgrade.test.mjs`): the `MIGRATIONS` entry
       keyed to 0.55.0 and the same function on every `upgrade`. `store.mjs`'s per-record comparison also ignores `number`, so a
@@ -238,8 +238,9 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
       (`conductor-15` 7.1, `conductor-39` 2.5) pin the new entry count. RED: `red-8.2.txt` (fails before 8.2, `upgrade` does not number).
 - [x] 8.3 RED then GREEN (UNIT `project-identity.test.mjs`): `set-project --name --key` with `--unset <name|key>`; registry rows,
       `VERB_POSITIONALS`, `VERB_EFFECTS`, dispatch and `USAGE`, `commands/set-project.md`, the parity ledger claim.
+      RED: `red-8.3.txt` (fails before 8.3, `set-project.mjs` is absent).
 - [x] 8.4 RED then GREEN (UNIT `board-export.test.mjs` additions): `project`, epic `number` and `key`, release `progress`, the
-      `project` rejection kind. `schemaVersion` stays 1 (D21).
+      `project` rejection kind. `schemaVersion` stays 1 (D21). RED: `red-8.4.txt` (fails before 8.4, the empty record lacks the new keys).
 - [x] 8.5 Verify which verbs write each field the boards need, and make each discoverable from `--help` (UNIT):
       - release `theme`, `rationale`, `exit`, `order`, `size`: `release <id> --theme|--rationale|--exit|--order|--size`, each cleared
         with `--clear <field>`; `target` and `intent`: `release <id> --target|--intent`. `intent` has no clear (a release with no
@@ -251,7 +252,7 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
       - epic `summary`: `add-epic|update-epic|add-many --summary`, cleared with `update-epic <id> --clear summary` (an empty
         `--summary ""` is refused, not a clear). No code change.
       The other gap was discoverability: the `release` usage text and its missing-id error never named `release here` or the plan
-      fields. Fixed in the same commit. RED: `red-8.3.txt`, `red-8.4.txt`, `red-8.5.txt` (each fails before its own task).
+      fields. Fixed in the same commit. RED: `red-8.5.txt` (the discoverability and `--clear target` tests fail before 8.5).
 - [x] 8.6 Required items for section 8 (CLAUDE.md "The gate procedure"):
       - **Call-site sweep (item 1).** `rg -n "pushEpic\(" scripts/lib` lists the five creation call sites (`add-epic.mjs`,
         `add-many.mjs`, `subcommands.mjs` x3). The rule is bound inside `pushEpic`, so all five hold it; the source scan in
@@ -260,7 +261,7 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
         which takes its number with it; the counter is untouched, so the number is not reissued to a plain registration.
         A DATA reference: nothing stores another epic's number, so no dangling reference exists.
       - **Inverses (item 1).** `set-project --name|--key` against `--unset name|key`: shipped. A number is never reassigned and
-        `nextEpicNumber` never goes back, by design (design Inverses). `release --target` has no clear: pre-existing, named.
+        `nextEpicNumber` never goes back, by design (design Inverses). `release --target` against `release --clear target`: shipped in 8.5 (design Inverses table, `release-planning` spec, mutants 110 and 111).
       - **Lifecycle (item 3).** Nothing in section 8 is lifecycle bookkeeping; C.2 and C.3 keep their markers.
       - **Verify against the commit (item 2).** `git show --stat` of `9cdbd672` (8.1, 8.2) and `3ae4f250` (8.3 to 8.5) lists every file the
         tasks above claim, including the command doc, the ledger claim and the three functional test files.
@@ -269,6 +270,49 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
         new test, 1 equivalent and redone on the real line).
       - **Cross-spec (item 5).** `project-identity` joins the 0.55.0 spec set and `board-export` changed, so the recorded cross-spec
         verdict is stale and must be re-run; Gate 2 is stale for the same reason.
+
+- [x] 8.7 RED then GREEN (UNIT `epic-numbers.test.mjs`, `epic-numbers-migration.test.mjs`; FILE `epic-numbers-upgrade.test.mjs`): the
+      counter floor (design D23). Epics with no tracker number draw from a counter whose first value is 1000; a tracker issue number
+      below 1000 that no epic holds is kept; a number at or above 1000, or held, falls back to the counter. `pushEpic` and the 0.55.0
+      backfill and `upgrade` renumbering share the rule (`scripts/lib/epic-number.mjs`). Every test that pinned 267-style numbers
+      (1, 2, 3, 257, 258, 10) now pins the floor. Guard proved: mutants 113 to 115 in `mutation-evidence.txt`. RED note: the RED run for 8.7 was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
+
+- [x] 8.8 RED then GREEN (FILE `project-boards-templates.test.mjs` 8.8): ids are engine keys (`okKey`), the slug is secondary
+      text, an epic with no key says "no key", dependency tags name keys; the table sits under "Epics" with a "Summary" column
+      whose null summary falls back to the title, marked; titles read `<name> Backlog` / `<name> Release Plan` from
+      `page/info.project` (`projOf` applies the `set-project` rules) and fall back to the neutral title. RED note: the RED run was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
+- [x] 8.9 RED then GREEN (FILE 8.9): `when()` formats every timestamp as "Nov 11, 2:10 PM" in the viewer's locale and zone
+      (pinned in tests), adds the year across years and a relative phrase past one day; no raw ISO reaches any output. RED note: the RED run was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
+- [x] 8.10 RED then GREEN (FILE 8.10): guided empty states (`need()`) for every null field each page needs, naming the command
+      and who supplies it, with placeholders escaped; none on a fully populated board; no bare "not set". The backlog takes the
+      Enterprise Portal layout (spine, group break, dot count pills, P0-P3 legend, Find/Priority/Status/Release/Lane filter grid
+      with drag off while filtering, compact cards only for epics with a why-now or description, Delivered and Not pursuing
+      tables with Restore); the release plan takes the Ivy layout (Last updated pill, mission, plan bar, dark "We are here"
+      banner with the two-day stale warning, collapsible release cards with `progress` bars and a WE ARE HERE rule, criteria
+      table, decisions with Agree/Disagree and Send). Write set unchanged: `backlogMeta`, `proposals/rank`, `answers`. RED note: the RED run was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
+- [x] 8.11 RED then GREEN (FILE 8.11): security over the new fields: hostile project name, key, theme, target, here text, lane,
+      progress and filter text stay inert; a new source scan refuses a markup string concatenated with anything but `esc()`,
+      `num()`, `H()` or a finished render part, alongside the `${}` scan. RED note: the RED run was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
+- [x] 8.12 RED then GREEN (FILE `project-boards-skill.test.mjs` 8.12): SKILL.md states that titles name the project and why the
+      old rule is replaced, `page/info` carries `project`, the "First population" section with every verb and who supplies it
+      (one batch, never invent, re-run the refresh), the refresh-time stale check, and the fallback's title substitution. RED note: the RED run was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
+- [x] 8.13 Rendering verified for real: each template loaded through the standalone fallback with a populated and an empty
+      snapshot, screenshotted at desktop and phone width in a browser, checked for horizontal overflow, raw ISO and code-name ids.
+- [x] 8.14 Required items for 8.8 to 8.13 (CLAUDE.md "The gate procedure"):
+      - **Call-site sweep (item 1).** `rg -n '\$\{' skills/project-boards/templates`: every site goes through `esc`/`num`/`H`,
+        enforced by the `${}` scan; markup concatenation is enforced by the new 8.11 scan. Data reference `page/info.project` is
+        written only by the refresh seed, read only by the two pages' render, and removed with `page/info`.
+      - **Inverses (item 1).** A filter chip toggles off and Find clears; Set aside has Restore; an answer can be changed by
+        picking the other stance. Renaming the project changes the tab and H1 on the next refresh, the gallery title only on a
+        republish (stated in the skill).
+      - **Verify against the commit (item 2).** `git show --stat` of the 8.8 to 8.13 feature commit lists both templates,
+        SKILL.md, both test files and `specs/project-boards/spec.md`, and nothing else.
+      - **Attribute (item 4).** The feature commit and this docs commit are attributed; the conductor bookkeeping commit is not.
+      - **Lifecycle (item 3).** Nothing in 8.8 to 8.14 is lifecycle bookkeeping.
+      - **Guards proved (item 8).** Mutants 116 to 131 in `mutation-evidence.txt`: 16 mutants, 15 killed on first run; 124 (an
+        unparseable date) survived, its test was strengthened and the re-run killed it. Review-fix mutants 132 to 135 (duplicate number, code-point name length, whitespace-only name, target hint): 135 first survived and was fixed.
+      - **Cross-spec (item 5).** `specs/project-boards/spec.md` changed, so the recorded 0.55.0 cross-spec verdict, Gate 1 and
+        Gate 2 are stale again and must be re-recorded by the orchestrator.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–8)
 
@@ -349,7 +393,7 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
 ## G. Gate 2
 
 - [x] G.1 **Gate 2** over `BASE..HEAD`, or the converged 0.55.0 release-candidate review. Review:
-      - spec alignment for all eight specs
+      - spec alignment for all nine specs
       - `board` declared read-only
       - no network or git in the engine
       - the template security requirements

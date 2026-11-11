@@ -35,7 +35,7 @@ While boards are off, `/pm:boards` SHALL say the boards are off, name `set-board
 ### Requirement: The database contract is fixed
 
 The skill SHALL define these collections. On both pages: `epics/<epicId>`, `releases/<releaseId>` and `page/info`
-(`lastUpdated`, the export's `asOf`, and `head`; there is no headline). On the release plan: `plan/state` (`here`, `hereText`, `nextText`, `head`,
+(`lastUpdated`, the export's `asOf`, `head`, and the export's `project`; there is no headline). On the release plan: `plan/state` (`here`, `hereText`, `nextText`, `head`,
 `asOf`), `mission/current`, `criteria/<cN>`, `decisions/<n>` and `answers/<n>`. On the backlog: `backlogMeta/<epicId>`
 and `proposals/rank`.
 
@@ -224,7 +224,7 @@ refused for a version mismatch SHALL be retried once after re-reading. A second 
 ### Requirement: Page-local marks survive every refresh and can be undone
 
 The skill's refresh SHALL never write, overwrite or delete a backlog "Not pursuing" mark (`backlogMeta/<epicId>`,
-`{removed, reason, note}`). The page SHALL offer Restore, which sets `removed` to false. When the export stops listing
+`{removed, reason, note}`). The page's "Set aside" control is what writes that "Not pursuing" mark. The page SHALL offer Restore, which sets `removed` to false. When the export stops listing
 an epic, the refresh SHALL delete that epic's `epics` doc and leave its `backlogMeta` doc in place.
 
 #### Scenario: Re-seed never names backlogMeta as a write target
@@ -301,3 +301,83 @@ that the boards are refreshed after the named triggers. While boards are off, th
 
 - **WHEN** the brief is fitted to `BRIEF_BYTE_CAP` with boards on
 - **THEN** the boards line is present and unshortened, and its bytes are measured on the fitted brief
+
+### Requirement: Board titles name the project
+
+Each board's title SHALL be `<project name> Backlog` or `<project name> Release Plan`, from the export's `project.name`.
+A page SHALL set its H1 and document title from `page/info.project` at render time, and SHALL keep a neutral title while
+the name is null or fails the `set-project` name rule. The skill SHALL publish each template with its `<title>` carrying
+the escaped name, and SHALL say why this replaces the old rule against a project name in a title.
+
+#### Scenario: The title follows the project name
+
+- **WHEN** the backlog renders with `project` `{name: "PM Plugin", key: "PM"}`, and again with `project.name` null
+- **THEN** the first title is "PM Plugin Backlog" and the second is "Project Backlog" with a guided card naming `set-project --name`
+
+### Requirement: Ids shown are engine keys
+
+Wherever a board shows an epic's id it SHALL show the export's `key` (such as `PM-256`) when it matches
+`/^[A-Z]{2,3}-[1-9][0-9]{0,8}$/`, and otherwise the words "no key". The epic's slug MAY appear only as small secondary text.
+A dependency tag SHALL name the dependency's key.
+
+#### Scenario: A slug is never the id
+
+- **WHEN** the backlog renders an epic with key `PM-256` and slug `project-boards`, and an epic with no key
+- **THEN** the first row's key cell reads `PM-256` with the slug as secondary text, and the second reads "no key"
+
+### Requirement: The backlog table is labelled Epics and its text column is Summary
+
+The backlog's ranked table SHALL sit under a heading "Epics", and its text column SHALL be headed "Summary" and hold the
+epic's one-line `summary`. When `summary` is null the cell SHALL show the title, marked visibly as a title shown in place
+of a summary. A detail card SHALL be drawn only for an epic with a `whyNow` or a `description`, and SHALL hide every empty field.
+
+#### Scenario: Missing summary is marked
+
+- **WHEN** an open epic has a null `summary`
+- **THEN** its Summary cell shows the title and the note "Title shown: no summary recorded"
+
+### Requirement: Timestamps are human-readable
+
+Every timestamp a board shows (the Last updated pill, each Updated and Ended cell, the banner, a mission's set date, a
+decision's asked date and an answer's saved date) SHALL render as a short date and time in the viewer's locale and time
+zone ("Nov 11, 2:10 PM", with the year when it differs from the current one), followed by a relative phrase ("3 days ago")
+when it is a day or more old. No raw ISO timestamp SHALL appear in a page's output.
+
+#### Scenario: No raw ISO
+
+- **WHEN** a fully populated board renders with en-US and UTC pinned
+- **THEN** the Updated cell reads "Nov 8, 9:30 AM" and "3 days ago", and the output holds no `YYYY-MM-DDTHH` string
+
+### Requirement: Every missing field renders a guided empty state
+
+For each field a board needs that is null, the page SHALL render a card naming what is missing, the engine command that
+sets it, and who supplies it, with the instruction to ask the user where only the user knows. A page SHALL NOT render a
+bare "not set", and a command placeholder SHALL render as text.
+
+#### Scenario: Empty backlog fields
+
+- **WHEN** the backlog renders with no project name or key and an open epic with no summary
+- **THEN** it carries guided cards naming `set-project --name`, `set-project --key` and `update-epic <id> --summary`
+
+#### Scenario: A key is set but an epic has no number
+
+- **WHEN** the backlog renders with `project` `{name: "PM Plugin", key: "PM"}` and an open epic whose `number` is null
+- **THEN** it carries a guided card naming `/pm:upgrade`
+
+#### Scenario: Empty project
+
+- **WHEN** the release plan renders with no project, mission, marker or milestone, and a planned release with no plan fields
+- **THEN** it carries guided cards naming `set-project`, `mission --statement`, `release here`, `release <id> --theme … --target`, `mission --milestone` and `mission --add-criterion`, and none of them for a fully populated board
+
+### Requirement: The skill asks for first-population fields in one batch
+
+The skill SHALL hold a section "First population: what to fill and what to ask the user" mapping each null field to its
+exact verb and to who supplies it, and telling the agent to ask in one batched question set, never to invent a mission or
+milestone, and to re-run the refresh afterwards. It SHALL state the refresh-time stale check: read `page/info.lastUpdated`
+before writing and, at two or more days, tell the user and re-check the plan marker's text with them.
+
+#### Scenario: The section is stated
+
+- **WHEN** the skill's text is checked by the file-rung doc assertion
+- **THEN** it names every verb above, the one batch, the never-invent rule, the re-run, and the two-day stale check
+
