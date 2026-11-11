@@ -119,6 +119,37 @@ export function currentSpendGuard() {
   try { return guardConfigured(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
 }
 
+/** The most the `## Mission` section may weigh, heading included (managed-rules-block). */
+export const MISSION_SECTION_MAX_BYTES = 280;
+
+/** The `## Mission` section's text for `state`, or "" while no current mission exists. The statement is cut with an
+ *  ellipsis so the whole section, heading included, stays within MISSION_SECTION_MAX_BYTES. Pure over the record, and
+ *  read straight from `state.mission` so this module never imports mission.mjs (which imports this one). A VERB-REFRESHED
+ *  section (design D15): `mission` rewrites the block when this text changes, and it is outside CONDITIONAL_SECTIONS. */
+export function missionSectionText(state) {
+  const m = state && state.mission && typeof state.mission === "object" ? state.mission : null;
+  const cur = m && m.current && typeof m.current.statement === "string" ? m.current.statement : null;
+  if (!cur) return "";
+  const bytes = (s) => Buffer.byteLength(s, "utf8");
+  const milestone = typeof m.milestoneRelease === "string" && m.milestoneRelease ? m.milestoneRelease : "none";
+  const shown = [...escapeControls(milestone)].length > 40 ? [...escapeControls(milestone)].slice(0, 40).join("") + "…" : escapeControls(milestone);
+  const head = "## Mission\n\nMission: ";
+  const tail = ` Mission milestone: ${shown}. Work that does not serve it needs a stated reason.`;
+  const room = MISSION_SECTION_MAX_BYTES - bytes(head) - bytes(tail);
+  let statement = escapeControls(cur);
+  if (bytes(statement) > room) {
+    const cps = [...statement];
+    while (cps.length && bytes(cps.join("")) + 3 > room) cps.pop();
+    statement = cps.join("").trimEnd() + "…";
+  }
+  return head + statement + tail;
+}
+
+/** The `## Mission` text for the loaded record; "" when state cannot be consulted, like the other readers. */
+export function currentMissionSection() {
+  try { return missionSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return ""; }
+}
+
 /** The usage answers the rules block is rendered with: `rulesUsage()` over the loaded record. Falls back
  *  to the FULL block (both true) when state cannot be consulted, the safe failure: over-emitting never
  *  drops a rule. Rethrows an unreadable file for the same reason the other readers do. */
@@ -735,7 +766,7 @@ export function proceduresEmittedOnUseLines(usage = FULL_USAGE) {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE) {
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -934,6 +965,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...(spend ? spendTrackingLines() : []),
     ...(guard ? spendGuardLines() : []),
+    ...(missionSection ? [...missionSection.split("\n"), ""] : []),
     ...(usage.releaseCandidate ? [
     "## Release candidate",
     "",
@@ -1282,7 +1314,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection());
   let next;
   // What this write says about itself, printed only AFTER the file is written: a write that fails must not
   // have claimed it refreshed the block or announced a section (gh-cfdude-pm-248 Gate 2 M2).

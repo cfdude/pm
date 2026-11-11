@@ -20,7 +20,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { rulesBlock } from "./rules.mjs";
+import { missionSectionText, rulesBlock } from "./rules.mjs";
 import { profileContext } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { guardConfigured } from "./spend-guard.mjs";
@@ -62,6 +62,8 @@ export const SURFACE_FEATURES = {
   "rules:spend-tracking": "spendTracking",
   "rules:spend-guard": "spendGuard",
   "rules:release-candidate": CORE,
+  // project-boards: recorded data, not a switchable feature, so it is core (managed-rules-block). Absent with no mission.
+  "rules:mission": CORE,
   "rules:feedback": CORE,
   "rules:re-read-the-source-before-an-epic-becomes-the-work": CORE,
   "rules:sync-after-completing-tracker-linked-work": "tracker",
@@ -169,7 +171,7 @@ export function rulesBlockFor(state, platform = "claude-code", usage = rulesUsag
   const tracker = s.tracker && s.tracker.system ? s.tracker : null;
   const mode = typeof s.reviewMode === "string" && s.reviewMode ? s.reviewMode : "standard";
   const secondary = Array.isArray(s.secondaryTrackers) ? s.secondaryTrackers : [];
-  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage);
+  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage, missionSectionText(s));
 }
 
 /** Every surface for `state`. PURE over its inputs: `listings`, `hooks` and `lessons` are handed in. */

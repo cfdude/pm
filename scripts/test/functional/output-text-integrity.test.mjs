@@ -1241,6 +1241,30 @@ recipe("release --unmember", { rendered: true, run: (c, v) => {
   ok(c.cwd, ["release", "1.0.0", "--member", "rel2"]);
   return pm(c.cwd, ["release", "1.0.0", "--unmember", `rel2:${v}`]);
 } });
+// project-boards: the one-line fields refuse a line break (the poison carries several), so each is refused before it is stored and
+// no surface can print it. `mission` and `release here` are the same rule at their own flags.
+const ONE_LINE = (flag, max) => `--${flag} is one line of at most ${max} characters, and the poison's line breaks are refused`;
+recipe("add-epic --summary", { exempt: ONE_LINE("summary", 200), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("sm"), "--lane", "claude-code", "--summary", v]) });
+recipe("add-epic --why-now", { exempt: ONE_LINE("why-now", 300), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("wn"), "--lane", "claude-code", "--why-now", v]) });
+recipe("add-many --summary", { exempt: ONE_LINE("summary", 200), run: (c, v) => batch(c, { id: fresh("msm"), lane: "claude-code", summary: v }) });
+recipe("add-many --why-now", { exempt: ONE_LINE("why-now", 300), run: (c, v) => batch(c, { id: fresh("mwn"), lane: "claude-code", whyNow: v }) });
+recipe("update-epic --summary", { exempt: ONE_LINE("summary", 200), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--summary", v]) });
+recipe("update-epic --why-now", { exempt: ONE_LINE("why-now", 300), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--why-now", v]) });
+recipe("release --theme", { exempt: ONE_LINE("theme", 400), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--theme", v]) });
+recipe("release --rationale", { exempt: ONE_LINE("rationale", 400), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--rationale", v]) });
+recipe("release --exit", { exempt: ONE_LINE("exit", 400), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--exit", v]) });
+recipe("release --order", { exempt: EXEMPT.number("order"), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--order", v]) });
+recipe("release --size", { exempt: EXEMPT.vocab("size"), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--size", v]) });
+recipe("release --clear", { exempt: "--clear must name a plan field this command can unset", run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--clear", v]) });
+recipe("release --text", { exempt: ONE_LINE("text", 200), run: (c, v) => pm(c.cwd, ["release", "here", "1.0.0", "--text", v]) });
+recipe("release --next", { exempt: ONE_LINE("next", 200), run: (c, v) => pm(c.cwd, ["release", "here", "1.0.0", "--next", v]) });
+recipe("board --archived", { exempt: "--archived is a positive integer or all, and anything else is refused", run: (c, v) => pm(c.cwd, ["board", "--json", "--archived", v]) });
+recipe("mission --statement", { exempt: ONE_LINE("statement", 300), run: (c, v) => pm(c.cwd, ["mission", "--statement", v, "--reason", "r"]) });
+recipe("mission --reason", { exempt: ONE_LINE("reason", 400), run: (c, v) => pm(c.cwd, ["mission", "--statement", "a statement", "--reason", v]) });
+recipe("mission --milestone", { exempt: "--milestone must name a declared release, and anything else is refused with the value escaped", run: (c, v) => pm(c.cwd, ["mission", "--milestone", v]) });
+recipe("mission --add-criterion", { exempt: ONE_LINE("add-criterion", 300), run: (c, v) => pm(c.cwd, ["mission", "--add-criterion", v]) });
+recipe("mission --check", { exempt: ONE_LINE("check", 300), run: (c, v) => pm(c.cwd, ["mission", "--add-criterion", "a criterion", "--check", v]) });
+recipe("mission --remove-criterion", { exempt: "--remove-criterion must name a criterion of the mission, and anything else is refused with the value escaped", run: (c, v) => pm(c.cwd, ["mission", "--remove-criterion", v, "--reason", "r"]) });
 recipe("record-cross-spec-review --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-cross-spec-review", "cs", "--verdict", v]) });
 recipe("record-cross-spec-review --reviewer", { rendered: true, run: (c, v) => pm(c.cwd, ["record-cross-spec-review", "cs", "--verdict", "pass", "--reviewer", v]) });
 

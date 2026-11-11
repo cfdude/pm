@@ -468,6 +468,8 @@ const DISPATCH_BASELINE = {
   "recover-created-at": { args: ["recover-created-at"] },
   "unconsidered-outcomes": { args: ["unconsidered-outcomes"] },
   list: { args: ["list"] },
+  board: { args: ["board"] },
+  mission: { args: ["mission", "--statement", "ship it", "--reason", "baseline"] },
   overhead: { args: ["overhead"] },
   upgrade: { args: ["upgrade"] },
   changelog: { args: ["changelog", "--since", "0.0.1"] },

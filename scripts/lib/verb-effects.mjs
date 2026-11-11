@@ -65,6 +65,9 @@ export const VERB_EFFECTS = {
   // a sibling repo. A verb that dirtied that repo to answer would be answering its own question
   // wrongly — so this one is exercised, not merely declared.
   owners: { effect: "read-only", exercise: [], note: "advisory claim report — who holds what, and how stale" },
+  // project-boards. The snapshot the boards read: epics, releases, mission and the derived values, computed once. It runs
+  // no git and no network, and it is exercised, so a write added to it later fails the suite rather than a page.
+  board: { effect: "read-only", exercise: ["--json"], note: "prints the versioned board snapshot (counts, mission, releases, epics, rejected); writes nothing, runs no git, opens no connection" },
   // #111's reader. Read-only in the strict sense the suite checks: it opens `.conductor/activity/`
   // and nothing else, and it does NOT create that directory when it is absent — a reader that
   // scaffolded its own store would dirty a repo merely by being asked a question about it.
@@ -115,6 +118,8 @@ export const VERB_EFFECTS = {
   "set-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "clear-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "set-tracker": { effect: "mutates", writes: "state.json (tracker config), CLAUDE.md (the rules block)" },
+  // project-boards. `mission show` is a pure read under this verb, like `release show`; the classification is the verb's.
+  mission: { effect: "mutates", writes: "state.json (the mission, its history, the mission milestone and the exit criteria), CLAUDE.md (the `## Mission` rules-block section, only when its text changed), plus render()'s writes — except `mission show`, which writes nothing at all" },
   "set-lane-routing": { effect: "mutates", writes: "state.json (lane-routing overrides)" },
   "set-autonomy": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's autonomy block and notifications)" },
   "set-review-mode": { effect: "mutates", writes: "state.json (the review-mode dial), CLAUDE.md (the rules block)" },

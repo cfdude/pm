@@ -27,6 +27,20 @@
       "platforms": { "claude-code": "slash command (/pm:backlog-grooming) entering a skill-carried pass that reads the open backlog via `list` and `triage` and proposes dispositions" }
     },
     {
+      "id": "board-export",
+      "artifacts": [
+        "commands/boards.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:boards) documenting the read-only `board --json` snapshot" }
+    },
+    {
+      "id": "project-mission",
+      "artifacts": [
+        "commands/mission.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:mission) recording the mission, its mission milestone and exit criteria" }
+    },
+    {
       "id": "disposition-audit",
       "artifacts": [
         "commands/unconsidered-outcomes.md"

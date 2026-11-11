@@ -57,6 +57,9 @@
  *                  field, from the commit that first introduced its id into state.json.
  *                  Local history only; unrecoverable stays ABSENT and re-attemptable,
  *                  which is why it is a re-runnable verb and not a MIGRATIONS body
+ *   board          READ-ONLY: the versioned snapshot the project boards read (`--json`; `--archived <n>|all`)
+ *   mission        record the project mission (with history), its mission milestone release and exit criteria;
+ *                  `mission show [--history]` reads it back. Rewrites the `## Mission` rules-block section
  *   unconsidered-outcomes  READ-ONLY: the archived epics whose outcome NOBODY CONSIDERED —
  *                  an engine stamp carrying `unknown` — each with the invocation that would
  *                  record a disposition. The spec says an agent ASKS the engine; this is the ask
@@ -87,7 +90,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, currentSpendTracking, currentSpendGuard, currentRulesUsage, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, currentSpendTracking, currentSpendGuard, currentRulesUsage, currentMissionSection, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
@@ -138,6 +141,8 @@ import { delegateToCheckout } from "./lib/self-hosting.mjs";
 import { recoverCreatedAt } from "./lib/created-at.mjs";
 import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
 import { list } from "./lib/list.mjs";
+import { board } from "./lib/board.mjs";
+import { mission } from "./lib/mission.mjs";
 import { overhead } from "./lib/overhead.mjs";
 import { setDevLog } from "./lib/dev-log.mjs";
 import { devLogVerb } from "./lib/dev-log-report.mjs";
@@ -252,7 +257,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|board|mission|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -467,6 +472,8 @@ function runInvocation(argv, io = {}) {
     "suggest-lane": suggestLane,
     triage,
     list,
+    board,
+    mission,
     overhead,
     "set-autonomy": setAutonomy,
     "record-reconcile": recordReconcile,
@@ -513,7 +520,7 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking(), currentSpendGuard(), currentRulesUsage());
+      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection());
       // `--sections`: instead of the block, the ranked per-section sizes of the block that WOULD be written
       // (rules-block-session-cost). Read-only like the verb itself.
       if (f.sections) outStream().write(sectionTableLines(measureRulesBlock(block)).join("\n") + "\n");

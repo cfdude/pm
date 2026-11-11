@@ -6,7 +6,7 @@ allowed-tools: Bash, Read
 Register an epic in a non-OpenSpec lane (superpowers, claude-code, decision, external) —
 for work that is correctly routed away from OpenSpec but still belongs in the system of record.
 
-Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|later|blocked|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"]`
+Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|later|blocked|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"] [--summary "<one line>"] [--why-now "<one line>"]`
 
 Use `--status planned` for roadmap work you intend to do but haven't proposed/scaffolded yet
 (default status is `queued`). Use `--parent <id>` to nest this epic under an existing parent
@@ -68,6 +68,14 @@ argument as `--add-story` below: register the rationale the triage you just did 
 because nothing ever comes back to add it. It REPLACES wholesale on each set, and it is not
 `--notes` — the two are distinct and neither substitutes for the other; see the paragraph under
 `update-epic`.
+
+`--summary` and `--why-now` are the **one-line** companions to `--description`, for a board that has room for one line
+per epic: `--summary` says what the epic is in plain words (at most 200 characters), `--why-now` why it matters now (at
+most 300). Both are on `add-epic`, `add-many` and `update-epic`, and neither touches `description` or `notes`. When a
+command moves an epic out of `untriaged` (or registers one) into any status other than `untriaged` or `archived`, and the
+epic still lacks either, it prints one stderr line naming the epic, each missing field and the flag that sets it. That is
+a **warning only**: the write still happens and the exit code is 0. Archiving, and a write that leaves the status
+unchanged, never warn.
 
 **Registration and last-touched dates are stamped for you; no flag sets either.** From 0.40.0 on,
 every epic carries `createdAt`, written by `pushEpic()` — the single sink every creation surface
@@ -215,6 +223,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   `external-id`. A bulk-registered epic is the one that needs it most: a batch entry's title is
   usually a ticket line or a chunk number, and the reason that chunk exists lives in a design
   document nobody re-reads before triaging the next ask against it.
+- **`summary`** and **`whyNow`** are the one-line fields, in state-key spelling, with the same limits (200 and 300
+  characters) and the same refusal, in the same up-front pass.
 - **`stories`** is an array of plain titles, or `{"title": "...", "done": true}` objects where a
   milestone is already behind you. Validated in the same up-front pass as everything else — a
   blank title or a non-boolean `done` refuses the whole batch and creates nothing.
@@ -269,8 +279,10 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--parent <id>` | `parent` | no self-parent, no cycle |
 | `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
 | `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically. **Refused** on an epic that owes a reconcile and holds an armed (or pre-0.44.0) `may-invalidate` link — the clear-and-re-supply repair included — until `record-reconcile` answers it |
-| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `spec-deltas-waived`, `gate1-waived`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `summary`, `why-now`, `external-updated-at`, `spec-deltas-waived`, `gate1-waived`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
+| `--summary "<one line>"` | `summary` | what the epic is, in plain words. One line, at most 200 characters; an empty, multi-line or longer value is refused and nothing is written. Replaces on each set; `--clear summary` is the inverse. Never touches `description` or `notes`. The boards show it |
+| `--why-now "<one line>"` | `whyNow` | why the epic matters now. One line, at most 300 characters, validated and cleared like `--summary` (`--clear why-now`) |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
 | `--external-url <url>` | `externalUrl` | the globally unique dedup key — one tracker item, one epic: setting a URL another epic holds (archived included) is refused naming it; `--clear external-url` on the holder frees it. Compared exactly after trimming surrounding whitespace — a trailing `/`, the host's case or a query string make a different URL, so record the tracker's canonical URL |

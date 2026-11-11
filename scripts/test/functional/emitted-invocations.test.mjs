@@ -3159,6 +3159,16 @@ const PRINTER_FIXTURES = {
       [repo.run(["record-cross-spec-review", "nope", "--verdict", "pass", "--reviewer", "r"]), /release nope --intent/],
     ];
   },
+  "release here with nothing to set or clear, and mission with no operation or an unknown mission milestone (project-boards)"() {
+    const repo = remedyRepo();
+    repo.ok(["release", "r1", "--intent", "the first"]);
+    return [
+      [repo.run(["release", "here"]), /release here <id>/],
+      [repo.run(["mission"]), /mission show/],
+      [repo.run(["mission", "--milestone", "nope"]), /release <id> --intent/],
+      [repo.run(["mission", "--history"]), /mission show --history/],
+    ];
+  },
   "a release write on a detached checkout"() {
     const repo = remedyRepo();
     fixtureGit(repo.cwd, "checkout", "-q", "--detach");

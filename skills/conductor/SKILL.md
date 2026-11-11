@@ -179,7 +179,7 @@ repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --re
 sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
 execution profile (review, model per job role — `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary`, each with a built-in default pair that is never stored — and verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
-epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
+epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · the release plan fields (`--theme`, `--rationale`, `--exit`, `--order`, `--size`, each cleared with `--clear <field>`; the status is derived, never stored) and `release here <id>` the plan marker (`release here --clear-here` removes it) · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
@@ -857,6 +857,14 @@ it waits on.
   stamp answers when the epic's own content last changed and a backfill of its registration date
   is not that. `touchedAt` itself needs no verb — every write that genuinely changes an epic
   advances it, and one that changes nothing leaves it alone.
+- What is the project trying to ship? `mission show [--history]` (read-only) reads the recorded mission, its mission
+  milestone and the active exit criteria; `mission --statement "<one line>" --reason "<why>"`, `--end`, `--milestone <releaseId>`
+  / `--clear-milestone` and `--add-criterion` / `--remove-criterion` write it. Releases at or before the mission milestone are
+  critical path. See `commands/mission.md`.
+- What does the whole board look like, as data? `board --json [--archived <n>|all]` (read-only): the counts, the
+  mission and its milestone, the releases in plan order with a derived status, the open epics in `PROJECT.md`'s order,
+  a window of recently ended epics, a three-state `delivered`, resolved `dependsOn`, and a `rejected[]` list for any
+  id or URL it would not emit. Read this instead of `.conductor/state.json`. See `commands/boards.md`.
 - Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
   list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
   engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the

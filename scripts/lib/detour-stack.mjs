@@ -35,6 +35,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { warnSummary } from "./epic-summary.mjs";
 import { deferralHistory, deferralNote, isArmed, liveReconcileFrame, ownedDetours } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
 import { die } from "./command-exit.mjs";
@@ -143,6 +144,9 @@ export function pushDetour() {
   // `cur.role === "detour"` when no frame is live, and PROJECT.md prints the role column. Set
   // HERE rather than at registration because this verb is the moment an epic BECOMES a detour.
   detour.role = "detour";
+  // project-boards: either epic may be leaving `untriaged` here, which owes the summary warning.
+  const pausedBefore = paused.status;
+  const detourBefore = detour.status;
   paused.status = "paused";
   // Set at the TRANSITION, not derived. reconcileArchived() re-derives it from the live frame
   // while the frame exists, so the two agree here; what makes writing it necessary is POP, where
@@ -172,6 +176,8 @@ export function pushDetour() {
   if (gate1Notice) errStream().write(gate1Notice);
 
   const saved = saveState(state, { verb: "push-detour" });
+  warnSummary(paused, pausedBefore);
+  warnSummary(detour, detourBefore);
   render();
 
   // "NO reconcile on resume" only where NOTHING is owed: a --no-reconcile push on an epic that still

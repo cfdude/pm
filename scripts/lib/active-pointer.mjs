@@ -8,6 +8,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { ownedDetours } from "./links.mjs";
+import { warnSummary } from "./epic-summary.mjs";
 import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
@@ -127,10 +128,12 @@ export function setActive() {
     if (refusal) { die(`conductor: ${refusal}\n`); }
   }
   const previous = state.active;
+  const statusBefore = t.status;
   activate(state, id);
   const saved = saveState(state);
   owedReconcileNotice(state, previous);
   movedActiveNotice(state, previous);
+  warnSummary(t, statusBefore);
   render();
   reportSave(saved, {
     changed: `conductor: active is now '${escapeControls(id)}'`,

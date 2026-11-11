@@ -1822,6 +1822,7 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:procedures-emitted-on-use` | core | ~75 tokens, measured by `overhead` in a freshly initialised repo (not by `overhead --all-features`, which counts the sections it stands in for) | no switch: below the threshold; it points at the autonomy and release-candidate procedures while those sections are not in use |
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
 | `rules:release-candidate` | core | ~294 tokens, emitted only while a release has no delivered marker | no switch: below the threshold; absent (not switched) while no release is open |
+| `rules:mission` | core | at most ~70 tokens (280 bytes), emitted only while a mission is recorded | no switch: it is recorded data, not a feature, and it is the line that bounds autonomous work |
 | `rules:feedback` | core | ~194 tokens | no switch: below the threshold |
 | `rules:re-read-the-source-before-an-epic-becomes-the-work` | core | ~411 tokens | no switch: below the threshold |
 | `brief` | core | ~339 to ~2,061 tokens (grows with the record, capped at 16,384 bytes) | no switch: its size is the rules-block budget's to bound |

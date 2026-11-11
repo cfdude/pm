@@ -123,7 +123,8 @@ const stateOf = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.jso
 test("gh-149: the registry declares which flags take no value, and it is a short closed list", async () => {
   const { EPIC_FLAGS } = await import(CONSTANTS);
   const valueless = EPIC_FLAGS.filter(f => f.valueless).map(f => f.flag).sort();
-  assert.deepEqual(valueless, ["clear-links", "deliver", "done", "no-deferrals", "repo", "steal", "undeliver"],
+  // project-boards: `clear-here` is `release here`'s valueless inverse (`--clear <field>` takes a value; this removes a singleton).
+  assert.deepEqual(valueless, ["clear-here", "clear-links", "deliver", "done", "no-deferrals", "repo", "steal", "undeliver"],
     "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #149");
   // The discriminator is `valueless`, never `key`. Ten value-bearing rows carry `key: null`
   // because the command owns the write (`--gate`, `--reviewer`, `--wont-do`, …); projecting the

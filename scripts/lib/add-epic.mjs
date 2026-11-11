@@ -9,6 +9,7 @@ import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
+import { SUMMARY_FIELDS, lineFieldError, warnSummary } from "./epic-summary.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -489,6 +490,12 @@ export function addEpic() {
   // epicProgress() falls through to its planPath/tasks.md precedence exactly as before.
   if (stories.length) epic.stories = stories;
   if (str(f.description) !== undefined) epic.description = str(f.description);
+  for (const field of SUMMARY_FIELDS) {
+    if (str(f[field.flag]) === undefined) continue;
+    const err = lineFieldError(field, str(f[field.flag]));
+    if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
+    epic[field.key] = str(f[field.flag]);
+  }
   if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
   if (profileFlags.review !== undefined) epic.reviewMode = profileFlags.review;
@@ -512,6 +519,7 @@ export function addEpic() {
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
   movedActiveNotice(state, previousActive);
+  warnSummary(epic, null);
   render();
   reportSave(saved, {
     changed: `conductor: added epic '${escapeControls(id)}' (${lane}, ${status})`,

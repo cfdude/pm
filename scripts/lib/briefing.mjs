@@ -2,6 +2,7 @@
 // Builds the SessionStart/PreCompact briefing text. Needs lib/active-pointer.mjs's
 // staleMarker() (one-directional — active-pointer doesn't need anything back from here).
 
+import { missionBriefLine } from "./mission-record.mjs";
 import { resolveEpics, missing, orderQueueWithDependencies, bar, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { changelogAddedHeadlines, cmpVer, newestInstalledVersion, pluginVersion } from "./plugin-meta.mjs";
 import { getAutonomy } from "./autonomy.mjs";
@@ -303,6 +304,11 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
     L.push(`planned: ${plannedCount} — see PROJECT.md`);
     L.push("");
   }
+
+  // The mission (project-boards): ONE line, at most 200 bytes, a plain string among the obligations so fitBrief() never
+  // shortens it. Absent with no current mission, so a repo that records none gains no byte.
+  const missionLine = missionBriefLine(state);
+  if (missionLine) { L.push(missionLine); L.push(""); }
 
   // Releases — the same releaseSummaries() PROJECT.md renders, so a release cannot read as 12
   // epics on one surface and 11 on the other. One line each: the counts and what the release is

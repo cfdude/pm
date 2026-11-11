@@ -624,6 +624,12 @@ x("help.mjs", "verbHelp", {
   "out.join(\"\\n\")": 1,
 }, "engine", "flag and positional registries, POSITIONAL_USAGE, epicBatchKeys()");
 j("lane-routing.mjs", "suggestLane", ALL, "json", "one JSON document");
+j("board.mjs", "board", ALL, "json", "one JSON document (jsonText) or boardText()'s three lines, each value through escapeControls");
+j("rules.mjs", "missionSectionText", ALL, "sink-flow", "the `## Mission` section: its only consumer is rulesBlock()'s lines (split on \\n and joined through lines.map(escapeControls)); the statement and milestone are escapeControls'd before truncation");
+j("mission.mjs", "lineError", ALL, "sink-flow", "a refusal fragment returned to applyMission(), whose caller mission() prints it only through die(`conductor: ${escapeControls(r.message)}`); the interpolated values are the flag name and a number, never stored text");
+j("mission.mjs", "applyMission", ALL, "sink-flow", "every message it returns is printed only through mission()'s escapeControls (the refusal through die(), each note through errStream().write(escapeControls(n))); stored text (a release id, a criterion id) is escaped where it is interpolated");
+j("mission.mjs", "missionShowLines", ALL, "sink-flow", "`mission show`'s lines, written only through mission()'s `.map(escapeControls).join(\"\\n\")`");
+j("mission-record.mjs", "missionBriefLine", ALL, "sink-flow", "the brief's one mission line, pushed onto buildBriefParts's L and escaped where `plain` and `parts` are assembled; the statement and milestone are escapeControls'd before truncation");
 j("triage.mjs", "triage", ALL, "json", "one JSON document");
 j("unconsidered.mjs", "unconsideredOutcomesReport", ALL, "json", "one JSON document");
 j("worktree-hygiene.mjs", "changesets", ALL, "json", "one JSON document");

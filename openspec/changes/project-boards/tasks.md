@@ -51,7 +51,7 @@
 - [x] 1.1 Refactor, with no behaviour change: extract `resolveEpics()`'s effective-priority and sort step into a pure
       exported function over an epic list, and call it from `resolveEpics()` (design D2). Verify that the existing
       ordering, render and brief tests pass unchanged; the commit carries no test edits.
-- [ ] 1.2 RED (UNIT, `boardSnapshot(state, resolved)` over fixtures): cover every scenario in
+- [x] 1.2 RED (UNIT, `boardSnapshot(state, resolved)` over fixtures): cover every scenario in
       `specs/board-export/spec.md`. That is:
       - the top-level shape and the `mission`/`milestone`/`plan` shapes
       - the render order, `position`, `meritPriority` and `rank`
@@ -67,13 +67,13 @@
 
       A file-rung test also asserts that `board --json` leaves `state.json`, `CLAUDE.md` and the `.conductor/` logs
       byte-identical. Save `red-1.2.txt`.
-- [ ] 1.3 GREEN: add `scripts/lib/board.mjs`, using `outcomeOf` and the shared ordering, with no copied comparator.
+- [x] 1.3 GREEN: add `scripts/lib/board.mjs`, using `outcomeOf` and the shared ordering, with no copied comparator.
       Add the dispatch and a `VERB_EFFECTS` row (read-only, with `exercise: ["--json"]`). Add `commands/boards.md`
       documenting the verb and its JSON shape, and claim it in the ledger. Add the changeset. Then certify functional.
 
 ## 2. Epic summary and why-now (spec: epic-annotation)
 
-- [ ] 2.1 RED (UNIT): cover each of these.
+- [x] 2.1 RED (UNIT): cover each of these.
       - `--summary` and `--why-now` persist through `add-epic`, `update-epic` and `add-many`, read back through
         `board --json`.
       - Both are refused when empty, multi-line or over their limit, and nothing is written.
@@ -82,14 +82,14 @@
       - Nothing warns on archive or on a write that leaves the status unchanged.
 
       Save `red-2.1.txt`.
-- [ ] 2.2 GREEN: add the fields to the flag registry in `scripts/lib/constants.mjs`, update
+- [x] 2.2 GREEN: add the fields to the flag registry in `scripts/lib/constants.mjs`, update
       `scripts/lib/add-epic.mjs` and `scripts/lib/add-many.mjs`, and add the warning at every status-write site that
       R.1 enumerates, including `scripts/lib/update-epic.mjs` and the other writers (`active-pointer.mjs`,
       `detour-stack.mjs`, `subcommands.mjs`, `epic-progress.mjs`) wherever a write leaves `untriaged`. Update `commands/epic.md` and the changeset.
 
 ## 3. Release plan fields and the plan marker (spec: release-planning)
 
-- [ ] 3.1 RED (UNIT): cover each of these.
+- [x] 3.1 RED (UNIT): cover each of these.
       - `release <id>` sets, replaces and clears theme, rationale, exit, order and size.
       - Bad values and an unknown `--clear` field are refused, with nothing written.
       - `--status` is an unknown flag.
@@ -103,13 +103,13 @@
       - `release here r2 --intent x` and `release here --text x` are refused.
 
       Save `red-3.1.txt`.
-- [ ] 3.2 GREEN: update `scripts/lib/releases.mjs`, the flag registry and the status render. Update the `release`
+- [x] 3.2 GREEN: update `scripts/lib/releases.mjs`, the flag registry and the status render. Update the `release`
       documentation in `skills/release-candidate/SKILL.md` and `skills/conductor/SKILL.md` (no `commands/release.md`
       exists), and the changeset. Confirm with `jq '.releases[].id'` that no existing release is named `here`.
 
 ## 4. Mission (spec: project-mission, managed-rules-block's `## Mission`)
 
-- [ ] 4.1 RED: these are UNIT unless marked FILE.
+- [x] 4.1 RED: these are UNIT unless marked FILE.
       - `mission --statement` keeps a history, requires `--reason`, and writes nothing when the statement is
         unchanged.
       - `mission --end` keeps the ended statement in history, and is refused when there is no current mission.
@@ -123,7 +123,7 @@
       - FILE: `overhead` reports `rules:mission` under `core`.
 
       Save `red-4.1.txt`.
-- [ ] 4.2 GREEN: add `scripts/lib/mission.mjs` and its dispatch, a `VERB_EFFECTS` row (mutates), the valueless `end`
+- [x] 4.2 GREEN: add `scripts/lib/mission.mjs` and its dispatch, a `VERB_EFFECTS` row (mutates), the valueless `end`
       and `clear-milestone` registry rows, `scripts/lib/briefing.mjs`, the `## Mission` section in
       `scripts/lib/rules.mjs` (outside `CONDITIONAL_SECTIONS`, refreshed by the verb), the `rules:mission` entry in
       `SURFACE_FEATURES`, the README cost row, and the `/pm:status` render. Add `commands/mission.md`, claimed in
