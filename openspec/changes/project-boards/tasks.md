@@ -157,7 +157,7 @@
 
 ## 6. Skill, command and templates (spec: project-boards)
 
-- [ ] 6.1 RED (FILE): these files exist and the parity test (`scripts/test/parity.test.mjs`) claims each exactly
+- [x] 6.1 RED (FILE): these files exist and the parity test (`scripts/test/parity.test.mjs`) claims each exactly
       once:
       - `skills/project-boards/SKILL.md`
       - `skills/project-boards/templates/backlog.html`
@@ -179,7 +179,7 @@
       - that it never deletes an artifact
 
       `commands/boards.md` names the skill and restates none of it. Save `red-6.1.txt`.
-- [ ] 6.2 RED (FILE, `node:vm`, design D13): evaluate each template's marked render block over fixture docs, and
+- [x] 6.2 RED (FILE, `node:vm`, design D13): evaluate each template's marked render block over fixture docs, and
       check each of these:
       - escaping in text, `href`, `data-*` and class positions, for the title, id, release id and status
       - the priority allowlist rendering `P?`
@@ -194,7 +194,7 @@
         containing no other `</script`
 
       Save `red-6.2.txt`.
-- [ ] 6.3 GREEN: write the skill and both templates. The templates derive from the reference's layout, with these
+- [x] 6.3 GREEN: write the skill and both templates. The templates derive from the reference's layout, with these
       changes:
       - every interpolation goes through the escaper
       - ids are checked against `/^[A-Za-z0-9._-]+$/`

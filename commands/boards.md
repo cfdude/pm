@@ -1,7 +1,15 @@
 ---
-description: The read-only board snapshot (`board --json`) that the project boards, and anything else that draws the backlog, read
-allowed-tools: Bash, Read
+description: Publish or refresh the project's backlog and release-plan boards (the project-boards skill); also documents the read-only `board --json` snapshot and the `set-boards` switch
+allowed-tools: Bash, Read, Write
 ---
+
+## `/pm:boards` — publish or refresh the boards
+
+Invoke the `project-boards` skill and follow it. Before anything else, read `boardsEnabled` from `board --json` first; while it
+is `false`, say so, name `set-boards on`, and stop before any artifact write. The skill owns the whole procedure, so this
+document restates none of it.
+
+## `board` — the snapshot
 
 `board` is the engine's one export for a page or a script that needs the backlog, the releases and the mission as data. It
 reads `.conductor/state.json` and prints a single JSON object; before it, every consumer read `state.json` directly, guessed at

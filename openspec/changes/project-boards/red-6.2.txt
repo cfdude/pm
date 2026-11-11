@@ -1,0 +1,39 @@
+RED for project-boards 6.2 (taken after the test file and before 6.3 writes skills/project-boards/ and its ledger claim; it fails after 6.2 and before 6.3)
+Command: node --test scripts/test/assert/project-boards-templates.test.mjs
+Method: the tests were written first; skills/project-boards/ did not exist, so every test fails on the missing file.
+
+  28     code: 'ENOENT',
+  18   Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/skills/project-boards/templates/backlog.html'
+  10   Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/skills/project-boards/templates/release-plan.html'
+   2 ✖ 6.2 release-plan.html: the fallback's inlined snapshot holds \u003c for every < and adds no </script (0.027583ms)
+   2 ✖ 6.2 release-plan.html: every ${} interpolation in the render block goes through esc(), num() or H() (0.028666ms)
+   2 ✖ 6.2 release-plan.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted (0.038334ms)
+   2 ✖ 6.2 release-plan.html: carries a marked render block, no remote script, no external stylesheet, both theme blocks and a title (0.030709ms)
+   2 ✖ 6.2 release plan: the here marker, the critical path and the stale warning render from plan/state and the releases (0.037709ms)
+   2 ✖ 6.2 release plan: priority allowlist, a javascript: URL and a malformed doc (0.034791ms)
+   2 ✖ 6.2 release plan: markup in a title renders as text; a hostile release id stays inert (0.03675ms)
+   2 ✖ 6.2 release plan: decisions and answers are type-checked, and fromSnapshot never throws (0.029291ms)
+   2 ✖ 6.2 release plan: a throwing roadmap step shows its notice while counts, criteria and decisions still render (0.039125ms)
+   2 ✖ 6.2 release plan: a release id that fails the pattern is skipped and counted (0.035375ms)
+   2 ✖ 6.2 backlog.html: the fallback's inlined snapshot holds \u003c for every < and adds no </script (0.053334ms)
+   2 ✖ 6.2 backlog.html: every ${} interpolation in the render block goes through esc(), num() or H() (0.06325ms)
+   2 ✖ 6.2 backlog.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted (0.072084ms)
+   2 ✖ 6.2 backlog.html: carries a marked render block, no remote script, no external stylesheet, both theme blocks and a title (0.390292ms)
+   2 ✖ 6.2 backlog: status and release are escaped in text and class positions (0.051417ms)
+   2 ✖ 6.2 backlog: rows are banded by merit priority; a lifted blocker has no drag handle and others have one (0.046625ms)
+   2 ✖ 6.2 backlog: markup in a title renders as text, never as an element (0.06075ms)
+   2 ✖ 6.2 backlog: dependency warning when a dependency is ranked below its dependent; fromSnapshot maps an export (0.034708ms)
+   2 ✖ 6.2 backlog: an ended epic is placed by delivered: true under Delivered, false under Not pursuing with its outcome, null under outcome unknown (0.035125ms)
+   2 ✖ 6.2 backlog: a within-band drop writes the whole merit band to proposals/rank and nothing else (0.078125ms)
+   2 ✖ 6.2 backlog: a throwing step is isolated; the other steps still render (0.035125ms)
+   2 ✖ 6.2 backlog: a priority outside the allowlist renders P? in its label and class and nothing else (0.074042ms)
+   2 ✖ 6.2 backlog: a malformed id is skipped and counted, and no markup from it reaches the page (0.033625ms)
+   2 ✖ 6.2 backlog: a malformed doc (string dependsOn, object title) renders while the rest of the board renders (0.056125ms)
+   2 ✖ 6.2 backlog: a lifted blocker cannot be dragged, and an unknown id is refused (0.031ms)
+   2 ✖ 6.2 backlog: a javascript: URL renders no href and no javascript: inside any attribute (0.043542ms)
+   2 ✖ 6.2 backlog: a cross-band drop is refused with the priority hint and writes nothing (0.058125ms)
+   2 ✖ 6.2 backlog: a backlogMeta Not-pursuing mark moves an open epic to Not pursuing and Restore undoes it (0.034541ms)
+   1 ℹ tests 28
+   1 ℹ pass 0
+   1 ✖ failing tests:
+   1 ℹ fail 28

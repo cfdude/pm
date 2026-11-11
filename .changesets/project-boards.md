@@ -36,3 +36,13 @@
 * **The inward tracker recipe carries `--summary=<one-line summary>`.** The registration line the rules block emits for a tracker now
   ends `--summary=<one-line summary>`, with the instruction to write it from the item's body: one line, at most 200 characters, in the
   agent's own words, single-quoted like the other placeholders, and to leave the flag off when the body gives nothing to summarise.
+* **`project-boards`: a skill, two page templates and `/pm:boards` draw the backlog and the release plan.** The skill
+  `skills/project-boards/SKILL.md` is the one home of the procedure: it publishes `templates/backlog.html` and
+  `templates/release-plan.html` with the Artifact tool, seeds them from `board --json` (the only state source, in writes of at
+  most 50), refreshes them after `/pm:sync`, a status change, a `release` or `mission` write and a gate record, and registers
+  each page in `docs/artifacts/artifacts.md`. The pages declare database rules: everything is `admin`-writable except
+  `answers` and `backlogMeta`, which are `interact`. The backlog bands open epics by merit priority and a drag writes a whole-band
+  proposal to `proposals/rank`; the agent applies it with `reorder`, then deletes it, and one bad id refuses the whole proposal.
+  Every value the templates draw is escaped, priority is allowlisted to `P0`..`P3` or `P?`, ids must match `/^[A-Za-z0-9._-]+$/`,
+  only http and https URLs become links, each render step has its own error boundary, and a host with no Artifact tool gets a
+  read-only standalone file whose inlined JSON escapes `<` as `\u003c`. `/pm:boards` loads the skill and stops while boards are off.

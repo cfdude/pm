@@ -1,0 +1,254 @@
+<title>Project Backlog</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a header, a summary band, then the board; one column at phone width. Data lives in the artifact db. */
+:root{
+  --bg:#F5F6F4; --surface:#FFFFFF; --fg:#1B2321; --muted:#5B6764; --line:#D9DEDB; --soft:#ECEFED;
+  --accent:#1D5C54; --accent-fg:#FFFFFF; --focus:#2A8A7E; --warn-bg:#FFF1D6; --warn-fg:#7A4B00; --err-fg:#9B1C14;
+  --p0-bg:#FBE3E1; --p0-fg:#9B1C14; --p1-bg:#FDEBD9; --p1-fg:#8A4300; --p2-bg:#FBF3CF; --p2-fg:#6B5600;
+  --p3-bg:#E5ECF3; --p3-fg:#2F4A63; --pq-bg:#E7E9E8; --pq-fg:#4A5552; --done-bg:#DFF1E6; --done-fg:#1C5E37;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101615; --surface:#171F1D; --fg:#E2EAE7; --muted:#9BAAA6; --line:#2A3835; --soft:#1E2927;
+  --accent:#6CC4B8; --accent-fg:#06201C; --focus:#86D6CB; --warn-bg:#3D2C0C; --warn-fg:#FFD27A; --err-fg:#FFB4AB;
+  --p0-bg:#4A1A16; --p0-fg:#FFB4AB; --p1-bg:#47290C; --p1-fg:#FFC58C; --p2-bg:#3D340B; --p2-fg:#F3DA6B;
+  --p3-bg:#1E2D3B; --p3-fg:#AFC6DC; --pq-bg:#27302E; --pq-fg:#B4C0BC; --done-bg:#163824; --done-fg:#9BE0B5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101615; --surface:#171F1D; --fg:#E2EAE7; --muted:#9BAAA6; --line:#2A3835; --soft:#1E2927;
+  --accent:#6CC4B8; --accent-fg:#06201C; --focus:#86D6CB; --warn-bg:#3D2C0C; --warn-fg:#FFD27A; --err-fg:#FFB4AB;
+  --p0-bg:#4A1A16; --p0-fg:#FFB4AB; --p1-bg:#47290C; --p1-fg:#FFC58C; --p2-bg:#3D340B; --p2-fg:#F3DA6B;
+  --p3-bg:#1E2D3B; --p3-fg:#AFC6DC; --pq-bg:#27302E; --pq-fg:#B4C0BC; --done-bg:#163824; --done-fg:#9BE0B5; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:24px 56px}
+h1{font:650 28px/1.15 var(--body);margin:0;text-wrap:balance}
+h2{font:650 20px/1.2 var(--body);margin:0 0 12px;text-wrap:balance}
+h3{font:600 16px/1.3 var(--body);margin:0}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.lede{color:var(--muted);margin:6px 0 0;max-width:68ch}
+.live{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.live[data-s="ok"] i{background:var(--done-fg)}.live[data-s="err"] i{background:var(--err-fg)}
+.counts{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+.count{padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;background:var(--soft);color:var(--fg)}
+.c-done{background:var(--done-bg);color:var(--done-fg)}
+.hint,.src,.s{font-size:13px;color:var(--muted)}
+.hint{margin:14px 0 8px}
+.tblw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px;border-bottom:1px solid var(--line);background:var(--soft)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px;min-width:0}
+tbody.band th{text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg)}
+tbody.itm.drag{opacity:.4}
+tbody.itm.over td{box-shadow:inset 0 2px 0 var(--accent)}
+.hd{cursor:grab;color:var(--muted);user-select:none;font-size:16px;line-height:1;padding:2px 4px;border-radius:4px;background:none;border:0}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-P0{background:var(--p0-bg);color:var(--p0-fg)}.p-P1{background:var(--p1-bg);color:var(--p1-fg)}.p-P2{background:var(--p2-bg);color:var(--p2-fg)}
+.p-P3{background:var(--p3-bg);color:var(--p3-fg)}.p-P\?{background:var(--pq-bg);color:var(--pq-fg)}
+.count.p-P0,.count.p-P1,.count.p-P2,.count.p-P3,.count.p-P\?{font-weight:600}
+.tag,.dep{font-size:12px;font-weight:600;border-radius:6px;padding:1px 7px;background:var(--soft);color:var(--muted);text-decoration:none;white-space:nowrap;margin-left:4px}
+.dep--warn{background:var(--warn-bg);color:var(--warn-fg)}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.it b{display:block;font-weight:600;overflow-wrap:anywhere}
+.s{display:block;overflow-wrap:anywhere}
+.st{font-size:12.5px;font-weight:600;white-space:nowrap}
+.st-blocked{color:var(--err-fg)}.st-active{color:var(--accent)}
+code,.mono{font:500 13px var(--mono)}
+a{color:var(--accent)}
+:is(button,select,a,input,textarea):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sec{margin-top:36px}
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.card:target{outline:2px solid var(--accent)}
+.card__h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card p{margin:8px 0 0;overflow-wrap:anywhere}
+.meta{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 12px;margin:10px 0 0;font-size:13.5px}
+.meta dt{color:var(--muted);font-weight:600}.meta dd{margin:0;overflow-wrap:anywhere}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.btn,select,textarea,input[type="text"]{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:5px 10px;font:600 13px var(--body)}
+.btn{cursor:pointer}.btn--p{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+textarea{width:100%;min-height:56px;font-weight:400;resize:vertical}
+.empty{padding:18px;color:var(--muted);text-align:center}
+.notice{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:13.5px}
+.warn{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:8px 12px;margin:12px 0;font-size:13.5px}
+.banner,.mission{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-top:16px}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.rel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-top:12px}
+.rel--here{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.rel__h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rs-planned{background:var(--p3-bg);color:var(--p3-fg)}.rs-in-progress{background:var(--p1-bg);color:var(--p1-fg)}.rs-shipped{background:var(--done-bg);color:var(--done-fg)}.rs-other{background:var(--pq-bg);color:var(--pq-fg)}
+.list{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.list li{font-size:13.5px;background:var(--soft);border-radius:6px;padding:8px 10px;overflow-wrap:anywhere}
+.msg{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;color:var(--muted);margin-top:18px}
+@media (max-width:640px){h1{font-size:24px}.meta{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div id="app"></div>
+<script type="application/json" id="pm-snapshot">null</script>
+<script>
+(function(){
+"use strict";
+/* pm:render-begin */
+const ID_RE=/^[A-Za-z0-9._-]+$/;
+const LEVELS=["P0","P1","P2","P3","P?"];
+const STATUSES=["untriaged","queued","active","paused","later","blocked","planned","archived"];
+const RSTATUS=["planned","in-progress","shipped"];
+const esc=s=>String(s==null?"":s).replace(/[&<>"'`]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;"})[c]);
+const num=x=>(typeof x==="number"&&isFinite(x))?String(x):"0";
+const H=x=>String(x);
+const str=x=>typeof x==="string"?x:"";
+const arr=x=>Array.isArray(x)?x:[];
+const okId=x=>typeof x==="string"&&ID_RE.test(x);
+const safeUrl=u=>(typeof u==="string"&&/^https?:\/\/[^\s"'<>`\\]+$/i.test(u))?u:"";
+const prioOf=p=>(typeof p==="string"&&LEVELS.indexOf(p)>=0)?p:"P?";
+const oneOf=(x,list)=>(typeof x==="string"&&list.indexOf(x)>=0)?x:"other";
+const inlineJson=v=>{const j=JSON.stringify(v);return (j===undefined?"null":j).replace(/</g,"\\u003c");};
+const safe=(fn,dflt)=>{try{return fn();}catch(_){return dflt;}};
+const step=(label,fn)=>{try{return String(fn());}catch(_){return '<div class="notice" role="status">'+esc(label)+' could not be drawn. The rest of the board is unaffected.</div>';}};
+const byPos=(a,b)=>{const pa=a.position==null?1e15:a.position,pb=b.position==null?1e15:b.position;return pa-pb||String(a.id).localeCompare(String(b.id));};
+function normEpic(d){
+  try{
+    if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.id))return null;
+    const n=v=>(typeof v==="number"&&isFinite(v))?v:null;
+    return {id:d.id,title:str(d.title),summary:str(d.summary),whyNow:str(d.whyNow),description:str(d.description),lane:str(d.lane),
+      status:str(d.status),priority:prioOf(d.priority),meritPriority:prioOf(d.meritPriority),position:n(d.position),
+      release:okId(d.release)?d.release:"",externalUrl:str(d.externalUrl),dependsOn:arr(d.dependsOn).filter(okId),
+      delivered:d.delivered===true?true:(d.delivered===false?false:null),outcome:str(d.outcome),outcomeReason:str(d.outcomeReason),endedAt:str(d.endedAt)};
+  }catch(_){return null;}
+}
+const skippedNote=n=>n>0?`<p class="hint">Skipped ${num(n)} record${H(n===1?"":"s")} with an unusable id or shape.</p>`:"";
+const linkOrText=raw=>{const u=safeUrl(raw);return u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u)}</a>`:esc(str(raw));};
+const REASONS=["Won't do","Deferred","For consideration","Merged"];
+const HINT_CROSS="Priority changes go through the agent: ask it to change the priority, then refresh the board.";
+function dropProposal(epicsIn,dragId,targetId,after){
+  const open=[];
+  arr(epicsIn).forEach(d=>{const e=normEpic(d);if(e&&e.status!=="archived")open.push(e);});
+  const d=open.find(e=>e.id===dragId),t=open.find(e=>e.id===targetId);
+  if(!d||!t)return {ok:false,hint:"That row is no longer on the board. Reload the page and try again."};
+  if(d.id===t.id)return {ok:false,hint:"Nothing to move."};
+  if(d.priority!==d.meritPriority)return {ok:false,hint:"A blocker lifted by a dependency cannot be dragged."};
+  if(d.meritPriority!==t.meritPriority)return {ok:false,hint:HINT_CROSS};
+  const rest=open.filter(e=>e.meritPriority===d.meritPriority).sort(byPos).map(e=>e.id).filter(x=>x!==d.id);
+  rest.splice(rest.indexOf(t.id)+(after?1:0),0,d.id);
+  return {ok:true,proposal:{band:d.meritPriority,order:rest}};
+}
+async function dropAndWrite(db,epicsIn,dragId,targetId,after,by,now){
+  const p=dropProposal(epicsIn,dragId,targetId,after);
+  if(!p.ok)return p;
+  await db.doc("proposals/rank").set({band:p.proposal.band,order:p.proposal.order,by:str(by),at:str(now)});
+  return p;
+}
+function renderBacklog(inp){
+  const I=(inp&&typeof inp==="object")?inp:{};
+  const admin=safe(()=>I.admin===true,false),canWrite=safe(()=>I.canWrite===true,false);
+  let skipped=0;const eps=[];
+  safe(()=>{for(const d of arr(I.epics)){const e=normEpic(d);if(e)eps.push(e);else skipped++;}},0);
+  const meta=safe(()=>(I.meta&&typeof I.meta==="object"&&!Array.isArray(I.meta))?I.meta:{},{});
+  const markOf=id=>{const m=Object.prototype.hasOwnProperty.call(meta,id)?meta[id]:null;return (m&&typeof m==="object"&&m.removed===true)?{reason:str(m.reason),note:str(m.note)}:null;};
+  const ended=eps.filter(e=>e.status==="archived"),live=eps.filter(e=>e.status!=="archived");
+  const marked=live.filter(e=>markOf(e.id)),open=live.filter(e=>!markOf(e.id)).sort(byPos);
+  const index=new Map();open.forEach((e,i)=>{index.set(e.id,i);});
+  const byEnd=(a,b)=>String(b.endedAt).localeCompare(String(a.endedAt))||String(a.id).localeCompare(String(b.id));
+  const yes=ended.filter(e=>e.delivered===true).sort(byEnd),no=ended.filter(e=>e.delivered===false).sort(byEnd),unk=ended.filter(e=>e.delivered===null).sort(byEnd);
+  const rowHtml=e=>{
+    const lifted=e.priority!==e.meritPriority,drag=admin&&!lifted;
+    const deps=e.dependsOn.map(d=>{const di=index.get(d);if(di===undefined)return `<span class="dep">${esc(d)}</span>`;
+      const warn=di>index.get(e.id);
+      return `<a class="dep${H(warn?" dep--warn":"")}" href="#card-${esc(d)}">${H(warn?"Ranked below: ":"Depends on ")}${esc(d)}</a>`;}).join("");
+    return `<tbody class="itm" data-id="${esc(e.id)}" data-band="${esc(e.meritPriority)}" draggable="${H(drag?"true":"false")}"><tr>
+<td>${H(drag?`<button type="button" class="hd" aria-label="Drag to reorder ${esc(e.title)}">&#8942;&#8942;</button>`:"")}</td>
+<td class="mono">${num(index.get(e.id)+1)}</td>
+<td><a class="mono" href="#card-${esc(e.id)}">${esc(e.id)}</a></td>
+<td><span class="pill p-${esc(e.priority)}">${esc(e.priority)}</span>${H(lifted?`<span class="tag">lifted from ${esc(e.meritPriority)}</span>`:"")}</td>
+<td class="it"><b>${esc(e.title)}</b><span class="s">${esc(e.summary)}</span>${H(deps?`<div class="tags">${H(deps)}</div>`:"")}</td>
+<td>${esc(e.release)}</td>
+<td><span class="st st-${esc(oneOf(e.status,STATUSES))}">${esc(e.status)}</span></td></tr></tbody>`;};
+  const cardHtml=e=>`<article class="card" id="card-${esc(e.id)}"><div class="card__h"><code>${esc(e.id)}</code><span class="pill p-${esc(e.priority)}">${esc(e.priority)}</span><h3>${esc(e.title)}</h3></div>
+<p>${esc(e.summary)}</p>
+<dl class="meta"><dt>Why now</dt><dd>${esc(e.whyNow)}</dd><dt>Status</dt><dd><span class="st st-${esc(oneOf(e.status,STATUSES))}">${esc(e.status)}</span></dd><dt>Release</dt><dd>${esc(e.release)}</dd><dt>Lane</dt><dd>${esc(e.lane)}</dd><dt>Tracker</dt><dd>${H(linkOrText(e.externalUrl))}</dd><dt>Depends on</dt><dd>${esc(e.dependsOn.join(", "))}</dd><dt>Detail</dt><dd>${esc(e.description)}</dd></dl>
+${H(canWrite?`<div class="row"><label class="lbl" for="np-r-${esc(e.id)}">Not pursuing</label><select id="np-r-${esc(e.id)}">${H(REASONS.map(r=>`<option>${esc(r)}</option>`).join(""))}</select><input type="text" id="np-n-${esc(e.id)}" maxlength="200" placeholder="Note" aria-label="Note for ${esc(e.id)}"><button class="btn" type="button" data-notpursuing="${esc(e.id)}">Mark not pursuing</button></div>`:"")}</article>`;
+  const parts={};
+  parts.info=step("The page info",()=>{const i=I.info,o=(i&&typeof i==="object")?i:{};
+    return `<p class="src">Updated ${esc(str(o.lastUpdated))} · export ${esc(str(o.asOf))} · head ${esc(str(o.head))}</p>`;});
+  parts.counts=step("The counts",()=>{const t={};LEVELS.forEach(l=>{t[l]=0;});open.forEach(e=>{t[e.priority]+=1;});
+    return `<div class="counts">${H(LEVELS.map(l=>`<span class="count p-${esc(l)}">${num(t[l])} ${esc(l)}</span>`).join(""))}<span class="count c-done">${num(yes.length)} delivered</span><span class="count">${num(no.length+marked.length)} not pursuing</span><span class="count">${num(unk.length)} outcome unknown</span></div>`;});
+  parts.hint=step("The hint",()=>`<p class="hint" id="hint">${H(admin?"Drag a row within its priority band to propose a new order. The agent applies it on the next refresh. Priority changes go through the agent.":"Only editors can propose an order. Contributors can mark an epic as not pursuing.")}</p>`);
+  parts.rows=step("The ranked list",()=>{
+    if(!open.length)return '<p class="empty">No open epics in the export. Ask the agent to refresh the board.</p>';
+    const bands=LEVELS.filter(b=>open.some(e=>e.meritPriority===b));
+    return `<div class="tblw"><table id="main"><thead><tr><th></th><th>#</th><th>ID</th><th>Priority</th><th>Epic</th><th>Release</th><th>Status</th></tr></thead>${H(bands.map(b=>{const inBand=open.filter(e=>e.meritPriority===b);
+      return `<tbody class="band band-${esc(b)}"><tr><th colspan="7"><span class="pill p-${esc(b)}">${esc(b)}</span> ${num(inBand.length)} in this band</th></tr></tbody>${H(inBand.map(rowHtml).join(""))}`;}).join(""))}</table></div>`;});
+  parts.cards=step("The detail cards",()=>open.map(cardHtml).join(""));
+  parts.delivered=step("The delivered table",()=>`<div class="tblw"><table><thead><tr><th>ID</th><th>Epic</th><th>Outcome</th><th>Reason</th></tr></thead><tbody>${H(yes.length?yes.map(e=>`<tr><td class="mono">${esc(e.id)}</td><td>${esc(e.title)}</td><td><span class="pill c-done">${esc(e.outcome||"delivered")}</span></td><td>${esc(e.outcomeReason)}</td></tr>`).join(""):'<tr><td colspan="4" class="empty">Nothing delivered yet.</td></tr>')}</tbody></table></div>`);
+  parts.gone=step("The not pursuing table",()=>{
+    const a=marked.map(e=>{const m=markOf(e.id);return `<tr><td class="mono">${esc(e.id)}</td><td>${esc(e.title)}</td><td>${esc(m.reason)} ${esc(m.note)}</td><td>${H(canWrite?`<button class="btn" type="button" data-restore="${esc(e.id)}">Restore</button>`:"")}</td></tr>`;});
+    const b=no.map(e=>`<tr><td class="mono">${esc(e.id)}</td><td>${esc(e.title)}</td><td>${esc(e.outcome)} ${esc(e.outcomeReason)}</td><td></td></tr>`);
+    return `<div class="tblw"><table><thead><tr><th>ID</th><th>Epic</th><th>Outcome or reason</th><th></th></tr></thead><tbody>${H(a.concat(b).length?a.concat(b).join(""):'<tr><td colspan="4" class="empty">Nothing set aside.</td></tr>')}</tbody></table></div>`;});
+  parts.unknown=step("The outcome unknown table",()=>unk.length?`<section class="sec"><h2>Outcome unknown</h2><p class="hint">These ended without a recorded outcome, so they are not counted as delivered.</p><div class="tblw"><table><thead><tr><th>ID</th><th>Epic</th><th>Ended</th></tr></thead><tbody>${H(unk.map(e=>`<tr><td class="mono">${esc(e.id)}</td><td>${esc(e.title)}</td><td>${esc(e.endedAt)}</td></tr>`).join(""))}</tbody></table></div></section>`:"");
+  parts.skipped=skippedNote(skipped);
+  const html=[parts.skipped,parts.info,parts.counts,parts.hint,parts.rows,'<section class="sec"><h2>Epic details</h2><div class="cards">'+parts.cards+'</div></section>','<section class="sec"><h2>Delivered</h2>'+parts.delivered+'</section>','<section class="sec"><h2>Not pursuing</h2>'+parts.gone+'</section>',parts.unknown].join("");
+  return {skipped,parts,html};
+}
+function fromSnapshot(s){
+  const o=(s&&typeof s==="object")?s:{};
+  return {epics:arr(o.epics),releases:arr(o.releases),meta:{},info:{lastUpdated:str(o.asOf),asOf:str(o.asOf),head:str(o.head)},admin:false,canWrite:false};
+}
+/* pm:render-end */
+const app=document.getElementById("app");
+app.innerHTML='<div class="wrap"><div class="top"><div><h1>Project Backlog</h1><p class="lede">Open epics in the order the engine ranks them, banded by merit priority. Drag proposes an order; the agent applies it.</p></div><div class="live" id="live" data-s="busy" role="status"><i></i><span>Connecting…</span></div></div><div id="body"></div></div>';
+const liveEl=document.getElementById("live"),bodyEl=document.getElementById("body");
+const setLive=(s,t)=>{liveEl.dataset.s=s;liveEl.querySelector("span").textContent=t;};
+const S={epics:[],meta:Object.create(null),info:{},ready:false,standalone:false};
+let db=null,me="",admin=false,canWrite=false,pending=false,hintMsg="";
+const withId=snap=>snap.docs.map(x=>Object.assign({},x.data(),{id:x.id}));
+function paint(){
+  if(!S.ready)return;
+  const a=document.activeElement;
+  if(a&&bodyEl.contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)){pending=true;return;}
+  pending=false;
+  bodyEl.innerHTML=renderBacklog({epics:S.epics,releases:[],meta:S.meta,info:S.info,admin:admin&&!S.standalone,canWrite:canWrite&&!S.standalone}).html;
+  if(S.standalone)bodyEl.insertAdjacentHTML("afterbegin",'<div class="notice">Read-only copy. Editing needs the live version of this board.</div>');
+  const h=document.getElementById("hint");if(h&&hintMsg)h.textContent=hintMsg;
+}
+bodyEl.addEventListener("focusout",()=>{if(pending)setTimeout(paint,0);});
+async function put(path,data){try{await db.doc(path).set(data);}catch(e){setLive("err",e&&e.code==="invalid_argument"?"Your access level cannot save this.":"A change did not save. Reload and try again.");}}
+bodyEl.addEventListener("click",e=>{
+  if(!db||S.standalone)return;
+  const t=e.target.closest?e.target.closest("[data-notpursuing],[data-restore]"):null;if(!t)return;
+  const np=t.getAttribute("data-notpursuing"),rs=t.getAttribute("data-restore");
+  if(np&&okId(np)){const r=document.getElementById("np-r-"+np),n=document.getElementById("np-n-"+np);
+    put("backlogMeta/"+np,{removed:true,reason:r?r.value:"",note:n?n.value.slice(0,200):""});}
+  else if(rs&&okId(rs))put("backlogMeta/"+rs,{removed:false,reason:"",note:""});
+});
+let dragId=null;
+const rowOf=e=>e.target.closest?e.target.closest("tbody[data-id]"):null;
+const lower=(e,b)=>{const r=b.getBoundingClientRect();return e.clientY>r.top+r.height/2;};
+bodyEl.addEventListener("dragstart",e=>{const b=rowOf(e);if(!b||!db||!admin||b.getAttribute("draggable")!=="true"){e.preventDefault();return;}
+  dragId=b.getAttribute("data-id");b.classList.add("drag");try{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",dragId);}catch(_){}});
+bodyEl.addEventListener("dragover",e=>{if(!dragId)return;e.preventDefault();bodyEl.querySelectorAll(".over").forEach(r=>r.classList.remove("over"));const b=rowOf(e);if(b&&b.getAttribute("data-id")!==dragId)b.classList.add("over");});
+bodyEl.addEventListener("dragend",()=>{dragId=null;bodyEl.querySelectorAll(".drag,.over").forEach(r=>r.classList.remove("drag","over"));});
+bodyEl.addEventListener("drop",async e=>{e.preventDefault();const b=rowOf(e),id=dragId;dragId=null;if(!id||!b||!db)return;
+  try{const r=await dropAndWrite(db,S.epics,id,b.getAttribute("data-id"),lower(e,b),me,new Date().toISOString());
+    hintMsg=r.ok?"Order proposed for band "+r.proposal.band+". The agent applies it on the next refresh.":r.hint;}
+  catch(err){hintMsg="The proposal did not save. Reload and try again.";}
+  paint();});
+(async()=>{
+  const use=window.claude&&window.claude.use?n=>window.claude.use(n).catch(()=>null):()=>Promise.resolve(null);
+  const [d,u]=await Promise.all([use("db"),use("user")]);
+  db=d;
+  if(!db){
+    let snap=null;try{snap=JSON.parse(document.getElementById("pm-snapshot").textContent);}catch(_){}
+    if(snap&&typeof snap==="object"){const m=fromSnapshot(snap);S.epics=m.epics;S.info=m.info;S.standalone=true;S.ready=true;setLive("ok","Read-only copy");paint();}
+    else{setLive("err","Not connected");bodyEl.innerHTML='<div class="msg">Open this page signed in to claude.ai to see the backlog.</div>';}
+    return;
+  }
+  if(u){try{me=await u.id();}catch(_){me="";}admin=safe(()=>u.canEdit()===true,false);canWrite=safe(()=>u.can("data.write")!==false,true);}
+  let got=0;const ready=()=>{if(++got>=3){S.ready=true;setLive("ok","Live");}paint();};
+  const fail=e=>setLive("err",e&&e.code==="revoked"?"Access changed. Reload the page.":"Lost the connection. Reload the page.");
+  db.collection("epics").onSnapshot(s=>{S.epics=withId(s);ready();},fail);
+  db.collection("backlogMeta").onSnapshot(s=>{const m=Object.create(null);s.docs.forEach(x=>{m[x.id]=x.data();});S.meta=m;ready();},fail);
+  db.collection("page").onSnapshot(s=>{const i=s.docs.find(x=>x.id==="info");S.info=i?i.data():{};ready();},fail);
+})();
+})();
+</script>

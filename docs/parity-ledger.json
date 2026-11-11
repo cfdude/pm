@@ -34,6 +34,15 @@
       "platforms": { "claude-code": "slash command (/pm:boards) documenting the read-only `board --json` snapshot" }
     },
     {
+      "id": "project-boards",
+      "artifacts": [
+        "skills/project-boards/SKILL.md",
+        "skills/project-boards/templates/backlog.html",
+        "skills/project-boards/templates/release-plan.html"
+      ],
+      "platforms": { "claude-code": "skill loaded by name or by /pm:boards; publishes the backlog and release-plan pages with the Artifact tool and refreshes them through ArtifactData from `board --json`" }
+    },
+    {
       "id": "project-mission",
       "artifacts": [
         "commands/mission.md"
