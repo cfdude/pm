@@ -107,7 +107,7 @@ its members, and each member missing a Gate 2 verdict. It stores nothing.
 
 **The plan fields.** `release <id> [--theme "<line>"] [--rationale "<line>"] [--exit "<runnable check>"] [--order <n>] [--size major|minor|patch]`
 records a release's plan, each text field one line of at most 400 characters. `--clear <field>` (repeatable) removes
-`theme`, `rationale`, `exit`, `order` or `size`. The release's status is never stored: `planned`, `in-progress` or
+`theme`, `rationale`, `exit`, `order`, `size` or `target`. The release's status is never stored: `planned`, `in-progress` or
 `shipped` is derived from `--deliver` and the members, and `release show` prints it with the order and size.
 `release here <id> [--text "<line>"] [--next "<line>"]` records where the project is (`here` is a reserved release id), and
 `release here --clear-here` removes it. `release show` marks the `here` release `(here)`, and, once a mission milestone

@@ -88,6 +88,8 @@ const VERB_BASELINE = {
   // project-boards: `board` is read-only and `--archived` takes a bound; the bare form is its working baseline.
   board: () => ["board"],
   mission: () => ["mission", "--statement", "ship it", "--reason", "baseline"],
+  // project-boards 8.3: the project key alone is a working baseline; `--unset` and `--name` take values.
+  "set-project": () => ["set-project", "--key", "PM"],
   overhead: () => ["overhead"],
   // developer-session-log: with the log off `dev-log` reads nothing, so the valueless sweep reaches its flags cheaply.
   "dev-log": () => ["dev-log"],

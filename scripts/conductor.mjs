@@ -59,6 +59,7 @@
  *                  which is why it is a re-runnable verb and not a MIGRATIONS body
  *   board          READ-ONLY: the versioned snapshot the project boards read (`--json`; `--archived <n>|all`)
  *   set-boards     turn the project boards on or off (default on): the `## Boards` rules-block section and the brief's boards line
+ *   set-project    record the project name and its two- or three-letter key (the epic keys the boards show); `--unset <name|key>` removes one
  *   mission        record the project mission (with history), its mission milestone release and exit criteria;
  *                  `mission show [--history]` reads it back. Rewrites the `## Mission` rules-block section
  *   unconsidered-outcomes  READ-ONLY: the archived epics whose outcome NOBODY CONSIDERED —
@@ -145,6 +146,7 @@ import { list } from "./lib/list.mjs";
 import { board } from "./lib/board.mjs";
 import { setBoards } from "./lib/set-boards.mjs";
 import { mission } from "./lib/mission.mjs";
+import { setProject } from "./lib/set-project.mjs";
 import { overhead } from "./lib/overhead.mjs";
 import { setDevLog } from "./lib/dev-log.mjs";
 import { devLogVerb } from "./lib/dev-log-report.mjs";
@@ -259,7 +261,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|board|set-boards|mission|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|board|set-boards|set-project|mission|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -476,6 +478,7 @@ function runInvocation(argv, io = {}) {
     list,
     board,
     "set-boards": setBoards,
+    "set-project": setProject,
     mission,
     overhead,
     "set-autonomy": setAutonomy,

@@ -26,6 +26,8 @@ import { resolveEpics } from "./epic-progress.mjs";
 import { criticalPathOf, orderOfRelease, releaseStatus } from "./release-plan.mjs";
 import { pluginVersion } from "./plugin-meta.mjs";
 import { boardsEnabled } from "./boards-switch.mjs";
+import { epicKey } from "./epic-number.mjs";
+import { projectKeyError, projectNameError } from "./project-identity.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, outStream } from "./invocation.mjs";
 
@@ -42,7 +44,7 @@ export const DEFAULT_ARCHIVED_WINDOW = 50;
 
 /** Every reason a `rejected` entry may carry. Closed: no other spec adds one without adding it here. */
 export const REJECTED_REASONS = [
-  "id format", "dangling depends-on", "url scheme", "here names no release", "milestone names no release",
+  "id format", "dangling depends-on", "url scheme", "here names no release", "milestone names no release", "project format",
 ];
 
 const PRIORITY_KEYS = ["P0", "P1", "P2", "P3", "P?"];
@@ -54,6 +56,14 @@ const time = (v) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? D
 /** The time an epic ended: the disposition's `recordedAt`, else `completedAt`, else null. */
 function endedAtOf(e) {
   return str(e.disposition && e.disposition.recordedAt) || str(e.completedAt) || null;
+}
+
+/** A release's progress over its members' ENTRIES (the values the epic rows carry, so the two cannot disagree): `total` counts every
+ *  member whose outcome (`outcomeById`, the one outcomeOf() read per epic) is not `declined`, `done` those whose `delivered` is true. Read over every member in the record, never the
+ *  ended-epic window, because the caller hands it entries built before the window is applied. */
+function progressOf(entries, outcomeById) {
+  const counted = entries.filter(x => outcomeById.get(x.id) !== "declined");
+  return { done: counted.filter(x => x.delivered === true).length, total: counted.length };
 }
 
 /** The snapshot. Pure over (state, resolved). `resolved` is resolveEpics(state)'s output (or any list of
@@ -101,9 +111,24 @@ export function boardSnapshot(state, resolved, opts = {}) {
   }
   const statusOf = new Map(registered.map(e => [e.id, e.status]));
 
+  // ── project: the name and key `set-project` records. Nothing is derived: unset (or invalid) is null. ──
+  const projectField = (raw, field, check) => {
+    if (raw === undefined || raw === null) return null;
+    if (check(raw) === null) return raw;
+    reject("project", null, field, raw, "project format");
+    return null;
+  };
+  const project = {
+    name: projectField(state && state.projectName, "projectName", projectNameError),
+    key: projectField(state && state.projectKey, "projectKey", projectKeyError),
+  };
+
+  /** id -> the outcome entryOf() read for that epic through outcomeOf(), so progressOf() never reads an outcome off anything itself. */
+  const outcomeById = new Map();
   const entryOf = (e) => {
     const archivedNow = e.status === "archived";
     const outcome = e.disposition ? outcomeOf(e) : null;
+    outcomeById.set(e.id, outcome);
     const delivered = archivedNow
       ? (outcome === "delivered" ? true : (outcome === null || outcome === "unknown" ? null : false))
       : false;
@@ -125,6 +150,8 @@ export function boardSnapshot(state, resolved, opts = {}) {
     }
     return {
       id: e.id,
+      number: Number.isSafeInteger(e.number) && e.number > 0 ? e.number : null,
+      key: epicKey({ projectKey: project.key }, e),
       title: str(e.title),
       summary: str(e.summary),
       whyNow: str(e.whyNow),
@@ -196,6 +223,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
   const plan = { here, hereText: str(rp.hereText), nextText: str(rp.nextText) };
 
   // ── releases ──
+  const entryById = new Map([...open, ...endedAll].map(x => [x.id, x]));
   const relEntries = [];
   for (const r of releases) {
     if (!isId(r.id)) { reject("release", r.id, "id", r.id, "id format"); continue; }
@@ -219,6 +247,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
       id: r.id, intent: str(r.intent), target: str(r.target), theme: str(r.theme), rationale: str(r.rationale),
       exit: str(r.exit), order, size: str(r.size), status, delivered,
       criticalPath: milestoneRelease === null ? null : criticalPathOf(r, state),
+      progress: progressOf(members.map(id => entryById.get(id)).filter(Boolean), outcomeById),
       members, deferred,
     });
   }
@@ -247,6 +276,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
     pmVersion: str(pmVersion),
     asOf,
     boardsEnabled: boardsEnabled(state),
+    project,
     counts,
     mission,
     milestone,

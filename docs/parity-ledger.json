@@ -50,6 +50,13 @@
       "platforms": { "claude-code": "slash command (/pm:mission) recording the mission, its mission milestone and exit criteria" }
     },
     {
+      "id": "project-identity",
+      "artifacts": [
+        "commands/set-project.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:set-project) recording the project name and the two- or three-letter key the boards show on every epic" }
+    },
+    {
       "id": "disposition-audit",
       "artifacts": [
         "commands/unconsidered-outcomes.md"

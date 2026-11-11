@@ -23,13 +23,14 @@ const archivedEpic = (id, over = {}) => epic(id, { status: "archived", dispositi
 unitTest("board: an empty record has every top-level key, null mission/milestone/plan.here and empty lists", () => {
   const s = snap(record());
   assert.deepEqual(Object.keys(s).sort(), [
-    "asOf", "boardsEnabled", "counts", "epics", "milestone", "mission", "plan", "pmVersion", "rejected", "releases", "schemaVersion",
+    "asOf", "boardsEnabled", "counts", "epics", "milestone", "mission", "plan", "pmVersion", "project", "rejected", "releases", "schemaVersion",
   ]);
   assert.equal(s.schemaVersion, 1);
   assert.equal(s.mission, null);
   assert.equal(s.milestone, null);
   assert.equal(s.plan.here, null);
   assert.deepEqual([s.releases, s.epics, s.rejected], [[], [], []]);
+  assert.deepEqual(s.project, { name: null, key: null }, "nothing is derived: unset stays null");
   assert.equal(s.boardsEnabled, true);
   assert.ok(Number.isFinite(Date.parse(s.asOf)));
 });
@@ -108,8 +109,8 @@ unitTest("board: time fields come from the record, each null when absent", () =>
 unitTest("board: every field is carried and a non-string where a string is expected reads null", () => {
   const e = byId(snap(record([epic("a", { summary: "s", whyNow: "w", description: "d", title: 7 })])), "a");
   assert.deepEqual(Object.keys(e).sort(), [
-    "createdAt", "delivered", "dependsOn", "description", "endedAt", "externalUrl", "id", "lane", "meritPriority", "outcome",
-    "outcomeReason", "position", "priority", "rank", "release", "status", "summary", "title", "updatedAt", "whyNow",
+    "createdAt", "delivered", "dependsOn", "description", "endedAt", "externalUrl", "id", "key", "lane", "meritPriority", "number",
+    "outcome", "outcomeReason", "position", "priority", "rank", "release", "status", "summary", "title", "updatedAt", "whyNow",
   ]);
   assert.equal(e.summary, "s");
   assert.equal(e.whyNow, "w");
@@ -263,7 +264,8 @@ unitTest("board: releases are listed in plan order with their plan fields, absen
   assert.deepEqual(s.releases.map(r => r.id), ["r1", "r2", "rx"]);
   assert.deepEqual(s.releases[1], {
     id: "r2", intent: "two", target: null, theme: "t", rationale: "why", exit: "e", order: 2, size: "minor",
-    status: "planned", delivered: false, criticalPath: null, members: ["m"], deferred: [{ epic: "m", reason: "cut" }],
+    status: "planned", delivered: false, criticalPath: null, progress: { done: 0, total: 1 }, members: ["m"],
+    deferred: [{ epic: "m", reason: "cut" }],
   });
   assert.equal(s.releases[2].intent, null);
 });
@@ -321,4 +323,72 @@ unitTest("board: the verb is declared read-only with an exercise list", () => {
 
 unitTest("board: an unknown flag is refused", () => {
   expectFail(() => memoryEngine(record())(["board", "--json", "--nonsense", "1"]));
+});
+
+// ─────────── project-boards 8.4: project, number, key, progress ───────────
+
+unitTest("project: name and key are emitted as recorded, null while unset, and nothing is derived", () => {
+  assert.deepEqual(snap(record([], { projectName: "Project Manager", projectKey: "PM" })).project, { name: "Project Manager", key: "PM" });
+  assert.deepEqual(snap(record([], { projectKey: "PM" })).project, { name: null, key: "PM" });
+  assert.deepEqual(snap(record([epic("pm-thing")])).project, { name: null, key: null }, "an id or a directory name is not a project name");
+});
+
+unitTest("project: an invalid stored name or key is nulled and named with the closed reason `project format`", () => {
+  const s = snap(record([epic("a", { number: 3 })], { projectKey: "pm<x", projectName: "x".repeat(61) }));
+  assert.deepEqual(s.project, { name: null, key: null });
+  assert.deepEqual(s.rejected.map(x => [x.kind, x.id, x.field, x.reason]).sort(), [
+    ["project", null, "projectKey", "project format"], ["project", null, "projectName", "project format"],
+  ]);
+  assert.equal(byId(s, "a").key, null, "an invalid key is never joined to a number");
+  const t = snap(record([], { projectName: "a\nb", projectKey: "A" }));
+  assert.equal(t.project.name, null);
+  assert.equal(t.project.key, null);
+  assert.equal(snap(record([], { projectName: "a<b" })).project.name, null);
+});
+
+unitTest("epic number and key: number as recorded, key = projectKey-number, both null while missing", () => {
+  const s = snap(record([epic("a", { number: 256 }), epic("b"), epic("c", { number: 0 }), epic("d", { number: 1.5 }), epic("e", { number: "7" })], { projectKey: "PM" }));
+  assert.deepEqual([byId(s, "a").number, byId(s, "a").key], [256, "PM-256"]);
+  for (const id of ["b", "c", "d", "e"]) assert.deepEqual([byId(s, id).number, byId(s, id).key], [null, null], id);
+  const unset = snap(record([epic("a", { number: 256 })]));
+  assert.deepEqual([byId(unset, "a").number, byId(unset, "a").key], [256, null], "no project key, no displayed key");
+});
+
+unitTest("epic key: changing the project key renames every key and rewrites no epic", () => {
+  const engine = memoryEngine(record([epic("a", { number: 256 })], { projectKey: "PM" }));
+  assert.equal(byId(JSON.parse(engine(["board", "--json"])), "a").key, "PM-256");
+  const before = JSON.stringify(engine.store.record().epics);
+  engine(["set-project", "--key", "PX"]);
+  assert.equal(byId(JSON.parse(engine(["board", "--json"])), "a").key, "PX-256");
+  assert.equal(JSON.stringify(engine.store.record().epics), before);
+});
+
+unitTest("release progress: delivered over every non-declined member, from the same values the epic rows carry", () => {
+  const s = snap(record([
+    archivedEpic("d1", { release: "r1" }), archivedEpic("d2", { release: "r1" }),
+    epic("open", { release: "r1" }),
+    archivedEpic("no", { release: "r1", disposition: disp("declined") }),
+    archivedEpic("killed", { release: "r1", disposition: disp("killed") }),
+  ], { releases: [{ id: "r1", intent: "i", deferred: [] }, { id: "r2", intent: "empty", deferred: [] }] }));
+  assert.deepEqual(s.releases.find(r => r.id === "r1").progress, { done: 2, total: 4 });
+  assert.deepEqual(s.releases.find(r => r.id === "r2").progress, { done: 0, total: 0 });
+  const done = s.epics.filter(e => e.release === "r1" && e.delivered === true).length;
+  assert.equal(done, s.releases.find(r => r.id === "r1").progress.done, "progress cannot disagree with the epic rows");
+});
+
+unitTest("release progress: members outside the ended-epic window still count", () => {
+  const epics = ["a", "b", "c"].map((id, i) => archivedEpic(id, { release: "r1", disposition: disp("delivered", { recordedAt: `2026-10-0${i + 1}T00:00:00Z` }) }));
+  const s = snap(record(epics, { releases: [{ id: "r1", intent: "i", deferred: [] }] }), ["--archived", "1"]);
+  assert.equal(s.epics.length, 1);
+  assert.deepEqual(s.releases[0].progress, { done: 3, total: 3 });
+});
+
+unitTest("release progress: an ended epic with an unknown outcome is in the total and not in done", () => {
+  const s = snap(record([archivedEpic("u", { release: "r1", disposition: { outcome: "unknown", reason: "r", recordedAt: "2026-11-01T00:00:00Z", recordedBy: "engine:archive-backfill" } })],
+    { releases: [{ id: "r1", intent: "i", deferred: [] }] }));
+  assert.deepEqual(s.releases[0].progress, { done: 0, total: 1 });
+});
+
+unitTest("board: schemaVersion stays 1 — the project, number, key and progress keys are additive", () => {
+  assert.equal(snap(record()).schemaVersion, 1);
 });

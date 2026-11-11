@@ -11,8 +11,9 @@ import { escapeControls, findRelease } from "./constants.mjs";
 export const PLAN_TEXT_MAX = 400;
 /** The "we are here" and "next up" lines: one line, at most this many characters. */
 export const PLAN_LINE_MAX = 200;
-/** The clearable plan fields, in the order they are listed in a refusal. */
-export const PLAN_FIELDS = ["theme", "rationale", "exit", "order", "size"];
+/** The clearable plan fields, in the order they are listed in a refusal. `target` is a field `--target` has always set; it joined the
+ *  clearable list in project-boards 8.5 so it has an inverse. `intent` has none: a release with no intent is the failure its creation refuses. */
+export const PLAN_FIELDS = ["theme", "rationale", "exit", "order", "size", "target"];
 /** The text ones among them. */
 export const PLAN_TEXT_FIELDS = ["theme", "rationale", "exit"];
 /** `--size` is the semver impact. */

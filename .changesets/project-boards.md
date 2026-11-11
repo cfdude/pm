@@ -46,3 +46,16 @@
   Every value the templates draw is escaped, priority is allowlisted to `P0`..`P3` or `P?`, ids must match `/^[A-Za-z0-9._-]+$/`,
   only http and https URLs become links, each render step has its own error boundary, and a host with no Artifact tool gets a
   read-only standalone file whose inlined JSON escapes `<` as `\u003c`. `/pm:boards` loads the skill and stops while boards are off.
+* **`set-project`: the project's name and key, and a number on every epic.** `set-project --name "<name>" --key <KEY>` records the project name
+  (at most 60 characters, no `<`, no control character) and a two- or three-letter key; either alone, and `--unset name|key` removes one. The
+  engine never invents either. Every epic now carries an integer `number`, assigned when it is registered (`add-epic`, `add-many` and `sync`):
+  a tracker issue number when the epic's `externalId` is a plain positive integer no other epic holds, otherwise the next number from a counter
+  that only moves forward. A number is never reassigned or freed by a plain registration. The key a board shows is `<KEY>-<number>` (`PM-256`),
+  computed on read, so changing the key renames them all. `upgrade` (a `MIGRATIONS` entry keyed to 0.55.0, also run on every `upgrade`) numbers the
+  epics that have none: tracker-linked ones by their issue number first, then the rest in registration order. A backfilled number is not a touch.
+* **`board --json` carries the project, each epic's key and each release's progress.** A top-level `project: {name, key}` (`null` while unset),
+  each epic's `number` and `key` (`null` while the project key is unset), and each release's `progress: {done, total}` (members delivered over members
+  not declined, over every member, not only the ended window). An invalid stored name or key is nulled and named in `rejected[]` as `project format`.
+  `schemaVersion` stays 1.
+* **`release --clear target`, and `release --help` names every plan verb.** `--clear` now accepts `target` (the inverse of `--target`), and the
+  `release` help text and its missing-id usage name `release here`, the plan fields and the clearable fields.

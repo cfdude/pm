@@ -1,0 +1,375 @@
+✖ board: an empty record has every top-level key, null mission/milestone/plan.here and empty lists (4.329375ms)
+✔ board: boardsEnabled is false only when the switch is recorded off (0.743917ms)
+✔ board: the mission, milestone and plan shapes (0.508417ms)
+✔ board: open epics come in the resolveEpics() order, with position, and carry rank and both priorities (0.670208ms)
+✔ board: a lifted blocker shows its effective and merit priorities (0.390333ms)
+✔ board: an unregistered change is counted and not listed (0.091416ms)
+✔ board: time fields come from the record, each null when absent (4.838041ms)
+✖ board: every field is carried and a non-string where a string is expected reads null (0.480625ms)
+✔ board: delivered has three states, all five cases (1.010292ms)
+✔ board: an engine stamp carrying delivered reads true (0.448167ms)
+✔ board: the ended-epic window defaults to 50, most recently ended first, after the open epics (2.043291ms)
+✔ board: epics that ended with no time come last, ordered by id (0.481334ms)
+✔ board: --archived <n> sets the window and --archived all includes everything (2.798209ms)
+✔ board: a bad --archived bound is refused, names the accepted values and prints no JSON (1.0225ms)
+✔ board: dependsOn resolves depends-on links only, in order and without duplicates (0.38625ms)
+✔ board: a dangling depends-on target is left out and reported (0.337125ms)
+✔ board: a malformed epic id is excluded and named, and the exit code is 0 (0.305958ms)
+✔ board: a malformed reference is nulled and named, for the epic's release and plan.here alike (0.285959ms)
+✔ board: a malformed release member and a malformed dependsOn target leave their lists (0.303917ms)
+✔ board: id format wins over a stale plan.here, which yields exactly one entry (0.235625ms)
+✔ board: a plan.here naming no release, and a milestone naming no release, are reported and nulled (0.252084ms)
+✔ board: externalUrl is emitted only for http and https, else null and reported (0.359ms)
+✔ board: control characters in a rejected value are escaped (0.251625ms)
+✖ board: releases are listed in plan order with their plan fields, absent fields null (0.489833ms)
+✔ board: release status is derived, never read from the record (1.658083ms)
+✔ board: critical path follows order from the milestone (0.593334ms)
+✔ board: counts partition the archived epics and the open ones (0.457208ms)
+✔ board: plain board prints the open count, the here release (or none) and the mission (or no mission) (0.906625ms)
+✔ board: the verb is declared read-only with an exercise list (0.044666ms)
+✔ board: an unknown flag is refused (0.28125ms)
+✖ project: name and key are emitted as recorded, null while unset, and nothing is derived (0.340709ms)
+✖ project: an invalid stored name or key is nulled and named with the closed reason `project format` (0.337166ms)
+✖ epic number and key: number as recorded, key = projectKey-number, both null while missing (0.4ms)
+✖ epic key: changing the project key renames every key and rewrites no epic (0.312042ms)
+✖ release progress: delivered over every non-declined member, from the same values the epic rows carry (0.395958ms)
+✖ release progress: members outside the ended-epic window still count (0.361792ms)
+✖ release progress: an ended epic with an unknown outcome is in the total and not in done (0.310334ms)
+✔ board: schemaVersion stays 1 — the project, number, key and progress keys are additive (0.217542ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 28
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 179.787542
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ board: an empty record has every top-level key, null mission/milestone/plan.here and empty lists (4.329375ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      'asOf',
+      'boardsEnabled',
+      'counts',
+      'epics',
+  ...
+      'pmVersion',
+  -   'project',
+      'rejected',
+      'releases',
+      'schemaVersion'
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:25:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [
+      'asOf',          'boardsEnabled',
+      'counts',        'epics',
+      'milestone',     'mission',
+      'plan',          'pmVersion',
+      'rejected',      'releases',
+      'schemaVersion'
+    ],
+    expected: [
+      'asOf',      'boardsEnabled',
+      'counts',    'epics',
+      'milestone', 'mission',
+      'plan',      'pmVersion',
+      'project',   'rejected',
+      'releases',  'schemaVersion'
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ board: every field is carried and a non-string where a string is expected reads null (0.480625ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      'createdAt',
+      'delivered',
+      'dependsOn',
+      'description',
+  ...
+      'id',
+  -   'key',
+      'lane',
+      'meritPriority',
+  -   'number',
+      'outcome',
+      'outcomeReason',
+      'position',
+      'priority',
+      'rank',
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:111:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [
+      'createdAt',     'delivered',
+      'dependsOn',     'description',
+      'endedAt',       'externalUrl',
+      'id',            'lane',
+      'meritPriority', 'outcome',
+      'outcomeReason', 'position',
+      'priority',      'rank',
+      'release',       'status',
+      'summary',       'title',
+      'updatedAt',     'whyNow'
+    ],
+    expected: [
+      'createdAt',     'delivered',
+      'dependsOn',     'description',
+      'endedAt',       'externalUrl',
+      'id',            'key',
+      'lane',          'meritPriority',
+      'number',        'outcome',
+      'outcomeReason', 'position',
+      'priority',      'rank',
+      'release',       'status',
+      'summary',       'title',
+      'updatedAt',     'whyNow'
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ board: releases are listed in plan order with their plan fields, absent fields null (0.489833ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      criticalPath: null,
+      deferred: [
+        {
+          epic: 'm',
+  ...
+      order: 2,
+  -   progress: {
+  -     done: 0,
+  -     total: 1
+  -   },
+      rationale: 'why',
+      size: 'minor',
+      status: 'planned',
+      target: null,
+      theme: 't'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:265:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { id: 'r2', intent: 'two', target: null, theme: 't', rationale: 'why', exit: 'e', order: 2, size: 'minor', status: 'planned', delivered: false, criticalPath: null, members: [ 'm' ], deferred: [ [Object] ] },
+    expected: { id: 'r2', intent: 'two', target: null, theme: 't', rationale: 'why', exit: 'e', order: 2, size: 'minor', status: 'planned', delivered: false, criticalPath: null, progress: { done: 0, total: 1 }, members: [ 'm' ], deferred: [ [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ project: name and key are emitted as recorded, null while unset, and nothing is derived (0.340709ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   key: 'PM',
+  -   name: 'Project Manager'
+  - }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:331:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { name: 'Project Manager', key: 'PM' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ project: an invalid stored name or key is nulled and named with the closed reason `project format` (0.337166ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   key: null,
+  -   name: null
+  - }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:338:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { name: null, key: null },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ epic number and key: number as recorded, key = projectKey-number, both null while missing (0.4ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   undefined,
+  +   undefined
+  -   256,
+  -   'PM-256'
+    ]
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:351:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined, undefined ],
+    expected: [ 256, 'PM-256' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ epic key: changing the project key renames every key and rewrites no epic (0.312042ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'PM-256'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:359:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'PM-256',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ release progress: delivered over every non-declined member, from the same values the epic rows carry (0.395958ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   done: 2,
+  -   total: 4
+  - }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:373:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { done: 2, total: 4 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ release progress: members outside the ended-epic window still count (0.361792ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   done: 3,
+  -   total: 3
+  - }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:383:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { done: 3, total: 3 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ release progress: an ended epic with an unknown outcome is in the total and not in done (0.310334ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   done: 0,
+  -   total: 1
+  - }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/board-export.test.mjs:389:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { done: 0, total: 1 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

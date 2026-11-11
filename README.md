@@ -1842,6 +1842,8 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 
 The project boards (`rules:boards`, `brief:boards`) are the one **default-on** switch: an absent setting reads as on, `init` never writes it,
 `set-boards off` records it and `set-boards on` removes it again. `board --json` is a read and works whichever way the switch is set.
+`set-project --name "<name>" --key <KEY>` records the project name and the two- or three-letter key the boards show on every epic (`PM-256`); it writes
+`state.json` only, so it adds no always-loaded bytes, and `--unset name|key` removes either.
 
 Features that inject nothing of their own: `reviewMode` (`set-review-mode`), `laneRouting` (`set-lane-routing`),
 `activityLog` (`set-activity-log`) and the developer session log (`set-dev-log on`, off by default, needs spend

@@ -1029,6 +1029,10 @@ export const VERB_FLAGS = [
   { flag: "check", commands: ["mission"], requires: "one line of at most 300 characters (how to check it)" },
   { flag: "needs-human", commands: ["mission"], valueless: true },
   { flag: "history", commands: ["mission"], valueless: true },
+  // `set-project` (project-boards 8.3): the project name and key, each removed by `--unset`.
+  { flag: "name", commands: ["set-project"], requires: "a project name of at most 60 characters" },
+  { flag: "key", commands: ["set-project"], requires: "two or three uppercase letters, such as PM" },
+  { flag: "unset", commands: ["set-project"], repeats: true, placeholder: "name|key" },
   // `board` (project-boards): the ended-epic window. The value is validated by the verb, which names "a positive
   // integer or all"; the row makes the flag declared and its valueless form a refusal.
   { flag: "archived", commands: ["board"], requires: "a positive integer or all" },
@@ -1109,7 +1113,7 @@ export const VERB_FLAGS = [
  *  of the change. A verb having flags says nothing about whether its positionals need explaining. */
 export const POSITIONAL_USAGE = {
   "set-gate-guard": "set-gate-guard on|off   — set it\n  set-gate-guard          — READ it: the current value, what it enforces, and whether anything is blocked right now",
-  release: "release <id> --intent \"<what this release is for>\" …   — create or amend one\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
+  release: "release <id> --intent \"<what this release is for>\" …   — create or amend one; also --target, --theme, --rationale, --exit, --order <n>, --size major|minor|patch, --member/--unmember, --defer/--undefer, --deliver/--undeliver. `--clear <field>` unsets theme, rationale, exit, order, size and target (intent has no clear)\n  release here <id> [--text \"<line>\"] [--next \"<line>\"]   — record WHERE THE PROJECT IS (the plan marker, a \"we are here\" and a \"next up\" line); release here --clear-here removes the marker and both lines. `here` is RESERVED as a release id\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
 };
 
 /** every-verb-refuses-what-it-does-not-read — how many POSITIONAL arguments each dispatched verb
@@ -1164,6 +1168,8 @@ export const VERB_POSITIONALS = {
   "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   // project-boards: the boards switch, the positional `on|off` again.
   "set-boards": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  // project-boards 8.3: `set-project` reads flags only.
+  "set-project": P0,
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // decision-cost-log: both take the epic the decisions belong to.
   "record-decision": EPIC_ID, decisions: EPIC_ID,

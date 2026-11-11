@@ -42,6 +42,7 @@ const NO_EPIC_CHANGE = {
   "set-gate-guard": "the gate-guard toggle", "record-cross-spec-review": "a release-scope verdict",
   mission: "the mission record (state.mission) and the rules block",
   "set-boards": "the boards switch (state.boards) and the rules block",
+  "set-project": "the project name and key (state.projectName, state.projectKey)",
   "set-activity-log": "the activityLog switch", "dev-log": "the dev log under .conductor/spend/",
   "set-dev-log": "the devLog switch", "set-spend-tracking": "the spendTracking switch and rules block",
   spend: "the spend ledger", "spend-analysis": "reads the ledger", decisions: "reads the ledger",

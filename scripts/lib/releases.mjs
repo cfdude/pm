@@ -117,7 +117,8 @@ export function release() {
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     errStream().write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"] [--deliver | --undeliver]\n");
+    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--theme \"<line>\"] [--rationale \"<line>\"] [--exit \"<check>\"] [--order <n>] [--size major|minor|patch] [--clear <field>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"] [--deliver | --undeliver]\n");
+    errStream().write("       conductor.mjs release here <id> [--text \"<line>\"] [--next \"<line>\"]   — record where the project is; release here --clear-here removes it\n");
     die("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
@@ -163,7 +164,7 @@ export function release() {
       refuse(`--clear ${escapeControls(name)}: '${escapeControls(name)}' is not a release field this command can unset. ` +
         `Clearable fields: ${PLAN_FIELDS.join(", ")}. Nothing was written.`);
     }
-    if (planSet[name] !== undefined) {
+    if ((name === "target" ? f.target : planSet[name]) !== undefined) {
       refuse(`--clear ${escapeControls(name)} contradicts --${escapeControls(name)} in the same invocation — set it or unset it, not both. Nothing was written.`);
     }
   }

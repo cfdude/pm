@@ -236,22 +236,22 @@ The engine half only. The HTML templates and `skills/project-boards/SKILL.md` fo
       keyed to 0.55.0 and the same function on every `upgrade`. `store.mjs`'s per-record comparison also ignores `number`, so a
       backfill is a recovery and not a touch (no epic reads as last touched on upgrade day). The two functional upgrade tests
       (`conductor-15` 7.1, `conductor-39` 2.5) pin the new entry count. RED: `red-8.2.txt` (fails before 8.2, `upgrade` does not number).
-- [ ] 8.3 RED then GREEN (UNIT `project-identity.test.mjs`): `set-project --name --key` with `--unset <name|key>`; registry rows,
+- [x] 8.3 RED then GREEN (UNIT `project-identity.test.mjs`): `set-project --name --key` with `--unset <name|key>`; registry rows,
       `VERB_POSITIONALS`, `VERB_EFFECTS`, dispatch and `USAGE`, `commands/set-project.md`, the parity ledger claim.
-- [ ] 8.4 RED then GREEN (UNIT `board-export.test.mjs` additions): `project`, epic `number` and `key`, release `progress`, the
+- [x] 8.4 RED then GREEN (UNIT `board-export.test.mjs` additions): `project`, epic `number` and `key`, release `progress`, the
       `project` rejection kind. `schemaVersion` stays 1 (D21).
-- [ ] 8.5 Verify which verbs write each field the boards need, and make each discoverable from `--help` (UNIT):
+- [x] 8.5 Verify which verbs write each field the boards need, and make each discoverable from `--help` (UNIT):
       - release `theme`, `rationale`, `exit`, `order`, `size`: `release <id> --theme|--rationale|--exit|--order|--size`, each cleared
-        with `--clear <field>`; `target` and `intent`: `release <id> --target|--intent`, with NO clear for either (pre-existing; `target`
-        is overwritten, see design Inverses).
+        with `--clear <field>`; `target` and `intent`: `release <id> --target|--intent`. `intent` has no clear (a release with no
+        intent is what creation refuses). `target` had no inverse, so `--clear target` is added (the one code change in this task).
       - `plan.here`, `hereText`, `nextText`: `release here <id> [--text] [--next]`, removed together by `release here --clear-here`;
         no flag clears the text lines alone.
       - `mission.statement`, `milestone`, `criteria`: `mission --statement --reason`, `--end --reason`, `--milestone`,
         `--clear-milestone`, `--add-criterion [--check|--needs-human]`, `--remove-criterion`.
       - epic `summary`: `add-epic|update-epic|add-many --summary`, cleared with `update-epic <id> --clear summary` (an empty
         `--summary ""` is refused, not a clear). No code change.
-      The one gap was discoverability: the `release` usage text and its missing-id error never named `release here` or the plan
-      fields. Fixed in the same commit.
+      The other gap was discoverability: the `release` usage text and its missing-id error never named `release here` or the plan
+      fields. Fixed in the same commit. RED: `red-8.3.txt`, `red-8.4.txt`, `red-8.5.txt` (each fails before its own task).
 - [ ] 8.6 Required items for section 8 (CLAUDE.md "The gate procedure"):
       - **Call-site sweep (item 1).** `rg -n "pushEpic\(" scripts/lib` lists the five creation call sites (`add-epic.mjs`,
         `add-many.mjs`, `subcommands.mjs` x3). The rule is bound inside `pushEpic`, so all five hold it; the source scan in

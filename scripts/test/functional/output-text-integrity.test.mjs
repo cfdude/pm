@@ -1259,6 +1259,9 @@ recipe("release --clear", { exempt: "--clear must name a plan field this command
 recipe("release --text", { exempt: ONE_LINE("text", 200), run: (c, v) => pm(c.cwd, ["release", "here", "1.0.0", "--text", v]) });
 recipe("release --next", { exempt: ONE_LINE("next", 200), run: (c, v) => pm(c.cwd, ["release", "here", "1.0.0", "--next", v]) });
 recipe("board --archived", { exempt: "--archived is a positive integer or all, and anything else is refused", run: (c, v) => pm(c.cwd, ["board", "--json", "--archived", v]) });
+recipe("set-project --name", { exempt: "--name is a project name of at most 60 characters with no `<` and no control character, and the poison's line breaks are refused", run: (c, v) => pm(c.cwd, ["set-project", "--name", v]) });
+recipe("set-project --key", { exempt: "--key is two or three uppercase letters, and anything else is refused with a fixed message that does not echo it", run: (c, v) => pm(c.cwd, ["set-project", "--key", v]) });
+recipe("set-project --unset", { exempt: "--unset must name `name` or `key`, and anything else is refused with the value escaped", run: (c, v) => pm(c.cwd, ["set-project", "--unset", v]) });
 recipe("mission --statement", { exempt: ONE_LINE("statement", 300), run: (c, v) => pm(c.cwd, ["mission", "--statement", v, "--reason", "r"]) });
 recipe("mission --reason", { exempt: ONE_LINE("reason", 400), run: (c, v) => pm(c.cwd, ["mission", "--statement", "a statement", "--reason", v]) });
 recipe("mission --milestone", { exempt: "--milestone must name a declared release, and anything else is refused with the value escaped", run: (c, v) => pm(c.cwd, ["mission", "--milestone", v]) });

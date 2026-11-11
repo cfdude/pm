@@ -31,21 +31,22 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 ## The JSON shape (`schemaVersion` 1)
 
-An unknown value is `null` or `[]`, never omitted. A change to the meaning of an existing key increments `schemaVersion`.
+An unknown value is `null` or `[]`, never omitted. A change to the meaning of an existing key increments `schemaVersion`; keys added since (`project`, an epic's `number` and `key`, a release's `progress`) are additive and did not.
 
 | Key | Holds |
 | --- | --- |
 | `schemaVersion`, `pmVersion`, `asOf` | the integer `1`, the pm version, the time of the read |
 | `boardsEnabled` | `true` unless boards are recorded off |
+| `project` | `{name, key}` from `set-project`, each `null` while unset (nothing is derived: an unset project is a prompt to ask the user, never a guess) |
 | `counts` | `open`, `unregisteredChanges`, `unassigned`, `byPriority` (`P0`..`P3`, `P?`, by effective priority), and `delivered` / `notPursued` / `unknownOutcome` over the whole record, never only the window |
 | `mission` | `null` or `{statement, setAt, reason}` |
 | `milestone` | `null` or `{release, criteria: [{id, text, check, needsHuman}]}`, active criteria only, in id order |
 | `plan` | `{here, hereText, nextText}`, each `null` when unset |
-| `releases` | every release by `order` then id, unordered last: `id`, `intent`, `target`, `theme`, `rationale`, `exit`, `order`, `size`, `status` (`planned`, `in-progress` or `shipped`, derived), `delivered`, `criticalPath` (`null` with no milestone), `members`, `deferred` |
+| `releases` | every release by `order` then id, unordered last: `id`, `intent`, `target`, `theme`, `rationale`, `exit`, `order`, `size`, `status` (`planned`, `in-progress` or `shipped`, derived), `delivered`, `criticalPath` (`null` with no milestone), `progress` (`{done, total}`: members delivered over members not declined, over every member and not only the ended window), `members`, `deferred` |
 | `epics` | open epics first, then the ended window |
 | `rejected` | what was left out, each `{kind, id, field, value, reason}` |
 
-Each entry in `epics` carries `id`, `title`, `summary`, `whyNow`, `description`, `lane`, `status`, `priority` (effective),
+Each entry in `epics` carries `id`, `number` (its integer, or `null` on a record not yet upgraded to 0.55.0), `key` (`<KEY>-<number>`, `null` while the project key is unset), `title`, `summary`, `whyNow`, `description`, `lane`, `status`, `priority` (effective),
 `meritPriority`, `rank`, `position`, `release`, `externalUrl`, `dependsOn`, `delivered`, `outcome`, `outcomeReason`,
 `createdAt`, `endedAt` and `updatedAt`.
 
@@ -58,8 +59,8 @@ Each entry in `epics` carries `id`, `title`, `summary`, `whyNow`, `description`,
 - **Unregistered changes** (a change directory with no registered epic) are counted in `counts.unregisteredChanges` and not listed.
 - **`dependsOn`** lists the registered targets of the epic's `depends-on` links, in order, without duplicates. A target that names
   no epic is reported in `rejected`.
-- **`rejected` and its reasons.** `kind` is `epic`, `release`, `link`, `url`, `plan` or `milestone`. `reason` is `id format`,
-  `dangling depends-on`, `url scheme`, `here names no release` or `milestone names no release`. Every emitted id must match
+- **`rejected` and its reasons.** `kind` is `epic`, `release`, `link`, `url`, `plan`, `milestone` or `project`. `reason` is `id format`,
+  `dangling depends-on`, `url scheme`, `here names no release`, `milestone names no release` or `project format`. Every emitted id must match
   `/^[A-Za-z0-9._-]+$/` and `externalUrl` is emitted only when it is an absolute http or https URL, so a page can interpolate
   either without a second check of its own. `value` has its control characters escaped.
 

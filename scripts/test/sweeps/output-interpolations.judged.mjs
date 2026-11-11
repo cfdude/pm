@@ -40,6 +40,33 @@ x("render.mjs", "writeRenderStampLocked", {
 x("state.mjs", "seedCreationFields", {
   "EPIC_ID_FORMAT.source": 1,
 }, "engine", "InvalidEpicIdError's message (the scanner attributes the class to the declaration before it): the engine's own id regex source; the id itself is escaped");
+x("project-identity.mjs", "projectNameError", {
+  "[...name].length": 1,
+}, "engine", "a character count in the refusal text (project-boards 8.3), a number");
+x("set-project.mjs", "applyProject", {
+  "message": 1,
+}, "passthrough", "refuse()'s `${message} Nothing was written.`: every caller passes a literal or text it escaped where it built it (the unknown --unset value goes through escapeControls(JSON.stringify(u)))");
+x("set-project.mjs", "applyProject", {
+  "field": 4,
+}, "engine", "a registry field name from FIELDS (`name` or `key`), never caller text");
+x("set-project.mjs", "applyProject", {
+  "err": 2,
+}, "engine", "projectNameError()/projectKeyError()'s own fixed refusal text; it embeds only a character count");
+x("set-project.mjs", "applyProject", {
+  "u": 1,
+}, "engine", "an --unset value already checked against FIELDS (Object.hasOwn) before the loop that prints it, so it is `name` or `key`");
+x("set-project.mjs", "setProject", {
+  "r.message": 1,
+}, "passthrough", "applyProject()'s refusal text, composed and escaped where it was built, printed through die()");
+x("set-project.mjs", "setProject", {
+  "state.projectKey": 1,
+}, "engine", "the stored project key, which applyProject() validated against /^[A-Z]{2,3}$/ before saving");
+x("set-project.mjs", "setProject", {
+  "now": 2,
+}, "escaped", "`now` is built from escapeControls(JSON.stringify(name)) and the validated key");
+x("set-project.mjs", "setProject", {
+  "r.notes.length ? r.notes.map(escapeControls).join(\"; \") + \" — \" : \"\"": 1,
+}, "escaped", "each note through escapeControls");
 x("epic-number.mjs", "epicKey", {
   "key": 1,
   "epic.number": 1,

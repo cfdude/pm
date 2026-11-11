@@ -198,3 +198,31 @@ unitTest("here: --text, --next and --clear-here are refused on a plain release a
   refused(engine, ["release", "r1", "--clear-here"], /release here r1 --text/);
   refused(engine, ["release", "r1", "--intent", "y", "--text", "x"], /release here r1 --text/);
 });
+
+// project-boards 8.5: the verbs that write each field the boards read are discoverable from `--help` and from the missing-id usage.
+unitTest("discoverability: `release --help` names `release here`, the plan fields and the clear inverse", () => {
+  const help = memoryEngine(record())(["release", "--help"]);
+  for (const needle of ["release here <id>", "--text", "--next", "--clear-here", "--theme", "--rationale", "--exit", "--order", "--size", "--clear <field>"]) {
+    assert.ok(help.includes(needle), `release --help names ${needle}`);
+  }
+  assert.match(help, /theme, rationale, exit, order, size and target/, "the clearable fields are listed");
+  assert.match(help, /release show \[<id>\]/);
+});
+
+unitTest("discoverability: the missing-id usage names `release here` and the plan flags", () => {
+  const r = memoryEngine(record()).result(["release"]);
+  assert.notEqual(r.status, 0);
+  for (const needle of ["release here <id>", "--theme", "--order", "--size", "--clear <field>"]) {
+    assert.ok(r.stderr.includes(needle), `the usage names ${needle}`);
+  }
+});
+
+unitTest("target: `--clear target` is the inverse of `--target`, refuses to contradict it, and says when there was nothing to clear", () => {
+  const engine = memoryEngine(record([], [rel("r1", { target: "2026-12-01" })]));
+  engine(["release", "r1", "--clear", "target"]);
+  assert.equal("target" in engine.store.record().releases[0], false);
+  assert.equal(relOf(engine, "r1").target, null);
+  assert.match(engine.combined(["release", "r1", "--clear", "target"]), /no target set/);
+  refused(engine, ["release", "r1", "--target", "x", "--clear", "target"], /contradicts --target/);
+  refused(engine, ["release", "r1", "--clear", "intent"], /Clearable fields: theme, rationale, exit, order, size, target/);
+});

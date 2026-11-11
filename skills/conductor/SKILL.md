@@ -861,6 +861,11 @@ it waits on.
   milestone and the active exit criteria; `mission --statement "<one line>" --reason "<why>"`, `--end`, `--milestone <releaseId>`
   / `--clear-milestone` and `--add-criterion` / `--remove-criterion` write it. Releases at or before the mission milestone are
   critical path. See `commands/mission.md`.
+- What is the project called, and what key do its epics carry (`PM-256`)? `set-project --name "<name>" --key <KEY>` (two or three
+  uppercase letters; either alone; `--unset name|key` removes one). Every epic has an integer `number` assigned at registration (a
+  tracker issue number where free, else a counter that never goes back), and the key shown is `<KEY>-<number>`, so changing the key
+  renames them all. Never invent either value: while unset, `board --json` reports `project: {name: null, key: null}`, so ask the
+  user. See `commands/set-project.md`.
 - What does the whole board look like, as data? `board --json [--archived <n>|all]` (read-only): the counts, the
   mission and its milestone, the releases in plan order with a derived status, the open epics in `PROJECT.md`'s order,
   a window of recently ended epics, a three-state `delivered`, resolved `dependsOn`, and a `rejected[]` list for any

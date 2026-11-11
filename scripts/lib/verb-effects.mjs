@@ -138,6 +138,8 @@ export const VERB_EFFECTS = {
   "dev-log": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree: the ingest `spend` runs (rows, cursor, markers, devlog.jsonl, ingest lock; --no-ingest skips it); --clear removes devlog.jsonl only — never state.json and never a transcript" },
   // project-boards. The default-on boards switch: `off` records the setting, `on` removes it. It rewrites the managed block itself.
   "set-boards": { effect: "mutates", writes: "state.json (the boards switch), CLAUDE.md (the `## Boards` rules-block section), plus render()'s writes (PROJECT.md embeds the brief)" },
+  // project-boards 8.3. The project name and key: state.json only (neither value is in the rules block or PROJECT.md).
+  "set-project": { effect: "mutates", writes: "state.json (the project name and key); nothing else — no rules block, no render" },
   "set-dev-log": { effect: "mutates", writes: "state.json (the devLog switch); nothing else — it writes no rules block and no ledger file" },
   "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch), CLAUDE.md (the rules block), and the main working tree's .conductor/spend/timeline.jsonl" },
   // `detachedNoOp`: `spend` writes ONLY into the MAIN working tree's git-ignored .conductor/spend/ and

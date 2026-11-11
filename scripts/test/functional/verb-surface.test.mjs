@@ -470,6 +470,7 @@ const DISPATCH_BASELINE = {
   list: { args: ["list"] },
   board: { args: ["board"] },
   "set-boards": { args: ["set-boards", "off"] },
+  "set-project": { args: ["set-project", "--key", "PM"] },
   mission: { args: ["mission", "--statement", "ship it", "--reason", "baseline"] },
   overhead: { args: ["overhead"] },
   upgrade: { args: ["upgrade"] },

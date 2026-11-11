@@ -566,3 +566,138 @@ mutation: migrations.mjs: the whole `release: "0.55.0"` entry deleted (scripts/l
 run:      node --test scripts/test/functional/conductor-39.test.mjs
 result:   KILLED (1 fail: '2.5: the 0.40.0 migration recovers dates and leaves touchedAt ABSENT on pre-existing epics')
 restored: yes
+
+mutant 93 [8.3]: probe: set-project with no operation
+mutation: set-project.mjs: the no-operation refusal disabled (scripts/lib/set-project.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs
+result:   KILLED (1 fail: 'set-project: an unknown --unset field, no operation, and set-plus-unset of one field are refused')
+restored: yes
+
+mutant 94 [8.3]: probe: an unknown --unset field
+mutation: set-project.mjs: the unknown --unset field refusal disabled (scripts/lib/set-project.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs
+result:   KILLED (1 fail: 'set-project: an unknown --unset field, no operation, and set-plus-unset of one field are refused')
+restored: yes
+
+mutant 95 [8.3]: probe: set and unset of one field
+mutation: set-project.mjs: the set-and-unset contradiction refusal disabled (scripts/lib/set-project.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs
+result:   KILLED (1 fail: 'set-project: an unknown --unset field, no operation, and set-plus-unset of one field are refused')
+restored: yes
+
+mutant 96 [8.3]: probe: a bad name reaches the record
+mutation: set-project.mjs: the --name validation bypassed (scripts/lib/set-project.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs
+result:   KILLED (1 fail: 'set-project: bad keys and names are refused with the rule named, writing nothing')
+restored: yes
+
+mutant 97 [8.3]: probe: a bad key reaches the record
+mutation: set-project.mjs: the --key validation bypassed (scripts/lib/set-project.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs
+result:   KILLED (2 fail: 'set-project: bad keys and names are refused with the rule named, writing nothing')
+restored: yes
+
+mutant 98 [8.3]: probe: the same value twice writes nothing
+mutation: set-project.mjs: the already-holds-this-value guard removed (scripts/lib/set-project.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs
+result:   KILLED (1 fail: 'set-project: the same value twice writes nothing and says so')
+restored: yes
+
+mutant 99 [8.3]: probe: a name over 60 characters
+mutation: project-identity.mjs: the length bound loosened by 100 (scripts/lib/project-identity.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 100 [8.3]: probe: a `<` in a name
+mutation: project-identity.mjs: the `<` guard removed (scripts/lib/project-identity.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 101 [8.3]: probe: a control character in a name
+mutation: project-identity.mjs: the control-character guard removed (scripts/lib/project-identity.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 102 [8.3]: probe: a key of the wrong shape
+mutation: project-identity.mjs: PROJECT_KEY_FORMAT widened to /^[A-Za-z]{1,4}$/ (scripts/lib/project-identity.mjs)
+run:      node --test scripts/test/unit/project-identity.test.mjs scripts/test/unit/board-export.test.mjs
+result:   KILLED (3 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 103 [8.4]: probe: export: an invalid stored project value is nulled
+mutation: board.mjs: projectField emits the raw stored value without checking it (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 104 [8.4]: probe: export: an invalid value is named in rejected[]
+mutation: board.mjs: the rejected[] entry for an invalid project value removed (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 105 [8.4]: probe: export: the key is joined from the validated project key
+mutation: board.mjs: each epic's key built from a made-up key instead of the validated project key (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (3 fail: 'project: an invalid stored name or key is nulled and named with the closed reason `project format`')
+restored: yes
+
+mutant 106 [8.4]: probe: export: number must be a positive integer
+mutation: board.mjs: number emitted for any numeric value (0, 1.5) (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'epic number and key: number as recorded, key = projectKey-number, both null while missing')
+restored: yes
+
+mutant 107 [8.4]: probe: progress: declined members leave the total
+mutation: board.mjs: progressOf counts declined members in the total (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'release progress: delivered over every non-declined member, from the same values the epic rows carry')
+restored: yes
+
+mutant 108 [8.4]: probe: progress: done is delivered only
+mutation: board.mjs: done counts an unknown-outcome member (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'release progress: an ended epic with an unknown outcome is in the total and not in done')
+restored: yes
+
+mutant 109 [8.4]: probe: progress: members outside the window count
+mutation: board.mjs: progress read over the windowed ended epics instead of every ended epic (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'release progress: members outside the ended-epic window still count')
+restored: yes
+
+mutant 110 [8.5]: probe: --clear target is refused alongside --target
+mutation: releases.mjs: the --target / --clear target contradiction check reads only planSet (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: 'target: `--clear target` is the inverse of `--target`, refuses to contradict it, and says when there was nothing to clear')
+restored: yes
+
+mutant 111 [8.5]: probe: target is clearable
+mutation: release-plan.mjs: target removed from PLAN_FIELDS (scripts/lib/release-plan.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: 'target: `--clear target` is the inverse of `--target`, refuses to contradict it, and says when there was nothing to clear')
+restored: yes
+
+mutant 112 [8.5]: probe: release --help names release here
+mutation: constants.mjs: the `release here` line of the usage text renamed (scripts/lib/constants.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   SURVIVED (an EQUIVALENT mutant: the text it renamed was a comment on line 705, not the usage string); the mutation was redone on the real line, see mutant 112 below
+restored: yes
+
+mutant 112b [8.5]: probe: release --help names release here
+mutation: constants.mjs: the `release here` line of POSITIONAL_USAGE renamed (the first attempt hit a comment on line 705: an equivalent mutant, discarded) (scripts/lib/constants.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: 'discoverability: `release --help` names `release here`, the plan fields and the clear inverse')
+restored: yes
+
+20 mutants (93-112b) for project-boards 8.3 to 8.5: 19 killed on first run, 1 survived (equivalent, redone on the real line and killed). Running total: 112 mutants, 102 killed on first run, 10 survived (9 fixed and re-killed, 1 equivalent).
+
+mutant 107b [8.4]: probe: progress: declined members leave the total (rechecked after progressOf read outcomeById instead of an entry property)
+mutation: board.mjs: progressOf counts declined members in the total (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: 'release progress: delivered over every non-declined member, from the same values the epic rows carry')
+restored: yes
+(107b repeats 107 after the progressOf refactor required by conductor-13's outcomeOf rule; it is the same guard, killed again.)
