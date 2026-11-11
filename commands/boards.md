@@ -54,3 +54,29 @@ Each entry in `epics` carries `id`, `title`, `summary`, `whyNow`, `description`,
   `dangling depends-on`, `url scheme`, `here names no release` or `milestone names no release`. Every emitted id must match
   `/^[A-Za-z0-9._-]+$/` and `externalUrl` is emitted only when it is an absolute http or https URL, so a page can interpolate
   either without a second check of its own. `value` has its control characters escaped.
+
+## `set-boards on|off` — the switch
+
+The boards are **on by default**. An absent setting reads as on, `init` writes nothing for them, and `upgrade` lists
+`boards: on (default)` with the command that turns them off.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-boards on|off
+```
+
+If `${CLAUDE_PLUGIN_ROOT}` is empty:
+`ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-boards off`
+
+- `off` records `state.boards = {enabled: false}` and removes the `## Boards` section of the managed rules block and the boards line of
+  the SessionStart brief. `overhead` then reports 0 bytes for the `boards` feature.
+- `on` removes that setting again, so each undoes the other exactly, and the section and the brief line come back.
+- A repeat of either says so and writes no state (the rules block and `PROJECT.md` are re-rendered either way). Any argument other than `on`
+  or `off`, and a missing one, is refused.
+- `board --json` keeps working whichever way the switch is set, because it is a read.
+- Boards already published stay where they are: deleting a hosted page is the user's own action.
+- On the upgrade that crosses release 0.55.0, `upgrade` prints one extra line telling the agent to tell the user the boards are on by
+  default and that `set-boards off` turns them off. It is derived from the from- and to-versions, writes no state, and a second
+  upgrade prints nothing.
+
+Cost, measured by `overhead`: `rules:boards` is the `## Boards` section (at most 280 bytes) and `brief:boards` is the brief's boards line
+(at most 160 bytes), both under the `boards` feature. `brief` is measured without that line, so no byte is counted twice.

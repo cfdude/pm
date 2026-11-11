@@ -171,6 +171,9 @@ x("spend-tracking.mjs", "setSpendTracking", {
 x("dev-log.mjs", "setDevLog", {
   "arg": 4,
 }, "engine", "arg is validated on|off before these lines (the same shape as setSpendTracking above); the main tree's path in the refusals is escaped");
+x("set-boards.mjs", "setBoards", {
+  "arg": 1,
+}, "engine", "arg is validated on|off before this line (project-boards; the same shape as setSpendTracking above)");
 x("dev-log-capture.mjs", "keyOf", {
   "e.messageId": 1,
   "e.sessionId": 1,
@@ -567,7 +570,8 @@ x("overhead.mjs", "collectSurfaces", {
   "l.name": 1,
   "l.description": 1,
   "plain": 1,
-}, "sink-flow", "surface ids and sizes: they reach output only through overheadText's L.map(escapeControls) join or jsonText(); `plain` is concatenated to measure its byte length and never printed");
+  "boardsLine": 1,
+}, "sink-flow", "surface ids and sizes: they reach output only through overheadText's L.map(escapeControls) join or jsonText(); `plain` is concatenated to measure its byte length and never printed; `boardsLine` (project-boards) is the brief's boards-line literal, concatenated with a newline only to measure its byte length");
 x("overhead.mjs", "overhead", {
   "jsonText(report, null, 2)": 1,
 }, "json", "one JSON document through jsonText()");
@@ -800,6 +804,9 @@ x("opt-ins.mjs", "optInLines", {
   "o.missing": 1,
   "o.command": 1,
 }, "engine", "OPT_INS registry literals, and describe() output whose every state-derived value (reviewMode, tracker.system) goes through escapeControls inside the registry row; the override count is a number");
+x("migrations.mjs", "upgrade", {
+  "boardsNote": 1,
+}, "engine", "boardsAnnouncement()'s one line (project-boards): an engine literal and the BOARDS_RELEASE constant, built from no stored text; empty when upgrade does not cross that release");
 x("migrations.mjs", "upgrade", {
   "u": 1,
 }, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");

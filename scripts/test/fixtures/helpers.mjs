@@ -524,6 +524,10 @@ export const ALWAYS_ON_HEADINGS = [
   "## Epic-level autonomy",
   "## Procedures emitted on use",
 ];
+/** project-boards: the default-on `## Boards` pointer. No tracker configuration turns it on or off and the frozen 0.26.0 fixtures
+ *  predate it, so each side of a comparison drops it. It sits BEFORE the refresh gate, so it is removed first, as a section of its
+ *  own: by the time the generic reduce below runs, the refresh gate has already consumed the heading that would end it. */
+export const BOARDS_HEADING = "## Boards";
 export const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 
 export const stripAlwaysOn = (block) =>
@@ -531,7 +535,7 @@ export const stripAlwaysOn = (block) =>
     (b, heading) => b.replace(new RegExp(`${heading}[\\s\\S]*?(?=## )`), ""),
     // The refresh gate is last in the document, so it consumes to the END marker rather than to a
     // following heading — a different shape, hence outside the reduce.
-    block.replace(
+    block.replace(new RegExp(`\\n*${BOARDS_HEADING}\\n[\\s\\S]*?(?=${REFRESH_GATE_HEADING})`), "\n\n").replace(
       new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), ""),
   );
 

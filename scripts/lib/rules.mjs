@@ -31,6 +31,7 @@ import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
+import { BOARDS_SECTION, boardsSectionText } from "./boards-switch.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
 import { CONDITIONAL_SECTIONS, FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 
@@ -148,6 +149,12 @@ export function missionSectionText(state) {
 /** The `## Mission` text for the loaded record; "" when state cannot be consulted, like the other readers. */
 export function currentMissionSection() {
   try { return missionSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return ""; }
+}
+
+/** The `## Boards` text for the loaded record; the default-on text when state cannot be consulted, like the other readers
+ *  (over-emitting a pointer never drops a rule). */
+export function currentBoardsSection() {
+  try { return boardsSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return BOARDS_SECTION; }
 }
 
 /** The usage answers the rules block is rendered with: `rulesUsage()` over the loaded record. Falls back
@@ -671,7 +678,10 @@ function registrationStep(platform, tracker) {
     "   Never use double quotes: `$(…)`, backticks and `\"` inside them change the command. Keep",
     "   `--title=` and `--ask=` attached to their values: that is what lets a title that starts with",
     "   `-` reach the engine as a title.",
-    `   \`add-epic --id ${prefix}-${idPart} --title=<issue-title> --status untriaged --external-id ${keyPart} --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2\``,
+    `   \`add-epic --id ${prefix}-${idPart} --title=<issue-title> --status untriaged --external-id ${keyPart} --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2 --summary=<one-line summary>\``,
+    "   Write `<one-line summary>` from the item's body: one line, at most 200 characters, in your own",
+    "   words and never the raw body, as ONE single-quoted word like the other placeholders. When the",
+    "   body gives nothing to summarise, leave `--summary=` off rather than invent one.",
     ...(numeric ? [] : [
       "   `<issue-key-slug>` is the item's key lowercased with every run of characters outside `a-z0-9`",
       "   replaced by `-` (`ABC-123` → `abc-123`), so distinct keys derive distinct ids.",
@@ -766,7 +776,7 @@ export function proceduresEmittedOnUseLines(usage = FULL_USAGE) {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "") {
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "", boardsSection = BOARDS_SECTION) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -1145,6 +1155,13 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   // The refresh gate — instruction, always, whether or not any tracker is configured. It keys on
   // PROVENANCE, so it has something to say for every epic: the tracker-linked case records a
   // verdict, the local-origin case records nothing at all.
+  // The boards pointer (project-boards): default ON, so a caller that passes nothing gets it. It sits after the Feedback and tracker
+  // sections and BEFORE the closing one on purpose: the sections the byte-pinned fixtures slice up to a neighbour (Spend tracking,
+  // Release candidate, Execution profile) never gain it, and it is not the last section, which carries the END marker's bytes into
+  // its own overhead figure. Verb-refreshed (`set-boards`), outside CONDITIONAL_SECTIONS.
+  if (boardsSection) {
+    lines.push("", ...boardsSection.replace(/\{\{pm:([a-z-]+)\}\}/g, (_, name) => pmCmd(platform, name)).split("\n"));
+  }
   lines.push(
     "",
     "## Re-read the source before an epic becomes the work",
@@ -1314,7 +1331,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection());
   let next;
   // What this write says about itself, printed only AFTER the file is written: a write that fails must not
   // have claimed it refreshed the block or announced a section (gh-cfdude-pm-248 Gate 2 M2).

@@ -2,6 +2,7 @@
   "version": 1,
   "revision": 7,
   "pmVersion": "__PM_VERSION__",
+  "boards": { "enabled": false },
   "active": "alpha",
   "epics": [
     {

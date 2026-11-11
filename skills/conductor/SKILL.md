@@ -865,6 +865,10 @@ it waits on.
   mission and its milestone, the releases in plan order with a derived status, the open epics in `PROJECT.md`'s order,
   a window of recently ended epics, a three-state `delivered`, resolved `dependsOn`, and a `rejected[]` list for any
   id or URL it would not emit. Read this instead of `.conductor/state.json`. See `commands/boards.md`.
+- Turn the boards off or on? `set-boards on|off` (default ON, an absent setting reads as on; `off` records it and `on` removes it, so each
+  undoes the other and a repeat writes nothing). Off removes the `## Boards` rules-block section and the brief's boards line;
+  `board --json` still works. `upgrade` prints `boards: on (default)` and, once, on the upgrade that crosses 0.55.0, a line telling the
+  agent to tell the user. See `commands/boards.md`.
 - Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
   list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
   engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the

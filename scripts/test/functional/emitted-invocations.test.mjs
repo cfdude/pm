@@ -2386,7 +2386,9 @@ function fillRecipe(section, line, item) {
     .replace(/<issue-key-slug>/g, item.key.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
     .replace(/<issue-key>/g, () => itemValue(item.key))
     .replace(/<issue-number>/g, item.key)
-    .replace(/<lane>/g, "claude-code");
+    .replace(/<lane>/g, "claude-code")
+    // project-boards: the agent writes this one itself, from the item's body, so it is a fixed sentence quoted like the others.
+    .replace(/<one-line summary>/g, () => itemValue("what the item asks for, in one line"));
   if (listingFetchesUpdated(section)) out = out.replace(/<issue-updated-at>/g, AT);
   return out;
 }
@@ -3167,6 +3169,12 @@ const PRINTER_FIXTURES = {
       [repo.run(["mission"]), /mission show/],
       [repo.run(["mission", "--milestone", "nope"]), /release <id> --intent/],
       [repo.run(["mission", "--history"]), /mission show --history/],
+    ];
+  },
+  "set-boards off names the command that undoes it (project-boards)"() {
+    const repo = remedyRepo();
+    return [
+      [repo.run(["set-boards", "off"]), /set-boards on/],
     ];
   },
   "a release write on a detached checkout"() {

@@ -17,6 +17,8 @@
 
 import { escapeControls } from "./constants.mjs";
 import { guardConfigured } from "./spend-guard.mjs";
+import { BOARDS_RELEASE, boardsEnabled } from "./boards-switch.mjs";
+import { cmpVer } from "./plugin-meta.mjs";
 
 /** One row per opt-in. `isSet(state)` is the adoption test; `describe(state)` renders the adopted
  *  value; `missing` is what an unadopted repo is losing, in a clause; `command` is the adopting
@@ -90,7 +92,26 @@ export const OPT_INS = [
     command: "set-spend-guard --max-failed-rounds <n>",
     example: ["set-spend-guard", "--max-failed-rounds", "2"],
   },
+  {
+    // project-boards. The one DEFAULT-ON row: an absent setting reads as on, so a repo that never ran `set-boards` is adopted, and
+    // `upgrade` says so ("boards: on (default)") beside the command that turns it off. Never written by `init` or `upgrade`.
+    id: "boards", verb: "set-boards", doc: "boards",
+    isSet: (s) => boardsEnabled(s),
+    describe: (s) => (s.boards ? "boards: on" : "boards: on (default)"),
+    missing: "boards — the `## Boards` rules-block section and the brief's boards line are off",
+    command: "set-boards on",
+    example: ["set-boards", "off"],
+  },
 ];
+
+/** The one line `upgrade` adds when it moves a repo from below the release that ships the boards switch, or "" otherwise. Keyed on the
+ *  upgrade's from-version and to-version and written nowhere: it records no flag, so a repo that upgrades again says nothing.
+ *  PURE. The agent that reads it tells the user; the engine opens no channel of its own. */
+export function boardsAnnouncement(from, to) {
+  if (!from || !to) return "";
+  if (cmpVer(from, BOARDS_RELEASE) >= 0 || cmpVer(to, BOARDS_RELEASE) < 0) return "";
+  return "conductor: NEW in " + BOARDS_RELEASE + " — tell the user the project boards are ON by default (the `## Boards` rules-block section and a brief line), and that `set-boards off` turns them off.";
+}
 
 /** The lines `upgrade` prints, from `state` alone. One summary line of what IS adopted, then one
  *  line per opt-in that is NOT, each naming the command. Never empty: a repo with everything

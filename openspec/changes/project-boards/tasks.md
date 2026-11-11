@@ -131,7 +131,7 @@
 
 ## 5. The switch and the boards surfaces (specs: feature-switches, managed-rules-block, tracker-sync)
 
-- [ ] 5.1 RED: these are UNIT unless marked FILE.
+- [x] 5.1 RED: these are UNIT unless marked FILE.
       - `set-boards on|off` is idempotent, each undoes the other, and other arguments are refused.
       - The `OPT_INS` row (`doc: "boards"`) has a runnable `example`.
       - The upgrade announcement appears only when crossing from below 0.55.0.
@@ -148,7 +148,7 @@
       - FILE: README rows exist for `rules:boards` and `brief:boards`.
 
       Save `red-5.1.txt`.
-- [ ] 5.2 GREEN: update `scripts/lib/opt-ins.mjs`, the `set-boards` verb and its `VERB_EFFECTS` row,
+- [x] 5.2 GREEN: update `scripts/lib/opt-ins.mjs`, the `set-boards` verb and its `VERB_EFFECTS` row,
       `scripts/lib/rules.mjs` (the `## Boards` section, verb-refreshed, and the recipe flag), and
       `scripts/lib/briefing.mjs`. Add the `<one-line summary>` substitution to `fillRecipe` in
       `scripts/test/functional/emitted-invocations.test.mjs` (~line 2378), which fills only known placeholders, with its

@@ -25,6 +25,7 @@ import { outcomeOf } from "./disposition.mjs";
 import { resolveEpics } from "./epic-progress.mjs";
 import { criticalPathOf, orderOfRelease, releaseStatus } from "./release-plan.mjs";
 import { pluginVersion } from "./plugin-meta.mjs";
+import { boardsEnabled } from "./boards-switch.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, outStream } from "./invocation.mjs";
 
@@ -245,7 +246,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
     schemaVersion: BOARD_SCHEMA_VERSION,
     pmVersion: str(pmVersion),
     asOf,
-    boardsEnabled: !(state && state.boards && state.boards.enabled === false),
+    boardsEnabled: boardsEnabled(state),
     counts,
     mission,
     milestone,

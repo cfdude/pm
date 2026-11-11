@@ -656,7 +656,9 @@ function emittedRegistration(block, { number, url, title, updatedAt }) {
     .replace(/<issue-updated-at>/g, updatedAt || "2026-08-23T09:30:00Z")
     // `<lane>` is a documented placeholder like the others: the recipe takes it from lane
     // routing rather than hardcoding one, so filling it is the agent's step, not an invention.
-    .replace(/<lane>/g, "claude-code");
+    .replace(/<lane>/g, "claude-code")
+    // project-boards: the agent writes the summary from the item's body; one word keeps this helper's whitespace split intact.
+    .replace(/<one-line summary>/g, "SUMMARY");
   return filled.trim().split(/\s+/);
 }
 

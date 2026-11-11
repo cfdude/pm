@@ -3,6 +3,7 @@
 // staleMarker() (one-directional — active-pointer doesn't need anything back from here).
 
 import { missionBriefLine } from "./mission-record.mjs";
+import { boardsBriefLine } from "./boards-switch.mjs";
 import { resolveEpics, missing, orderQueueWithDependencies, bar, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { changelogAddedHeadlines, cmpVer, newestInstalledVersion, pluginVersion } from "./plugin-meta.mjs";
 import { getAutonomy } from "./autonomy.mjs";
@@ -308,7 +309,13 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
   // The mission (project-boards): ONE line, at most 200 bytes, a plain string among the obligations so fitBrief() never
   // shortens it. Absent with no current mission, so a repo that records none gains no byte.
   const missionLine = missionBriefLine(state);
-  if (missionLine) { L.push(missionLine); L.push(""); }
+  // The boards line (project-boards): default on, one line of at most 160 bytes, a plain string like the mission's, and absent while
+  // `set-boards off` holds. It follows the mission line with no blank of its own, so its measured bytes are exactly the line and
+  // its newline (overhead's `brief:boards`).
+  const boardsLine = boardsBriefLine(state);
+  if (missionLine) L.push(missionLine);
+  if (boardsLine) L.push(boardsLine);
+  if (missionLine || boardsLine) L.push("");
 
   // Releases — the same releaseSummaries() PROJECT.md renders, so a release cannot read as 12
   // epics on one surface and 11 on the other. One line each: the counts and what the release is

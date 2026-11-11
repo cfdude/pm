@@ -1162,6 +1162,8 @@ export const VERB_POSITIONALS = {
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  // project-boards: the boards switch, the positional `on|off` again.
+  "set-boards": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // decision-cost-log: both take the epic the decisions belong to.
   "record-decision": EPIC_ID, decisions: EPIC_ID,
@@ -1197,6 +1199,8 @@ export const FLAGLESS_VERBS = [
   "set-spend-tracking",
   // developer-session-log's switch: the POSITIONAL `on|off` again.
   "set-dev-log",
+  // project-boards' switch: the POSITIONAL `on|off` again.
+  "set-boards",
   // The unconsidered-outcome walker's ASK. Its population is a PREDICATE over the whole record
   // — an engine stamp carrying `unknown` — so there is nothing to select; a `--status` or
   // `--lane` filter would let a caller narrow the very set the question is "show me all of".

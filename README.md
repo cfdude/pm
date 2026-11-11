@@ -1823,6 +1823,8 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
 | `rules:release-candidate` | core | ~294 tokens, emitted only while a release has no delivered marker | no switch: below the threshold; absent (not switched) while no release is open |
 | `rules:mission` | core | at most ~70 tokens (280 bytes), emitted only while a mission is recorded | no switch: it is recorded data, not a feature, and it is the line that bounds autonomous work |
+| `rules:boards` | boards | at most ~70 tokens (280 bytes; ~60 measured) | `set-boards off`, on by default |
+| `brief:boards` | boards | at most ~40 tokens (one line of at most 160 bytes; ~34 measured), counted out of `brief` | `set-boards off`, on by default |
 | `rules:feedback` | core | ~194 tokens | no switch: below the threshold |
 | `rules:re-read-the-source-before-an-epic-becomes-the-work` | core | ~411 tokens | no switch: below the threshold |
 | `brief` | core | ~339 to ~2,061 tokens (grows with the record, capped at 16,384 bytes) | no switch: its size is the rules-block budget's to bound |
@@ -1837,6 +1839,9 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `spend-marker` | spendTracking | ~15 tokens per dispatched sub-agent, while tracking is on | `set-spend-tracking on`, off by default |
 | `rules:spend-guard` | spendGuard | ~202 tokens | `set-spend-guard --max-failed-rounds <n>`, off until a limit is set |
 | `listing:*` | listings | ~1,923 tokens for the 41 command, skill and agent descriptions | no switch: the host reads the plugin's files, the engine cannot hide them |
+
+The project boards (`rules:boards`, `brief:boards`) are the one **default-on** switch: an absent setting reads as on, `init` never writes it,
+`set-boards off` records it and `set-boards on` removes it again. `board --json` is a read and works whichever way the switch is set.
 
 Features that inject nothing of their own: `reviewMode` (`set-review-mode`), `laneRouting` (`set-lane-routing`),
 `activityLog` (`set-activity-log`) and the developer session log (`set-dev-log on`, off by default, needs spend

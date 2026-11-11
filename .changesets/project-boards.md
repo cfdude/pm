@@ -26,3 +26,13 @@
   reads it back. The mission shows in `/pm:status`, as one brief line (at most 200 bytes) and as a `## Mission` section of the
   managed rules block (at most 280 bytes, absent while no mission is recorded). Releases at or before the mission milestone,
   by `--order`, are marked critical path. The engine never writes a statement it was not given.
+* **`set-boards on|off`: the boards are on by default, and one switch removes them.** `set-boards off` records
+  `state.boards = {enabled: false}` and removes the `## Boards` section of the managed rules block (at most 280 bytes: it names the
+  `project-boards` skill and `/pm:boards` and says when to refresh) and the brief's boards line (at most 160 bytes). `set-boards on`
+  removes the setting again, so each undoes the other and a repeat writes no state. An absent setting reads as on and `init` writes
+  nothing. `board --json` keeps working whichever way it is set. `overhead` reports `rules:boards` and `brief:boards` under the
+  `boards` feature (0 bytes while off), measures `brief` without that line, and the README cost table has a row for each. `upgrade`
+  prints `boards: on (default)`, and once, on the upgrade that crosses 0.55.0, a line telling the agent to tell the user the boards are on.
+* **The inward tracker recipe carries `--summary=<one-line summary>`.** The registration line the rules block emits for a tracker now
+  ends `--summary=<one-line summary>`, with the instruction to write it from the item's body: one line, at most 200 characters, in the
+  agent's own words, single-quoted like the other placeholders, and to leave the flag off when the body gives nothing to summarise.
