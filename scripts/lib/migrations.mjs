@@ -11,6 +11,7 @@ import { reconcileArchived } from "./epic-progress.mjs";
 import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { normalizeLink, stampReconcileKeys } from "./links.mjs";
+import { stampEpicNumbers } from "./epic-number.mjs";
 import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore, untrackInstruction } from "./subcommands.mjs";
@@ -107,6 +108,16 @@ const MIGRATIONS = [
     // (a keyed link is never touched) and reads only `state`. The SAME function runs again on every
     // upgrade below; this entry is what the version bump carries.
     apply(state) { stampReconcileKeys(state); },
+  },
+  // 0.55.0 — project-boards: every epic gains an integer `number` (the Jira-style key is the project key plus it). Tracker-linked
+  // epics take their issue number, the rest follow from the counter in createdAt-then-id order. Additive (it fills only what is
+  // absent), idempotent, absent-tolerant, and it reads nothing outside `state`. The SAME function runs again on every upgrade
+  // below: an older engine can register an un-numbered epic after the stamp. Nothing else in the 0.55.0 record needs a transform
+  // (every other new key is absent-tolerant, see scripts/test/unit/project-boards-compat.test.mjs).
+  {
+    release: "0.55.0",
+    note: "number every epic (tracker-linked epics by their issue number, the rest from a counter)",
+    apply(state) { stampEpicNumbers(state); },
   },
 ];
 
@@ -232,6 +243,8 @@ export function upgrade() {
   // second machine sharing state.json). The refusal that names /pm:upgrade must never name a no-op.
   // Immediately before the heal, so the heal reads every link keyed.
   stampReconcileKeys(state);
+  // The same reasoning for numbers (0.55.0): the migration is keyed to a release, the heal is not.
+  stampEpicNumbers(state);
   reconcileArchived(state);
   stampVersion(state);
   const saved = saveState(state);

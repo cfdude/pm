@@ -40,6 +40,10 @@ x("render.mjs", "writeRenderStampLocked", {
 x("state.mjs", "seedCreationFields", {
   "EPIC_ID_FORMAT.source": 1,
 }, "engine", "InvalidEpicIdError's message (the scanner attributes the class to the declaration before it): the engine's own id regex source; the id itself is escaped");
+x("epic-number.mjs", "epicKey", {
+  "key": 1,
+  "epic.number": 1,
+}, "engine", "the display key `PM-256` (project-boards 8.1): `key` is a validated project key (/^[A-Z]{2,3}$/, tested on the line above) and `epic.number` a positive safe integer (tested by validNumber on the same return), so neither can carry a control character");
 x("state.mjs", "recordEngineSave", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the same render-stamp file body writeRenderStamp writes, with `lastSave: {revision, mtimeMs}` added — numbers and the stamp's own fields, written through the store, never printed");

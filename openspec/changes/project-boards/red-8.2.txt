@@ -1,0 +1,57 @@
+✖ 8.2 upgrade backfills numbers on a 0.54.0 record, and a second upgrade writes nothing new (69.389875ms)
+✖ 8.2 upgrade also numbers an epic an older engine registered AFTER the stamp (the heal runs on every upgrade) (49.731959ms)
+✔ migration: tracker-linked epics take their issue number first, the rest follow in createdAt-then-id order past the largest (5.63375ms)
+✔ migration: a duplicate externalId is deterministic (the earlier-created epic keeps the number), the other takes the counter (0.104375ms)
+✔ migration: idempotent — a second run changes nothing, and numbers an epic already holds are never touched (0.091375ms)
+✔ migration: absent-tolerant — no epics, no array, junk entries and a damaged counter do not throw (0.08675ms)
+✔ migration: an invalid or duplicated stored number is replaced, never left to collide (0.086917ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 261.869458
+
+✖ failing tests:
+
+test at scripts/test/assert/epic-numbers-upgrade.test.mjs:11:1
+✖ 8.2 upgrade backfills numbers on a 0.54.0 record, and a second upgrade writes nothing new (69.389875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 256
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/epic-numbers-upgrade.test.mjs:26:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 256,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/assert/epic-numbers-upgrade.test.mjs:34:1
+✖ 8.2 upgrade also numbers an epic an older engine registered AFTER the stamp (the heal runs on every upgrade) (49.731959ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(readState(cwd).epics.find(e => e.id === "from-old-engine").number > 0)
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/assert/epic-numbers-upgrade.test.mjs:43:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

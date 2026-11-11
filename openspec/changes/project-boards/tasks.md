@@ -217,8 +217,55 @@
       Report the counts and any unlisted flake.
 - [x] 7.3 Backward compatibility: a unit test loads a 0.54.0-shaped state fixture, with no `mission`, `releasePlan`,
       `boards` or new epic fields. `board --json`, `release show` and `mission show` must all succeed on it. This
-      states MIGRATIONS: none (additive), and the test is the evidence. Whether an older engine tolerates newer keys
+      states that the new keys are additive (section 8 adds the one 0.55.0 migration, epic numbers), and the test is the evidence. Whether an older engine tolerates newer keys
       is not claimed (design, Migration Plan).
+
+## 8. Board redesign (Rob feedback 2026-11-11)
+
+The engine half only. The HTML templates and `skills/project-boards/SKILL.md` follow in a later change. Specs:
+`specs/project-identity/spec.md` (new) and the "project, number and key" and "progress" requirements added to
+`specs/board-export/spec.md`. Design D20 to D23.
+
+- [ ] 8.0 Docs of record: the `project-identity` spec, the `board-export` additions, design D20 to D23 and its Inverses and
+      Migration Plan rows, the proposal bullets, this section. `openspec validate project-boards --strict` passes.
+- [x] 8.1 RED then GREEN (UNIT `epic-numbers.test.mjs`, FILE `epic-numbers-files.test.mjs`): every epic carries a number,
+      assigned in `pushEpic` through `assignEpicNumber` (`scripts/lib/epic-number.mjs`). Tracker integer first, else the
+      counter, skipping held numbers; the counter only advances; a caller-supplied number is never honoured; remove and a
+      changed `--external-id` do not free or change a number. RED: `red-8.1.txt` (fails before 8.1, the module is absent).
+- [x] 8.2 RED then GREEN (UNIT `epic-numbers-migration.test.mjs`, FILE `epic-numbers-upgrade.test.mjs`): the `MIGRATIONS` entry
+      keyed to 0.55.0 and the same function on every `upgrade`. `store.mjs`'s per-record comparison also ignores `number`, so a
+      backfill is a recovery and not a touch (no epic reads as last touched on upgrade day). The two functional upgrade tests
+      (`conductor-15` 7.1, `conductor-39` 2.5) pin the new entry count. RED: `red-8.2.txt` (fails before 8.2, `upgrade` does not number).
+- [ ] 8.3 RED then GREEN (UNIT `project-identity.test.mjs`): `set-project --name --key` with `--unset <name|key>`; registry rows,
+      `VERB_POSITIONALS`, `VERB_EFFECTS`, dispatch and `USAGE`, `commands/set-project.md`, the parity ledger claim.
+- [ ] 8.4 RED then GREEN (UNIT `board-export.test.mjs` additions): `project`, epic `number` and `key`, release `progress`, the
+      `project` rejection kind. `schemaVersion` stays 1 (D21).
+- [ ] 8.5 Verify which verbs write each field the boards need, and make each discoverable from `--help` (UNIT):
+      - release `theme`, `rationale`, `exit`, `order`, `size`: `release <id> --theme|--rationale|--exit|--order|--size`, each cleared
+        with `--clear <field>`; `target` and `intent`: `release <id> --target|--intent`, with NO clear for either (pre-existing; `target`
+        is overwritten, see design Inverses).
+      - `plan.here`, `hereText`, `nextText`: `release here <id> [--text] [--next]`, removed together by `release here --clear-here`;
+        no flag clears the text lines alone.
+      - `mission.statement`, `milestone`, `criteria`: `mission --statement --reason`, `--end --reason`, `--milestone`,
+        `--clear-milestone`, `--add-criterion [--check|--needs-human]`, `--remove-criterion`.
+      - epic `summary`: `add-epic|update-epic|add-many --summary`, cleared with `update-epic <id> --clear summary` (an empty
+        `--summary ""` is refused, not a clear). No code change.
+      The one gap was discoverability: the `release` usage text and its missing-id error never named `release here` or the plan
+      fields. Fixed in the same commit.
+- [ ] 8.6 Required items for section 8 (CLAUDE.md "The gate procedure"):
+      - **Call-site sweep (item 1).** `rg -n "pushEpic\(" scripts/lib` lists the five creation call sites (`add-epic.mjs`,
+        `add-many.mjs`, `subcommands.mjs` x3). The rule is bound inside `pushEpic`, so all five hold it; the source scan in
+        `conductor-13.test.mjs` keeps a sixth from bypassing it. Readers of `number`: `board.mjs` (the export) and
+        `epic-number.mjs`. Writers: `pushEpic` and `stampEpicNumbers` only. Removers: `remove-epic` deletes the whole epic record,
+        which takes its number with it; the counter is untouched, so the number is not reissued to a plain registration.
+        A DATA reference: nothing stores another epic's number, so no dangling reference exists.
+      - **Inverses (item 1).** `set-project --name|--key` against `--unset name|key`: shipped. A number is never reassigned and
+        `nextEpicNumber` never goes back, by design (design Inverses). `release --target` has no clear: pre-existing, named.
+      - **Lifecycle (item 3).** Nothing in section 8 is lifecycle bookkeeping; C.2 and C.3 keep their markers.
+      - **Attribute (item 4).** Each feature commit is attributed on landing, and the bookkeeping commit is not.
+      - **Guards proved (item 8).** Mutants 80 onwards in `mutation-evidence.txt`.
+      - **Cross-spec (item 5).** `project-identity` joins the 0.55.0 spec set and `board-export` changed, so the recorded cross-spec
+        verdict is stale and must be re-run; Gate 2 is stale for the same reason.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–8)
 
@@ -320,7 +367,7 @@
 - [ ] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.55.0` as part of the release cut, not in this change.
 - [ ] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.55.0 entry, including the default-on boards
       announcement.
-- [ ] V.4 MIGRATIONS: no entry (additive). The evidence is task 7.3.
+- [ ] V.4 MIGRATIONS: one entry keyed to 0.55.0 (epic numbering, task 8.2). Everything else is additive; the evidence for that is task 7.3.
 
 ## C. Close
 

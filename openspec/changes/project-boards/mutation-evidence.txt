@@ -486,3 +486,83 @@ result:   KILLED (1 fail: 'milestone: refuses an unknown release; --clear-milest
 restored: yes
 
 13 mutants (67-79): 13 killed on first run, 0 survived. Running total: 79 mutants, 73 killed on first run, 6 survived (all 6 fixed and re-killed).
+
+mutant 80 [8.1]: probe: a tracker number another epic holds
+mutation: epic-number.mjs: `ext !== null && !held.has(ext)` -> `ext !== null` (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs
+result:   KILLED (1 fail: 'number: a held externalId number falls back to the counter (two trackers can both say 5)')
+restored: yes
+
+mutant 81 [8.1]: probe: the counter landing on a held number
+mutation: epic-number.mjs: the `while (held.has(n)) n++` skip removed (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs
+result:   SURVIVED on first run; a new unit test (the counter sitting ON a held number) added, then KILLED (1 fail: 'number: a counter that sits ON a held number (an older engine, a hand edit) still skips it') on rerun
+restored: yes
+
+mutant 82 [8.1]: probe: an externalId with a leading zero or sign
+mutation: epic-number.mjs: POSITIVE_INTEGER_TEXT `/^[1-9][0-9]*$/` -> `/^[0-9]+$/` (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs
+result:   KILLED (1 fail: 'number: an externalId that is not a plain positive integer never becomes a number')
+restored: yes
+
+mutant 83 [8.1]: probe: number 0 is not a number
+mutation: epic-number.mjs: validNumber `n > 0` -> `n >= 0` (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (1 fail: 'key: projectKey and the number, or null while either is missing')
+restored: yes
+
+mutant 84 [8.1]: probe: the counter never goes back after a removal
+mutation: epic-number.mjs: the persisted counter recomputed from the held numbers instead of only advancing (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs
+result:   SURVIVED on first run; a new unit test (a tracker number below the counter) added, then KILLED (1 fail: 'number: taking a tracker number never moves the counter back') on rerun
+restored: yes
+
+mutant 85 [8.1]: probe: a caller-supplied valid number is kept, an invalid one replaced
+mutation: epic-number.mjs: the keep-a-valid-number branch disabled (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs
+result:   KILLED (1 fail: 'number: assignEpicNumber keeps a number the epic already carries (a replayed record is not re-numbered) and advances the counter past it')
+restored: yes
+
+mutant 86 [8.1]: probe: the key needs a valid project key
+mutation: epic-number.mjs: epicKey's key-format guard removed (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers.test.mjs
+result:   KILLED (1 fail: 'key: projectKey and the number, or null while either is missing')
+restored: yes
+
+mutant 87 [8.2]: probe: migration: tracker number first, only when free
+mutation: epic-number.mjs: the migration's `!held.has(ext)` guard removed (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (1 fail: 'migration: a duplicate externalId is deterministic (the earlier-created epic keeps the number), the other takes the counter')
+restored: yes
+
+mutant 88 [8.2]: probe: migration: createdAt order, absent last
+mutation: epic-number.mjs: byCreation puts an absent createdAt first instead of last (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (1 fail: 'migration: tracker-linked epics take their issue number first, the rest follow in createdAt-then-id order past the largest')
+restored: yes
+
+mutant 89 [8.2]: probe: migration: idempotent (only unnumbered epics are filled)
+mutation: epic-number.mjs: every epic treated as pending, so held numbers are rewritten (scripts/lib/epic-number.mjs)
+run:      node --test scripts/test/unit/epic-numbers-migration.test.mjs
+result:   KILLED (3 fail: 'migration: idempotent — a second run changes nothing, and numbers an epic already holds are never touched')
+restored: yes
+
+mutant 90 [8.2]: probe: the every-upgrade heal
+mutation: migrations.mjs: the stampEpicNumbers() call in upgrade() removed (scripts/lib/migrations.mjs)
+run:      node --test scripts/test/assert/epic-numbers-upgrade.test.mjs
+result:   SURVIVED on first run; the upgrade test now stamps pmVersion 0.55.0 so only the heal can number the epic added, then KILLED (1 fail: '8.2 upgrade also numbers an epic an older engine registered AFTER the stamp (the heal runs on every upgrade)') on rerun
+restored: yes
+
+mutant 91 [8.2]: probe: a backfilled number is not a touch
+mutation: store.mjs: `delete rest.number` removed from comparableEpic (scripts/lib/store.mjs)
+run:      node --test scripts/test/assert/epic-numbers-upgrade.test.mjs
+result:   KILLED (1 fail: "8.2 backfilling numbers is a recovery, not a touch: an old epic's touchedAt stays absent through upgrade")
+restored: yes
+
+12 mutants (80-91) for project-boards 8.1 and 8.2: 9 killed on first run, 3 survived (all 3 fixed by a test and re-killed). Running total: 91 mutants, 82 killed on first run, 9 survived (all 9 fixed and re-killed).
+NOT MUTATED, with the reason: the 0.55.0 MIGRATIONS entry's own `apply` body. It runs the same function the every-upgrade heal runs, so removing the body changes nothing observable on any record a test can build (the heal numbers the epic either way); the entry is pinned instead by the functional upgrade-count tests (conductor-15 7.1 and conductor-39 2.5), which fail if the entry is removed.
+mutant 92 [8.2, checked after the note above]: probe: the 0.55.0 MIGRATIONS entry removed whole
+mutation: migrations.mjs: the whole `release: "0.55.0"` entry deleted (scripts/lib/migrations.mjs)
+run:      node --test scripts/test/functional/conductor-39.test.mjs
+result:   KILLED (1 fail: '2.5: the 0.40.0 migration recovers dates and leaves touchedAt ABSENT on pre-existing epics')
+restored: yes

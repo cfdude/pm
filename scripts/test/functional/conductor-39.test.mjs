@@ -397,14 +397,14 @@ test("2.4: an epic in an undefined status is handled like any other and is NOT r
 });
 
 test("2.5: the 0.40.0 migration recovers dates and leaves touchedAt ABSENT on pre-existing epics", () => {
-  // The fixture already stamps and commits `pmVersion: "0.39.0"`, so the 0.40.0 entry and the
-  // 0.44.0 reconcile arming stamp (a no-op on this record, which holds no may-invalidate link) are
-  // the entries this repo is missing — MIGRATIONS apply by stamped version, not by running one.
+  // The fixture already stamps and commits `pmVersion: "0.39.0"`, so the 0.40.0 entry, the
+  // 0.44.0 reconcile arming stamp (a no-op on this record, which holds no may-invalidate link) and
+  // the 0.55.0 epic numbering are the entries this repo is missing — MIGRATIONS apply by stamped version, not by running one.
   const cwd = trackedHistoryRepo(["one", "two"]);
 
   const out = runCombined(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: fixturePluginRoot("0.40.0") } });
-  assert.match(out, /upgraded \(2 migration\(s\)\)/,
-    "a 0.39.0-stamped repo is missing exactly the 0.40.0 and 0.44.0 entries");
+  assert.match(out, /upgraded \(3 migration\(s\)\)/,
+    "a 0.39.0-stamped repo is missing exactly the 0.40.0, 0.44.0 and 0.55.0 entries");
 
   for (const e of readState(cwd).epics) {
     assert.match(e.createdAt || "", ISO, `${e.id} should have been recovered`);
