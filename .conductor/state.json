@@ -16392,15 +16392,17 @@
         "820f08e031abb5d20a5cdd6cc3470a7b027add66",
         "ab128ee9ac5b1a4d6cfc9dcee4fa3ab4ea45b41c",
         "75c8cf4c1d3ac6ce6f73285fde9e1dc175d44d50",
-        "016babf032e6dda127c3cbef09681be60d4ba271"
+        "016babf032e6dda127c3cbef09681be60d4ba271",
+        "47528b6adacba593229ed58e3fed49cb3d0c6754",
+        "89dbbf46c674e7bca992fd4b2dec0e12ea51239e"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-11T07:36:22.630Z",
+      "touchedAt": "2026-11-11T07:45:42.196Z",
       "sessions": [
         {
           "session": "pm-dev",
           "firstAt": "2026-11-11T05:41:45.223Z",
-          "lastAt": "2026-11-11T07:36:22.630Z"
+          "lastAt": "2026-11-11T07:45:42.196Z"
         }
       ],
       "release": "0.55.0",
@@ -16486,7 +16488,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2327,
+  "revision": 2329,
   "reviewMode": "standard",
   "releases": [
     {

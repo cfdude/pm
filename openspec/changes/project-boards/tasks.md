@@ -212,7 +212,7 @@
       `/pm:boards`, and keep the process notes. Run one `ArtifactData` list of each page-written collection, and one
       read at a lower `as_level`. Record that the page-written collections are exactly `answers`, `backlogMeta` and
       `proposals`. Every instruction from the skill that did not run as written is a filing (R.7).
-- [ ] 7.2 Run the whole assertion half once:
+- [x] 7.2 Run the whole assertion half once:
       `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`. Then certify each bucket drift names.
       Report the counts and any unlisted flake.
 - [x] 7.3 Backward compatibility: a unit test loads a 0.54.0-shaped state fixture, with no `mission`, `releasePlan`,
@@ -261,7 +261,7 @@
         `epic-summary-required-on-triage`.
       - File `/pm:feedback` for each instruction the proving run (7.1) found that did not run as written.
       - File a lesson if the reference template's raw interpolation recurs in a shipped page.
-- [ ] R.8 **Prove every guard can fail** (item 8, the `mutation-pass` skill). Mutate each guard below and confirm that
+- [x] R.8 **Prove every guard can fail** (item 8, the `mutation-pass` skill). Mutate each guard below and confirm that
       a test fails:
       - **Export:**
         - the id-format check, both on own ids and on reference fields
