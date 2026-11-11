@@ -1,0 +1,406 @@
+project-boards R.8 mutation evidence. One mutant per run; each restored and confirmed with `git diff` clean before the next.
+Narrow run = the named test files (node --test). A narrow survivor is re-run against the whole assertion half (unit + assert).
+
+mutant 1 [E1a]: export: id-format check on an epic's own id
+mutation: board.mjs entryOf loop: `if (!isId(e.id))` -> `if (false)` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: "board: a malformed epic id is excluded and named, and the exit code is 0")
+restored: yes (git diff clean)
+
+mutant 2 [E1b]: export: id-format check on reference fields (idRef)
+mutation: board.mjs idRef: `if (isId(v)) return v;` -> `if (true) return v;` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: "board: a malformed reference is nulled and named, for the epic's release and plan.here alike")
+restored: yes (git diff clean)
+
+mutant 3 [E1c]: export: id-format check on depends-on link ids
+mutation: board.mjs: `if (!isId(l.epic))` -> `if (false)` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: "board: a malformed release member and a malformed dependsOn target leave their lists")
+restored: yes (git diff clean)
+
+mutant 4 [E2]: export: URL scheme check
+mutation: board.mjs: `ok = p === "http:" || p === "https:"` -> `ok = true` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: "board: externalUrl is emitted only for http and https, else null and reported")
+restored: yes (git diff clean)
+
+mutant 5 [E3a]: export: `delivered` rule, unknown outcome
+mutation: board.mjs: outcome "unknown" reads true (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: "board: delivered has three states, all five cases")
+restored: yes (git diff clean)
+
+mutant 6 [E3b]: export: `delivered` rule, missing disposition
+mutation: board.mjs: outcome null (no disposition) reads true (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: "board: delivered has three states, all five cases")
+restored: yes (git diff clean)
+
+mutant 7 [E4]: export: dangling dependsOn report
+mutation: board.mjs: `if (!knownIds.has(l.epic))` -> `if (false)` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: "board: a dangling depends-on target is left out and reported")
+restored: yes (git diff clean)
+
+mutant 8 [E5a]: export: --archived bound parse (positive integer)
+mutation: board.mjs parseArchivedBound regex `[1-9][0-9]*` -> `[0-9]*` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: "board: a bad --archived bound is refused, names the accepted values and prints no JSON")
+restored: yes (git diff clean)
+
+mutant 9 [E5b]: export: --archived invalid value refusal
+mutation: board.mjs board(): `if (bound === null)` -> `if (false)` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (1 fail: "board: a bad --archived bound is refused, names the accepted values and prints no JSON")
+restored: yes (git diff clean)
+
+mutant 10 [E5c]: export: --archived window applied
+mutation: board.mjs: `endedAll.slice(0, archived)` -> `endedAll` (scripts/lib/board.mjs)
+run:      node --test scripts/test/unit/board-export.test.mjs
+result:   KILLED (2 fail: "board: the ended-epic window defaults to 50, most recently ended first, after the open epics")
+restored: yes (git diff clean)
+
+mutant 11 [R1a]: release plan field: --size allowlist
+mutation: releases.mjs: `if (!PLAN_SIZES.includes(v))` -> `if (false)` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: "plan fields: bad values are refused with the accepted values named, writing nothing")
+restored: yes (git diff clean)
+
+mutant 12 [R1b]: release plan field: --order non-negative integer
+mutation: releases.mjs: order regex test removed (`!/^[0-9]+$/.test(v)` -> `false`) (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: "plan fields: bad values are refused with the accepted values named, writing nothing")
+restored: yes (git diff clean)
+
+mutant 13 [R1c]: release plan field: newline refusal
+mutation: releases.mjs oneLineError: `/[\r\n]/.test(value)` -> `false` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (2 fail: "plan fields: bad values are refused with the accepted values named, writing nothing")
+restored: yes (git diff clean)
+
+mutant 14 [R1d]: release plan field: length limit
+mutation: releases.mjs oneLineError: `[...value].length > max` -> `false` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (2 fail: "plan fields: bad values are refused with the accepted values named, writing nothing")
+restored: yes (git diff clean)
+
+mutant 15 [R2a]: release: `here` reserved-id refusal (plan-marker branch)
+mutation: releases.mjs: `if (argv[0] === HERE)` -> `if (false)` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (3 fail: "here: sets the marker and the two lines, and --clear-here (valueless) removes all three")
+restored: yes (git diff clean)
+
+mutant 16 [R2b]: release here: unknown-release refusal
+mutation: releases.mjs releaseHere: `if (!findRelease(state, id))` -> `if (false)` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: "here: an unknown release id is refused, and `here` cannot be created as a release")
+restored: yes (git diff clean)
+
+mutant 17 [R3]: mission milestone: unknown-release refusal
+mutation: mission.mjs: `!findRelease(state, id)` -> `false` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (2 fail: "milestone: refuses an unknown release; --clear-milestone clears it and every criticalPath reads null")
+restored: yes (git diff clean)
+
+mutant 18 [R4a]: mission: --reason requirement
+mutation: mission.mjs: reason required check -> `if (false)` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (3 fail: "statement: requires --reason, one line, at most 300 characters, and is never empty")
+restored: yes (git diff clean)
+
+mutant 19 [R4b]: mission: same-statement no-op
+mutation: mission.mjs: `m.current.statement === statement.trim()` -> `false` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: "statement: the same statement twice writes nothing and says so")
+restored: yes (git diff clean)
+
+mutant 20 [R4c]: mission: --end with no mission refusal
+mutation: mission.mjs: `if (!m.current) return refuse("there is no current mission` -> `if (false)` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: "end: keeps the ended statement in history, leaves the milestone and criteria, and is refused with no mission")
+restored: yes (git diff clean)
+
+mutant 21 [R5]: mission: criterion-id reuse guard (counter advance)
+mutation: mission.mjs: `m.nextCriterion += 1` -> `+= 0` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: "criteria: ids are never reused, removal marks and keeps the record, and the board lists only active ones")
+restored: yes (git diff clean)
+
+mutant 22 [S1a]: epic summary: one-line check
+mutation: epic-summary.mjs: `if (NEWLINE.test(value))` -> `if (false)` (scripts/lib/epic-summary.mjs)
+run:      node --test scripts/test/unit/epic-summary.test.mjs
+result:   KILLED (1 fail: "summary: empty, multi-line and over-limit values are refused on every surface, naming the field and its limit, writing nothing")
+restored: yes (git diff clean)
+
+mutant 23 [S1b]: epic summary: length limit
+mutation: epic-summary.mjs: `[...value].length > max` -> `false` (scripts/lib/epic-summary.mjs)
+run:      node --test scripts/test/unit/epic-summary.test.mjs
+result:   KILLED (1 fail: "summary: empty, multi-line and over-limit values are refused on every surface, naming the field and its limit, writing nothing")
+restored: yes (git diff clean)
+
+mutant 24 [S1c]: epic summary: untriaged warning, leaving-untriaged condition
+mutation: epic-summary.mjs owesSummaryWarning: drop the `before === null || before === "untriaged"` condition (scripts/lib/epic-summary.mjs)
+run:      node --test scripts/test/unit/epic-summary.test.mjs
+result:   KILLED (2 fail: "warning: archiving never warns, nor does a write that leaves the status unchanged")
+restored: yes (git diff clean)
+
+mutant 25 [S1d]: epic summary: untriaged warning, emission
+mutation: epic-summary.mjs warnSummary: `if (line)` -> `if (false)` (scripts/lib/epic-summary.mjs)
+run:      node --test scripts/test/unit/epic-summary.test.mjs
+result:   KILLED (4 fail: "warning: moving an epic out of untriaged without them warns on stderr, exits 0 and still writes")
+restored: yes (git diff clean)
+
+mutant 26 [S2a]: set-boards idempotence (reports a change only when the record changed)
+mutation: set-boards.mjs applyBoards: return `true` always (scripts/lib/set-boards.mjs)
+run:      node --test scripts/test/unit/boards-switch.test.mjs scripts/test/assert/boards-switch.test.mjs
+result:   KILLED (1 fail: "5.1 a repeat of either direction changes nothing")
+restored: yes (git diff clean)
+
+mutant 27 [S2b]: set-boards on/off are exact inverses
+mutation: set-boards.mjs applyBoards: `on` writes {enabled:true} instead of removing the key (scripts/lib/set-boards.mjs)
+run:      node --test scripts/test/unit/boards-switch.test.mjs scripts/test/assert/boards-switch.test.mjs
+result:   KILLED (3 fail: "5.1 set-boards off removes the section and the line naming the skill; on puts them back and the record returns to its first bytes")
+restored: yes (git diff clean)
+
+mutant 28 [S3a]: ## Boards section byte bound
+mutation: boards-switch.mjs BOARDS_SECTION grows past 280 bytes (scripts/lib/boards-switch.mjs)
+run:      node --test scripts/test/unit/boards-switch.test.mjs scripts/test/assert/boards-switch.test.mjs
+result:   KILLED (2 fail: "5.1 the `## Boards` section is present by default, at most 280 bytes, names the skill and /pm:boards, and init writes no setting")
+restored: yes (git diff clean)
+
+mutant 29 [S3b]: ## Mission section byte bound
+mutation: rules.mjs missionSectionText: `room` -> Infinity (no truncation) (scripts/lib/rules.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs scripts/test/assert/mission-write.test.mjs
+result:   KILLED (2 fail: "4.1 a mission write adds the `## Mission` section, at most 280 bytes, ending a long statement in an ellipsis and naming the milestone")
+restored: yes (git diff clean)
+
+mutant 30 [T1a-backlog]: escaper on id (backlog.html)
+mutation: every `esc(e.id)` interpolation -> `e.id` (escaping dropped) (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 31 [T1a-plan]: escaper on id (release-plan.html)
+mutation: every `esc(e.id)` and `esc(r.id)` interpolation -> raw (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 release-plan.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 32 [T1b-backlog]: escaper on priority (backlog.html)
+mutation: every `esc(e.priority)` -> `e.priority` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 33 [T1b-plan]: escaper on priority (release-plan.html)
+mutation: every `esc(e.priority)` -> `e.priority` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 release-plan.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 34 [T1c-backlog]: escaper on the release id (backlog.html)
+mutation: every `esc(e.release)` -> `e.release` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 35 [T1c-plan]: escaper on the release id (release-plan.html)
+mutation: every `esc(r.id)` -> `r.id` (the release's id) (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 release-plan.html: every ${} interpolation in the render block goes through esc(), num() or H()")
+restored: yes (git diff clean)
+
+mutant 36 [T1a2-backlog]: escaper on id, disguised as H() (backlog.html)
+mutation: every `esc(e.id)` -> `H(e.id)` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED narrow (28/28 pass); whole assertion half also green
+action:   added test "6.2 <template>: H() never wraps a bare field..." in scripts/test/assert/project-boards-templates.test.mjs (a raw field passed through the permitted H() wrapper escaped the interpolation scan); re-run -> KILLED (1 fail: "6.2 backlog.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 37 [T1a2-plan]: escaper on id, disguised as H() (release-plan.html)
+mutation: every `esc(e.id)`/`esc(r.id)` -> `H(..)` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED narrow (28/28 pass); whole assertion half also green
+action:   added test "6.2 <template>: H() never wraps a bare field..." in scripts/test/assert/project-boards-templates.test.mjs (a raw field passed through the permitted H() wrapper escaped the interpolation scan); re-run -> KILLED (1 fail: "6.2 release-plan.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 38 [T1b2-backlog]: escaper on priority, disguised as H() (backlog.html)
+mutation: every `esc(e.priority)` -> `H(e.priority)` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED narrow (28/28 pass); whole assertion half also green
+action:   added test "6.2 <template>: H() never wraps a bare field..." in scripts/test/assert/project-boards-templates.test.mjs (a raw field passed through the permitted H() wrapper escaped the interpolation scan); re-run -> KILLED (1 fail: "6.2 backlog.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 39 [T1b2-plan]: escaper on priority, disguised as H() (release-plan.html)
+mutation: every `esc(e.priority)` -> `H(e.priority)` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED narrow (28/28 pass); whole assertion half also green
+action:   added test "6.2 <template>: H() never wraps a bare field..." in scripts/test/assert/project-boards-templates.test.mjs (a raw field passed through the permitted H() wrapper escaped the interpolation scan); re-run -> KILLED (1 fail: "6.2 release-plan.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 40 [T1c2-backlog]: escaper on the release id, disguised as H() (backlog.html)
+mutation: every `esc(e.release)` -> `H(e.release)` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED narrow (28/28 pass); whole assertion half also green
+action:   added test "6.2 <template>: H() never wraps a bare field..." in scripts/test/assert/project-boards-templates.test.mjs (a raw field passed through the permitted H() wrapper escaped the interpolation scan); re-run -> KILLED (1 fail: "6.2 backlog.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 41 [T1c2-plan]: escaper on the release id, disguised as H() (release-plan.html)
+mutation: every `esc(r.id)` -> `H(r.id)` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   SURVIVED narrow (28/28 pass); whole assertion half killed it via "scripts/test/assert/conductor-02.test.mjs"
+action:   added test "6.2 <template>: H() never wraps a bare field..." in scripts/test/assert/project-boards-templates.test.mjs (a raw field passed through the permitted H() wrapper escaped the interpolation scan); re-run -> KILLED (1 fail: "6.2 release-plan.html: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)")
+restored: yes (git diff clean)
+
+mutant 42 [T1d-backlog]: escaper: the function itself escapes `<` (backlog.html)
+mutation: esc() no longer maps `<` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (3 fail: "6.2 backlog.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 43 [T1d-release-plan]: escaper: the function itself escapes `<` (release-plan.html)
+mutation: esc() no longer maps `<` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 release-plan.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 44 [T2-backlog]: priority allowlist (backlog.html)
+mutation: prioOf: `LEVELS.indexOf(p)>=0` -> `true` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 backlog.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 45 [T2-release-plan]: priority allowlist (release-plan.html)
+mutation: prioOf: `LEVELS.indexOf(p)>=0` -> `true` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 release-plan.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 46 [T3-backlog]: page link-scheme check (backlog.html)
+mutation: safeUrl: scheme regex dropped (any string accepted) (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 backlog.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 47 [T3-release-plan]: page link-scheme check (release-plan.html)
+mutation: safeUrl: scheme regex dropped (any string accepted) (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 release-plan.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 48 [T4a-backlog]: page id check (backlog.html)
+mutation: `ID_RE` accepts anything (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 backlog.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 49 [T4a-release-plan]: page id check (release-plan.html)
+mutation: `ID_RE` accepts anything (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 release-plan.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 50 [T5a-backlog]: Array.isArray on dependsOn (backlog.html)
+mutation: normEpic: `arr(d.dependsOn).filter(okId)` -> `d.dependsOn.filter(okId)` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a malformed doc (string dependsOn, object title) renders while the rest of the board renders")
+restored: yes (git diff clean)
+
+mutant 51 [T5a2-backlog]: Array.isArray on dependsOn, via arr() (backlog.html)
+mutation: arr: `Array.isArray(x)?x:[]` -> `x` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a malformed doc (string dependsOn, object title) renders while the rest of the board renders")
+restored: yes (git diff clean)
+
+mutant 52 [T5a2-plan]: Array.isArray guard via arr() (release-plan.html)
+mutation: arr: `Array.isArray(x)?x:[]` -> `x` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 release plan: priority allowlist, a javascript: URL and a malformed doc")
+restored: yes (git diff clean)
+
+mutant 53 [T5b-backlog]: string check on title (backlog.html)
+mutation: normEpic: `title:str(d.title)` -> `title:d.title` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a malformed doc (string dependsOn, object title) renders while the rest of the board renders")
+restored: yes (git diff clean)
+
+mutant 54 [T5b2-backlog]: string check, via str() (backlog.html)
+mutation: str: `typeof x==="string"?x:""` -> `x` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a malformed doc (string dependsOn, object title) renders while the rest of the board renders")
+restored: yes (git diff clean)
+
+mutant 55 [T5b2-plan]: string check, via str() (release-plan.html)
+mutation: str: `typeof x==="string"?x:""` -> `x` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 release plan: decisions and answers are type-checked, and fromSnapshot never throws")
+restored: yes (git diff clean)
+
+mutant 56 [T6-backlog]: per-step try/catch (backlog.html)
+mutation: step(): `try{return String(fn());}catch(_){...}` -> `return String(fn());` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a throwing step is isolated; the other steps still render")
+restored: yes (git diff clean)
+
+mutant 57 [T6-release-plan]: per-step try/catch (release-plan.html)
+mutation: step(): `try{return String(fn());}catch(_){...}` -> `return String(fn());` (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 release plan: a throwing roadmap step shows its notice while counts, criteria and decisions still render")
+restored: yes (git diff clean)
+
+mutant 58 [T7a]: cross-band drag refusal (backlog.html)
+mutation: dropProposal: `if(d.meritPriority!==t.meritPriority)return` -> `if(false)return` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a cross-band drop is refused with the priority hint and writes nothing")
+restored: yes (git diff clean)
+
+mutant 59 [T7b]: lifted-blocker no-drag rule, in the proposal (backlog.html)
+mutation: dropProposal: `if(d.priority!==d.meritPriority)return` -> `if(false)return` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: a lifted blocker cannot be dragged, and an unknown id is refused")
+restored: yes (git diff clean)
+
+mutant 60 [T7c]: lifted-blocker no-drag rule, in the markup (backlog.html)
+mutation: rowHtml: `drag=admin&&!lifted` -> `drag=admin` (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "6.2 backlog: rows are banded by merit priority; a lifted blocker has no drag handle and others have one")
+restored: yes (git diff clean)
+
+mutant 61 [T8-backlog]: inlined-JSON `<` escaping (backlog.html)
+mutation: inlineJson: `.replace(/</g,"\\u003c")` -> no-op replace (skills/project-boards/templates/backlog.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 backlog.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 62 [T8-release-plan]: inlined-JSON `<` escaping (release-plan.html)
+mutation: inlineJson: `.replace(/</g,"\\u003c")` -> no-op replace (skills/project-boards/templates/release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (2 fail: "6.2 release-plan.html: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted")
+restored: yes (git diff clean)
+
+mutant 63 [K1]: skill: declared-rules doc assertion (only answers and backlogMeta at interact)
+mutation: SKILL.md: the first block's `epics` rule `write` flipped `admin` -> `interact` (skills/project-boards/SKILL.md)
+run:      node --test scripts/test/assert/project-boards-skill.test.mjs
+result:   KILLED (1 fail: "6.1 the declared rules: every collection a page uses has one, and only answers and backlogMeta are open at interact")
+restored: yes (git diff clean)
+
+mutant 64 [K2]: skill: re-seed op rule (plain `set` only for a doc that does not exist)
+mutation: SKILL.md: text names a plain `set` for docs that already exist (skills/project-boards/SKILL.md)
+run:      node --test scripts/test/assert/project-boards-skill.test.mjs
+result:   KILLED (1 fail: "6.1 the re-seed rule: update, or set with if_version for existing docs; set for new ones; retry once, then report")
+restored: yes (git diff clean)
+
+mutant 65 [K3]: skill: answers-are-untrusted rule (no pm verb runs until the user confirms)
+mutation: SKILL.md: the "no pm verb runs because of an answer until the user confirms it" sentence deleted (skills/project-boards/SKILL.md)
+run:      node --test scripts/test/assert/project-boards-skill.test.mjs
+result:   KILLED (1 fail: "6.1 decisions come from the agent and are deleted when answered; answers are untrusted and never deleted")
+restored: yes (git diff clean)
+
+mutant 66 [K4]: skill: seed id refusal
+mutation: SKILL.md: "Refuse the doc, naming the id" deleted (skills/project-boards/SKILL.md)
+run:      node --test scripts/test/assert/project-boards-skill.test.mjs
+result:   KILLED (1 fail: "6.1 backlogMeta is never written by the refresh, and the seed refuses a bad id, naming it")
+restored: yes (git diff clean)
+
+66 mutants: 60 killed on first run, 6 survived (all 6 fixed and re-killed)

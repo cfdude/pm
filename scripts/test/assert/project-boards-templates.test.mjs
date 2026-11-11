@@ -82,6 +82,12 @@ for (const name of [BACKLOG, PLAN]) {
     assert.deepEqual(bad, [], "an unescaped interpolation");
   });
 
+  test(`6.2 ${name}: H() never wraps a bare field, so a raw value cannot pass the interpolation check disguised as H(e.id)`, () => {
+    const b = blockOf(bytes(name));
+    const bare = [...b.matchAll(/\$\{\s*H\(\s*([A-Za-z_$][\w$]*(?:\.[\w$]+|\[[^\]]*\])+)\s*\)\s*\}/g)].map(m => m[0]);
+    assert.deepEqual(bare, [], "a field reference goes through esc(), never H()");
+  });
+
   test(`6.2 ${name}: esc escapes text, attribute and class positions; ids and URLs are checked; priority is allowlisted`, () => {
     const { esc, okId, safeUrl, prioOf, inlineJson } = load(name, SHARED);
     assert.equal(esc(`<img src=x onerror=alert(1)>"'&`), "&lt;img src=x onerror=alert(1)&gt;&quot;&#39;&amp;");
