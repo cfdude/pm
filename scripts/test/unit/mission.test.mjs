@@ -194,3 +194,23 @@ unitTest("rules section: at most 280 bytes, ends the statement in an ellipsis an
   assert.equal(missionSectionText({ mission: { current: null, milestoneRelease: "r2" } }), "");
   assert.match(missionSectionText({ mission: { current: { statement: "short" }, milestoneRelease: null } }), /Mission milestone: none/);
 });
+
+unitTest("comment markers: `<!--` and `-->` are refused in the statement and in criterion text, writing nothing", () => {
+  refusedWith(record(), { statement: "a <!-- b", reason: "r" }, /--statement.*<!--/);
+  refusedWith(record(), { statement: "a --> b", reason: "r" }, /--statement.*-->/);
+  refusedWith(record(), { "add-criterion": "a <!-- b" }, /--add-criterion.*<!--/);
+  refusedWith(record(), { "add-criterion": "ok", check: "x --> y" }, /--check.*-->/);
+});
+
+unitTest("a stray positional on the mission verb is refused, writing nothing", () => {
+  const engine = memoryEngine(record());
+  const before = JSON.stringify(engine.store.record());
+  const r = engine.result(["mission", "stray", "--statement", "x", "--reason", "r"]);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /stray|positional/i);
+  assert.equal(JSON.stringify(engine.store.record()), before);
+});
+
+unitTest("the release verb-effects row says `release here` writes state.releasePlan", () => {
+  assert.match(VERB_EFFECTS.release.writes, /release here.*state\.releasePlan/);
+});

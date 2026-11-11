@@ -190,3 +190,11 @@ unitTest("here: the brief's release lines carry neither mark", () => {
 unitTest("here: no existing release is named here, and the flag surface is unchanged for release show", () => {
   expectFail(() => memoryEngine(record([], [rel("r1")]))(["release", "show", "--theme", "x"]));
 });
+
+unitTest("here: --text, --next and --clear-here are refused on a plain release amendment, naming `release here`", () => {
+  const engine = memoryEngine(record([], [rel("r1")]));
+  refused(engine, ["release", "r1", "--text", "x"], /release here r1 --text/);
+  refused(engine, ["release", "r1", "--next", "x"], /release here r1 --text/);
+  refused(engine, ["release", "r1", "--clear-here"], /release here r1 --text/);
+  refused(engine, ["release", "r1", "--intent", "y", "--text", "x"], /release here r1 --text/);
+});

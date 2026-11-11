@@ -21,6 +21,7 @@
 import { escapeControls, findRelease } from "./constants.mjs";
 import { activeCriteria, missionOf } from "./mission-record.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { checkedPositionals } from "./argv-surface.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -41,6 +42,7 @@ const NEWLINE = new RegExp("[\\r\\n" + String.fromCharCode(0x2028, 0x2029) + "]"
 /** One line of at most `max` characters, or the refusal text. */
 function lineError(flag, value, max) {
   if (typeof value !== "string" || value.trim() === "") return `--${flag} requires one line of at most ${max} characters`;
+  if (flag !== "reason" && (value.includes("<!--") || value.includes("-->"))) return `--${flag} must not contain \`<!--\` or \`-->\` (it is written into CLAUDE.md's managed block, where a comment marker would break it)`;
   if (NEWLINE.test(value)) return `--${flag} must be one line of at most ${max} characters (it contains a newline)`;
   if ([...value].length > max) return `--${flag} must be one line of at most ${max} characters (got ${[...value].length})`;
   return null;
@@ -172,6 +174,11 @@ export function missionShowLines(state, { history = false } = {}) {
 export function mission() {
   if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const argv = currentArgv().slice(3);
+  // A positional other than the reserved `show` was silently dropped (checkedPositionals, argv-surface.mjs).
+  const [positional] = checkedPositionals("mission");
+  if (positional !== undefined && positional !== SHOW) {
+    die(`conductor: mission takes the read keyword \`show\` or flags only, not '${escapeControls(positional)}'. Nothing was written.\n`);
+  }
   const read = argv[0] === SHOW;
   const f = parseFlags(read ? argv.slice(1) : argv);
   requireFlagValues("mission", f);

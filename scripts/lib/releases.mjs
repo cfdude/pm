@@ -126,6 +126,12 @@ export function release() {
   // `--member` was dropped by str()/lastStr() and the release was written without it; only
   // `--reason` had a check of its own, and only because a deferral demands one.
   requireFlagValues("release", f);
+  // `--text`, `--next` and `--clear-here` belong to the `here` branch alone; on an ordinary amendment they were silently ignored.
+  const hereOnly = ["text", "next", "clear-here"].filter(k => f[k] !== undefined);
+  if (hereOnly.length) {
+    refuse(`${hereOnly.map(k => `--${escapeControls(k)}`).join(", ")} belong to the plan marker, not to a release amendment: ` +
+      `use: release ${HERE} ${escapeControls(id)} --text "<line>" [--next "<line>"] (or: release ${HERE} --clear-here). Nothing was written.`);
+  }
 
   // PLAN FIELDS (project-boards): every value is checked HERE, before any write. A text field is one line of at most
   // 400 characters, `--order` a non-negative integer, `--size` one of major|minor|patch.

@@ -404,3 +404,85 @@ result:   KILLED (1 fail: "6.1 backlogMeta is never written by the refresh, and 
 restored: yes (git diff clean)
 
 66 mutants: 60 killed on first run, 6 survived (all 6 fixed and re-killed)
+
+# Gate 2 fixes: the brief boards line, `release` here-only flags, mission hardening, and the six reviewer probes
+
+mutant 67 [GB1]: brief boards line: all five refresh triggers
+mutation: boards-switch.mjs: `a release or mission write` -> `a release write` in BOARDS_BRIEF_LINE_TEMPLATE (scripts/lib/boards-switch.mjs)
+run:      node --test scripts/test/assert/boards-switch.test.mjs
+result:   KILLED (1 fail: "5.1 the brief's boards line names a platform-resolved /pm:boards and all five refresh triggers, within 160 bytes")
+restored: yes
+
+mutant 68 [GB2]: brief boards line: names a platform-resolved boards command
+mutation: boards-switch.mjs: `Redraw with {{pm:boards}} after` -> `Redraw after` (scripts/lib/boards-switch.mjs)
+run:      node --test scripts/test/assert/boards-switch.test.mjs
+result:   KILLED (1 fail: "5.1 the brief's boards line names a platform-resolved /pm:boards and all five refresh triggers, within 160 bytes")
+restored: yes
+
+mutant 69 [GB3]: brief boards line: platform resolution
+mutation: boards-switch.mjs: boardsBriefLine resolves with a fixed `claude-code` instead of resolvePlatform({}, state) (scripts/lib/boards-switch.mjs)
+run:      node --test scripts/test/assert/boards-switch.test.mjs
+result:   KILLED (1 fail: "5.1 the brief's boards line names a platform-resolved /pm:boards and all five refresh triggers, within 160 bytes")
+restored: yes
+
+mutant 70 [GR1]: release: --text/--next/--clear-here refused outside `here`
+mutation: releases.mjs: `if (hereOnly.length)` -> `if (false)` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: 'here: --text, --next and --clear-here are refused on a plain release amendment, naming `release here`')
+restored: yes
+
+mutant 71 [GM1]: mission: comment markers refused
+mutation: mission.mjs lineError: marker test -> `false` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'comment markers: `<!--` and `-->` are refused in the statement and in criterion text, writing nothing')
+restored: yes
+
+mutant 72 [GM2]: mission: stray positional refused
+mutation: mission.mjs: `positional !== undefined && positional !== SHOW` -> `false` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'a stray positional on the mission verb is refused, writing nothing')
+restored: yes
+
+mutant 73 [GV1]: verb-effects: release row names `release here` and state.releasePlan
+mutation: verb-effects.mjs: `; `release here` writes state.releasePlan` deleted (scripts/lib/verb-effects.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'the release verb-effects row says `release here` writes state.releasePlan')
+restored: yes
+
+mutant 74 [P1]: probe: `release here` stray flag (`release here r1 --intent x`)
+mutation: releases.mjs: the stray-flag filter -> `() => false` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: 'here: an unknown release id is refused, and `here` cannot be created as a release')
+restored: yes
+
+mutant 75 [P2]: probe: `--clear-here` with an id
+mutation: releases.mjs: `clearing && (id !== undefined ||` -> `clearing && (false ||` (scripts/lib/releases.mjs)
+run:      node --test scripts/test/unit/release-plan.test.mjs
+result:   KILLED (1 fail: 'here: an unknown release id is refused, and `here` cannot be created as a release')
+restored: yes
+
+mutant 76 [P3]: probe: `--check` without `--add-criterion`
+mutation: mission.mjs: `&& !has("add-criterion")` guard -> `&& false` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'criteria: --check and --needs-human apply only to --add-criterion and not together; criteria need no milestone')
+restored: yes
+
+mutant 77 [P4]: probe: --reason serves exactly one operation
+mutation: mission.mjs: `reasoned.length > 1` -> `reasoned.length > 5` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'reason: serves exactly one operation, and is required by each')
+restored: yes
+
+mutant 78 [P5]: probe: already-removed criterion
+mutation: mission.mjs: `if (c.removedAt) return refuse` -> `if (false) return refuse` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'criteria: ids are never reused, removal marks and keeps the record, and the board lists only active ones')
+restored: yes
+
+mutant 79 [P6]: probe: --milestone with --clear-milestone
+mutation: mission.mjs: `has("milestone") && has("clear-milestone")` -> `... && false` (scripts/lib/mission.mjs)
+run:      node --test scripts/test/unit/mission.test.mjs
+result:   KILLED (1 fail: 'milestone: refuses an unknown release; --clear-milestone clears it and every criticalPath reads null')
+restored: yes
+
+13 mutants (67-79): 13 killed on first run, 0 survived. Running total: 79 mutants, 73 killed on first run, 6 survived (all 6 fixed and re-killed).

@@ -13,7 +13,7 @@ import { tmpRepo, run, runCombined, readState } from "../fixtures/assert-harness
 import { rulesBlock } from "../../lib/rules.mjs";
 import { buildBriefParts } from "../../lib/briefing.mjs";
 import { BRIEF_BYTE_CAP, fitBrief } from "../../lib/session-cost.mjs";
-import { BOARDS_BRIEF_LINE, BOARDS_BRIEF_LINE_MAX_BYTES, BOARDS_SECTION_MAX_BYTES } from "../../lib/boards-switch.mjs";
+import { BOARDS_BRIEF_LINE, BOARDS_BRIEF_LINE_MAX_BYTES, BOARDS_SECTION_MAX_BYTES, boardsBriefLine } from "../../lib/boards-switch.mjs";
 import { missionBriefLine } from "../../lib/mission-record.mjs";
 import { collectSurfaces } from "../../lib/overhead.mjs";
 
@@ -88,6 +88,20 @@ test("5.1 the brief carries the boards line, at most 160 bytes, and not while th
   run(["set-boards", "off"], { cwd });
   assert.ok(!run(["brief"], { cwd }).includes("BOARDS:"));
   assert.ok(!fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8").includes("BOARDS:"), "PROJECT.md embeds the brief and was re-rendered");
+});
+
+test("5.1 the brief's boards line names a platform-resolved /pm:boards and all five refresh triggers, within 160 bytes", () => {
+  const cwd = repo();
+  const line = JSON.parse(run(["brief"], { cwd })).hookSpecificOutput.additionalContext.split("\n").find((l) => l.startsWith("BOARDS:"));
+  assert.ok(line, "the brief carries the line");
+  assert.match(line, /\/pm:boards/);
+  assert.match(line, /\/pm:sync/);
+  for (const trigger of [/status change/, /release/, /mission/, /gate record/]) assert.match(line, trigger);
+  assert.ok(Buffer.byteLength(line) <= BOARDS_BRIEF_LINE_MAX_BYTES, `${Buffer.byteLength(line)} bytes`);
+  assert.doesNotMatch(line, /\{\{/, "no unresolved placeholder");
+  assert.match(boardsBriefLine({ platform: "codex" }), /\/pm-boards/, "a recorded platform resolves the command form");
+  assert.match(boardsBriefLine({ platform: "codex" }), /\/pm-sync/);
+  assert.ok(Buffer.byteLength(boardsBriefLine({ platform: "codex" })) <= BOARDS_BRIEF_LINE_MAX_BYTES);
 });
 
 test("5.1 overhead reports rules:boards and brief:boards under boards, brief without the line, and 0 bytes for boards while off", () => {

@@ -9,6 +9,9 @@
 // `state.boards = {enabled: false}`, and `set-boards on` removes that key again, so each is the other's inverse and a
 // record that never touched the switch is byte-identical to one that turned it off and on. No MIGRATIONS entry is needed.
 
+import { PLATFORM_COMMAND_PREFIX } from "./constants.mjs";
+import { resolvePlatform } from "./platform.mjs";
+
 /** The release that adds the switch. `upgrade` announces default-on boards when it moves a repo from below this. */
 export const BOARDS_RELEASE = "0.55.0";
 
@@ -33,12 +36,21 @@ export const BOARDS_SECTION = [
   "`{{pm:sync}}`, a status change, a release or mission write, or a gate record. `set-boards off` turns them off.",
 ].join("\n");
 
-/** The brief's one boards line. A plain string among the obligations, so fitBrief() never shortens it. */
-export const BOARDS_BRIEF_LINE =
-  "BOARDS: on. Refresh them with the project-boards skill after a sync, a status change or a gate record; set-boards off turns them off.";
+/** The brief's one boards line, with its slash commands as `{{pm:<name>}}` placeholders that boardsBriefLine() resolves to the
+ *  platform's own form. All five refresh triggers, at most 160 bytes once resolved. A plain string among the obligations, so
+ *  fitBrief() never shortens it. */
+export const BOARDS_BRIEF_LINE_TEMPLATE =
+  "BOARDS: on. Redraw with {{pm:boards}} after {{pm:sync}}, an epic status change, a release or mission write, or a gate record; set-boards off.";
+
+const resolveCmds = (text, platform) =>
+  text.replace(/\{\{pm:([a-z-]+)\}\}/g, (_, name) => (PLATFORM_COMMAND_PREFIX[platform] || PLATFORM_COMMAND_PREFIX["claude-code"]) + name);
+
+/** The line as the default (claude-code) platform reads it. */
+export const BOARDS_BRIEF_LINE = resolveCmds(BOARDS_BRIEF_LINE_TEMPLATE, "claude-code");
 
 /** The `## Boards` text for `state`, or "" while the boards are off. */
 export const boardsSectionText = (state) => (boardsEnabled(state) ? BOARDS_SECTION : "");
 
 /** The brief's boards line for `state`, or "" while the boards are off. */
-export const boardsBriefLine = (state) => (boardsEnabled(state) ? BOARDS_BRIEF_LINE : "");
+export const boardsBriefLine = (state) =>
+  (boardsEnabled(state) ? resolveCmds(BOARDS_BRIEF_LINE_TEMPLATE, resolvePlatform({}, state)) : "");

@@ -129,7 +129,7 @@ export const VERB_EFFECTS = {
   // `set-gate-guard`'s read form has. The classification stays `mutates` because it is a property
   // of the VERB, which is what the divergence warning is gated on; declaring it read-only would
   // silence that warning for every real write the verb makes.
-  release: { effect: "mutates", epicWriting: true, writes: "state.json (releases, one-way membership, deferrals and the amendments trail), plus render()'s writes — except `release show`, which writes nothing at all" },
+  release: { effect: "mutates", epicWriting: true, writes: "state.json (releases, one-way membership, deferrals and the amendments trail; `release here` writes state.releasePlan), plus render()'s writes — except `release show`, which writes nothing at all" },
   "record-reconcile": { effect: "mutates", epicWriting: true, writes: "state.json (the reconcile verdict on an epic's detour link)" },
   "record-gate-review": { effect: "mutates", epicWriting: true, writes: "state.json (gateReview.gateN and, in the same write, the epic's gateRounds tally); a verdict that leaves the recorded rounds signal tripped also prints the STOP block on stderr" },
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
