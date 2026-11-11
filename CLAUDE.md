@@ -557,7 +557,10 @@ agent) do:
    Never use double quotes: `$(…)`, backticks and `"` inside them change the command. Keep
    `--title=` and `--ask=` attached to their values: that is what lets a title that starts with
    `-` reach the engine as a title.
-   `add-epic --id gh-cfdude-pm-<issue-number> --title=<issue-title> --status untriaged --external-id <issue-number> --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`
+   `add-epic --id gh-cfdude-pm-<issue-number> --title=<issue-title> --status untriaged --external-id <issue-number> --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2 --summary=<one-line summary>`
+   Write `<one-line summary>` from the item's body: one line, at most 200 characters, in your own
+   words and never the raw body, as ONE single-quoted word like the other placeholders. When the
+   body gives nothing to summarise, leave `--summary=` off rather than invent one.
    Take `<lane>` from LANE ROUTING, never a fixed value: run `suggest-lane --ask=<issue-title>`
    and use the lane it returns; when it returns none, apply this repo's generic lane
    heuristic. The lane decides whether the work leaves any spec, plan or gate record, so
@@ -598,6 +601,11 @@ run `/pm:sync` — to pull
 in anything new that appeared while you were heads-down. You're already doing tracker I/O
 for this epic, so this is the cheapest moment to catch it; this applies whether you have one
 tracker or several (primary + secondary) configured.
+
+## Boards
+
+The `project-boards` skill and `/pm:boards` draw the backlog and release boards from `board --json`. Refresh them after
+`/pm:sync`, a status change, a release or mission write, or a gate record. `set-boards off` turns them off.
 
 ## Re-read the source before an epic becomes the work
 

@@ -23,7 +23,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:47:13.519Z",
-      "touchedAt": "2026-09-10T02:47:13.521Z"
+      "touchedAt": "2026-09-10T02:47:13.521Z",
+      "number": 1000
     },
     {
       "id": "epic-hierarchy-orchestration",
@@ -47,7 +48,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:47:15.824Z",
-      "touchedAt": "2026-09-10T02:47:15.826Z"
+      "touchedAt": "2026-09-10T02:47:15.826Z",
+      "number": 1001
     },
     {
       "id": "portfolio-architecture-consistency-scan",
@@ -76,7 +78,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:17.889Z"
+      "touchedAt": "2026-09-10T02:47:17.889Z",
+      "number": 1003
     },
     {
       "id": "infra-runbook-preflight",
@@ -99,7 +102,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:47:19.918Z",
-      "touchedAt": "2026-09-10T02:47:19.920Z"
+      "touchedAt": "2026-09-10T02:47:19.920Z",
+      "number": 1002
     },
     {
       "id": "pm-plugin-improvements-2026-07-14",
@@ -122,7 +126,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:21.988Z"
+      "touchedAt": "2026-09-10T02:47:21.988Z",
+      "number": 1017
     },
     {
       "id": "gate-guard-default-on-reconcile",
@@ -160,7 +165,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:24.027Z"
+      "touchedAt": "2026-09-10T02:47:24.027Z",
+      "number": 1012
     },
     {
       "id": "diffshape-minimal-detour-inference",
@@ -198,7 +204,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:26.059Z"
+      "touchedAt": "2026-09-10T02:47:26.059Z",
+      "number": 1009
     },
     {
       "id": "remove-epic-verb",
@@ -272,7 +279,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T02:51:52.853Z"
+      "completedAt": "2026-09-10T02:51:52.853Z",
+      "number": 1019
     },
     {
       "id": "fix-archived-no-change-warning",
@@ -304,7 +312,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:28.155Z"
+      "touchedAt": "2026-09-10T02:47:28.155Z",
+      "number": 1011
     },
     {
       "id": "reconciler-structured-writeback",
@@ -342,7 +351,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:30.214Z"
+      "touchedAt": "2026-09-10T02:47:30.214Z",
+      "number": 1018
     },
     {
       "id": "lane-routing-config",
@@ -374,7 +384,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:32.267Z"
+      "touchedAt": "2026-09-10T02:47:32.267Z",
+      "number": 1015
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
@@ -406,7 +417,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:34.310Z"
+      "touchedAt": "2026-09-10T02:47:34.310Z",
+      "number": 1004
     },
     {
       "id": "honcho-memory-string-print",
@@ -438,7 +450,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:36.339Z"
+      "touchedAt": "2026-09-10T02:47:36.339Z",
+      "number": 1013
     },
     {
       "id": "verify-state-command",
@@ -476,7 +489,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:38.403Z"
+      "touchedAt": "2026-09-10T02:47:38.403Z",
+      "number": 1020
     },
     {
       "id": "dependency-aware-standalone-ordering",
@@ -514,7 +528,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:40.495Z"
+      "touchedAt": "2026-09-10T02:47:40.495Z",
+      "number": 1008
     },
     {
       "id": "per-epic-review-mode-override",
@@ -546,7 +561,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:42.667Z"
+      "touchedAt": "2026-09-10T02:47:42.667Z",
+      "number": 1016
     },
     {
       "id": "epic-timestamps-and-staleness",
@@ -578,7 +594,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:44.662Z"
+      "touchedAt": "2026-09-10T02:47:44.662Z",
+      "number": 1010
     },
     {
       "id": "category-based-preauthorization",
@@ -610,7 +627,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:46.653Z"
+      "touchedAt": "2026-09-10T02:47:46.653Z",
+      "number": 1005
     },
     {
       "id": "incremental-notify-timing-fix",
@@ -642,7 +660,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:48.614Z"
+      "touchedAt": "2026-09-10T02:47:48.614Z",
+      "number": 1014
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
@@ -674,7 +693,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:50.616Z"
+      "touchedAt": "2026-09-10T02:47:50.616Z",
+      "number": 1007
     },
     {
       "id": "changelog-preview-in-sessionstart-nudge",
@@ -706,7 +726,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:52.661Z"
+      "touchedAt": "2026-09-10T02:47:52.661Z",
+      "number": 1006
     },
     {
       "id": "ai-feedback-loop-github-issues",
@@ -748,7 +769,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:54.665Z"
+      "touchedAt": "2026-09-10T02:47:54.665Z",
+      "number": 1021
     },
     {
       "id": "github-issue-tracker-sync",
@@ -796,7 +818,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:56.678Z"
+      "touchedAt": "2026-09-10T02:47:56.678Z",
+      "number": 1026
     },
     {
       "id": "cfdude-pm-repo-governance",
@@ -819,7 +842,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:47:58.675Z"
+      "touchedAt": "2026-09-10T02:47:58.675Z",
+      "number": 1024
     },
     {
       "id": "branch-protection-and-pr-workflow",
@@ -862,7 +886,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:00.670Z"
+      "touchedAt": "2026-09-10T02:48:00.670Z",
+      "number": 1023
     },
     {
       "id": "ci-test-lint-workflow",
@@ -900,7 +925,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:02.701Z"
+      "touchedAt": "2026-09-10T02:48:02.701Z",
+      "number": 1025
     },
     {
       "id": "autonomous-issue-resolution-agent",
@@ -924,7 +950,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:04.755Z"
+      "touchedAt": "2026-09-10T02:48:04.755Z",
+      "number": 1022
     },
     {
       "id": "df-stale-cache-silent-fallback",
@@ -962,7 +989,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:48:06.751Z",
-      "touchedAt": "2026-09-10T02:48:06.753Z"
+      "touchedAt": "2026-09-10T02:48:06.753Z",
+      "number": 1029
     },
     {
       "id": "df-plan-hierarchy-includes-archived-children",
@@ -986,7 +1014,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:48:09.194Z",
-      "touchedAt": "2026-09-10T02:48:09.196Z"
+      "touchedAt": "2026-09-10T02:48:09.196Z",
+      "number": 1028
     },
     {
       "id": "df-hierarchy-no-shared-file-conflict-detection",
@@ -1010,7 +1039,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:48:11.483Z",
-      "touchedAt": "2026-09-10T02:48:11.484Z"
+      "touchedAt": "2026-09-10T02:48:11.484Z",
+      "number": 1027
     },
     {
       "id": "df-github-tracker-outward-sync-unsuppressed",
@@ -1047,7 +1077,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:13.993Z"
+      "touchedAt": "2026-09-10T02:48:13.993Z",
+      "number": 1030
     },
     {
       "id": "df-changelog-fragment-conflicts",
@@ -1084,7 +1115,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:15.989Z"
+      "touchedAt": "2026-09-10T02:48:15.989Z",
+      "number": 1032
     },
     {
       "id": "df-conflict-resolution-verification-step",
@@ -1121,7 +1153,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:18.579Z"
+      "touchedAt": "2026-09-10T02:48:18.579Z",
+      "number": 1033
     },
     {
       "id": "df-skill-commands-line-drift",
@@ -1158,7 +1191,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:21.000Z"
+      "touchedAt": "2026-09-10T02:48:21.000Z",
+      "number": 1035
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
@@ -1195,7 +1229,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:23.408Z"
+      "touchedAt": "2026-09-10T02:48:23.408Z",
+      "number": 1034
     },
     {
       "id": "df-stray-render-artifacts-noise",
@@ -1232,7 +1267,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:25.652Z"
+      "touchedAt": "2026-09-10T02:48:25.652Z",
+      "number": 1036
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
@@ -1269,7 +1305,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:27.716Z"
+      "touchedAt": "2026-09-10T02:48:27.716Z",
+      "number": 1037
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",
@@ -1293,7 +1330,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:29.781Z"
+      "touchedAt": "2026-09-10T02:48:29.781Z",
+      "number": 1031
     },
     {
       "id": "df-readme-stale-since-gate-guard",
@@ -1316,7 +1354,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:32.025Z"
+      "touchedAt": "2026-09-10T02:48:32.025Z",
+      "number": 1038
     },
     {
       "id": "multi-platform-agent-support",
@@ -1344,7 +1383,8 @@
         "declined": []
       },
       "completedAt": "2026-09-08T06:43:24.797Z",
-      "createdAt": "2026-07-15T18:53:56-07:00"
+      "createdAt": "2026-07-15T18:53:56-07:00",
+      "number": 1039
     },
     {
       "id": "df-no-mechanical-openspec-gate-enforcement",
@@ -1386,7 +1426,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:35.007Z"
+      "touchedAt": "2026-09-10T02:48:35.007Z",
+      "number": 1040
     },
     {
       "id": "df-orchestrator-committed-release-without-reverifying",
@@ -1410,7 +1451,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:37.200Z"
+      "touchedAt": "2026-09-10T02:48:37.200Z",
+      "number": 1041
     },
     {
       "id": "df-hierarchy-executor-must-check-readme-for-user-facing-changes",
@@ -1434,7 +1476,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:41.049Z"
+      "touchedAt": "2026-09-10T02:48:41.049Z",
+      "number": 1042
     },
     {
       "id": "docs-site-cleanup",
@@ -1495,7 +1538,8 @@
         "assertedAt": "2026-09-10T02:51:26.099Z",
         "deferrals": [],
         "declined": []
-      }
+      },
+      "number": 1043
     },
     {
       "id": "df-precommit-hook-too-noisy-on-success",
@@ -1532,7 +1576,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:44.566Z"
+      "touchedAt": "2026-09-10T02:48:44.566Z",
+      "number": 1046
     },
     {
       "id": "df-engine-banner-noise-every-invocation",
@@ -1570,7 +1615,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:50.380Z"
+      "touchedAt": "2026-09-10T02:48:50.380Z",
+      "number": 1045
     },
     {
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",
@@ -1607,7 +1653,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:48:55.150Z"
+      "touchedAt": "2026-09-10T02:48:55.150Z",
+      "number": 1047
     },
     {
       "id": "df-contributing-doc-missing-direct-push-recovery",
@@ -1631,7 +1678,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:00.585Z"
+      "touchedAt": "2026-09-10T02:49:00.585Z",
+      "number": 1044
     },
     {
       "id": "multi-tracker-primary-secondary-support",
@@ -1661,7 +1709,8 @@
         "recordedAt": "2026-07-20T01:04:54.194Z",
         "recordedBy": "migration"
       },
-      "createdAt": "2026-07-19T17:40:47-07:00"
+      "createdAt": "2026-07-19T17:40:47-07:00",
+      "number": 1049
     },
     {
       "id": "2026-07-14-epic-hierarchy-orchestration",
@@ -1686,7 +1735,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:06.322Z"
+      "touchedAt": "2026-09-10T02:49:06.322Z",
+      "number": 1048
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
@@ -1723,7 +1773,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:11.738Z"
+      "touchedAt": "2026-09-10T02:49:11.738Z",
+      "number": 1050
     },
     {
       "id": "conductor-mjs-module-split",
@@ -1749,7 +1800,8 @@
         "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md",
-      "createdAt": "2026-07-20T20:27:55-07:00"
+      "createdAt": "2026-07-20T20:27:55-07:00",
+      "number": 1051
     },
     {
       "id": "edd-harness-agent-behavior-testing",
@@ -1775,7 +1827,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:16.575Z"
+      "touchedAt": "2026-09-10T02:49:16.575Z",
+      "number": 1052
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
@@ -1800,7 +1853,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:20.989Z"
+      "touchedAt": "2026-09-10T02:49:20.989Z",
+      "number": 1060
     },
     {
       "id": "platform-parity-mechanism",
@@ -1827,7 +1881,8 @@
         "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md",
-      "createdAt": "2026-07-28T19:25:39-07:00"
+      "createdAt": "2026-07-28T19:25:39-07:00",
+      "number": 1059
     },
     {
       "id": "codex-platform-support",
@@ -1869,7 +1924,8 @@
           "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
         }
       ],
-      "touchedAt": "2026-10-06T19:57:52.529Z"
+      "touchedAt": "2026-10-06T19:57:52.529Z",
+      "number": 1053
     },
     {
       "id": "hermes-platform-support",
@@ -1917,7 +1973,8 @@
           "text": "Deprioritised 2026-11-03 by Rob: no pressing need; ranked just above codex-platform-support."
         }
       ],
-      "startedAt": "2026-11-02T23:33:19.245Z"
+      "startedAt": "2026-11-02T23:33:19.245Z",
+      "number": 1058
     },
     {
       "id": "edd-observe-hardcodes-claude-md",
@@ -1953,7 +2010,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:26.867Z"
+      "touchedAt": "2026-09-10T02:49:26.867Z",
+      "number": 1056
     },
     {
       "id": "edd-user-memory-confound-control-run",
@@ -2017,7 +2075,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:32.251Z"
+      "touchedAt": "2026-09-10T02:49:32.251Z",
+      "number": 1057
     },
     {
       "id": "edd-measures-installed-plugin-not-worktree",
@@ -2047,7 +2106,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:37.758Z"
+      "touchedAt": "2026-09-10T02:49:37.758Z",
+      "number": 1055
     },
     {
       "id": "edd-adapter-discards-agent-stdout",
@@ -2080,7 +2140,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T09:49:32.280Z",
-      "createdAt": "2026-07-28T19:25:39-07:00"
+      "createdAt": "2026-07-28T19:25:39-07:00",
+      "number": 1054
     },
     {
       "id": "init-detects-foreign-agent-instruction-files",
@@ -2106,7 +2167,8 @@
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-10-17T12:42:17.936Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "number": 1065
     },
     {
       "id": "rules-block-cli-fallback",
@@ -2148,7 +2210,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:57:36.451Z"
+      "completedAt": "2026-10-14T04:57:36.451Z",
+      "number": 1067
     },
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
@@ -2202,7 +2265,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T01:57:09.323Z",
-      "createdAt": "2026-07-30T12:31:30-07:00"
+      "createdAt": "2026-07-30T12:31:30-07:00",
+      "number": 64
     },
     {
       "id": "gh-65-autodetour-false-positives",
@@ -2260,7 +2324,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:43.640Z"
+      "touchedAt": "2026-09-10T02:49:43.640Z",
+      "number": 65
     },
     {
       "id": "gh-66-update-epic-missing-flags",
@@ -2290,7 +2355,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T01:56:33.852Z",
-      "createdAt": "2026-07-30T12:31:30-07:00"
+      "createdAt": "2026-07-30T12:31:30-07:00",
+      "number": 66
     },
     {
       "id": "gh-69-sync-no-done-signal-for-plans",
@@ -2320,7 +2386,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T01:56:35.618Z",
-      "createdAt": "2026-07-30T12:31:30-07:00"
+      "createdAt": "2026-07-30T12:31:30-07:00",
+      "number": 69
     },
     {
       "id": "gh-70-link-validation-gap",
@@ -2345,7 +2412,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:49.287Z"
+      "touchedAt": "2026-09-10T02:49:49.287Z",
+      "number": 70
     },
     {
       "id": "test-suite-perf-and-scaffolding",
@@ -2411,7 +2479,8 @@
         "assertedAt": "2026-09-10T02:51:49.231Z",
         "deferrals": [],
         "declined": []
-      }
+      },
+      "number": 1068
     },
     {
       "id": "2026-07-21-conductor-mjs-module-split",
@@ -2436,7 +2505,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:55.138Z"
+      "touchedAt": "2026-09-10T02:49:55.138Z",
+      "number": 1061
     },
     {
       "id": "2026-07-26-edd-harness-agent-behavior-testing",
@@ -2461,7 +2531,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:49:59.718Z"
+      "touchedAt": "2026-09-10T02:49:59.718Z",
+      "number": 1062
     },
     {
       "id": "2026-07-29-platform-aware-rules-block",
@@ -2486,7 +2557,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:50:02.410Z"
+      "touchedAt": "2026-09-10T02:50:02.410Z",
+      "number": 1063
     },
     {
       "id": "platform-switch-orphans-old-rules-block",
@@ -2553,7 +2625,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T21:54:59.060Z"
+      "completedAt": "2026-11-01T21:54:59.060Z",
+      "number": 1066
     },
     {
       "id": "autodetour-parser-misses-am-and-f",
@@ -2592,7 +2665,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T05:18:40.665Z",
-      "createdAt": "2026-07-30T12:31:30-07:00"
+      "createdAt": "2026-07-30T12:31:30-07:00",
+      "number": 1064
     },
     {
       "id": "edd-corpus-expansion-nondeterministic-surfaces",
@@ -2638,7 +2712,8 @@
       ],
       "touchedAt": "2026-11-01T18:54:09.262Z",
       "release": "0.54.0",
-      "startedAt": "2026-11-01T17:36:10.732Z"
+      "startedAt": "2026-11-01T17:36:10.732Z",
+      "number": 1069
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2679,7 +2754,8 @@
         }
       ],
       "touchedAt": "2026-10-17T12:42:17.936Z",
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "number": 1072
     },
     {
       "id": "parity-propagation-skill",
@@ -2708,7 +2784,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T04:37:57.415Z",
-      "touchedAt": "2026-09-10T04:37:57.417Z"
+      "touchedAt": "2026-09-10T04:37:57.417Z",
+      "number": 1071
     },
     {
       "id": "parity-ledger-exemptions",
@@ -2737,7 +2814,8 @@
         "declined": []
       },
       "completedAt": "2026-09-28T22:29:00.123Z",
-      "touchedAt": "2026-09-28T22:29:00.126Z"
+      "touchedAt": "2026-09-28T22:29:00.126Z",
+      "number": 1070
     },
     {
       "id": "state-lost-update-concurrent-sessions",
@@ -2769,7 +2847,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:50:04.654Z"
+      "touchedAt": "2026-09-10T02:50:04.654Z",
+      "number": 83
     },
     {
       "id": "epic-session-attribution",
@@ -2883,7 +2962,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-20T11:38:09.086Z"
+      "completedAt": "2026-10-20T11:38:09.086Z",
+      "number": 1078
     },
     {
       "id": "cross-session-epic-assignment",
@@ -2919,7 +2999,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T13:31:47.624Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 84
     },
     {
       "id": "changelog-page-too-long-archive-older-releases",
@@ -2943,7 +3024,8 @@
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-09-10T04:38:01.014Z"
+      "touchedAt": "2026-09-10T04:38:01.014Z",
+      "number": 1074
     },
     {
       "id": "gh-71-update-epic-positional-id",
@@ -2968,7 +3050,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:39.653Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 71
     },
     {
       "id": "gh-79-epic-description-and-notes",
@@ -2999,7 +3082,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:41.261Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 79
     },
     {
       "id": "gh-80-gate-guard-refusal-applies-anyway",
@@ -3024,7 +3108,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:42.876Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 80
     },
     {
       "id": "gh-81-project-md-never-clean",
@@ -3053,7 +3138,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:21:57.625Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 81
     },
     {
       "id": "gh-82-claude-project-dir-overrides-cwd",
@@ -3081,7 +3167,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:21:59.323Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 82
     },
     {
       "id": "gh-85-document-mutating-verbs",
@@ -3109,7 +3196,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:21:55.963Z",
-      "createdAt": "2026-08-16T23:06:53-07:00"
+      "createdAt": "2026-08-16T23:06:53-07:00",
+      "number": 85
     },
     {
       "id": "gh-86-openspec-lane-silent-zero-progress",
@@ -3134,7 +3222,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:50:06.847Z"
+      "touchedAt": "2026-09-10T02:50:06.847Z",
+      "number": 86
     },
     {
       "id": "edd-run-policy-when-behavior-artifacts-change",
@@ -3163,7 +3252,8 @@
         "declined": []
       },
       "completedAt": "2026-10-14T04:57:34.865Z",
-      "touchedAt": "2026-10-14T04:57:34.869Z"
+      "touchedAt": "2026-10-14T04:57:34.869Z",
+      "number": 1077
     },
     {
       "id": "conductor-skill-orient-reads-spec-inventory",
@@ -3193,7 +3283,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T04:37:37.658Z",
-      "touchedAt": "2026-09-10T04:37:37.660Z"
+      "touchedAt": "2026-09-10T04:37:37.660Z",
+      "number": 1075
     },
     {
       "id": "autonomy-grant-starts-at-apply-not-propose",
@@ -3216,7 +3307,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T04:37:39.483Z",
-      "touchedAt": "2026-09-10T04:37:39.485Z"
+      "touchedAt": "2026-09-10T04:37:39.485Z",
+      "number": 1073
     },
     {
       "id": "openspec-gate1-guard-on-apply",
@@ -3271,7 +3363,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:09.786Z"
+      "completedAt": "2026-10-14T04:55:09.786Z",
+      "number": 1079
     },
     {
       "id": "openspec-planning-completeness-instruction",
@@ -3329,7 +3422,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-05T21:51:46.998Z"
+      "completedAt": "2026-10-05T21:51:46.998Z",
+      "number": 1080
     },
     {
       "id": "dehardcode-openspec-change-root-in-instructions",
@@ -3445,7 +3539,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-20T11:33:39.373Z"
+      "completedAt": "2026-10-20T11:33:39.373Z",
+      "number": 1076
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -3470,7 +3565,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:50:08.950Z"
+      "touchedAt": "2026-09-10T02:50:08.950Z",
+      "number": 87
     },
     {
       "id": "gh-88-record-where-unfinished-tasks-went",
@@ -3495,7 +3591,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:44.467Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 88
     },
     {
       "id": "gh-89-delegate-discovery-to-subagents",
@@ -3522,7 +3619,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T14:55:17.891Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 89
     },
     {
       "id": "gh-90-honor-output-style-contract",
@@ -3549,7 +3647,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T14:55:19.380Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 90
     },
     {
       "id": "gh-91-autodetour-false-minimal-detour",
@@ -3576,7 +3675,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T06:57:07.922Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 91
     },
     {
       "id": "gh-92-epic-specpath",
@@ -3611,7 +3711,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T06:57:00.173Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 92
     },
     {
       "id": "gh-93-verify-specs-coverage",
@@ -3635,7 +3736,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T06:57:01.719Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 93
     },
     {
       "id": "gh-94-serial-detours-accepted-silently",
@@ -3662,7 +3764,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:18:55.790Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 94
     },
     {
       "id": "gh-95-stories-optional-and-gate-nothing",
@@ -3696,7 +3799,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T01:56:37.298Z",
-      "createdAt": "2026-08-16T23:22:35-07:00"
+      "createdAt": "2026-08-16T23:22:35-07:00",
+      "number": 95
     },
     {
       "id": "gh-100-link-types-no-known-set",
@@ -3730,7 +3834,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:18:54.273Z",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 100
     },
     {
       "id": "gh-101-dependency-order-blind-to-blocked",
@@ -3759,7 +3864,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T23:19:11.691Z",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 101
     },
     {
       "id": "2026-08-03-platform-parity-mechanism",
@@ -3783,7 +3889,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:50:11.030Z",
-      "touchedAt": "2026-09-10T02:50:11.031Z"
+      "touchedAt": "2026-09-10T02:50:11.031Z",
+      "number": 1081
     },
     {
       "id": "2026-08-14-eval-measures-worktree",
@@ -3807,7 +3914,8 @@
         "declined": []
       },
       "completedAt": "2026-09-10T02:50:13.056Z",
-      "touchedAt": "2026-09-10T02:50:13.058Z"
+      "touchedAt": "2026-09-10T02:50:13.058Z",
+      "number": 1082
     },
     {
       "id": "gh-104-commit-nudge-fires-on-text-match",
@@ -3841,7 +3949,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T06:57:06.318Z",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 104
     },
     {
       "id": "gh-102-sync-blind-to-issue-comments",
@@ -3867,7 +3976,8 @@
       },
       "completedAt": "2026-08-26T21:22:46.061Z",
       "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 102
     },
     {
       "id": "gh-103-tracker-refresh-gate-before-specs",
@@ -3899,7 +4009,8 @@
       },
       "completedAt": "2026-08-26T21:22:47.586Z",
       "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 103
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
@@ -3926,7 +4037,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:21:54.299Z",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 105
     },
     {
       "id": "gh-106-conductor-logs-never-gitignored",
@@ -3957,7 +4069,8 @@
       },
       "completedAt": "2026-09-01T05:22:04.025Z",
       "externalUpdatedAt": "2026-08-20T21:29:26Z",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 106
     },
     {
       "id": "gh-107-snapshot-consumes-warning-into-unread-file",
@@ -3982,7 +4095,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:49.143Z",
-      "createdAt": "2026-08-20T14:29:22-07:00"
+      "createdAt": "2026-08-20T14:29:22-07:00",
+      "number": 107
     },
     {
       "id": "gh-109-tracker-sync-direction",
@@ -4008,7 +4122,8 @@
       },
       "completedAt": "2026-08-26T21:22:50.755Z",
       "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 109
     },
     {
       "id": "gh-110-gate2-bypassed-by-archive-hook",
@@ -4038,7 +4153,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:25.567Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 110
     },
     {
       "id": "gh-111-activity-log-for-conductor-usage",
@@ -4067,7 +4183,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T13:31:49.146Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 111
     },
     {
       "id": "gh-112-backlog-triage-at-intake",
@@ -4095,7 +4212,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T23:19:14.972Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 112
     },
     {
       "id": "gh-113-gate-verdict-records-no-diff-range",
@@ -4120,7 +4238,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:52.332Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 113
     },
     {
       "id": "gh-114-lane-routing-blind-to-product",
@@ -4171,7 +4290,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-14T23:49:32.549Z"
+      "completedAt": "2026-10-14T23:49:32.549Z",
+      "number": 114
     },
     {
       "id": "gh-115-gates-blind-to-absent-edit",
@@ -4202,7 +4322,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:53.938Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 115
     },
     {
       "id": "gh-116-conflict-warning-missed-on-burst",
@@ -4233,7 +4354,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:55.526Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 116
     },
     {
       "id": "gh-117-sync-blind-to-archived-changes",
@@ -4258,7 +4380,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:57.278Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 117
     },
     {
       "id": "gh-118-checkbox-signal-unreliable",
@@ -4289,7 +4412,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:58.874Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 118
     },
     {
       "id": "gh-119-deferrals-have-no-path-to-backlog",
@@ -4314,7 +4438,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:23:00.412Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 119
     },
     {
       "id": "gh-120-epic-outcome-shipped-vs-killed",
@@ -4339,7 +4464,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:23:01.965Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 120
     },
     {
       "id": "gh-121-tasks-verified-against-tree-not-commit",
@@ -4364,7 +4490,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:23:03.515Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 121
     },
     {
       "id": "gh-122-gate-records-unreliable-both-ways",
@@ -4389,7 +4516,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:23:05.092Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 122
     },
     {
       "id": "gh-123-adopt-openspec-1-9-cli-surface",
@@ -4413,7 +4541,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:31:39.259Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 123
     },
     {
       "id": "gh-124-rules-block-emits-failing-add-epic",
@@ -4444,7 +4573,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:23:06.660Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 124
     },
     {
       "id": "gh-125-release-planning-and-deliberate-exclusion",
@@ -4475,7 +4605,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:23:08.290Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 125
     },
     {
       "id": "gh-126-release-level-cross-spec-gate",
@@ -4517,7 +4648,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T16:47:17.753Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 126
     },
     {
       "id": "gh-127-dogfooding-practices-as-product",
@@ -4552,7 +4684,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:18:51.205Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 127
     },
     {
       "id": "gh-128-openspec-staleness-nudge",
@@ -4593,7 +4726,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T16:47:20.535Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 128
     },
     {
       "id": "gh-129-attribution-nudge-at-commit-time",
@@ -4626,7 +4760,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:22:01.178Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 129
     },
     {
       "id": "conductor-tells-the-truth",
@@ -4757,7 +4892,8 @@
       },
       "completedAt": "2026-08-25T23:12:02.877Z",
       "createdAt": "2026-08-25T16:36:38-07:00",
-      "touchedAt": "2026-10-05T20:22:06.979Z"
+      "touchedAt": "2026-10-05T20:22:06.979Z",
+      "number": 1084
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -4782,7 +4918,8 @@
         "deferrals": [],
         "declined": []
       },
-      "touchedAt": "2026-09-10T02:50:15.045Z"
+      "touchedAt": "2026-09-10T02:50:15.045Z",
+      "number": 1083
     },
     {
       "id": "gh-130-disposition-has-no-correction-verb",
@@ -4810,7 +4947,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T06:57:03.194Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 130
     },
     {
       "id": "gh-131-retry-half-unverified",
@@ -4837,7 +4975,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:21:52.619Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 131
     },
     {
       "id": "gh-132-lessons-advisor-hook",
@@ -4864,7 +5003,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:18:52.733Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 132
     },
     {
       "id": "gh-133-disposition-reverts-backfill-counts",
@@ -4892,7 +5032,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T06:57:04.757Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 133
     },
     {
       "id": "gh-134-hooks-run-the-installed-plugin",
@@ -4928,7 +5069,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T16:47:22.171Z",
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "number": 134
     },
     {
       "id": "gh-137-release-completion-cascade",
@@ -4965,7 +5107,8 @@
         "declined": []
       },
       "completedAt": "2026-08-28T00:35:28.728Z",
-      "createdAt": "2026-08-27T09:45:38-07:00"
+      "createdAt": "2026-08-27T09:45:38-07:00",
+      "number": 137
     },
     {
       "id": "gh-136-add-epic-notes-discarded",
@@ -4992,7 +5135,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T08:21:50.945Z",
-      "createdAt": "2026-08-27T09:45:38-07:00"
+      "createdAt": "2026-08-27T09:45:38-07:00",
+      "number": 136
     },
     {
       "id": "gh-138-refresh-warning-counts-terminal-epics",
@@ -5026,7 +5170,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T01:56:38.923Z",
-      "createdAt": "2026-08-27T09:45:38-07:00"
+      "createdAt": "2026-08-27T09:45:38-07:00",
+      "number": 138
     },
     {
       "id": "gh-139-command-doc-engine-fallback-ungated",
@@ -5061,7 +5206,8 @@
         "declined": []
       },
       "completedAt": "2026-08-28T00:35:30.204Z",
-      "createdAt": "2026-08-27T09:45:38-07:00"
+      "createdAt": "2026-08-27T09:45:38-07:00",
+      "number": 139
     },
     {
       "id": "gh-140-attribution-write-not-persisted",
@@ -5088,7 +5234,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T23:19:17.925Z",
-      "createdAt": "2026-08-27T09:45:38-07:00"
+      "createdAt": "2026-08-27T09:45:38-07:00",
+      "number": 140
     },
     {
       "id": "gh-142-recorded-sha-unreachable",
@@ -5121,7 +5268,8 @@
         "declined": []
       },
       "completedAt": "2026-08-27T23:19:20.493Z",
-      "createdAt": "2026-08-27T15:01:49-07:00"
+      "createdAt": "2026-08-27T15:01:49-07:00",
+      "number": 142
     },
     {
       "id": "gh-148-propose-spec-association-from-header",
@@ -5154,7 +5302,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:18:58.828Z",
-      "createdAt": "2026-08-29T01:18:25-07:00"
+      "createdAt": "2026-08-29T01:18:25-07:00",
+      "number": 148
     },
     {
       "id": "gh-149-add-epic-drops-valueless-flag",
@@ -5188,7 +5337,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T10:18:57.337Z",
-      "createdAt": "2026-08-29T01:18:25-07:00"
+      "createdAt": "2026-08-29T01:18:25-07:00",
+      "number": 149
     },
     {
       "id": "gh-151-no-push-detour-verb",
@@ -5223,7 +5373,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T13:31:44.532Z",
-      "createdAt": "2026-08-29T03:15:36-07:00"
+      "createdAt": "2026-08-29T03:15:36-07:00",
+      "number": 151
     },
     {
       "id": "gh-152-flag-value-rule-outside-epic-flags",
@@ -5256,7 +5407,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T13:31:46.072Z",
-      "createdAt": "2026-08-29T03:15:36-07:00"
+      "createdAt": "2026-08-29T03:15:36-07:00",
+      "number": 152
     },
     {
       "id": "gh-154-openspec-validate-lifecycle-collision",
@@ -5289,7 +5441,8 @@
         "declined": []
       },
       "completedAt": "2026-08-29T14:55:20.865Z",
-      "createdAt": "2026-08-29T06:27:41-07:00"
+      "createdAt": "2026-08-29T06:27:41-07:00",
+      "number": 154
     },
     {
       "id": "gh-156-shipped-markdown-structural-check",
@@ -5341,7 +5494,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T09:49:29.002Z",
-      "createdAt": "2026-08-29T07:51:41-07:00"
+      "createdAt": "2026-08-29T07:51:41-07:00",
+      "number": 156
     },
     {
       "id": "per-verb-help-from-flag-registry",
@@ -5410,7 +5564,8 @@
         ]
       },
       "completedAt": "2026-09-01T06:12:56.356Z",
-      "createdAt": "2026-08-31T23:12:34-07:00"
+      "createdAt": "2026-08-31T23:12:34-07:00",
+      "number": 158
     },
     {
       "id": "rules-block-emits-no-help-pointer",
@@ -5452,7 +5607,8 @@
         "declined": []
       },
       "completedAt": "2026-09-01T23:19:57.689Z",
-      "createdAt": "2026-08-31T23:12:34-07:00"
+      "createdAt": "2026-08-31T23:12:34-07:00",
+      "number": 1085
     },
     {
       "id": "flag-level-doc-gaps",
@@ -5506,7 +5662,8 @@
         ]
       },
       "completedAt": "2026-09-01T06:12:57.971Z",
-      "createdAt": "2026-08-31T23:12:34-07:00"
+      "createdAt": "2026-08-31T23:12:34-07:00",
+      "number": 160
     },
     {
       "id": "gh-159-no-reader-for-gate-guard-state",
@@ -5579,7 +5736,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T07:27:13.909Z",
-      "createdAt": "2026-08-31T23:12:34-07:00"
+      "createdAt": "2026-08-31T23:12:34-07:00",
+      "number": 159
     },
     {
       "id": "gh-165-deferral-assertion-mangled-and-immutable",
@@ -5648,7 +5806,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T07:27:11.816Z",
-      "createdAt": "2026-09-05T00:26:52-07:00"
+      "createdAt": "2026-09-05T00:26:52-07:00",
+      "number": 165
     },
     {
       "id": "gh-161-strip-always-on-duplicated",
@@ -5704,7 +5863,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T09:49:30.635Z",
-      "createdAt": "2026-09-05T00:26:52-07:00"
+      "createdAt": "2026-09-05T00:26:52-07:00",
+      "number": 161
     },
     {
       "id": "gh-162-delegation-drops-stdout",
@@ -5756,7 +5916,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T09:49:51.385Z",
-      "createdAt": "2026-09-05T00:26:52-07:00"
+      "createdAt": "2026-09-05T00:26:52-07:00",
+      "number": 162
     },
     {
       "id": "gh-163-gate-verdicts-openspec-only",
@@ -5822,7 +5983,8 @@
         "declined": []
       },
       "completedAt": "2026-09-05T07:27:15.839Z",
-      "createdAt": "2026-09-05T00:26:52-07:00"
+      "createdAt": "2026-09-05T00:26:52-07:00",
+      "number": 163
     },
     {
       "id": "gh-172-trufflehog-false-positive",
@@ -5878,7 +6040,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:06.271Z"
+      "completedAt": "2026-10-14T04:55:06.271Z",
+      "number": 172
     },
     {
       "id": "gh-cfdude-pm-168",
@@ -5933,7 +6096,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-17T22:52:20.077Z"
+      "completedAt": "2026-09-17T22:52:20.077Z",
+      "number": 168
     },
     {
       "id": "gh-cfdude-pm-169",
@@ -5987,7 +6151,8 @@
       },
       "completedAt": "2026-09-08T22:15:15.278Z",
       "touchedAt": "2026-09-08T23:58:50.764Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "number": 169
     },
     {
       "id": "gh-cfdude-pm-167",
@@ -6045,7 +6210,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T21:51:36.946Z"
+      "completedAt": "2026-10-05T21:51:36.946Z",
+      "number": 167
     },
     {
       "id": "fleet-upgrade-after-release",
@@ -6071,7 +6237,8 @@
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-10-17T12:42:17.936Z"
+      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "number": 1091
     },
     {
       "id": "epic-registration-clock",
@@ -6121,7 +6288,8 @@
         "declined": []
       },
       "completedAt": "2026-09-08T22:15:42.126Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "number": 1090
     },
     {
       "id": "sweep-covers-operation-pairs",
@@ -6166,7 +6334,8 @@
       },
       "completedAt": "2026-09-08T22:15:11.490Z",
       "touchedAt": "2026-09-08T23:02:28.116Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "number": 1094
     },
     {
       "id": "backlog-grooming-pass",
@@ -6328,7 +6497,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T16:46:00.349Z"
+      "completedAt": "2026-11-01T16:46:00.349Z",
+      "number": 1088
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -6376,7 +6546,8 @@
         "declined": []
       },
       "completedAt": "2026-09-08T22:15:13.396Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "number": 174
     },
     {
       "id": "gh-cfdude-pm-175",
@@ -6428,7 +6599,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-12T01:28:11.994Z"
+      "completedAt": "2026-09-12T01:28:11.994Z",
+      "number": 175
     },
     {
       "id": "gh-cfdude-pm-173",
@@ -6473,7 +6645,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-17T19:46:53.984Z"
+      "completedAt": "2026-09-17T19:46:53.984Z",
+      "number": 173
     },
     {
       "id": "disposition-backfill-undispositioned-archive",
@@ -6529,7 +6702,8 @@
         "declined": []
       },
       "completedAt": "2026-09-08T22:15:44.003Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "number": 1089
     },
     {
       "id": "remaining-platform-investigation",
@@ -6561,7 +6735,8 @@
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
       "touchedAt": "2026-10-17T12:42:17.936Z",
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "number": 1093
     },
     {
       "id": "record-answers-for-itself",
@@ -6635,7 +6810,8 @@
         "declined": []
       },
       "completedAt": "2026-09-09T00:04:14.925Z",
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "number": 1092
     },
     {
       "id": "agent-outcomes-derivation-unguarded",
@@ -6674,7 +6850,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:40:13.979Z"
+      "completedAt": "2026-09-10T04:40:13.979Z",
+      "number": 1086
     },
     {
       "id": "walk-the-undispositioned-archive",
@@ -6708,7 +6885,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T03:14:36.093Z"
+      "completedAt": "2026-09-10T03:14:36.093Z",
+      "number": 1087
     },
     {
       "id": "gh-cfdude-pm-177",
@@ -6753,7 +6931,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:39:17.029Z"
+      "completedAt": "2026-09-10T04:39:17.029Z",
+      "number": 177
     },
     {
       "id": "gh-cfdude-pm-178",
@@ -6796,7 +6975,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:39:18.758Z"
+      "completedAt": "2026-09-10T04:39:18.758Z",
+      "number": 178
     },
     {
       "id": "gh-cfdude-pm-179",
@@ -6839,7 +7019,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:39:20.669Z"
+      "completedAt": "2026-09-10T04:39:20.669Z",
+      "number": 179
     },
     {
       "id": "gh-cfdude-pm-180",
@@ -6876,7 +7057,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:40:08.707Z"
+      "completedAt": "2026-09-10T04:40:08.707Z",
+      "number": 180
     },
     {
       "id": "gh-cfdude-pm-181",
@@ -6919,7 +7101,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:39:22.484Z"
+      "completedAt": "2026-09-10T04:39:22.484Z",
+      "number": 181
     },
     {
       "id": "gh-cfdude-pm-176",
@@ -6978,7 +7161,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:08.044Z"
+      "completedAt": "2026-10-14T04:55:08.044Z",
+      "number": 176
     },
     {
       "id": "gh-cfdude-pm-182",
@@ -7021,7 +7205,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:40:10.525Z"
+      "completedAt": "2026-09-10T04:40:10.525Z",
+      "number": 182
     },
     {
       "id": "hooks-json-unknown-keys-warn-every-session",
@@ -7056,7 +7241,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:40:12.239Z"
+      "completedAt": "2026-09-10T04:40:12.239Z",
+      "number": 1095
     },
     {
       "id": "gh-cfdude-pm-185",
@@ -7101,7 +7287,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-10T04:39:15.237Z"
+      "completedAt": "2026-09-10T04:39:15.237Z",
+      "number": 185
     },
     {
       "id": "gh-cfdude-pm-186",
@@ -7131,7 +7318,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:39:24.231Z"
+      "completedAt": "2026-09-10T04:39:24.231Z",
+      "number": 186
     },
     {
       "id": "gh-cfdude-pm-187",
@@ -7161,7 +7349,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-10T04:39:25.960Z"
+      "completedAt": "2026-09-10T04:39:25.960Z",
+      "number": 187
     },
     {
       "id": "detached-head-is-not-a-workspace",
@@ -7253,7 +7442,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-12T01:28:09.785Z"
+      "completedAt": "2026-09-12T01:28:09.785Z",
+      "number": 1096
     },
     {
       "id": "gh-cfdude-pm-191",
@@ -7296,7 +7486,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-11T08:16:14.039Z"
+      "completedAt": "2026-09-11T08:16:14.039Z",
+      "number": 191
     },
     {
       "id": "gh-cfdude-pm-192",
@@ -7342,7 +7533,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-14T18:09:09.919Z"
+      "completedAt": "2026-09-14T18:09:09.919Z",
+      "number": 192
     },
     {
       "id": "lessons-index-cannot-drift-silently",
@@ -7375,7 +7567,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-12T06:48:21.279Z"
+      "completedAt": "2026-09-12T06:48:21.279Z",
+      "number": 1097
     },
     {
       "id": "capture-pipe-lesson-matcher",
@@ -7408,7 +7601,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-14T18:08:28.519Z"
+      "completedAt": "2026-09-14T18:08:28.519Z",
+      "number": 1098
     },
     {
       "id": "gate-verdict-withdrawal",
@@ -7550,7 +7744,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-15T04:25:06.170Z"
+      "completedAt": "2026-09-15T04:25:06.170Z",
+      "number": 1099
     },
     {
       "id": "gh-cfdude-pm-184",
@@ -7590,7 +7785,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-17T19:46:54.543Z"
+      "completedAt": "2026-09-17T19:46:54.543Z",
+      "number": 184
     },
     {
       "id": "gh-cfdude-pm-195",
@@ -7635,7 +7831,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-17T19:46:55.466Z"
+      "completedAt": "2026-09-17T19:46:55.466Z",
+      "number": 195
     },
     {
       "id": "gh-cfdude-pm-196",
@@ -7691,7 +7888,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:08.917Z"
+      "completedAt": "2026-10-14T04:55:08.917Z",
+      "number": 196
     },
     {
       "id": "gh-cfdude-pm-194",
@@ -7743,7 +7941,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:16.500Z"
+      "completedAt": "2026-09-26T05:19:16.500Z",
+      "number": 194
     },
     {
       "id": "gh-cfdude-pm-190",
@@ -7783,7 +7982,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:56.824Z"
+      "completedAt": "2026-09-28T22:28:56.824Z",
+      "number": 190
     },
     {
       "id": "gh-cfdude-pm-189",
@@ -7822,7 +8022,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-17T19:46:55.014Z"
+      "completedAt": "2026-09-17T19:46:55.014Z",
+      "number": 189
     },
     {
       "id": "archive-gate-reads-what-it-writes",
@@ -7949,7 +8150,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-15T02:21:34.011Z"
+      "completedAt": "2026-09-15T02:21:34.011Z",
+      "number": 197
     },
     {
       "id": "archived-delivered-gate2-regression-report",
@@ -8002,7 +8204,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:06.210Z"
+      "completedAt": "2026-10-05T01:44:06.210Z",
+      "number": 1100
     },
     {
       "id": "status-write-undone-by-heal-reports-updated",
@@ -8038,7 +8241,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:06.996Z"
+      "completedAt": "2026-10-05T01:44:06.996Z",
+      "number": 1101
     },
     {
       "id": "disposition-invocation-prints-bare-no-deferrals",
@@ -8074,7 +8278,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:07.764Z"
+      "completedAt": "2026-10-05T01:44:07.764Z",
+      "number": 1102
     },
     {
       "id": "handoff-refusal-prints-story-titles-raw",
@@ -8116,7 +8321,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T22:37:17.828Z"
+      "completedAt": "2026-09-16T22:37:17.828Z",
+      "number": 1103
     },
     {
       "id": "gate-staleness-reads-only-last-attribution",
@@ -8163,7 +8369,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T20:28:42.020Z"
+      "completedAt": "2026-09-16T20:28:42.020Z",
+      "number": 1104
     },
     {
       "id": "comprehensive-code-review-after-0-43-0",
@@ -8200,7 +8407,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T05:12:27.025Z"
+      "completedAt": "2026-09-15T05:12:27.025Z",
+      "number": 1105
     },
     {
       "id": "release-0-43-0-cut",
@@ -8247,7 +8455,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T05:19:19.404Z"
+      "completedAt": "2026-09-15T05:19:19.404Z",
+      "number": 1106
     },
     {
       "id": "gh-cfdude-pm-201",
@@ -8292,7 +8501,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:03.904Z"
+      "completedAt": "2026-10-05T01:44:03.904Z",
+      "number": 201
     },
     {
       "id": "gh-cfdude-pm-200",
@@ -8339,7 +8549,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:03.112Z"
+      "completedAt": "2026-10-05T01:44:03.112Z",
+      "number": 200
     },
     {
       "id": "gh-cfdude-pm-199",
@@ -8373,7 +8584,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-17T19:46:55.904Z"
+      "completedAt": "2026-09-17T19:46:55.904Z",
+      "number": 199
     },
     {
       "id": "gh-cfdude-pm-198",
@@ -8418,7 +8630,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T23:10:08.950Z"
+      "completedAt": "2026-10-01T23:10:08.950Z",
+      "number": 198
     },
     {
       "id": "state-json-unparseable-loads-as-empty",
@@ -8449,7 +8662,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:24:56.764Z"
+      "completedAt": "2026-09-15T12:24:56.764Z",
+      "number": 1107
     },
     {
       "id": "state-write-race-loses-updates",
@@ -8480,7 +8694,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:24:58.720Z"
+      "completedAt": "2026-09-15T12:24:58.720Z",
+      "number": 1108
     },
     {
       "id": "reconcile-gate-bypasses",
@@ -8511,7 +8726,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:25:04.626Z"
+      "completedAt": "2026-09-15T12:25:04.626Z",
+      "number": 1109
     },
     {
       "id": "commit-shas-stored-unresolved",
@@ -8547,7 +8763,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:25:06.733Z"
+      "completedAt": "2026-09-15T12:25:06.733Z",
+      "number": 1110
     },
     {
       "id": "every-verb-validates-its-argv",
@@ -8583,7 +8800,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:24:54.800Z"
+      "completedAt": "2026-09-15T12:24:54.800Z",
+      "number": 1111
     },
     {
       "id": "rules-block-writer-destroys-hand-content",
@@ -8614,7 +8832,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:25:02.717Z"
+      "completedAt": "2026-09-15T12:25:02.717Z",
+      "number": 1112
     },
     {
       "id": "claim-ttl-overflow-crashes-readers",
@@ -8652,7 +8871,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T12:25:00.695Z"
+      "completedAt": "2026-09-15T12:25:00.695Z",
+      "number": 1113
     },
     {
       "id": "autonomy-grants-have-no-revoke",
@@ -8684,7 +8904,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-18T00:26:28.821Z"
+      "completedAt": "2026-09-18T00:26:28.821Z",
+      "number": 1114
     },
     {
       "id": "archived-paused-epic-jams-detour-stack",
@@ -8716,7 +8937,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-18T00:26:29.963Z"
+      "completedAt": "2026-09-18T00:26:29.963Z",
+      "number": 1115
     },
     {
       "id": "tracker-item-dedup-bypassed",
@@ -8765,7 +8987,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:12.739Z"
+      "completedAt": "2026-09-26T05:19:12.739Z",
+      "number": 1116
     },
     {
       "id": "drift-heal-leaves-claim-on-archive",
@@ -8806,7 +9029,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:14.248Z"
+      "completedAt": "2026-09-26T05:19:14.248Z",
+      "number": 1117
     },
     {
       "id": "add-many-drops-input-silently",
@@ -8846,7 +9070,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:13.529Z"
+      "completedAt": "2026-09-26T05:19:13.529Z",
+      "number": 1118
     },
     {
       "id": "hooks-not-silent-before-init",
@@ -8888,7 +9113,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:14.913Z"
+      "completedAt": "2026-09-26T05:19:14.913Z",
+      "number": 1119
     },
     {
       "id": "gate-guard-bash-writes-unguarded",
@@ -8920,7 +9146,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-18T00:26:30.458Z"
+      "completedAt": "2026-09-18T00:26:30.458Z",
+      "number": 1120
     },
     {
       "id": "lesson-detect-matcher-hardening",
@@ -8968,7 +9195,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:15.662Z"
+      "completedAt": "2026-09-26T05:19:15.662Z",
+      "number": 1121
     },
     {
       "id": "commit-watch-misses-commits",
@@ -9009,7 +9237,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T22:37:15.928Z"
+      "completedAt": "2026-09-16T22:37:15.928Z",
+      "number": 1122
     },
     {
       "id": "emitted-text-says-hand-edit-state",
@@ -9040,7 +9269,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T22:37:16.300Z"
+      "completedAt": "2026-09-16T22:37:16.300Z",
+      "number": 1123
     },
     {
       "id": "disposition-references-unvalidated",
@@ -9079,7 +9309,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-18T00:26:29.485Z"
+      "completedAt": "2026-09-18T00:26:29.485Z",
+      "number": 1124
     },
     {
       "id": "release-member-moves-silently",
@@ -9134,7 +9365,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:17.208Z"
+      "completedAt": "2026-09-26T05:19:17.208Z",
+      "number": 1125
     },
     {
       "id": "user-text-unescaped-in-render-brief-integrity",
@@ -9177,7 +9409,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T22:37:17.453Z"
+      "completedAt": "2026-09-16T22:37:17.453Z",
+      "number": 1126
     },
     {
       "id": "handoff-demand-blind-spots",
@@ -9292,7 +9525,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-26T05:17:49.151Z"
+      "completedAt": "2026-09-26T05:17:49.151Z",
+      "number": 1127
     },
     {
       "id": "tracker-sync-recipes-broken",
@@ -9323,7 +9557,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T22:37:16.675Z"
+      "completedAt": "2026-09-16T22:37:16.675Z",
+      "number": 1128
     },
     {
       "id": "activity-log-detour-events-lose-epic",
@@ -9375,7 +9610,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:52.434Z"
+      "completedAt": "2026-09-26T05:19:52.434Z",
+      "number": 1129
     },
     {
       "id": "verify-state-false-hand-edit",
@@ -9419,7 +9655,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:53.324Z"
+      "completedAt": "2026-09-26T05:19:53.324Z",
+      "number": 1130
     },
     {
       "id": "agent-docs-teach-stale-gate-evidence",
@@ -9450,7 +9687,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-16T22:37:17.080Z"
+      "completedAt": "2026-09-16T22:37:17.080Z",
+      "number": 1131
     },
     {
       "id": "commit-gate-tests-working-tree-not-index",
@@ -9493,7 +9731,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:54.142Z"
+      "completedAt": "2026-09-26T05:19:54.142Z",
+      "number": 1132
     },
     {
       "id": "no-network-law-test-is-weak",
@@ -9534,7 +9773,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:54.821Z"
+      "completedAt": "2026-09-26T05:19:54.821Z",
+      "number": 1133
     },
     {
       "id": "triage-ignores-non-latin-text",
@@ -9577,7 +9817,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:55.505Z"
+      "completedAt": "2026-09-26T05:19:55.505Z",
+      "number": 1134
     },
     {
       "id": "sync-registers-ids-add-epic-refuses",
@@ -9630,7 +9871,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:56.196Z"
+      "completedAt": "2026-09-26T05:19:56.196Z",
+      "number": 1135
     },
     {
       "id": "code-review-0-43-0-minors",
@@ -9742,7 +9984,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-26T05:20:08.482Z"
+      "completedAt": "2026-09-26T05:20:08.482Z",
+      "number": 1136
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -9852,7 +10095,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-15T18:41:26.289Z"
+      "completedAt": "2026-09-15T18:41:26.289Z",
+      "number": 1137
     },
     {
       "id": "state-file-refuses-to-guess",
@@ -9966,7 +10210,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-15T22:29:59.465Z"
+      "completedAt": "2026-09-15T22:29:59.465Z",
+      "number": 1138
     },
     {
       "id": "gates-bind-to-verified-evidence",
@@ -10082,7 +10327,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-16T20:28:49.767Z"
+      "completedAt": "2026-09-16T20:28:49.767Z",
+      "number": 1139
     },
     {
       "id": "commit-nudge-reads-the-whole-move",
@@ -10229,7 +10475,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-17T05:13:57.014Z"
+      "completedAt": "2026-09-17T05:13:57.014Z",
+      "number": 1140
     },
     {
       "id": "emitted-commands-run-as-written",
@@ -10387,7 +10634,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-17T11:31:49.715Z"
+      "completedAt": "2026-09-17T11:31:49.715Z",
+      "number": 1141
     },
     {
       "id": "user-text-never-forges-output",
@@ -10523,7 +10771,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-17T18:18:34.323Z"
+      "completedAt": "2026-09-17T18:18:34.323Z",
+      "number": 1142
     },
     {
       "id": "hierarchy-run-has-one-state-writer",
@@ -10543,7 +10792,8 @@
       "description": "From 0.43.0 review E1 and 0.45.0 Gate 1 (emitted-commands lens B). SKILL.md's orchestrator section says children never write state.json while agents/hierarchy-child-executor.md has children record gates and archive; ROOT = CLAUDE_PROJECT_DIR||cwd so parallel children write the main checkout's state concurrently. Open design questions: the managed rules block orders every agent (children included) to attribute each commit; the tasks.md a child is handed carries record-gate-review, attribution and archive tasks; the orchestrator must attribute only the child branch's commits, never a merge or conflict-resolution commit (a merge commit as last entry makes the reviewed headSha stale); evidence carried in the child's DONE prose can be shortened by a terse contract, so Reporting item 1 must cover it; the child's context is discarded after it reports.",
       "attributedCommits": [],
       "createdAt": "2026-09-16T23:22:32.761Z",
-      "touchedAt": "2026-09-16T23:22:32.765Z"
+      "touchedAt": "2026-09-16T23:22:32.765Z",
+      "number": 1143
     },
     {
       "id": "gh-cfdude-pm-206",
@@ -10581,7 +10831,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T21:51:39.635Z"
+      "completedAt": "2026-10-05T21:51:39.635Z",
+      "number": 206
     },
     {
       "id": "commit-observation-gate2-minors",
@@ -10639,7 +10890,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:05.363Z"
+      "completedAt": "2026-10-14T04:55:05.363Z",
+      "number": 1144
     },
     {
       "id": "gh-cfdude-pm-207",
@@ -10669,7 +10921,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:07.415Z"
+      "completedAt": "2026-10-20T05:50:07.415Z",
+      "number": 207
     },
     {
       "id": "gh-cfdude-pm-208",
@@ -10685,7 +10938,8 @@
       "externalUpdatedAt": "2026-09-17T11:31:30Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T11:31:38.757Z",
-      "touchedAt": "2026-09-17T11:31:38.761Z"
+      "touchedAt": "2026-09-17T11:31:38.761Z",
+      "number": 208
     },
     {
       "id": "registry-bound-poison-sweep-practice",
@@ -10712,7 +10966,8 @@
           "text": "Evidence from 0.45.0 user-text-never-forges-output: the task list named a site list; the apply run found ~20 more; Gate 2 found 5 more; the per-interpolation sweep then found 12 more. What binds a future flag is the completeness assertion (every registry entry has a recipe, unconstructable bound = 0), not the enumeration. See also docs/lessons/a-static-guard-over-dynamic-code-needs-declared-limits.md and docs/lessons/bind-rules-to-functions-not-enumerations.md"
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "number": 1145
     },
     {
       "id": "gh-cfdude-pm-204",
@@ -10749,7 +11004,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:06.604Z"
+      "completedAt": "2026-10-20T05:50:06.604Z",
+      "number": 204
     },
     {
       "id": "gh-cfdude-pm-205",
@@ -10793,7 +11049,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T23:10:12.456Z"
+      "completedAt": "2026-10-01T23:10:12.456Z",
+      "number": 205
     },
     {
       "id": "operations-ship-their-inverses",
@@ -10894,7 +11151,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-18T16:59:37.110Z"
+      "completedAt": "2026-09-18T16:59:37.110Z",
+      "number": 1146
     },
     {
       "id": "the-guard-covers-every-write-path",
@@ -10981,7 +11239,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-18T16:52:02.170Z"
+      "completedAt": "2026-09-18T16:52:02.170Z",
+      "number": 1147
     },
     {
       "id": "mutation-pass-is-a-required-task-item",
@@ -11031,7 +11290,8 @@
         ]
       },
       "completedAt": "2026-11-02T23:31:54.226Z",
-      "planPath": "docs/superpowers/plans/2026-11-02-mutation-pass-required-item.md"
+      "planPath": "docs/superpowers/plans/2026-11-02-mutation-pass-required-item.md",
+      "number": 1148
     },
     {
       "id": "functional-assertion-test-split",
@@ -11143,7 +11403,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-22T06:11:39.187Z"
+      "completedAt": "2026-09-22T06:11:39.187Z",
+      "number": 1149
     },
     {
       "id": "suite-twin-and-certification-discipline",
@@ -11174,7 +11435,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:33.290Z"
+      "completedAt": "2026-09-28T22:28:33.290Z",
+      "number": 1150
     },
     {
       "id": "guards-that-read-engine-source-drift-silently",
@@ -11239,7 +11501,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-29T22:02:43.904Z"
+      "completedAt": "2026-09-29T22:02:43.904Z",
+      "number": 1151
     },
     {
       "id": "hook-fixtures-couple-to-every-hook-step",
@@ -11292,7 +11555,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-30T06:21:16.666Z"
+      "completedAt": "2026-09-30T06:21:16.666Z",
+      "number": 1152
     },
     {
       "id": "unit-rung-and-fixture-snapshots",
@@ -11456,7 +11720,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-22T11:09:55.426Z"
+      "completedAt": "2026-09-22T11:09:55.426Z",
+      "number": 1153
     },
     {
       "id": "store-owns-claude-md-managed-block",
@@ -11503,7 +11768,8 @@
           "text": "re-baseline 2026-10-22 (0.54.0 recheck): D7 10s gate reads MET on docs/measurement/2026-10-commit-gate-rebaseline.md (write-reaching file-rung tests 312-328s summed, ~26-28s wall-equivalent; load 6-16). Not decided: quiet-machine rerun and sizing of movable tests among 525 still owed (owner: pm-overhead-calibration-and-feature-switches 4.1). Stays out of 0.54.0 core until sized."
         }
       ],
-      "startedAt": "2026-10-05T22:07:30.403Z"
+      "startedAt": "2026-10-05T22:07:30.403Z",
+      "number": 1154
     },
     {
       "id": "node-support-policy",
@@ -11601,7 +11867,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-25T04:46:07.444Z"
+      "completedAt": "2026-09-25T04:46:07.444Z",
+      "number": 1155
     },
     {
       "id": "gh-cfdude-pm-222",
@@ -11647,7 +11914,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-25T20:10:25.713Z"
+      "completedAt": "2026-09-25T20:10:25.713Z",
+      "number": 222
     },
     {
       "id": "gh-cfdude-pm-224",
@@ -11697,7 +11965,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:56.839Z"
+      "completedAt": "2026-09-26T05:19:56.839Z",
+      "number": 224
     },
     {
       "id": "gh-cfdude-pm-219",
@@ -11735,7 +12004,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-26T05:19:57.506Z"
+      "completedAt": "2026-09-26T05:19:57.506Z",
+      "number": 219
     },
     {
       "id": "brief-snapshot-epipe-on-large-hook-payload",
@@ -11787,7 +12057,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:04.408Z"
+      "completedAt": "2026-10-14T04:55:04.408Z",
+      "number": 1156
     },
     {
       "id": "spec-sync-waive-for-skip-specs",
@@ -11823,7 +12094,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T21:51:42.028Z"
+      "completedAt": "2026-10-05T21:51:42.028Z",
+      "number": 1157
     },
     {
       "id": "brief-txt-tracked-in-fleet-repos",
@@ -11870,7 +12142,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T02:52:14.643Z"
+      "completedAt": "2026-10-01T02:52:14.643Z",
+      "number": 1158
     },
     {
       "id": "integrity-reports-set-aside-archive-dirs",
@@ -11906,7 +12179,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:08.551Z"
+      "completedAt": "2026-10-05T01:44:08.551Z",
+      "number": 1159
     },
     {
       "id": "created-at-recovery-dates-too-late",
@@ -11942,7 +12216,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T21:51:44.204Z"
+      "completedAt": "2026-10-05T21:51:44.204Z",
+      "number": 1160
     },
     {
       "id": "lesson-budget-tests-flake-under-load",
@@ -11980,7 +12255,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-29T22:16:04.033Z"
+      "completedAt": "2026-09-29T22:16:04.033Z",
+      "number": 1161
     },
     {
       "id": "gh-cfdude-pm-237",
@@ -12012,7 +12288,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T23:09:59.615Z"
+      "completedAt": "2026-10-01T23:09:59.615Z",
+      "number": 237
     },
     {
       "id": "gh-cfdude-pm-233",
@@ -12044,7 +12321,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T23:10:03.160Z"
+      "completedAt": "2026-10-01T23:10:03.160Z",
+      "number": 233
     },
     {
       "id": "gh-cfdude-pm-232",
@@ -12076,7 +12354,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T23:10:06.184Z"
+      "completedAt": "2026-10-01T23:10:06.184Z",
+      "number": 232
     },
     {
       "id": "gh-cfdude-pm-231",
@@ -12114,7 +12393,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:04.684Z"
+      "completedAt": "2026-10-05T01:44:04.684Z",
+      "number": 231
     },
     {
       "id": "gh-cfdude-pm-230",
@@ -12147,7 +12427,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:51.801Z"
+      "completedAt": "2026-09-28T22:28:51.801Z",
+      "number": 230
     },
     {
       "id": "gh-cfdude-pm-229",
@@ -12180,7 +12461,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:52.591Z"
+      "completedAt": "2026-09-28T22:28:52.591Z",
+      "number": 229
     },
     {
       "id": "gh-cfdude-pm-228",
@@ -12210,7 +12492,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:09.148Z"
+      "completedAt": "2026-10-20T05:50:09.148Z",
+      "number": 228
     },
     {
       "id": "gh-cfdude-pm-227",
@@ -12237,7 +12520,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:53.464Z"
+      "completedAt": "2026-09-28T22:28:53.464Z",
+      "number": 227
     },
     {
       "id": "gh-cfdude-pm-226",
@@ -12271,7 +12555,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:51.017Z"
+      "completedAt": "2026-09-28T22:28:51.017Z",
+      "number": 226
     },
     {
       "id": "gh-cfdude-pm-223",
@@ -12298,7 +12583,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-28T22:28:58.459Z"
+      "completedAt": "2026-09-28T22:28:58.459Z",
+      "number": 223
     },
     {
       "id": "gh-cfdude-pm-216",
@@ -12333,7 +12619,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T23:09:55.802Z"
+      "completedAt": "2026-10-01T23:09:55.802Z",
+      "number": 216
     },
     {
       "id": "gh-cfdude-pm-215",
@@ -12376,7 +12663,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-05T01:44:05.454Z"
+      "completedAt": "2026-10-05T01:44:05.454Z",
+      "number": 215
     },
     {
       "id": "gh-cfdude-pm-213",
@@ -12432,7 +12720,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:07.156Z"
+      "completedAt": "2026-10-14T04:55:07.156Z",
+      "number": 213
     },
     {
       "id": "gh-cfdude-pm-211",
@@ -12478,7 +12767,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-02T23:31:35.732Z"
+      "completedAt": "2026-11-02T23:31:35.732Z",
+      "number": 211
     },
     {
       "id": "gh-cfdude-pm-210",
@@ -12528,7 +12818,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:11.548Z"
+      "completedAt": "2026-10-14T04:55:11.548Z",
+      "number": 210
     },
     {
       "id": "certification-record-redesign",
@@ -12684,7 +12975,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-29T18:26:53.667Z"
+      "completedAt": "2026-09-29T18:26:53.667Z",
+      "number": 1162
     },
     {
       "id": "test-isolation-guard",
@@ -12716,7 +13008,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-29T21:13:46.398Z"
+      "completedAt": "2026-09-29T21:13:46.398Z",
+      "number": 1163
     },
     {
       "id": "emitted-invocations-copy-flake",
@@ -12771,7 +13064,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-29T22:48:34.132Z"
+      "completedAt": "2026-09-29T22:48:34.132Z",
+      "number": 1164
     },
     {
       "id": "retire-single-file-certification-record",
@@ -12812,7 +13106,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T03:15:32.930Z"
+      "completedAt": "2026-10-20T03:15:32.930Z",
+      "number": 1165
     },
     {
       "id": "engine-source-extraction-vacuity",
@@ -12852,7 +13147,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:05.569Z"
+      "completedAt": "2026-10-20T05:50:05.569Z",
+      "number": 1166
     },
     {
       "id": "execution-profile-layered-settings",
@@ -12921,7 +13217,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-01T02:52:06.502Z"
+      "completedAt": "2026-10-01T02:52:06.502Z",
+      "number": 1167
     },
     {
       "id": "converged-release-candidate-review",
@@ -12980,7 +13277,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T02:52:13.701Z"
+      "completedAt": "2026-10-01T02:52:13.701Z",
+      "number": 1168
     },
     {
       "id": "lean-subagent-bootstrap",
@@ -13010,7 +13308,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-01T06:08:31.193Z"
+      "completedAt": "2026-10-01T06:08:31.193Z",
+      "number": 1169
     },
     {
       "id": "flaky-test-quarantine-and-targeted-rerun",
@@ -13050,7 +13349,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-01T06:08:28.058Z"
+      "completedAt": "2026-10-01T06:08:28.058Z",
+      "number": 1170
     },
     {
       "id": "hook-friction-0-51",
@@ -13095,7 +13395,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-01T06:08:29.853Z"
+      "completedAt": "2026-10-01T06:08:29.853Z",
+      "number": 1171
     },
     {
       "id": "release-0-51-0-cut",
@@ -13140,7 +13441,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-07T01:12:34.050Z"
+      "completedAt": "2026-10-07T01:12:34.050Z",
+      "number": 1172
     },
     {
       "id": "flake-owner-certify-index-sigterm",
@@ -13173,7 +13475,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:01.300Z"
+      "completedAt": "2026-10-20T05:50:01.300Z",
+      "number": 1173
     },
     {
       "id": "flake-owner-g2-c1-i2-2000ms-bound",
@@ -13206,7 +13509,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:02.847Z"
+      "completedAt": "2026-10-20T05:50:02.847Z",
+      "number": 1174
     },
     {
       "id": "release-in-flight-rule-needs-decision",
@@ -13248,7 +13552,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T01:44:09.329Z"
+      "completedAt": "2026-10-05T01:44:09.329Z",
+      "number": 1175
     },
     {
       "id": "unit-rung-flake-retry-gap",
@@ -13281,7 +13586,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:04.080Z"
+      "completedAt": "2026-10-20T05:50:04.080Z",
+      "number": 1176
     },
     {
       "id": "token-spend-tracking-per-epic",
@@ -13497,7 +13803,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-14T04:54:39.434Z"
+      "completedAt": "2026-10-14T04:54:39.434Z",
+      "number": 1177
     },
     {
       "id": "integrity-reports-legacy-duplicate-attributions",
@@ -13530,7 +13837,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:10.003Z"
+      "completedAt": "2026-10-20T05:50:10.003Z",
+      "number": 1178
     },
     {
       "id": "integrity-reports-stale-gate-1",
@@ -13589,7 +13897,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:10.659Z"
+      "completedAt": "2026-10-14T04:55:10.659Z",
+      "number": 1179
     },
     {
       "id": "conductor-tells-the-truth-gate2-unreviewed-range",
@@ -13619,7 +13928,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-05T20:22:23.074Z"
+      "completedAt": "2026-10-05T20:22:23.074Z",
+      "number": 1180
     },
     {
       "id": "record-gate-review-fail-requires-shas",
@@ -13695,7 +14005,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T16:08:16.311Z"
+      "completedAt": "2026-11-01T16:08:16.311Z",
+      "number": 1181
     },
     {
       "id": "planning-completeness-orient-and-autonomy-boundary",
@@ -13715,7 +14026,8 @@
       "attributedCommits": [],
       "createdAt": "2026-10-05T21:51:24.361Z",
       "touchedAt": "2026-10-17T12:42:17.936Z",
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "number": 1182
     },
     {
       "id": "token-spend-analysis-and-recommendations",
@@ -13823,7 +14135,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-20T11:39:29.080Z"
+      "completedAt": "2026-10-20T11:39:29.080Z",
+      "number": 1183
     },
     {
       "id": "spend-budget-and-stuck-loop-guard",
@@ -13979,7 +14292,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-14T04:54:51.396Z"
+      "completedAt": "2026-10-14T04:54:51.396Z",
+      "number": 1184
     },
     {
       "id": "execution-profile-planning-and-light-roles",
@@ -14064,7 +14378,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:54:50.333Z"
+      "completedAt": "2026-10-14T04:54:50.333Z",
+      "number": 1185
     },
     {
       "id": "decision-cost-log",
@@ -14176,7 +14491,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-20T11:41:01.255Z"
+      "completedAt": "2026-10-20T11:41:01.255Z",
+      "number": 1186
     },
     {
       "id": "rules-block-session-cost",
@@ -14230,7 +14546,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T04:55:12.473Z"
+      "completedAt": "2026-10-14T04:55:12.473Z",
+      "number": 1187
     },
     {
       "id": "openspec-1-14-workflows-evaluation",
@@ -14269,7 +14586,8 @@
           "firstAt": "2026-11-11T06:09:13.912Z",
           "lastAt": "2026-11-11T06:09:13.912Z"
         }
-      ]
+      ],
+      "number": 1188
     },
     {
       "id": "gh-cfdude-pm-239",
@@ -14306,7 +14624,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T05:50:08.196Z"
+      "completedAt": "2026-10-20T05:50:08.196Z",
+      "number": 239
     },
     {
       "id": "spend-guard-rules-section-follows-live-limits",
@@ -14428,7 +14747,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-20T11:31:47.347Z"
+      "completedAt": "2026-10-20T11:31:47.347Z",
+      "number": 1189
     },
     {
       "id": "release-0-52-0-cut",
@@ -14464,7 +14784,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-10-14T16:50:50.925Z"
+      "completedAt": "2026-10-14T16:50:50.925Z",
+      "number": 1190
     },
     {
       "id": "pm-overhead-baseline",
@@ -14569,7 +14890,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-20T11:43:48.688Z"
+      "completedAt": "2026-10-20T11:43:48.688Z",
+      "number": 1191
     },
     {
       "id": "feature-switches-audit",
@@ -14700,7 +15022,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-20T11:45:14.030Z"
+      "completedAt": "2026-10-20T11:45:14.030Z",
+      "number": 1192
     },
     {
       "id": "developer-session-log",
@@ -14830,7 +15153,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-20T11:42:28.204Z"
+      "completedAt": "2026-10-20T11:42:28.204Z",
+      "number": 1193
     },
     {
       "id": "triage-surfaces-open-release-intents",
@@ -14903,7 +15227,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T17:36:02.401Z"
+      "completedAt": "2026-11-01T17:36:02.401Z",
+      "number": 1194
     },
     {
       "id": "gh-cfdude-pm-253",
@@ -14926,7 +15251,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
-      ]
+      ],
+      "number": 253
     },
     {
       "id": "gh-cfdude-pm-252",
@@ -14991,7 +15317,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T21:54:11.224Z"
+      "completedAt": "2026-11-01T21:54:11.224Z",
+      "number": 252
     },
     {
       "id": "gh-cfdude-pm-251",
@@ -15133,7 +15460,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-20T11:36:45.396Z"
+      "completedAt": "2026-10-20T11:36:45.396Z",
+      "number": 251
     },
     {
       "id": "gh-cfdude-pm-250",
@@ -15156,7 +15484,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
-      ]
+      ],
+      "number": 250
     },
     {
       "id": "gh-cfdude-pm-249",
@@ -15221,7 +15550,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T21:54:16.210Z"
+      "completedAt": "2026-11-01T21:54:16.210Z",
+      "number": 249
     },
     {
       "id": "gh-cfdude-pm-248",
@@ -15443,7 +15773,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-02T22:57:00.205Z"
+      "completedAt": "2026-11-02T22:57:00.205Z",
+      "number": 248
     },
     {
       "id": "gh-cfdude-pm-247",
@@ -15466,7 +15797,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
-      ]
+      ],
+      "number": 247
     },
     {
       "id": "gh-cfdude-pm-246",
@@ -15533,7 +15865,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T21:54:14.865Z"
+      "completedAt": "2026-11-01T21:54:14.865Z",
+      "number": 246
     },
     {
       "id": "gh-cfdude-pm-245",
@@ -15556,7 +15889,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
-      ]
+      ],
+      "number": 245
     },
     {
       "id": "gh-cfdude-pm-243",
@@ -15623,7 +15957,8 @@
           }
         ]
       },
-      "completedAt": "2026-11-01T21:54:13.264Z"
+      "completedAt": "2026-11-01T21:54:13.264Z",
+      "number": 243
     },
     {
       "id": "gh-cfdude-pm-242",
@@ -15726,7 +16061,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-10-20T11:35:11.017Z"
+      "completedAt": "2026-10-20T11:35:11.017Z",
+      "number": 242
     },
     {
       "id": "gh-cfdude-pm-241",
@@ -15749,7 +16085,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
-      ]
+      ],
+      "number": 241
     },
     {
       "id": "release-0-53-0-cut",
@@ -15792,7 +16129,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-21T18:11:10.440Z"
+      "completedAt": "2026-10-21T18:11:10.440Z",
+      "number": 1195
     },
     {
       "id": "pm-overhead-calibration-and-feature-switches",
@@ -15866,7 +16204,8 @@
           }
         ]
       },
-      "completedAt": "2026-10-30T22:23:08.719Z"
+      "completedAt": "2026-10-30T22:23:08.719Z",
+      "number": 1196
     },
     {
       "id": "gh-cfdude-pm-254",
@@ -15889,7 +16228,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
-      ]
+      ],
+      "number": 254
     },
     {
       "id": "gh-cfdude-pm-255",
@@ -15912,7 +16252,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
-      ]
+      ],
+      "number": 255
     },
     {
       "id": "gh-cfdude-pm-256",
@@ -15935,7 +16276,8 @@
           "actor": "agent",
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
-      ]
+      ],
+      "number": 256
     },
     {
       "id": "fresh-session-and-model-per-role-dispatch",
@@ -15981,7 +16323,8 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-23T13:23:59.176Z",
-      "touchedAt": "2026-10-23T13:37:19.249Z"
+      "touchedAt": "2026-10-23T13:37:19.249Z",
+      "number": 1197
     },
     {
       "id": "release-planning-mission-and-milestone",
@@ -16113,7 +16456,8 @@
           "reason": "epic superseded by project-boards; Gate 1 carried over and re-recorded there",
           "withdrawnAt": "2026-11-11T05:59:11.741Z"
         }
-      ]
+      ],
+      "number": 1198
     },
     {
       "id": "opt-in-nudge-shows-running-cost",
@@ -16133,7 +16477,8 @@
       "description": "Issue #248 (second comment): /pm:upgrade prints a NOT SET line nudging adoption of each opt-in (scripts/lib/opt-ins.mjs optInLines ~105), and adopting one raises the per-session and per-subagent rules-block tax (weekly-product-updates grew 34,654 -> 36,340 B after set-spend-tracking and set-spend-guard). Nothing tells the user the nudge has a running cost. Ask: each NOT SET line carries its estimated per-session cost from the overhead map.",
       "attributedCommits": [],
       "createdAt": "2026-11-02T19:43:54.999Z",
-      "touchedAt": "2026-11-02T19:43:55.006Z"
+      "touchedAt": "2026-11-02T19:43:55.006Z",
+      "number": 1199
     },
     {
       "id": "gh-cfdude-pm-266",
@@ -16149,7 +16494,8 @@
       "externalUpdatedAt": "2026-11-02T17:30:45Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:15.560Z",
-      "touchedAt": "2026-11-03T16:08:15.565Z"
+      "touchedAt": "2026-11-03T16:08:15.565Z",
+      "number": 266
     },
     {
       "id": "gh-cfdude-pm-265",
@@ -16165,7 +16511,8 @@
       "externalUpdatedAt": "2026-11-01T15:49:37Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:16.627Z",
-      "touchedAt": "2026-11-03T16:08:16.632Z"
+      "touchedAt": "2026-11-03T16:08:16.632Z",
+      "number": 265
     },
     {
       "id": "gh-cfdude-pm-264",
@@ -16181,7 +16528,8 @@
       "externalUpdatedAt": "2026-11-02T17:31:26Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:17.569Z",
-      "touchedAt": "2026-11-03T16:08:17.574Z"
+      "touchedAt": "2026-11-03T16:08:17.574Z",
+      "number": 264
     },
     {
       "id": "gh-cfdude-pm-263",
@@ -16197,7 +16545,8 @@
       "externalUpdatedAt": "2026-10-31T13:24:54Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:18.505Z",
-      "touchedAt": "2026-11-03T16:08:18.509Z"
+      "touchedAt": "2026-11-03T16:08:18.509Z",
+      "number": 263
     },
     {
       "id": "gh-cfdude-pm-262",
@@ -16213,7 +16562,8 @@
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-03T16:08:19.435Z"
+      "touchedAt": "2026-11-03T16:08:19.435Z",
+      "number": 262
     },
     {
       "id": "gh-cfdude-pm-261",
@@ -16229,7 +16579,8 @@
       "externalUpdatedAt": "2026-10-28T17:28:06Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:20.352Z",
-      "touchedAt": "2026-11-03T16:08:20.357Z"
+      "touchedAt": "2026-11-03T16:08:20.357Z",
+      "number": 261
     },
     {
       "id": "gh-cfdude-pm-260",
@@ -16245,7 +16596,8 @@
       "externalUpdatedAt": "2026-10-27T15:14:43Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:21.307Z",
-      "touchedAt": "2026-11-03T16:08:21.312Z"
+      "touchedAt": "2026-11-03T16:08:21.312Z",
+      "number": 260
     },
     {
       "id": "gh-cfdude-pm-259",
@@ -16261,7 +16613,8 @@
       "externalUpdatedAt": "2026-10-23T15:57:39Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:22.247Z",
-      "touchedAt": "2026-11-03T16:08:22.252Z"
+      "touchedAt": "2026-11-03T16:08:22.252Z",
+      "number": 259
     },
     {
       "id": "mission-anti-spawn-rule",
@@ -16288,7 +16641,8 @@
           "firstAt": "2026-11-11T05:33:23.608Z",
           "lastAt": "2026-11-11T05:33:23.608Z"
         }
-      ]
+      ],
+      "number": 1200
     },
     {
       "id": "backlog-trend-view",
@@ -16315,7 +16669,8 @@
           "firstAt": "2026-11-11T05:33:24.682Z",
           "lastAt": "2026-11-11T05:33:24.682Z"
         }
-      ]
+      ],
+      "number": 1201
     },
     {
       "id": "commit-time-close-check",
@@ -16342,7 +16697,8 @@
           "firstAt": "2026-11-11T05:33:25.733Z",
           "lastAt": "2026-11-11T05:33:25.733Z"
         }
-      ]
+      ],
+      "number": 1202
     },
     {
       "id": "epic-summary-required-on-triage",
@@ -16369,7 +16725,8 @@
           "firstAt": "2026-11-11T05:33:26.847Z",
           "lastAt": "2026-11-11T05:33:26.847Z"
         }
-      ]
+      ],
+      "number": 1203
     },
     {
       "id": "project-boards",
@@ -16574,7 +16931,8 @@
           "lastPassAt": "2026-11-11T18:08:43.314Z"
         }
       },
-      "startedAt": "2026-11-11T05:43:32.637Z"
+      "startedAt": "2026-11-11T05:43:32.637Z",
+      "number": 1204
     }
   ],
   "detourStack": [],
@@ -16585,7 +16943,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2341,
+  "revision": 2343,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17461,5 +17819,8 @@
       "removedEpic": "2026-10-30-pm-overhead-calibration",
       "reason": "removed by remove-epic"
     }
-  ]
+  ],
+  "projectName": "PM Plugin",
+  "projectKey": "PM",
+  "nextEpicNumber": 1205
 }
