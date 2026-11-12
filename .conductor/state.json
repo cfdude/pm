@@ -16551,7 +16551,7 @@
     {
       "id": "gh-cfdude-pm-262",
       "title": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases the edit",
-      "priority": "P2",
+      "priority": "P1",
       "status": "untriaged",
       "role": "epic",
       "lane": "superpowers",
@@ -16562,8 +16562,16 @@
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-03T16:08:19.435Z",
-      "number": 262
+      "touchedAt": "2026-11-12T19:07:46.933Z",
+      "number": 262,
+      "notes": [
+        {
+          "at": "2026-11-12T19:07:43.778Z",
+          "actor": "agent",
+          "text": "2026-11-12: raised to P1 per Rob, hit more than once in the fleet. Fix direction agreed: stop editing OpenSpec's generated files; carry pm's clause in the managed rules block or a pm skill so the order of openspec update and pm upgrade stops mattering. Interim: the upgrade doc runs openspec update first, then pm upgrade; plus a post-update check naming missing pm-authored passages. Also confirm whether openspec update rewrites CLAUDE.md. Related: #266 (drift HOLD names every unarchived change). lane: superpowers (unchanged)."
+        }
+      ],
+      "release": "0.54.0"
     },
     {
       "id": "gh-cfdude-pm-261",
@@ -16935,6 +16943,133 @@
       },
       "startedAt": "2026-11-11T05:43:32.637Z",
       "number": 1204
+    },
+    {
+      "id": "release-planning-taxonomy",
+      "title": "Release planning taxonomy: mission, initiative, milestone, release goal, non-goals",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "project-boards",
+          "reason": "boards render the initiative and release goal this adds"
+        },
+        {
+          "type": "relates-to",
+          "epic": "release-planning-mission-and-milestone",
+          "reason": "extends its mission and milestone with the initiative level"
+        }
+      ],
+      "reconcileNeeded": false,
+      "summary": "Add the initiative level between mission and release, tie milestones and release goals to it, flag off-mission and off-initiative work, carry non-goals, report an 80/20 health split.",
+      "whyNow": "Rob's 2026-11-12 taxonomy decisions; boards and release planning need initiatives to say what a release is for.",
+      "notes": [
+        {
+          "at": "2026-11-12T19:07:33.588Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — new capability across state, verbs, rules block and boards. Phasing: 0.56.0 minimum = initiative record, milestone tied to an initiative, release goal and primary initiative, off-mission/off-initiative challenge once with a recorded reason, non-goals on mission/initiative/release/epic (not milestone), epic kind (initiative-work or health) with an 80/20 report; human override is a recorded reason. Next: Now/Next/Later roadmap, derived progress attribution (never asserted), definition of done at three levels. Later: dependency-graph validation as a view of depends-on links (no second file), risk register (holds off-mission false positives), deprecation record, decision-log expansion, appetite, successSignal plus reviewDue (orchestrating agent answers first, human only if it lacks authority). Health = bugs, security, dependency/stack upgrades, deprecation, test/tooling debt; not new internal capability. Principle: the agent attests facts, the human decides preferences. Agent derives and never invents; ungrounded is marked. Engine stays an instruction layer."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-11-12T19:07:33.588Z",
+      "number": 1205,
+      "touchedAt": "2026-11-12T19:07:44.831Z",
+      "release": "0.56.0"
+    },
+    {
+      "id": "stop-and-escalate-floor",
+      "title": "Always-on stop-and-escalate floor for repeated failures",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "spend-budget-and-stuck-loop-guard",
+          "reason": "splits its floor (stop and escalate) from its meter (token and round counting)"
+        }
+      ],
+      "reconcileNeeded": false,
+      "summary": "After two failed attempts at the same failure, stop and escalate to the advisor or a stronger model; a required task item in the core rules, independent of spend guard and spend tracking.",
+      "whyNow": "Measured 2026-11-12: with spendGuard off, no always-on rule limits an implement or test fix loop; the only stop language is inside the spend-guard section.",
+      "notes": [
+        {
+          "at": "2026-11-12T19:07:34.766Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — changes the emitted core rules block, the functional bucket and the opt-in registry. Floor vs meter: the floor is always on and small (about 150 tokens), a numbered required task item (14/14 adoption vs 3/15 for prose); default escalation target is the profile review role; a human override is a recorded decision, not a switch. Spend guard stays the opt-in mechanical backstop with a token ceiling. Rule for all config: turning off a meter must never remove a floor."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-11-12T19:07:34.767Z",
+      "number": 1206,
+      "touchedAt": "2026-11-12T19:07:45.882Z",
+      "release": "0.57.0"
+    },
+    {
+      "id": "project-assessment-skill",
+      "title": "Project assessment skill: tier the project and recommend the pm features it needs",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "release-planning-taxonomy",
+          "reason": "derives candidate initiatives and backfills backlog, release plan and roadmap"
+        },
+        {
+          "type": "relates-to",
+          "epic": "fleet-upgrade-after-release",
+          "reason": "runs after the upgrade the fleet pass performs"
+        },
+        {
+          "type": "relates-to",
+          "epic": "rules-block-session-cost",
+          "reason": "the tier decides which features cost tokens"
+        }
+      ],
+      "reconcileNeeded": false,
+      "summary": "On-demand skill that assesses project size and tier, reads what pm has configured, and recommends what to turn on; runs as the last step of every pm upgrade.",
+      "whyNow": "Rob 2026-11-12: opt-ins skipped early are invisible forever; a tiny fix and a large unmanaged project need different amounts of pm.",
+      "notes": [
+        {
+          "at": "2026-11-12T19:07:35.826Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — new skill, registry change and an upgrade step. Guardrails agreed: cheap by default (engine computes the delta, skill runs fully only when tier or config changed); recommend and never enable (opt-in meters cost overhead; the human confirms); feature requirements are data (each capability declares requires in the opt-ins registry). Tiers: tiny fix (claude-code lane, floors only), light (OpenSpec plus superpowers), moderate, large or unmanaged (all tools, backfill). Lenses are on-demand skills not standing agents: architecture, security, codebase-triage (keep, repair, cut). Evidence first: a read-only survey of personal repos. Answer order: engine record, orchestrating agent, human."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-11-12T19:07:35.826Z",
+      "number": 1207,
+      "touchedAt": "2026-11-12T19:07:35.831Z"
+    },
+    {
+      "id": "pm-folder-consolidation",
+      "title": "Consolidate pm files into one .pm folder, with a fleet migration",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "summary": "Move pm's own files under a single .pm folder (keeping .conductor inside it) via an upgrade migration, so CI can exclude it from release branches; OpenSpec stays outside.",
+      "whyNow": "Rob 2026-11-12: users know /pm, not conductor; one place for pm artifacts helps open-source release branches.",
+      "notes": [
+        {
+          "at": "2026-11-12T19:07:37.024Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — fleet-wide migration across hook paths, gitignore entries, docs and tests. Needs its own release and a fleet pass. Engine reads .pm first and falls back to .conductor during transition; migration idempotent; a state file from the prior version must still load. openspec/ and superpowers files stay outside .pm."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-11-12T19:07:37.024Z",
+      "number": 1208,
+      "touchedAt": "2026-11-12T19:07:37.029Z"
     }
   ],
   "detourStack": [],
@@ -16945,7 +17080,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2362,
+  "revision": 2370,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17832,6 +17967,18 @@
           "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs (3 BLOCKS, all contradictions, fixed in the docs, not re-reviewed)"
         }
       }
+    },
+    {
+      "id": "0.56.0",
+      "intent": "Release planning taxonomy: the initiative level, milestone and release goal tied to it, non-goals, off-mission challenge and an 80/20 health report.",
+      "deferred": [],
+      "size": "minor"
+    },
+    {
+      "id": "0.57.0",
+      "intent": "Stop-and-escalate floor: an always-on stop after repeated failures, independent of the spend guard.",
+      "deferred": [],
+      "size": "minor"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z",
@@ -17869,7 +18016,7 @@
   ],
   "projectName": "PM Plugin",
   "projectKey": "PM",
-  "nextEpicNumber": 1205,
+  "nextEpicNumber": 1209,
   "mission": {
     "current": {
       "statement": "Give AI-driven projects a project manager: one that survives context compaction, interruptions and pivots, keeps the work transparent and observable, and carries it through completion, release and deployment with proven project-management practice.",
