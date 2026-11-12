@@ -80,3 +80,20 @@ render no empty heading.
 
 - **WHEN** a release non-goal is `</script><script>alert(1)</script>`
 - **THEN** the card shows the escaped text and no script element is created
+
+### Requirement: Mission non-goals reach the rules block in one line
+
+While the mission holds at least one active non-goal, the managed rules block SHALL carry a `## Mission non-goals` section of
+at most 200 bytes, heading included: one line joining the active non-goals, cut with an ellipsis to fit. With none it SHALL be
+absent. Every builder of the block SHALL include it; `mission` refreshes it, and `overhead` reports it as
+`rules:mission-non-goals`.
+
+#### Scenario: Present, bounded, absent
+
+- **WHEN** three 300-character mission non-goals are added, and then all three are removed
+- **THEN** after the first the section exists, is at most 200 bytes and ends in an ellipsis; after the second the block holds no `## Mission non-goals`
+
+#### Scenario: The Mission section is unchanged
+
+- **WHEN** a mission non-goal is added
+- **THEN** the `## Mission` section's text is byte-identical to before

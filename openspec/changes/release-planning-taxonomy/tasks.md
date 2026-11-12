@@ -38,26 +38,29 @@
       - `board.mjs` `REJECTED_REASONS` and the fixed `mission` object (design D5, D7)
       - `docs/parity-ledger.json`, `SURFACE_FEATURES`, the rules-block sections, the README cost table
       - the "milestone" vocabulary (design D3)
-- [ ] 0.5 **Owner answers.** Put design.md Open questions Q1 to Q13 to the owner in one batch. Q1 and Q11 can change the
-      record shape and must be answered before 1.1; Q3 before 4.2, and its number is then written into the release-planning drift requirement. Fold each answer into the artifacts, re-validate, and
-      re-run 0.2 and 0.4 if a spec changed. An answer needing a transform adds a `MIGRATIONS` task to section 8.
+- [x] 0.5 **Owner answers.** Q1 to Q13 answered on 2026-11-12 and folded in as design D17 to D30 (Q5 revised by the owner).
+      Q14 answered the same day as design D31 (an automatic planning baseline, no flag).
 
 ## 1. The export reads the new fields (specs: all four, their `board --json` requirements)
 
 - [ ] 1.1 RED (UNIT, `boardSnapshot` over fixtures): `initiatives` is `[]` and `missionNonGoals` is `[]` on an empty record;
-      every release entry carries `initiative: null`, `maintenance: false`, `splitReason: null`, `nonGoals: []` and the
-      zero `split`; every epic entry carries `initiative: null`, `secondaryInitiatives: []`, `kind: null`, both reasons
-      `null` and `nonGoals: []`; a populated fixture reads each back; an initiative with a malformed id is omitted; a
-      reference naming no initiative reads `null`; removed milestones and non-goals are absent; `schemaVersion` is 1.
-      Save `red-1.1.txt`.
+      every initiative entry carries `outcome`, `source`, `offMissionReason` and milestones with `reachedAt` and `evidence`;
+      every release entry carries `initiative: null`, `maintenance: false`, `splitReason: null`, `primaryServed: null`,
+      `planningBaseline: null`, `addedSincePlanning: null`, `unknownJoinTime: null`, `nonGoals: []` and the zero `split`
+      (`initiativeWork`, `health`, `unaligned`); every epic entry carries `initiative`, `initiativeJoinedAt`,
+      `secondaryInitiatives: []`, `kind`, `effectiveKind`, `releaseJoinedAt`, both reasons and `nonGoals: []`; a populated
+      fixture reads each back; an initiative with a malformed id is omitted; a reference naming no initiative reads `null`;
+      removed milestones and non-goals are absent; `schemaVersion` is 1. Save `red-1.1.txt`.
 - [ ] 1.2 GREEN: extend `scripts/lib/board.mjs` (no change to `REJECTED_REASONS`); update the JSON shape in
       `commands/boards.md`. Changeset.
 
 ## 2. Initiatives (spec: initiative-record)
 
 - [ ] 2.1 RED (UNIT): create needs `--title` and `--capability`; amend replaces; one-line and length refusals with escaped
-      echo; `show` reserved; malformed id refused; `--end --reason` and `--reopen --reason` append history, `--reason` alone or beside another flag is refused, refuse the wrong state and an
-      empty reason; no delete path exists; `initiative show [<id>] [--history]` and `no initiatives` write nothing; unknown
+      echo; `show` reserved; malformed id refused; `--source` (with `UNGROUNDED`) and `--off-mission-reason` set and clear,
+      `--clear` refusing any other field; `--end --outcome delivered|abandoned|superseded --reason` and `--reopen --reason`
+      append history, refusing the wrong state, a missing or other outcome (`killed`), an empty reason, and `--reason` alone
+      or beside another flag; no delete path exists; `initiative show [<id>] [--history]` and `no initiatives` write nothing; unknown
       id refused. Save `red-2.1.txt`.
 - [ ] 2.2 GREEN: `scripts/lib/initiative.mjs` and `scripts/lib/initiative-record.mjs` (pure readers, a leaf like
       `mission-record.mjs`), registry rows, `VERB_POSITIONALS`, `USAGE`, dispatch in `scripts/conductor.mjs`, a
@@ -65,7 +68,8 @@
       in `docs/parity-ledger.json` in the same commit. Certify functional (the read-only check). Changeset.
 - [ ] 2.3 RED then GREEN (UNIT): initiative milestones: stable `mN` ids, never reused; `--remove-milestone "mN:<why>"` marks
       with time and reason, refuses unknown, removed and reasonless; no release field; the mission milestone and
-      `criticalPath` unchanged. RED: `red-2.3.txt` (fails before 2.3).
+      `criticalPath` unchanged; `--reach-milestone "mN:<evidence>"` and its override `--unreach-milestone "mN:<why>"` keep
+      both events and refuse the wrong state. RED: `red-2.3.txt` (fails before 2.3).
 - [ ] 2.4 RED then GREEN (UNIT): the reference rule: every initiative-naming flag refuses an unknown id; `runIntegrity`
       reports a hand-edited `epic.initiative`, `epic.secondaryInitiatives[]` entry and `release.initiative` naming no
       initiative. Edit `scripts/lib/integrity.mjs`. RED: `red-2.4.txt`.
@@ -88,13 +92,26 @@
       refused, `--clear-initiative` (valueless) removing either; `release here` refuses all three; `--goal` is an unknown
       flag; `release show <id>` labels the theme `goal:` and prints `initiative: <id> (<title>)` or `initiative: maintenance`;
       `release show` appends the purpose. Edit `scripts/lib/releases.mjs`, the registry, `USAGE`. RED: `red-4.1.txt`.
-- [ ] 4.2 RED then GREEN (UNIT), blocked on Q3: the split by member count (`initiativeWork`, `health`, `unclassified`),
-      `healthShare` and its `null` case, fixed `target: 0.2`, `drift` against `HEALTH_DRIFT_TOLERANCE` set from Q3's
-      answer (10/0 drifts, 8/2 does not, unclassified-only is `null`), never stored; the `release show` split line and its
-      `, DRIFT` suffix. RED: `red-4.2.txt`.
+- [ ] 4.2 RED then GREEN (UNIT): every member in any lane counted once into `health`, `initiativeWork` or `unaligned`
+      (design D21); the claude-code effective kind (`initiative-work` with an initiative, else `health`); an
+      `offInitiativeReason` leaves a member `unaligned`; `healthShare` over all members and its `null` case; fixed
+      `target: 0.2`; `drift` against `HEALTH_SHARE_MIN = 0.10` and `HEALTH_SHARE_MAX = 0.30` (0/10 and 4/10 drift; 1, 2 and
+      3 of 10 do not); never stored; `primaryServed` true, false and `null`, and its `release show` warning line; the
+      `release show` split line with its band and `, DRIFT` suffix. RED: `red-4.2.txt`.
 - [ ] 4.3 RED then GREEN (UNIT): `--split-reason` (one line, 400) and `--clear-split-reason` (valueless); a reason changes
       neither `drift` nor the split; no flag, verb or `OPT_INS` row turns the report off or changes the target (a registry
-      scan). RED: `red-4.3.txt`. Changeset for 4.1 to 4.3.
+      scan). RED: `red-4.3.txt`.
+- [ ] 4.4 RED then GREEN (UNIT; no new verb or flag): `release --member` writes `epic.releaseJoinedAt` at the one writer
+      (`releases.mjs:367`), a move replaces it, `--unmember` removes it, a pre-0.56.0 member reads `null`; the derived
+      `planningBaseline` is the earliest member `startedAt` and `null` with none started; `addedSincePlanning` and
+      `unknownJoinTime` follow it and are `null` without it; `release --planned` is an unknown flag; `release show`
+      prints `N epics added since planning`. RED: `red-4.4.txt`.
+- [ ] 4.5 RED then GREEN (UNIT `attributionNudge` with the injected `short`): the untied branch names `maintenance-<releaseId>`
+      with runnable `add-epic` and `release --member` commands when it is absent and a runnable `--attribute-commit` with the
+      commit's sha, plus the small claude-code epic for initiative work, when the active epic is a release member; unchanged
+      text when it is not; `null` still returned with no active epic. Then extend the emitted-invocations functional test with
+      the new commands and its assertion twin, and run `node scripts/test/certify.mjs functional`. RED: `red-4.5.txt`.
+      Changeset for 4.1 to 4.5.
 
 ## 5. Epic planning fields and the challenge (spec: epic-annotation)
 
@@ -102,7 +119,8 @@
       refused), `--remove-secondary-initiative`, `--kind initiative-work|health`, `--off-mission-reason`,
       `--off-initiative-reason`, each through add-epic, update-epic and add-many (batch keys), each scalar cleared with
       `--clear`, and the nullable-field registry test covering every new nullable row. `commands/epic.md` states the health
-      definition. RED: `red-5.1.txt`.
+      definition; `initiativeJoinedAt` is written when the primary changes, kept on a same-value re-set and removed by
+      `--clear initiative`. RED: `red-5.1.txt`.
 - [ ] 5.2 RED then GREEN (UNIT): the planning warning at every `warnSummary` sink (design, Call sites): fires on the
       transition only while an initiative is open; names `--kind`, and `--initiative` unless `health`; silenced by
       `offInitiativeReason`; never for `claude-code`; never on an unchanged status or on archive; exit 0 and the write lands.
@@ -111,27 +129,35 @@
       `claude-code`, no reason), still writes the membership, and never warns for a maintenance or purpose-less release.
       RED: `red-5.3.txt`. Changeset for section 5.
 
-## 6. The rules-block section (spec: initiative-record)
+## 6. The rules-block sections (specs: initiative-record, non-goals)
 
 - [ ] 6.1 RED (FILE): `## Initiatives` present while an initiative is open, absent when none is, at most 280 bytes heading
-      included, names both reason flags, rewritten by `initiative` when its text changes, and kept by `set-boards`, `mission` and the `rules` verb; `overhead` reports
-      `rules:initiatives` under `core`; a README cost row exists. Save `red-6.1.txt`.
-- [ ] 6.2 GREEN: the section in `scripts/lib/rules.mjs` (outside `CONDITIONAL_SECTIONS`, the `missionSectionText` pattern),
-      its argument at all three `rulesBlock` builders (`writeRules`, the `rules` verb in `scripts/conductor.mjs`, `overhead.mjs`), the `SURFACE_FEATURES` row, the README row. Extend `fillRecipe` in
+      included, names both reason flags; `## Mission non-goals` present while the mission has an active non-goal, absent
+      otherwise, at most 200 bytes with an ellipsis cut, and the `## Mission` section byte-identical; both rewritten by their
+      verb when their text changes and kept by `set-boards`, `mission` and the `rules` verb; `overhead` reports
+      `rules:initiatives` and `rules:mission-non-goals` under `core`; README cost rows exist. Save `red-6.1.txt`.
+- [ ] 6.2 GREEN: both sections in `scripts/lib/rules.mjs` (outside `CONDITIONAL_SECTIONS`, the `missionSectionText`
+      pattern), their arguments at all three `rulesBlock` builders (`writeRules`, the `rules` verb in `scripts/conductor.mjs`,
+      `overhead.mjs`), the `SURFACE_FEATURES` rows, the README rows. Extend `fillRecipe` in
       `scripts/test/functional/emitted-invocations.test.mjs` for any new placeholder, with its assertion twin, and run
-      `node scripts/test/certify.mjs functional`. Changeset.
+      `node scripts/test/certify.mjs functional`. Re-run `node scripts/conductor.mjs overhead` and put the measured bytes in
+      the changeset (design D29 gives the 2026-11-12 baseline). Changeset.
 
 ## 7. Skills and the release plan template (specs: initiative-record, non-goals, release-planning)
 
 - [ ] 7.1 RED (FILE): `skills/project-boards/SKILL.md` "First population" names clustering the backlog, UNGROUNDED, "Does
       this make sense?", that the user never names an initiative or milestone, and that nothing unconfirmed is written;
-      `skills/conductor/SKILL.md` Intake names both reason flags, "once", the `claude-code` exemption and the
-      orchestrating-agent-first order. Save `red-7.1.txt`.
+      `skills/conductor/SKILL.md` Intake names both reason flags, "once", initiatives as well as epics, reading the recorded
+      reason first, the `claude-code` exemption, the orchestrating-agent-first order, and the two tweak destinations
+      (`maintenance-<releaseId>` with its lane, kind, membership, `--attribute-commit` and end-with-release; a small
+      claude-code epic for a tweak that moves an initiative). `--source` and UNGROUNDED appear in "First population".
+      Save `red-7.1.txt`.
 - [ ] 7.2 RED (FILE, `node:vm` over the template's marked render block, project-boards D13): the Initiatives section and its
-      guided empty state; each release card's primary initiative title or "Maintenance", its "Goal" label, its split with the
-      drift mark and reason, and its guided empty state naming `release <id> --initiative <id>` and `--maintenance`; the
+      guided empty state, source with the UNGROUNDED mark, milestone reached marks; each release card's primary initiative
+      title or "Maintenance", its "Goal" label, its split with the unaligned count, drift mark and reason, the unserved-primary
+      warning, the scope-added line, and its guided empty state naming `release <id> --initiative <id>` and `--maintenance`; the
       "Not doing" lists for mission, initiative and release, with no empty heading; hostile title, capability, milestone,
-      non-goal and split-reason text stays inert; the `${}` and markup-concatenation source scans still pass. Save
+      non-goal, evidence, source and split-reason text stays inert; the `${}` and markup-concatenation source scans still pass. Save
       `red-7.2.txt`.
 - [ ] 7.3 GREEN: write the skill text and `skills/project-boards/templates/release-plan.html`; update the skill's doc contract
       for the new keys. Changeset.
@@ -152,12 +178,15 @@
       - `rg -n "warnSummary\(|owesSummaryWarning" scripts/lib`: every transition sink carries the planning warning.
       - `rg -n "lineFieldError\(" scripts/lib`: every new one-line field is validated through it.
       - `rg -n "epicBatchKeys|epicFlagsFor" scripts/lib`: add-many and `--help` see every new epic row.
-      - `rg -n 'flag: "(initiative|secondary-initiative|remove-secondary-initiative|kind|off-mission-reason|off-initiative-reason|add-non-goal|remove-non-goal|maintenance|clear-initiative|split-reason|clear-split-reason|add-milestone|remove-milestone|title|capability|end|reopen)"' scripts/lib/constants.mjs`:
+      - `rg -n 'flag: "(initiative|secondary-initiative|remove-secondary-initiative|kind|off-mission-reason|off-initiative-reason|add-non-goal|remove-non-goal|maintenance|clear-initiative|split-reason|clear-split-reason|add-milestone|remove-milestone|title|capability|end|reopen|outcome|source|reach-milestone|unreach-milestone)"' scripts/lib/constants.mjs`:
         each new row, and each flag's `commands` list.
       - `rg -n "\.initiative\b|secondaryInitiatives|initiatives\b" scripts/lib scripts/conductor.mjs`: every writer, reader and
         remover of the data references (design, Data references table).
       - `rg -n "nonGoals|nextNonGoal" scripts/lib`: all four records go through `non-goals.mjs`.
-      - `rg -n "\.kind\b|splitReason|maintenance" scripts/lib/releases.mjs scripts/lib/board.mjs scripts/lib/epic-summary.mjs`.
+      - `rg -n "\.kind\b|effectiveKind|splitReason|maintenance|planningBaseline|primaryServed" scripts/lib/releases.mjs scripts/lib/board.mjs scripts/lib/epic-summary.mjs`.
+      - `rg -n "\.release = |releaseJoinedAt|initiativeJoinedAt" scripts/lib`: the one writer of membership writes the join time,
+        and every remover (`--unmember`, a move, `--clear initiative`, `remove-epic`) removes or replaces it.
+      - `rg -n "attributionNudge|attributionCandidates" scripts/lib`: only the untied branch carries the destinations.
       - `rg -n "missionSectionText|SURFACE_FEATURES|CONDITIONAL_SECTIONS" scripts/lib`.
       - `rg -n "rulesBlock\(|writeRules\(|currentMissionSection\(|currentBoardsSection\(" scripts/lib scripts/conductor.mjs`:
         every builder of the block passes the `## Initiatives` section, and every other writer goes through `writeRules`.
@@ -182,11 +211,14 @@
         the empty-reason refusal, milestone id reuse, the remove-reason requirement
       - references: the unknown-initiative refusal on epic and release, the integrity report, the export's `null` read
       - non-goals: the per-record counter, the whole-invocation refusal, the marked removal, the milestone exclusion
-      - release: the `--initiative`/`--maintenance` exclusion, `release here` refusal, the split arithmetic, the `null`
-        share, the drift band, the reason-does-not-change-drift rule
+      - initiative: the outcome allowlist (`killed` refused), reach and unreach state checks, the `--clear` field list
+      - release: the `--initiative`/`--maintenance` exclusion, `release here` refusal, the three-way split, the claude-code
+        effective kind, the `null` share, both band edges (0.10 and 0.30 inside), the reason-does-not-change-drift rule,
+        `primaryServed`, the join-time write and its removal on `--unmember`, the baseline's earliest-`startedAt` choice and its `null` with no member started
+      - nudge: the release-member condition for the destinations text
       - epic: secondary-equals-primary, the kind allowlist, the warning's open-initiative, `claude-code`, `health` and
         recorded-reason conditions, the member warning's maintenance condition
-      - rules block: the 280-byte cap and the absent-when-none-open rule
+      - rules block: both caps (280, 200) and both absent-when-empty rules
       - template: escaping of each new field, and the guided empty states
       Save and commit the run as `openspec/changes/release-planning-taxonomy/mutation-evidence.txt`. A surviving mutant is a
       finding to fix.

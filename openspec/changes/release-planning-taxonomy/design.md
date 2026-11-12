@@ -1,10 +1,11 @@
 ## Context
 
 See proposal.md, Why. Inputs: the owner's 2026-11-12 decisions (epic `release-planning-taxonomy`, its notes in
-`.conductor/state.json`), and the `project-boards` change (`openspec/changes/project-boards/`), which this extends: its
-`mission`, `releasePlan`, release plan fields, `board --json` and the two board templates. Constraints: the engine has zero
-runtime dependencies, opens no network connection and runs no git for this change; `state.json` is the only record and the
-engine its only writer; every field is machine-checkable; a 0.55.0 state file must still load.
+`.conductor/state.json`), the owner's answers to this change's thirteen open questions (2026-11-12, recorded below as D17 to
+D30), and the `project-boards` change (`openspec/changes/project-boards/`), which this extends: its `mission`,
+`releasePlan`, release plan fields, `board --json` and the two board templates. Constraints: the engine has zero runtime
+dependencies, opens no network connection and runs no git for this change; `state.json` is the only record and the engine its
+only writer; every field is machine-checkable; a 0.55.0 state file must still load.
 
 **Ordering.** `project-boards` (0.55.0) archives first. Its specs (`release-planning`, `board-export`, `project-mission`,
 `project-boards`) are not in `openspec/specs/` yet, so this change uses ADDED requirements only, and never MODIFIED, for
@@ -12,131 +13,202 @@ those capabilities. `epic-annotation` exists in `openspec/specs/` and also recei
 
 ## Goals / Non-Goals
 
-**Goals:** record the initiative level and tie milestones and releases to it; record what each level will not do; record
-each epic's kind and report each release's health split; challenge off-mission and off-initiative work once and keep the
-answer; show the initiative on the release plan board.
+**Goals:** record the initiative level and tie milestones and releases to it; record what each level will not do; account for
+every piece of work in any lane in each release's split; challenge off-mission and off-initiative work once and keep the
+answer; record when work joined a release or an initiative so scope movement is derivable; show all of it on the release plan.
 
 **Non-Goals:** everything in proposal.md "Non-goals of this change". In particular this change computes no initiative
-progress and no release-to-initiative attribution; it records only the fields that work will read.
+progress; it records the fields that work will read (the join times of D26 among them).
 
 ## Decisions
 
 **D1. Initiatives are a top-level array, the record of their own verb.** `state.initiatives = [{id, title, capability,
-status: "open"|"ended", createdAt, history: [{event, at, reason}], milestones: [...], nextMilestone, nonGoals: [...],
-nextNonGoal}]`. Not a release field (an initiative spans releases) and not an epic (it is not a unit of delivery, and an
-epic never spans releases). Ids use `EPIC_ID_FORMAT` (`constants.mjs`) in their own namespace; an initiative id may equal an
-epic id without conflict.
+status: "open"|"ended", outcome, createdAt, source, offMissionReason, history: [{event, outcome?, at, reason}],
+milestones: [...], nextMilestone, nonGoals: [...], nextNonGoal}]`. Not a release field (an initiative spans releases) and not
+an epic (it is not a unit of delivery). Ids use `EPIC_ID_FORMAT` (`constants.mjs`) in their own namespace.
 
-**D2. Initiative milestones nest inside their initiative.** The owner: a milestone is meaningless without an initiative.
-Nesting makes an orphan milestone unrepresentable, so no milestone reference can dangle. The shape reuses the mission exit
-criterion pattern (`mission-record.mjs`): `{id: "mN", text, addedAt, removedAt?, removeReason?}`, stable ids, marked removed.
-It carries no release, because a milestone sits outside any single release.
+**D2. Initiative milestones nest inside their initiative.** A milestone is meaningless without an initiative, so nesting
+makes an orphan unrepresentable and no milestone reference can dangle. The shape reuses the mission exit criterion pattern
+(`mission-record.mjs`): `{id: "mN", text, addedAt, reachedAt?, evidence?, history: [...], removedAt?, removeReason?}`, stable
+ids, marked removed. It carries no release, because a milestone sits outside any single release.
 
-**D3. The 0.55.0 mission milestone is left untouched.** `mission.milestoneRelease` is a release and drives `criticalPath`
-(`board.mjs`). Whether it stays, folds into initiative milestones or retires is the owner's call (Q1). Until then the two are
-kept apart by name, as project-boards D7 did for plan stories: every human surface says "initiative milestone".
+**D3. The 0.55.0 mission milestone is left untouched.** `mission.milestoneRelease` stays a release and keeps driving
+`criticalPath` (`board.mjs`). The two are kept apart by name, as project-boards D7 did for plan stories: every human surface
+says "initiative milestone". Folding the mission milestone in belongs to the later roadmap epic (D17).
 
 **D4. A release records one purpose; the initiatives it also serves are not recorded on it.** `release.initiative` (an id) or
-`release.maintenance: true`, mutually exclusive. The owner: a release's attribution to initiatives is computed from its
-epics. Recording secondaries on the release as well would be a second source of truth for what its epics already say, so
-the secondaries live on epics only (`secondaryInitiatives`) and the attribution is computed by the later progress epic.
+`release.maintenance: true`, mutually exclusive. A release's attribution to initiatives is computed from its epics, so the
+secondaries live on epics only (`secondaryInitiatives`) and the attribution is computed by the later progress epic.
 
-**D5. Spellings that keep 0.55.0's closed lists intact.** Several `project-boards` requirements close a list:
-- `release --clear <field>` names exactly theme, rationale, exit, order, size and target. The release's new singletons
-  therefore use project-boards D7's valueless `--clear-<thing>` form: `--clear-initiative`, `--clear-split-reason`.
-- `mission`'s `--reason` serves exactly `--statement`, `--end` and `--remove-criterion`. Every non-goal and initiative
-  milestone removal therefore carries its reason inline, `nN:<why>` / `mN:<why>`, split at the first colon: the gh#179
-  `--unmember` precedent (`constants.mjs`). Not repeatable, for the same reason `--unmember` is not.
-- `board-export`'s `rejected` kinds and reasons are closed, and its `mission` object is a fixed `{statement, setAt, reason}`.
-  So mission non-goals are a top-level `missionNonGoals` key, and a dangling initiative reference reads `null` with the
-  report left to `integrity` (D7). Adding top-level keys contradicts nothing: board-export names what SHALL be present.
-- The epic flags go through the open, registry-driven `update-epic --clear` (nullable rows), which has no closed list.
+**D5. Spellings that keep 0.55.0's closed lists intact.**
+- `release --clear <field>` names exactly theme, rationale, exit, order, size and target, so the release's new singletons use
+  project-boards D7's valueless `--clear-<thing>` form: `--clear-initiative`, `--clear-split-reason`.
+- `mission`'s `--reason` serves exactly `--statement`, `--end` and `--remove-criterion`, so every non-goal and initiative
+  milestone operation carries its text inline, `nN:<why>` / `mN:<why>` / `mN:<evidence>`, split at the first colon: the
+  gh#179 `--unmember` precedent (`constants.mjs`). Not repeatable, for the same reason `--unmember` is not.
+- `board-export`'s `rejected` kinds and reasons are closed and its `mission` object is a fixed `{statement, setAt, reason}`.
+  So mission non-goals are a top-level `missionNonGoals` key, and a dangling initiative reference reads `null` with the report
+  left to `integrity` (D7). Adding top-level keys contradicts nothing.
+- The `## Mission` section's 280-byte cap is a 0.55.0 requirement, so mission non-goals get their own section (D29).
+- The epic flags go through the open, registry-driven `update-epic --clear` (nullable rows), which has no closed list. The
+  new `initiative` verb gets its own `--clear source|off-mission-reason`.
 
-**D6. The challenge is a warning at the transition, not a judgment by the engine.** The engine cannot decide that work is
-off-mission; it can check that fields are present. It warns on the `owesSummaryWarning` transition (`epic-summary.mjs`):
-leaving `untriaged`, or registration into a live status. Firing only at that transition is what makes "challenged once"
-mechanical, and the recorded reason field is the "already answered" marker. Off-mission judgment is the agent's, carried by
-the conductor skill and the `## Initiatives` section; the engine only stores `offMissionReason`. Three scoping choices,
-each beyond the brief and reported as such:
+**D6. The challenge is a warning at the transition, not a judgment by the engine.** The engine checks presence; the agent
+judges alignment. It warns on the `owesSummaryWarning` transition (`epic-summary.mjs`): leaving `untriaged`, or registration
+into a live status. Firing only there is what makes "challenged once" mechanical, and the recorded reason is the "already
+answered" marker. Off-mission judgment (of epics and of initiatives, D25) is the agent's, carried by the conductor skill and
+`## Initiatives`; the engine stores the reasons. Scoping, beyond the brief:
 - The warning fires only while at least one initiative is `open`. Before any initiative is derived, every triage would warn.
 - A `health` epic needs no initiative: health is the 20% that is by definition not initiative work.
 - `release --member` warns (never refuses) when the epic does not serve the release's primary; a maintenance release, or one
   with no primary, never warns.
 
-**D7. Dangling initiative references are an integrity finding.** No verb deletes an initiative (it ends, D8), and every flag
-that names one refuses an unknown id, so a dangling reference needs a hand edit. `integrity` (`scripts/lib/integrity.mjs`,
-`runIntegrity`) is pm's existing reporter of hand-edit damage, and it reports one; the export reads it as `null`.
+**D7. Dangling initiative references are an integrity finding.** No verb deletes an initiative and every flag that names one
+refuses an unknown id, so a dangling reference needs a hand edit. `integrity` (`scripts/lib/integrity.mjs`, `runIntegrity`)
+is pm's existing reporter of hand-edit damage; the export reads such a reference as `null`.
 
-**D8. An initiative ends, never deletes.** `--end --reason "<why>"` and `--reopen --reason "<why>"` append to a history,
-spelled exactly as `mission --end --reason` so one operation has one spelling, and following gate item 6 (end by recording, never by removal). Whether ending carries an outcome vocabulary is Q7.
+**D8. An initiative ends, never deletes.** `--end --outcome <o> --reason "<why>"` and `--reopen --reason "<why>"` append to a
+history, spelled as `mission --end --reason` so one operation has one spelling, and following gate item 6.
 
-**D9. The split counts epics.** Epics carry no size and release `--size` is semver impact, so the epic count is the only
-measure computable today. Unclassified members are counted and excluded from the share. Weighting is Q4. The `claude-code`
-lane is exempt from the challenge only; its members count in the split by their kind until Q5 says otherwise.
+**D9. The split counts epics** (D18, D20). Epics carry no size and release `--size` is semver impact.
 
-**D10. Drift has a named tolerance whose value is the owner's.** `HEALTH_DRIFT_TOLERANCE` in the release module. The spec's
-scenarios (10/0 drifts, 8/2 does not) hold for any tolerance between 0 and 0.2, so the RED tests can be written now; the value
-is set from Q3 before task 4.2, and task 0.5 writes the number into the release-planning spec once answered. The target is fixed at 0.2 (Q13 asks whether it may be set per project).
+**D10. The health band is two engine constants** (D19): `HEALTH_SHARE_MIN = 0.10`, `HEALTH_SHARE_MAX = 0.30`, in the release
+module. Not settings; the target is a fixed 0.2 (D30).
 
-**D11. An override is a reason, not a setting.** `splitReason` is displayed beside the drift and changes nothing else. No
-`OPT_INS` row, no switch: the owner said the report is not a setting to turn off.
+**D11. An override is a reason, not a setting.** `splitReason` is shown beside the drift and changes nothing else. No
+`OPT_INS` row, no switch: the report is not a setting to turn off.
 
 **D12. Non-goals are one shared module.** `scripts/lib/non-goals.mjs` holds the shape, validation (`lineFieldError` from
 `epic-summary.mjs`, 300 characters, control characters escaped by `escapeControls`) and the add and remove operations, so the
-four records cannot drift apart. Ids are per record (`nextNonGoal` on each). The cap of 300 matches mission statements and
-criteria.
+four records cannot drift apart. Ids are per record (`nextNonGoal` on each).
 
-**D13. `## Initiatives` is a verb-refreshed section with its own cap.** The `## Mission` section is already near its 280-byte
-cap (head and tail about 97 bytes, statement truncated), so nothing is appended to it. The new section is present only while
-an initiative is open, capped at 280 bytes, outside `CONDITIONAL_SECTIONS` (`rules-usage.mjs`), rewritten by `initiative`
-when its text changes (the `mission` verb's pattern, `mission.mjs`), and attributed `rules:initiatives` → `core` in
-`SURFACE_FEATURES` (`overhead.mjs`), as `rules:mission` is. Its code spans pass the emitted-invocations functional test.
+**D13. `## Initiatives` is a verb-refreshed section with its own cap.** Present only while an initiative is open, capped at
+280 bytes, outside `CONDITIONAL_SECTIONS` (`rules-usage.mjs`), rewritten by `initiative` when its text changes (the `mission`
+verb's pattern, `mission.mjs:196-206`), attributed `rules:initiatives` → `core` in `SURFACE_FEATURES` (`overhead.mjs`), as
+`rules:mission` is. Its code spans pass the emitted-invocations functional test.
 
 **D14. Derive-and-confirm lives in skill text, in two existing homes.** Candidate derivation joins the `project-boards`
-skill's "First population: Derive, then confirm" (task 8.15 of project-boards). The challenge-once procedure joins the
+skill's "First population: Derive, then confirm". The challenge-once procedure and the two tweak destinations (D23) join the
 conductor skill's Intake. No new skill: a project assessment skill is out of scope.
 
-**D15. `schemaVersion` stays 1.** Every `board --json` addition is a new key; no existing key's meaning changes.
+**D15. `schemaVersion` stays 1.** Every `board --json` addition is a new key; no existing key's meaning changes. `unaligned`
+(D21) replaces this change's own earlier `unclassified` draft, which never shipped.
 
-**D16. Field caps follow the engine's existing conventions** (`--help`, 2026-11-12): titles 200 (as `--summary`),
-capability 400 (as release `--theme`), milestones and non-goals 300 (as mission criteria), reasons 300 (as `--why-now`),
-split reason 400 (as `--rationale`). All one line, validated before any write, echoed through `escapeControls`.
+**D16. Field caps follow the engine's existing conventions** (`--help`, 2026-11-12): titles 200 (as `--summary`), capability
+400 (as release `--theme`), milestones, evidence, sources and non-goals 300 (as mission criteria), reasons 300 (as
+`--why-now`), split reason 400 (as `--rationale`). All one line, validated before any write, echoed through `escapeControls`.
+
+### Owner answers (2026-11-12)
+
+**D17 (Q1). The mission milestone stays as it is; no migration.** It folds into initiative milestones later, in the roadmap
+epic, not here.
+
+**D18 (Q2). No epic sizing in 0.56.0; the split and progress count epics.** A later epic adds epic sizing with ONE default
+scale chosen and kept, but the scale is a configuration choice (t-shirt, Fibonacci, others), because people hold strong
+opinions about it. That epic is in proposal.md's non-goals; nothing here reserves a size field.
+
+**D19 (Q3). Drift is a share below 10% or above 30%.** Boundaries are inside the band: 0.10 and 0.30 do not drift.
+
+**D20 (Q4). Count by epic.** Same as D9; restated so the answer is on record.
+
+**D21 (Q5, revised). Every piece of work in any lane is accounted for, with minimal overhead.** NEW MACHINERY is marked.
+- (a) A `claude-code`-lane epic counts in the split by its kind. With none recorded, its EFFECTIVE kind is `initiative-work`
+  when it names an initiative, else `health`. NEW: the derived `effectiveKind` (read-only, never stored, so no backfill and no
+  inverse). It is still not challenged one by one.
+- (b) A tweak too small for its own epic goes to the per-release floating epic `maintenance-<releaseId>` (lane `claude-code`,
+  kind `health`, a member of that release), registered by the agent with `add-epic` on the first unaccounted tweak, its
+  commits recorded with the existing `update-epic --attribute-commit`, ended with the release by the normal disposition. NOT
+  new engine machinery: it is a naming convention over existing verbs, stated in the conductor skill. A tweak that moves an
+  initiative is a small claude-code epic naming that initiative instead. The id fits `EPIC_ID_FORMAT`
+  (`maintenance-0.56.0`). Inverse: the normal disposition; `remove-epic` for one registered in error.
+- (c) The commit nudge (`attributionNudge`, `scripts/lib/subcommands.mjs`, read 2026-11-12) already has an "untied" branch
+  for a commit whose subject and paths do not name the active epic; it ends "If it is not, attribute nothing." AMENDED
+  (cheap, one branch): when the active epic is a member of a release, that sentence names the two destinations instead, with
+  runnable commands. When no epic is active the nudge returns `null` today (no candidate); that stays, to keep the nudge's
+  noise budget, and the gap is closed later by the unattributed-commit check (e).
+- (d) The split reports `health`, `initiativeWork` and `unaligned`. NEW: `unaligned` is any member that is neither effective
+  `health` nor naming a primary initiative, a visible off-initiative signal even when a reason is recorded. Its audience is
+  the release plan board, the orchestrating agent at closeout (`release show`) and the later assessment skill. A tiny project
+  pays at most one attribution line per tweak.
+- (e) The read-only `integrity` check listing commits in a release range that no epic attributes is LATER, not 0.56.0. A
+  release records no commit range today (`delivered` holds only `recordedAt`; the record's release keys are amendments,
+  crossSpecReview, deferred, delivered, exit, id, intent, rationale, size, target, theme), so the check needs a new range
+  record and a git walk inside `integrity`, which already imports `git.mjs` but would put a new functional-bucket subject in
+  every certify. The nudge amendment (c) covers commits from here on; the check is listed in proposal.md's non-goals.
+
+**D22 (Q6). An initiative milestone is reached when the agent records it with evidence.** `--reach-milestone
+"mN:<evidence>"`; the human override is `--unreach-milestone "mN:<why>"`, its inverse. No mechanical check yet.
+
+**D23 (Q7). Ending an initiative records only the WORK disposition.** `--outcome delivered|abandoned|superseded`, the epic
+vocabulary's subset the owner named. The OUTCOME review (`successSignal`, `reviewDue`) is a separate later feature that arms
+AFTER deployment, never at close, because the human cannot judge an outcome before it has run in production. Out of scope.
+
+**D24 (Q8). Warn when no member serves the release's primary initiative.** Derived `primaryServed`; `release show` prints a
+warning line while it is `false`. A report, never a refusal.
+
+**D25 (Q9). An initiative is challenged against the mission once,** with its answer in `initiative --off-mission-reason`.
+
+**D26 (Q10). An initiative may record its source** (`--source`, optional, one line; `UNGROUNDED` is an accepted value).
+
+**D27 (Q11, widened). Record when an epic joined its initiative and its release; report scope added since planning.** Checked
+from disk first: `release --member` writes only `epic.release = id` (`releases.mjs:367`) and appends an amendment only when an
+epic MOVES (`{op: "unmember", via: "member", to, at}` on the old release, `releases.mjs:355`). A plain join records no time,
+so join times cannot be recovered from amendments. NEW: `epic.releaseJoinedAt` (written by `--member`, removed by
+`--unmember`), `epic.initiativeJoinedAt` (written when the primary changes, removed by `--clear initiative`), and
+a derived planning baseline (D31). `addedSincePlanning` and `unknownJoinTime`
+are derived; `release show` prints "N epics added since planning" at closeout as a learning input. Report only.
+
+**D28 (Q11).** Superseded by D31; the explicit-mark proposal it held was declined by the owner.
+
+**D29 (Q12). Mission non-goals reach the rules block in one line.** A separate `## Mission non-goals` section (D5), present only
+while one is active, capped at 200 bytes, refreshed by `mission`, `rules:mission-non-goals` → `core`. Measured with
+`node scripts/conductor.mjs overhead` on 2026-11-12 in this repo: `rules:mission` is 282 bytes and core is 40280 bytes; the
+mission has no non-goals, so the new section costs 0 bytes today and at most 200 bytes (about 50 tokens, bytes/4) when set,
+a 0.5% rise in core. `rules:initiatives` adds at most 280 more while an initiative is open.
+
+**D30 (Q13). The 20% target is fixed for every project.** The only override is a recorded `--split-reason`.
+
+**D31 (Q14). The planning baseline is automatic: no mark, no flag, no inverse.** The owner wants no added ceremony.
+`planningBaseline` is derived on every read as the earliest `startedAt` among the release's members that have one. Checked
+from disk: `startedAt` is stamped once, on an epic's first activation, and never reset (`active-pointer.mjs:46-48`); 67 epics
+in this repo carry it (jq, 2026-11-12). "Added since planning" counts members whose `releaseJoinedAt` is later. With no member
+started there is no baseline and every scope count is `null`, never invented. Nothing is stored, so nothing needs unsetting.
 
 ## Call sites (gate item 1, derived with `rg` on 2026-11-12; R.1 re-derives them)
 
 - `rg -n "warnSummary\(" scripts/lib`: the transition sink the planning warning joins: `active-pointer.mjs:136`,
-  `update-epic.mjs:1195`, `detour-stack.mjs:179-180`, `add-epic.mjs:522`, `add-many.mjs:266`. Every status writer that
-  already warns for a missing summary warns for planning fields too, from the same call.
-- `rg -n "lineFieldError\(" scripts/lib`: `update-epic.mjs:591`, `add-many.mjs:148`, `add-epic.mjs:495`, the validators the
-  new one-line fields reuse.
-- `rg -n "epicBatchKeys|epicFlagsFor" scripts/lib`: `constants.mjs` (definition), `update-epic.mjs`, `add-many.mjs`,
-  `help.mjs`: a new registry row reaches add-epic, update-epic, add-many and `--help` through these projections.
-- `rg -n "pushEpic\(" scripts/lib`: the creation sink (`state.mjs:136`, `subcommands.mjs` x3, plus add-epic and add-many
-  through it). New epic fields are optional and seeded by nothing, so no creation site changes.
-- `rg -n "missionSectionText|boardsSectionText" scripts/lib`: `rules.mjs`, `overhead.mjs:181`, `mission.mjs:196,206`,
-  `boards-switch.mjs`: the rules-block section pattern `## Initiatives` copies, and the `rulesBlock` argument list it joins.
+  `update-epic.mjs:1195`, `detour-stack.mjs:179-180`, `add-epic.mjs:522`, `add-many.mjs:266`.
+- `rg -n "lineFieldError\(" scripts/lib`: `update-epic.mjs:591`, `add-many.mjs:148`, `add-epic.mjs:495`.
+- `rg -n "epicBatchKeys|epicFlagsFor" scripts/lib`: `constants.mjs`, `update-epic.mjs`, `add-many.mjs`, `help.mjs`.
+- `rg -n "pushEpic\(" scripts/lib`: `state.mjs:136`, `subcommands.mjs` x3, add-epic and add-many through it. New epic fields
+  are optional and seeded by nothing, so no creation site changes.
+- `rg -n "\.release = " scripts/lib`: `releases.mjs:367`, the ONLY writer of `epic.release`, so `releaseJoinedAt` is written in
+  one place; the `--unmember` path (`releases.mjs` ~281-400) is its one remover.
+- `rg -n "attributionNudge|attributionCandidates" scripts/lib`: `subcommands.mjs` (the nudge, ~649-728, and its candidates
+  ~540); only the untied branch changes.
 - `rg -n "rulesBlock\(|writeRules\(|currentMissionSection\(|currentBoardsSection\(" scripts/lib scripts/conductor.mjs`:
   three builders of the block (`rules.mjs:1334` in `writeRules`, `conductor.mjs:529` for the `rules` verb, `overhead.mjs:181`)
-  each gain the `## Initiatives` argument; every other writer (`set-boards`, `mission`, tracker verbs, `review-mode`,
-  `profile-verbs`, `spend-tracking`, `spend-guard-verbs`, `subcommands`, `migrations` for `upgrade`) goes through
-  `writeRules`, so none can drop the section.
+  each gain the `## Initiatives` and `## Mission non-goals` arguments; every other writer (`set-boards`, `mission`, tracker
+  verbs, `review-mode`, `profile-verbs`, `spend-tracking`, `spend-guard-verbs`, `subcommands`, `migrations` for `upgrade`)
+  goes through `writeRules`, so none can drop either section.
 - `rg -n "SURFACE_FEATURES|CONDITIONAL_SECTIONS" scripts/lib`: `overhead.mjs:51`, `rules-usage.mjs:41`, `rules.mjs`,
   `spend-guard-verbs.mjs`.
-- `rg -n "REJECTED_REASONS" scripts/lib`: `board.mjs:46` only; this change does not extend it (D5).
+- `rg -n "REJECTED_REASONS" scripts/lib`: `board.mjs:46` only; not extended (D5).
 - `rg -n "missionOf\(" scripts/lib`: `mission-record.mjs`, `mission.mjs`: the readers that must carry `nonGoals`.
-- `rg -n "releaseSummaries" scripts/lib`: `constants.mjs:215`, `briefing.mjs`, `render.mjs`, `releases.mjs`: release
-  readers; the split is computed in the release module and read by `release show`, `board` and the template only, not by
+- `rg -n "releaseSummaries" scripts/lib`: `constants.mjs:215`, `briefing.mjs`, `render.mjs`, `releases.mjs`. The split, scope
+  and `primaryServed` are computed in the release module and read by `release show`, `board` and the template only, not by
   the brief or `PROJECT.md`.
-- `rg -n "VERB_EFFECTS" scripts/lib/verb-effects.mjs`: the `release` and `mission` rows' `writes` text gains the new keys; a
-  new `initiative` row (mutates; `show` writes nothing).
+- `rg -n "VERB_EFFECTS" scripts/lib/verb-effects.mjs`: the `release` and `mission` rows' `writes` text gains the new keys; a new
+  `initiative` row (mutates; `show` writes nothing).
 
-**Data references (gate item 1).** Fields that hold another record's id:
+**Data references (gate item 1).**
 
 | Holder | Writers | Readers | Removers |
 |---|---|---|---|
-| `epic.initiative` | add-epic, update-epic, add-many | board, warning, initiative show (counts), integrity | `update-epic --clear initiative`; `remove-epic` removes the holder |
-| `epic.secondaryInitiatives[]` | same | board, member warning, integrity | `--remove-secondary-initiative`; `remove-epic` |
-| `release.initiative` | `release --initiative` | board, release show, member warning, integrity | `--clear-initiative`, `--maintenance` |
+| `epic.initiative` (+ `initiativeJoinedAt`) | add-epic, update-epic, add-many | board, warnings, split, initiative show, integrity | `update-epic --clear initiative`; `remove-epic` removes the holder |
+| `epic.secondaryInitiatives[]` | same | board, member warning, `primaryServed`, integrity | `--remove-secondary-initiative`; `remove-epic` |
+| `epic.releaseJoinedAt` | `release --member` (`releases.mjs:367`) | scope report, board | `--unmember`; a move replaces it; `remove-epic` |
+| `release.initiative` | `release --initiative` | board, release show, member warning, `primaryServed`, integrity | `--clear-initiative`, `--maintenance` |
 | initiative milestones and non-goals | `initiative` | board, initiative show | marked removed only |
 
 An initiative is never removed, so none of these can dangle through a verb; a hand edit is reported by `integrity` (D7).
@@ -145,57 +217,48 @@ An initiative is never removed, so none of these can dangle through a verb; a ha
 
 | Operation | Inverse | Shipped |
 |---|---|---|
-| `initiative <id>` create | `--end --reason "<why>"` (history kept) | yes |
+| `initiative <id>` create | `--end --outcome <o> --reason "<why>"` (history kept) | yes |
 | `initiative --end` | `--reopen --reason "<why>"` | yes |
-| `initiative --title`, `--capability` | a new value | **no clear**, deliberate: both are required on create, as release `intent` |
+| `initiative --title`, `--capability` | a new value | **no clear**, deliberate: required on create, as release `intent` |
+| `initiative --source`, `--off-mission-reason` | `initiative --clear source`, `--clear off-mission-reason` | yes |
 | `--add-milestone` | `--remove-milestone "mN:<why>"` (marked, not deleted) | yes |
+| `--reach-milestone` | `--unreach-milestone "mN:<why>"` (both events kept) | yes |
 | `--add-non-goal` (four records) | `--remove-non-goal "nN:<why>"` (marked) | yes |
 | `release --initiative` / `--maintenance` | `--clear-initiative`; each replaces the other | yes |
 | `release --split-reason` | `--clear-split-reason` | yes |
-| `--initiative` (epic) | `update-epic --clear initiative` | yes |
+| `releaseJoinedAt` written by `--member` | removed by `--unmember`, replaced by a move | yes |
+| `--initiative` (epic), with `initiativeJoinedAt` | `update-epic --clear initiative` (removes both) | yes |
 | `--secondary-initiative` | `--remove-secondary-initiative` | yes |
 | `--kind` | `update-epic --clear kind` | yes |
 | `--off-mission-reason`, `--off-initiative-reason` | `update-epic --clear off-mission-reason`, `--clear off-initiative-reason` | yes |
+| `maintenance-<releaseId>` registered | normal disposition at release end; `remove-epic` if registered in error | yes (existing verbs) |
 | initiative delete | none | **no**, deliberate: ending records, deletion destroys (gate item 6) |
-| the 80/20 report | none | **no**, deliberate: the owner said it is not a setting to turn off |
+| the 80/20 report, the scope report | none | **no**, deliberate: reports are not settings to turn off |
 
 ## Amendments owed to 0.55.0 specs
 
-None. D5 picks spellings so that no `project-boards` requirement is contradicted. The cross-spec review (task 0.4) checks
-this claim against the whole 0.56.0 set plus the 0.55.0 specs it extends.
+None. D5 picks spellings so that no `project-boards` requirement is contradicted, and the nudge amendment changes text in a
+branch no 0.55.0 spec fixes. The cross-spec review (task 0.4) checks this claim.
 
 ## Risks / Trade-offs
 
-- [Warning noise once initiatives exist] → it fires only at the transition, never re-fires once a reason is recorded, skips
-  `claude-code` and `health`, and is off while no initiative is open.
-- [Rules-block bytes in every repo] → present only while an initiative is open, capped at 280, README cost row.
-- [Two milestone concepts confuse readers] → distinct names on every surface until Q1 is answered.
-- [Count-based split misleads when epics differ widely in size] → stated on the board as "by epic count"; Q4.
-- [Later progress epic lacks a planning baseline] → Q11: if 0.56.0 must start capturing when an epic joined an initiative,
-  that field must be added here, because history cannot be reconstructed later.
+- [Warning noise once initiatives exist] → transition-only, silenced by a recorded reason, skips `claude-code` and `health`,
+  off while no initiative is open.
+- [Rules-block bytes in every repo] → two sections, each present only while its data exists, capped at 280 and 200 bytes
+  (D29), with README cost rows.
+- [Two milestone concepts confuse readers] → distinct names on every surface until the roadmap epic folds them (D17).
+- [Count-based split misleads when epics differ widely in size] → stated on the board as "by epic count"; sizing is later (D18).
+- [Pre-0.56.0 members carry no join time] → reported as `unknownJoinTime`, never guessed.
+- [Tweaks committed with no active epic stay unattributed] → the nudge is silent there today (D21c); the unattributed-commit
+  check is a later epic (D21e).
 
 ## Migration Plan
 
-Additive. Every new key is optional and absent means today's behaviour: no initiative, no non-goals, unclassified kind, no
-release purpose, a split of all-unclassified. No existing value is transformed, so no `MIGRATIONS` entry is added; task 8.2's
-unit test loading a 0.55.0-shaped fixture is the evidence. If an answer to an Open question requires a transform (for example
-Q1 folding the mission milestone into an initiative), that answer adds a `MIGRATIONS` entry keyed to 0.56.0, additive and
-idempotent, in the same task. Rollback is reinstalling 0.55.0; whether it tolerates the new keys is not claimed here.
+Additive. Every new key is optional and absent means today's behaviour: no initiative, no non-goals, no recorded kind, no
+release purpose, no planning baseline, no join times. No existing value is transformed: D17 keeps the mission milestone and
+D27 does not backfill join times. So no `MIGRATIONS` entry is added; task 8.2's unit test loading a 0.55.0-shaped fixture is
+the evidence. Rollback is reinstalling 0.55.0; whether it tolerates the new keys is not claimed here.
 
 ## Open questions
 
-Owner answers needed; none is guessed in the specs. Q3 blocks task 4.2; Q1 and Q11 block task 1.1; the rest can land later.
-
-- Q1. Is the 0.55.0 mission milestone (a release) kept beside initiative milestones, folded into them, or retired?
-- Q2. What epic size weights initiative progress, given epics carry no size today and release `--size` is semver?
-- Q3. What drift tolerance around the 20% health target raises the drift flag?
-- Q4. Is the 80/20 split counted by epic (as specced) or weighted by size once a size exists?
-- Q5. Do claude-code-lane epics count in the 80/20 split, or are they excluded from it as well as from the challenge?
-- Q6. How is an initiative milestone reached: recorded by the agent, checked mechanically, or derived from its epics?
-- Q7. Does ending an initiative carry an outcome (delivered, abandoned, superseded) like an epic's disposition?
-- Q8. Should a release be flagged when none of its members serves its primary initiative?
-- Q9. Is an initiative itself challenged against the mission, with its own recorded reason?
-- Q10. Should an initiative record the evidence it was derived from (a source field), or is the user's confirmation enough?
-- Q11. Must 0.56.0 start recording when an epic joined an initiative, so the later progress epic has a "since planning" baseline?
-- Q12. Should mission non-goals reach the managed rules block so subagents see them, and at what byte cost?
-- Q13. Is the 20% health target fixed for every project, or settable per project with a recorded reason?
+None. Q1 to Q14 are answered (D17 to D31).

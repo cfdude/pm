@@ -22,22 +22,32 @@ A secondary equal to the primary SHALL be refused.
 - **WHEN** `update-epic E --remove-secondary-initiative reporting` runs on E above
 - **THEN** E's `secondaryInitiatives` is `[]` and its primary is unchanged
 
+### Requirement: An epic records when it joined its initiative
+
+Setting an epic's primary initiative to a new value SHALL record `initiativeJoinedAt`, the time of that write; re-setting the
+same value SHALL keep it, and `--clear initiative` SHALL remove both. An epic that named an initiative before this field
+existed cannot exist, so no backfill is needed.
+
+#### Scenario: Join time follows the primary
+
+- **WHEN** `update-epic E --initiative boards` runs, again with `boards`, and later with `reporting`
+- **THEN** `initiativeJoinedAt` is the first run's time after the second run and the third run's time after the third
+
 ### Requirement: An epic carries a kind
 
 `--kind initiative-work|health` on `add-epic`, `update-epic` and `add-many` SHALL record the epic's kind; `update-epic <id>
 --clear kind` removes it. Health is bugs, security fixes, dependency and stack upgrades, deprecation work, and test and
-tooling debt, never new internal capability; `commands/epic.md` SHALL say so. No kind reads as unclassified and nothing
-backfills it.
+tooling debt, never new internal capability; `commands/epic.md` SHALL say so. Nothing backfills a missing kind.
 
 #### Scenario: Bad kind refused
 
 - **WHEN** `update-epic E --kind feature` runs
 - **THEN** it is refused naming `initiative-work|health` and nothing is written
 
-#### Scenario: Existing epics stay unclassified
+#### Scenario: Existing epics keep no kind
 
 - **WHEN** a 0.55.0 state file is loaded and `board --json` runs
-- **THEN** every epic's `kind` is `null`, and the state file is unchanged by the load
+- **THEN** every epic's recorded `kind` is `null`, and the state file is unchanged by the load
 
 ### Requirement: Challenge answers are recorded reasons
 
@@ -89,11 +99,11 @@ and has no off-initiative reason. A maintenance release, or one with no primary,
 
 ### Requirement: board --json carries the epic planning fields
 
-Each `board --json` epic entry SHALL carry `initiative`, `secondaryInitiatives` (`[]` when none), `kind`, `offMissionReason`
-and `offInitiativeReason`, each `null` when absent. A reference naming no initiative SHALL read as `null` (left to
-`integrity`). These keys are additive, so `schemaVersion` SHALL stay 1.
+Each `board --json` epic entry SHALL carry `initiative`, `initiativeJoinedAt`, `secondaryInitiatives` (`[]` when none),
+`kind` (as recorded), `effectiveKind`, `releaseJoinedAt`, `offMissionReason` and `offInitiativeReason`, each `null` when
+absent. A reference naming no initiative SHALL read as `null`. These keys are additive, so `schemaVersion` SHALL stay 1.
 
 #### Scenario: Unset fields
 
-- **WHEN** `board --json` runs over an epic with none of these fields
-- **THEN** its entry has `initiative: null`, `secondaryInitiatives: []`, `kind: null` and both reasons `null`
+- **WHEN** `board --json` runs over a `superpowers` epic with none of these fields
+- **THEN** its entry has `initiative: null`, `secondaryInitiatives: []`, `kind: null`, `effectiveKind: null`, both join times `null` and both reasons `null`

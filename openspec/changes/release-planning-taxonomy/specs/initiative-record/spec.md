@@ -27,26 +27,43 @@ invocation SHALL write nothing.
 - **WHEN** `initiative show --title x` or `initiative "Bad Id" --title x --capability y` runs
 - **THEN** the first is refused naming `show` as reserved, the second naming the id format, and neither writes anything
 
-### Requirement: An initiative is ended, never deleted
+### Requirement: An initiative records its source and its mission challenge answer
 
-`initiative <id> --end --reason "<why>"` SHALL set the status to `ended` and append `{event: "ended", at, reason}` to its
-history. `--reopen --reason "<why>"` SHALL be its inverse, setting `open` and appending a `reopened` event. `--reason` serves
-only these two. Ending an ended initiative or reopening an open one SHALL be refused, writing nothing. No verb SHALL delete one.
+`--source "<line>"` SHALL record where the initiative was derived from; the literal `UNGROUNDED` is an accepted value.
+`--off-mission-reason "<line>"` SHALL record the stated reason an initiative is off the mission. Each is optional, one line
+of at most 300 characters, and removable with `initiative <id> --clear source` or `--clear off-mission-reason`.
+
+#### Scenario: Ungrounded source
+
+- **WHEN** `initiative boards --source UNGROUNDED` runs, and then `initiative boards --clear source`
+- **THEN** after the first `board --json` reports `source: "UNGROUNDED"` for boards; after the second it reports `null`
+
+#### Scenario: Unknown clear field
+
+- **WHEN** `initiative boards --clear title` runs
+- **THEN** it is refused naming `source` and `off-mission-reason` as the clearable fields, and nothing is written
+
+### Requirement: An initiative ends with a work disposition, never a deletion
+
+`initiative <id> --end --outcome delivered|abandoned|superseded --reason "<why>"` SHALL set the status to `ended` and append
+`{event: "ended", outcome, at, reason}` to its history. `--reopen --reason "<why>"` SHALL be its inverse, appending a
+`reopened` event. `--reason` serves only these two. A wrong-state, outcome-less or reasonless call SHALL write nothing, and
+no verb SHALL delete an initiative.
 
 #### Scenario: End then reopen keeps both events
 
-- **WHEN** `initiative boards --end --reason "folded into reporting"` runs and then `initiative boards --reopen --reason "split back out"` runs
-- **THEN** `initiative show boards --history` lists both events with their reasons, and the status is `open`
+- **WHEN** `initiative boards --end --outcome superseded --reason "folded into reporting"` runs, then `initiative boards --reopen --reason "split back out"`
+- **THEN** `initiative show boards --history` lists both events, the first with outcome `superseded`, and the status is `open`
 
-#### Scenario: A reason is required
+#### Scenario: Outcome and reason are required
 
-- **WHEN** `initiative boards --end` runs without `--reason`, or with `--reason ""`
-- **THEN** it is refused naming a non-empty reason and nothing is written
+- **WHEN** `initiative boards --end --reason "x"`, `initiative boards --end --outcome killed --reason "x"` or `initiative boards --end --outcome delivered` runs
+- **THEN** each is refused, naming `delivered|abandoned|superseded` or the missing reason, and nothing is written
 
 #### Scenario: Ending keeps every reference
 
-- **WHEN** epic E and release r1 name initiative `boards` and `initiative boards --end --reason "done"` runs
-- **THEN** E's `initiative` and r1's `initiative` still read `boards`, and `board --json` lists `boards` with status `ended`
+- **WHEN** epic E and release r1 name initiative `boards` and `initiative boards --end --outcome delivered --reason "done"` runs
+- **THEN** E's and r1's `initiative` still read `boards`, and `board --json` lists `boards` with status `ended` and outcome `delivered`
 
 ### Requirement: initiative show reads the record back
 
@@ -92,6 +109,22 @@ unknown or already-removed id, or a missing reason, SHALL be refused, writing no
 - **WHEN** `initiative boards --remove-milestone m1` runs
 - **THEN** it is refused naming the `mN:<why>` form and nothing is written
 
+### Requirement: A milestone is recorded as reached with evidence
+
+`initiative <id> --reach-milestone "mN:<evidence>"` SHALL record the milestone reached, with the time and a one-line evidence
+note of at most 300 characters. `--unreach-milestone "mN:<why>"` SHALL be its inverse (the human override), clearing the
+mark and keeping both events in the milestone's history. No mechanical check SHALL decide either.
+
+#### Scenario: Reach then override
+
+- **WHEN** `initiative boards --reach-milestone "m1:both boards live in 26 repos"` runs, then `initiative boards --unreach-milestone "m1:three repos still fall back"`
+- **THEN** after the first `board --json` shows m1 `reachedAt` set with that evidence; after the second `reachedAt` is `null`, and `--history` lists both
+
+#### Scenario: Wrong state refused
+
+- **WHEN** m1 is already reached and `--reach-milestone "m1:again"` runs, or m2 is not reached and `--unreach-milestone "m2:x"` runs
+- **THEN** each is refused naming the milestone's state, and nothing is written
+
 ### Requirement: Every reference to an initiative is checked
 
 A flag that names an initiative (on `release` and the epic-writing verbs) SHALL refuse an id naming no recorded initiative,
@@ -111,8 +144,9 @@ each one, and `board --json` SHALL read it as `null`.
 ### Requirement: board --json lists the initiatives
 
 `board --json` SHALL carry a top-level `initiatives` array in creation order, `[]` when none. Each entry SHALL be
-`{id, title, capability, status, endedAt, milestones: [{id, text}]}` with active milestones only, in id order. An entry
-whose id fails the board id format SHALL be omitted and left to `integrity`. `schemaVersion` SHALL stay 1.
+`{id, title, capability, status, outcome, endedAt, source, offMissionReason, milestones: [{id, text, reachedAt, evidence}]}`
+with active milestones only, in id order. An entry whose id fails the board id format SHALL be omitted and left to
+`integrity`. `schemaVersion` SHALL stay 1.
 
 #### Scenario: Empty record
 
@@ -121,9 +155,9 @@ whose id fails the board id format SHALL be omitted and left to `integrity`. `sc
 
 ### Requirement: The release plan board shows the initiatives
 
-The release plan template SHALL render an Initiatives section listing each initiative's title, capability, status and
-active initiative milestones, every value escaped like every other interpolation. With none, it SHALL render a guided empty
-state naming `initiative <id> --title --capability` and that the agent derives candidates for the user to confirm.
+The release plan template SHALL render an Initiatives section listing each initiative's title, capability, status, source
+(marked when `UNGROUNDED`) and active initiative milestones with their reached marks, every value escaped. With none, it
+SHALL render a guided empty state naming `initiative <id> --title --capability` and that the agent derives candidates.
 
 #### Scenario: Hostile initiative text stays inert
 
@@ -155,22 +189,23 @@ written. With none open it SHALL be absent. Every builder of the block SHALL inc
 ### Requirement: Candidates are derived and confirmed, never invented
 
 The `project-boards` skill's "First population" procedure SHALL tell the agent to derive candidate initiatives, initiative
-milestones, release primary initiatives and epic kinds from the repo, its docs and issues by clustering the backlog; to mark
-each candidate it cannot ground UNGROUNDED; to ask "Does this make sense?"; and to write only confirmed answers.
+milestones, release primary initiatives and epic kinds by clustering the backlog, docs and issues; to record each
+initiative's `--source`, or `UNGROUNDED` when it cannot ground one; to ask "Does this make sense?"; and to write only
+confirmed answers.
 
 #### Scenario: The skill states the procedure
 
 - **WHEN** `skills/project-boards/SKILL.md` is read
-- **THEN** it names clustering the existing backlog, the UNGROUNDED mark, the question "Does this make sense?", that the user never has to name an initiative or milestone, and that nothing unconfirmed is written
+- **THEN** it names clustering the existing backlog, `--source` and UNGROUNDED, the question "Does this make sense?", that the user never has to name an initiative or milestone, and that nothing unconfirmed is written
 
 ### Requirement: Off-mission and off-initiative work is challenged once
 
-The conductor skill's Intake SHALL tell the agent to challenge off-mission or off-initiative work once, to accept a stated
-reason and record it with `--off-mission-reason` or `--off-initiative-reason`, to read the epic's `board --json` entry first and
-never re-flag a recorded reason, to exempt
-`claude-code`-lane work, and to ask the orchestrating agent first and the human only when that agent lacks authority.
+The conductor skill's Intake SHALL tell the agent to challenge each initiative against the mission, and each off-initiative
+epic, once; to read the record's `board --json` entry first and never re-flag a recorded reason; to record the answer with
+`--off-mission-reason` or `--off-initiative-reason`; to exempt `claude-code`-lane epics; and to ask the orchestrating agent
+before the human.
 
 #### Scenario: The skill states the rule
 
 - **WHEN** `skills/conductor/SKILL.md` is read
-- **THEN** its Intake names both reason flags, "once", reading the recorded reason before challenging, the `claude-code` exemption, and the orchestrating-agent-first order
+- **THEN** its Intake names both reason flags, "once", initiatives as well as epics, reading the recorded reason before challenging, the `claude-code` exemption, and the orchestrating-agent-first order
