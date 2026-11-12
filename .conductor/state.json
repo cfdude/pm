@@ -1924,8 +1924,9 @@
           "text": "Deferred 2026-10-06 by Rob in favour of 0.52.0/0.53.0. Reassess at the next backlog grooming."
         }
       ],
-      "touchedAt": "2026-10-06T19:57:52.529Z",
-      "number": 1053
+      "touchedAt": "2026-11-12T19:09:26.993Z",
+      "number": 1053,
+      "summary": "Port pm to Codex CLI at full parity, proving first with a throwaway probe that hooks fire and inject context."
     },
     {
       "id": "hermes-platform-support",
@@ -1959,7 +1960,7 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "createdAt": "2026-07-28T19:25:39-07:00",
-      "touchedAt": "2026-11-03T16:45:09.349Z",
+      "touchedAt": "2026-11-12T19:09:25.959Z",
       "release": "0.54.0",
       "notes": [
         {
@@ -1974,7 +1975,8 @@
         }
       ],
       "startedAt": "2026-11-02T23:33:19.245Z",
-      "number": 1058
+      "number": 1058,
+      "summary": "Port pm to Hermes Agent as its first non-Claude-Code platform; open problems are per-turn context injection and shell hooks living in user config."
     },
     {
       "id": "edd-observe-hardcodes-claude-md",
@@ -2167,8 +2169,9 @@
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
-      "number": 1065
+      "touchedAt": "2026-11-12T19:09:23.907Z",
+      "number": 1065,
+      "summary": "pm init should detect an existing AGENTS.md or sol.md from a prior agent and read it first."
     },
     {
       "id": "rules-block-cli-fallback",
@@ -2710,10 +2713,11 @@
           "text": "Parked 2026-11-01 at Rob's call: pm only targets Claude Code, nothing is drifting, build sized over 8h plus paid live runs. Trigger to revive: first non-Claude platform build (Hermes). Prefer a Hermes rules-parity eval over this corpus expansion."
         }
       ],
-      "touchedAt": "2026-11-01T18:54:09.262Z",
+      "touchedAt": "2026-11-12T19:08:53.060Z",
       "release": "0.54.0",
       "startedAt": "2026-11-01T17:36:10.732Z",
-      "number": 1069
+      "number": 1069,
+      "summary": "The agent-behavior test corpus covers one scenario; extend it to the judgment-dependent surfaces where drift hides."
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2753,9 +2757,10 @@
           "text": "GROOMING 0.41.0 — absorbed parity-propagation-skill. Same trigger (the first real port), same procedural layer in docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md. This epic's own stories ARE the propagation skill's content: add the platform to platforms[], fill its column, run the corpus, record what differed. Verified still unbuilt: docs/parity-ledger.json still reads platforms: [\"claude-code\"] and contains zero occurrences of 'exempt'."
         }
       ],
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-12T19:09:12.918Z",
       "release": "0.54.0",
-      "number": 1072
+      "number": 1072,
+      "summary": "Recurring: on every new platform, rerun the test corpus, reassess parity-ledger exemptions, and compare drift."
     },
     {
       "id": "parity-propagation-skill",
@@ -3024,8 +3029,9 @@
         }
       ],
       "createdAt": "2026-08-16T23:06:53-07:00",
-      "touchedAt": "2026-09-10T04:38:01.014Z",
-      "number": 1074
+      "touchedAt": "2026-11-12T19:08:51.993Z",
+      "number": 1074,
+      "summary": "The docs changelog is 1,198 lines on one page; keep about 10 recent releases in full, index the rest, and make the roll-forward mechanical."
     },
     {
       "id": "gh-71-update-epic-positional-id",
@@ -6237,8 +6243,9 @@
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
       "release": "0.54.0",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
-      "number": 1091
+      "touchedAt": "2026-11-12T19:08:54.116Z",
+      "number": 1091,
+      "summary": "A release only reaches a repo when /pm:upgrade runs there; let pm say which repos are behind and print the upgrade steps, without the engine leaving the instruction layer."
     },
     {
       "id": "epic-registration-clock",
@@ -6734,9 +6741,10 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-12T19:09:24.934Z",
       "release": "0.54.0",
-      "number": 1093
+      "number": 1093,
+      "summary": "Investigate Gemini CLI, Grok Build and generic AGENTS.md consumers hands-on, and decide whether pm's rules block can land there at all."
     },
     {
       "id": "record-answers-for-itself",
@@ -10792,8 +10800,9 @@
       "description": "From 0.43.0 review E1 and 0.45.0 Gate 1 (emitted-commands lens B). SKILL.md's orchestrator section says children never write state.json while agents/hierarchy-child-executor.md has children record gates and archive; ROOT = CLAUDE_PROJECT_DIR||cwd so parallel children write the main checkout's state concurrently. Open design questions: the managed rules block orders every agent (children included) to attribute each commit; the tasks.md a child is handed carries record-gate-review, attribution and archive tasks; the orchestrator must attribute only the child branch's commits, never a merge or conflict-resolution commit (a merge commit as last entry makes the reviewed headSha stale); evidence carried in the child's DONE prose can be shortened by a terse contract, so Reporting item 1 must cover it; the child's context is discarded after it reports.",
       "attributedCommits": [],
       "createdAt": "2026-09-16T23:22:32.761Z",
-      "touchedAt": "2026-09-16T23:22:32.765Z",
-      "number": 1143
+      "touchedAt": "2026-11-12T19:08:48.872Z",
+      "number": 1143,
+      "summary": "In a hierarchy run, only the orchestrator writes state.json; children report attribution and gate evidence and the orchestrator records them after merge."
     },
     {
       "id": "gh-cfdude-pm-206",
@@ -10938,8 +10947,9 @@
       "externalUpdatedAt": "2026-09-17T11:31:30Z",
       "attributedCommits": [],
       "createdAt": "2026-09-17T11:31:38.757Z",
-      "touchedAt": "2026-09-17T11:31:38.761Z",
-      "number": 208
+      "touchedAt": "2026-11-12T19:09:19.595Z",
+      "number": 208,
+      "summary": "Offer repos using pm the pm:refused <class> marker so their quoted pm commands are checked against the engine."
     },
     {
       "id": "registry-bound-poison-sweep-practice",
@@ -10958,7 +10968,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-17T18:18:06.298Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-12T19:09:14.022Z",
       "notes": [
         {
           "at": "2026-09-17T18:18:06.783Z",
@@ -10967,7 +10977,8 @@
         }
       ],
       "release": "0.54.0",
-      "number": 1145
+      "number": 1145,
+      "summary": "Ship a check over every value-taking flag and non-argv input so a new value cannot be added without a hostile-input test."
     },
     {
       "id": "gh-cfdude-pm-204",
@@ -11745,7 +11756,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-22T11:09:54.629Z",
-      "touchedAt": "2026-10-22T17:05:35.000Z",
+      "touchedAt": "2026-11-12T19:09:15.129Z",
       "notes": [
         {
           "at": "2026-09-25T21:14:34.648Z",
@@ -11769,7 +11780,8 @@
         }
       ],
       "startedAt": "2026-10-05T22:07:30.403Z",
-      "number": 1154
+      "number": 1154,
+      "summary": "Make init's CLAUDE.md and .gitignore writes go through the store so their tests can leave the disk, the last lever on the per-commit gate time."
     },
     {
       "id": "node-support-policy",
@@ -14025,9 +14037,10 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T21:51:24.361Z",
-      "touchedAt": "2026-10-17T12:42:17.936Z",
+      "touchedAt": "2026-11-12T19:09:22.897Z",
       "release": "0.54.0",
-      "number": 1182
+      "number": 1182,
+      "summary": "Two leftover planning-completeness duties: Orient reads the spec inventory, and the propose/apply boundary governs an autonomy grant."
     },
     {
       "id": "token-spend-analysis-and-recommendations",
@@ -14560,7 +14573,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-07T00:23:56.798Z",
-      "touchedAt": "2026-11-11T06:09:13.912Z",
+      "touchedAt": "2026-11-12T19:08:49.936Z",
       "notes": [
         {
           "at": "2026-10-07T00:23:57.541Z",
@@ -14587,7 +14600,8 @@
           "lastAt": "2026-11-11T06:09:13.912Z"
         }
       ],
-      "number": 1188
+      "number": 1188,
+      "summary": "Check OpenSpec 1.14's new workflows against pm's gates, sync and archive, and decide what pm should instruct and what it should leave alone."
     },
     {
       "id": "gh-cfdude-pm-239",
@@ -15244,7 +15258,7 @@
       "externalUpdatedAt": "2026-10-17T07:44:57Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:39.273Z",
-      "touchedAt": "2026-10-17T12:41:40.175Z",
+      "touchedAt": "2026-11-12T19:08:59.414Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:40.170Z",
@@ -15252,7 +15266,8 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "number": 253
+      "number": 253,
+      "summary": "Serialise hooks that run tests across agents in one repo, so parallel agents do not all run the suite at once."
     },
     {
       "id": "gh-cfdude-pm-252",
@@ -15477,7 +15492,7 @@
       "externalUpdatedAt": "2026-10-14T22:56:08Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:44.228Z",
-      "touchedAt": "2026-10-17T12:41:45.061Z",
+      "touchedAt": "2026-11-12T19:08:58.347Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:45.057Z",
@@ -15485,7 +15500,8 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "number": 250
+      "number": 250,
+      "summary": "The spend guard should tell a converging review loop from a stuck one and allow one scoped confirmation round."
     },
     {
       "id": "gh-cfdude-pm-249",
@@ -15790,7 +15806,7 @@
       "externalUpdatedAt": "2026-10-14T22:02:30Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:49.147Z",
-      "touchedAt": "2026-10-17T12:41:49.977Z",
+      "touchedAt": "2026-11-12T19:08:57.291Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:49.973Z",
@@ -15798,7 +15814,8 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "number": 247
+      "number": 247,
+      "summary": "Let an epic record what it is blocked on when that is not another epic."
     },
     {
       "id": "gh-cfdude-pm-246",
@@ -15882,7 +15899,7 @@
       "externalUpdatedAt": "2026-10-14T22:02:27Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:52.437Z",
-      "touchedAt": "2026-10-17T12:41:53.245Z",
+      "touchedAt": "2026-11-12T19:08:56.234Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:53.240Z",
@@ -15890,7 +15907,8 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "number": 245
+      "number": 245,
+      "summary": "Add a rename-epic verb, and let add-many entries carry notes."
     },
     {
       "id": "gh-cfdude-pm-243",
@@ -16078,7 +16096,7 @@
       "externalUpdatedAt": "2026-10-13T14:02:17Z",
       "attributedCommits": [],
       "createdAt": "2026-10-17T12:41:57.292Z",
-      "touchedAt": "2026-10-17T12:41:58.101Z",
+      "touchedAt": "2026-11-12T19:08:55.169Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:58.097Z",
@@ -16086,7 +16104,8 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "number": 241
+      "number": 241,
+      "summary": "Parallel epic branches conflict on state.json, PROJECT.md and render-stamp.json, and there is no verb or merge driver to resolve it."
     },
     {
       "id": "release-0-53-0-cut",
@@ -16221,7 +16240,7 @@
       "externalUpdatedAt": "2026-10-17T12:43:17Z",
       "attributedCommits": [],
       "createdAt": "2026-10-23T04:24:32.655Z",
-      "touchedAt": "2026-10-23T04:24:40.506Z",
+      "touchedAt": "2026-11-12T19:09:00.544Z",
       "notes": [
         {
           "at": "2026-10-23T04:24:40.502Z",
@@ -16229,7 +16248,8 @@
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
       ],
-      "number": 254
+      "number": 254,
+      "summary": "When a release closes, follow a superseded epic to the epic that delivered it, so its tracker issues do not stay open."
     },
     {
       "id": "gh-cfdude-pm-255",
@@ -16245,7 +16265,7 @@
       "externalUpdatedAt": "2026-10-20T06:26:11Z",
       "attributedCommits": [],
       "createdAt": "2026-10-23T04:24:34.688Z",
-      "touchedAt": "2026-10-23T04:24:42.592Z",
+      "touchedAt": "2026-11-12T19:09:01.659Z",
       "notes": [
         {
           "at": "2026-10-23T04:24:42.587Z",
@@ -16253,7 +16273,8 @@
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
       ],
-      "number": 255
+      "number": 255,
+      "summary": "gate-guard asks for a tracker refresh again after every attribute-commit on a tracker-linked epic, and then blocks the next write."
     },
     {
       "id": "gh-cfdude-pm-256",
@@ -16269,7 +16290,7 @@
       "externalUpdatedAt": "2026-10-20T22:07:02Z",
       "attributedCommits": [],
       "createdAt": "2026-10-23T04:24:38.029Z",
-      "touchedAt": "2026-10-23T04:24:44.414Z",
+      "touchedAt": "2026-11-12T19:09:02.781Z",
       "notes": [
         {
           "at": "2026-10-23T04:24:44.404Z",
@@ -16277,7 +16298,8 @@
           "text": "lane: superpowers not (no route) — engine behavior change, 2-8h, single subsystem; triage found no duplicate"
         }
       ],
-      "number": 256
+      "number": 256,
+      "summary": "An openspec epic can build for a week with no Gate 1 verdict recorded; nothing flags it until set-active."
     },
     {
       "id": "fresh-session-and-model-per-role-dispatch",
@@ -16323,8 +16345,9 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-10-23T13:23:59.176Z",
-      "touchedAt": "2026-10-23T13:37:19.249Z",
-      "number": 1197
+      "touchedAt": "2026-11-12T19:08:47.784Z",
+      "number": 1197,
+      "summary": "Start each epic in its own session or a subagent, and give every dispatch a model picked for its job role (plan, build, test, review)."
     },
     {
       "id": "release-planning-mission-and-milestone",
@@ -16477,8 +16500,9 @@
       "description": "Issue #248 (second comment): /pm:upgrade prints a NOT SET line nudging adoption of each opt-in (scripts/lib/opt-ins.mjs optInLines ~105), and adopting one raises the per-session and per-subagent rules-block tax (weekly-product-updates grew 34,654 -> 36,340 B after set-spend-tracking and set-spend-guard). Nothing tells the user the nudge has a running cost. Ask: each NOT SET line carries its estimated per-session cost from the overhead map.",
       "attributedCommits": [],
       "createdAt": "2026-11-02T19:43:54.999Z",
-      "touchedAt": "2026-11-02T19:43:55.006Z",
-      "number": 1199
+      "touchedAt": "2026-11-12T19:09:21.876Z",
+      "number": 1199,
+      "summary": "Make each NOT SET opt-in line in /pm:upgrade show that opt-in's estimated per-session rules-block cost."
     },
     {
       "id": "gh-cfdude-pm-266",
@@ -16494,8 +16518,9 @@
       "externalUpdatedAt": "2026-11-02T17:30:45Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:15.560Z",
-      "touchedAt": "2026-11-03T16:08:15.565Z",
-      "number": 266
+      "touchedAt": "2026-11-12T19:09:11.817Z",
+      "number": 266,
+      "summary": "The OpenSpec drift hold lists every unarchived change, even ones with no build progress, so the update is held indefinitely."
     },
     {
       "id": "gh-cfdude-pm-265",
@@ -16511,8 +16536,9 @@
       "externalUpdatedAt": "2026-11-01T15:49:37Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:16.627Z",
-      "touchedAt": "2026-11-03T16:08:16.632Z",
-      "number": 265
+      "touchedAt": "2026-11-12T19:09:10.700Z",
+      "number": 265,
+      "summary": "add-epic accepts repeated --notes but silently keeps only the last."
     },
     {
       "id": "gh-cfdude-pm-264",
@@ -16528,8 +16554,9 @@
       "externalUpdatedAt": "2026-11-02T17:31:26Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:17.569Z",
-      "touchedAt": "2026-11-03T16:08:17.574Z",
-      "number": 264
+      "touchedAt": "2026-11-12T19:09:09.590Z",
+      "number": 264,
+      "summary": "Auto-detour logs an epic's own fix commits as detours; one epic had to retract it 6 times."
     },
     {
       "id": "gh-cfdude-pm-263",
@@ -16545,8 +16572,9 @@
       "externalUpdatedAt": "2026-10-31T13:24:54Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:18.505Z",
-      "touchedAt": "2026-11-03T16:08:18.509Z",
-      "number": 263
+      "touchedAt": "2026-11-12T19:09:08.477Z",
+      "number": 263,
+      "summary": "A MODIFIED delta that drops a scenario is refused, and pm guidance never mentions the REMOVED-plus-ADDED route under a new name."
     },
     {
       "id": "gh-cfdude-pm-262",
@@ -16562,7 +16590,7 @@
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-12T19:07:46.933Z",
+      "touchedAt": "2026-11-12T19:09:07.304Z",
       "number": 262,
       "notes": [
         {
@@ -16571,7 +16599,8 @@
           "text": "2026-11-12: raised to P1 per Rob, hit more than once in the fleet. Fix direction agreed: stop editing OpenSpec's generated files; carry pm's clause in the managed rules block or a pm skill so the order of openspec update and pm upgrade stops mattering. Interim: the upgrade doc runs openspec update first, then pm upgrade; plus a post-update check naming missing pm-authored passages. Also confirm whether openspec update rewrites CLAUDE.md. Related: #266 (drift HOLD names every unarchived change). lane: superpowers (unchanged)."
         }
       ],
-      "release": "0.54.0"
+      "release": "0.54.0",
+      "summary": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases those edits."
     },
     {
       "id": "gh-cfdude-pm-261",
@@ -16587,8 +16616,9 @@
       "externalUpdatedAt": "2026-10-28T17:28:06Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:20.352Z",
-      "touchedAt": "2026-11-03T16:08:20.357Z",
-      "number": 261
+      "touchedAt": "2026-11-12T19:09:06.139Z",
+      "number": 261,
+      "summary": "The pm:lifecycle task marker now also trips /opsx:verify, not only openspec validate --archived."
     },
     {
       "id": "gh-cfdude-pm-260",
@@ -16604,8 +16634,9 @@
       "externalUpdatedAt": "2026-10-27T15:14:43Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:21.307Z",
-      "touchedAt": "2026-11-03T16:08:21.312Z",
-      "number": 260
+      "touchedAt": "2026-11-12T19:09:05.026Z",
+      "number": 260,
+      "summary": "The auto-detour hook logs a commit again when a manual log-detour already recorded it."
     },
     {
       "id": "gh-cfdude-pm-259",
@@ -16621,8 +16652,9 @@
       "externalUpdatedAt": "2026-10-23T15:57:39Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:22.247Z",
-      "touchedAt": "2026-11-03T16:08:22.252Z",
-      "number": 259
+      "touchedAt": "2026-11-12T19:09:03.896Z",
+      "number": 259,
+      "summary": "Add update-epic --unlink <type>:<epic> so a single link can be removed."
     },
     {
       "id": "mission-anti-spawn-rule",
@@ -16642,7 +16674,7 @@
       "description": "Follow-up to project-boards: use the project mission to refuse or flag epics that serve no mission (the epic -> new epics -> close epic spawn cycle).",
       "attributedCommits": [],
       "createdAt": "2026-11-11T05:33:23.603Z",
-      "touchedAt": "2026-11-11T05:33:23.608Z",
+      "touchedAt": "2026-11-12T19:09:20.736Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16650,7 +16682,8 @@
           "lastAt": "2026-11-11T05:33:23.608Z"
         }
       ],
-      "number": 1200
+      "number": 1200,
+      "summary": "Follow-up to project-boards: use the mission to flag epics that serve no mission, breaking the epic spawns epic cycle."
     },
     {
       "id": "backlog-trend-view",
@@ -16670,7 +16703,7 @@
       "description": "Follow-up to project-boards: a trend view of backlog size and age over time on the backlog board.",
       "attributedCommits": [],
       "createdAt": "2026-11-11T05:33:24.676Z",
-      "touchedAt": "2026-11-11T05:33:24.682Z",
+      "touchedAt": "2026-11-12T19:09:16.243Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16678,7 +16711,8 @@
           "lastAt": "2026-11-11T05:33:24.682Z"
         }
       ],
-      "number": 1201
+      "number": 1201,
+      "summary": "Follow-up to project-boards: show how backlog size and age change over time on the backlog board."
     },
     {
       "id": "commit-time-close-check",
@@ -16698,7 +16732,7 @@
       "description": "Follow-up to project-boards: at commit time, check whether a commit closes or completes an epic and prompt for its disposition.",
       "attributedCommits": [],
       "createdAt": "2026-11-11T05:33:25.728Z",
-      "touchedAt": "2026-11-11T05:33:25.733Z",
+      "touchedAt": "2026-11-12T19:09:17.359Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16706,7 +16740,8 @@
           "lastAt": "2026-11-11T05:33:25.733Z"
         }
       ],
-      "number": 1202
+      "number": 1202,
+      "summary": "Follow-up to project-boards: at commit time, check whether a commit finishes an epic and prompt for its disposition."
     },
     {
       "id": "epic-summary-required-on-triage",
@@ -16726,7 +16761,7 @@
       "description": "Follow-up to project-boards: require a one-line summary on an epic before it leaves untriaged.",
       "attributedCommits": [],
       "createdAt": "2026-11-11T05:33:26.841Z",
-      "touchedAt": "2026-11-11T05:33:26.847Z",
+      "touchedAt": "2026-11-12T19:09:18.453Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16734,7 +16769,8 @@
           "lastAt": "2026-11-11T05:33:26.847Z"
         }
       ],
-      "number": 1203
+      "number": 1203,
+      "summary": "Follow-up to project-boards: require a one-line summary on an epic before it can leave untriaged."
     },
     {
       "id": "project-boards",
@@ -16770,7 +16806,7 @@
         "3f4bf6a868139f911cfb902b22deaab7271be049"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-12T06:45:02.277Z",
+      "touchedAt": "2026-11-12T19:08:50.948Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16942,7 +16978,8 @@
         }
       },
       "startedAt": "2026-11-11T05:43:32.637Z",
-      "number": 1204
+      "number": 1204,
+      "summary": "Add a release plan board and a backlog board, a read-only board export, and a recorded mission and milestone for every pm project."
     },
     {
       "id": "release-planning-taxonomy",
@@ -17080,7 +17117,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2370,
+  "revision": 2428,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17141,7 +17178,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:00.843Z"
-      }
+      },
+      "theme": "The conductor tells the truth: dispositions with reasons, an archive gate on every path, checkable gate verdicts, explicit tracker direction, and read-only integrity checks."
     },
     {
       "id": "0.37.0",
@@ -17150,7 +17188,8 @@
       "target": "0.37.0",
       "delivered": {
         "recordedAt": "2026-11-12T16:38:02.080Z"
-      }
+      },
+      "theme": "Help that answers the question asked: per-verb --help from the flag registry and a docs pointer every managed repo gets on upgrade."
     },
     {
       "id": "0.38.0",
@@ -17159,7 +17198,8 @@
       "target": "0.38.0",
       "delivered": {
         "recordedAt": "2026-11-12T16:38:03.214Z"
-      }
+      },
+      "theme": "The record says what happened: deferral handling stops guessing, set-gate-guard reads back, gate verdicts record on any lane, and an attribution can be withdrawn."
     },
     {
       "id": "0.39.0",
@@ -17168,7 +17208,8 @@
       "target": "0.39.0",
       "delivered": {
         "recordedAt": "2026-11-12T16:38:04.344Z"
-      }
+      },
+      "theme": "Things that went missing unnoticed: a truncated shipped file, a discarded agent transcript, and a duplicated helper whose sibling went stale."
     },
     {
       "id": "0.40.0",
@@ -17241,7 +17282,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:05.508Z"
-      }
+      },
+      "theme": "The record answers questions about itself: epic dates, undefined statuses reported, unreconstructable outcomes, unsettable fields, and operations that ship their inverse."
     },
     {
       "id": "0.41.0",
@@ -17256,7 +17298,8 @@
       "target": "0.41.0",
       "delivered": {
         "recordedAt": "2026-11-12T16:38:06.682Z"
-      }
+      },
+      "theme": "Backlog health and the papercuts 0.40.0 surfaced, batched so the fleet needs one upgrade pass."
     },
     {
       "id": "0.42.0",
@@ -17271,7 +17314,8 @@
       "target": "0.42.0",
       "delivered": {
         "recordedAt": "2026-11-12T16:38:07.895Z"
-      }
+      },
+      "theme": "The record stops writing where nobody works: a deployed detached checkout is no longer read as a workspace."
     },
     {
       "id": "0.43.0",
@@ -17295,7 +17339,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:09.087Z"
-      }
+      },
+      "theme": "Gate verdicts get the inverse every other correctable record has."
     },
     {
       "id": "0.44.0",
@@ -17339,7 +17384,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:10.311Z"
-      }
+      },
+      "theme": "Fix every Critical from the 0.43.0 code review: state-file and argv data-loss paths and gate bypasses."
     },
     {
       "id": "0.45.0",
@@ -17438,7 +17484,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:11.511Z"
-      }
+      },
+      "theme": "First batch of Important 0.43.0 review findings: the commit nudge, commands pm emits, and user text in pm output."
     },
     {
       "id": "0.46.0",
@@ -17481,7 +17528,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:12.662Z"
-      }
+      },
+      "theme": "Cluster 4 of the 0.43.0 review: every operation ships its inverse and the gate guard covers every write path."
     },
     {
       "id": "0.47.0",
@@ -17504,7 +17552,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:13.819Z"
-      }
+      },
+      "theme": "Split the test suite into a per-commit in-process half and a triggered functional half."
     },
     {
       "id": "0.48.0",
@@ -17558,7 +17607,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:14.963Z"
-      }
+      },
+      "theme": "Make assertions real assertions: a unit rung over in-memory state so the pre-commit hook takes seconds."
     },
     {
       "id": "0.49.0",
@@ -17585,7 +17635,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:16.128Z"
-      }
+      },
+      "theme": "Node support policy: oldest non-EOL major, CI matrix from Node's schedule, per-file test mode."
     },
     {
       "id": "0.50.0",
@@ -17649,7 +17700,8 @@
       },
       "delivered": {
         "recordedAt": "2026-11-12T16:38:17.369Z"
-      }
+      },
+      "theme": "Close the open 0.43.0 review findings, the archive gate's blind spots, and the test-harness temp-dir leak."
     },
     {
       "id": "0.51.0",
@@ -17682,7 +17734,8 @@
       },
       "delivered": {
         "recordedAt": "2026-10-07T01:12:16.163Z"
-      }
+      },
+      "theme": "Tests and records you can trust: the certification redesign, flaky-test fixes, and refusals the gate verbs should have made."
     },
     {
       "id": "0.52.0",
@@ -17743,7 +17796,8 @@
       },
       "delivered": {
         "recordedAt": "2026-10-14T16:50:31.289Z"
-      }
+      },
+      "theme": "Safe to leave running: stop runaway token burn, oversized hook context and silent wrong records; measure spend."
     },
     {
       "id": "0.53.0",
@@ -17808,7 +17862,8 @@
       },
       "delivered": {
         "recordedAt": "2026-10-21T18:11:15.484Z"
-      }
+      },
+      "theme": "Know where the tokens went, and keep the record honest: spend analysis, decisions log, overhead report, developer session log."
     },
     {
       "id": "0.54.0",
@@ -17867,7 +17922,11 @@
           ],
           "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 619999c0, round 2 no BLOCKS, live run of the combined call exit 0"
         }
-      }
+      },
+      "theme": "Portable, and within budget: a second platform (Hermes), gate practices, and backlog tooling.",
+      "rationale": "Provisional: scope depends on the section 7 re-check in docs/reviews/pm-0.54.0-grooming.md; the 0.53.0 deploy it waited on is done.",
+      "exit": "The section 7 re-check is done, and each open member is shipped or recorded with release --defer.",
+      "size": "minor"
     },
     {
       "id": "0.55.0",
@@ -17966,7 +18025,11 @@
           ],
           "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs (3 BLOCKS, all contradictions, fixed in the docs, not re-reviewed)"
         }
-      }
+      },
+      "theme": "Release planning and project boards: a recorded mission and milestone, release plan fields, a read-only board export, and two default-on boards (release plan, backlog) for every pm project.",
+      "rationale": "Without a stated mission and a plan marker, the backlog is a flat list; boards make what is in flight and what comes next visible without reading state.json.",
+      "exit": "project-boards archived delivered with Gate 2 current; plugin.json 0.55.0; CHANGELOG 0.55.0 entry and MIGRATIONS entry present; board --json runs clean; CI test green on the release PR.",
+      "size": "minor"
     },
     {
       "id": "0.56.0",
@@ -18027,5 +18090,10 @@
     "milestoneRelease": null,
     "criteria": [],
     "nextCriterion": 1
+  },
+  "releasePlan": {
+    "here": "0.55.0",
+    "hereText": "0.55.0: project-boards is built and past Gate 2 (mission, milestone, release plan fields, boards). Docs, version bump, changelog and archive remain.",
+    "nextText": "Finish docs and V.1-V.4, archive project-boards, cut 0.55.0, then settle 0.54.0 after its section 7 re-check; 0.56.0 is the taxonomy."
   }
 }
