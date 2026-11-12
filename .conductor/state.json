@@ -16945,7 +16945,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2347,
+  "revision": 2362,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17003,25 +17003,37 @@
           }
         ],
         "reviewer": "two independent fresh-context lenses, 2026-08-23 — RECORDED RETROACTIVELY: the review ran by hand before /opsx:apply and returned 5 Critical + 10 Important; all Critical closed and re-reviewed twice, the second round finding 2 more introduced by the fixes. The verb did not exist at the time, so this date is the write date, not the review date"
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:00.843Z"
       }
     },
     {
       "id": "0.37.0",
       "intent": "Help that answers the question actually asked: per-verb --help projected from the flag registry, closed enums naming their legal values, and a docs pointer every managed repo receives on its next upgrade",
       "deferred": [],
-      "target": "0.37.0"
+      "target": "0.37.0",
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:02.080Z"
+      }
     },
     {
       "id": "0.38.0",
       "intent": "The record says what actually happened: the deferral separator stops guessing, a deferral flag outside an archive refuses instead of reporting a phantom write, set-gate-guard reads back, gate verdicts record on any lane, and an attribution can be withdrawn",
       "deferred": [],
-      "target": "0.38.0"
+      "target": "0.38.0",
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:03.214Z"
+      }
     },
     {
       "id": "0.39.0",
       "intent": "Things that go missing without anything noticing: a shipped file that lost its tail, an agent transcript thrown away, a duplicated helper whose sibling went stale, and a reported stdout loss that did not exist",
       "deferred": [],
-      "target": "0.39.0"
+      "target": "0.39.0",
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:04.344Z"
+      }
     },
     {
       "id": "0.40.0",
@@ -17091,6 +17103,9 @@
           ],
           "reviewer": "three rounds, two fresh-context lenses each (review mode: thorough), 2026-09-07/08"
         }
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:05.508Z"
       }
     },
     {
@@ -17103,7 +17118,10 @@
           "recordedAt": "2026-09-10T04:39:51.497Z"
         }
       ],
-      "target": "0.41.0"
+      "target": "0.41.0",
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:06.682Z"
+      }
     },
     {
       "id": "0.42.0",
@@ -17115,7 +17133,10 @@
           "recordedAt": "2026-09-12T06:09:28.396Z"
         }
       ],
-      "target": "0.42.0"
+      "target": "0.42.0",
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:07.895Z"
+      }
     },
     {
       "id": "0.43.0",
@@ -17136,6 +17157,9 @@
           }
         ],
         "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency-order), initial + 3 re-rounds; round-3 BLOCKS fixed d046e02; remaining round-3 items adjudicated POLISH (rendering detail, no contradiction) and trimmed from the spec 2b971c9, 2026-09-14"
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:09.087Z"
       }
     },
     {
@@ -17177,6 +17201,9 @@
           }
         ],
         "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency order over apply order argv → state-file → gates): round 1 fail (4 BLOCKS: link-repair contradiction, --force vs persist-or-refuse, 6.10 missed DISPATCH_BASELINE, 6.1–6.4 lacked --verdict); scoped re-review fail (6.9a/6.9b lacked --verdict) fixed and grep-verified; 7 spec files; 2026-09-15"
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:10.311Z"
       }
     },
     {
@@ -17273,6 +17300,9 @@
           ],
           "reviewer": "two fresh-context lenses per round (coherence/contradiction; falsifiability/dependency order), 6 rounds: r1 fail 7 BLOCKS, r2 fail 3, r3 fail 5, r4 fail 3, r5 split (1 contradiction adjudicated as BLOCK), r6 pass both lenses with REDs and printed remedies reproduced on 0.44.0; 2026-09-16"
         }
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:11.511Z"
       }
     },
     {
@@ -17313,6 +17343,9 @@
           }
         ],
         "reviewer": "two fresh-context lenses over both changes' spec sets, combined with Gate 1 fix confirmation: round 1 lens A pass (5 POLISH), lens B fail (2 BLOCKS: an engine-invocation exemption that could not fail, a multi-digit fd redirect evading the shape minimum); fixed; narrow confirmation round pass — MODIFIED delta fidelity diffed against the main spec, 117-case regex diff, mutation proofs both ways, drop-detour reachability verified on 0.45.0; 2026-09-17"
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:12.662Z"
       }
     },
     {
@@ -17333,6 +17366,9 @@
           }
         ],
         "reviewer": "INLINE review by the applying agent, NOT fresh-context lenses — this run's discipline forbids subagent dispatch, and that limitation is recorded here rather than papered over. Six questions over the release's two spec files (engine-invocation, suite-certification): (1) contradiction — none; the near-miss (one-process assertion half vs two-independent-invocations) is mutual dependency, not conflict. (2) double ownership — none; conductor.mjs's covers referencing the conformance set is a reference, and engine-invocation explicitly declines to restate verb-surface's refusal classes. (3) unmeetable — none in the specs. (4) gaps against proposal What-Changes — one: ci.yml's non-descending syntax loop has no requirement; declined as POLISH. (5) vocabulary forks — two, change-internal: \"double\" vs \"fake\", \"change-triggered bucket\" vs \"sweeps bucket\"; declined, renaming churns a passed Gate 1 contract for no behaviour change. (6) shared chokepoint — the single-process assertion half with injected streams is load-bearing for BOTH specs; guarded on each side (1.2 exits, 3.5 roots, 5.2 spawns). FINDING raised against the TASK LIST, not the specs: git.mjs's resolvedCommitCache is keyed by VALUE ONLY (unreachedCache by head+commits), so two invocations in one process against two roots share it and a hex abbreviation resolving in one repository and not the other gets the first repository's answer — engine-invocation forbids observing another invocation's values, and no task keys those caches; handled in the gateway work (4.2) rather than by amending a spec that is already correct. Verdict pass: no BLOCK found in either spec file; one BLOCK-level finding against tasks.md, acted on. 2026-09-20"
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:13.819Z"
       }
     },
     {
@@ -17384,6 +17420,9 @@
           ],
           "reviewer": "inline foreground cross-spec review of the 0.48.0 spec set (2 spec files: suite-certification, engine-invocation) — no fresh-context subagents were available in this run, so the reviewer is the applying agent, which read both deltas in full and answered the six questions. BLOCKS (fixed in this commit): engine-invocation's 'the invocation that used the in-memory store created no file' scenario was unreachable — init() writes CLAUDE.md (rules.mjs:1097) and .gitignore through raw fs, both deliberately outside the store per design D1, so the scenario was narrowed to the store's own footprint with an explicit boundary paragraph added. Contradiction: none — suite-certification's rungs and engine-invocation's per-call store agree; the rung's process claim ('both rungs, one invocation, one process') does not collide with 'two invocations in one process are independent' because they are different claims about different things. Double ownership: none — engine-invocation owns the caller's contract and states the store boundary; suite-certification owns rung membership and names the store only as the mechanism a unit test obtains a value through. Unmeetable: the one above, now fixed. Gaps vs the proposal's What Changes: none found — the three artifacts I1 added (session-claim.json, commit-observe.json+.lock, write-conflicts.log.prev) and the render's three reads (projectMd pre-image :306, the stamp's mtime test :356, detoursLog :276) are each carried by a task (1.2, 1.3). Vocabulary: ok within the spec set; POLISH declined — the file rung's directory is still named assert/ (the half's own name) while the unit rung's is unit/, and the spec's 'the two rungs SHALL be named on disk' is satisfied but the names are not parallel; renaming is out of this change's scope. Chokepoints: homeOf() (certification.mjs:63) and the two-glob runner invocation shared by the hook and ci.yml are each owned by exactly one capability. Recorded after the amendment above, so the hash covers the amended text."
         }
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:14.963Z"
       }
     },
     {
@@ -17408,6 +17447,9 @@
           }
         ],
         "reviewer": "two fresh-context lenses (coherence; falsifiability) + one confirmation: round 1 fail (BLOCKS: 'supported' R1/R2 contradiction over 23/25/27; bounded-wait over-wide; schedule filter unfalsifiable; zero-count CI pass; unfalsifiable version-default scenario; collapsed-half message; unit fs ban vs shim), fixed at 8a73f75; confirmation fail (end clause untested; twin coupling), fixed at 9fa4163; 2026-09-24"
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:16.128Z"
       }
     },
     {
@@ -17469,6 +17511,9 @@
           ],
           "reviewer": "re-review after Gate 2 amended gate-integrity and conductor-record (101ebb7..90d25ebc): refusal wording, N/M items, the spec-sync degrade rule (only spec-sync may be UNAVAILABLE), confirm-128, snapshot exclusion — no BLOCKS; 3 POLISH declined; falsifiability: corrupt index exits 128 like no-repo; an index-read throw takes down brief/render/integrity without the degrade; 2026-09-25. Supersedes the 101ebb7 verdict."
         }
+      },
+      "delivered": {
+        "recordedAt": "2026-11-12T16:38:17.369Z"
       }
     },
     {
