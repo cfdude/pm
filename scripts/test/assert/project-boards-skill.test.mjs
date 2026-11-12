@@ -185,6 +185,25 @@ test("8.12 First population: one batched question set, never invent, the exact v
   for (const w of ["| the user |", "| the engine |", "you draft it from `board --json`; the user confirms", "the user confirms or edits them as a batch"]) assert.ok(sec.includes(w), `who: ${w}`);
 });
 
+test("8.15 First population opens with Derive, then confirm: sources in order, UNGROUNDED, ask only the gaps", () => {
+  const raw = read(SKILL);
+  const i = raw.indexOf("## First population: what to fill and what to ask the user");
+  const sec = flat(raw.slice(i, raw.indexOf("\n## ", i + 5)));
+  const d = sec.indexOf("Derive, then confirm");
+  assert.ok(d > -1, "the step exists");
+  assert.ok(d < sec.indexOf("Ask in this order"), "it leads the question list");
+  const step = sec.slice(d, sec.indexOf("Ask in this order"));
+  const order = ["README", "CLAUDE.md", "`board --json`", "release and epic records", "`git log`"].map((w) => step.indexOf(w));
+  assert.ok(order.every((n) => n > -1), "every source is named");
+  assert.deepEqual(order, [...order].sort((a, b) => a - b), "sources are in the stated order");
+  assert.match(step, /Do not open by asking blank questions/);
+  assert.match(step, /UNGROUNDED/);
+  assert.match(step, /ask the user only about the gaps and for confirmation/);
+  assert.match(step, /at most 300 characters/);
+  assert.match(step, /never invent a fact; unset stays unset/);
+  assert.match(sec, /question list below is the fallback for gaps/);
+});
+
 test("8.12 the refresh-time stale check is stated, at two days, before any write", () => {
   const s = skill();
   assert.match(s, /### Stale check \(every refresh\)/);

@@ -175,6 +175,15 @@ field null and the card stays. After the answers, run the verbs below, then re-r
 | epic `summary` | `update-epic <id> --summary "<one line>"` | you draft one line per epic; the user confirms or edits them as a batch |
 | open questions for the release plan | `decisions/<n>` docs (see Seed) | you write each question with your recommendation |
 
+**Derive, then confirm.** Do not open by asking blank questions. First draft, from what the project already holds, the
+mission statement (one small paragraph, at most 300 characters, the `mission --statement` limit), why it is the mission now,
+where things stand, each open release's theme, rationale and exit, and a one-line summary per epic that has none. Read in
+this order: the README or the intro and docs page, `CLAUDE.md` or `AGENTS.md`, `board --json`, the release and epic records,
+then `git log`. Show the draft and mark anything you could not ground in one of those as UNGROUNDED. Then ask the user only
+about the gaps and for confirmation, in the one batch. Write what the user confirms with the verbs above (`mission`,
+`release`, `release here`, `update-epic --summary`); never invent a fact; unset stays unset. The question list below is the
+fallback for gaps.
+
 Ask in this order, in the one batch:
 
 1. What is the project called, and which two or three letters should its epic keys carry (for example PM)?

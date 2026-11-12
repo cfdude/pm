@@ -855,3 +855,11 @@ re-run:   KILLED (see the fail count above, run after the fix)
 restored: yes
 
 4 mutants (132-135) for the Gate 1 review fixes. Running total: 135 mutants.
+
+mutant 136 [8.15 derive-then-confirm]: the never-invent sentence removed from the Derive step
+mutation: `never invent a fact; unset stays unset` -> `never make up a fact; unset stays unset` (skills/project-boards/SKILL.md)
+run:      node --test scripts/test/assert/project-boards-skill.test.mjs
+result:   KILLED (1 fail: "8.15 First population opens with Derive, then confirm: sources in order, UNGROUNDED, ask only the gaps")
+restored: yes
+
+1 mutant (136) for task 8.15. Running total: 136 mutants.

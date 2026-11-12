@@ -298,6 +298,13 @@
       (one batch, never invent, re-run the refresh), the refresh-time stale check, and the fallback's title substitution. RED note: the RED run was done in-session and not saved to a file; the mutation evidence (mutants 113 to 131) is the proof the guards can fail.
 - [x] 8.13 Rendering verified for real: each template loaded through the standalone fallback with a populated and an empty
       snapshot, screenshotted at desktop and phone width in a browser, checked for horizontal overflow, raw ISO and code-name ids.
+- [x] 8.15 RED then GREEN (FILE `project-boards-skill.test.mjs` 8.15): SKILL.md "First population" leads with "Derive, then
+      confirm": the agent drafts the mission (at most 300 characters), why-now, where things stand, per-release theme, rationale
+      and exit, and epic summaries from the README or docs page, CLAUDE.md or AGENTS.md, `board --json`, release and epic
+      records, then `git log`, in that order; marks what it could not ground as UNGROUNDED; asks only about the gaps and for
+      confirmation; writes confirmed answers with the existing verbs; never invents a fact. The question list stays as the
+      fallback. Mutant 136 killed. Specs/artifacts changed, so Gate 1, cross-spec and Gate 2 digests may be stale; the
+      orchestrator re-records them.
 - [x] 8.14 Required items for 8.8 to 8.13 (CLAUDE.md "The gate procedure"):
       - **Call-site sweep (item 1).** `rg -n '\$\{' skills/project-boards/templates`: every site goes through `esc`/`num`/`H`,
         enforced by the `${}` scan; markup concatenation is enforced by the new 8.11 scan. Data reference `page/info.project` is

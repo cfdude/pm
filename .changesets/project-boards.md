@@ -72,3 +72,6 @@
   milestone's exit criteria and the decisions for the owner. Each field a page needs that is still null shows a card naming what is
   missing, the command that sets it and whether to ask the user. The skill gains "First population: what to fill and what to ask
   the user" (every verb, who supplies each field, one batched question set, never invent a mission) and a refresh-time stale check.
+  First population now opens with "Derive, then confirm": the agent drafts the mission, why-now, where things stand, release
+  themes and epic summaries from the README, CLAUDE.md or AGENTS.md, `board --json`, the records and `git log`, marks anything it
+  could not ground as UNGROUNDED, and asks the user only about the gaps and for confirmation.
