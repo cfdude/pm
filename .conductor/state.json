@@ -16988,7 +16988,7 @@
       "id": "release-planning-taxonomy",
       "title": "Release planning taxonomy: mission, initiative, milestone, release goal, non-goals",
       "priority": "P1",
-      "status": "planned",
+      "status": "queued",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -17016,8 +17016,59 @@
       "attributedCommits": [],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-12T19:07:44.831Z",
-      "release": "0.56.0"
+      "touchedAt": "2026-11-12T23:21:09.654Z",
+      "release": "0.56.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-12T23:21:01.987Z",
+          "artifacts": [
+            "openspec/changes/release-planning-taxonomy/proposal.md",
+            "openspec/changes/release-planning-taxonomy/design.md",
+            "openspec/changes/release-planning-taxonomy/tasks.md",
+            "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
+            "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
+            "openspec/changes/release-planning-taxonomy/specs/release-planning/spec.md",
+            "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md"
+          ],
+          "artifactDigests": [
+            {
+              "path": "openspec/changes/release-planning-taxonomy/proposal.md",
+              "sha256": "e1e50e2f641346a80b86dae16df4ca7463a6273a829122387b9f7e7a5c6be003"
+            },
+            {
+              "path": "openspec/changes/release-planning-taxonomy/design.md",
+              "sha256": "157b4ed9ae17eef907863bf23c1a23dc3308e9ead3127cc1df073008e3359d09"
+            },
+            {
+              "path": "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
+              "sha256": "39b4e5fa5cc82684a8e3e94c8a9c686ce33af7d24940bcac782ebbc34147e6c4"
+            },
+            {
+              "path": "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
+              "sha256": "4882ea26df6b8815b845505a82c43f7b25f15140bd2ead2f2a2f65584d94e6d6"
+            },
+            {
+              "path": "openspec/changes/release-planning-taxonomy/specs/release-planning/spec.md",
+              "sha256": "ea1b0aca94c887a379fa824c31ab0ff7ac7e0d24e5e6ac408bee118109b0ff0d"
+            },
+            {
+              "path": "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
+              "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
+            }
+          ],
+          "reviewer": "opus fresh-context 2026-11-12, two rounds: round 1 (1 Critical, 5 Important) and round 2 (2 Important, no Critical), all fixed and re-validated; Minors fixed or logged in design D32"
+        }
+      },
+      "gateRounds": {
+        "gate1": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-12T23:21:01.987Z",
+          "lastPassAt": "2026-11-12T23:21:01.987Z"
+        }
+      }
     },
     {
       "id": "stop-and-escalate-floor",
@@ -17120,7 +17171,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2439,
+  "revision": 2442,
   "reviewMode": "standard",
   "releases": [
     {
@@ -18038,7 +18089,30 @@
       "id": "0.56.0",
       "intent": "Release planning taxonomy: the initiative level, milestone and release goal tied to it, non-goals, off-mission challenge and an 80/20 health report.",
       "deferred": [],
-      "size": "minor"
+      "size": "minor",
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-11-12T23:21:03.129Z",
+        "specs": [
+          {
+            "key": "release-planning-taxonomy/specs/epic-annotation/spec.md",
+            "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
+          },
+          {
+            "key": "release-planning-taxonomy/specs/initiative-record/spec.md",
+            "sha256": "39b4e5fa5cc82684a8e3e94c8a9c686ce33af7d24940bcac782ebbc34147e6c4"
+          },
+          {
+            "key": "release-planning-taxonomy/specs/non-goals/spec.md",
+            "sha256": "4882ea26df6b8815b845505a82c43f7b25f15140bd2ead2f2a2f65584d94e6d6"
+          },
+          {
+            "key": "release-planning-taxonomy/specs/release-planning/spec.md",
+            "sha256": "ea1b0aca94c887a379fa824c31ab0ff7ac7e0d24e5e6ac408bee118109b0ff0d"
+          }
+        ],
+        "reviewer": "opus fresh-context 2026-11-12, round 2 over this change's 4 specs and the 9 project-boards specs; one Critical (round 1) and all Important fixed, no unresolved contradiction"
+      }
     },
     {
       "id": "0.57.0",
