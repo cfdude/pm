@@ -16804,10 +16804,11 @@
         "75479c067b2dabed028bf206571e0768dbd21399",
         "f8d2f201b335bb675416d2146b7e20ada5d439c2",
         "3f4bf6a868139f911cfb902b22deaab7271be049",
-        "020f73fe7127001e7109bd39d0d3d212fec9b023"
+        "020f73fe7127001e7109bd39d0d3d212fec9b023",
+        "225338084fea8f1cb3675359e9d1f28a84803b7f"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-12T21:25:02.478Z",
+      "touchedAt": "2026-11-12T21:30:55.239Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16949,16 +16950,16 @@
         },
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-12T20:23:33.346Z",
+          "reviewedAt": "2026-11-12T21:30:55.233Z",
           "baseSha": "15a679154c8477486567a1323349e0eb2bf68140",
-          "headSha": "020f73fe7127001e7109bd39d0d3d212fec9b023",
-          "reviewer": "opus fresh-context 2026-11-12, one round over the staged unshipped amendment (123/123 touched tests); Important I1 fixed in the spec before commit; Minors logged, 5 declined as hardening the legacy-record path",
+          "headSha": "225338084fea8f1cb3675359e9d1f28a84803b7f",
+          "reviewer": "opus fresh-context 2026-11-12, one round over the staged header amendment (75/75 touched assertion tests, 2872/2872 total); Important (guided card for an unset marker) fixed and re-tested, not re-reviewed; Minors fixed or logged",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-11-12T06:45:02.270Z",
+            "reviewedAt": "2026-11-12T20:23:33.346Z",
             "baseSha": "15a679154c8477486567a1323349e0eb2bf68140",
-            "headSha": "3f4bf6a868139f911cfb902b22deaab7271be049",
-            "reviewer": "opus fresh-context delta review of f8d2f201 (1 Important, one-line wording, fixed in 3f4bf6a8 and re-tested; pass on the one-round precedent)"
+            "headSha": "020f73fe7127001e7109bd39d0d3d212fec9b023",
+            "reviewer": "opus fresh-context 2026-11-12, one round over the staged unshipped amendment (123/123 touched tests); Important I1 fixed in the spec before commit; Minors logged, 5 declined as hardening the legacy-record path"
           }
         }
       },
@@ -16972,10 +16973,10 @@
         },
         "gate2": {
           "fails": 0,
-          "passes": 4,
+          "passes": 5,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-12T20:23:33.346Z",
-          "lastPassAt": "2026-11-12T20:23:33.346Z"
+          "lastVerdictAt": "2026-11-12T21:30:55.233Z",
+          "lastPassAt": "2026-11-12T21:30:55.233Z"
         }
       },
       "startedAt": "2026-11-11T05:43:32.637Z",
@@ -17118,7 +17119,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2436,
+  "revision": 2438,
   "reviewMode": "standard",
   "releases": [
     {
