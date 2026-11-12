@@ -16757,10 +16757,12 @@
         "3ae4f250dfd2cb580f1a9053dcb5e0154f2e5c3d",
         "3d2098ef9eeb6b8a39cc5a6fc8227229e563077c",
         "a2326b19a23f8fb8ad8599a38593fb96e337ad23",
-        "75479c067b2dabed028bf206571e0768dbd21399"
+        "75479c067b2dabed028bf206571e0768dbd21399",
+        "f8d2f201b335bb675416d2146b7e20ada5d439c2",
+        "3f4bf6a868139f911cfb902b22deaab7271be049"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-11T18:08:43.319Z",
+      "touchedAt": "2026-11-12T06:45:02.277Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16902,16 +16904,16 @@
         },
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-11T18:08:43.314Z",
+          "reviewedAt": "2026-11-12T06:45:02.270Z",
           "baseSha": "15a679154c8477486567a1323349e0eb2bf68140",
-          "headSha": "75479c067b2dabed028bf206571e0768dbd21399",
-          "reviewer": "opus fresh-context 2026-11-11, delta 378831d9..a2326b19 (0 Critical, 1 Important doc claim fixed, Minors declined: duplicate-number read-path detection, 9-digit KEY_RE, duplicated key regex, untrimmed stored name, _submitted answers entry)",
+          "headSha": "3f4bf6a868139f911cfb902b22deaab7271be049",
+          "reviewer": "opus fresh-context delta review of f8d2f201 (1 Important, one-line wording, fixed in 3f4bf6a8 and re-tested; pass on the one-round precedent)",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-11-11T08:13:47.228Z",
+            "reviewedAt": "2026-11-11T18:08:43.314Z",
             "baseSha": "15a679154c8477486567a1323349e0eb2bf68140",
-            "headSha": "9852e3bfe656a9e1d2fd1a37deba476141c37536",
-            "reviewer": "opus fresh-context round 1: 0 Critical, 2 Important fixed in 378831d9 plus 3 Minors, re-tested (assertion 2782, sweeps 25, functional 1365), not re-reviewed per the one-round rule"
+            "headSha": "75479c067b2dabed028bf206571e0768dbd21399",
+            "reviewer": "opus fresh-context 2026-11-11, delta 378831d9..a2326b19 (0 Critical, 1 Important doc claim fixed, Minors declined: duplicate-number read-path detection, 9-digit KEY_RE, duplicated key regex, untrimmed stored name, _submitted answers entry)"
           }
         }
       },
@@ -16925,10 +16927,10 @@
         },
         "gate2": {
           "fails": 0,
-          "passes": 2,
+          "passes": 3,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-11T18:08:43.314Z",
-          "lastPassAt": "2026-11-11T18:08:43.314Z"
+          "lastVerdictAt": "2026-11-12T06:45:02.270Z",
+          "lastPassAt": "2026-11-12T06:45:02.270Z"
         }
       },
       "startedAt": "2026-11-11T05:43:32.637Z",
@@ -16943,7 +16945,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2344,
+  "revision": 2347,
   "reviewMode": "standard",
   "releases": [
     {
