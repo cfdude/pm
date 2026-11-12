@@ -500,6 +500,10 @@ autonomy grant covers `override-spend-guard`. Never wire `spend-guard` into a ho
 Round counts include review dispatches, so mark each one in the exact form
 `pm-spend: epic=<id> role=review phase=review round=<n>` (a marker with any other phase is not counted).
 
+## Mission
+
+Mission: Give AI-driven projects a project manager: one that survives context compaction, interruptions and pivots, keeps the work transparent and observable, and carries it through complet… Mission milestone: none. Work that does not serve it needs a stated reason.
+
 ## Release candidate
 
 Building a release from several changes? Do not run a Gate 2 round per change: batch the work by

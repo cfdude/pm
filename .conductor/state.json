@@ -16943,7 +16943,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2343,
+  "revision": 2344,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17822,5 +17822,16 @@
   ],
   "projectName": "PM Plugin",
   "projectKey": "PM",
-  "nextEpicNumber": 1205
+  "nextEpicNumber": 1205,
+  "mission": {
+    "current": {
+      "statement": "Give AI-driven projects a project manager: one that survives context compaction, interruptions and pivots, keeps the work transparent and observable, and carries it through completion, release and deployment with proven project-management practice.",
+      "setAt": "2026-11-12T05:39:21.720Z",
+      "reason": "Rob's wording, tightened; drawn from pm-plugin.dev/introduction"
+    },
+    "history": [],
+    "milestoneRelease": null,
+    "criteria": [],
+    "nextCriterion": 1
+  }
 }
