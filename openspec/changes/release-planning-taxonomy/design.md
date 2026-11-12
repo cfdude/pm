@@ -153,10 +153,12 @@ warning line while it is `false`. A report, never a refusal.
 **D27 (Q11, widened). Record when an epic joined its initiative and its release; report scope added since planning.** Checked
 from disk first: `release --member` writes only `epic.release = id` (`releases.mjs:367`) and appends an amendment only when an
 epic MOVES (`{op: "unmember", via: "member", to, at}` on the old release, `releases.mjs:355`). A plain join records no time,
-so join times cannot be recovered from amendments. NEW: `epic.releaseJoinedAt` (written by `--member`, removed by
-`--unmember`), `epic.initiativeJoinedAt` (written when the primary changes, removed by `--clear initiative`), and
+so join times cannot be recovered from amendments. NEW: `epic.releaseJoinedAt`, written by `--member` only when the epic
+JOINS (a repeat for the same release keeps it; `releases.mjs:367` writes `epic.release` unconditionally today, so the build
+guards it), replaced by a move, and removed by both membership removers, `--unmember` (`releases.mjs:399`) and `--defer` on
+that release (`releases.mjs:375`); `epic.initiativeJoinedAt` (written when the primary changes, removed by `--clear initiative`), and
 a derived planning baseline (D31). `addedSincePlanning` and `unknownJoinTime`
-are derived; `release show` prints "N epics added since planning" at closeout as a learning input. Report only.
+are derived; `release show` prints "N epics added since the first member started" at closeout as a learning input. Report only.
 
 **D28 (Q11).** Superseded by D31; the explicit-mark proposal it held was declined by the owner.
 
@@ -174,6 +176,19 @@ from disk: `startedAt` is stamped once, on an epic's first activation, and never
 in this repo carry it (jq, 2026-11-12). "Added since planning" counts members whose `releaseJoinedAt` is later. With no member
 started there is no baseline and every scope count is `null`, never invented. Nothing is stored, so nothing needs unsetting.
 
+**D32. Smaller choices, stated so the build does not guess them** (fresh-context review, 2026-11-12):
+- `release show` keeps its 0.55.0 `theme:` label (`releases.mjs:616`, pinned by existing tests); only the board says "Goal".
+- The split's override has one home, `splitReason` on the release entry; `split` carries no `reason`.
+- The split counts EVERY member, killed and declined ones included, because the split asks where effort was planned; 0.55.0
+  `progress` excludes declined members from its denominator because it asks what shipped. The two answer different questions.
+- A non-claude-code epic with no kind that names a primary initiative counts as `initiativeWork` (it serves one), while its
+  `effectiveKind` reads `null`, because the claude-code default (D21a) is the only derived kind.
+- Rules-section caps (280 and 200 bytes) are tested on the section text as the section function returns it, heading
+  included and with no trailing newline: `missionSectionText`'s convention. `overhead` also counts the separator, which is
+  why it reports `rules:mission` as 282.
+- The automatic baseline moves earlier when a member that started before the others joins later, so every human surface
+  says "added since the first member started", never "since planning".
+
 ## Call sites (gate item 1, derived with `rg` on 2026-11-12; R.1 re-derives them)
 
 - `rg -n "warnSummary\(" scripts/lib`: the transition sink the planning warning joins: `active-pointer.mjs:136`,
@@ -182,8 +197,10 @@ started there is no baseline and every scope count is `null`, never invented. No
 - `rg -n "epicBatchKeys|epicFlagsFor" scripts/lib`: `constants.mjs`, `update-epic.mjs`, `add-many.mjs`, `help.mjs`.
 - `rg -n "pushEpic\(" scripts/lib`: `state.mjs:136`, `subcommands.mjs` x3, add-epic and add-many through it. New epic fields
   are optional and seeded by nothing, so no creation site changes.
-- `rg -n "\.release = " scripts/lib`: `releases.mjs:367`, the ONLY writer of `epic.release`, so `releaseJoinedAt` is written in
-  one place; the `--unmember` path (`releases.mjs` ~281-400) is its one remover.
+- `rg -n "\.release = |delete [a-zA-Z.()]*\.release\b" scripts/lib scripts/conductor.mjs` (2026-11-12): one writer,
+  `releases.mjs:367` (`--member`, also the move); two removers, `releases.mjs:375` (`--defer`, `if (epic.release === id)
+  delete epic.release`) and `releases.mjs:399` (`--unmember`). Each remover deletes `releaseJoinedAt` in the same statement
+  block; `remove-epic` deletes the whole record.
 - `rg -n "attributionNudge|attributionCandidates" scripts/lib`: `subcommands.mjs` (the nudge, ~649-728, and its candidates
   ~540); only the untied branch changes.
 - `rg -n "rulesBlock\(|writeRules\(|currentMissionSection\(|currentBoardsSection\(" scripts/lib scripts/conductor.mjs`:
@@ -207,7 +224,7 @@ started there is no baseline and every scope count is `null`, never invented. No
 |---|---|---|---|
 | `epic.initiative` (+ `initiativeJoinedAt`) | add-epic, update-epic, add-many | board, warnings, split, initiative show, integrity | `update-epic --clear initiative`; `remove-epic` removes the holder |
 | `epic.secondaryInitiatives[]` | same | board, member warning, `primaryServed`, integrity | `--remove-secondary-initiative`; `remove-epic` |
-| `epic.releaseJoinedAt` | `release --member` (`releases.mjs:367`) | scope report, board | `--unmember`; a move replaces it; `remove-epic` |
+| `epic.releaseJoinedAt` | `release --member` on a join (`releases.mjs:367`) | scope report, board | `--unmember` (`:399`); `--defer` (`:375`); a move replaces it; `remove-epic` |
 | `release.initiative` | `release --initiative` | board, release show, member warning, `primaryServed`, integrity | `--clear-initiative`, `--maintenance` |
 | initiative milestones and non-goals | `initiative` | board, initiative show | marked removed only |
 
@@ -226,7 +243,7 @@ An initiative is never removed, so none of these can dangle through a verb; a ha
 | `--add-non-goal` (four records) | `--remove-non-goal "nN:<why>"` (marked) | yes |
 | `release --initiative` / `--maintenance` | `--clear-initiative`; each replaces the other | yes |
 | `release --split-reason` | `--clear-split-reason` | yes |
-| `releaseJoinedAt` written by `--member` | removed by `--unmember`, replaced by a move | yes |
+| `releaseJoinedAt` written by `--member` | removed by `--unmember` and `--defer`, replaced by a move, kept by a repeat | yes |
 | `--initiative` (epic), with `initiativeJoinedAt` | `update-epic --clear initiative` (removes both) | yes |
 | `--secondary-initiative` | `--remove-secondary-initiative` | yes |
 | `--kind` | `update-epic --clear kind` | yes |
@@ -237,8 +254,14 @@ An initiative is never removed, so none of these can dangle through a verb; a ha
 
 ## Amendments owed to 0.55.0 specs
 
-None. D5 picks spellings so that no `project-boards` requirement is contradicted, and the nudge amendment changes text in a
-branch no 0.55.0 spec fixes. The cross-spec review (task 0.4) checks this claim.
+One, owed AFTER `project-boards` archives. `board-export`'s "Every emitted id passes the board id format" requires each
+failing id to appear in `rejected` with reason `id format`, and its `rejected` kind list is closed with no `initiative`. This
+change cannot amend `project-boards` (it is built and unarchived; editing it would make 0.55.0 contradict its own code), and a
+MODIFIED delta needs the base spec in `openspec/specs/`, which exists only after that archive. So 0.56.0 validates initiative
+ids on write, skips a hand-edited bad one in the export and reports it through `integrity`, and states plainly that it is
+not a `rejected` entry. Task 0.6, ordered after project-boards' archive, adds the MODIFIED `board-export` delta (kind
+`initiative`) and turns the skip into a `rejected` entry. Everything else: D5 keeps the closed lists intact, and the nudge
+amendment changes a branch no 0.55.0 spec fixes. The cross-spec review (task 0.4) checks both claims.
 
 ## Risks / Trade-offs
 

@@ -24,7 +24,7 @@ valueless `--clear-initiative` SHALL remove either. `release here` SHALL accept 
 ### Requirement: The release goal is its theme
 
 A release's goal SHALL be its existing `theme`: no `--goal` flag and no second goal field SHALL exist. The release plan board
-and `release show <id>` SHALL label the theme "Goal"; the JSON key stays `theme`.
+SHALL label it "Goal"; `release show <id>` SHALL keep its 0.55.0 `theme:` label, and the JSON key stays `theme`.
 
 #### Scenario: No goal flag
 
@@ -33,8 +33,8 @@ and `release show <id>` SHALL label the theme "Goal"; the JSON key stays `theme`
 
 #### Scenario: Labelled Goal
 
-- **WHEN** r1 has theme "Lock the API" and `release show r1` runs
-- **THEN** the output reads `goal: Lock the API`
+- **WHEN** r1 has theme "Lock the API", and `release show r1` runs and the release plan renders
+- **THEN** the show output reads `theme: Lock the API` as in 0.55.0, and the card labels the same text "Goal"
 
 ### Requirement: Every member counts in the release's split
 
@@ -88,7 +88,7 @@ verb, flag or setting SHALL turn the report off or change the target or the band
 #### Scenario: Reason shown beside the drift
 
 - **WHEN** r1 drifts and `release r1 --split-reason "platform migration: 80% migration, 20% critical fixes"` runs
-- **THEN** `board --json` reports r1's `drift: true` and `reason` equal to that text
+- **THEN** `board --json` reports r1's `drift: true` and `splitReason` equal to that text
 
 ### Requirement: A release whose members do not serve its primary initiative is flagged
 
@@ -103,26 +103,36 @@ SHALL print a warning line while it is `false`.
 
 ### Requirement: Membership records when an epic joined the release
 
-`release <id> --member <epic>` SHALL record on the epic `releaseJoinedAt`, the time it joined, replacing any earlier value
-when the epic moves releases; `--unmember` SHALL remove it with the membership. An epic that joined before 0.56.0 SHALL read
-`releaseJoinedAt: null`; nothing backfills it.
+`release <id> --member <epic>` SHALL record `releaseJoinedAt` on the epic when it joins; a repeat for the same release keeps
+it, and a move to another release replaces it. Every remover of membership (`--unmember`, and `--defer` on that release)
+SHALL remove it too. An epic that joined before 0.56.0 reads `null`; nothing backfills it.
 
 #### Scenario: Moving releases
 
 - **WHEN** `release r1 --member E` runs, and later `release r2 --member E`
 - **THEN** E's `releaseJoinedAt` is the second run's time, and r1's amendments record the move as they do today
 
+#### Scenario: A repeated member keeps its join time
+
+- **WHEN** `release r1 --member E` runs, and later `release r1 --member E` again
+- **THEN** E's `releaseJoinedAt` is still the first run's time
+
+#### Scenario: Defer removes it
+
+- **WHEN** E is a member of r1 and `release r1 --defer "E:cut"` runs
+- **THEN** E has no `release` and no `releaseJoinedAt`
+
 ### Requirement: A release derives its planning baseline and reports scope added since
 
 A release's `planningBaseline` SHALL be derived, never recorded: the earliest `startedAt` among its members that have one, or
 `null` when no member has started. With a baseline, the release SHALL report `addedSincePlanning` (members whose
 `releaseJoinedAt` is later) and `unknownJoinTime` (members with none); without one, both SHALL be `null`. No flag sets it.
-This is a report, never a refusal.
+Human surfaces SHALL say "since the first member started". A report, never a refusal.
 
 #### Scenario: Scope added after planning
 
 - **WHEN** E1 and E2 join r1, E1 becomes active (stamping its `startedAt`), then E3 joins r1
-- **THEN** `board --json` reports r1's `planningBaseline` as E1's `startedAt`, `addedSincePlanning: 1` and `unknownJoinTime: 0`, and `release show r1` prints `1 epic added since planning`
+- **THEN** `board --json` reports r1's `planningBaseline` as E1's `startedAt`, `addedSincePlanning: 1` and `unknownJoinTime: 0`, and `release show r1` prints `1 epic added since the first member started`
 
 #### Scenario: No baseline
 
@@ -177,7 +187,8 @@ true and adding the recorded reason. `release show` with no id SHALL append the 
 ### Requirement: board --json carries the release purpose, split and scope
 
 Each `board --json` release entry SHALL carry `initiative`, `maintenance`, `splitReason`, `primaryServed`, `planningBaseline`,
-`addedSincePlanning`, `unknownJoinTime` and `split: {initiativeWork, health, unaligned, healthShare, target, drift, reason}`.
+`addedSincePlanning`, `unknownJoinTime` and `split: {initiativeWork, health, unaligned, healthShare, target, drift}`; the
+override lives only in `splitReason`.
 These keys are additive, so `schemaVersion` SHALL stay 1.
 
 #### Scenario: A release with nothing recorded

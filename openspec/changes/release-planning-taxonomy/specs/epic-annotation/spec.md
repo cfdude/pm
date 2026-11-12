@@ -62,14 +62,19 @@ initiative. Each SHALL be removable with `update-epic <id> --clear <field>`. An 
 
 ### Requirement: Leaving untriaged without planning fields warns once
 
-When at least one initiative is `open`, an epic outside the `claude-code` lane that leaves `untriaged` or is registered into a
-live status SHALL get one stderr warning, exit 0, naming what it lacks: a `kind`, or (unless `kind` is `health`) an
-`initiative` or an off-initiative reason. A write leaving the status unchanged SHALL NOT warn.
+While an initiative is `open`, an epic outside the `claude-code` lane that leaves `untriaged` for a live status, or is
+registered into one, SHALL get one stderr warning, exit 0, naming what it lacks: a `kind`, or (unless `kind` is `health`)
+an `initiative` or an off-initiative reason. Going to `archived` (a decline) or leaving the status unchanged SHALL NOT warn.
 
 #### Scenario: Warned on triage
 
 - **WHEN** an initiative is open and `update-epic E --status queued` moves E (lane `superpowers`, no kind, no initiative) out of `untriaged`
 - **THEN** stderr names `--kind` and `--initiative`, the exit code is 0, and the status write lands
+
+#### Scenario: A decline never warns
+
+- **WHEN** an initiative is open and E (lane `superpowers`, no kind, no initiative) goes from `untriaged` to `archived` with outcome `declined`
+- **THEN** no planning warning is printed
 
 #### Scenario: A recorded reason silences it
 

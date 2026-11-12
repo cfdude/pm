@@ -41,6 +41,13 @@
 - [x] 0.5 **Owner answers.** Q1 to Q13 answered on 2026-11-12 and folded in as design D17 to D30 (Q5 revised by the owner).
       Q14 answered the same day as design D31 (an automatic planning baseline, no flag).
 
+- [ ] 0.6 **The owed `board-export` amendment** (design, "Amendments owed"), ordered AFTER `project-boards` is archived (0.1
+      confirms it), because a MODIFIED delta needs `openspec/specs/board-export/spec.md` to exist and amending the unarchived
+      `project-boards` would make 0.55.0 contradict its built code. Add `specs/board-export/spec.md` with a MODIFIED
+      "rejected entries have one shape and a closed reason list" adding kind `initiative`, amend the initiative-record export
+      requirement so a bad initiative id becomes a `rejected` entry (reason `id format`) instead of a skip, and add its RED
+      test to 1.1. Re-validate, then re-run 0.2 and 0.4 (a fifth spec file joins the set).
+
 ## 1. The export reads the new fields (specs: all four, their `board --json` requirements)
 
 - [ ] 1.1 RED (UNIT, `boardSnapshot` over fixtures): `initiatives` is `[]` and `missionNonGoals` is `[]` on an empty record;
@@ -90,7 +97,7 @@
 
 - [ ] 4.1 RED then GREEN (UNIT): `--initiative`, `--maintenance` (valueless), each replacing the other, both together
       refused, `--clear-initiative` (valueless) removing either; `release here` refuses all three; `--goal` is an unknown
-      flag; `release show <id>` labels the theme `goal:` and prints `initiative: <id> (<title>)` or `initiative: maintenance`;
+      flag; `release show <id>` keeps its `theme:` label (existing tests unchanged, design D32) and prints `initiative: <id> (<title>)` or `initiative: maintenance`;
       `release show` appends the purpose. Edit `scripts/lib/releases.mjs`, the registry, `USAGE`. RED: `red-4.1.txt`.
 - [ ] 4.2 RED then GREEN (UNIT): every member in any lane counted once into `health`, `initiativeWork` or `unaligned`
       (design D21); the claude-code effective kind (`initiative-work` with an initiative, else `health`); an
@@ -102,10 +109,12 @@
       neither `drift` nor the split; no flag, verb or `OPT_INS` row turns the report off or changes the target (a registry
       scan). RED: `red-4.3.txt`.
 - [ ] 4.4 RED then GREEN (UNIT; no new verb or flag): `release --member` writes `epic.releaseJoinedAt` at the one writer
-      (`releases.mjs:367`), a move replaces it, `--unmember` removes it, a pre-0.56.0 member reads `null`; the derived
+      (`releases.mjs:367`) only on a join, guarded so a repeat for the same release keeps it; a move replaces it; both
+      removers delete it, `--unmember` (`releases.mjs:399`) and `--defer` on that release (`releases.mjs:375`); a pre-0.56.0
+      member reads `null`; the derived
       `planningBaseline` is the earliest member `startedAt` and `null` with none started; `addedSincePlanning` and
       `unknownJoinTime` follow it and are `null` without it; `release --planned` is an unknown flag; `release show`
-      prints `N epics added since planning`. RED: `red-4.4.txt`.
+      prints `N epics added since the first member started`. RED: `red-4.4.txt`.
 - [ ] 4.5 RED then GREEN (UNIT `attributionNudge` with the injected `short`): the untied branch names `maintenance-<releaseId>`
       with runnable `add-epic` and `release --member` commands when it is absent and a runnable `--attribute-commit` with the
       commit's sha, plus the small claude-code epic for initiative work, when the active epic is a release member; unchanged
@@ -184,8 +193,9 @@
         remover of the data references (design, Data references table).
       - `rg -n "nonGoals|nextNonGoal" scripts/lib`: all four records go through `non-goals.mjs`.
       - `rg -n "\.kind\b|effectiveKind|splitReason|maintenance|planningBaseline|primaryServed" scripts/lib/releases.mjs scripts/lib/board.mjs scripts/lib/epic-summary.mjs`.
-      - `rg -n "\.release = |releaseJoinedAt|initiativeJoinedAt" scripts/lib`: the one writer of membership writes the join time,
-        and every remover (`--unmember`, a move, `--clear initiative`, `remove-epic`) removes or replaces it.
+      - `rg -n "\.release = |delete [a-zA-Z.()]*\.release\b|releaseJoinedAt|initiativeJoinedAt" scripts/lib scripts/conductor.mjs`:
+        the one writer of membership writes the join time only on a join, and every remover (`--unmember`, `--defer`, a move,
+        `--clear initiative`, `remove-epic`) removes or replaces it.
       - `rg -n "attributionNudge|attributionCandidates" scripts/lib`: only the untied branch carries the destinations.
       - `rg -n "missionSectionText|SURFACE_FEATURES|CONDITIONAL_SECTIONS" scripts/lib`.
       - `rg -n "rulesBlock\(|writeRules\(|currentMissionSection\(|currentBoardsSection\(" scripts/lib scripts/conductor.mjs`:

@@ -46,14 +46,19 @@ of at most 300 characters, and removable with `initiative <id> --clear source` o
 ### Requirement: An initiative ends with a work disposition, never a deletion
 
 `initiative <id> --end --outcome delivered|abandoned|superseded --reason "<why>"` SHALL set the status to `ended` and append
-`{event: "ended", outcome, at, reason}` to its history. `--reopen --reason "<why>"` SHALL be its inverse, appending a
-`reopened` event. `--reason` serves only these two. A wrong-state, outcome-less or reasonless call SHALL write nothing, and
-no verb SHALL delete an initiative.
+`{event: "ended", outcome, at, reason}` to its history. `--reopen --reason "<why>"` SHALL be its inverse: status `open`,
+`outcome` and `endedAt` cleared, a `reopened` event appended. `--reason` serves only these two. A wrong-state, outcome-less
+or reasonless call SHALL write nothing; no verb SHALL delete an initiative.
 
 #### Scenario: End then reopen keeps both events
 
 - **WHEN** `initiative boards --end --outcome superseded --reason "folded into reporting"` runs, then `initiative boards --reopen --reason "split back out"`
 - **THEN** `initiative show boards --history` lists both events, the first with outcome `superseded`, and the status is `open`
+
+#### Scenario: An open initiative exports no outcome
+
+- **WHEN** boards has been ended and then reopened, or was never ended
+- **THEN** `board --json` reports boards with `status: "open"`, `outcome: null` and `endedAt: null`
 
 #### Scenario: Outcome and reason are required
 
@@ -145,13 +150,18 @@ each one, and `board --json` SHALL read it as `null`.
 
 `board --json` SHALL carry a top-level `initiatives` array in creation order, `[]` when none. Each entry SHALL be
 `{id, title, capability, status, outcome, endedAt, source, offMissionReason, milestones: [{id, text, reachedAt, evidence}]}`
-with active milestones only, in id order. An entry whose id fails the board id format SHALL be omitted and left to
-`integrity`. `schemaVersion` SHALL stay 1.
+with active milestones only, in id order. Ids are validated on write, so a failing id is a hand edit: the export SHALL
+skip it and `integrity` report it, NOT a `rejected` entry (0.55.0 closes that kind list). `schemaVersion` stays 1.
 
 #### Scenario: Empty record
 
 - **WHEN** `board --json` runs over a freshly initialised state
 - **THEN** `initiatives` is `[]` and `schemaVersion` is `1`
+
+#### Scenario: A hand-edited bad id is skipped, not rejected
+
+- **WHEN** state.json is hand-edited so an initiative's id is `Bad Id`, and `board --json` then `integrity` run
+- **THEN** the export omits it, `rejected` holds no entry for it, exit is 0, and integrity names it
 
 ### Requirement: The release plan board shows the initiatives
 
@@ -196,7 +206,7 @@ confirmed answers.
 #### Scenario: The skill states the procedure
 
 - **WHEN** `skills/project-boards/SKILL.md` is read
-- **THEN** it names clustering the existing backlog, `--source` and UNGROUNDED, the question "Does this make sense?", that the user never has to name an initiative or milestone, and that nothing unconfirmed is written
+- **THEN** it names clustering the existing backlog, `--source` and UNGROUNDED, the question "Does this make sense?", that the user never has to name an initiative or an initiative milestone, and that nothing unconfirmed is written
 
 ### Requirement: Off-mission and off-initiative work is challenged once
 

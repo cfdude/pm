@@ -36,7 +36,7 @@ and never spans releases. The agent attests facts, the human decides preferences
   `release <id> --split-reason "<why>"` records an override beside the drift; it never hides the report and no switch exists.
 - **Scope movement, recorded now so it is derivable later**: `release --member` records `releaseJoinedAt`;
   the planning baseline is derived (the earliest `startedAt` among the release's members, no new flag); `release show`
-  reports "N epics added since planning". Report only.
+  reports "N epics added since the first member started". Report only.
 - **Non-goals** on the mission, each initiative, each release and each epic (never on a milestone): `--add-non-goal`,
   `--remove-non-goal "nN:<why>"`, stable ids, marked removed. Mission non-goals reach the rules block in one line.
 - **Derive, then confirm.** The skill clusters the existing backlog, docs and issues into candidate initiatives and milestones,
