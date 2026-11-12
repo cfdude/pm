@@ -41,7 +41,7 @@ An unknown value is `null` or `[]`, never omitted. A change to the meaning of an
 | `counts` | `open`, `unregisteredChanges`, `unassigned`, `byPriority` (`P0`..`P3`, `P?`, by effective priority), and `delivered` / `notPursued` / `unknownOutcome` over the whole record, never only the window |
 | `mission` | `null` or `{statement, setAt, reason}` |
 | `milestone` | `null` or `{release, criteria: [{id, text, check, needsHuman}]}`, active criteria only, in id order |
-| `plan` | `{here, hereText, nextText}`, each `null` when unset |
+| `plan` | `{here, hereText, nextText}`, each `null` when unset; the release plan page draws `here` only (as the roadmap's We are here rule) |
 | `releases` | every release by `order` then id, unordered last: `id`, `intent`, `target`, `theme`, `rationale`, `exit`, `order`, `size`, `status` (`planned`, `in-progress` or `shipped`, derived), `delivered`, `criticalPath` (`null` with no milestone), `progress` (`{done, total}`: members delivered over members not declined, over every member and not only the ended window), `members`, `deferred`, `unshipped` (one `{epic, title, outcome, reason, supersededBy}` row per member not delivered, then per deferral that is not a member: `outcome` is the recorded outcome, `open`, `unknown` or `deferred`; `reason` is the recorded text capped at 300 characters with control characters escaped, `null` when none is recorded; `supersededBy` is set only from a structured `supersedes` link, never from prose) |
 | `epics` | open epics first, then the ended window |
 | `rejected` | what was left out, each `{kind, id, field, value, reason}` |

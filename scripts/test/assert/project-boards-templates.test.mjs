@@ -350,16 +350,15 @@ test("6.2 release plan: a throwing roadmap step shows its notice while counts, c
   assert.ok(out.parts.counts.length > 0);
 });
 
-test("6.2 release plan: the here marker, the critical path and the stale warning render from plan/state and the releases", () => {
+test("6.2 release plan: the roadmap here marker, the critical path and the stale warning render from plan/state and the releases", () => {
   const { renderPlan } = pl();
   const out = renderPlan(pInput({
     releases: [R("r1", { criticalPath: true }), R("r2", { criticalPath: false })],
     plan: { here: "r1", hereText: "Building the export", nextText: "Skins", head: "abc1234", asOf: "2020-01-01T00:00:00Z" },
     mission: { statement: "Ship the thing", setAt: "t", reason: "r", milestoneRelease: "r1" },
   }));
-  assert.match(out.parts.banner, /Building the export/);
-  assert.match(out.parts.banner, /abc1234/);
-  assert.match(out.parts.banner, /stale/i);
+  assert.doesNotMatch(out.html, /Building the export|abc1234|Skins/, "the removed We are here block's text is not drawn");
+  assert.match(out.parts.planline, /stale/i);
   assert.match(out.parts.roadmap, /we are here/i);
   assert.match(out.parts.roadmap, /critical path/i);
   assert.match(out.html, /Ship the thing/);
@@ -430,6 +429,12 @@ for (const name of [BACKLOG, PLAN]) {
     assert.doesNotMatch(out.html, ISO, "no raw ISO timestamp anywhere in the output");
     assert.doesNotMatch(visible(out.html), /\bnot set\b/i);
     assert.match(out.html, /Last updated Nov 11, 2:10 PM/);
+    if (name === PLAN) {
+      const css = bytes(PLAN);
+      assert.match(css, /\.lastup\{[^}]*text-align:right[^}]*color:var\(--fg\)[^}]*font-weight:700/, "Last updated is plain bold right-aligned text in the text color token");
+      assert.doesNotMatch(css, /\.lastup\{[^}]*(background|border-radius|#fff|white)/i, "no pill, no hard-coded white");
+      assert.match(css, /\.lede\{[^}]*max-width:none/, "the intro line wraps the full content width");
+    }
     assert.match(out.title, /^PM Plugin (Backlog|Release Plan)$/);
     assert.match(visible(out.html), /PM-256/);
   });
@@ -557,8 +562,8 @@ test("8.11 release plan: progress comes from release.progress (a bad one falls b
   assert.match(out.parts.roadmap, /class="g cur" data-release="r1" open>/);
   assert.doesNotMatch(out.parts.roadmap, /data-release="r2" open/);
   assert.doesNotMatch(out.parts.roadmap, /data-need="release-r0"/, "a shipped release owes no plan fields");
-  assert.match(out.parts.banner, /r1 · theme r1/);
-  assert.match(out.parts.banner, /<b>Next:<\/b> Ship/);
+  assert.doesNotMatch(out.html, /<b>Next:<\/b>|class="here"|class="htag"/, "no We are here block in the page");
+  assert.match(out.parts.roadmap, /theme r1/, "the roadmap's current release row carries the theme");
   assert.match(renderPlan(pInput({ releases: [R("r1")], plan: { here: "r1" }, open: { r1: false } })).parts.roadmap, /data-release="r1">/, "a viewer's collapse survives a repaint");
 });
 
@@ -574,14 +579,25 @@ test("8.11 release plan: criteria flag needsHuman; decisions show Agree and Disa
   assert.match(out.parts.decisions, /data-stance="agree" aria-pressed="false"/);
   assert.match(out.parts.decisions, /id="send-answers"/);
   assert.match(out.parts.decisions, /asked by the agent · Nov 10, 10:00 AM/);
-  assert.match(out.parts.banner, /Decisions open <b>0<\/b>/);
+  assert.match(out.parts.planline, /Decisions open <b>0<\/b>/);
 });
 
 test("8.10 release plan: the stale warning reads page/info.lastUpdated first and appears from two days", () => {
   const { renderPlan } = plX();
-  const at = (iso) => renderPlan(pInput({ info: { lastUpdated: iso }, plan: { here: null, asOf: "2026-11-11T14:00:00Z" }, ...TS })).parts.banner;
+  const at = (iso) => renderPlan(pInput({ info: { lastUpdated: iso }, plan: { here: null, asOf: "2026-11-11T14:00:00Z" }, ...TS })).parts.planline;
   assert.match(at("2026-11-09T14:00:00Z"), /class="stale"/);
   assert.doesNotMatch(at("2026-11-10T14:00:00Z"), /class="stale"/);
+});
+
+test("9.5 release plan: a guided card names `release here` only while plan.here is unset, and never draws hereText or nextText", () => {
+  const { renderPlan } = plX();
+  const unset = renderPlan(pInput({ releases: [R("r1")], plan: { here: null, hereText: "Secret where", nextText: "Secret next" }, ...TS }));
+  assert.match(unset.html, /data-need="here"/, "a card when here is unset");
+  assert.match(visible(unset.html), /release here &lt;release id&gt;|release here <release id>/, "it names the verb");
+  assert.doesNotMatch(unset.html, /Secret where|Secret next/, "hereText and nextText are not drawn");
+  const set = renderPlan(pInput({ releases: [R("r1")], plan: { here: "r1" }, ...TS }));
+  assert.doesNotMatch(set.html, /data-need="here"/, "no card once here is set");
+  assert.doesNotMatch(unset.html, /class="here"|class="htag"/, "the removed block does not return");
 });
 
 test("8.8 both fallbacks carry the export's project into the page", () => {
@@ -596,7 +612,7 @@ test("8.8 both fallbacks carry the export's project into the page", () => {
 const U = (epic, outcome, reason, o = {}) => ({ epic, title: `Title of ${epic}`, outcome, reason, supersededBy: null, ...o });
 const SH = (id, o = {}) => R(id, { status: "shipped", delivered: true, progress: { done: 1, total: 1 }, members: ["m"], unshipped: [], ...o });
 
-test("9.2 release plan: the mission and the here marker read as ONE flat header, with no box between them", () => {
+test("9.2 release plan: the header is the mission, the plan bar and a plan line in ONE flat header, with no We are here block", () => {
   const { renderPlan } = plX();
   const out = renderPlan(pInput({
     releases: [R("r1", { status: "in-progress" })], plan: { here: "r1", hereText: "Building", nextText: "Skins", head: "h", asOf: "2026-11-11T00:00:00Z" },
@@ -605,8 +621,17 @@ test("9.2 release plan: the mission and the here marker read as ONE flat header,
   assert.ok(head, "a single header element");
   assert.match(head[1], /class="mission"/);
   assert.match(head[1], /Ship the thing/);
-  assert.match(head[1], /class="here"/);
-  assert.ok(head[1].indexOf('class="mission"') < head[1].indexOf('class="here"'), "mission first, then where we are");
+  assert.doesNotMatch(head[1], /We are here|class="here"/i, "the header carries no We are here block");
+  assert.match(head[1], /class="planline"[^>]*>[\s\S]*Decisions open <b>0<\/b>/, "the open-decisions count stays as a plan line");
+  assert.doesNotMatch(head[1], /Why now/, "no Why now line");
+  assert.doesNotMatch(head[1].match(/<section class="mission">[\s\S]*?<\/section>/)[0], /milestone/i, "the mission block carries no milestone line");
+  assert.match(head[1].match(/class="planline"[\s\S]*$/)[0], /Mission milestone <b>r1<\/b>/, "the milestone shows in the plan line when set");
+  const noMs = renderPlan(pInput({ releases: [R("r1")], mission: { statement: "Ship the thing", setAt: "2026-11-01T00:00:00Z", reason: "users", milestoneRelease: null }, ...TS })).html;
+  assert.doesNotMatch(noMs, /milestone yet|Mission milestone/, "an unset milestone prints nothing in the header");
+  assert.match(bytes(PLAN), /\.mission p\.st\{[^}]*max-width:none/, "the statement spans the header width");
+  assert.doesNotMatch(bytes(PLAN), /\.mission p\.st\{[^}]*font-size/, "the statement is at body size");
+  assert.ok(head[1].indexOf('class="mission"') < head[1].indexOf('class="planbar"') && head[1].indexOf('class="planbar"') < head[1].indexOf('class="planline"'), "mission, then the plan bar, then the plan line");
+  assert.match(out.parts.roadmap, /We are here · r1/, "the roadmap keeps its here rule");
   assert.doesNotMatch(head[1], /class="box/, "no boxed section inside the header");
   assert.equal((out.html.match(/<header /g) || []).length, 1);
 });

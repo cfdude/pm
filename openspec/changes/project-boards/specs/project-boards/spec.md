@@ -338,7 +338,7 @@ of a summary. A detail card SHALL be drawn only for an epic with a `whyNow` or a
 
 ### Requirement: Timestamps are human-readable
 
-Every timestamp a board shows (the Last updated pill, each Updated and Ended cell, the banner, a mission's set date, a
+Every timestamp a board shows (the Last updated line, each Updated and Ended cell, the plan line's stale warning, a
 decision's asked date and an answer's saved date) SHALL render as a short date and time in the viewer's locale and time
 zone ("Nov 11, 2:10 PM", with the year when it differs from the current one), followed by a relative phrase ("3 days ago")
 when it is a day or more old. No raw ISO timestamp SHALL appear in a page's output.
@@ -384,7 +384,12 @@ before writing and, at two or more days, tell the user and re-check the plan mar
 
 ### Requirement: The release plan header reads as one block, the roadmap holds live releases, and shipped releases explain themselves
 
-The release plan SHALL draw the mission and the "we are here" marker as one header with no box between them. The roadmap SHALL list only releases that are `in-progress` or `planned`; `shipped` releases SHALL appear in a Shipped table at the bottom, newest first. The page SHALL NOT infer a reason, and SHALL escape and check every `unshipped` value.
+The release plan SHALL draw the mission, the plan bar and a plan line as one header with no "We are here" block; the roadmap SHALL list only `in-progress` or `planned` releases, and `shipped` releases SHALL appear in a Shipped table at the bottom. The page SHALL NOT draw `plan.hereText`, `plan.nextText` or `plan.head`, SHALL NOT infer a reason, and SHALL escape and check every `unshipped` value.
+
+#### Scenario: The header is one block
+
+- **WHEN** the release plan is drawn
+- **THEN** the mission spans the header width at body size with no "Why now" line, and the plan line shows the mission milestone only when one is set (nothing when it is not), the open-decisions count, and the stale warning from two days, with no box between them
 
 #### Scenario: A shipped release's row and explanation
 
@@ -394,7 +399,7 @@ The release plan SHALL draw the mission and the "we are here" marker as one head
 #### Scenario: A shipped release leaves the roadmap
 
 - **WHEN** releases r0 (`shipped`), r1 (`in-progress`) and r2 (`planned`) exist
-- **THEN** the roadmap lists r1 and r2, and the Shipped table lists r0 only
+- **THEN** the roadmap lists r1 and r2, and the Shipped table lists r0 only, newest first
 
 #### Scenario: A partly shipped release is explained
 

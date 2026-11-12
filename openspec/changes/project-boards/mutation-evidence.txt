@@ -893,3 +893,24 @@ run:      node --test scripts/test/assert/project-boards-templates.test.mjs
 result:   KILLED (1 fail: "9.2 ... a fully shipped release lists no unshipped rows ...")
 restored: yes
 Running total: 153 mutants.
+
+mutants 154-159 [9.5 owner comments: remove the We are here block; mission header]. run: node --test scripts/test/assert/project-boards-templates.test.mjs
+154 a We are here block put back into the header                      KILLED (2 fail: 8.11 progress/current release, 9.2 ONE flat header)
+155 the Decisions open count removed from the plan line               KILLED (2 fail: 8.11 criteria/decisions, 9.2 ONE flat header)
+156 the stale warning threshold raised from 2 days to 99              KILLED (1 fail: 8.10 stale warning from two days)
+157 a "Why now:" line put back in the mission block                   KILLED (1 fail: 9.2 ONE flat header)
+158 the mission milestone printed even when unset                     KILLED (1 fail: 9.2 ONE flat header)
+159 the statement column narrowed again (max-width:46ch)              KILLED (1 fail: 9.2 ONE flat header)
+All restored. RED before the change: 5 tests failed against the old template. Running total: 159 mutants.
+
+mutants 160-162 [9.5 owner comments: Last updated as plain text, intro line full width]. run: node --test scripts/test/assert/project-boards-templates.test.mjs
+160 .lastup colour hard-coded #fff instead of var(--fg)               KILLED (1 fail: 8.10 release-plan.html fully populated board)
+161 .lastup pill background put back                                   KILLED (1 fail: same test)
+162 .lede max-width back to 72ch                                        KILLED (1 fail: same test)
+All restored. Running total: 162 mutants.
+
+mutant 163 [9.5 review fix: the here-only guided card]. run: node --test scripts/test/assert/project-boards-templates.test.mjs
+mutation: `${H(here?"":need("here"` -> `${H(!here?"":need("here"` (release-plan.html; card shown only when here is SET)
+result:   KILLED (3 fail: 8.10 fully populated board, 8.10 empty project, 9.5 here card)
+restored: yes
+Running total: 163 mutants.

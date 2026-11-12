@@ -1,15 +1,14 @@
 <title>Release Plan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: one reading column. A Last updated pill, then ONE flat header (no boxes): the mission is the stable north star, a
-   hairline, then "We are here" as the current focus. Then the roadmap, which holds only releases in progress or planned (a
+/* Layout: one reading column. A right-aligned Last updated line, then ONE flat header (no boxes): the mission is the stable north star, then the plan bar and a plan line (decisions open, and a stale warning). Then the roadmap, which holds only releases in progress or planned (a
    WE ARE HERE rule above the current one), the milestone's exit criteria, the decisions put to the owner, and at the bottom a
    Shipped table whose rows open to say what did not ship and why. Guided cards name every field still to fill in. Data lives
    in the artifact db. */
 :root{
   --bg:#F3F5F6; --surface:#FFFFFF; --fg:#18222A; --muted:#58656E; --line:#D6DDE2; --soft:#E9EEF1;
   --accent:#0B6E66; --accent-fg:#FFFFFF; --accent-soft:#DFF0EE; --focus:#1D7FD0;
-  --here:#1D4F9C; --here-bg:#14305C; --here-fg:#FFFFFF; --here-sub:#CFE0FF; --here-tag:#A9C8FF;
+  --here:#1D4F9C; --here-bg:#14305C; --here-fg:#FFFFFF;
   --warn-bg:#FBEFD9; --warn-fg:#7A4B00; --err-fg:#A3262A; --err-bg:#F9E1E2;
   --need-bg:#FFF8E8; --need-line:#E8C873; --need-fg:#5C4300;
   --p0-bg:#FBE3E1; --p0-fg:#9B1C14; --p1-bg:#FDEBD9; --p1-fg:#8A4300; --p2-bg:#FBF3CF; --p2-fg:#6B5600;
@@ -19,7 +18,7 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#11171B; --surface:#192127; --fg:#E6EAED; --muted:#98A3AC; --line:#2C353D; --soft:#20292F;
   --accent:#4CC2B6; --accent-fg:#062421; --accent-soft:#16312F; --focus:#7FB0FF;
-  --here:#7FB0FF; --here-bg:#1B3D78; --here-fg:#FFFFFF; --here-sub:#CFE0FF; --here-tag:#A9C8FF;
+  --here:#7FB0FF; --here-bg:#1B3D78; --here-fg:#FFFFFF;
   --warn-bg:#33270F; --warn-fg:#E0A84A; --err-fg:#F08A8D; --err-bg:#3A1A1C;
   --need-bg:#2E260F; --need-line:#7A6224; --need-fg:#F5DC9A;
   --p0-bg:#4A1A16; --p0-fg:#FFB4AB; --p1-bg:#47290C; --p1-fg:#FFC58C; --p2-bg:#3D340B; --p2-fg:#F3DA6B;
@@ -27,7 +26,7 @@
 :root[data-theme="dark"]{
   --bg:#11171B; --surface:#192127; --fg:#E6EAED; --muted:#98A3AC; --line:#2C353D; --soft:#20292F;
   --accent:#4CC2B6; --accent-fg:#062421; --accent-soft:#16312F; --focus:#7FB0FF;
-  --here:#7FB0FF; --here-bg:#1B3D78; --here-fg:#FFFFFF; --here-sub:#CFE0FF; --here-tag:#A9C8FF;
+  --here:#7FB0FF; --here-bg:#1B3D78; --here-fg:#FFFFFF;
   --warn-bg:#33270F; --warn-fg:#E0A84A; --err-fg:#F08A8D; --err-bg:#3A1A1C;
   --need-bg:#2E260F; --need-line:#7A6224; --need-fg:#F5DC9A;
   --p0-bg:#4A1A16; --p0-fg:#FFB4AB; --p1-bg:#47290C; --p1-fg:#FFC58C; --p2-bg:#3D340B; --p2-fg:#F3DA6B;
@@ -43,27 +42,23 @@ p{margin:0 0 6px;max-width:72ch}
 .top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between}
 .top>div{min-width:0}
 .sub,.lede{color:var(--muted)}
-.lede{margin:8px 0 0;max-width:72ch}
+.lede{margin:8px 0 0;max-width:none}
+.top>div:first-child{flex:1 1 280px}
 .live{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .live i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .live[data-s="ok"] i{background:var(--accent)}.live[data-s="err"] i{background:var(--err-fg)}
-.lastup{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:6px;padding:5px 14px;border-radius:999px;background:var(--here-bg);color:var(--here-fg);font-weight:650;font-size:14px;font-variant-numeric:tabular-nums}
-.lastup .rel{color:var(--here-sub);font-weight:500;display:inline}
+.lastup{text-align:right;color:var(--fg);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.lastup .rel{color:inherit;font-weight:inherit;display:inline;margin-left:6px}
 section.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px max(16px,3vw);min-width:0}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .hd{display:grid;gap:20px;padding-block:6px 4px}
 .mission{display:grid;gap:4px;min-width:0}
-.mission p.st{font-size:24px;font-weight:650;line-height:1.3;letter-spacing:-.005em;margin:2px 0 4px;max-width:46ch;text-wrap:balance}
+.mission p.st{margin:2px 0 4px;max-width:none}
 .planbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:13.5px;color:var(--muted)}
 .planbar .sub{flex:1 1 260px;min-width:0}
-.here{border-top:1px solid var(--line);padding-top:18px;min-width:0}
-.here .htag{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--here)}
-.here .where{font-size:20px;font-weight:650;margin:2px 0 6px;text-wrap:balance;overflow-wrap:anywhere}
-.here p{color:var(--fg)}
-.here .hm{display:flex;flex-wrap:wrap;gap:4px 18px;color:var(--muted);font-size:13.5px;margin-top:8px}
-.here .hm b{color:var(--fg);font-weight:600}
-.here .need{margin-top:8px}
-.stale{margin-top:10px;padding:7px 11px;border-radius:6px;background:var(--warn-bg);color:var(--warn-fg);font-size:13.5px}
+.planline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:13.5px;color:var(--muted)}
+.planline b{color:var(--fg);font-weight:600}
+.stale{padding:7px 11px;border-radius:6px;background:var(--warn-bg);color:var(--warn-fg);font-size:13.5px}
 .need{background:var(--need-bg);border:1px dashed var(--need-line);color:var(--need-fg);border-radius:8px;padding:10px 14px;font-size:13.5px;display:grid;gap:3px;min-width:0}
 .need b{font-weight:650}
 .need code{font:500 12.5px var(--mono);overflow-wrap:anywhere;color:inherit}
@@ -243,7 +238,6 @@ function renderPlan(inp){
   const rels=[];let relErr=false;
   safe(()=>{arr(I.releases).forEach(d=>{let r;try{r=normRel(d);}catch(_){relErr=true;return;}if(r)rels.push(r);else skipped++;});},0);
   rels.sort((a,b)=>{const x=a.order==null?1e15:a.order,y=b.order==null?1e15:b.order;return x-y||String(a.id).localeCompare(String(b.id));});
-  const hereRel=rels.find(r=>r.id===here)||null;
   const answered=new Map();safe(()=>{arr(I.answers).forEach(a=>{if(a&&typeof a==="object"&&okId(a.id))answered.set(a.id,a);});},0);
   const decs=[];safe(()=>{arr(I.decisions).forEach(d=>{if(d&&typeof d==="object"&&okId(d.id))decs.push(d);else skipped++;});},0);
   decs.sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
@@ -258,23 +252,16 @@ function renderPlan(inp){
     return n.length?`<div class="needs" aria-label="Still to fill in">${H(n.join(""))}</div>`:"";});
   parts.mission=step("The mission",()=>{const m=(I.mission&&typeof I.mission==="object")?I.mission:null;
     if(!m||!str(m.statement))return `<section class="mission"><span class="lbl">Mission</span>${H(need("mission","No mission recorded: what the project is for right now, in one line","mission --statement \"<one line>\" --reason \"<why this is the mission now>\"",ASK_USER))}</section>`;
-    const ms=okId(m.milestoneRelease)?m.milestoneRelease:"",set=when(str(m.setAt),tOpt);
-    return `<section class="mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p>${H(str(m.reason)?`<p class="sub">Why now: ${esc(str(m.reason))}</p>`:"")}<p class="s">${H(ms?`Mission milestone: <b>${esc(ms)}</b>`:"No mission milestone yet")}${H(set.abs?` · set ${esc(set.abs)}`:"")}</p></section>`;});
+    return `<section class="mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p></section>`;});
   parts.planbar=step("The plan bar",()=>{
     const shipped=rels.filter(r=>r.status==="shipped").length,active=rels.some(r=>r.status==="in-progress");
     const open=eps.filter(e=>e.status!=="archived").length;
     const range=rels.length?esc(rels[0].id)+" to "+esc(rels[rels.length-1].id):"no releases yet";
     return `<div class="planbar"><span class="lbl">Plan</span><b>${esc(proj.name||"This project")}, ${H(range)}</b><span class="pill ${H(active?"rs-in-progress":"rs-planned")}">${H(active?"active":"not started")}</span><span class="sub">${num(rels.length)} release${H(rels.length===1?"":"s")}, ${num(shipped)} shipped, ${num(open)} open epic${H(open===1?"":"s")}.</span></div>`;});
-  parts.banner=step("The banner",()=>{
+  parts.planline=step("The plan line",()=>{
     const t=Date.parse(str(info.lastUpdated)||str(plan.asOf)),days=isFinite(t)?Math.floor((nowMs-t)/864e5):null;
-    const miss=[];if(!here)miss.push("the current release");if(!str(plan.hereText))miss.push("where things stand");if(!str(plan.nextText))miss.push("what comes next");
-    const cmd=["release here",here||"<release id>","--text \"<where things stand>\"","--next \"<what comes next>\""].join(" ");
-    const upd=when(str(plan.asOf),tOpt);
-    return `<div class="here" aria-live="polite"><div class="htag">We are here</div><div class="where">${H(here?`${esc(here)}${H(hereRel&&hereRel.theme?` · ${esc(hereRel.theme)}`:"")}`:"No current release marked")}</div>
-${H(str(plan.hereText)?`<p>${esc(str(plan.hereText))}</p>`:"")}${H(str(plan.nextText)?`<p><b>Next:</b> ${esc(str(plan.nextText))}</p>`:"")}
-${H(miss.length?need("here","Not recorded: "+miss.join(", "),cmd,AGENT_DRAFTS+" The agent reads board --json for it."):"")}
-<div class="hm"><span>Updated <b>${esc(upd.abs||"unknown")}</b>${H(upd.rel?`<span class="rel">${esc(upd.rel)}</span>`:"")}</span>${H(str(plan.head)?`<span>Repo head <b class="mono">${esc(str(plan.head))}</b></span>`:"")}<span>Decisions open <b>${num(openDecs)}</b></span></div>
-${H(days!==null&&days>=2?`<div class="stale">Stale: this board was last refreshed ${num(days)} days ago, so the marker may be out of date. Ask the agent to refresh it.</div>`:"")}</div>`;});
+    const mi=(I.mission&&typeof I.mission==="object")?I.mission:null,ms=mi&&okId(mi.milestoneRelease)?mi.milestoneRelease:"";
+    return `<div class="planline" aria-live="polite">${H(ms?`<span>Mission milestone <b>${esc(ms)}</b></span>`:"")}<span>Decisions open <b>${num(openDecs)}</b></span>${H(days!==null&&days>=2?`<span class="stale">Stale: this board was last refreshed ${num(days)} days ago, so the plan may be out of date. Ask the agent to refresh it.</span>`:"")}</div>${H(here?"":need("here","No current release marked: which release the work is in now","release here <release id>",AGENT_DRAFTS+" --text and --next are optional and are not shown on this page."))}`;});
   parts.counts=step("The counts",()=>{const open=eps.filter(e=>e.status!=="archived").length;
     return `<div class="counts"><span class="count">${num(open)} open epics</span><span class="count">${num(eps.length-open)} ended in the export</span><span class="count">${num(rels.length)} release${H(rels.length===1?"":"s")}</span></div>`;});
   parts.roadmap=step("The roadmap",()=>{
@@ -321,7 +308,7 @@ ${H(days!==null&&days>=2?`<div class="stale">Stale: this board was last refreshe
       return `<details class="sh" data-shipped="${esc(r.id)}"${H(openMap["s:"+r.id]===true?" open":"")}><summary><span class="gid">${esc(r.id)}</span><span class="gth">${H(r.theme?esc(r.theme):(r.intent?esc(r.intent):'<i>No theme recorded</i>'))}</span><span class="shn ${H(none?"none":(part?"part":""))}">${esc(lead)}</span></summary>${H(body)}</details>`;};
     return `<div class="shipped"><div class="sh-head" aria-hidden="true"><span>Release</span><span>Theme</span><span>Result</span></div>${H(done.map(one).join(""))}</div>`;});
   parts.skipped=skippedNote(skipped);
-  const html=[parts.skipped,'<div class="top"><div>'+parts.info+'</div></div>',parts.needs,'<header class="hd">'+parts.mission+parts.banner+parts.planbar+'</header>',parts.counts,
+  const html=[parts.skipped,'<div class="top"><div>'+parts.info+'</div></div>',parts.needs,'<header class="hd">'+parts.mission+parts.planbar+parts.planline+'</header>',parts.counts,
     '<section class="box"><h2>Roadmap</h2><p class="sub">Open a release to see its scope, exit check and epics. The current release starts open.</p><div class="rm">'+parts.roadmap+'</div></section>',
     '<section class="box"><h2>Exit criteria</h2>'+parts.criteria+'</section>','<section class="box"><h2>Decisions for the owner</h2>'+parts.decisions+'</section>',
     '<section class="box"><h2>Shipped</h2><p class="sub">Releases already delivered, newest first. Open one to see what shipped and, for anything that did not, the reason on record.</p>'+parts.shipped+'</section>'].join("");

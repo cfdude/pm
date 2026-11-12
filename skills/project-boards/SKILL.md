@@ -39,7 +39,7 @@ that is intended, and `--archived all` is the one-off full mirror.
 | `epics/<epicId>` | both | one `board --json` epic entry, unchanged |
 | `releases/<releaseId>` | both | one `board --json` release entry, unchanged: it carries `progress` and `unshipped`, the rows (`{epic, title, outcome, reason, supersededBy}`) the release plan's Shipped table explains a partly shipped release with. Copy `unshipped` as the export gives it; never write a reason of your own into it |
 | `page/info` | both | `lastUpdated` (now, ISO), `asOf` (the export's `asOf`), `head`, and `project` (the export's `project`, `{name, key}`); there is no headline |
-| `plan/state` | release plan | `here`, `hereText`, `nextText` from the export's `plan`, plus `head` and `asOf` |
+| `plan/state` | release plan | `here`, `hereText`, `nextText` from the export's `plan`, plus `head` and `asOf`; the page draws only `here` (the roadmap's We are here rule) and `asOf`, and keeps `hereText`, `nextText` and `head` for agents |
 | `mission/current` | release plan | the export's `mission` plus `milestoneRelease` (the milestone's release, or null) |
 | `criteria/<cN>` | release plan | one active milestone criterion: `id`, `text`, `check`, `needsHuman` |
 | `decisions/<n>` | release plan | `question`, `recommendation`, `askedAt`: an open question the AGENT is putting to the user now |
@@ -122,9 +122,9 @@ record. A refresh writes data only; it does not republish the page. Take the ran
 ### Stale check (every refresh)
 
 Before you write, read `page/info.lastUpdated`. The release plan shows an amber stale warning once it is two or more days
-old. When it is, tell the user the boards had not been refreshed since that date, and check that `plan.hereText` and
-`plan.nextText` from `board --json` still describe where the work is. When they do not, draft new lines and ask the user to
-confirm them before you run `release here <id> --text --next`. Then refresh, which writes `lastUpdated` as now.
+old, in the plan line under the mission. When it is, tell the user the boards had not been refreshed since that date.
+The page has no We are here block (the roadmap's current-release row carries it), so `plan.hereText` and `plan.nextText` are not shown;
+if you keep them current, run `release here <id> --text --next` for the agents that read them. Then refresh, which writes `lastUpdated` as now.
 
 ### Apply a rank proposal (backlog)
 
@@ -178,7 +178,7 @@ field null and the card stays. After the answers, run the verbs below, then re-r
 | `mission` | `mission --statement "<one line>" --reason "<why it is the mission now>"` | the user |
 | `milestone` | `mission --milestone <releaseId>` | the user |
 | milestone `criteria` | `mission --add-criterion "<criterion>" --check "<how to check it>"`, plus `--needs-human` where a person must check it | the user, from your drafted checks |
-| `plan.here`, `hereText`, `nextText` | `release here <releaseId> --text "<where things stand>" --next "<what comes next>"` | you draft it from `board --json`; the user confirms |
+| `plan.here` (the page's guided card covers `here` only; `hereText` and `nextText` are agent-only data, not drawn) | `release here <releaseId>` (optionally `--text "<where things stand>" --next "<what comes next>"` for agents) | you draft it from `board --json`; the user confirms |
 | an open release's `theme`, `rationale`, `exit`, `order`, `size`, `target` | `release <releaseId> --theme "<line>" --rationale "<line>" --exit "<check>" --order <n> --size <major or minor or patch> --target "<date>"` | the user; you propose wording |
 | epic `summary` | `update-epic <id> --summary "<one line>"` | you draft one line per epic; the user confirms or edits them as a batch |
 | open questions for the release plan | `decisions/<n>` docs (see Seed) | you write each question with your recommendation |
@@ -197,7 +197,7 @@ Ask in this order, in the one batch:
 1. What is the project called, and which two or three letters should its epic keys carry (for example PM)?
 2. The mission in one line (at most 300 characters), and why it is the mission now.
 3. Which release meets the mission, its exit criteria with the check for each, and which of them need a person.
-4. Which release the work is heading toward now, where things stand, and what comes next (your draft to correct).
+4. Which release the work is heading toward now (your draft to correct); where things stand and what comes next are optional (`--text`, `--next`), kept for agents and not drawn on the page.
 5. For each open release: theme, rationale, exit check, size and target date (leave the target unset when there is none), with your proposal.
 6. The one-line summaries you drafted for epics with none: confirm or edit.
 7. Any decision the user wants on the release plan now, with your recommendation.

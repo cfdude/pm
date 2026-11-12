@@ -16807,7 +16807,7 @@
         "020f73fe7127001e7109bd39d0d3d212fec9b023"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-12T20:23:33.354Z",
+      "touchedAt": "2026-11-12T21:25:02.478Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16819,7 +16819,7 @@
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-12T20:10:42.609Z",
+          "reviewedAt": "2026-11-12T21:25:02.470Z",
           "artifacts": [
             "openspec/changes/project-boards/proposal.md",
             "openspec/changes/project-boards/design.md",
@@ -16861,7 +16861,7 @@
             },
             {
               "path": "openspec/changes/project-boards/specs/project-boards/spec.md",
-              "sha256": "aa297284bb92618cacdcb2c5e79112ea4a1764a2e04cc24683fb1095a337283a"
+              "sha256": "34b4f7eee46a24b1c4db7d4ff6e8d114bb93cb5732d958a9a9d35aeb058ef5d8"
             },
             {
               "path": "openspec/changes/project-boards/specs/project-identity/spec.md",
@@ -16880,10 +16880,10 @@
               "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-12, one round over the unshipped amendment; Important I1 (deferral title scenario) fixed in the spec, Minors logged",
+          "reviewer": "opus fresh-context 2026-11-12, one round over the header amendment: Important (guided card for an unset release marker, spec scenario contradiction) fixed and re-tested, not re-reviewed; requirement text shortened under the 500-character limit; Minors fixed or logged",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-11-11T18:03:08.967Z",
+            "reviewedAt": "2026-11-12T20:10:42.609Z",
             "artifacts": [
               "openspec/changes/project-boards/proposal.md",
               "openspec/changes/project-boards/design.md",
@@ -16901,15 +16901,15 @@
             "artifactDigests": [
               {
                 "path": "openspec/changes/project-boards/proposal.md",
-                "sha256": "91b591a01ca867b30724d8a51d91adfca8060d37537d251afb1dcd804dece190"
+                "sha256": "c2ab8663d7f124014caecaa6ac7045f00638387867389999e1173c4bf0f8866f"
               },
               {
                 "path": "openspec/changes/project-boards/design.md",
-                "sha256": "266fdfd65d9f672921a78f36928320f545e4c4a9d6bfa552e6869beef47e61c5"
+                "sha256": "1b4040f1bc2b587aa06368adf801208875a2f8a360fb2cc6ad75d2dae03fd763"
               },
               {
                 "path": "openspec/changes/project-boards/specs/board-export/spec.md",
-                "sha256": "39fa2b651a6440417025b6f348d17f1ef8dd6e5813be038121f6d3cc5385eb47"
+                "sha256": "ddb5ff9963aa6b7a7993b868fac50ec716586085bb85cdbb43858ba2a206eeb7"
               },
               {
                 "path": "openspec/changes/project-boards/specs/epic-annotation/spec.md",
@@ -16925,7 +16925,7 @@
               },
               {
                 "path": "openspec/changes/project-boards/specs/project-boards/spec.md",
-                "sha256": "10fe7815525bd884c5bb19b5828a80538c1ffc369949b962e16e2b17b7425ddf"
+                "sha256": "aa297284bb92618cacdcb2c5e79112ea4a1764a2e04cc24683fb1095a337283a"
               },
               {
                 "path": "openspec/changes/project-boards/specs/project-identity/spec.md",
@@ -16944,7 +16944,7 @@
                 "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
               }
             ],
-            "reviewer": "opus fresh-context 2026-11-11, one round (0 Critical, Important fixed); tasks.md 8.14 commit claim corrected after Gate 2 delta review"
+            "reviewer": "opus fresh-context 2026-11-12, one round over the unshipped amendment; Important I1 (deferral title scenario) fixed in the spec, Minors logged"
           }
         },
         "gate2": {
@@ -16965,10 +16965,10 @@
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 4,
+          "passes": 5,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-12T20:10:42.609Z",
-          "lastPassAt": "2026-11-12T20:10:42.609Z"
+          "lastVerdictAt": "2026-11-12T21:25:02.470Z",
+          "lastPassAt": "2026-11-12T21:25:02.470Z"
         },
         "gate2": {
           "fails": 0,
@@ -17118,7 +17118,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2432,
+  "revision": 2436,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17943,7 +17943,7 @@
       ],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-11-12T20:10:43.655Z",
+        "reviewedAt": "2026-11-12T21:25:03.585Z",
         "specs": [
           {
             "key": "project-boards/specs/board-export/spec.md",
@@ -17963,7 +17963,7 @@
           },
           {
             "key": "project-boards/specs/project-boards/spec.md",
-            "sha256": "aa297284bb92618cacdcb2c5e79112ea4a1764a2e04cc24683fb1095a337283a"
+            "sha256": "34b4f7eee46a24b1c4db7d4ff6e8d114bb93cb5732d958a9a9d35aeb058ef5d8"
           },
           {
             "key": "project-boards/specs/project-identity/spec.md",
@@ -17982,14 +17982,14 @@
             "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
           }
         ],
-        "reviewer": "opus fresh-context 2026-11-12, one round over 9 specs after the unshipped amendment; no contradiction, double ownership or unmeetable requirement",
+        "reviewer": "opus fresh-context 2026-11-12, one round over 9 specs after the header amendment; no spec still requires the removed block; one Important fixed",
         "superseded": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-11T18:03:10.220Z",
+          "reviewedAt": "2026-11-12T21:24:30.928Z",
           "specs": [
             {
               "key": "project-boards/specs/board-export/spec.md",
-              "sha256": "39fa2b651a6440417025b6f348d17f1ef8dd6e5813be038121f6d3cc5385eb47"
+              "sha256": "ddb5ff9963aa6b7a7993b868fac50ec716586085bb85cdbb43858ba2a206eeb7"
             },
             {
               "key": "project-boards/specs/epic-annotation/spec.md",
@@ -18005,7 +18005,7 @@
             },
             {
               "key": "project-boards/specs/project-boards/spec.md",
-              "sha256": "10fe7815525bd884c5bb19b5828a80538c1ffc369949b962e16e2b17b7425ddf"
+              "sha256": "0cd86a732ee74bfc57520799a10e26d1263eabe8f5998f7c42e498413097002b"
             },
             {
               "key": "project-boards/specs/project-identity/spec.md",
@@ -18024,7 +18024,7 @@
               "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs; tasks.md 8.14 wording corrected after"
+          "reviewer": "opus fresh-context 2026-11-12, one round over 9 specs after the header amendment; no spec still requires the removed block; one Important fixed"
         }
       },
       "theme": "Release planning and project boards: a recorded mission and milestone, release plan fields, a read-only board export, and two default-on boards (release plan, backlog) for every pm project.",

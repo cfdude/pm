@@ -180,7 +180,7 @@ test("8.12 First population: one batched question set, never invent, the exact v
   assert.match(sec, /Never invent a project name, key, mission or milestone/);
   assert.match(sec, /re-run the refresh/);
   for (const v of ['set-project --name "<name>" --key <KEY>', "/pm:upgrade", 'mission --statement "<one line>" --reason', "mission --milestone <releaseId>",
-    "mission --add-criterion", "--needs-human", 'release here <releaseId> --text "<where things stand>" --next', "--theme", "--rationale", "--exit",
+    "mission --add-criterion", "--needs-human", "release here <releaseId>", "covers `here` only", "agent-only data, not drawn", "--theme", "--rationale", "--exit",
     "--order <n>", "--size", "--target", 'update-epic <id> --summary "<one line>"', "`decisions/<n>`"]) assert.ok(sec.includes(v), `names ${v}`);
   for (const w of ["| the user |", "| the engine |", "you draft it from `board --json`; the user confirms", "the user confirms or edits them as a batch"]) assert.ok(sec.includes(w), `who: ${w}`);
 });
@@ -209,6 +209,8 @@ test("8.12 the refresh-time stale check is stated, at two days, before any write
   assert.match(s, /### Stale check \(every refresh\)/);
   assert.match(s, /Before you write, read `page\/info\.lastUpdated`/);
   assert.match(s, /two or more days old/);
+  assert.match(s, /no We are here block/);
+  assert.doesNotMatch(s, /check that `plan\.hereText`/, "the stale check no longer asks to re-verify text the page does not draw");
 });
 
 test("9.3 the skill says the release docs carry unshipped, that the Shipped table explains from it, and that no reason is ever invented", () => {

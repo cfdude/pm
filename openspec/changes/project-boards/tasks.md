@@ -348,6 +348,17 @@ requirement in `specs/project-boards/spec.md`.
       to 153 in `mutation-evidence.txt`. **Lifecycle (item 3):** none. Specs and artifacts changed, so Gate 1, cross-spec and Gate 2
       digests are stale; the orchestrator re-records them.
 
+- [x] 9.5 GREEN with mutation proof (FILES `project-boards-templates.test.mjs` 9.2 and 8.10, `project-boards-skill.test.mjs` 8.12): the product owner
+      asked on the live plan to remove the "We are here" block from the header (the roadmap's current-release row and its WE ARE HERE
+      rule carry the same marker with more detail). The header is now the mission, the plan bar and a plan line (open-decisions count,
+      stale warning from two days). Dropped from the page: `hereText`, `nextText`, repo head, the second Updated time (the pill has it),
+      the "No current release marked" line; the `data-need="here"` card stays but only while `plan.here` is unset (a review finding: the spec's guided-empty-state rule and the Empty project scenario still name `release here`); the doc shape is unchanged. This amends 9.2 and the
+      section 8 skin line above (the dark "We are here" banner); the spec requirement and SKILL.md "Stale check" follow. RED 5 tests, then
+      GREEN. Mutants 154 to 156 (the three header mutants). A second owner
+      comment, same header: the mission statement now spans the header width at body size; the "Why now:" line, the mission block's milestone
+      line and its "set <date>" tail are removed; the mission milestone shows only in the plan line, and only when set. Mutants 157 to 159. A third pair: Last updated is plain bold right-aligned text in the text colour token (no pill), and
+      the intro line under the title wraps the full content width (`.lede` max-width removed). Mutants 160 to 162. Review fix: the here-only guided card, RED first, mutant 163. Specs changed, so Gate 1, cross-spec and Gate 2 digests are stale; the orchestrator re-records them.
+
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–8)
 
 - [ ] R.1 **Call-site completeness sweep** (item 1). Derive every call site mechanically with these searches:
