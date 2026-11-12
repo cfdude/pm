@@ -23,41 +23,43 @@
 - [ ] 0.1 **Re-read the source.** The epic has no `externalId`: read its notes in `.conductor/state.json` in full, this change,
       and `openspec/changes/project-boards/` (or its archive) in full. Confirm `project-boards` is archived, so
       `openspec/specs/release-planning/spec.md` exists and this change's ADDED requirements land on it.
-- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the four spec files and this file. Fix every Critical
+- [ ] 0.1a **The owed `board-export` amendment** (design, "Amendments owed"), run right after 0.1 and BEFORE 0.2 and 0.4, so
+      neither gate is recorded on text this task replaces. It needs `project-boards` archived (0.1 confirms it), because a
+      MODIFIED delta needs `openspec/specs/board-export/spec.md` to exist and amending the unarchived `project-boards` would
+      make 0.55.0 contradict its built code. Add `specs/board-export/spec.md` with two MODIFIED requirements: "rejected
+      entries have one shape and a closed reason list" gains kind `initiative`, and "Every emitted id passes the board id
+      format" gains initiative ids, initiative milestone ids and the three initiative references (`epic.initiative`,
+      `epic.secondaryInitiatives[]`, `release.initiative`). Amend the initiative-record export requirement so a bad
+      initiative id becomes a `rejected` entry (reason `id format`) instead of a skip, and add its RED test to 1.1.
+      Re-validate; a fifth spec file joins the set that 0.2 and 0.4 review.
+- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the spec files (four, plus `board-export` once 0.1a lands) and this file. Fix every Critical
       and Important finding, re-run `openspec validate release-planning-taxonomy --strict` (it must print "is valid"), then
       `record-gate-review release-planning-taxonomy --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
 - [ ] 0.3 **Release membership.** `release show 0.56.0` lists `release-planning-taxonomy`; if not, `release 0.56.0 --member
       release-planning-taxonomy`.
 - [ ] 0.4 **Cross-spec review** (gate item 5). Four spec files, so invoke the `cross-spec-review` skill over the whole 0.56.0
       set AND the 0.55.0 specs it extends (`release-planning`, `board-export`, `project-mission`, `project-boards`,
-      `epic-annotation`), testing design.md's "Amendments owed: none" claim. Record
+      `epic-annotation`), testing design.md's "Amendments owed" section (one amendment, delivered by 0.1a, and none other). Record
       `record-cross-spec-review 0.56.0 --verdict pass|fail --reviewer "<identity>"`. Shared chokepoints:
       - the flag registry in `scripts/lib/constants.mjs` (the second `kind` row beside `purge-logs`'s; valueless
         `maintenance`, `clear-initiative`, `clear-split-reason`; `add-non-goal`, `remove-non-goal` across five verbs)
       - `release --clear`'s closed field list and `mission`'s `--reason` closed list (design D5)
       - `board.mjs` `REJECTED_REASONS` and the fixed `mission` object (design D5, D7)
       - `docs/parity-ledger.json`, `SURFACE_FEATURES`, the rules-block sections, the README cost table
-      - the "milestone" vocabulary (design D3)
+      - the "mission milestone" versus "initiative milestone" vocabulary (design D3)
 - [x] 0.5 **Owner answers.** Q1 to Q13 answered on 2026-11-12 and folded in as design D17 to D30 (Q5 revised by the owner).
       Q14 answered the same day as design D31 (an automatic planning baseline, no flag).
-
-- [ ] 0.6 **The owed `board-export` amendment** (design, "Amendments owed"), ordered AFTER `project-boards` is archived (0.1
-      confirms it), because a MODIFIED delta needs `openspec/specs/board-export/spec.md` to exist and amending the unarchived
-      `project-boards` would make 0.55.0 contradict its built code. Add `specs/board-export/spec.md` with a MODIFIED
-      "rejected entries have one shape and a closed reason list" adding kind `initiative`, amend the initiative-record export
-      requirement so a bad initiative id becomes a `rejected` entry (reason `id format`) instead of a skip, and add its RED
-      test to 1.1. Re-validate, then re-run 0.2 and 0.4 (a fifth spec file joins the set).
 
 ## 1. The export reads the new fields (specs: all four, their `board --json` requirements)
 
 - [ ] 1.1 RED (UNIT, `boardSnapshot` over fixtures): `initiatives` is `[]` and `missionNonGoals` is `[]` on an empty record;
-      every initiative entry carries `outcome`, `source`, `offMissionReason` and milestones with `reachedAt` and `evidence`;
+      every initiative entry carries `outcome`, `source`, `offMissionReason`, `nonGoals` and initiative milestones with `reachedAt` and `evidence`;
       every release entry carries `initiative: null`, `maintenance: false`, `splitReason: null`, `primaryServed: null`,
       `planningBaseline: null`, `addedSincePlanning: null`, `unknownJoinTime: null`, `nonGoals: []` and the zero `split`
       (`initiativeWork`, `health`, `unaligned`); every epic entry carries `initiative`, `initiativeJoinedAt`,
       `secondaryInitiatives: []`, `kind`, `effectiveKind`, `releaseJoinedAt`, both reasons and `nonGoals: []`; a populated
       fixture reads each back; an initiative with a malformed id is omitted; a reference naming no initiative reads `null`;
-      removed milestones and non-goals are absent; `schemaVersion` is 1. Save `red-1.1.txt`.
+      removed initiative milestones and non-goals are absent; `schemaVersion` is 1. Save `red-1.1.txt`.
 - [ ] 1.2 GREEN: extend `scripts/lib/board.mjs` (no change to `REJECTED_REASONS`); update the JSON shape in
       `commands/boards.md`. Changeset.
 
@@ -79,7 +81,8 @@
       both events and refuse the wrong state. RED: `red-2.3.txt` (fails before 2.3).
 - [ ] 2.4 RED then GREEN (UNIT): the reference rule: every initiative-naming flag refuses an unknown id; `runIntegrity`
       reports a hand-edited `epic.initiative`, `epic.secondaryInitiatives[]` entry and `release.initiative` naming no
-      initiative. Edit `scripts/lib/integrity.mjs`. RED: `red-2.4.txt`.
+      initiative, and a hand-edited initiative id failing the id format (named by `integrity`, skipped by the export, no
+      `rejected` entry until 0.1a's amendment). Edit `scripts/lib/integrity.mjs`. RED: `red-2.4.txt` covers all four reports.
 
 ## 3. Non-goals (spec: non-goals)
 
@@ -155,17 +158,17 @@
 ## 7. Skills and the release plan template (specs: initiative-record, non-goals, release-planning)
 
 - [ ] 7.1 RED (FILE): `skills/project-boards/SKILL.md` "First population" names clustering the backlog, UNGROUNDED, "Does
-      this make sense?", that the user never names an initiative or milestone, and that nothing unconfirmed is written;
+      this make sense?", that the user never names an initiative or an initiative milestone, and that nothing unconfirmed is written;
       `skills/conductor/SKILL.md` Intake names both reason flags, "once", initiatives as well as epics, reading the recorded
       reason first, the `claude-code` exemption, the orchestrating-agent-first order, and the two tweak destinations
       (`maintenance-<releaseId>` with its lane, kind, membership, `--attribute-commit` and end-with-release; a small
       claude-code epic for a tweak that moves an initiative). `--source` and UNGROUNDED appear in "First population".
       Save `red-7.1.txt`.
 - [ ] 7.2 RED (FILE, `node:vm` over the template's marked render block, project-boards D13): the Initiatives section and its
-      guided empty state, source with the UNGROUNDED mark, milestone reached marks; each release card's primary initiative
+      guided empty state, source with the UNGROUNDED mark, initiative milestone reached marks; each release card's primary initiative
       title or "Maintenance", its "Goal" label, its split with the unaligned count, drift mark and reason, the unserved-primary
       warning, the scope-added line, and its guided empty state naming `release <id> --initiative <id>` and `--maintenance`; the
-      "Not doing" lists for mission, initiative and release, with no empty heading; hostile title, capability, milestone,
+      "Not doing" lists for mission, initiative and release, with no empty heading; hostile title, capability, initiative milestone,
       non-goal, evidence, source and split-reason text stays inert; the `${}` and markup-concatenation source scans still pass. Save
       `red-7.2.txt`.
 - [ ] 7.3 GREEN: write the skill text and `skills/project-boards/templates/release-plan.html`; update the skill's doc contract
@@ -218,13 +221,13 @@
       collisions of design D5 recur in a later change.
 - [ ] R.8 **Prove every guard can fail** (item 8, the `mutation-pass` skill). Mutate each and confirm a test fails:
       - initiative: create-needs-both, the one-line and length checks, reserved `show`, id format, end and reopen state checks,
-        the empty-reason refusal, milestone id reuse, the remove-reason requirement
+        the empty-reason refusal, initiative milestone id reuse, the remove-reason requirement
       - references: the unknown-initiative refusal on epic and release, the integrity report, the export's `null` read
-      - non-goals: the per-record counter, the whole-invocation refusal, the marked removal, the milestone exclusion
+      - non-goals: the per-record counter, the whole-invocation refusal, the marked removal, the exclusion of every milestone kind
       - initiative: the outcome allowlist (`killed` refused), reach and unreach state checks, the `--clear` field list
       - release: the `--initiative`/`--maintenance` exclusion, `release here` refusal, the three-way split, the claude-code
         effective kind, the `null` share, both band edges (0.10 and 0.30 inside), the reason-does-not-change-drift rule,
-        `primaryServed`, the join-time write and its removal on `--unmember`, the baseline's earliest-`startedAt` choice and its `null` with no member started
+        `primaryServed`, the join-time write, the guard that keeps it on a repeat `--member` for the same release, its replacement on a move, and its removal on `--unmember` and on `--defer`, the baseline's earliest-`startedAt` choice and its `null` with no member started
       - nudge: the release-member condition for the destinations text
       - epic: secondary-equals-primary, the kind allowlist, the warning's open-initiative, `claude-code`, `health` and
         recorded-reason conditions, the member warning's maintenance condition

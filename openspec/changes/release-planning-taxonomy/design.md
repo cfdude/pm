@@ -259,8 +259,8 @@ failing id to appear in `rejected` with reason `id format`, and its `rejected` k
 change cannot amend `project-boards` (it is built and unarchived; editing it would make 0.55.0 contradict its own code), and a
 MODIFIED delta needs the base spec in `openspec/specs/`, which exists only after that archive. So 0.56.0 validates initiative
 ids on write, skips a hand-edited bad one in the export and reports it through `integrity`, and states plainly that it is
-not a `rejected` entry. Task 0.6, ordered after project-boards' archive, adds the MODIFIED `board-export` delta (kind
-`initiative`) and turns the skip into a `rejected` entry. Everything else: D5 keeps the closed lists intact, and the nudge
+not a `rejected` entry. Task 0.1a, run after project-boards' archive and before Gate 1, adds the MODIFIED `board-export` delta (kind
+`initiative`, and initiative ids and references in the emitted-id list) and turns the skip into a `rejected` entry. Everything else: D5 keeps the closed lists intact, and the nudge
 amendment changes a branch no 0.55.0 spec fixes. The cross-spec review (task 0.4) checks both claims.
 
 ## Risks / Trade-offs

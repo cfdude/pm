@@ -106,7 +106,7 @@ and has no off-initiative reason. A maintenance release, or one with no primary,
 
 Each `board --json` epic entry SHALL carry `initiative`, `initiativeJoinedAt`, `secondaryInitiatives` (`[]` when none),
 `kind` (as recorded), `effectiveKind`, `releaseJoinedAt`, `offMissionReason` and `offInitiativeReason`, each `null` when
-absent. A reference naming no initiative SHALL read as `null`. These keys are additive, so `schemaVersion` SHALL stay 1.
+absent. A reference naming no initiative SHALL become `null` (`initiative`) or leave its list (`secondaryInitiatives`). These keys are additive, so `schemaVersion` SHALL stay 1.
 
 #### Scenario: Unset fields
 

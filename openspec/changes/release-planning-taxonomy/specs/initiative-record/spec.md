@@ -149,8 +149,8 @@ each one, and `board --json` SHALL read it as `null`.
 ### Requirement: board --json lists the initiatives
 
 `board --json` SHALL carry a top-level `initiatives` array in creation order, `[]` when none. Each entry SHALL be
-`{id, title, capability, status, outcome, endedAt, source, offMissionReason, milestones: [{id, text, reachedAt, evidence}]}`
-with active milestones only, in id order. Ids are validated on write, so a failing id is a hand edit: the export SHALL
+`{id, title, capability, status, outcome, endedAt, source, offMissionReason, nonGoals, milestones: [{id, text, reachedAt,
+evidence}]}` with active milestones only, in id order. Ids are validated on write, so a failing id is a hand edit: the export SHALL
 skip it and `integrity` report it, NOT a `rejected` entry (0.55.0 closes that kind list). `schemaVersion` stays 1.
 
 #### Scenario: Empty record
