@@ -88,7 +88,7 @@ Out of scope, with where each goes (none of it is dropped):
   record), both verb-refreshed and outside the conditional-section set.
 - `tracker-sync`: the inward registration recipe carries a `summary`.
 - `release-planning` (amended): `release --clear target`, the inverse of `--target`.
-- `board-export` (amended): the `project` object, epic `number` and `key`, release `progress`, and the `project` rejection kind.
+- `board-export` (amended): the `project` object, epic `number` and `key`, release `progress` and `unshipped`, and the `project` rejection kind.
 
 ## Impact
 

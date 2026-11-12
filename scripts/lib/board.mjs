@@ -66,6 +66,47 @@ function progressOf(entries, outcomeById) {
   return { done: counted.filter(x => x.delivered === true).length, total: counted.length };
 }
 
+/** The longest reason an `unshipped` row carries (board-export spec); a longer one ends in an ellipsis. */
+export const UNSHIPPED_REASON_CAP = 300;
+
+/** A recorded reason as an `unshipped` row carries it: null when absent or blank, control characters escaped as every other export
+ *  text is, capped at UNSHIPPED_REASON_CAP code points with a trailing ellipsis. Never invents text. */
+function reasonText(v) {
+  if (typeof v !== "string" || v.trim() === "") return null;
+  const text = escapeControls(v);
+  const cps = Array.from(text);
+  return cps.length > UNSHIPPED_REASON_CAP ? escapeControls(cps.slice(0, UNSHIPPED_REASON_CAP - 1).join("")) + "\u2026" : text;
+}
+
+/** A release's `unshipped` rows: one per member whose `delivered` is not true (member order), then one per deferral whose epic is not
+ *  already a row. Derived once here so a second reader never guesses the outcome, the reason or the successor again. `supersededBy`
+ *  comes only from a structured `supersedes` link (`superseder`: epic id -> the id of an epic that links to it), never from prose. */
+function unshippedOf(members, deferred, entryById, superseder, outcomeById) {
+  const rows = [];
+  const have = new Set();
+  const reasonOf = new Map(deferred.map(d => [d.epic, d.reason]));
+  for (const id of members) {
+    const x = entryById.get(id);
+    if (!x || x.delivered === true) continue;
+    const read = outcomeById.get(id);
+    const outcome = x.status !== "archived" ? "open" : (read === null || read === undefined || read === "unknown" ? "unknown" : read);
+    const recorded = outcome === "unknown" || outcome === "open" ? null : x.outcomeReason;
+    rows.push({
+      epic: id, title: x.title, outcome,
+      reason: reasonText(recorded) || (outcome === "unknown" ? null : reasonText(reasonOf.get(id))),
+      supersededBy: superseder.get(id) || null,
+    });
+    have.add(id);
+  }
+  for (const d of deferred) {
+    if (have.has(d.epic)) continue;
+    const x = entryById.get(d.epic);
+    rows.push({ epic: d.epic, title: x ? x.title : null, outcome: "deferred", reason: reasonText(d.reason), supersededBy: null });
+    have.add(d.epic);
+  }
+  return rows;
+}
+
 /** The snapshot. Pure over (state, resolved). `resolved` is resolveEpics(state)'s output (or any list of
  *  epics carrying `effectivePriority`, in the order to emit them). `opts`: `pmVersion`, `asOf` (an ISO
  *  time) and `archived` (a positive integer or "all"). */
@@ -224,6 +265,14 @@ export function boardSnapshot(state, resolved, opts = {}) {
 
   // ── releases ──
   const entryById = new Map([...open, ...endedAll].map(x => [x.id, x]));
+  /** epic id -> the first registered epic (list order) whose structured `supersedes` link names it. Prose is never read. */
+  const superseder = new Map();
+  for (const e of registered) {
+    if (!isId(e.id)) continue;
+    for (const l of Array.isArray(e.links) ? e.links : []) {
+      if (l && l.type === "supersedes" && isId(l.epic) && l.epic !== e.id && !superseder.has(l.epic)) superseder.set(l.epic, e.id);
+    }
+  }
   const relEntries = [];
   for (const r of releases) {
     if (!isId(r.id)) { reject("release", r.id, "id", r.id, "id format"); continue; }
@@ -248,7 +297,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
       exit: str(r.exit), order, size: str(r.size), status, delivered,
       criticalPath: milestoneRelease === null ? null : criticalPathOf(r, state),
       progress: progressOf(members.map(id => entryById.get(id)).filter(Boolean), outcomeById),
-      members, deferred,
+      members, deferred, unshipped: unshippedOf(members, deferred, entryById, superseder, outcomeById),
     });
   }
   relEntries.sort((a, b) => {

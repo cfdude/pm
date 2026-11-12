@@ -138,7 +138,7 @@ routes through, so a fifth path cannot skip it. An issue number below 1000 becom
 everything else takes the counter, whose first value is 1000 (the floor), skipping held numbers. The counter is persisted and only advances, so a number is never reused.
 `set-project` writes the record only: it needs no render and does not touch the managed rules block, so it adds no overhead row.
 
-**D21. `schemaVersion` stays 1.** The `project` object, the epic `number`/`key` and the release `progress` are additive keys, and the
+**D21. `schemaVersion` stays 1.** The `project` object, the epic `number`/`key` and the release `progress` and `unshipped` are additive keys, and the
 snapshot has not shipped (0.55.0 is unreleased), so there is no consumer to break and the "meaning of an existing key changed" rule
 does not fire. The export emits `project: {name: null, key: null}` while unset and never derives a name or key.
 

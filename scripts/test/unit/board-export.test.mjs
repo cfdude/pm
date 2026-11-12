@@ -266,6 +266,7 @@ unitTest("board: releases are listed in plan order with their plan fields, absen
     id: "r2", intent: "two", target: null, theme: "t", rationale: "why", exit: "e", order: 2, size: "minor",
     status: "planned", delivered: false, criticalPath: null, progress: { done: 0, total: 1 }, members: ["m"],
     deferred: [{ epic: "m", reason: "cut" }],
+    unshipped: [{ epic: "m", title: "Title of m", outcome: "open", reason: "cut", supersededBy: null }],
   });
   assert.equal(s.releases[2].intent, null);
 });
@@ -391,4 +392,71 @@ unitTest("release progress: an ended epic with an unknown outcome is in the tota
 
 unitTest("board: schemaVersion stays 1 — the project, number, key and progress keys are additive", () => {
   assert.equal(snap(record()).schemaVersion, 1);
+});
+
+// ─────────── release unshipped: what did not ship, with the recorded reason (board-export spec) ───────────
+const rel1 = (over = {}) => ({ id: "r1", intent: "i", deferred: [], ...over });
+const unshipped = (epics, r = rel1(), args = []) => snap(record(epics, { releases: [r] }), args).releases[0].unshipped;
+
+unitTest("release unshipped: a superseded member is a row with its recorded reason and progress is unchanged", () => {
+  const s = snap(record([
+    archivedEpic("ok", { release: "r1" }),
+    archivedEpic("old", { release: "r1", disposition: disp("superseded", { reason: "folded into x" }) }),
+  ], { releases: [rel1()] }));
+  const r = s.releases[0];
+  assert.deepEqual(r.progress, { done: 1, total: 2 }, "progress keeps counting only delivered members");
+  assert.deepEqual(r.unshipped, [{ epic: "old", title: "Title of old", outcome: "superseded", reason: "folded into x", supersededBy: null }]);
+});
+
+unitTest("release unshipped: a deferral that is not a member is a row; one that is a member is not doubled", () => {
+  const rows = unshipped([epic("m", { release: "r1" })], rel1({ deferred: [{ epic: "gone", reason: "later" }, { epic: "m", reason: "cut" }] }));
+  assert.deepEqual(rows, [
+    { epic: "m", title: "Title of m", outcome: "open", reason: "cut", supersededBy: null },
+    { epic: "gone", title: null, outcome: "deferred", reason: "later", supersededBy: null },
+  ]);
+});
+
+unitTest("release unshipped: no recorded reason is null, never invented", () => {
+  const rows = unshipped([
+    epic("open1", { release: "r1" }),
+    archivedEpic("stamp", { release: "r1", disposition: disp("unknown", { reason: "engine boilerplate", recordedBy: "archive-backfill" }) }),
+    archivedEpic("bare", { release: "r1", disposition: undefined }),
+  ], rel1({ deferred: [{ epic: "d", reason: "   " }] }));
+  assert.deepEqual(rows.map(x => [x.epic, x.outcome, x.reason]), [
+    ["open1", "open", null], ["stamp", "unknown", null], ["bare", "unknown", null], ["d", "deferred", null],
+  ]);
+});
+
+unitTest("release unshipped: killed, declined and abandoned members carry their outcome and reason", () => {
+  const rows = unshipped(["killed", "declined", "abandoned"].map(o => archivedEpic(o, { release: "r1", disposition: disp(o, { reason: `why ${o}` }) })));
+  assert.deepEqual(rows.map(x => [x.outcome, x.reason]), [["killed", "why killed"], ["declined", "why declined"], ["abandoned", "why abandoned"]]);
+});
+
+unitTest("release unshipped: supersededBy comes from a structured supersedes link, never from prose", () => {
+  const rows = unshipped([
+    archivedEpic("a", { release: "r1", disposition: disp("superseded", { reason: "carried by b" }) }),
+    archivedEpic("c", { release: "r1", disposition: disp("superseded", { reason: "carried by b" }) }),
+    epic("b", { links: [{ type: "supersedes", epic: "a" }, { type: "relates-to", epic: "c" }] }),
+  ]);
+  assert.deepEqual(rows.map(x => [x.epic, x.supersededBy]), [["a", "b"], ["c", null]]);
+});
+
+unitTest("release unshipped: a long reason is capped at 300 characters ending in an ellipsis; control characters are escaped", () => {
+  const rows = unshipped([
+    archivedEpic("long", { release: "r1", disposition: disp("killed", { reason: "x".repeat(400) }) }),
+    archivedEpic("exact", { release: "r1", disposition: disp("killed", { reason: "y".repeat(300) }) }),
+    archivedEpic("ctl", { release: "r1", disposition: disp("killed", { reason: "a\nb\u001b[31m" }) }),
+  ]);
+  assert.equal(Array.from(rows[0].reason).length, 300);
+  assert.ok(rows[0].reason.endsWith("\u2026"));
+  assert.equal(rows[1].reason, "y".repeat(300), "exactly at the cap is left whole");
+  assert.equal(rows[2].reason, "a\\u000ab\\u001b[31m");
+});
+
+unitTest("release unshipped: read over every member, not only the ended-epic window; an empty release has none", () => {
+  const epics = ["a", "b", "c"].map((id, i) => archivedEpic(id, { release: "r1", disposition: disp("superseded", { reason: `r${id}`, recordedAt: `2026-10-0${i + 1}T00:00:00Z` }) }));
+  const s = snap(record(epics, { releases: [rel1(), { id: "r2", intent: "empty", deferred: [] }] }), ["--archived", "1"]);
+  assert.equal(s.epics.length, 1);
+  assert.equal(s.releases[0].unshipped.length, 3);
+  assert.deepEqual(s.releases[1].unshipped, []);
 });

@@ -75,3 +75,7 @@
   First population now opens with "Derive, then confirm": the agent drafts the mission, why-now, where things stand, release
   themes and epic summaries from the README, CLAUDE.md or AGENTS.md, `board --json`, the records and `git log`, marks anything it
   could not ground as UNGROUNDED, and asks the user only about the gaps and for confirmation.
+  Each release in `board --json` now carries `unshipped`: one `{epic, title, outcome, reason, supersededBy}` row per member that
+  did not ship and per deferral, with the recorded reason (capped at 300 characters, `null` when none is recorded). The release plan
+  keeps only in-progress and planned releases in its roadmap, reads the mission and "we are here" as one header, and lists shipped
+  releases in a Shipped table at the bottom that explains, for a release that did not ship everything, what did not ship and why.

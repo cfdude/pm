@@ -381,3 +381,27 @@ before writing and, at two or more days, tell the user and re-check the plan mar
 - **WHEN** the skill's text is checked by the file-rung doc assertion
 - **THEN** it names every verb above, the one batch, the never-invent rule, the re-run, and the two-day stale check
 
+
+### Requirement: The release plan header reads as one block, the roadmap holds live releases, and shipped releases explain themselves
+
+The release plan SHALL draw the mission and the "we are here" marker as one header with no box between them. The roadmap SHALL list only releases that are `in-progress` or `planned`; `shipped` releases SHALL appear in a Shipped table at the bottom, newest first. The page SHALL NOT infer a reason, and SHALL escape and check every `unshipped` value.
+
+#### Scenario: A shipped release's row and explanation
+
+- **WHEN** a shipped release is drawn
+- **THEN** its row reads `N of M shipped` from `progress` (or "no members recorded"), and, when it has `unshipped` rows, it expands to its intent, its `N of M` and each row's outcome label and recorded `reason`, or "no reason recorded" when `reason` is null; a row's epic and `supersededBy` ids are checked against the id pattern and its outcome is allowlisted
+
+#### Scenario: A shipped release leaves the roadmap
+
+- **WHEN** releases r0 (`shipped`), r1 (`in-progress`) and r2 (`planned`) exist
+- **THEN** the roadmap lists r1 and r2, and the Shipped table lists r0 only
+
+#### Scenario: A partly shipped release is explained
+
+- **WHEN** a shipped release has `progress` `{done: 17, total: 18}` and an `unshipped` row `{outcome: "superseded", reason: null}`
+- **THEN** its Shipped row reads "17 of 18 shipped" and its expansion lists that row as Superseded with "no reason recorded"
+
+#### Scenario: An empty release
+
+- **WHEN** a shipped release has no members and no `unshipped` rows
+- **THEN** its row reads "no members recorded"

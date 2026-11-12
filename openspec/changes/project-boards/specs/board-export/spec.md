@@ -290,3 +290,37 @@ release with no members SHALL report `{done: 0, total: 0}`.
 
 - **WHEN** `board --json --archived 1` runs and r1 has three delivered members that fall outside the window
 - **THEN** r1's `progress.done` is still 3
+
+### Requirement: Each release lists what did not ship, with the recorded reason
+
+Each release entry SHALL carry `unshipped`, derived once in the export: one `{epic, title, outcome, reason, supersededBy}` row per member whose `delivered` is not `true`, then one per deferral that is not already a row, read over every member and not only the ended-epic window. `progress` SHALL be unchanged. The row rules are in the scenarios.
+
+#### Scenario: Outcome, title and reason
+
+- **WHEN** a row is built
+- **THEN** `outcome` is the recorded outcome, `open` for a member not yet ended, `unknown` for an ended member with no outcome or the engine stamp `unknown`, or `deferred` for a deferral that is not a member; `title` is the epic's title or `null` for an unknown epic; `reason` is the disposition's `reason` (else the release's deferral reason), capped at 300 characters with a trailing `…`, control characters escaped as `escapeControls` does, and `null` when none is recorded or the outcome is `unknown`
+
+#### Scenario: A superseded member is listed with its recorded reason
+
+- **WHEN** release r1 has one delivered member and one member whose outcome is `superseded` with reason "folded into x"
+- **THEN** r1's `progress` is `{done: 1, total: 2}` and `unshipped` is one row `{epic, title, outcome: "superseded", reason: "folded into x", supersededBy: null}`
+
+#### Scenario: A deferral is a row
+
+- **WHEN** release r1 has a `deferred` entry for an epic that is not one of its members, with reason "later"
+- **THEN** `unshipped` holds `{epic, title, outcome: "deferred", reason: "later", supersededBy: null}`, where `title` is that epic's title, or `null` when the epic is not registered
+
+#### Scenario: No reason is never invented
+
+- **WHEN** an ended member's outcome is `unknown`, or an open member has no disposition, or a deferral records no reason
+- **THEN** its row's `reason` is `null`
+
+#### Scenario: A structured supersedes link names the successor
+
+- **WHEN** epic b carries a link `{type: "supersedes", epic: a}` and a is an unshipped member of r1
+- **THEN** a's row has `supersededBy: "b"`; a reason that merely mentions "b" sets nothing
+
+#### Scenario: A long reason is capped
+
+- **WHEN** a recorded reason is 400 characters
+- **THEN** the row's `reason` is 300 characters ending in `…`

@@ -591,3 +591,82 @@ test("8.8 both fallbacks carry the export's project into the page", () => {
   assert.equal(load(BACKLOG, ["renderBacklog"]).renderBacklog(fb({ project: PROJ, epics: [] })).title, "PM Plugin Backlog");
   assert.equal(load(PLAN, ["renderPlan"]).renderPlan(fp({ project: PROJ })).title, "PM Plugin Release Plan");
 });
+
+// ---------------------------------------------------------------- 9.2 release plan: one header, a roadmap of live releases, a Shipped table
+const U = (epic, outcome, reason, o = {}) => ({ epic, title: `Title of ${epic}`, outcome, reason, supersededBy: null, ...o });
+const SH = (id, o = {}) => R(id, { status: "shipped", delivered: true, progress: { done: 1, total: 1 }, members: ["m"], unshipped: [], ...o });
+
+test("9.2 release plan: the mission and the here marker read as ONE flat header, with no box between them", () => {
+  const { renderPlan } = plX();
+  const out = renderPlan(pInput({
+    releases: [R("r1", { status: "in-progress" })], plan: { here: "r1", hereText: "Building", nextText: "Skins", head: "h", asOf: "2026-11-11T00:00:00Z" },
+    mission: { statement: "Ship the thing", setAt: "2026-11-01T00:00:00Z", reason: "users", milestoneRelease: "r1" }, ...TS }));
+  const head = out.html.match(/<header class="hd">([\s\S]*?)<\/header>/);
+  assert.ok(head, "a single header element");
+  assert.match(head[1], /class="mission"/);
+  assert.match(head[1], /Ship the thing/);
+  assert.match(head[1], /class="here"/);
+  assert.ok(head[1].indexOf('class="mission"') < head[1].indexOf('class="here"'), "mission first, then where we are");
+  assert.doesNotMatch(head[1], /class="box/, "no boxed section inside the header");
+  assert.equal((out.html.match(/<header /g) || []).length, 1);
+});
+
+test("9.2 release plan: shipped releases leave the roadmap; in-progress and planned stay", () => {
+  const { renderPlan } = plX();
+  const out = renderPlan(pInput({ releases: [SH("r0", { order: 0 }), R("r1", { order: 1, status: "in-progress" }), R("r2", { order: 2 })], plan: { here: "r1" }, ...TS }));
+  assert.doesNotMatch(out.parts.roadmap, /data-release="r0"/);
+  assert.match(out.parts.roadmap, /data-release="r1"/);
+  assert.match(out.parts.roadmap, /data-release="r2"/);
+  assert.match(out.parts.shipped, /data-shipped="r0"/);
+  assert.doesNotMatch(out.parts.shipped, /data-shipped="r[12]"/);
+  assert.match(renderPlan(pInput({ releases: [SH("r0")], ...TS })).parts.roadmap, /No release is in progress or planned/);
+});
+
+test("9.2 release plan: a shipped release with unshipped members says N of M and lists each with its outcome and recorded reason", () => {
+  const { renderPlan } = plX();
+  const out = renderPlan(pInput({
+    releases: [SH("r5", { progress: { done: 17, total: 18 }, members: new Array(18).fill("m"), intent: "Make a thing",
+      unshipped: [U("a", "superseded", "folded into b", { supersededBy: "b" }), U("c", "deferred", null), U("d", "killed", "no longer needed")] })], ...TS }));
+  const s = out.parts.shipped;
+  assert.match(s, /17 of 18 shipped/);
+  assert.match(s, /Make a thing/);
+  assert.match(s, /data-unshipped="a"[\s\S]*?Superseded[\s\S]*?folded into b/);
+  assert.match(s, /\(see b\)/);
+  assert.match(s, /data-unshipped="c"[\s\S]*?Deferred[\s\S]*?no reason recorded/);
+  assert.match(s, /data-unshipped="d"[\s\S]*?Killed[\s\S]*?no longer needed/);
+  assert.match(s, /3 did not ship as planned/);
+});
+
+test("9.2 release plan: a fully shipped release lists no unshipped rows; an empty one says no members recorded", () => {
+  const { renderPlan } = plX();
+  const s = renderPlan(pInput({ releases: [SH("r1", { progress: { done: 4, total: 4 } }), SH("r2", { progress: { done: 0, total: 0 }, members: [], delivered: false })], ...TS })).parts.shipped;
+  assert.match(s, /4 of 4 shipped/);
+  const flagged = (rel) => /class="shn part"/.test(renderPlan(pInput({ releases: [rel], ...TS })).parts.shipped);
+  assert.equal(flagged(SH("r3", { progress: { done: 2, total: 3 }, unshipped: [U("a", "killed", "x")] })), true, "a partly shipped release is flagged");
+  assert.equal(flagged(SH("r4", { progress: { done: 3, total: 3 }, unshipped: [U("a", "deferred", "later")] })), false, "all members shipped is not flagged, even with a deferral");
+  assert.doesNotMatch(s.slice(s.indexOf('data-shipped="r1"'), s.indexOf('data-shipped="r2"')), /data-unshipped/);
+  assert.match(s, /no members recorded/);
+});
+
+test("9.2 release plan: an unshipped row's text is inert, its id and outcome are checked, its reason is capped", () => {
+  const { renderPlan } = plX();
+  const hostile = '<img src=x onerror=alert(1)>" onclick="x';
+  const out = renderPlan(pInput({
+    releases: [SH("r1", { progress: { done: 0, total: 3 }, unshipped: [U("a", "superseded", hostile, { title: hostile, supersededBy: 'b" onfocus="y' }), U('bad"id', "killed", "x"), U("e", 'x" onmouseover="y', "z"), U("g", "constructor", "z"), U("f", "killed", "y".repeat(500))] })], ...TS }));
+  const s = out.parts.shipped;
+  assert.doesNotMatch(out.html, /<img/i);
+  const names = attrNames(out.html);
+  for (const bad of ["onclick", "onerror", "onfocus", "onmouseover"]) assert.ok(!names.includes(bad), bad);
+  assert.equal((s.match(/data-unshipped=/g) || []).length, 4, "the row whose epic id fails the pattern is dropped, the other four are kept");
+  assert.doesNotMatch(s, /bad(&quot;|")id/);
+  assert.doesNotMatch(s, /\(see /, "a successor id that fails the pattern is dropped");
+  assert.match(s, /data-unshipped="e"[\s\S]*?Outcome unknown/);
+  assert.match(s, /data-unshipped="g"[\s\S]*?Outcome unknown/, "an inherited property name is not an outcome");
+  assert.ok(!s.includes("y".repeat(301)), "a reason is capped at 300 characters");
+});
+
+test("9.2 release plan: a viewer's open Shipped row survives a repaint", () => {
+  const { renderPlan } = plX();
+  assert.match(renderPlan(pInput({ releases: [SH("r1")], open: { "s:r1": true }, ...TS })).parts.shipped, /data-shipped="r1" open>/);
+  assert.doesNotMatch(renderPlan(pInput({ releases: [SH("r1")], ...TS })).parts.shipped, /data-shipped="r1" open>/);
+});

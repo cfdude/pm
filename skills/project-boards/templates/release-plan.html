@@ -1,9 +1,11 @@
 <title>Release Plan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: one reading column. Header with the Last updated pill, the mission, a plan bar, the dark "We are here" banner,
-   then collapsible release cards (the current one open, a WE ARE HERE rule above it), the milestone's exit criteria and
-   the decisions put to the owner. Guided cards name every field still to fill in. Data lives in the artifact db. */
+/* Layout: one reading column. A Last updated pill, then ONE flat header (no boxes): the mission is the stable north star, a
+   hairline, then "We are here" as the current focus. Then the roadmap, which holds only releases in progress or planned (a
+   WE ARE HERE rule above the current one), the milestone's exit criteria, the decisions put to the owner, and at the bottom a
+   Shipped table whose rows open to say what did not ship and why. Guided cards name every field still to fill in. Data lives
+   in the artifact db. */
 :root{
   --bg:#F3F5F6; --surface:#FFFFFF; --fg:#18222A; --muted:#58656E; --line:#D6DDE2; --soft:#E9EEF1;
   --accent:#0B6E66; --accent-fg:#FFFFFF; --accent-soft:#DFF0EE; --focus:#1D7FD0;
@@ -49,15 +51,17 @@ p{margin:0 0 6px;max-width:72ch}
 .lastup .rel{color:var(--here-sub);font-weight:500;display:inline}
 section.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px max(16px,3vw);min-width:0}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.mission p.st{font-size:17px;font-weight:600;margin:4px 0 6px}
-.planbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:14px}
+.hd{display:grid;gap:20px;padding-block:6px 4px}
+.mission{display:grid;gap:4px;min-width:0}
+.mission p.st{font-size:24px;font-weight:650;line-height:1.3;letter-spacing:-.005em;margin:2px 0 4px;max-width:46ch;text-wrap:balance}
+.planbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:13.5px;color:var(--muted)}
 .planbar .sub{flex:1 1 260px;min-width:0}
-.here{background:var(--here-bg);color:var(--here-fg);border-radius:8px;padding:16px max(16px,3vw)}
-.here .htag{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:650;color:var(--here-tag)}
-.here .where{font-size:21px;font-weight:650;margin:2px 0 6px;text-wrap:balance;overflow-wrap:anywhere}
-.here p{color:var(--here-fg)}
-.here .hm{display:flex;flex-wrap:wrap;gap:4px 18px;color:var(--here-sub);font-size:13.5px;margin-top:8px}
-.here .hm b{color:var(--here-fg);font-weight:600}
+.here{border-top:1px solid var(--line);padding-top:18px;min-width:0}
+.here .htag{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--here)}
+.here .where{font-size:20px;font-weight:650;margin:2px 0 6px;text-wrap:balance;overflow-wrap:anywhere}
+.here p{color:var(--fg)}
+.here .hm{display:flex;flex-wrap:wrap;gap:4px 18px;color:var(--muted);font-size:13.5px;margin-top:8px}
+.here .hm b{color:var(--fg);font-weight:600}
 .here .need{margin-top:8px}
 .stale{margin-top:10px;padding:7px 11px;border-radius:6px;background:var(--warn-bg);color:var(--warn-fg);font-size:13.5px}
 .need{background:var(--need-bg);border:1px dashed var(--need-line);color:var(--need-fg);border-radius:8px;padding:10px 14px;font-size:13.5px;display:grid;gap:3px;min-width:0}
@@ -112,13 +116,29 @@ textarea{font:13.5px/1.4 var(--body);color:var(--fg);background:var(--bg);border
 .s{font-size:13px;color:var(--muted);display:block}
 .when{white-space:nowrap;font-variant-numeric:tabular-nums}
 .rel{color:var(--muted);font-size:12px;margin-left:4px}
-.here .rel{color:var(--here-sub)}
 code,.mono{font:500 13px var(--mono)}
 a{color:var(--accent)}
 :is(button,a,textarea,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .empty{color:var(--muted);font-style:italic;padding:6px 0}
 .notice{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;font-size:13.5px}
 .msg{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;color:var(--muted)}
+.shipped{display:flex;flex-direction:column;gap:6px}
+.sh-head,details.sh>summary{display:grid;grid-template-columns:minmax(4.5rem,max-content) minmax(0,1fr) 11rem;gap:6px 14px;align-items:center;padding:8px 12px}
+.sh-head{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-block:2px}
+details.sh{border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+details.sh>summary{cursor:pointer;list-style:none}
+details.sh>summary::-webkit-details-marker{display:none}
+.shn{font-variant-numeric:tabular-nums;font-size:13.5px}
+.shn.part{color:var(--warn-fg);font-weight:600}
+.shn.none{color:var(--muted)}
+.exp{padding:6px 14px 14px;border-top:1px solid var(--line);display:grid;gap:8px}
+.exp p{margin:0}
+.unl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.unl li{display:grid;grid-template-columns:minmax(8rem,12rem) minmax(0,1fr);gap:2px 14px;font-size:14px;min-width:0}
+.unl .why{overflow-wrap:anywhere;min-width:0}
+.unl .why.nr{color:var(--muted);font-style:italic}
+.oc{font-size:12px;font-weight:650;border-radius:999px;padding:1px 9px;background:var(--soft);color:var(--fg);white-space:nowrap;justify-self:start;align-self:start}
+@media (max-width:600px){.sh-head{display:none}details.sh>summary{grid-template-columns:minmax(4.5rem,max-content) minmax(0,1fr)}.unl li{grid-template-columns:1fr}}
 @media (max-width:600px){h1{font-size:25px}details.g>summary{grid-template-columns:minmax(4.5rem,max-content) minmax(0,1fr)}.kv{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -192,12 +212,20 @@ const labelOf=e=>e.summary||e.title;
 const REASONS=["Won't do","Deferred","For consideration","Merged"];
 const RELSTAT_LABEL={"planned":"not started","in-progress":"in progress","shipped":"shipped"};
 const DONE=["archived"];
+const OUTCOME_LABEL={"superseded":"Superseded","killed":"Killed","declined":"Declined","abandoned":"Abandoned","unreconstructable":"Unreconstructable","unknown":"Outcome unknown","deferred":"Deferred","open":"Still open"};
+/** One `unshipped` row of a release doc, checked the way every other doc is: a bad id drops the row, the outcome is allowlisted, the reason is capped again. */
+function normUnshipped(d){
+  if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.epic))return null;
+  const o=typeof d.outcome==="string"&&Object.prototype.hasOwnProperty.call(OUTCOME_LABEL,d.outcome)?d.outcome:"unknown";
+  return {epic:d.epic,title:str(d.title),outcome:o,reason:[...str(d.reason)].slice(0,300).join(""),by:okId(d.supersededBy)?d.supersededBy:""};
+}
 function normRel(d){
   if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.id))return null;
   const p=d.progress,okN=v=>typeof v==="number"&&isFinite(v)&&v>=0;
   return {id:d.id,intent:str(d.intent),theme:str(d.theme),rationale:str(d.rationale),exit:str(d.exit),size:str(d.size),target:str(d.target),
     order:(typeof d.order==="number"&&isFinite(d.order))?d.order:null,status:str(d.status),critical:d.criticalPath===true,
-    progress:(p&&typeof p==="object"&&okN(p.done)&&okN(p.total)&&p.done<=p.total)?{done:p.done,total:p.total}:null};
+    progress:(p&&typeof p==="object"&&okN(p.done)&&okN(p.total)&&p.done<=p.total)?{done:p.done,total:p.total}:null,
+    memberCount:arr(d.members).filter(okId).length,unshipped:arr(d.unshipped).map(normUnshipped).filter(Boolean)};
 }
 function renderPlan(inp){
   const I=(inp&&typeof inp==="object")?inp:{};
@@ -229,9 +257,9 @@ function renderPlan(inp){
     if(!proj.key)n.push(need("project-key","No project key: epic chips show \"no key\" instead of a key such as PM-256","set-project --key <2 or 3 capital letters>",ASK_USER));
     return n.length?`<div class="needs" aria-label="Still to fill in">${H(n.join(""))}</div>`:"";});
   parts.mission=step("The mission",()=>{const m=(I.mission&&typeof I.mission==="object")?I.mission:null;
-    if(!m||!str(m.statement))return `<section class="box mission"><span class="lbl">Mission</span>${H(need("mission","No mission recorded: what the project is for right now, in one line","mission --statement \"<one line>\" --reason \"<why this is the mission now>\"",ASK_USER))}</section>`;
+    if(!m||!str(m.statement))return `<section class="mission"><span class="lbl">Mission</span>${H(need("mission","No mission recorded: what the project is for right now, in one line","mission --statement \"<one line>\" --reason \"<why this is the mission now>\"",ASK_USER))}</section>`;
     const ms=okId(m.milestoneRelease)?m.milestoneRelease:"",set=when(str(m.setAt),tOpt);
-    return `<section class="box mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p>${H(str(m.reason)?`<p class="sub">Why now: ${esc(str(m.reason))}</p>`:"")}<p class="s">${H(ms?`Mission milestone: <b>${esc(ms)}</b>`:"No mission milestone yet")}${H(set.abs?` · set ${esc(set.abs)}`:"")}</p></section>`;});
+    return `<section class="mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p>${H(str(m.reason)?`<p class="sub">Why now: ${esc(str(m.reason))}</p>`:"")}<p class="s">${H(ms?`Mission milestone: <b>${esc(ms)}</b>`:"No mission milestone yet")}${H(set.abs?` · set ${esc(set.abs)}`:"")}</p></section>`;});
   parts.planbar=step("The plan bar",()=>{
     const shipped=rels.filter(r=>r.status==="shipped").length,active=rels.some(r=>r.status==="in-progress");
     const open=eps.filter(e=>e.status!=="archived").length;
@@ -267,7 +295,8 @@ ${H(days!==null&&days>=2?`<div class="stale">Stale: this board was last refreshe
 <h3>Epics in ${esc(r.id)} (${num(ms.length)})</h3>${H(ms.length?`<div class="chips">${H(ms.map(chip).join(""))}</div>`:(pr.total>0?`<p class="empty">${num(pr.total)} member epic${H(pr.total===1?"":"s")}, all ended before the export's recent window, so none is listed here.</p>`:'<p class="empty">No epics in this release yet.</p>'))}</div></details>`;};
     const loose=eps.filter(e=>!known.has(e.release)&&e.status!=="archived").sort(byPos);
     if(!rels.length&&!loose.length)return '<p class="empty">No releases recorded yet. The agent creates one with release &lt;id&gt; --intent "&lt;what it is for&gt;".</p>';
-    return rels.map(relHtml).join("")+(loose.length?`<details class="g" data-release="-"${H(openMap["-"]===true?" open":"")}><summary><span class="gid">none</span><span class="gth"><b>Not in a release</b></span><span class="prog">${num(loose.length)} open</span><span></span></summary><div class="gb"><div class="chips">${H(loose.map(chip).join(""))}</div></div></details>`:"");});
+    const live=rels.filter(r=>r.status!=="shipped");
+    return (live.length?live.map(relHtml).join(""):'<p class="empty">No release is in progress or planned. Shipped releases are listed at the bottom.</p>')+(loose.length?`<details class="g" data-release="-"${H(openMap["-"]===true?" open":"")}><summary><span class="gid">none</span><span class="gth"><b>Not in a release</b></span><span class="prog">${num(loose.length)} open</span><span></span></summary><div class="gb"><div class="chips">${H(loose.map(chip).join(""))}</div></div></details>`:"");});
   parts.criteria=step("The exit criteria",()=>{const cs=[];
     const ms=safe(()=>{const m=(I.mission&&typeof I.mission==="object")?I.mission:null;return m&&okId(m.milestoneRelease)?m.milestoneRelease:"";},"");
     arr(I.criteria).forEach(d=>{if(d&&typeof d==="object"&&okId(d.id))cs.push(d);else skipped++;});
@@ -280,10 +309,22 @@ ${H(days!==null&&days>=2?`<div class="stale">Stale: this board was last refreshe
     return `<div class="tw"><table><thead><tr><th>#</th><th>Question</th><th>Recommendation</th><th>Your answer</th></tr></thead><tbody>${H(decs.map(d=>{const a=answered.get(d.id),st=stanceOf(d.id),asked=when(str(d.askedAt),tOpt),at=a?when(str(a.at),tOpt):{abs:""};
       const btn=(v,l)=>`<button class="btn" type="button" data-answer="${esc(d.id)}" data-stance="${esc(v)}" aria-pressed="${H(st===v?"true":"false")}">${esc(l)}</button>`;
       return `<tr data-decision="${esc(d.id)}"><td class="mono">${esc(d.id)}</td><td><b>${esc(str(d.question))}</b><span class="s">asked by the agent${H(asked.abs?` · ${esc(asked.abs)}`:"")}</span></td><td class="rec">${esc(str(d.recommendation))}</td><td>${H(canWrite?`<div class="ans"><div class="row">${H(btn("agree","Agree"))}${H(btn("disagree","Disagree"))}</div><textarea id="ans-${esc(d.id)}" maxlength="1000" placeholder="Notes (optional)" aria-label="Note on question ${esc(d.id)}"></textarea>${H(st!=="other"?`<span class="s">Saved: ${esc(st)}${H(at.abs?` · ${esc(at.abs)}`:"")}</span>`:"")}</div>`:(st!=="other"?`<span class="s">Answer: ${esc(st)}</span>`:'<span class="s">No answer yet</span>'))}</td></tr>`;}).join(""))}</tbody></table></div>${H(canWrite?'<div class="sendbar"><button class="btn btn--p" type="button" id="send-answers">Send my answers</button><span class="s">Each answer saves when you pick Agree or Disagree. Send tells the agent to read them on its next refresh.</span></div>':"")}`;});
+  parts.shipped=step("The shipped releases",()=>{
+    const done=rels.filter(r=>r.status==="shipped").sort((a,b)=>{const x=a.order==null?-1e15:a.order,y=b.order==null?-1e15:b.order;return y-x||String(b.id).localeCompare(String(a.id));});
+    if(!done.length)return '<p class="empty">Nothing has shipped yet.</p>';
+    const one=r=>{
+      const pr=r.progress||{done:0,total:r.memberCount},un=r.unshipped,none=r.memberCount===0&&pr.total===0&&un.length===0;
+      const part=pr.done<pr.total;
+      const lead=none?"no members recorded":`${num(pr.done)} of ${num(pr.total)} shipped`;
+      const row=u=>`<li data-unshipped="${esc(u.epic)}"><span class="oc">${esc(OUTCOME_LABEL[u.outcome]||"Outcome unknown")}</span><span class="why${H(u.reason?"":" nr")}"><b>${esc(u.title||u.epic)}</b>${H(u.by?` (see ${esc(u.by)})`:"")}<br>${H(u.reason?esc(u.reason):"no reason recorded")}</span></li>`;
+      const body=`<div class="exp">${H(r.intent?`<p><b>Intent.</b> ${esc(r.intent)}</p>`:"")}<p><b>Shipped.</b> ${esc(lead)}${H(un.length&&!none?`; ${num(un.length)} did not ship as planned.`:".")}</p>${H(un.length?`<ul class="unl">${H(un.map(row).join(""))}</ul>`:(none?'<p class="empty">This release has no member epics in the record.</p>':""))}</div>`;
+      return `<details class="sh" data-shipped="${esc(r.id)}"${H(openMap["s:"+r.id]===true?" open":"")}><summary><span class="gid">${esc(r.id)}</span><span class="gth">${H(r.theme?esc(r.theme):(r.intent?esc(r.intent):'<i>No theme recorded</i>'))}</span><span class="shn ${H(none?"none":(part?"part":""))}">${esc(lead)}</span></summary>${H(body)}</details>`;};
+    return `<div class="shipped"><div class="sh-head" aria-hidden="true"><span>Release</span><span>Theme</span><span>Result</span></div>${H(done.map(one).join(""))}</div>`;});
   parts.skipped=skippedNote(skipped);
-  const html=[parts.skipped,'<div class="top"><div>'+parts.info+'</div></div>',parts.needs,parts.mission,parts.planbar,parts.banner,parts.counts,
+  const html=[parts.skipped,'<div class="top"><div>'+parts.info+'</div></div>',parts.needs,'<header class="hd">'+parts.mission+parts.banner+parts.planbar+'</header>',parts.counts,
     '<section class="box"><h2>Roadmap</h2><p class="sub">Open a release to see its scope, exit check and epics. The current release starts open.</p><div class="rm">'+parts.roadmap+'</div></section>',
-    '<section class="box"><h2>Exit criteria</h2>'+parts.criteria+'</section>','<section class="box"><h2>Decisions for the owner</h2>'+parts.decisions+'</section>'].join("");
+    '<section class="box"><h2>Exit criteria</h2>'+parts.criteria+'</section>','<section class="box"><h2>Decisions for the owner</h2>'+parts.decisions+'</section>',
+    '<section class="box"><h2>Shipped</h2><p class="sub">Releases already delivered, newest first. Open one to see what shipped and, for anything that did not, the reason on record.</p>'+parts.shipped+'</section>'].join("");
   return {skipped,parts,html,title};
 }
 function fromSnapshot(s){
@@ -320,7 +361,7 @@ function paint(){
   if(S.standalone)bodyEl.insertAdjacentHTML("afterbegin",'<div class="notice">Read-only copy. Editing and answering need the live version of this board.</div>');
 }
 bodyEl.addEventListener("focusout",()=>{if(pending)setTimeout(paint,0);});
-bodyEl.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details.g")){const id=d.getAttribute("data-release");if(id)OPEN[id]=d.open;}},true);
+bodyEl.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details.g")){const id=d.getAttribute("data-release");if(id)OPEN[id]=d.open;}else if(d&&d.matches&&d.matches("details.sh")){const id=d.getAttribute("data-shipped");if(id)OPEN["s:"+id]=d.open;}},true);
 async function put(path,data){try{await db.doc(path).set(data);return true;}catch(e){setLive("err",e&&e.code==="invalid_argument"?"Your access level cannot save answers.":"An answer did not save. Reload and try again.");return false;}}
 bodyEl.addEventListener("click",async e=>{
   if(!db||S.standalone||!e.target.closest)return;

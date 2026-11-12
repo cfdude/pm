@@ -37,7 +37,7 @@ that is intended, and `--archived all` is the one-off full mirror.
 | Collection | Page | Holds |
 | --- | --- | --- |
 | `epics/<epicId>` | both | one `board --json` epic entry, unchanged |
-| `releases/<releaseId>` | both | one `board --json` release entry, unchanged |
+| `releases/<releaseId>` | both | one `board --json` release entry, unchanged: it carries `progress` and `unshipped`, the rows (`{epic, title, outcome, reason, supersededBy}`) the release plan's Shipped table explains a partly shipped release with. Copy `unshipped` as the export gives it; never write a reason of your own into it |
 | `page/info` | both | `lastUpdated` (now, ISO), `asOf` (the export's `asOf`), `head`, and `project` (the export's `project`, `{name, key}`); there is no headline |
 | `plan/state` | release plan | `here`, `hereText`, `nextText` from the export's `plan`, plus `head` and `asOf` |
 | `mission/current` | release plan | the export's `mission` plus `milestoneRelease` (the milestone's release, or null) |
@@ -46,6 +46,14 @@ that is intended, and `--archived all` is the one-off full mirror.
 | `answers/<n>` | release plan | the viewer's `agree` or `disagree` plus a note, keyed like the decision; `answers/_submitted` is written by "Send my answers" |
 | `backlogMeta/<epicId>` | backlog | the page-local Not pursuing mark `{removed, reason, note}`, written only by the page |
 | `proposals/rank` | backlog | a whole-band drag proposal `{band, order, by, at}`, written only by the page |
+
+### What the release plan draws from the release docs
+
+The roadmap holds only releases whose `status` is `in-progress` or `planned`. A `shipped` release moves to the Shipped table
+at the bottom, newest first, which reads `progress` for "N of M shipped" and `unshipped` for the explanation: each member
+that did not ship, with its outcome and the reason on record, or "no reason recorded" when there is none. A release with
+no members reads "no members recorded". The page never works a reason out for itself, so a stale `unshipped` array on a
+`releases/<id>` doc is a stale explanation: refresh the doc from a fresh export.
 
 ## Access: the declared rules decide
 

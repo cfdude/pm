@@ -324,6 +324,30 @@
       - **Cross-spec (item 5).** `specs/project-boards/spec.md` changed, so the recorded 0.55.0 cross-spec verdict, Gate 1 and
         Gate 2 are stale again and must be re-recorded by the orchestrator.
 
+## 9. Release plan: shipped releases explain themselves (Rob feedback 2026-11-12)
+
+Specs: the "Each release lists what did not ship" requirement in `specs/board-export/spec.md` and the header/roadmap/Shipped
+requirement in `specs/project-boards/spec.md`.
+
+- [x] 9.1 RED then GREEN (UNIT `board-export.test.mjs`): each `board --json` release entry carries `unshipped` rows
+      (`{epic, title, outcome, reason, supersededBy}`), derived once from the member entries (so the ended-epic window does not
+      hide an old member) and the release's `deferred` list; `progress` is unchanged. `supersededBy` comes only from a structured
+      `supersedes` link. `shipped` and `unshippedCount` were not added: `progress.done` and `unshipped.length` already say both.
+      RED: `red-9.1.txt` (fails before 9.1). Mutants 137 to 143.
+- [x] 9.2 GREEN with mutation proof, no saved RED run (FILE `project-boards-templates.test.mjs` 9.2): the release plan's mission and "we are here" read as one
+      flat header; the roadmap lists only in-progress and planned releases; a Shipped table at the bottom explains each shipped
+      release (`N of M shipped`, intent, each unshipped row with its outcome and recorded reason, "no reason recorded", "no members
+      recorded"). Mutants 144 to 153 (146 and 147 survived once and were fixed by their test).
+- [x] 9.3 GREEN, no saved RED run (FILE `project-boards-skill.test.mjs` 9.3): SKILL.md states the release doc carries `unshipped`, what the
+      Shipped table draws from it, and that no reason is invented. `commands/boards.md` documents the field.
+- [x] 9.4 Required items for section 9. **Call-site sweep (item 1):** `rg -n "progress" scripts/lib/board.mjs commands/boards.md
+      skills/project-boards` lists every reader and writer of the release shape: the export (`board.mjs`, the only writer), the
+      command doc, the skill's doc contract and `release-plan.html` (the only reader of `unshipped`; `backlog.html` does not read
+      release docs' progress or rows, so its docs need no refresh). **Inverses (item 1):** `unshipped` is derived on every export and
+      holds no state, so there is nothing to unset; a stale doc is replaced by the next refresh. **Guards proved (item 8):** mutants 137
+      to 153 in `mutation-evidence.txt`. **Lifecycle (item 3):** none. Specs and artifacts changed, so Gate 1, cross-spec and Gate 2
+      digests are stale; the orchestrator re-records them.
+
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–8)
 
 - [ ] R.1 **Call-site completeness sweep** (item 1). Derive every call site mechanically with these searches:

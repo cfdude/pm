@@ -210,3 +210,14 @@ test("8.12 the refresh-time stale check is stated, at two days, before any write
   assert.match(s, /Before you write, read `page\/info\.lastUpdated`/);
   assert.match(s, /two or more days old/);
 });
+
+test("9.3 the skill says the release docs carry unshipped, that the Shipped table explains from it, and that no reason is ever invented", () => {
+  const t = read(SKILL);
+  assert.match(t, /`releases\/<releaseId>`[^\n]*`progress` and `unshipped`/);
+  assert.match(t, /What the release plan draws from the release docs/);
+  assert.match(t, /only releases whose `status` is `in-progress` or `planned`/);
+  assert.match(t, /Shipped table/);
+  assert.match(t, /no reason recorded/);
+  assert.match(t, /no members recorded/);
+  assert.match(t, /never write a reason of your own/);
+});

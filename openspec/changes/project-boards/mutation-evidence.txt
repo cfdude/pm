@@ -863,3 +863,33 @@ result:   KILLED (1 fail: "8.15 First population opens with Derive, then confirm
 restored: yes
 
 1 mutant (136) for task 8.15. Running total: 136 mutants.
+
+mutants 137-143 [9.1 release `unshipped` export]: scripts/lib/board.mjs, run: node --test scripts/test/unit/board-export.test.mjs
+137 cap boundary `cps.length > UNSHIPPED_REASON_CAP` -> `>=`                          KILLED (2 fail: "release unshipped: a long reason is capped ...")
+138 delivered members skipped `x.delivered === true` guard removed                      KILLED (2 fail: "release unshipped: a superseded member is a row ...")
+139 supersedes link type check removed (any link names a successor)                    KILLED (2 fail: "release unshipped: supersededBy comes from a structured supersedes link ...")
+140 `escapeControls` removed from the reason                                            KILLED (2 fail: "... capped ... control characters are escaped")
+141 `unknown` outcome reads the engine stamp's text as its reason                       KILLED (2 fail: "release unshipped: no recorded reason is null, never invented")
+142 deferral not de-duplicated against a member row (`have.has` guard disabled)        KILLED (4 fail, incl. "release unshipped: a deferral ... is not doubled")
+143 blank reason is read as a reason (`v.trim() === ""` check removed)                  KILLED (2 fail: "release unshipped: no recorded reason is null, never invented")
+All restored. 7 mutants (137-143), all killed on first run. Running total: 143 mutants.
+
+mutants 144-152 [9.2 release-plan template: header, roadmap of live releases, Shipped table]: skills/project-boards/templates/release-plan.html
+run: node --test scripts/test/assert/project-boards-templates.test.mjs
+144 roadmap lists every release (`status!=="shipped"` filter removed)                  KILLED (2 fail: "9.2 ... shipped releases leave the roadmap")
+145 "no reason recorded" fallback blanked                                                 KILLED (2 fail: "9.2 ... N of M and lists each ...")
+146 unshipped row's epic id no longer checked with okId                                  first run SURVIVED (esc() hid it; the test counted nothing); test now counts rows. Re-run KILLED
+147 unshipped outcome no longer allowlisted                                              first run SURVIVED (the label fallback hid it); test now feeds "constructor". Re-run KILLED
+148 successor id (`supersededBy`) not checked                                           KILLED (2 fail: "9.2 ... text is inert ...")
+149 row reason not capped again at 300                                                   KILLED (2 fail: same test)
+150 empty release no longer says "no members recorded"                                   KILLED (2 fail: "9.2 ... an empty one says no members recorded")
+151 a viewer's open Shipped row not restored (`openMap["s:"+id]` ignored)               KILLED (2 fail: "9.2 ... open Shipped row survives a repaint")
+152 mission and here no longer share one `<header class="hd">`                          KILLED (2 fail: "9.2 ... ONE flat header")
+All restored. 9 mutants (144-152), 7 killed on first run, 2 survived and were fixed by strengthening their test. Running total: 152 mutants.
+
+mutant 153 [9.2 review of the live page]: a shipped row is flagged partial only when done < total
+mutation: `const part=pr.done<pr.total;` -> `const part=un.length>0||pr.done<pr.total;` (release-plan.html)
+run:      node --test scripts/test/assert/project-boards-templates.test.mjs
+result:   KILLED (1 fail: "9.2 ... a fully shipped release lists no unshipped rows ...")
+restored: yes
+Running total: 153 mutants.

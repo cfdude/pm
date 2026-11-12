@@ -16806,7 +16806,7 @@
         "3f4bf6a868139f911cfb902b22deaab7271be049"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-12T19:08:50.948Z",
+      "touchedAt": "2026-11-12T20:10:42.616Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16818,7 +16818,7 @@
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-11T18:03:08.967Z",
+          "reviewedAt": "2026-11-12T20:10:42.609Z",
           "artifacts": [
             "openspec/changes/project-boards/proposal.md",
             "openspec/changes/project-boards/design.md",
@@ -16836,15 +16836,15 @@
           "artifactDigests": [
             {
               "path": "openspec/changes/project-boards/proposal.md",
-              "sha256": "91b591a01ca867b30724d8a51d91adfca8060d37537d251afb1dcd804dece190"
+              "sha256": "c2ab8663d7f124014caecaa6ac7045f00638387867389999e1173c4bf0f8866f"
             },
             {
               "path": "openspec/changes/project-boards/design.md",
-              "sha256": "266fdfd65d9f672921a78f36928320f545e4c4a9d6bfa552e6869beef47e61c5"
+              "sha256": "1b4040f1bc2b587aa06368adf801208875a2f8a360fb2cc6ad75d2dae03fd763"
             },
             {
               "path": "openspec/changes/project-boards/specs/board-export/spec.md",
-              "sha256": "39fa2b651a6440417025b6f348d17f1ef8dd6e5813be038121f6d3cc5385eb47"
+              "sha256": "ddb5ff9963aa6b7a7993b868fac50ec716586085bb85cdbb43858ba2a206eeb7"
             },
             {
               "path": "openspec/changes/project-boards/specs/epic-annotation/spec.md",
@@ -16860,7 +16860,7 @@
             },
             {
               "path": "openspec/changes/project-boards/specs/project-boards/spec.md",
-              "sha256": "10fe7815525bd884c5bb19b5828a80538c1ffc369949b962e16e2b17b7425ddf"
+              "sha256": "aa297284bb92618cacdcb2c5e79112ea4a1764a2e04cc24683fb1095a337283a"
             },
             {
               "path": "openspec/changes/project-boards/specs/project-identity/spec.md",
@@ -16879,10 +16879,10 @@
               "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-11, one round (0 Critical, Important fixed); tasks.md 8.14 commit claim corrected after Gate 2 delta review",
+          "reviewer": "opus fresh-context 2026-11-12, one round over the unshipped amendment; Important I1 (deferral title scenario) fixed in the spec, Minors logged",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-11-11T17:51:55.764Z",
+            "reviewedAt": "2026-11-11T18:03:08.967Z",
             "artifacts": [
               "openspec/changes/project-boards/proposal.md",
               "openspec/changes/project-boards/design.md",
@@ -16943,7 +16943,7 @@
                 "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
               }
             ],
-            "reviewer": "opus fresh-context 2026-11-11, one round on the board redesign amendments (0 Critical, 4 Important fixed and re-tested, not re-reviewed)"
+            "reviewer": "opus fresh-context 2026-11-11, one round (0 Critical, Important fixed); tasks.md 8.14 commit claim corrected after Gate 2 delta review"
           }
         },
         "gate2": {
@@ -16964,10 +16964,10 @@
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 3,
+          "passes": 4,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-11T18:03:08.967Z",
-          "lastPassAt": "2026-11-11T18:03:08.967Z"
+          "lastVerdictAt": "2026-11-12T20:10:42.609Z",
+          "lastPassAt": "2026-11-12T20:10:42.609Z"
         },
         "gate2": {
           "fails": 0,
@@ -17117,7 +17117,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2428,
+  "revision": 2430,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17942,11 +17942,11 @@
       ],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-11-11T18:03:10.220Z",
+        "reviewedAt": "2026-11-12T20:10:43.655Z",
         "specs": [
           {
             "key": "project-boards/specs/board-export/spec.md",
-            "sha256": "39fa2b651a6440417025b6f348d17f1ef8dd6e5813be038121f6d3cc5385eb47"
+            "sha256": "ddb5ff9963aa6b7a7993b868fac50ec716586085bb85cdbb43858ba2a206eeb7"
           },
           {
             "key": "project-boards/specs/epic-annotation/spec.md",
@@ -17962,7 +17962,7 @@
           },
           {
             "key": "project-boards/specs/project-boards/spec.md",
-            "sha256": "10fe7815525bd884c5bb19b5828a80538c1ffc369949b962e16e2b17b7425ddf"
+            "sha256": "aa297284bb92618cacdcb2c5e79112ea4a1764a2e04cc24683fb1095a337283a"
           },
           {
             "key": "project-boards/specs/project-identity/spec.md",
@@ -17981,10 +17981,10 @@
             "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
           }
         ],
-        "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs; tasks.md 8.14 wording corrected after",
+        "reviewer": "opus fresh-context 2026-11-12, one round over 9 specs after the unshipped amendment; no contradiction, double ownership or unmeetable requirement",
         "superseded": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-11T17:51:56.992Z",
+          "reviewedAt": "2026-11-11T18:03:10.220Z",
           "specs": [
             {
               "key": "project-boards/specs/board-export/spec.md",
@@ -18023,7 +18023,7 @@
               "sha256": "f558bea03f4b3cb6d3de19e0cebf6e32170e2cbd7c1c710a961c5d2c03b50043"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs (3 BLOCKS, all contradictions, fixed in the docs, not re-reviewed)"
+          "reviewer": "opus fresh-context 2026-11-11, one round over 9 specs; tasks.md 8.14 wording corrected after"
         }
       },
       "theme": "Release planning and project boards: a recorded mission and milestone, release plan fields, a read-only board export, and two default-on boards (release plan, backlog) for every pm project.",
