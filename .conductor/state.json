@@ -16590,7 +16590,7 @@
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-12T19:09:07.304Z",
+      "touchedAt": "2026-11-12T22:05:30.462Z",
       "number": 262,
       "notes": [
         {
@@ -16600,7 +16600,8 @@
         }
       ],
       "release": "0.54.0",
-      "summary": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases those edits."
+      "summary": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases those edits.",
+      "planPath": "docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits.md"
     },
     {
       "id": "gh-cfdude-pm-261",
@@ -17119,7 +17120,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2438,
+  "revision": 2439,
   "reviewMode": "standard",
   "releases": [
     {
