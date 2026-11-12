@@ -1960,8 +1960,8 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "createdAt": "2026-07-28T19:25:39-07:00",
-      "touchedAt": "2026-11-12T19:09:25.959Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:27.085Z",
+      "release": "0.57.0",
       "notes": [
         {
           "at": "2026-11-01T18:54:10.951Z",
@@ -2168,8 +2168,8 @@
         }
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
-      "release": "0.54.0",
-      "touchedAt": "2026-11-12T19:09:23.907Z",
+      "release": "0.57.0",
+      "touchedAt": "2026-11-12T23:45:28.132Z",
       "number": 1065,
       "summary": "pm init should detect an existing AGENTS.md or sol.md from a prior agent and read it first."
     },
@@ -2589,8 +2589,8 @@
         }
       ],
       "createdAt": "2026-07-30T12:31:30-07:00",
-      "release": "0.54.0",
-      "touchedAt": "2026-11-01T21:54:59.065Z",
+      "release": "0.55.0",
+      "touchedAt": "2026-11-12T23:45:14.955Z",
       "attributedCommits": [
         "878a28bef0f61b3c1fe36f660e080029aec7737a",
         "7d2709c04422ae791a70285ac5ef581d167f26a0"
@@ -2713,8 +2713,8 @@
           "text": "Parked 2026-11-01 at Rob's call: pm only targets Claude Code, nothing is drifting, build sized over 8h plus paid live runs. Trigger to revive: first non-Claude platform build (Hermes). Prefer a Hermes rules-parity eval over this corpus expansion."
         }
       ],
-      "touchedAt": "2026-11-12T19:08:53.060Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:29.184Z",
+      "release": "0.57.0",
       "startedAt": "2026-11-01T17:36:10.732Z",
       "number": 1069,
       "summary": "The agent-behavior test corpus covers one scenario; extend it to the judgment-dependent surfaces where drift hides."
@@ -2757,8 +2757,8 @@
           "text": "GROOMING 0.41.0 — absorbed parity-propagation-skill. Same trigger (the first real port), same procedural layer in docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md. This epic's own stories ARE the propagation skill's content: add the platform to platforms[], fill its column, run the corpus, record what differed. Verified still unbuilt: docs/parity-ledger.json still reads platforms: [\"claude-code\"] and contains zero occurrences of 'exempt'."
         }
       ],
-      "touchedAt": "2026-11-12T19:09:12.918Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:30.229Z",
+      "release": "0.57.0",
       "number": 1072,
       "summary": "Recurring: on every new platform, rerun the test corpus, reassess parity-ledger exemptions, and compare drift."
     },
@@ -6242,8 +6242,8 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "release": "0.54.0",
-      "touchedAt": "2026-11-12T19:08:54.116Z",
+      "release": "0.57.0",
+      "touchedAt": "2026-11-12T23:45:31.293Z",
       "number": 1091,
       "summary": "A release only reaches a repo when /pm:upgrade runs there; let pm say which repos are behind and print the upgrade steps, without the engine leaving the instruction layer."
     },
@@ -6387,8 +6387,8 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-11-01T16:46:00.354Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:16.086Z",
+      "release": "0.55.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -6741,8 +6741,8 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-11-12T19:09:24.934Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:32.328Z",
+      "release": "0.57.0",
       "number": 1093,
       "summary": "Investigate Gemini CLI, Grok Build and generic AGENTS.md consumers hands-on, and decide whether pm's rules block can land there at all."
     },
@@ -10968,7 +10968,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-17T18:18:06.298Z",
-      "touchedAt": "2026-11-12T19:09:14.022Z",
+      "touchedAt": "2026-11-12T23:45:33.352Z",
       "notes": [
         {
           "at": "2026-09-17T18:18:06.783Z",
@@ -10976,7 +10976,7 @@
           "text": "Evidence from 0.45.0 user-text-never-forges-output: the task list named a site list; the apply run found ~20 more; Gate 2 found 5 more; the per-interpolation sweep then found 12 more. What binds a future flag is the completeness assertion (every registry entry has a recipe, unconstructable bound = 0), not the enumeration. See also docs/lessons/a-static-guard-over-dynamic-code-needs-declared-limits.md and docs/lessons/bind-rules-to-functions-not-enumerations.md"
         }
       ],
-      "release": "0.54.0",
+      "release": "0.57.0",
       "number": 1145,
       "summary": "Ship a check over every value-taking flag and non-argv input so a new value cannot be added without a hostile-input test."
     },
@@ -11275,7 +11275,7 @@
         "82e8b8b0236ab69b4c37b49c9f64516fdc245bf8"
       ],
       "createdAt": "2026-09-18T05:38:32.206Z",
-      "touchedAt": "2026-11-03T16:08:23.180Z",
+      "touchedAt": "2026-11-12T23:45:17.179Z",
       "notes": [
         {
           "at": "2026-09-18T05:38:54.044Z",
@@ -11283,7 +11283,7 @@
           "text": "lane: superpowers not <none routed> — suggest-lane returned no lane for this ask. Routed AWAY from claude-code deliberately, per the asymmetric tie-break: this is a new required task item in the emitted rules block plus its three mirrors and a load-bearing-claim entry, which is a gate/discipline change with a durable record, not a sub-2-hour tweak. superpowers over openspec because it modifies one subsystem (the gate procedure's item list) rather than adding a capability."
         }
       ],
-      "release": "0.54.0",
+      "release": "0.55.0",
       "startedAt": "2026-11-01T21:54:09.190Z",
       "disposition": {
         "outcome": "delivered",
@@ -12755,8 +12755,8 @@
       "externalUpdatedAt": "2026-09-18T03:05:04Z",
       "attributedCommits": [],
       "createdAt": "2026-09-28T17:11:09.453Z",
-      "touchedAt": "2026-11-02T23:31:35.737Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:18.245Z",
+      "release": "0.55.0",
       "trackerRefresh": {
         "verdict": "unchanged",
         "summary": "Re-read #211 2026-11-02: open, no comments, body unchanged since filing; asks a task-relative RED note form or an apply-time re-run.",
@@ -14037,8 +14037,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-05T21:51:24.361Z",
-      "touchedAt": "2026-11-12T19:09:22.897Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:34.388Z",
+      "release": "0.57.0",
       "number": 1182,
       "summary": "Two leftover planning-completeness duties: Orient reads the spec inventory, and the propose/apply boundary governs an autonomy grant."
     },
@@ -14573,7 +14573,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-10-07T00:23:56.798Z",
-      "touchedAt": "2026-11-12T19:08:49.936Z",
+      "touchedAt": "2026-11-12T23:45:35.480Z",
       "notes": [
         {
           "at": "2026-10-07T00:23:57.541Z",
@@ -14591,7 +14591,7 @@
           "text": "paused 2026-11-11 for the project-boards build (0.55.0); 0.54.0 is still in flight"
         }
       ],
-      "release": "0.54.0",
+      "release": "0.57.0",
       "startedAt": "2026-11-03T16:45:10.456Z",
       "sessions": [
         {
@@ -15205,8 +15205,8 @@
         "30b693101bfcf8f45d6d41a23207162bde3a2b83"
       ],
       "createdAt": "2026-10-14T23:49:24.862Z",
-      "touchedAt": "2026-11-01T17:36:02.406Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:19.365Z",
+      "release": "0.55.0",
       "startedAt": "2026-11-01T16:46:18.480Z",
       "gateReview": {
         "gate2": {
@@ -15285,7 +15285,7 @@
         "2e6abd10007fc03cb1f56167f6ac3c650facc429"
       ],
       "createdAt": "2026-10-17T12:41:40.986Z",
-      "touchedAt": "2026-11-01T21:54:11.232Z",
+      "touchedAt": "2026-11-12T23:45:20.612Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:41.788Z",
@@ -15293,7 +15293,7 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0",
+      "release": "0.55.0",
       "trackerRefresh": {
         "verdict": "unchanged",
         "recordedAt": "2026-11-01T19:20:53.292Z",
@@ -15519,7 +15519,7 @@
         "254be093f2ea2969b1faffafa144f93ce26de29f"
       ],
       "createdAt": "2026-10-17T12:41:45.870Z",
-      "touchedAt": "2026-11-01T21:54:16.215Z",
+      "touchedAt": "2026-11-12T23:45:21.708Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:46.681Z",
@@ -15527,7 +15527,7 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0",
+      "release": "0.55.0",
       "trackerRefresh": {
         "verdict": "unchanged",
         "recordedAt": "2026-11-01T19:42:30.947Z",
@@ -15616,7 +15616,7 @@
         "74073f4b55f0ad8bd582830a61c5474f649be0b8"
       ],
       "createdAt": "2026-10-17T12:41:47.516Z",
-      "touchedAt": "2026-11-02T22:57:00.210Z",
+      "touchedAt": "2026-11-12T23:45:22.790Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:48.331Z",
@@ -15634,7 +15634,7 @@
           "text": "R.7 lessons routed 2026-11-02. PRACTICE (register as an epic, evidence attached): a section gated on derived state is refreshed by comparing the block on disk with state, never before with after; mutation M1 in mutation-3.5.txt dies only on the hand-edit-then-write case, and M3 (skip the hook exclusion) SURVIVED the first run until a test existed in which a hook WRITES state (snapshot's archive self-heal), proof that a guard with no exercising case is untested. TOOLING FRICTION routed around (file via /pm:feedback): every commit touching scripts/lib/rules.mjs demands functional+sweeps certify, ~8 min each, and a certify of the functional half also fails on ANY live-record finding (test 9.14 reads this repo's real record), so a stale Gate 1 blocked all commits until re-recorded; tasks were merged (2.2+2.5, 3.1-3.3) to cut certify runs. PROCESS FAILURE (lesson file): amending gate-1 artifacts (cross-spec amendments) without re-recording Gate 1 leaves integrity red and blocks the next builder; trigger: amending a change's proposal/design/specs after Gate 1 was recorded. TOOLING FRICTION (OpenSpec tasks instruction vs pm's marked archive task) unchanged from the candidate named in tasks.md R.7."
         }
       ],
-      "release": "0.54.0",
+      "release": "0.55.0",
       "trackerRefresh": {
         "verdict": "unchanged",
         "summary": "Re-read issue 248 + its one comment (weekly-product-updates data point: autonomy 3,137 B and release-candidate 1,173 B unconditional; spend sections already conditional). No change since registration.",
@@ -15833,7 +15833,7 @@
         "ee3f9ec9f01f4005a8e9d7a6322269320b6f6249"
       ],
       "createdAt": "2026-10-17T12:41:50.796Z",
-      "touchedAt": "2026-11-01T21:54:14.870Z",
+      "touchedAt": "2026-11-12T23:45:23.855Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:51.618Z",
@@ -15841,7 +15841,7 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0",
+      "release": "0.55.0",
       "startedAt": "2026-11-01T18:54:07.332Z",
       "trackerRefresh": {
         "verdict": "unchanged",
@@ -15928,7 +15928,7 @@
         "423d3b27fc074e9c676f01264602e356aabda4c7"
       ],
       "createdAt": "2026-10-17T12:41:54.053Z",
-      "touchedAt": "2026-11-01T21:54:13.272Z",
+      "touchedAt": "2026-11-12T23:45:24.937Z",
       "notes": [
         {
           "at": "2026-10-17T12:41:54.863Z",
@@ -15936,7 +15936,7 @@
           "text": "lane: superpowers not (none) — suggest-lane returned null; engine behaviour change, tie-break away from claude-code"
         }
       ],
-      "release": "0.54.0",
+      "release": "0.55.0",
       "trackerRefresh": {
         "verdict": "unchanged",
         "recordedAt": "2026-11-01T19:20:54.221Z",
@@ -16202,8 +16202,8 @@
         "43d9b74857ae7a3635f61eb42e12721bd3a11763"
       ],
       "createdAt": "2026-10-20T11:28:06.603Z",
-      "touchedAt": "2026-10-30T22:23:08.724Z",
-      "release": "0.54.0",
+      "touchedAt": "2026-11-12T23:45:26.008Z",
+      "release": "0.55.0",
       "disposition": {
         "outcome": "delivered",
         "recordedAt": "2026-10-30T22:23:08.719Z",
@@ -16590,7 +16590,7 @@
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-12T22:05:30.462Z",
+      "touchedAt": "2026-11-12T23:45:36.565Z",
       "number": 262,
       "notes": [
         {
@@ -16599,7 +16599,7 @@
           "text": "2026-11-12: raised to P1 per Rob, hit more than once in the fleet. Fix direction agreed: stop editing OpenSpec's generated files; carry pm's clause in the managed rules block or a pm skill so the order of openspec update and pm upgrade stops mattering. Interim: the upgrade doc runs openspec update first, then pm upgrade; plus a post-update check naming missing pm-authored passages. Also confirm whether openspec update rewrites CLAUDE.md. Related: #266 (drift HOLD names every unarchived change). lane: superpowers (unchanged)."
         }
       ],
-      "release": "0.54.0",
+      "release": "0.57.0",
       "summary": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases those edits.",
       "planPath": "docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits.md"
     },
@@ -17171,7 +17171,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2442,
+  "revision": 2465,
   "reviewMode": "standard",
   "releases": [
     {
@@ -17921,7 +17921,7 @@
     },
     {
       "id": "0.54.0",
-      "intent": "Portable, and within budget: a second platform (Hermes), gate practices, backlog tooling. PROVISIONAL until 0.53.0 deploys and the section 7 re-check in docs/reviews/pm-0.54.0-grooming.md is done.",
+      "intent": "Retired 2026-11-12: its delivered work shipped inside 0.55.0 and its unfinished epics moved to 0.57.0. No 0.54.0 version was cut.",
       "deferred": [],
       "crossSpecReview": {
         "verdict": "pass",
@@ -17977,10 +17977,155 @@
           "reviewer": "opus fresh-context, 2 rounds 2026-11-01: round 1 one BLOCK (no writer for the relates-to link on a decline) fixed in 619999c0, round 2 no BLOCKS, live run of the combined call exit 0"
         }
       },
-      "theme": "Portable, and within budget: a second platform (Hermes), gate practices, and backlog tooling.",
-      "rationale": "Provisional: scope depends on the section 7 re-check in docs/reviews/pm-0.54.0-grooming.md; the 0.53.0 deploy it waited on is done.",
-      "exit": "The section 7 re-check is done, and each open member is shipped or recorded with release --defer.",
-      "size": "minor"
+      "amendments": [
+        {
+          "op": "unmember",
+          "epic": "platform-switch-orphans-old-rules-block",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:14.950Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "backlog-grooming-pass",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:16.082Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "mutation-pass-is-a-required-task-item",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:17.175Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-211",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:18.241Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "triage-surfaces-open-release-intents",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:19.360Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-252",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:20.608Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-249",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:21.703Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-248",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:22.786Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-246",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:23.850Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-243",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:24.932Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "pm-overhead-calibration-and-feature-switches",
+          "via": "member",
+          "to": "0.55.0",
+          "at": "2026-11-12T23:45:26.004Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "hermes-platform-support",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:27.081Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "init-detects-foreign-agent-instruction-files",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:28.127Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "edd-corpus-expansion-nondeterministic-surfaces",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:29.180Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "parity-reassessment-per-platform",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:30.225Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "fleet-upgrade-after-release",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:31.289Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "remaining-platform-investigation",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:32.324Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "registry-bound-poison-sweep-practice",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:33.348Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "planning-completeness-orient-and-autonomy-boundary",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:34.384Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "openspec-1-14-workflows-evaluation",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:35.474Z"
+        },
+        {
+          "op": "unmember",
+          "epic": "gh-cfdude-pm-262",
+          "via": "member",
+          "to": "0.57.0",
+          "at": "2026-11-12T23:45:36.561Z"
+        }
+      ]
     },
     {
       "id": "0.55.0",
@@ -18080,9 +18225,9 @@
           "reviewer": "opus fresh-context 2026-11-12, one round over 9 specs after the header amendment; no spec still requires the removed block; one Important fixed"
         }
       },
-      "theme": "Release planning and project boards: a recorded mission and milestone, release plan fields, a read-only board export, and two default-on boards (release plan, backlog) for every pm project.",
+      "theme": "Release planning and project boards (mission, milestone, release plan fields, board export, two default-on boards), plus the work built since 0.53.0: backlog grooming, mutation pass as a required task item, overhead calibration, triage of open releases.",
       "rationale": "Without a stated mission and a plan marker, the backlog is a flat list; boards make what is in flight and what comes next visible without reading state.json.",
-      "exit": "project-boards archived delivered with Gate 2 current; plugin.json 0.55.0; CHANGELOG 0.55.0 entry and MIGRATIONS entry present; board --json runs clean; CI test green on the release PR.",
+      "exit": "plugin.json 0.55.0; CHANGELOG 0.55.0 entry covers all 12 changesets and a MIGRATIONS entry exists; project-boards archived delivered; all three test buckets green; docs site live; CI test green on the release PR.",
       "size": "minor"
     },
     {
