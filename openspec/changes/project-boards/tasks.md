@@ -455,11 +455,11 @@ requirement in `specs/project-boards/spec.md`.
 
 ## V. Release discipline (0.55.0, at the cut, per the `release-checklist` skill)
 
-- [ ] V.1 Confirm `.changesets/project-boards.md` covers every user-facing change above.
-- [ ] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.55.0` as part of the release cut, not in this change.
-- [ ] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.55.0 entry, including the default-on boards
+- [x] V.1 Confirm `.changesets/project-boards.md` covers every user-facing change above.
+- [x] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.55.0` as part of the release cut, not in this change.
+- [x] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.55.0 entry, including the default-on boards
       announcement.
-- [ ] V.4 MIGRATIONS: one entry keyed to 0.55.0 (epic numbering, task 8.2). Everything else is additive; the evidence for that is task 7.3.
+- [x] V.4 MIGRATIONS: one entry keyed to 0.55.0 (epic numbering, task 8.2). Everything else is additive; the evidence for that is task 7.3.
 
 ## C. Close
 

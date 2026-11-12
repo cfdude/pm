@@ -1,2 +1,0 @@
-* **Moving the active pointer between two epics is now said out loud.** `update-epic <id> --status active`, `set-active`, and `add-epic`/`add-many` creating an epic at active used to demote the previously active epic to queued without a word. They now print `moved active from 'a' (now queued) to 'b'` on stderr, with the `set-active` call that undoes it. The move is not refused.
-* **The brief warns when no epic is active while spend tracking is on.** Every orchestrator token is then unattributed (`no-active-epic`). The line appears only with spend tracking on.
