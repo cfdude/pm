@@ -176,7 +176,7 @@ field null and the card stays. After the answers, run the verbs below, then re-r
 | open questions for the release plan | `decisions/<n>` docs (see Seed) | you write each question with your recommendation |
 
 **Derive, then confirm.** Do not open by asking blank questions. First draft, from what the project already holds, the
-mission statement (one small paragraph, at most 300 characters, the `mission --statement` limit), why it is the mission now,
+mission statement (one line, at most 300 characters, the `mission --statement` limit), why it is the mission now,
 where things stand, each open release's theme, rationale and exit, and a one-line summary per epic that has none. Read in
 this order: the README or the intro and docs page, `CLAUDE.md` or `AGENTS.md`, `board --json`, the release and epic records,
 then `git log`. Show the draft and mark anything you could not ground in one of those as UNGROUNDED. Then ask the user only

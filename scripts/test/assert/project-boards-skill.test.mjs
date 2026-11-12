@@ -199,7 +199,7 @@ test("8.15 First population opens with Derive, then confirm: sources in order, U
   assert.match(step, /Do not open by asking blank questions/);
   assert.match(step, /UNGROUNDED/);
   assert.match(step, /ask the user only about the gaps and for confirmation/);
-  assert.match(step, /at most 300 characters/);
+  assert.match(step, /mission statement \(one line, at most 300 characters/);
   assert.match(step, /never invent a fact; unset stays unset/);
   assert.match(sec, /question list below is the fallback for gaps/);
 });
