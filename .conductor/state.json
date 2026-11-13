@@ -17228,7 +17228,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2467,
+  "revision": 2468,
   "reviewMode": "standard",
   "releases": [
     {
@@ -18285,7 +18285,10 @@
       "theme": "Release planning and project boards (mission, milestone, release plan fields, board export, two default-on boards), plus the work built since 0.53.0: backlog grooming, mutation pass as a required task item, overhead calibration, triage of open releases.",
       "rationale": "Without a stated mission and a plan marker, the backlog is a flat list; boards make what is in flight and what comes next visible without reading state.json.",
       "exit": "plugin.json 0.55.0; CHANGELOG 0.55.0 entry covers all 12 changesets and a MIGRATIONS entry exists; project-boards archived delivered; all three test buckets green; docs site live; CI test green on the release PR.",
-      "size": "minor"
+      "size": "minor",
+      "delivered": {
+        "recordedAt": "2026-11-13T00:56:58.770Z"
+      }
     },
     {
       "id": "0.56.0",
