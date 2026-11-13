@@ -22,17 +22,17 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Re-read the source** (CLAUDE.md "Re-read the source before an epic becomes the work"). The epic has no
+- [x] 0.1 **Re-read the source** (CLAUDE.md "Re-read the source before an epic becomes the work"). The epic has no
       `externalId`, so read in full the brief, the research doc and this change. Confirm with `gh issue view` that
       #268, #269 and #270 are still open, because this change folds them in.
-- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, all nine spec files and this file. Fix every
+- [x] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, all nine spec files and this file. Fix every
       Critical and Important finding, then re-run `openspec validate project-boards --strict`; it must print "is
       valid". Then run
       `record-gate-review project-boards --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
-- [ ] 0.3 **Release membership.** Register or amend the release with
+- [x] 0.3 **Release membership.** Register or amend the release with
       `release 0.55.0 --intent "<…>" --member project-boards`, and verify it with
       `release show 0.55.0`.
-- [ ] 0.4 **Cross-spec review** (gate item 5). This change alone holds nine spec files, so before `/opsx:apply`, and
+- [x] 0.4 **Cross-spec review** (gate item 5). This change alone holds nine spec files, so before `/opsx:apply`, and
       again after any concurrent amendment, invoke the `cross-spec-review` skill over the whole 0.55.0 spec set.
       Record the verdict with `record-cross-spec-review 0.55.0 --verdict pass|fail --reviewer "<identity>"`. Name the
       shared chokepoints:
@@ -361,7 +361,7 @@ requirement in `specs/project-boards/spec.md`.
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1–8)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). Derive every call site mechanically with these searches:
+- [x] R.1 **Call-site completeness sweep** (item 1). Derive every call site mechanically with these searches:
       - `rg -n "resolveEpics|orderQueueWithDependencies|releaseSummaries|outcomeOf" scripts/lib`: the readers of
         order, membership and outcome.
       - `rg -n "\.status\s*=|status:" scripts/lib scripts/conductor.mjs`: the status-write sites that need the
@@ -384,17 +384,17 @@ requirement in `specs/project-boards/spec.md`.
 
       **Inverses.** Confirm every row of the design.md "Inverses" table against the code, and justify the two that
       are not shipped.
-- [ ] R.2 **Verify against the commit** (item 2): run `git show --stat <sha>` for each task. Every file a task claims
+- [x] R.2 **Verify against the commit** (item 2): run `git show --stat <sha>` for each task. Every file a task claims
       must appear in THAT commit, not only in the working tree.
-- [ ] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/project-boards/tasks.md` must list
+- [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/project-boards/tasks.md` must list
       C.2 and C.3.
-- [ ] R.4 **Attribute every commit** (item 4): run
+- [x] R.4 **Attribute every commit** (item 4): run
       `update-epic project-boards --attribute-commit <sha>` in landing order. Never attribute
       the archive move, or a lifecycle commit made after Gate 2 is recorded.
-- [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4. Re-run it if any spec in the 0.55.0 set changes after the
+- [x] R.5 **Cross-spec review** (item 5): satisfied by 0.4. Re-run it if any spec in the 0.55.0 set changes after the
       verdict.
 - [ ] R.6 **Disposition** (item 6): satisfied by C.2.
-- [ ] R.7 **Route what the work taught you** (item 7). Name each lesson as a practice, tooling friction or process
+- [x] R.7 **Route what the work taught you** (item 7). Name each lesson as a practice, tooling friction or process
       failure, with its evidence. Candidates:
       - Register the follow-up epics: `mission-anti-spawn-rule`, `backlog-trend-view`, `commit-time-close-check` and
         `epic-summary-required-on-triage`.
