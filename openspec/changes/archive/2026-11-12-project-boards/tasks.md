@@ -393,7 +393,7 @@ requirement in `specs/project-boards/spec.md`.
       the archive move, or a lifecycle commit made after Gate 2 is recorded.
 - [x] R.5 **Cross-spec review** (item 5): satisfied by 0.4. Re-run it if any spec in the 0.55.0 set changes after the
       verdict.
-- [ ] R.6 **Disposition** (item 6): satisfied by C.2.
+- [x] R.6 **Disposition** (item 6): satisfied by C.2.
 - [x] R.7 **Route what the work taught you** (item 7). Name each lesson as a practice, tooling friction or process
       failure, with its evidence. Candidates:
       - Register the follow-up epics: `mission-anti-spawn-rule`, `backlog-trend-view`, `commit-time-close-check` and
@@ -449,7 +449,7 @@ requirement in `specs/project-boards/spec.md`.
 
 ## D. Docs (after Gate 2 only)
 
-- [ ] D.1 Update the README (the new verbs and `/pm:boards`; the cost rows already landed in 4.2 and 5.2) and the
+- [x] D.1 Update the README (the new verbs and `/pm:boards`; the cost rows already landed in 4.2 and 5.2) and the
       Mintlify site, per the `mintlify-doc-sync` skill, or carry them to the release cut. `commands/list.md` is
       unchanged because `list --json` does not change; say so in the PR.
 
@@ -463,6 +463,6 @@ requirement in `specs/project-boards/spec.md`.
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after the docs, if the docs added commits. Re-record, never withdraw.
+- [x] C.1 Re-record Gate 2 after the docs, if the docs added commits. Re-record, never withdraw.
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** First end the superseded brief epic: `update-epic release-planning-mission-and-milestone --status archived --outcome superseded --reason "built as project-boards" --no-deferrals`. Then `update-epic project-boards --status archived --outcome delivered --reason "<why>" --deferral "<followUpEpicId>:proposal.md Out of scope" --declined-deferral "votes:start lean" --declined-deferral "effort field:start lean" --declined-deferral "data-science flag:start lean" --declined-deferral "per-release log:start lean" --declined-deferral "CSV export:start lean" --declined-deferral "size weight:start lean" --declined-deferral "critical-path marks in the brief RELEASES lines:brief is capped; status and boards carry them"`, with one `--deferral` per registered follow-up epic. Then run `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive project-boards`. Do NOT attribute the archive-move commit.

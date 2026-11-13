@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "project-boards",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -16777,7 +16777,7 @@
       "id": "project-boards",
       "title": "Project boards: release plan board, backlog board, board export, mission and milestone",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -16809,7 +16809,7 @@
         "225338084fea8f1cb3675359e9d1f28a84803b7f"
       ],
       "createdAt": "2026-11-11T05:41:45.217Z",
-      "touchedAt": "2026-11-12T21:30:55.239Z",
+      "touchedAt": "2026-11-13T00:31:41.081Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16982,7 +16982,64 @@
       },
       "startedAt": "2026-11-11T05:43:32.637Z",
       "number": 1204,
-      "summary": "Add a release plan board and a backlog board, a read-only board export, and a recorded mission and milestone for every pm project."
+      "summary": "Add a release plan board and a backlog board, a read-only board export, and a recorded mission and milestone for every pm project.",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-13T00:31:41.075Z",
+        "reason": "built and released in 0.55.0: mission and milestone, release plan fields, board --json, project name and key, two default-on boards; Gate 1, cross-spec and Gate 2 recorded (two amendments after the first Gate 2: first-population derivation, then unshipped reasons and one header, each reviewed)"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-13T00:31:41.045Z",
+        "deferrals": [
+          {
+            "epic": "backlog-trend-view",
+            "section": "proposal.md Out of scope"
+          },
+          {
+            "epic": "commit-time-close-check",
+            "section": "proposal.md Out of scope"
+          },
+          {
+            "epic": "epic-summary-required-on-triage",
+            "section": "proposal.md Out of scope"
+          },
+          {
+            "epic": "mission-anti-spawn-rule",
+            "section": "proposal.md Out of scope"
+          }
+        ],
+        "declined": [
+          {
+            "what": "votes",
+            "reason": "start lean"
+          },
+          {
+            "what": "effort field",
+            "reason": "start lean"
+          },
+          {
+            "what": "data-science flag",
+            "reason": "start lean"
+          },
+          {
+            "what": "per-release log",
+            "reason": "start lean"
+          },
+          {
+            "what": "CSV export",
+            "reason": "start lean"
+          },
+          {
+            "what": "size weight",
+            "reason": "start lean"
+          },
+          {
+            "what": "critical-path marks in the brief RELEASES lines",
+            "reason": "brief is capped; status and boards carry them"
+          }
+        ]
+      },
+      "completedAt": "2026-11-13T00:31:41.075Z"
     },
     {
       "id": "release-planning-taxonomy",
@@ -17171,7 +17228,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2466,
+  "revision": 2467,
   "reviewMode": "standard",
   "releases": [
     {
