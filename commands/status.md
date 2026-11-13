@@ -347,6 +347,25 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --member <epic
 - Re-running `release <id> --intent …` amends that release in place rather than registering a
   second one.
 
+**Plan fields and "we are here" (0.55.0):**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.55.0 [--theme "<line>"] [--rationale "<line>"] [--exit "<runnable check>"] [--order <n>] [--size major|minor|patch]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.55.0 --clear theme [--clear target ...]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release here 0.55.0 [--text "<line>"] [--next "<line>"]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release here --clear-here
+```
+
+- **Each text field is one line of at most 400 characters; `--order` is a non-negative integer.** `--clear <field>` is
+  repeatable and removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`--clear target` is the inverse of
+  `--target`).
+- **A release's status is never stored.** `planned`, `in-progress` or `shipped` is derived from `--deliver` and the members,
+  so `--status` is not a flag.
+- **`here` is a reserved release id.** `release here` records where the project is and `--clear-here` removes it; `release
+  show` marks that release `(here)`. Once a mission milestone exists (`commands/mission.md`), `release show` and `render` mark
+  releases `(critical path)`. `PROJECT.md` and the brief carry neither mark.
+- `release --help` names every one of these verbs.
+
 **Recording what you cut — `--defer`:**
 
 ```bash

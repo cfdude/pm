@@ -874,6 +874,16 @@ it waits on.
   undoes the other and a repeat writes nothing). Off removes the `## Boards` rules-block section and the brief's boards line;
   `board --json` still works. `upgrade` prints `boards: on (default)` and, once, on the upgrade that crosses 0.55.0, a line telling the
   agent to tell the user. See `commands/boards.md`.
+- Draw the boards? `/pm:boards` loads the `project-boards` skill (default on; it stops while `set-boards off`). Page titles are
+  `<project name> Backlog` and `<project name> Release Plan` from `set-project`, ids shown are the engine key (`PM-256`), and the
+  first population opens with "Derive, then confirm": draft the mission, why-now, release themes and epic summaries from the
+  README, `CLAUDE.md`/`AGENTS.md`, `board --json`, the records and `git log`, mark anything ungrounded UNGROUNDED, and ask the user
+  only about gaps. The release plan's header carries the mission and "we are here", and its Shipped table gives the reason for
+  anything a shipped release did not ship (`board --json` release `unshipped`). See `skills/project-boards/SKILL.md`.
+- One line per epic for the boards? `add-epic`, `update-epic` and `add-many` take `--summary` (at most 200 characters) and
+  `--why-now` (at most 300); `update-epic <id> --clear summary` / `--clear why-now` unset them. An epic leaving `untriaged` without
+  them prints one stderr warning (the write still happens). Release plan fields (`release <id> --theme --rationale --exit --order
+  --size`, `--clear <field>` including `target`) and `release here <id>` are in the `release-candidate` skill.
 - Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
   list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
   engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the

@@ -958,6 +958,39 @@ because declining by never registering the ask destroys the record that anyone c
 </details>
 
 <details>
+<summary><code>/pm:boards</code> — Publish the backlog and release-plan boards</summary>
+
+`/pm:boards` loads the `project-boards` skill, which publishes two pages with the Artifact tool, a backlog board and a
+release-plan board, and refreshes them after `/pm:sync`, a status change, a `release` or `mission` write and a gate
+record. It stops while the boards are off. Page titles name the project (`<project name> Backlog`, `<project name> Release
+Plan`, from `set-project`), every id shown is the engine key (`PM-256`) with the slug beside it, and a field a page needs
+that is still unset shows a card naming the command that sets it. The release plan reads the mission and "we are here" as
+one header, keeps only in-progress and planned releases in its roadmap, and lists shipped releases in a Shipped table
+that says, for a release that did not ship everything, what did not ship and why. See `commands/boards.md` and
+`skills/project-boards/SKILL.md`.
+
+First population opens with "Derive, then confirm": the agent drafts the mission, why-now, where things stand, release
+themes and epic summaries from the README, `CLAUDE.md` or `AGENTS.md`, `board --json`, the records and `git log`, marks
+anything it could not ground as UNGROUNDED, and asks you only about the gaps and for confirmation. It never invents a
+mission.
+
+The boards are on by default (an absent setting reads as on). `set-boards off` records `state.boards = {enabled: false}`
+and removes the `## Boards` rules section and the brief's boards line; `set-boards on` removes the setting again.
+`board --json` keeps working whichever way it is set, and `upgrade` prints `boards: on (default)`.
+
+| Verb | What it does |
+|------|--------------|
+| `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit. Plain `board` prints three lines |
+| `mission --statement "<line>" --reason "<why>"` | records the mission; `--end`, `--milestone <releaseId>` / `--clear-milestone`, `--add-criterion` / `--remove-criterion` and `mission show [--history]` complete it. Releases at or before the milestone, by `--order`, are marked critical path. See `commands/mission.md` |
+| `set-project --name "<name>" --key <KEY>` | the project name (at most 60 characters) and a two- or three-letter key; `--unset name\|key` removes one. Every epic carries an integer `number` assigned at registration, and the key shown is `<KEY>-<number>`. See `commands/set-project.md` |
+| `set-boards on\|off` | the switch above |
+| `release <id> --theme --rationale --exit --order --size` | a release's plan fields (each text field one line of at most 400 characters); `--clear <field>` removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`release --clear target` is the inverse of `--target`) |
+| `release here <id> [--text] [--next]` | records where the project is; `release here --clear-here` removes it. `release show` marks the `here` release `(here)` |
+| `add-epic` / `update-epic` / `add-many` `--summary`, `--why-now` | one line per epic (at most 200 and 300 characters); `update-epic <id> --clear summary` and `--clear why-now` unset them |
+
+</details>
+
+<details>
 <summary><code>/pm:lane-routing</code> — Per-repo lane-routing overrides</summary>
 
 `set-lane-routing --add "<match>:<lane>" [--add …] | --remove "<match>" | --clear` defines
@@ -1774,6 +1807,7 @@ Installed to `skills/` on `/pm:init`:
 | `cross-spec-review` | The release-scope gate: do this release's specs AGREE with each other? Gate 1 and Gate 2 each take one change as their unit and structurally cannot find a contradiction between two of them. Triggers on "cross-spec review," "do the specs agree," "review the specs together." |
 | `lessons` | Keeping a repository's PROCESS knowledge where it fires on the situation rather than on recall — the `docs/lessons/` shape, the frontmatter contract, and the capture half. Its `detect:` matchers are what the `lesson-advice` `PreToolUse` hook fires on. pm ships the mechanism, never the corpus. Triggers on "lessons learned," "have we hit this before," "that cost us." |
 | `dogfooding` | Routing what the work taught you instead of leaving it in the transcript: a practice you adopted becomes a registered candidate with its evidence attached, and a workaround you invented for tooling friction becomes a filed bug. Triggers on "should this be in the product," "I had to work around," "there's no verb for this." |
+| `project-boards` | Drawing the backlog and the release plan as two published boards from `board --json`: the pages, the refresh triggers, the project-named titles, first population ("Derive, then confirm") and what to ask the user. Triggers on "boards," "show the backlog," "release plan." |
 
 ## Reporting — pm does not have a house style
 
@@ -2016,7 +2050,7 @@ pm/ (this repo)
 ├── commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync
 │                                 /pm:epic /pm:hierarchy /pm:tracker /pm:feedback /pm:lane-routing
 │                                 /pm:review-mode /pm:profile /pm:gate-guard /pm:changelog /pm:upgrade
-│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs
+│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs /pm:boards
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md
 ├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PostToolUseFailure · PreToolUse
