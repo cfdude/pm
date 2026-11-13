@@ -179,7 +179,7 @@ repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --re
 sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
 execution profile (review, model per job role — `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary`, each with a built-in default pair that is never stored — and verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
-epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
+epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · the release plan fields (`--theme`, `--rationale`, `--exit`, `--order`, `--size`, each cleared with `--clear <field>`; the status is derived, never stored) and `release here <id>` the plan marker (`release here --clear-here` removes it) · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
@@ -618,6 +618,16 @@ bullet reached 3/15.
    precisely stays retrieval-only.
    Name which of the three it is out loud. A process lesson filed as a feature request never
    gets built, and a product gap written down as a lesson never gets fixed.
+8. **Prove every guard can fail.** A green test distinguishes nothing unless it can go red, and both
+   gates read a diff, so neither can see a test that cannot fail. For each guard this change adds,
+   MUTATE it — remove or invert its condition — and run the tests: one must fail. Save and commit the
+   run as `mutation-evidence.txt` beside the change or plan, so the gate can read it rather than
+   trust a sentence. A SURVIVING mutant is a finding to fix, not a test to delete. No guard added:
+   say so, and why, instead of an evidence file, exactly as an unguarded call site must be
+   justified; a docs-only change and a skipped pass must not look alike. Write every RED note
+   task-relative ("fails after 2.4"), never a bare "fails today"; re-run it when its own task
+   starts, because a RED note written against the release baseline goes stale as its own change
+   lands. The `mutation-pass` skill carries the method and a worked example.
 
 ## When something blocks progress: classify the detour FIRST
 
@@ -847,6 +857,33 @@ it waits on.
   stamp answers when the epic's own content last changed and a backfill of its registration date
   is not that. `touchedAt` itself needs no verb — every write that genuinely changes an epic
   advances it, and one that changes nothing leaves it alone.
+- What is the project trying to ship? `mission show [--history]` (read-only) reads the recorded mission, its mission
+  milestone and the active exit criteria; `mission --statement "<one line>" --reason "<why>"`, `--end`, `--milestone <releaseId>`
+  / `--clear-milestone` and `--add-criterion` / `--remove-criterion` write it. Releases at or before the mission milestone are
+  critical path. See `commands/mission.md`.
+- What is the project called, and what key do its epics carry (`PM-256`)? `set-project --name "<name>" --key <KEY>` (two or three
+  uppercase letters; either alone; `--unset name|key` removes one). Every epic has an integer `number` assigned at registration (a
+  tracker issue number where free, else a counter that never goes back), and the key shown is `<KEY>-<number>`, so changing the key
+  renames them all. Never invent either value: while unset, `board --json` reports `project: {name: null, key: null}`, so ask the
+  user. See `commands/set-project.md`.
+- What does the whole board look like, as data? `board --json [--archived <n>|all]` (read-only): the counts, the
+  mission and its milestone, the releases in plan order with a derived status, the open epics in `PROJECT.md`'s order,
+  a window of recently ended epics, a three-state `delivered`, resolved `dependsOn`, and a `rejected[]` list for any
+  id or URL it would not emit. Read this instead of `.conductor/state.json`. See `commands/boards.md`.
+- Turn the boards off or on? `set-boards on|off` (default ON, an absent setting reads as on; `off` records it and `on` removes it, so each
+  undoes the other and a repeat writes nothing). Off removes the `## Boards` rules-block section and the brief's boards line;
+  `board --json` still works. `upgrade` prints `boards: on (default)` and, once, on the upgrade that crosses 0.55.0, a line telling the
+  agent to tell the user. See `commands/boards.md`.
+- Draw the boards? `/pm:boards` loads the `project-boards` skill (default on; it stops while `set-boards off`). Page titles are
+  `<project name> Backlog` and `<project name> Release Plan` from `set-project`, ids shown are the engine key (`PM-256`), and the
+  first population opens with "Derive, then confirm": draft the mission, why-now, release themes and epic summaries from the
+  README, `CLAUDE.md`/`AGENTS.md`, `board --json`, the records and `git log`, mark anything ungrounded UNGROUNDED, and ask the user
+  only about gaps. The release plan's header carries the mission and "we are here", and its Shipped table gives the reason for
+  anything a shipped release did not ship (`board --json` release `unshipped`). See `skills/project-boards/SKILL.md`.
+- One line per epic for the boards? `add-epic`, `update-epic` and `add-many` take `--summary` (at most 200 characters) and
+  `--why-now` (at most 300); `update-epic <id> --clear summary` / `--clear why-now` unset them. An epic leaving `untriaged` without
+  them prints one stderr warning (the write still happens). Release plan fields (`release <id> --theme --rationale --exit --order
+  --size`, `--clear <field>` including `target`) and `release here <id>` are in the `release-candidate` skill.
 - Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
   list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
   engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the
@@ -1027,7 +1064,7 @@ candidate already flagged `superseded: true` is dead — never consolidate into 
 **4. Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you, and its
 answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and nothing
 else. It cannot ask what a person would ask, whether this work SERVES something already committed
-to, because pm holds no milestone or product context to weigh and the engine will not invent one.
+to, because pm holds no milestone or product context to weigh beyond the release records `triage` lists, and the engine will not invent one.
 The suggestion is an input; the lane is your call.
 
 **The tie-break is asymmetric**, and it is not a matter of taste. `claude-code` means no spec, no
@@ -1120,8 +1157,11 @@ surfaces the match for you to act on.
 An epic can be granted broad execution trust so it runs through phase transitions and
 destructive actions without a human present for each one — but ONLY after a preflight scan, and
 autonomy never removes a genuine safety stop. This section defines the scan; the decision rule
-and reporting obligations that consume its output are in the rules block re-injected into
-CLAUDE.md (see `/pm:epic` → `set-autonomy`).
+and reporting obligations that consume its output are in the rules block's `## Epic-level autonomy`
+section (see `/pm:epic` → `set-autonomy`). That section is present only while a non-archived epic has an
+autonomy record: the first `set-autonomy` adds it to CLAUDE.md and prints a one-line notice, and a session
+that loaded the block earlier does not have it until `rules` prints it. Until then the block's
+`## Procedures emitted on use` section points here.
 
 **When:** before setting any epic's `autonomy.level` to `"autonomous"` (see `set-autonomy` below).
 
@@ -1264,6 +1304,11 @@ not just one epic.
    when the batch has more than one epic, since batch membership already means they have no
    dependency on each other. Do **not** start the next batch until every dispatch in the current
    batch has reported back AND its worktree has merged (see below).
+   - **Carry a section that appeared this session into the dispatch prompt.** If the engine printed the
+     notice that the rules block "is now carried" a section (the first `set-autonomy` adds
+     `## Epic-level autonomy`, the first `release` adds `## Release candidate`), your own copy of the
+     block predates it: run `node "$ENGINE" rules` and put that section's rules in each dispatch prompt
+     rather than relying on a copy loaded earlier.
    - **Children never write `.conductor/state.json` themselves** — they only return their fixed
      report. You (the orchestrator) are the sole writer of state transitions, applied in one pass
      after the batch (mark each merged child `archived`), not interleaved with dispatch. This is

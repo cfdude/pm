@@ -400,7 +400,7 @@ test("5.2 With no limit configured the hooks pay nothing: no spend path, and no 
 test("5.2 A stuck active epic puts one STOP line in the brief, from state alone", () => {
   const sc = scene({ on: true, limit: 1 });
   run(["set-active", "e1"], sc.opts);
-  run(["record-gate-review", "e1", "--gate", "2", "--verdict", "fail"], sc.opts);
+  run(["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"], sc.opts);
   const seen = hotPaths(sc);
   const ctx = JSON.parse(seen.brief.result.stdout).hookSpecificOutput.additionalContext;
   const lines = ctx.split("\n").filter((l) => l.startsWith("STOP: spend guard —"));
@@ -442,8 +442,8 @@ test("5.3 CLAUDE.md gains the Spend guard section on the first limit and loses i
   const md = claudeMd(cwd);
   assert.match(md, /## Spend guard/);
   assert.ok(md.includes("`spend-guard <epic>`"));
-  assert.ok(md.indexOf("## Spend guard") > md.indexOf("Current mode:") && md.indexOf("## Spend guard") < md.indexOf("## Release candidate"),
-    "with tracking off it takes the Spend tracking slot's position");
+  assert.ok(md.indexOf("## Spend guard") > md.indexOf("Current mode:") && md.indexOf("## Spend guard") < md.indexOf("## Feedback"),
+    "with tracking off it takes the Spend tracking slot's position (before the sections that follow it; Release candidate is present only while a release is open)");
   run(["set-spend-guard", "--unset", "max-failed-rounds"], { cwd });
   assert.doesNotMatch(claudeMd(cwd), /## Spend guard/, "unsetting the last limit removes the section");
 });
@@ -456,7 +456,7 @@ test("5.3 With tracking on the section follows ## Spend tracking, and an archive
   run(["set-spend-guard", "--epic", "e1", "--tokens", "5000"], { cwd });
   const md = claudeMd(cwd);
   assert.ok(md.indexOf("## Spend tracking") !== -1 && md.indexOf("## Spend guard") > md.indexOf("## Spend tracking"));
-  assert.ok(md.indexOf("## Spend guard") < md.indexOf("## Release candidate"));
+  assert.ok(md.indexOf("## Spend guard") < md.indexOf("## Feedback"));
   run(["update-epic", "e1", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   run(["write-rules"], { cwd });
   assert.doesNotMatch(claudeMd(cwd), /## Spend guard/, "an archived epic's layer is not a configured limit");

@@ -553,7 +553,8 @@ A recorded gate verdict SHALL carry `baseSha`, `headSha` and reviewer identity a
 prose inside a free-text note. A `pass` verdict without a recorded `baseSha` and `headSha` MUST be
 refused: `record-gate-review <id> --gate 2 --verdict pass` is otherwise one command with no
 evidence requirement, and a review of `a..b` on an epic that later ships `b..c` is today
-byte-identical to one that covered everything. A `fail` verdict MAY omit the range. Verdicts
+byte-identical to one that covered everything. A Gate 2 `fail` verdict MUST carry the range
+too; only a Gate 1 `fail` MAY omit it. Verdicts
 written before this capability existed remain loadable and are treated as carrying no evidence.
 
 #### Scenario: Recording a pass with its range and reviewer

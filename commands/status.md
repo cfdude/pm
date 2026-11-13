@@ -347,6 +347,25 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --member <epic
 - Re-running `release <id> --intent …` amends that release in place rather than registering a
   second one.
 
+**Plan fields and "we are here" (0.55.0):**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.55.0 [--theme "<line>"] [--rationale "<line>"] [--exit "<runnable check>"] [--order <n>] [--size major|minor|patch]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.55.0 --clear theme [--clear target ...]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release here 0.55.0 [--text "<line>"] [--next "<line>"]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release here --clear-here
+```
+
+- **Each text field is one line of at most 400 characters; `--order` is a non-negative integer.** `--clear <field>` is
+  repeatable and removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`--clear target` is the inverse of
+  `--target`).
+- **A release's status is never stored.** `planned`, `in-progress` or `shipped` is derived from `--deliver` and the members,
+  so `--status` is not a flag.
+- **`here` is a reserved release id.** `release here` records where the project is and `--clear-here` removes it; `release
+  show` marks that release `(here)`. Once a mission milestone exists (`commands/mission.md`), `release show` and `render` mark
+  releases `(critical path)`. `PROJECT.md` and the brief carry neither mark.
+- `release --help` names every one of these verbs.
+
 **Recording what you cut — `--defer`:**
 
 ```bash
@@ -563,3 +582,13 @@ bullet reached 3/15.
    precisely stays retrieval-only.
    Name which of the three it is out loud. A process lesson filed as a feature request never
    gets built, and a product gap written down as a lesson never gets fixed.
+8. **Prove every guard can fail.** A green test distinguishes nothing unless it can go red, and both
+   gates read a diff, so neither can see a test that cannot fail. For each guard this change adds,
+   MUTATE it — remove or invert its condition — and run the tests: one must fail. Save and commit the
+   run as `mutation-evidence.txt` beside the change or plan, so the gate can read it rather than
+   trust a sentence. A SURVIVING mutant is a finding to fix, not a test to delete. No guard added:
+   say so, and why, instead of an evidence file, exactly as an unguarded call site must be
+   justified; a docs-only change and a skipped pass must not look alike. Write every RED note
+   task-relative ("fails after 2.4"), never a bare "fails today"; re-run it when its own task
+   starts, because a RED note written against the release baseline goes stale as its own change
+   lands. The `mutation-pass` skill carries the method and a worked example.

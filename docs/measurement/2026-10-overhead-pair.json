@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-30T22:15:18.492Z",
+  "claudeCode": "2.1.314 (Claude Code)",
+  "pmVersion": "0.53.0",
+  "pmTreeSha": "33d2548eb4d0ce1ac29799f42d0a0de491b91070",
+  "pmTreeDirty": true,
+  "caps": {
+    "perRun": 100000,
+    "pair": 150000
+  },
+  "pmEstimate": 10908,
+  "runs": [
+    {
+      "arm": "pm-off",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheCreation": 19219,
+      "cacheRead": 11391,
+      "output": 4,
+      "briefPresent": false,
+      "start": "startup",
+      "entrypoint": "sdk-cli",
+      "total": 30616,
+      "aborted": null,
+      "exitCode": 0,
+      "instructionsUserScope": 0
+    },
+    {
+      "arm": "pm-on",
+      "model": "claude-sonnet-5-5",
+      "input": 2,
+      "cacheCreation": 31181,
+      "cacheRead": 12471,
+      "output": 4,
+      "briefPresent": true,
+      "start": "startup",
+      "entrypoint": "sdk-cli",
+      "total": 43658,
+      "aborted": null,
+      "exitCode": 0,
+      "instructionsUserScope": 0
+    }
+  ],
+  "spent": 74274,
+  "stopped": null,
+  "void": null,
+  "summary": {
+    "promptDelta": 13042,
+    "archivedMethodDelta": 11962,
+    "pmEstimate": 10908,
+    "ratio": 1.196,
+    "sameModel": true
+  }
+}

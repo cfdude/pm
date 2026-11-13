@@ -1,0 +1,522 @@
+{
+  "schema": 1,
+  "method": "first main-chain assistant message of each session; headline = SessionStart source startup, entrypoint cli or sdk-cli, project not excluded; total = input + cacheCreation + cacheRead; percentiles are nearest-rank",
+  "population": {
+    "headline": "startup sessions from cli and sdk-cli",
+    "headlineSessions": 102,
+    "sessionsRead": 3449,
+    "projectsRead": 93
+  },
+  "groups": [
+    {
+      "briefPresent": false,
+      "model": "claude-opus-4-7",
+      "n": 1,
+      "input": {
+        "median": 6,
+        "p10": 6,
+        "p90": 6,
+        "min": 6,
+        "max": 6
+      },
+      "cacheCreation": {
+        "median": 44253,
+        "p10": 44253,
+        "p90": 44253,
+        "min": 44253,
+        "max": 44253
+      },
+      "cacheRead": {
+        "median": 17006,
+        "p10": 17006,
+        "p90": 17006,
+        "min": 17006,
+        "max": 17006
+      },
+      "total": {
+        "median": 61265,
+        "p10": 61265,
+        "p90": 61265,
+        "min": 61265,
+        "max": 61265
+      },
+      "inputPlusCacheCreation": {
+        "median": 44259,
+        "p10": 44259,
+        "p90": 44259,
+        "min": 44259,
+        "max": 44259
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "claude-opus-4-8",
+      "n": 1,
+      "input": {
+        "median": 29964,
+        "p10": 29964,
+        "p90": 29964,
+        "min": 29964,
+        "max": 29964
+      },
+      "cacheCreation": {
+        "median": 35161,
+        "p10": 35161,
+        "p90": 35161,
+        "min": 35161,
+        "max": 35161
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 65125,
+        "p10": 65125,
+        "p90": 65125,
+        "min": 65125,
+        "max": 65125
+      },
+      "inputPlusCacheCreation": {
+        "median": 65125,
+        "p10": 65125,
+        "p90": 65125,
+        "min": 65125,
+        "max": 65125
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "claude-opus-5",
+      "n": 8,
+      "input": {
+        "median": 2,
+        "p10": 2,
+        "p90": 2,
+        "min": 2,
+        "max": 2
+      },
+      "cacheCreation": {
+        "median": 85199.5,
+        "p10": 74792,
+        "p90": 112692,
+        "min": 74792,
+        "max": 112692
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 85201.5,
+        "p10": 74794,
+        "p90": 112694,
+        "min": 74794,
+        "max": 112694
+      },
+      "inputPlusCacheCreation": {
+        "median": 85201.5,
+        "p10": 74794,
+        "p90": 112694,
+        "min": 74794,
+        "max": 112694
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "claude-opus-5-5",
+      "n": 5,
+      "input": {
+        "median": 2,
+        "p10": 2,
+        "p90": 2,
+        "min": 2,
+        "max": 2
+      },
+      "cacheCreation": {
+        "median": 96968,
+        "p10": 50302,
+        "p90": 110603,
+        "min": 50302,
+        "max": 110603
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 96970,
+        "p10": 50304,
+        "p90": 110605,
+        "min": 50304,
+        "max": 110605
+      },
+      "inputPlusCacheCreation": {
+        "median": 96970,
+        "p10": 50304,
+        "p90": 110605,
+        "min": 50304,
+        "max": 110605
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "claude-sonnet-5",
+      "n": 2,
+      "input": {
+        "median": 15900,
+        "p10": 2,
+        "p90": 31798,
+        "min": 2,
+        "max": 31798
+      },
+      "cacheCreation": {
+        "median": 63002,
+        "p10": 48474,
+        "p90": 77530,
+        "min": 48474,
+        "max": 77530
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 78902,
+        "p10": 77532,
+        "p90": 80272,
+        "min": 77532,
+        "max": 80272
+      },
+      "inputPlusCacheCreation": {
+        "median": 78902,
+        "p10": 77532,
+        "p90": 80272,
+        "min": 77532,
+        "max": 80272
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "claude-sonnet-5-5",
+      "n": 5,
+      "input": {
+        "median": 2,
+        "p10": 2,
+        "p90": 2,
+        "min": 2,
+        "max": 2
+      },
+      "cacheCreation": {
+        "median": 91573,
+        "p10": 67213,
+        "p90": 107024,
+        "min": 67213,
+        "max": 107024
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 29537,
+        "min": 0,
+        "max": 29537
+      },
+      "total": {
+        "median": 99521,
+        "p10": 91575,
+        "p90": 107026,
+        "min": 91575,
+        "max": 107026
+      },
+      "inputPlusCacheCreation": {
+        "median": 91575,
+        "p10": 67215,
+        "p90": 107026,
+        "min": 67215,
+        "max": 107026
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "glm-5p3",
+      "n": 1,
+      "input": {
+        "median": 54195,
+        "p10": 54195,
+        "p90": 54195,
+        "min": 54195,
+        "max": 54195
+      },
+      "cacheCreation": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 54195,
+        "p10": 54195,
+        "p90": 54195,
+        "min": 54195,
+        "max": 54195
+      },
+      "inputPlusCacheCreation": {
+        "median": 54195,
+        "p10": 54195,
+        "p90": 54195,
+        "min": 54195,
+        "max": 54195
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "glm-5p3-flash",
+      "n": 1,
+      "input": {
+        "median": 47375,
+        "p10": 47375,
+        "p90": 47375,
+        "min": 47375,
+        "max": 47375
+      },
+      "cacheCreation": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 47375,
+        "p10": 47375,
+        "p90": 47375,
+        "min": 47375,
+        "max": 47375
+      },
+      "inputPlusCacheCreation": {
+        "median": 47375,
+        "p10": 47375,
+        "p90": 47375,
+        "min": 47375,
+        "max": 47375
+      }
+    },
+    {
+      "briefPresent": false,
+      "model": "other",
+      "n": 1,
+      "input": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "cacheCreation": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "inputPlusCacheCreation": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    {
+      "briefPresent": true,
+      "model": "claude-opus-5-5",
+      "n": 48,
+      "input": {
+        "median": 2,
+        "p10": 2,
+        "p90": 2,
+        "min": 2,
+        "max": 2
+      },
+      "cacheCreation": {
+        "median": 86566.5,
+        "p10": 81295,
+        "p90": 114875,
+        "min": 79945,
+        "max": 134671
+      },
+      "cacheRead": {
+        "median": 12666,
+        "p10": 12666,
+        "p90": 12916,
+        "min": 0,
+        "max": 12916
+      },
+      "total": {
+        "median": 98500,
+        "p10": 94186,
+        "p90": 127543,
+        "min": 92613,
+        "max": 134673
+      },
+      "inputPlusCacheCreation": {
+        "median": 86568.5,
+        "p10": 81297,
+        "p90": 114877,
+        "min": 79947,
+        "max": 134673
+      }
+    },
+    {
+      "briefPresent": true,
+      "model": "claude-sonnet-5",
+      "n": 1,
+      "input": {
+        "median": 32006,
+        "p10": 32006,
+        "p90": 32006,
+        "min": 32006,
+        "max": 32006
+      },
+      "cacheCreation": {
+        "median": 52830,
+        "p10": 52830,
+        "p90": 52830,
+        "min": 52830,
+        "max": 52830
+      },
+      "cacheRead": {
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+      },
+      "total": {
+        "median": 84836,
+        "p10": 84836,
+        "p90": 84836,
+        "min": 84836,
+        "max": 84836
+      },
+      "inputPlusCacheCreation": {
+        "median": 84836,
+        "p10": 84836,
+        "p90": 84836,
+        "min": 84836,
+        "max": 84836
+      }
+    },
+    {
+      "briefPresent": true,
+      "model": "claude-sonnet-5-5",
+      "n": 28,
+      "input": {
+        "median": 2,
+        "p10": 2,
+        "p90": 2,
+        "min": 2,
+        "max": 2
+      },
+      "cacheCreation": {
+        "median": 81403.5,
+        "p10": 75089,
+        "p90": 114047,
+        "min": 45251,
+        "max": 127421
+      },
+      "cacheRead": {
+        "median": 12678,
+        "p10": 0,
+        "p90": 12678,
+        "min": 0,
+        "max": 32134
+      },
+      "total": {
+        "median": 92832.5,
+        "p10": 87769,
+        "p90": 122731,
+        "min": 77387,
+        "max": 127423
+      },
+      "inputPlusCacheCreation": {
+        "median": 81405.5,
+        "p10": 75091,
+        "p90": 114049,
+        "min": 45253,
+        "max": 127423
+      }
+    }
+  ],
+  "withinProject": {
+    "overall": {
+      "pairs": 2,
+      "projects": 2,
+      "pairsWithAtLeast5PerSide": 0,
+      "medianDeltaTotal": -4663.5,
+      "medianDeltaInputPlusCacheCreation": -3280
+    },
+    "byModel": [
+      {
+        "model": "claude-sonnet-5-5",
+        "pairs": 2,
+        "projects": 2,
+        "pairsWithAtLeast5PerSide": 0,
+        "medianDeltaTotal": -4663.5,
+        "medianDeltaInputPlusCacheCreation": -3280
+      }
+    ]
+  },
+  "excluded": {
+    "byReason": {
+      "entrypoint-sdk-py": 3324,
+      "start-clear": 19,
+      "entrypoint-other": 2,
+      "start-none": 2,
+      "project-highway": 18,
+      "project-employer-repo": 2,
+      "no-assistant-message": 48
+    }
+  }
+}

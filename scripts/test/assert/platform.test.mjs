@@ -228,3 +228,70 @@ test("rules-target rejects an unknown --platform rather than defaulting", () => 
   assert.equal(r.status, 1);
   assert.match(r.stderr, /--platform must be one of claude-code\|hermes\|codex/);
 });
+
+// ────────────── a platform switch retires the OLD platform's managed block ──────────────
+// writeRules() writes only rulesTarget(platform). Before this, switching platform left the
+// previous file's block live but never refreshed again -- stale instructions an agent may still read.
+
+test("a switch claude-code -> codex removes the block from CLAUDE.md and keeps the text around it", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "CLAUDE.md"), "# My project\n\nHand-written rule.\n");
+  run(["init", "--platform", "claude-code"], { cwd });
+  assert.match(fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8"), /BEGIN pm-conductor rules/);
+
+  const out = runCombined(["write-rules", "--platform", "codex"], { cwd });
+
+  assert.match(fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8"), /BEGIN pm-conductor rules/);
+  const claude = fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8");
+  assert.doesNotMatch(claude, /pm-conductor rules/, "the orphaned block must be gone");
+  assert.equal(claude, "# My project\n\nHand-written rule.\n", "content outside the markers is byte-identical");
+  assert.match(out, /removed .*CLAUDE\.md/, "the removal is reported");
+});
+
+test("a switch deletes an old file that held nothing but pm's block", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "claude-code"], { cwd });
+  assert.ok(fs.existsSync(path.join(cwd, "CLAUDE.md")));
+  run(["write-rules", "--platform", "codex"], { cwd });
+  assert.ok(!fs.existsSync(path.join(cwd, "CLAUDE.md")), "a file pm created and only pm used is not left as an empty shell");
+});
+
+test("a switch leaves the target alone when the old and new platform share the file", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "claude-code"], { cwd });
+  run(["write-rules", "--platform", "hermes"], { cwd });   // hermes resolves to CLAUDE.md here
+  const claude = fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8");
+  assert.equal(claude.match(/BEGIN pm-conductor rules/g).length, 1);
+});
+
+test("a switch never touches a file that has no pm block, or an ambiguous one", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "CLAUDE.md"), "# keep\n<!-- BEGIN pm-conductor rules (x) -->\nno end marker\n");
+  run(["init", "--platform", "codex"], { cwd });
+  assert.equal(fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8"),
+    "# keep\n<!-- BEGIN pm-conductor rules (x) -->\nno end marker\n", "ambiguous markers: never guess, never write");
+});
+
+// ────────────── a switch never retires a file that IS the target under another name ──────────────
+// retireOrphanedRulesBlocks() once compared path STRINGS: with CLAUDE.md -> AGENTS.md (or a hard link) the
+// "other" file is the target itself, and the block writeRules() had just written was stripped.
+
+test("a symlinked CLAUDE.md -> AGENTS.md keeps the block writeRules just wrote", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "AGENTS.md"), "# Agents\n\nRule.\n");
+  fs.symlinkSync("AGENTS.md", path.join(cwd, "CLAUDE.md"));
+  run(["write-rules", "--platform", "codex"], { cwd });
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.equal(agents.match(/BEGIN pm-conductor rules/g)?.length, 1, "the freshly written block survives");
+  assert.ok(fs.lstatSync(path.join(cwd, "CLAUDE.md")).isSymbolicLink(), "the link is left in place");
+});
+
+test("a hard-linked CLAUDE.md and AGENTS.md keep the block writeRules just wrote", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "AGENTS.md"), "# Agents\n\nRule.\n");
+  fs.linkSync(path.join(cwd, "AGENTS.md"), path.join(cwd, "CLAUDE.md"));
+  run(["write-rules", "--platform", "codex"], { cwd });
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.equal(agents.match(/BEGIN pm-conductor rules/g)?.length, 1, "the freshly written block survives");
+  assert.ok(fs.existsSync(path.join(cwd, "CLAUDE.md")), "the second name is not deleted");
+});

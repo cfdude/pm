@@ -471,7 +471,7 @@ export const EPIC_FLAGS = [
   // `set-lane-routing --clear` (VERB_FLAGS below, valueless) now arrives as `[true]` rather than
   // bare `true`. That is fine — lane-routing.mjs asks `if (f.clear)` and `[true]` is truthy — but
   // a later tightening of that test to `=== true` would break it silently.
-  { flag: "clear", key: null, commands: ["update-epic"], repeats: true, write: "custom",
+  { flag: "clear", key: null, commands: ["update-epic", "release"], repeats: true, write: "custom",
     requires: "the FLAG NAME of a field to unset, e.g. --clear plan", placeholder: "field" },
   // `description` and `notes` are DISTINCT and neither substitutes for the other: a description
   // is durable rationale (why this epic exists, what would make it worth revisiting), replaced
@@ -481,6 +481,12 @@ export const EPIC_FLAGS = [
   // `add-many` flag — its state shape is an array of {at, actor, text} entries the batch loop
   // would silently drop, and rejecting the key by name is the whole point of #79.
   { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  // project-boards (epic-annotation). One-line fields beside `description`, never a truncation of it: a board needs ONE
+  // line. Validated by lib/epic-summary.mjs on every surface (one line, 200 and 300 characters), and clearable.
+  { flag: "summary", key: "summary", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    requires: "one line of at most 200 characters" },
+  { flag: "why-now", key: "whyNow", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    requires: "one line of at most 300 characters" },
   // spec-sync-waive-for-skip-specs. The ONE record that a delivered change's archived spec deltas were
   // INTENTIONALLY not applied to the main specs (an archive taken with `openspec archive --skip-specs`).
   // The value IS the reason, so a waiver cannot be recorded without one. `delivered-epic-spec-deltas-absent`
@@ -522,9 +528,9 @@ export const EPIC_FLAGS = [
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
   // rather than on a top-level epic key, so the command owns the write.
   { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom",
-    placeholder: "a sha — REQUIRED for a gate 2 pass, optional otherwise" },
+    placeholder: "a sha — REQUIRED for a gate 2 verdict (pass or fail), optional otherwise" },
   { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom",
-    placeholder: "a sha — REQUIRED for a gate 2 pass, optional otherwise" },
+    placeholder: "a sha — REQUIRED for a gate 2 verdict (pass or fail), optional otherwise" },
   // GATE 1's evidence, and the reason the sha pair above stopped being unconditional (gh#177).
   // Gate 1 is the SPEC review and runs before `/opsx:apply`, so at the moment its verdict is
   // truthful there is by construction no implementation range to point at — the emitted procedure
@@ -694,6 +700,17 @@ export const EPIC_FLAGS = [
   // `delivered-release-epic-left-open` had to GUESS whether a release had delivered, from its members. This
   // records the fact: `--deliver` sets `release.delivered = {recordedAt}`, `--undeliver` removes it (back to
   // the member-derived reading). Both are BOOLEANS, so they are valueless, and mutually exclusive.
+  // project-boards (release-planning). The plan fields: one-line text (400), a non-negative order, a semver size. Each has
+  // `--clear <field>` as its inverse (the `clear` row above lists `release`). `here` is a RESERVED release id, so
+  // `release here <id> [--text] [--next]` and its valueless inverse `--clear-here` are a verb branch (releases.mjs).
+  { flag: "theme", key: null, commands: ["release"], write: "custom", requires: "one line of at most 400 characters" },
+  { flag: "rationale", key: null, commands: ["release"], write: "custom", requires: "one line of at most 400 characters" },
+  { flag: "exit", key: null, commands: ["release"], write: "custom", requires: "one line of at most 400 characters (the runnable exit check)" },
+  { flag: "order", key: null, commands: ["release"], write: "custom", requires: "a non-negative integer" },
+  { flag: "size", key: null, commands: ["release"], write: "custom", requires: "major|minor|patch" },
+  { flag: "text", key: null, commands: ["release"], write: "custom", requires: "one line of at most 200 characters" },
+  { flag: "next", key: null, commands: ["release"], write: "custom", requires: "one line of at most 200 characters" },
+  { flag: "clear-here", key: null, commands: ["release"], write: "custom", valueless: true },
   { flag: "deliver", key: null, commands: ["release"], write: "custom", valueless: true },
   { flag: "undeliver", key: null, commands: ["release"], write: "custom", valueless: true },
   // THE EPIC LAYER OF THE EXECUTION PROFILE (execution-profile-layered-settings D3/D4). Three fields,
@@ -926,7 +943,7 @@ export const VERB_FLAGS = [
   // like a flag (`--limit=5 ignored`) is classified as a flag even inside shell quotes when passed
   // positionally; `--ask=<text>` is one token whose value is never reclassified, so the emitted
   // lane-routing step routes any item title (emitted-commands-run-as-written, Decision 3).
-  { flag: "ask", commands: ["suggest-lane"], requires: "the text to route" },
+  { flag: "ask", commands: ["suggest-lane", "triage"], requires: "the text to route" },
   // record-reconcile and record-tracker-refresh. `--verdict` is spelled the same on four verbs
   // and means four different vocabularies, so it is four scoped rows and not one shared one;
   // what they agree on — that it takes a value — is what the row carries.
@@ -995,13 +1012,30 @@ export const VERB_FLAGS = [
   //
   // `--json` is one row across both readers because it means the same boolean on each — the
   // opposite case to `--remove`, which is two rows precisely because it does not.
-  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "overhead", "dev-log", "spend-analysis", "decisions"], valueless: true },
+  { flag: "json", commands: ["owners", "activity", "spend", "spend-guard", "list", "board", "overhead", "dev-log", "spend-analysis", "decisions"], valueless: true },
   // pm-overhead-baseline: compute the report over the named every-opt-in-on hypothetical, in memory, writing nothing.
   { flag: "all-features", commands: ["overhead"], valueless: true },
   // `list` (#204), the read-only epic listing. `--status` and `--lane` FILTER here where the epic
   // registry's rows SET, so they are scoped rows of their own (`--lane` joins the set-profile row above).
   { flag: "status", commands: ["list"], placeholder: KNOWN_STATUSES.join("|") },
   { flag: "linked-to", commands: ["list"], requires: "an epic id" },
+  // `mission` (project-boards). `--reason` is the shared epic-flags row (it lists `mission`); the rest are scoped here.
+  { flag: "statement", commands: ["mission"], requires: "one line of at most 300 characters" },
+  { flag: "end", commands: ["mission"], valueless: true },
+  { flag: "milestone", commands: ["mission"], requires: "a release id" },
+  { flag: "clear-milestone", commands: ["mission"], valueless: true },
+  { flag: "add-criterion", commands: ["mission"], requires: "one line of at most 300 characters" },
+  { flag: "remove-criterion", commands: ["mission"], requires: "a criterion id (cN)" },
+  { flag: "check", commands: ["mission"], requires: "one line of at most 300 characters (how to check it)" },
+  { flag: "needs-human", commands: ["mission"], valueless: true },
+  { flag: "history", commands: ["mission"], valueless: true },
+  // `set-project` (project-boards 8.3): the project name and key, each removed by `--unset`.
+  { flag: "name", commands: ["set-project"], requires: "a project name of at most 60 characters" },
+  { flag: "key", commands: ["set-project"], requires: "two or three uppercase letters, such as PM" },
+  { flag: "unset", commands: ["set-project"], repeats: true, placeholder: "name|key" },
+  // `board` (project-boards): the ended-epic window. The value is validated by the verb, which names "a positive
+  // integer or all"; the row makes the flag declared and its valueless form a refusal.
+  { flag: "archived", commands: ["board"], requires: "a positive integer or all" },
   // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
   // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
   // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
@@ -1044,7 +1078,7 @@ export const VERB_FLAGS = [
   { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|token-basis|warn-at|all" },
   { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
   { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
-  { flag: "reason", commands: ["override-spend-guard", "record-decision"], requires: REASON_REQUIRES },
+  { flag: "reason", commands: ["override-spend-guard", "record-decision", "mission"], requires: REASON_REQUIRES },
   { flag: "revoke", commands: ["override-spend-guard"], valueless: true },
   { flag: "clear", commands: ["spend", "dev-log"], valueless: true },
   { flag: "rebuild", commands: ["spend"], valueless: true },
@@ -1079,7 +1113,7 @@ export const VERB_FLAGS = [
  *  of the change. A verb having flags says nothing about whether its positionals need explaining. */
 export const POSITIONAL_USAGE = {
   "set-gate-guard": "set-gate-guard on|off   — set it\n  set-gate-guard          — READ it: the current value, what it enforces, and whether anything is blocked right now",
-  release: "release <id> --intent \"<what this release is for>\" …   — create or amend one\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
+  release: "release <id> --intent \"<what this release is for>\" …   — create or amend one; also --target, --theme, --rationale, --exit, --order <n>, --size major|minor|patch, --member/--unmember, --defer/--undefer, --deliver/--undeliver. `--clear <field>` unsets theme, rationale, exit, order, size and target (intent has no clear)\n  release here <id> [--text \"<line>\"] [--next \"<line>\"]   — record WHERE THE PROJECT IS (the plan marker, a \"we are here\" and a \"next up\" line); release here --clear-here removes the marker and both lines. `here` is RESERVED as a release id\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
 };
 
 /** every-verb-refuses-what-it-does-not-read — how many POSITIONAL arguments each dispatched verb
@@ -1116,7 +1150,9 @@ export const VERB_POSITIONALS = {
   "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
   "set-review-mode": P0, "set-profile": P0, profile: P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
   activity: P0, spend: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
-  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0, overhead: P0, "dev-log": P0, "spend-analysis": P0,
+  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0, board: P0, overhead: P0,
+  // `mission` takes the reserved read keyword `show` or nothing (every other argument is a flag).
+  mission: { min: 0, max: 1, form: "[show]", idFirst: false, freeText: false }, "dev-log": P0, "spend-analysis": P0,
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
@@ -1130,13 +1166,17 @@ export const VERB_POSITIONALS = {
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-spend-tracking": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
   "set-dev-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  // project-boards: the boards switch, the positional `on|off` again.
+  "set-boards": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  // project-boards 8.3: `set-project` reads flags only.
+  "set-project": P0,
   "set-spend-guard": P0, "spend-guard": EPIC_ID, "override-spend-guard": EPIC_ID,
   // decision-cost-log: both take the epic the decisions belong to.
   "record-decision": EPIC_ID, decisions: EPIC_ID,
   // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
   // flag nor a text is given, and refuses both at once.
   "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
-  triage: { min: 1, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
+  triage: { min: 0, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
   "pop-detour": { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
   "set-gate-guard": { min: 0, max: 1, form: "[on|off]", idFirst: false, freeText: false },
   claim: { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
@@ -1146,7 +1186,7 @@ export const VERB_POSITIONALS = {
   "honcho-memory": { min: 3, max: Infinity, form: "<push|pop> <epicId> \"<reason>\"", idFirst: false, freeText: true },
   release: {
     min: 1, max: 1, form: "<id>", idFirst: false, freeText: false,
-    byFirst: { show: { min: 1, max: 2, form: "show [<id>]" } },
+    byFirst: { show: { min: 1, max: 2, form: "show [<id>]" }, here: { min: 1, max: 2, form: "here [<id>]" } },
   },
 };
 
@@ -1165,6 +1205,8 @@ export const FLAGLESS_VERBS = [
   "set-spend-tracking",
   // developer-session-log's switch: the POSITIONAL `on|off` again.
   "set-dev-log",
+  // project-boards' switch: the POSITIONAL `on|off` again.
+  "set-boards",
   // The unconsidered-outcome walker's ASK. Its population is a PREDICATE over the whole record
   // — an engine stamp carrying `unknown` — so there is nothing to select; a `--status` or
   // `--lane` filter would let a caller narrow the very set the question is "show me all of".

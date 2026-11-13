@@ -26,6 +26,10 @@ import {
   CROSS_SPEC_MIN_SPECS, KNOWN_CROSS_SPEC_VERDICTS, crossSpecLine, crossSpecRequired,
   releaseSpecFiles, specDigest,
 } from "./cross-spec-review.mjs";
+import {
+  PLAN_FIELDS, PLAN_LINE_MAX, PLAN_SIZES, PLAN_TEXT_FIELDS, PLAN_TEXT_MAX,
+  planOf, planStatusLines, releaseMarks, releaseStatus,
+} from "./release-plan.mjs";
 import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 const str = (v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined);
@@ -52,6 +56,16 @@ const refuse = (msg) => die(`conductor: ${msg}\n`);
  *  here?") is exactly the ambiguity this engine refuses everywhere else. A release genuinely
  *  called `show` is not a thing anyone needs; a deterministic answer is. */
 const SHOW = "show";
+/** The positional that names the PLAN-MARKER form (`release here <id>`). RESERVED as an id for `show`'s reason. */
+const HERE = "here";
+
+/** One line of at most `max` characters, or the refusal text. Pure. */
+function oneLineError(flag, value, max) {
+  if (value === undefined || value.trim() === "") return escapeControls(`--${flag} requires one line of at most ${max} characters`);
+  if (/[\r\n]/.test(value)) return escapeControls(`--${flag} must be one line of at most ${max} characters (it contains a newline)`);
+  if ([...value].length > max) return escapeControls(`--${flag} must be one line of at most ${max} characters (got ${[...value].length})`);
+  return null;
+}
 
 /** `<epicId>[:<reason>]`, with `--reason "<why>"` as the out-of-band form — gh#179.
  *
@@ -98,10 +112,13 @@ export function release() {
   // THE READ FORM, dispatched before anything else parses. `show` is a reserved positional (see
   // SHOW above), so this branch is unambiguous and the write path below can never see that id.
   if (argv[0] === SHOW) { releaseShow(argv.slice(1)); return; }
+  // `here` is RESERVED the same way: the plan-marker branch, so no release can be created under that id.
+  if (argv[0] === HERE) { releaseHere(argv.slice(1)); return; }
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     errStream().write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"] [--deliver | --undeliver]\n");
+    errStream().write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--theme \"<line>\"] [--rationale \"<line>\"] [--exit \"<check>\"] [--order <n>] [--size major|minor|patch] [--clear <field>] [--member <epicId>]... [--defer \"<epicId>:<why it was cut>\"] [--unmember \"<epicId>:<why>\"] [--undefer \"<epicId>:<why>\"] [--deliver | --undeliver]\n");
+    errStream().write("       conductor.mjs release here <id> [--text \"<line>\"] [--next \"<line>\"]   — record where the project is; release here --clear-here removes it\n");
     die("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
   }
   // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
@@ -110,6 +127,47 @@ export function release() {
   // `--member` was dropped by str()/lastStr() and the release was written without it; only
   // `--reason` had a check of its own, and only because a deferral demands one.
   requireFlagValues("release", f);
+  // `--text`, `--next` and `--clear-here` belong to the `here` branch alone; on an ordinary amendment they were silently ignored.
+  const hereOnly = ["text", "next", "clear-here"].filter(k => f[k] !== undefined);
+  if (hereOnly.length) {
+    refuse(`${hereOnly.map(k => `--${escapeControls(k)}`).join(", ")} belong to the plan marker, not to a release amendment: ` +
+      `use: release ${HERE} ${escapeControls(id)} --text "<line>" [--next "<line>"] (or: release ${HERE} --clear-here). Nothing was written.`);
+  }
+
+  // PLAN FIELDS (project-boards): every value is checked HERE, before any write. A text field is one line of at most
+  // 400 characters, `--order` a non-negative integer, `--size` one of major|minor|patch.
+  const planSet = {};
+  for (const name of PLAN_TEXT_FIELDS) {
+    if (f[name] === undefined) continue;
+    const v = lastStr(f[name]);
+    const err = oneLineError(name, v, PLAN_TEXT_MAX);
+    if (err) refuse(`${escapeControls(err)}. Nothing was written.`);
+    planSet[name] = v;
+  }
+  if (f.order !== undefined) {
+    const v = lastStr(f.order);
+    if (v === undefined || !/^[0-9]+$/.test(v) || !Number.isSafeInteger(Number(v))) {
+      refuse(`--order must be a non-negative integer (got ${escapeControls(JSON.stringify(f.order))}). Nothing was written.`);
+    }
+    planSet.order = Number(v);
+  }
+  if (f.size !== undefined) {
+    const v = lastStr(f.size);
+    if (!PLAN_SIZES.includes(v)) {
+      refuse(`--size must be one of ${PLAN_SIZES.join("|")} (got ${escapeControls(JSON.stringify(f.size))}). Nothing was written.`);
+    }
+    planSet.size = v;
+  }
+  const planClear = [].concat(f.clear === undefined ? [] : f.clear).filter(v => typeof v === "string").map(v => v.trim());
+  for (const name of planClear) {
+    if (!PLAN_FIELDS.includes(name)) {
+      refuse(`--clear ${escapeControls(name)}: '${escapeControls(name)}' is not a release field this command can unset. ` +
+        `Clearable fields: ${PLAN_FIELDS.join(", ")}. Nothing was written.`);
+    }
+    if ((name === "target" ? f.target : planSet[name]) !== undefined) {
+      refuse(`--clear ${escapeControls(name)} contradicts --${escapeControls(name)} in the same invocation — set it or unset it, not both. Nothing was written.`);
+    }
+  }
 
   const state = loadState();
   if (!Array.isArray(state.releases)) state.releases = [];
@@ -141,6 +199,11 @@ export function release() {
     if (intent !== undefined) rel.intent = intent;
     if (target !== undefined) rel.target = target;
     if (!Array.isArray(rel.deferred)) rel.deferred = [];
+  }
+  for (const [name, v] of Object.entries(planSet)) rel[name] = v;
+  for (const name of planClear) {
+    if (name in rel) delete rel[name];
+    else errStream().write(`conductor: release '${escapeControls(id)}' has no ${escapeControls(name)} set — there was nothing to clear\n`);
   }
 
   const knownEpic = (epicId) => state.epics.find(e => e.id === epicId) || null;
@@ -368,7 +431,82 @@ export function release() {
   });
 }
 
+// ─────────────────── the plan marker (project-boards) ───────────────────
+
+/** `release here <id> [--text "<line>"] [--next "<line>"]` records WHERE THE PROJECT IS: the release the plan is
+ *  currently in, with a "we are here" line and a "next up" line. `release here --clear-here` removes the marker and both
+ *  lines; it is valueless and takes no id. State: `state.releasePlan = {here, hereText, nextText}` (design D6).
+ *
+ *  A branch of `release` and not a verb, because `here` is a RESERVED release id exactly as `show` is. The branch takes
+ *  only an id, `--text`, `--next` and `--clear-here`; any other flag is refused, naming those three, so `release here
+ *  r2 --intent x` can never read as an amendment of r2. Every refusal writes nothing. */
+function releaseHere(rest) {
+  const id = rest[0] && !rest[0].startsWith("--") ? rest[0] : undefined;
+  const f = parseFlags(id === undefined ? rest : rest.slice(1));
+  requireFlagValues("release", f);
+  const accepted = ["text", "next", "clear-here", "session", "force"];
+  const stray = Object.keys(f).filter(k => !accepted.includes(k));
+  if (stray.length) {
+    refuse(`\`${HERE}\` is a reserved release id: \`release ${HERE}\` sets the plan marker and takes only a release id, ` +
+      `--text, --next and --clear-here (got ${escapeControls(stray.map(k => `--${k}`).join(", "))}). Nothing was written.`);
+  }
+  const clearing = f["clear-here"] !== undefined;
+  if (clearing && (id !== undefined || f.text !== undefined || f.next !== undefined)) {
+    refuse("--clear-here takes no id and no --text or --next: it removes the marker and both lines. Nothing was written.");
+  }
+  if (!clearing && id === undefined) {
+    refuse(`release ${HERE} needs a release id to set the marker (\`release ${HERE} <id> [--text "<line>"] [--next "<line>"]\`), ` +
+      "or --clear-here to remove it. Nothing was written.");
+  }
+  const text = lastStr(f.text);
+  const next = lastStr(f.next);
+  for (const [flag, given, v] of [["text", f.text, text], ["next", f.next, next]]) {
+    if (given === undefined) continue;
+    const err = oneLineError(flag, v, PLAN_LINE_MAX);
+    if (err) refuse(`${escapeControls(err)}. Nothing was written.`);
+  }
+  const state = loadState();
+  if (clearing) {
+    delete state.releasePlan;
+    const saved = saveState(state);
+    render();
+    reportSave(saved, {
+      changed: "conductor: plan marker cleared — `here`, the \"we are here\" line and the \"next up\" line are removed",
+      unchanged: `conductor: there was no plan marker to clear — ${STATE_UNCHANGED}`,
+    });
+    return;
+  }
+  if (!findRelease(state, id)) {
+    const known = (Array.isArray(state.releases) ? state.releases : []).map(r => `'${escapeControls(r.id)}'`);
+    refuse(`release '${escapeControls(id)}' does not exist, so it cannot be the plan marker. ` +
+      (known.length ? `Declared here: ${escapeControls(known.join(", "))}.` : "No releases are declared in this repo yet.") + " Nothing was written.");
+  }
+  const prior = planOf(state);
+  const plan = { here: id };
+  const hereText = text !== undefined ? text : (prior.here === id ? prior.hereText : null);
+  if (hereText !== null) plan.hereText = hereText;
+  const nextText = next !== undefined ? next : prior.nextText;
+  if (nextText !== null) plan.nextText = nextText;
+  state.releasePlan = plan;
+  const saved = saveState(state);
+  render();
+  reportSave(saved, {
+    changed: `conductor: the plan is now at release '${escapeControls(id)}'`,
+    unchanged: `conductor: the plan marker already read exactly that — ${STATE_UNCHANGED}`,
+  });
+}
+
 // ─────────────────── the READ form (gh#178) ───────────────────
+
+/** ` [order N · size S · <derived status>]`: the plan suffix, with the status derived from the members. */
+function planSuffix(rel, epics) {
+  const statuses = releaseMembers(epics, rel.id).map(e => e.status);
+  const bits = [];
+  if (Number.isInteger(rel.order)) bits.push(escapeControls(`order ${rel.order}`));
+  if (rel.size !== undefined) bits.push(`size ${rel.size}`);
+  bits.push(releaseStatus(rel, statuses));
+  return ` [${escapeControls(bits.join(" · "))}]`;
+}
 
 /** The CANDIDATE review's convergence, DERIVED from existing Gate 2 records — nothing is stored
  *  (converged-release-candidate-review D3). A candidate member is a release member that is NOT
@@ -446,8 +584,10 @@ export function releaseShow(rest) {
     }
     const out = [`conductor: ${releases.length} release${releases.length === 1 ? "" : "s"}:`];
     for (const r of releaseSummaries(state, epics)) {
+      const full = findRelease(state, r.id);
+      const plan = planSuffix(full, epics);
       out.push(`  • ${releaseLine(r)}${crossSpecLine(state, epics, r.id)}` +
-        `${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`);
+        `${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}${plan}${releaseMarks(full, state)}`);
     }
     out.push("  Read one back with `release show <id>`.");
     // One entry per line: escaping each is what keeps a stored id, intent or target on its line.
@@ -468,8 +608,14 @@ export function releaseShow(rest) {
   const members = releaseMembers(epics, id);
   const deferred = Array.isArray(rel.deferred) ? rel.deferred : [];
   const amendments = Array.isArray(rel.amendments) ? rel.amendments : [];
-  const out = [`conductor: release \`${rel.id}\`${rel.intent ? ` — ${rel.intent}` : ""}`];
+  const out = [`conductor: release \`${rel.id}\`${rel.intent ? ` — ${rel.intent}` : ""}${escapeControls(releaseMarks(rel, state))}`];
   out.push(`  target: ${rel.target || "—"}`);
+  // The plan fields, printed only when one is set so a release that does not plan reads exactly as before.
+  const planned = ["theme", "rationale", "exit", "order", "size"].some(k => rel[k] !== undefined);
+  if (planned) {
+    for (const k of ["theme", "rationale", "exit"]) if (rel[k] !== undefined) out.push(`  ${k}: ${rel[k]}`);
+    out.push(`  plan:${planSuffix(rel, epics).replace(/^ \[/, " ").replace(/\]$/, "")}`);
+  }
   out.push(rel.delivered
     ? `  delivered: yes — marked${rel.delivered.recordedAt ? ` ${rel.delivered.recordedAt}` : ""} (\`integrity\` reads this marker)`
     : "  delivered: — (no marker: integrity derives it from the members; this verb's --deliver flag records it)");

@@ -19,8 +19,8 @@
 // is a MUTATION, and the engine must never perform it: it emits the instruction and whoever reads
 // the instruction — agent or human — runs the command. That is a statement about pm's ENGINE, not
 // a permission boundary: an agent reading the nudge MAY run `openspec update` immediately, and the
-// safety requirement is reviewing the diff, not who typed it. The ONLY argv this file ever
-// passes to the `openspec` binary is `--version`, and a source scan in
+// safety requirement is reviewing the diff, not who typed it. The ONLY argvs this file ever
+// pass to the `openspec` binary are `--version` and the read-only `validate <id> --strict`, and a source scan in
 // scripts/test/tool-currency.test.mjs fails the suite if any lib file ever passes another.
 //
 // THE GENERAL FORM. Every CLI in the stack has this failure mode; OpenSpec is simply the one
@@ -85,6 +85,34 @@ const spawnTimeoutMs = () => {
 // Per process, keyed by the binary it was asked of: every render re-asks, and an answer that can land on
 // either side of a timeout is exactly what made the drift line flap (gh#196).
 const spawnAnswers = new Map();
+
+/** The environment `openspec validate` is spawned with: the caller's, with OpenSpec's telemetry switched off.
+ *  `validate` runs OpenSpec's preAction hook, which POSTs usage telemetry unless `OPENSPEC_TELEMETRY=0` or
+ *  `DO_NOT_TRACK=1` (or `CI`) is set. pm is an instruction layer and opens no network connection, so it sets
+ *  both, overriding whatever the user's shell says. (The old `--version` probe never ran that hook.) */
+export function validateSpawnEnv(env) {
+  return { ...env, OPENSPEC_TELEMETRY: "0", DO_NOT_TRACK: "1" };
+}
+
+/** Does `openspec validate <id> --strict` pass? `{state:"pass"}`, `{state:"fail", output}` (validate ANSWERED with a
+ *  non-zero exit status) or `{state:"unknown"}` (no CLI, a timeout, a signal: could not tell, never a failure).
+ *  The SECOND and last argv the engine passes to `openspec` (gh#243): a local, read-only check of files on disk,
+ *  asked here because this is the one module the spawn allowlist lets run `openspec`. The caller guarantees `id`
+ *  is a safe argv word (openspec-validate.mjs). Unpiped, and the EXIT STATUS decides, never the last output line. */
+export function runOpenspecValidate(id) {
+  try {
+    execFileSync("openspec", ["validate", id, "--strict"], {
+      cwd: engineRoot(), encoding: "utf8", timeout: spawnTimeoutMs(), stdio: ["ignore", "pipe", "pipe"],
+      env: validateSpawnEnv(currentEnv()),
+    });
+    return { state: "pass" };
+  } catch (e) {
+    if (e && typeof e.status === "number" && e.status !== 0) {
+      return { state: "fail", output: [e.stdout, e.stderr].filter(Boolean).join("\n") };
+    }
+    return { state: "unknown" };
+  }
+}
 
 /** The first executable named `openspec` on `PATH`, or `null`. A READ — no spawn. */
 function openspecOnPath() {

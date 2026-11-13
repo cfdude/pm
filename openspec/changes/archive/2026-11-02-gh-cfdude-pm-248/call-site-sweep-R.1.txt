@@ -1,0 +1,108 @@
+call-site-sweep-R.1 — gh-cfdude-pm-248 (required gate item 1: call-site completeness and inverses)
+Every list below is derived with rg on 2026-11-02 against the working tree at the head of this change's code commits.
+
+(a) rulesBlock( callers outside scripts/test            $ rg -n "rulesBlock\(" scripts --glob '!scripts/test/**'
+scripts/lib/overhead.mjs:172:  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage);
+scripts/lib/rules.mjs:721:export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE) {
+scripts/lib/rules.mjs:1268:  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(),
+scripts/conductor.mjs:516:      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking(), 
+  scripts/lib/rules.mjs:1268 writeRules()          PASSES usage: currentRulesUsage()      (the write path)
+  scripts/conductor.mjs:516  the `rules` verb       PASSES usage: currentRulesUsage()      (the print path)
+  scripts/lib/overhead.mjs:172 rulesBlockFor()      PASSES usage: the parameter, default rulesUsage(state); --all-features passes FULL_USAGE
+  scripts/lib/rules.mjs:721  the definition         usage = FULL_USAGE default
+  Direct test callers (rg -c "rulesBlock\(" scripts/test, 61 calls in 15 files on 2026-11-02) rely on the FULL default ON PURPOSE:
+  they assert on the content of a section or on the shipped text, and the default is byte-identical to the pre-change block
+  (36 renders compared against HEAD). A future non-test caller that forgets the argument over-emits rather than drops a rule.
+  Result: every caller that renders FROM STATE passes usage; none was found that renders from state and relies on the default.
+
+  writeRules( callers                                   $ rg -n "writeRules\(" scripts --glob '!scripts/test/**'
+scripts/conductor.mjs:529:      writeRules(platform);
+scripts/lib/spend-tracking.mjs:116:  writeRules(resolvePlatform({}, state));
+scripts/lib/review-mode.mjs:31:  writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees the new active mode
+scripts/lib/rules.mjs:1258:export function writeRules(platform = "claude-code") {
+scripts/lib/tracker.mjs:118:      writeRules(resolvePlatform({}, state));
+scripts/lib/tracker.mjs:140:    writeRules(resolvePlatform({}, state));
+scripts/lib/tracker.mjs:226:  writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
+scripts/lib/spend-guard-verbs.mjs:167:  if (guardConfigured(state) !== wasConfigured) writeRules(resolvePlatform({}, state));
+scripts/lib/spend-guard-verbs.mjs:197:    writeRules(platform);
+scripts/lib/subcommands.mjs:190:  writeRules(platform);
+scripts/lib/profile-verbs.mjs:36:  writeRules(resolvePlatform({}, state));   // the block shows project and lane values
+scripts/lib/migrations.mjs:238:  const rulesFile = path.basename(writeRules(resolvePlatform({}, state)));
+  Every one of these reaches the appearance notice because the notice lives INSIDE writeRules() (rules.mjs, the arrangement-"one" branch),
+  not in a caller: migrations.mjs:238 (upgrade), subcommands.mjs:190 (init: create/append branch, silent by design), profile-verbs.mjs:36,
+  spend-guard-verbs.mjs:167 (set-spend-guard) and :197 (the wrapper refresh), tracker.mjs:118,140,226, review-mode.mjs:31,
+  spend-tracking.mjs:116, conductor.mjs:529 (write-rules). All of them call saveState before writeRules, so currentRulesUsage() reads the
+  state they just wrote (checked for upgrade: migrations.mjs saveState precedes writeRules; set-spend-guard: saveState precedes it).
+
+(b) Writers of the predicates' inputs, and where each runs relative to the dispatch wrapper's non-hook refresh
+  (the wrapper arms the refresh for a verb the effects registry marks effect:"mutates" and NOT hook; scripts/lib/verb-effects.mjs)
+  epic.autonomy      rg: scripts/lib/autonomy.mjs:214 (`epic.autonomy = a`) is the ONLY writer. Verb set-autonomy: mutates, non-hook -> refreshed.
+                     add-epic / add-many write no autonomy field (rg finds none); remove-epic and archive remove/retire the holder (below).
+  epic status        update-epic (update-epic.mjs:903): mutates, non-hook -> refreshed (archive, un-archive).
+                     sync (subcommands.mjs:1009 planned->untriaged, both non-archived: moves no predicate; archived registrations via reconcileArchived): non-hook -> refreshed.
+                     detour-stack.mjs:146 / active-pointer.mjs:41,44,148 (paused/active/queued among NON-archived epics): cannot move either predicate.
+                     reconcileArchived (epic-progress.mjs:208): see the hook paragraph below.
+  epic existence     add-epic (state.mjs:139 push), add-many, sync: non-hook mutates -> refreshed. remove-epic (remove-epic.mjs:134): non-hook -> refreshed.
+                     init: non-hook mutates; writes the block itself, then the wrapper finds agreement.
+  state.releases     release create (releases.mjs:139), --deliver (:354), --undeliver (:358): verb `release`, mutates non-hook -> refreshed.
+  Hooks DO write one input: reconcileArchived() sets status = "archived" from the commit-nudge hook (subcommands.mjs:854-855), from the
+  snapshot hook through render()'s self-heal (verified: a snapshot invocation archived the epic and left CLAUDE.md byte-identical), from
+  the `render` verb (non-hook, so the wrapper refreshes it), and from `upgrade` (migrations.mjs:235). How the block catches up:
+    - commit-nudge / snapshot (hooks, hook:true in the registry): they compare nothing (mutant M3 in mutation-3.5.txt proves it) and the NEXT
+      non-hook write corrects the block, which the precedent set for the spend-guard section by the same hook (tested: rules-conditional-refresh
+      "a hook that WRITES state ... the next non-hook write catches up").
+    - upgrade: writeRules() runs after reconcileArchived and saveState (migrations.mjs:235-238), so the block follows the healed state in the same run.
+    - render verb / sync: non-hook, refreshed by the wrapper.
+
+(c) Referrers of the two sections in emitted text, skills, commands, agents and docs
+  $ rg -n -i "epic-level[- ]autonomy|release[- ]candidate|decision[- ]rule" (excluding tests, openspec, vision/lessons/feedback docs, changelog)
+       3 ./agents/hierarchy-child-executor.md
+      10 ./CLAUDE.md
+       1 ./commands/overhead.md
+       2 ./commands/review-mode.md
+       1 ./commands/spend-guard.md
+       1 ./commands/spend.md
+       1 ./commands/status.md
+       1 ./docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md
+       4 ./docs/feedback/2026-07-15-autonomy-hierarchy-adoption-investigation.md
+       1 ./docs/feedback/2026-07-15-cross-repo-epic-dependency-investigation.md
+       3 ./docs/parity-ledger.json
+       3 ./docs/reviews/pm-0.54.0-grooming.md
+       5 ./docs/rules-block-session-cost.md
+      11 ./README.md
+       1 ./scripts/lib/add-epic.mjs
+       5 ./scripts/lib/autonomy.mjs
+       2 ./scripts/lib/overhead.mjs
+       2 ./scripts/lib/rules-usage.mjs
+      13 ./scripts/lib/rules.mjs
+       1 ./scripts/lib/spend-guard-verbs.mjs
+       2 ./scripts/lib/spend-guard.mjs
+      17 ./skills/conductor/SKILL.md
+  Judged, file by file, whether each still resolves while the section is ABSENT:
+    scripts/lib/rules.mjs 811 (operating rule 7: "the epic-level-autonomy preflight scan" is a KIND OF WORK named for the full-read rule, not a pointer to the
+        section) and Reporting ("the end-of-epic autonomy report") -> resolve: they name work, and the preflight scan lives in the conductor skill, which the pointer names.
+    scripts/lib/rules.mjs 985-994 (the outward-tracker paragraph citing decision-rule item (d)) -> WAS a dangling reference; now emitted only while the section is (usage.autonomy).
+    scripts/lib/spend-guard.mjs:318,372 and commands/spend-guard.md:43 ("Epic-level autonomy does not bypass this stop") -> a statement about the FEATURE, true and complete with the section absent; no section is cited.
+    agents/hierarchy-child-executor.md:5,25-26 -> cites "the `conductor` skill's 'Epic-level autonomy' section", which ships whatever the block carries; resolves. Not edited (it never says the rules-block section is always present).
+    commands/status.md:402, commands/review-mode.md:107-114, commands/spend.md:147 -> name the `release-candidate` skill, which ships whatever the block carries; resolve.
+    skills/conductor/SKILL.md (17 hits) -> the preflight scan lives here; the one sentence that claimed the decision rule "is in the rules block re-injected into CLAUDE.md" is reworded (task 5.1).
+    commands/epic.md set-autonomy, commands/upgrade.md, commands/overhead.md, docs/parity-ledger.json, docs/rules-block-session-cost.md -> updated in task 5.1 to state the conditional presence.
+    README.md (11 hits) -> the cost-table rows for rules:epic-level-autonomy / rules:release-candidate say "~785 / ~294 tokens, core" without "emitted only while in use": that is task D.1 (after Gate 2), named there.
+    scripts/lib/autonomy.mjs, add-epic.mjs -> code comments about the decision rule; no emitted line.
+    CLAUDE.md (this repo's own managed block, 10 hits) -> regenerated by the engine; not hand-edited.
+
+(d) Inverses (each operation this change adds or modifies, and its inverse)
+  autonomy section:  ADD  = a non-archived epic gains an autonomy record (set-autonomy).
+                     RETIRE = the last holder is archived (update-epic --status archived) or removed (remove-epic).   SHIPPED, tested (rules-conditional-refresh).
+                     RESTORE = un-archive (update-epic --status untriaged).                                          SHIPPED, tested.
+                     level off KEEPS the section (re-arming restores kept grants).                                  tested.
+                     Removing an autonomy RECORD has no verb: set-autonomy appends or revokes and never deletes epic.autonomy. UNSHIPPED, justified:
+                     a safety record is kept (the revoke precedent in CLAUDE.md gate item 1); archive and remove-epic are the two ways its holder leaves the predicate.
+  release section:   ADD  = release <id> creates a release with no delivered marker.   RETIRE = --deliver.   RESTORE = --undeliver.   SHIPPED, tested.
+                     Release REMOVAL has no verb. UNSHIPPED, justified: records end, they are not deleted (the disposition rule); a release the user hand-removes from state.json
+                     is the hand-edit scenario, corrected by the next engine write (tested: "a hand-edit of state is corrected by the NEXT engine write").
+  pointer:           added/removed as a pure function of the two rows (tested for all 16 input combinations in rules-conditional-coverage).
+  appearance notice: one line per section that APPEARS in an existing block. It has no inverse line BY DESIGN (D5): a retirement prints nothing new beyond the existing
+                     "refreshed rules block" line; tested ("a retirement is silent, even when the pointer appears", "a removal-only refresh").
+  usage parameter:   rulesBlock(..., usage) <-> the FULL_USAGE default: the inverse of "drop a section" is "pass true" or omit the argument.
+  refresh:           refreshConditionalSections rewrites in both directions (adds and removes) in one comparison, so no direction is left to a second path.

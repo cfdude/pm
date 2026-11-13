@@ -15,7 +15,8 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { rulesBlockShowsSpendGuard, writeRules } from "./rules.mjs";
+import { rulesBlockHeadings, writeRules } from "./rules.mjs";
+import { CONDITIONAL_SECTIONS } from "./rules-usage.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { CommandExit, die } from "./command-exit.mjs";
 import { currentArgv, currentEnv, errStream, outStream } from "./invocation.mjs";
@@ -31,7 +32,7 @@ import { buildReport, emptyTotals } from "./spend-report.mjs";
 import {
   GUARD_FIELDS, GUARD_SIGNALS, SIGNAL_ROLE, checkMaxFailedRounds, checkTokenBasis, checkTokenCeiling, checkWarnAt,
   LOW_TOTAL_CEILING_FLOOR,
-  guardConfigured, guardLivenessChanged, ledgerRounds, liveOverrides, passAnchor, resolveGuard, rolePair, roundsSignal, escalationRank,
+  guardConfigured, ledgerRounds, liveOverrides, passAnchor, resolveGuard, rolePair, roundsSignal, escalationRank,
   stopBlock, targetFor, tokenSignal, unrevokedOverrides,
 } from "./spend-guard.mjs";
 import os from "node:os";
@@ -175,24 +176,29 @@ export function setSpendGuard() {
   }
 }
 
-/** Keep the rules block's `## Spend guard` section equal to "a limit is configured" after ANY verb that
- *  wrote state (spend-guard-rules-section-follows-live-limits). `before` is the dispatch wrapper's
- *  snapshot, `after` the one image read once the verb returned. The block is rewritten only when the
- *  section on disk disagrees with `guardConfigured(after)`, which makes it exact on four counts: a verb
- *  that already refreshed (`set-spend-guard`) is not refreshed twice; a write that leaves liveness alone
- *  rewrites nothing; a liveness change a HOOK's self-heal left unreflected is picked up here, by the next
- *  non-hook write; and a repository with no managed block is never given one. A failure is a warning, not
- *  a failed verb: the state write already happened. */
-export function refreshSpendGuardSection(before, after) {
+/** Keep every CONDITIONAL section of the rules block (`CONDITIONAL_SECTIONS`: Spend tracking, Spend guard,
+ *  Epic-level autonomy, Release candidate) equal to its predicate after ANY verb that wrote state
+ *  (spend-guard-rules-section-follows-live-limits, generalised by gh-cfdude-pm-248 D4). `before` is the dispatch
+ *  wrapper's snapshot, `after` the one image read once the verb returned. The block is rewritten only when a
+ *  section's presence ON DISK disagrees with its predicate over `after`. Comparing disk with state, not `before`
+ *  with `after`, is what makes four things exact: a verb that already refreshed (`set-spend-guard`) is not
+ *  refreshed twice; a write that moves no condition rewrites nothing; a change a HOOK's self-heal left
+ *  unreflected, or a hand-edit of state, is picked up by the next non-hook write; and a repository with no
+ *  managed block is never given one. A failure is a warning, not a failed verb: the state write already
+ *  happened. */
+export function refreshConditionalSections(before, after) {
+  let disagreeing = [];
   try {
     const platform = resolvePlatform({}, after);
-    const shown = rulesBlockShowsSpendGuard(platform);
-    const configured = guardConfigured(after);
-    if (shown === null || shown === configured) return;
+    const onDisk = rulesBlockHeadings(platform);
+    if (onDisk === null) return;
+    disagreeing = CONDITIONAL_SECTIONS.filter((row) => onDisk.has(row.heading) !== Boolean(row.shown(after))).map((row) => row.heading);
+    if (!disagreeing.length) return;
     writeRules(platform);
   } catch (e) {
-    const why = guardLivenessChanged(before, after) ? "this write changed whether a spend limit is configured" : "the block on disk disagrees with the configured spend limits";
-    errStream().write(`conductor: warning — ${escapeControls(why)}, but the rules block's Spend guard section could not be refreshed (${escapeControls(String(e && e.message))}). Run \`write-rules\` to refresh the rules block.\n`);
+    const names = disagreeing.length ? disagreeing : CONDITIONAL_SECTIONS.map((row) => row.heading);
+    const noun = names.length === 1 ? "section" : "sections";
+    errStream().write(`conductor: warning — the rules block on disk disagrees with the record, but the ${names.map(escapeControls).join(" and ")} ${noun} could not be refreshed (${escapeControls(String(e && e.message))}). Run \`write-rules\` to refresh the rules block.\n`);
   }
 }
 

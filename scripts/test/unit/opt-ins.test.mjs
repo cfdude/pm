@@ -8,10 +8,11 @@ import { OPT_INS, optInLines } from "../../lib/opt-ins.mjs";
 
 unitTest("gh#210: an empty state lists every registry opt-in as NOT SET, each with its command", () => {
   const lines = optInLines({ epics: [] });
-  assert.equal(lines[0], "conductor: opt-ins — none adopted");
+  // project-boards: the boards row is DEFAULT ON, so an empty record has it adopted and says so; every other row is NOT SET.
+  assert.equal(lines[0], "conductor: opt-ins — boards: on (default)");
   const notSet = lines.filter(l => l.includes("NOT SET:"));
-  assert.equal(notSet.length, OPT_INS.length, "one NOT SET line per registry row, none hand-typed elsewhere");
-  for (const o of OPT_INS) {
+  assert.equal(notSet.length, OPT_INS.length - 1, "one NOT SET line per registry row that is not default-on, none hand-typed elsewhere");
+  for (const o of OPT_INS.filter(x => x.id !== "boards")) {
     assert.ok(notSet.some(l => l.includes(o.command)), `${o.id}: the line names the adopting command`);
   }
 });

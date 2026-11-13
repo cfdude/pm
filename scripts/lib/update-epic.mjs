@@ -6,7 +6,8 @@ import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES,
   CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, isOpenspecLane, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken, priorityValueError, timestampValueError,
 } from "./constants.mjs";
-import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
+import { SUMMARY_FIELDS, lineFieldError, warnSummary } from "./epic-summary.mjs";
 import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
@@ -582,6 +583,15 @@ export function updateEpic() {
 
   // The valueless --description / --notes loop that stood here is requireFlagValues()' job now.
   const description = str(f.description);
+  // project-boards: the one-line fields. Validated HERE, before any write, so a refusal writes nothing.
+  const lineFields = {};
+  for (const field of SUMMARY_FIELDS) {
+    const v = str(f[field.flag]);
+    if (v === undefined) continue;
+    const err = lineFieldError(field, v);
+    if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
+    lineFields[field.key] = v;
+  }
   const note = str(f.notes);
   // spec-sync-waive-for-skip-specs: the reason a delivered change's archived spec deltas were deliberately
   // not applied. Blank is refused by requireFlagValues() above; `--clear spec-deltas-waived` is the inverse.
@@ -900,6 +910,7 @@ export function updateEpic() {
   if (setUrl !== undefined) epic.externalUrl = setUrl;
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   if (parent !== undefined) epic.parent = parent;
+  const statusBefore = epic.status;
   if (status !== undefined) epic.status = status;
   // In-place field writes: the epic keeps its position in `state.epics[]`, its startedAt, its
   // gate verdicts, its links and its stories. Re-routing an epic must cost none of those — that
@@ -992,6 +1003,7 @@ export function updateEpic() {
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.
   if (description !== undefined) epic.description = description;
+  for (const [key, v] of Object.entries(lineFields)) epic[key] = v;
   if (specDeltasWaived !== undefined) epic.specDeltasWaived = specDeltasWaived;
   if (gate1WaivedFlag !== undefined) epic.gate1Waived = gate1WaivedFlag;
   if (note !== undefined) {
@@ -1179,6 +1191,8 @@ export function updateEpic() {
   // INSTANCES of it, not its scope.
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
+  movedActiveNotice(state, previousActive);
+  warnSummary(epic, statusBefore);
   render();
 
   // The success message is printed only after the record on disk is READ BACK and confirmed to

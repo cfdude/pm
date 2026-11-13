@@ -152,3 +152,31 @@ unitTest("the gate is reachable from update-epic, refusal text intact", () => {
     "--outcome", "delivered", "--no-deferrals"]));
   assert.match(String(err.stderr || ""), /Gate 2|gate/i);
 });
+
+// ─────────────── a gate 2 `fail` carries the range it covered ───────────────
+// The refusal half of the functional file's test of the same subject. The write half needs resolvable
+// commits (real git), so it stays functional; every refusal happens BEFORE any commit is resolved.
+unitTest("a gate 2 fail verdict requires the range it covered, naming the missing flag; gate 1 fail is unchanged", () => {
+  const engine = repo();
+  engine(["add-epic", "--id", "spec-epic", "--lane", "openspec"]);
+  const before = engine.store.read("state.json").text;
+  for (const [flags, missing] of [[[], "--base-sha and --head-sha"], [["--base-sha", "abc1234"], "--head-sha"], [["--head-sha", "abc1234"], "--base-sha"]]) {
+    const err = expectFail(() => engine(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", ...flags]));
+    assert.match(String(err.stderr || ""), new RegExp(`a gate 2 'fail' requires the commit range.*missing ${missing}`));
+    assert.match(String(err.stderr || ""), /Gate 2 fail carries a range/);
+  }
+  assert.equal(engine.store.read("state.json").text, before, "a refused verdict writes nothing");
+  engine(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "fail"]);
+  assert.equal(readState(engine).epics.find(e => e.id === "spec-epic").gateReview.gate1.verdict, "fail");
+});
+unitTest("a gate 2 fail recorded without a range before this rule still loads, and a gate 1 verdict can be recorded beside it", () => {
+  const engine = repo();
+  engine(["add-epic", "--id", "old", "--lane", "openspec"]);
+  const rec = structuredClone(readState(engine));
+  rec.epics.find(e => e.id === "old").gateReview = { gate2: { verdict: "fail", reviewedAt: "2026-09-01T00:00:00.000Z" } };
+  install(engine, rec);
+  engine(["record-gate-review", "old", "--gate", "1", "--verdict", "fail"]);
+  const g = readState(engine).epics.find(e => e.id === "old").gateReview;
+  assert.deepEqual(g.gate2, { verdict: "fail", reviewedAt: "2026-09-01T00:00:00.000Z" }, "the old entry is untouched");
+  assert.equal(g.gate1.verdict, "fail");
+});

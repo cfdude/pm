@@ -4,7 +4,7 @@ date: 2026-08-27
 trigger: About to rely on an existing test as proof that a behaviour holds — especially a guard someone wrote to protect a rule, and most especially one you or a teammate wrote recently.
 cost: Three instances in one day. A drift guard that compared only titles while a mirror's body could contradict the generator. A file-preservation check that matched no delimiter and silently compared whole files, reporting 24 of 24 repos as damaged. A registry guard that proved a flag was DECLARED while an implementation that parsed and discarded it passed green.
 rule: A guard proves the half it asserts, not the half it is named for. Before trusting one, neuter the behaviour it claims to protect and watch it fail — and read the assertion itself, not the test's name or its comment.
-enforced_in: habit — the neuter-before-trust step; no mechanism
+enforced_in: required gate-procedure item 8, "Prove every guard can fail." (scripts/lib/rules.mjs GATE_PROCEDURE_ITEMS, emitted into the rules block and mirrored in skills/conductor/SKILL.md, commands/epic.md, commands/status.md), whose method is skills/mutation-pass/SKILL.md; pinned by scripts/test/unit/mutation-pass.test.mjs and scripts/test/assert/mutation-pass.test.mjs. The pass is agent-run and its evidence file is read by the reviewer, not by the engine, so beyond the requirement it is a habit.
 tags: [verification, false-signal, testing]
 ---
 

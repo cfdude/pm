@@ -11,8 +11,10 @@ review is recorded as each member epic's Gate 2 and read back.
 ### Requirement: pm emits the converged release-candidate procedure as instructions
 
 pm SHALL carry the procedure in a shipped skill, `release-candidate`, and SHALL point to it from the
-managed rules block. pm SHALL NOT create branches, merge, dispatch reviewers or push. Every step is
-an instruction to the agent. The procedure SHALL state six steps, in this order:
+managed rules block while at least one release has no delivered marker; with no such release the
+block's always-on pointer names the skill instead. pm SHALL NOT create branches, merge, dispatch
+reviewers or push. Every step is an instruction to the agent. The procedure SHALL state six steps, in
+this order:
 
 1. **Batch by area.** Work items that touch the same component go to ONE sub-agent.
 2. **One integration branch.** Each worktree branch merges into one candidate branch, `rc/<releaseId>`,
@@ -28,9 +30,26 @@ an instruction to the agent. The procedure SHALL state six steps, in this order:
 
 #### Scenario: The rules block points to the procedure
 
-- **WHEN** the managed rules block is written
+- **WHEN** the managed rules block is written while a release with no delivered marker exists
 - **THEN** it carries a "Release candidate" section that names the `release-candidate` skill and
   states the budget rule and the one-round cap
+
+#### Scenario: No undelivered release, no section
+
+- **WHEN** the managed rules block is written for a repo with no release, or with every release marked delivered
+- **THEN** it carries no "Release candidate" section
+- **AND** its `## Procedures emitted on use` section names the `release-candidate` skill
+
+#### Scenario: The first release adds the section
+
+- **WHEN** no release exists and `release 1.0.0 --intent "x"` runs
+- **THEN** the managed block on disk carries the "Release candidate" section
+
+#### Scenario: Delivering the last open release retires it, undelivering restores it
+
+- **WHEN** release R is the only release with no delivered marker and `release R --deliver` runs
+- **THEN** the managed block on disk carries no "Release candidate" section
+- **AND** after `release R --undeliver` it carries the section again
 
 #### Scenario: The skill is claimed by the parity ledger
 

@@ -5,12 +5,13 @@
 import { gate1ActivationRefusal } from "./gate1-guard.mjs";
 import fs from "node:fs";
 import path from "node:path";
-import { activate, owedReconcileNotice } from "./active-pointer.mjs";
+import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
 import { die } from "./command-exit.mjs";
 import { newStory, parentError, sourceArtifactPathError, parseFlags, requireFlagValues, splitLinkSpec } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { SUMMARY_FIELDS, lineFieldError, warnSummary } from "./epic-summary.mjs";
 import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
@@ -142,6 +143,11 @@ export function addMany() {
       if (!m.ok) refuse(`epic '${escapeControls(id)}': ${m.message}`);
       e.model = m.model;
     }
+    // project-boards: summary and whyNow are one-line fields with limits, checked here so a bad one creates nothing.
+    for (const field of SUMMARY_FIELDS) {
+      const err = e[field.key] === undefined ? null : lineFieldError(field, e[field.key], `epic '${escapeControls(id)}': ${escapeControls(field.key)}`);
+      if (err) refuse(err);
+    }
     for (const k of Object.keys(e)) {
       if (!allowedKeys.includes(k) || k === "links" || k === "stories" || k === "model") continue;
       if (typeof e[k] !== "string" || !e[k].trim()) {
@@ -207,6 +213,7 @@ export function addMany() {
     }
     claimed.push(e);
   }
+  const registeredForWarning = [];
   for (const e of incoming) {
     // Seeded with the defaults a batch entry may omit, plus the two fields the ENGINE owns and
     // a batch never supplies (`role`, `reconcileNeeded`). Everything else is copied by the
@@ -241,6 +248,7 @@ export function addMany() {
     // validation pass resolved it.
     if ((e.status || "queued") === "archived") epic.disposition = creationStamp("add-many");
     pushEpic(state, epic);
+    registeredForWarning.push(epic);
   }
   // Route every activation through the ONE door. add-many used to construct epics inline and
   // push them straight onto state.epics, so a batch entry at `active` status set neither the
@@ -254,6 +262,8 @@ export function addMany() {
   }
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
+  movedActiveNotice(state, previousActive);
+  for (const e of registeredForWarning) warnSummary(e, null);
   render();
   reportSave(saved, {
     changed: `conductor: add-many added ${incoming.length} epic(s)`,

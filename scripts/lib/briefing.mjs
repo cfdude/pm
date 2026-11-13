@@ -2,6 +2,8 @@
 // Builds the SessionStart/PreCompact briefing text. Needs lib/active-pointer.mjs's
 // staleMarker() (one-directional — active-pointer doesn't need anything back from here).
 
+import { missionBriefLine } from "./mission-record.mjs";
+import { boardsBriefLine } from "./boards-switch.mjs";
 import { resolveEpics, missing, orderQueueWithDependencies, bar, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { changelogAddedHeadlines, cmpVer, newestInstalledVersion, pluginVersion } from "./plugin-meta.mjs";
 import { getAutonomy } from "./autonomy.mjs";
@@ -19,6 +21,7 @@ import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
 import { briefGuardLines } from "./spend-guard.mjs";
+import { spendEnabled } from "./spend-switch.mjs";
 
 /** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
  *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
@@ -207,6 +210,11 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
   } else {
     L.push("NOW: (no active epic set)");
   }
+  // gh#249: with no active epic, every orchestrator token lands in `no-active-epic`. Said only while
+  // spend tracking is on, so a repo that never opted in gains no byte.
+  if (!active && spendEnabled(state)) {
+    L.push("  ⚠ spend tracking is on and no epic is active — orchestrator tokens go unattributed; `set-active <id>`.");
+  }
   L.push("");
 
   // At-or-above the threshold, and once per EPISODE of contention — not exactly-equal, and not
@@ -259,13 +267,17 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
   }
 
   const NEXT_CAP = 5;
-  const queuedByPriority = epics.filter(e => ["queued", "untriaged"].includes(e.status) && !missing(e));
+  // gh#246: a queued openspec epic with no change on disk is still the work the user queued, often
+  // the top priority. Dropping it made NEXT UP start at a lower-priority epic while PROJECT.md showed
+  // the P1 with its warning, so the one view re-injected every session disagreed with the table. It is
+  // listed with its state; the lanes rollup below still counts only epics whose change exists.
+  const queuedByPriority = epics.filter(e => ["queued", "untriaged"].includes(e.status));
   const { ordered: queued, notes: starvationNotes } = orderQueueWithDependencies(queuedByPriority);
   if (queued.length) {
     L.push("NEXT UP (by priority, then lane):");
     for (const e of queued.slice(0, NEXT_CAP)) {
       const pa = e.parent ? `, parent: \`${e.parent}\`` : "";
-      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}${staleMarker(e)}`);
+      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}${staleMarker(e)}${missing(e) ? " ⚠ no change on disk — needs /opsx:propose" : ""}`);
     }
     if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
     for (const note of starvationNotes) L.push(`  ⚠ ${note}`);
@@ -273,7 +285,7 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
     for (const e of epics) if (!missing(e) && e.status !== "planned") counts[e.lane] = (counts[e.lane] || 0) + 1;
     const ordered = KNOWN_LANES.filter(l => counts[l]).map(l => `${l} ${counts[l]}`);
     const unknown = Object.keys(counts).filter(l => !KNOWN_LANES.includes(l)).sort().map(l => `${l} ${counts[l]}`);
-    L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
+    if (ordered.length || unknown.length) L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
     L.push("");
   }
 
@@ -293,6 +305,17 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
     L.push(`planned: ${plannedCount} — see PROJECT.md`);
     L.push("");
   }
+
+  // The mission (project-boards): ONE line, at most 200 bytes, a plain string among the obligations so fitBrief() never
+  // shortens it. Absent with no current mission, so a repo that records none gains no byte.
+  const missionLine = missionBriefLine(state);
+  // The boards line (project-boards): default on, one line of at most 160 bytes, a plain string like the mission's, and absent while
+  // `set-boards off` holds. It follows the mission line with no blank of its own, so its measured bytes are exactly the line and
+  // its newline (overhead's `brief:boards`).
+  const boardsLine = boardsBriefLine(state);
+  if (missionLine) L.push(missionLine);
+  if (boardsLine) L.push(boardsLine);
+  if (missionLine || boardsLine) L.push("");
 
   // Releases — the same releaseSummaries() PROJECT.md renders, so a release cannot read as 12
   // epics on one surface and 11 on the other. One line each: the counts and what the release is

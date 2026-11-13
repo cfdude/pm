@@ -311,13 +311,18 @@ test("gh#128: no engine source runs `openspec` with anything but a read-only fla
     const re = /exec(?:File)?Sync\(\s*"openspec"\s*,\s*(\[[^\]]*\])/g;
     let m;
     while ((m = re.exec(src))) {
-      if (m[1].replace(/\s/g, "") !== '["--version"]') offenders.push(`${f}: ${m[1]}`);
+      // The two read-only questions the engine may ask: the version (tool-currency.mjs) and whether a change
+      // validates (also tool-currency.mjs, gh#243). Both are local reads that write nothing.
+      const argv = m[1].replace(/\s/g, "");
+      if (argv !== '["--version"]' && !(f === "tool-currency.mjs" && argv === '["validate",id,"--strict"]')) {
+        offenders.push(`${f}: ${m[1]}`);
+      }
     }
     if (/exec(?:File)?Sync\(\s*[`"'][^`"']*\bopenspec\b/.test(src.replace(/execFileSync\(\s*"openspec"/g, "")))
       offenders.push(`${f}: openspec inside a shell command string`);
   }
   assert.deepEqual(offenders, [],
-    "the engine may only ever ask openspec for its version — every mutation is emitted as an " +
+    "the engine may only ever ask openspec for its version or whether a change validates — every mutation is emitted as an " +
     "instruction for the user to run");
 });
 

@@ -29,9 +29,10 @@ import { createHash } from "node:crypto";
 import { engineRoot, gateArtifacts } from "./constants.mjs";
 import { archivedChangeDir } from "./epic-progress.mjs";
 
-const LIVE_CHANGE_FILE = /^openspec\/changes\/(?!archive\/)([^/]+)\/(.+)$/;
+// `rest` is empty when the recorded path names the change DIRECTORY itself (gh#252).
+const LIVE_CHANGE_FILE = /^openspec\/changes\/(?!archive(?:\/|$))([^/]+)(?:\/(.*))?$/;
 
-const normalize = (p) => String(p).trim().replace(/\\/g, "/").replace(/^\.\//, "");
+const normalize = (p) => String(p).trim().replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "");
 
 /** A change's `tasks.md` is a PROGRESS LEDGER, not reviewed content: /opsx:apply ticks it constantly, so
  *  digesting it staled every openspec epic's Gate 1 at the first ticked checkbox. It stays in the recorded
@@ -39,27 +40,65 @@ const normalize = (p) => String(p).trim().replace(/\\/g, "/").replace(/^\.\//, "
  *  never unreadable. proposal/design/specs keep their digests. */
 export const isProgressLedger = (p) => /^openspec\/changes\/(?!archive\/)[^/]+\/tasks\.md$/.test(normalize(p));
 
-/** The sha-256 of the file at `abs`, or null where it cannot be read as a file. */
-export function artifactDigest(abs) {
+/** Local cruft that is not content and would make a directory digest differ between two machines. */
+const IGNORED_NAMES = new Set([".DS_Store"]);
+
+/** Every digestable file under `dir`, as sorted `/`-joined paths relative to `dir`. Sorted by plain code-unit
+ *  comparison — never a locale collation — so two machines list one tree identically. Regular files and
+ *  directories only: a symlink or special file is skipped rather than followed out of the tree. `rel` is the
+ *  recorded path of `dir`, so the progress-ledger exemption is judged on the path the reviewer was shown. */
+function filesUnder(dir, rel, prefix = ".") {
+  const out = [];
+  for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (IGNORED_NAMES.has(d.name)) continue;
+    const sub = path.posix.join(prefix, d.name);
+    if (d.isDirectory()) out.push(...filesUnder(path.join(dir, d.name), rel, sub));
+    else if (d.isFile() && !(rel !== null && isProgressLedger(path.posix.join(rel, sub)))) out.push(sub);
+  }
+  return out.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/** The sha-256 of what `abs` holds, or null where there is nothing digestable.
+ *
+ *  A FILE digests its bytes. A DIRECTORY (gh#252 — an OpenSpec Gate 1 reviews a change directory) digests the
+ *  sorted list of `<relative path>\0<file sha-256>\n` over every file beneath it, so adding, removing,
+ *  renaming or editing any file changes it and nothing else does. `rel`, the recorded path, lets a change's
+ *  top-level `tasks.md` stay exempt (it is a progress ledger, `isProgressLedger`). A directory with no
+ *  digestable file is null — the digest of nothing certifies nothing. */
+export function artifactDigest(abs, rel = null) {
   try {
-    if (!fs.statSync(abs).isFile()) return null;
-    return createHash("sha256").update(fs.readFileSync(abs)).digest("hex");
+    const st = fs.statSync(abs);
+    if (st.isFile()) return createHash("sha256").update(fs.readFileSync(abs)).digest("hex");
+    if (!st.isDirectory()) return null;
+    const files = filesUnder(abs, rel === null ? null : normalize(rel));
+    if (!files.length) return null;
+    const h = createHash("sha256");
+    for (const f of files) {
+      h.update(f);
+      h.update("\0");
+      h.update(createHash("sha256").update(fs.readFileSync(path.join(abs, f))).digest("hex"));
+      h.update("\n");
+    }
+    return h.digest("hex");
   } catch { return null; }
 }
+
+/** Does `abs` exist as something a digest could be taken of (a file or a directory)? No hashing. */
+const artifactExists = (abs) => { try { const st = fs.statSync(abs); return st.isFile() || st.isDirectory(); } catch { return false; } };
 
 /** Where a recorded artifact path sits NOW: live, else under its change's archive directory, else the
  *  live path (which then reads as unreadable). Absolute. */
 export function locateArtifact(recorded, root = engineRoot()) {
   const rel = normalize(recorded);
   const live = path.resolve(root, rel);
-  if (artifactDigest(live) !== null) return live;
+  if (artifactExists(live)) return live;
   const m = LIVE_CHANGE_FILE.exec(rel);
   if (m) {
     const archive = path.join(root, "openspec", "changes", "archive");
     const dir = archivedChangeDir(m[1], archive);
     if (dir) {
-      const moved = path.join(archive, dir, m[2]);
-      if (artifactDigest(moved) !== null) return moved;
+      const moved = path.join(archive, dir, m[2] || "");
+      if (artifactExists(moved)) return moved;
     }
   }
   return live;
@@ -73,7 +112,7 @@ export function recordArtifactDigests(paths, root = engineRoot()) {
   const unreadable = [];
   for (const p of paths || []) {
     if (isProgressLedger(p)) continue;
-    const sha256 = artifactDigest(locateArtifact(p, root));
+    const sha256 = artifactDigest(locateArtifact(p, root), p);
     if (sha256 === null) unreadable.push(p); else digests.push({ path: p, sha256 });
   }
   return { digests, unreadable };
@@ -98,7 +137,7 @@ export function artifactStaleness(entry, root = engineRoot()) {
   for (const d of entry.artifactDigests) {
     if (!d || typeof d.path !== "string" || isProgressLedger(d.path)) continue;
     digested.add(d.path);
-    const now = artifactDigest(locateArtifact(d.path, root));
+    const now = artifactDigest(locateArtifact(d.path, root), d.path);
     if (now === null) unreadable.push(d.path);
     else if (now !== d.sha256) changed.push(d.path);
   }

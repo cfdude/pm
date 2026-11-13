@@ -65,6 +65,9 @@ export const VERB_EFFECTS = {
   // a sibling repo. A verb that dirtied that repo to answer would be answering its own question
   // wrongly — so this one is exercised, not merely declared.
   owners: { effect: "read-only", exercise: [], note: "advisory claim report — who holds what, and how stale" },
+  // project-boards. The snapshot the boards read: epics, releases, mission and the derived values, computed once. It runs
+  // no git and no network, and it is exercised, so a write added to it later fails the suite rather than a page.
+  board: { effect: "read-only", exercise: ["--json"], note: "prints the versioned board snapshot (counts, mission, releases, epics, rejected); writes nothing, runs no git, opens no connection" },
   // #111's reader. Read-only in the strict sense the suite checks: it opens `.conductor/activity/`
   // and nothing else, and it does NOT create that directory when it is absent — a reader that
   // scaffolded its own store would dirty a repo merely by being asked a question about it.
@@ -115,6 +118,8 @@ export const VERB_EFFECTS = {
   "set-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "clear-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "set-tracker": { effect: "mutates", writes: "state.json (tracker config), CLAUDE.md (the rules block)" },
+  // project-boards. `mission show` is a pure read under this verb, like `release show`; the classification is the verb's.
+  mission: { effect: "mutates", writes: "state.json (the mission, its history, the mission milestone and the exit criteria), CLAUDE.md (the `## Mission` rules-block section, only when its text changed), plus render()'s writes — except `mission show`, which writes nothing at all" },
   "set-lane-routing": { effect: "mutates", writes: "state.json (lane-routing overrides)" },
   "set-autonomy": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's autonomy block and notifications)" },
   "set-review-mode": { effect: "mutates", writes: "state.json (the review-mode dial), CLAUDE.md (the rules block)" },
@@ -124,13 +129,17 @@ export const VERB_EFFECTS = {
   // `set-gate-guard`'s read form has. The classification stays `mutates` because it is a property
   // of the VERB, which is what the divergence warning is gated on; declaring it read-only would
   // silence that warning for every real write the verb makes.
-  release: { effect: "mutates", epicWriting: true, writes: "state.json (releases, one-way membership, deferrals and the amendments trail), plus render()'s writes — except `release show`, which writes nothing at all" },
+  release: { effect: "mutates", epicWriting: true, writes: "state.json (releases, one-way membership, deferrals and the amendments trail; `release here` writes state.releasePlan), plus render()'s writes — except `release show`, which writes nothing at all" },
   "record-reconcile": { effect: "mutates", epicWriting: true, writes: "state.json (the reconcile verdict on an epic's detour link)" },
   "record-gate-review": { effect: "mutates", epicWriting: true, writes: "state.json (gateReview.gateN and, in the same write, the epic's gateRounds tally); a verdict that leaves the recorded rounds signal tripped also prints the STOP block on stderr" },
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
   "record-tracker-refresh": { effect: "mutates", epicWriting: true, writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
   "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
   "dev-log": { effect: "mutates", detachedNoOp: true, writes: ".conductor/spend/ in the MAIN working tree: the ingest `spend` runs (rows, cursor, markers, devlog.jsonl, ingest lock; --no-ingest skips it); --clear removes devlog.jsonl only — never state.json and never a transcript" },
+  // project-boards. The default-on boards switch: `off` records the setting, `on` removes it. It rewrites the managed block itself.
+  "set-boards": { effect: "mutates", writes: "state.json (the boards switch), CLAUDE.md (the `## Boards` rules-block section), plus render()'s writes (PROJECT.md embeds the brief)" },
+  // project-boards 8.3. The project name and key: state.json only (neither value is in the rules block or PROJECT.md).
+  "set-project": { effect: "mutates", writes: "state.json (the project name and key); nothing else — no rules block, no render" },
   "set-dev-log": { effect: "mutates", writes: "state.json (the devLog switch); nothing else — it writes no rules block and no ledger file" },
   "set-spend-tracking": { effect: "mutates", writes: "state.json (the spendTracking switch), CLAUDE.md (the rules block), and the main working tree's .conductor/spend/timeline.jsonl" },
   // `detachedNoOp`: `spend` writes ONLY into the MAIN working tree's git-ignored .conductor/spend/ and

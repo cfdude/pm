@@ -420,7 +420,7 @@ const DISPATCH_BASELINE = {
   triage: { args: ["triage", "a caching bug"] },
   "set-autonomy": { args: ["set-autonomy", "e1", "--level", "off"] },
   "record-reconcile": { pre: [PUSH, ["pop-detour"]], args: ["record-reconcile", "e1", "--detour", "other", "--verdict", "valid"] },
-  "record-gate-review": { args: ["record-gate-review", "e1", "--gate", "2", "--verdict", "fail"] },
+  "record-gate-review": { args: ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail"] },
   "record-cross-spec-review": { pre: [["release", "r1", "--intent", "x", "--member", "xs"]],
     args: ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me"] },
   "record-tracker-refresh": { args: ["record-tracker-refresh", "ext", "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"] },
@@ -468,6 +468,10 @@ const DISPATCH_BASELINE = {
   "recover-created-at": { args: ["recover-created-at"] },
   "unconsidered-outcomes": { args: ["unconsidered-outcomes"] },
   list: { args: ["list"] },
+  board: { args: ["board"] },
+  "set-boards": { args: ["set-boards", "off"] },
+  "set-project": { args: ["set-project", "--key", "PM"] },
+  mission: { args: ["mission", "--statement", "ship it", "--reason", "baseline"] },
   overhead: { args: ["overhead"] },
   upgrade: { args: ["upgrade"] },
   changelog: { args: ["changelog", "--since", "0.0.1"] },
@@ -664,7 +668,7 @@ test("--force is not refused on a mutating verb that validates its own flags", (
     [[], ["add-epic", "--id", "f1", "--lane", "claude-code", "--force"]],
     [[], ["update-epic", "e1", "--title", "x", "--force"]],
     [[], ["release", "r1", "--intent", "x", "--force"]],
-    [[], ["record-gate-review", "e1", "--gate", "2", "--verdict", "fail", "--force"]],
+    [[], ["record-gate-review", "e1", "--gate", "1", "--verdict", "fail", "--force"]],
     [[["release", "r1", "--intent", "x", "--member", "xs"]],
       ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me", "--force"]],
   ];
@@ -695,7 +699,7 @@ const POSITIONAL_COUNTS = {
   "log-detour": 1, "retract-detour": 1, "push-detour": 1, "drop-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
-  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1, "set-dev-log": 1,
+  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1, "set-dev-log": 1, "set-boards": 1,
   "spend-guard": 1, "override-spend-guard": 1, "record-decision": 1, decisions: 1,
 };
 for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;

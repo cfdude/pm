@@ -98,6 +98,7 @@ test("gateway: the non-git spawns are EXACTLY the two the omission names", () =>
   assert.deepEqual(others, [
     "self-hosting.mjs: process.execPath",
     'tool-currency.mjs: "openspec"',
+    'tool-currency.mjs: "openspec"',   // the second site is the read-only `validate <id> --strict` (gh#243)
   ],
     "the engine's non-git spawns are the delegation handoff and the openspec version probe; a third " +
     "one is a call site nothing covers and must be a written decision rather than a passing accident");

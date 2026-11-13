@@ -1,0 +1,36 @@
+RED for project-boards 5.1 (taken after the tests and before 5.2's engine changes)
+Method: the implementation (scripts/conductor.mjs and scripts/lib/, including the new boards-switch.mjs and set-boards.mjs) was set aside with git stash, leaving only the tests, the README rows, the command doc and the fixtures; the five test files below then ran. The implementation had been written first (as in red-4.1.txt), so this RED was taken by removal. It fails after 5.1 and before 5.2; 5.2 restores the engine and it passes.
+
+    throw new ERR_MODULE_NOT_FOUND(
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/boards-switch.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/assert/boards-switch.test.mjs
+  code: 'ERR_MODULE_NOT_FOUND',
+✖ scripts/test/assert/boards-switch.test.mjs (120.337334ms)
+✔ every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md (1.654208ms)
+✔ every dispatch-table subcommand is mentioned somewhere in README.md (1.602292ms)
+✔ sync ignores README.md/INDEX.md in the plans directory — they are not plans (77.528417ms)
+✔ .githooks/pre-commit exists, is executable, and runs the assertion half and the drift script (0.899458ms)
+✔ IX the hook verifies the INDEX: captured before the scrub, exported with checkout-index, and run from the export (1.050208ms)
+✔ 4.3 .githooks/commit-msg runs the COMMIT's drift in the commit-msg phase, over the index and message git hands it (0.312834ms)
+✔ AM .githooks/commit-msg tells drift when a commit is an amend, from its parent's command line and never from a message word (1.68875ms)
+✔ 4.4 the phase table puts diff coupling in exactly one hook's phase, and it is commit-msg's (0.136ms)
+✔ L5 5.9 each message hook opens with the guarded git-secrets block, as pre-commit does for its own case (0.368125ms)
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/set-boards.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/unit/boards-switch.test.mjs
+✖ scripts/test/unit/boards-switch.test.mjs (120.789292ms)
+✔ the tracker-item refusal's printed remedy runs as written and frees the item (16.473709ms)
+✖ the inward recipe's --summary=<one-line summary> line, filled with a single-quoted value, is accepted and stores the summary (1.627208ms)
+✖ gh#210: an empty state lists every registry opt-in as NOT SET, each with its command (1.244209ms)
+✔ gh#210: laneRouting with zero overrides reads as NOT SET and says what routing then returns (0.12ms)
+✔ gh#210: adopted opt-ins move to the summary line and out of the NOT SET list (0.146458ms)
+✔ gh#210: a claim is an epic's temporary hold, not a repo setting, so it is never listed as NOT SET (0.07025ms)
+✔ gh#210: a tracker name with control characters is escaped in the summary (0.075625ms)
+ℹ tests 18
+ℹ pass 14
+ℹ fail 4
+✖ failing tests:
+  AssertionError [ERR_ASSERTION]: add-epic --id gh-o-n-<issue-number> --title=<issue-title> --status untriaged --external-id <issue-number> --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane
+    actual: false,
+    expected: true,
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+    actual: 'conductor: opt-ins — none adopted',
+    expected: 'conductor: opt-ins — boards: on (default)',

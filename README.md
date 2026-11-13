@@ -390,11 +390,12 @@ first and then exit 1, ending pm's dormancy in a repo whose init had failed.
 
 For an OpenSpec-lane epic the emitted rules (under "Re-read the source before an epic becomes the work") direct the agent to confirm planning is complete before applying: every artifact the project's OpenSpec schema requires exists and they agree. It states the obligation and names no OpenSpec command; `/pm:upgrade` refreshes the block.
 
-The rules block carries a **gate procedure of seven numbered, required task items** — the call-site
+The rules block carries a **gate procedure of eight numbered, required task items** — the call-site
 completeness sweep (which since 0.40.0 also obliges the INVERSE of every operation the change
 adds), commit-based verification, the lifecycle-marker declaration, commit attribution, the
-release-scope cross-spec review, ending work by recording a disposition, and routing what the work
-taught you. They are numbered items rather than prose bullets on purpose: measured across an audit
+release-scope cross-spec review, ending work by recording a disposition, routing what the work
+taught you, and proving every guard the change adds can fail (a mutation pass saved as
+`mutation-evidence.txt`, with RED notes written task-relative). They are numbered items rather than prose bullets on purpose: measured across an audit
 of 8 repositories, a rule carried by a mandatory task section reached **14/14** adoption in
 subsequent changes, and the same rule as a prose bullet reached **3/15**.
 
@@ -643,8 +644,8 @@ implementation range in existence when its verdict is truthful — it requires `
 there produced a required field satisfiable only with a value of the wrong kind, and the artifact
 commits typed into it read as an implementation range to every consumer that treats the field as
 one. The sha pair is still accepted on Gate 1 (every prior invocation and every recorded verdict
-keeps working); a Gate 1 pass carrying a range and no artifacts says so on stderr. A `fail` needs
-neither. `--gate 1 --artifact` also stores a sha-256 per readable artifact as `artifactDigests`: amending a reviewed artifact reads `⚠ stale` on `/pm:status` and the brief, and an unreadable one reads `⚠ unverifiable`. A live change's `tasks.md` stays in the list but is never digested, because `/opsx:apply` ticks it constantly; a verdict recorded before this carries no digests and renders as before, and the archive move never reads as staleness.
+keeps working); a Gate 1 pass carrying a range and no artifacts says so on stderr. A Gate 1 `fail` needs
+neither; a Gate 2 `fail` requires `--base-sha` and `--head-sha`. `--gate 1 --artifact` also stores a sha-256 per readable artifact as `artifactDigests`: amending a reviewed artifact reads `⚠ stale` on `/pm:status` and the brief, and an unreadable one reads `⚠ unverifiable`. A live change's `tasks.md` stays in the list but is never digested, because `/opsx:apply` ticks it constantly; a verdict recorded before this carries no digests and renders as before, and the archive move never reads as staleness.
 
 An archive that reached `archived` without any review at all now records **`verdict: "ungated"`**
 instead of nothing. That is a standing condition, reported by the brief and by `integrity` until a
@@ -930,19 +931,62 @@ carrying a command, and an absent record leaves the guard dormant.
 engine, so an agent no longer reads `.conductor/state.json` and guesses its shape: it prints one line per epic, or
 `{count, epics}` with `--json`, and `--linked-to` is incoming (the epics carrying a link to that id, which is the
 deferral-list question). Read-only; see `commands/list.md`. It filters fields; `triage` reads an ask.
+Each `--json` row also carries `release`, `createdAt`, `description` and `outcome` (copies of the epic's own fields, never inferred:
+`null` when absent, except `outcome`, which is `null` with no disposition and `"unknown"` when the recorded outcome is outside the known vocabulary or not a string), so a pass can ask how long an epic has sat and what finished ones delivered.
+
+`/pm:backlog-grooming` is the sprint-planning pass `triage` is not: `triage` screens one ask at registration, this
+re-reads the whole OPEN backlog (one `list --status <s> --json` per open status), runs `triage` on suspects, and
+proposes merges, declines and dead-premise findings, naming the epics it judged alive. It writes nothing until you
+confirm, then records each consolidation as a disposition (`--outcome superseded|declined`, a `supersedes` link on the
+survivor), never `remove-epic`. Findings cite epic ids, verb output and shas, never line numbers. No new verb or flag;
+see `skills/backlog-grooming/SKILL.md`.
 
 `triage "<the ask>"` runs BEFORE `add-epic`. The dedup the conductor already had is
 identity-based — same id, or the same `externalUrl` — which stops `/pm:sync` mirroring an issue
 twice and does nothing about *the same ask arriving under a different name*. This returns the
 existing epics that share **distinctive** vocabulary with the ask (each with the shared words
-that put it there, and a flag for the ones already superseded), the lane this repo's routing
-picks, and the backlog's current shape.
+that put it there, a flag for the ones already superseded, and the release each belongs to), the
+lane this repo's routing picks, the backlog's current shape, and the open releases with their
+intents. `triage --ask=<text>` takes an ask that starts with a dash, as `suggest-lane --ask=` does.
 
 It emits `verdict: null` and means it: the engine computes what is worth READING and never
 decides whether two asks are the same — that is judgment, and judgment is the agent's. Record
 what you conclude with `--link "supersedes:<id>:<why>"`, or end an ask you are turning down with
 `update-epic <id> --status archived --outcome declined --reason "<why not>" --no-deferrals` —
 because declining by never registering the ask destroys the record that anyone considered it.
+
+</details>
+
+<details>
+<summary><code>/pm:boards</code> — Publish the backlog and release-plan boards</summary>
+
+`/pm:boards` loads the `project-boards` skill, which publishes two pages with the Artifact tool, a backlog board and a
+release-plan board, and refreshes them after `/pm:sync`, a status change, a `release` or `mission` write and a gate
+record. It stops while the boards are off. Page titles name the project (`<project name> Backlog`, `<project name> Release
+Plan`, from `set-project`), every id shown is the engine key (`PM-256`) with the slug beside it, and a field a page needs
+that is still unset shows a card naming the command that sets it. The release plan reads the mission and "we are here" as
+one header, keeps only in-progress and planned releases in its roadmap, and lists shipped releases in a Shipped table
+that says, for a release that did not ship everything, what did not ship and why. See `commands/boards.md` and
+`skills/project-boards/SKILL.md`.
+
+First population opens with "Derive, then confirm": the agent drafts the mission, why-now, where things stand, release
+themes and epic summaries from the README, `CLAUDE.md` or `AGENTS.md`, `board --json`, the records and `git log`, marks
+anything it could not ground as UNGROUNDED, and asks you only about the gaps and for confirmation. It never invents a
+mission.
+
+The boards are on by default (an absent setting reads as on). `set-boards off` records `state.boards = {enabled: false}`
+and removes the `## Boards` rules section and the brief's boards line; `set-boards on` removes the setting again.
+`board --json` keeps working whichever way it is set, and `upgrade` prints `boards: on (default)`.
+
+| Verb | What it does |
+|------|--------------|
+| `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit. Plain `board` prints three lines |
+| `mission --statement "<line>" --reason "<why>"` | records the mission; `--end`, `--milestone <releaseId>` / `--clear-milestone`, `--add-criterion` / `--remove-criterion` and `mission show [--history]` complete it. Releases at or before the milestone, by `--order`, are marked critical path. See `commands/mission.md` |
+| `set-project --name "<name>" --key <KEY>` | the project name (at most 60 characters) and a two- or three-letter key; `--unset name\|key` removes one. Every epic carries an integer `number` assigned at registration, and the key shown is `<KEY>-<number>`. See `commands/set-project.md` |
+| `set-boards on\|off` | the switch above |
+| `release <id> --theme --rationale --exit --order --size` | a release's plan fields (each text field one line of at most 400 characters); `--clear <field>` removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`release --clear target` is the inverse of `--target`) |
+| `release here <id> [--text] [--next]` | records where the project is; `release here --clear-here` removes it. `release show` marks the `here` release `(here)` |
+| `add-epic` / `update-epic` / `add-many` `--summary`, `--why-now` | one line per epic (at most 200 and 300 characters); `update-epic <id> --clear summary` and `--clear why-now` unset them |
 
 </details>
 
@@ -959,7 +1003,7 @@ passing both is refused. The emitted tracker recipes use `--ask=`.
 
 **It is an input, not an answer.** Routing reads THE ASK — words, size, the overrides recorded
 here — and nothing else; it cannot ask whether the work serves something the project already
-committed to, because pm holds no milestone or product context to weigh. So the tie-break is
+committed to, because pm holds no milestone or product context to weigh beyond the release records `triage` lists. So the tie-break is
 asymmetric: `claude-code` means no spec, no plan, no gate and no stories, over-processing costs
 hours and under-processing costs the record permanently, and an unresolved routing question
 therefore resolves **away** from `claude-code`, never into it. Departing from the suggestion is
@@ -1763,6 +1807,7 @@ Installed to `skills/` on `/pm:init`:
 | `cross-spec-review` | The release-scope gate: do this release's specs AGREE with each other? Gate 1 and Gate 2 each take one change as their unit and structurally cannot find a contradiction between two of them. Triggers on "cross-spec review," "do the specs agree," "review the specs together." |
 | `lessons` | Keeping a repository's PROCESS knowledge where it fires on the situation rather than on recall — the `docs/lessons/` shape, the frontmatter contract, and the capture half. Its `detect:` matchers are what the `lesson-advice` `PreToolUse` hook fires on. pm ships the mechanism, never the corpus. Triggers on "lessons learned," "have we hit this before," "that cost us." |
 | `dogfooding` | Routing what the work taught you instead of leaving it in the transcript: a practice you adopted becomes a registered candidate with its evidence attached, and a workaround you invented for tooling friction becomes a filed bug. Triggers on "should this be in the product," "I had to work around," "there's no verb for this." |
+| `project-boards` | Drawing the backlog and the release plan as two published boards from `board --json`: the pages, the refresh triggers, the project-named titles, first population ("Derive, then confirm") and what to ask the user. Triggers on "boards," "show the backlog," "release plan." |
 
 ## Reporting — pm does not have a house style
 
@@ -1791,7 +1836,7 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 Everything pm injects into a session is re-read on every message, so it is worth knowing what it costs. Run
 `overhead` for the numbers on your repository (`overhead --all-features` for the every-opt-in-on case); nothing
 below is a promise about yours. Every figure is **bytes/4, an estimate**: the engine has no tokenizer, and the
-estimate has not yet been checked against real token counts. Measured 2026-10-20 on 0.53.0 (method and the
+estimate was checked against real token counts once: one same-model pair (n=1 per arm) measured 13,042 tokens against an estimate of 10,908, so the estimate ran about 16% low, inside the 25% threshold; no variance is known (`docs/measurement/2026-10-overhead-calibration.md`). Measured 2026-10-20 on 0.53.0 (method and the
 reasoning for each decision: `docs/measurement/2026-10-feature-switch-audit.md`). This table does not claim that
 any of it saves downstream work; `overhead` says so too.
 
@@ -1805,11 +1850,15 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:pm-conductor` | core | ~1,485 tokens | no switch: the detour, reconcile and state-of-record rules |
 | `rules:getting-help-with-pm` | core | ~181 tokens | no switch: below the threshold |
 | `rules:the-gate-procedure` | core | ~3,006 tokens | no switch: the required gate items are a record-integrity rule |
-| `rules:intake` | core | ~1,006 tokens | no switch yet: at the threshold by 6 tokens, a candidate awaiting a decision |
+| `rules:intake` | core | ~834 tokens | no switch: below the threshold after the shrink (it was ~1,006), and held under 900 by a test |
 | `rules:reporting` | core | ~714 tokens | no switch: below the threshold, and it forbids dropping a recorded fact |
-| `rules:epic-level-autonomy` | core | ~785 tokens | no switch: below the threshold, and it holds the safety stops |
+| `rules:epic-level-autonomy` | core | ~785 tokens, emitted only while a non-archived epic has an autonomy record | no switch: below the threshold, and it holds the safety stops; absent (not switched) while unused |
+| `rules:procedures-emitted-on-use` | core | ~75 tokens, measured by `overhead` in a freshly initialised repo (not by `overhead --all-features`, which counts the sections it stands in for) | no switch: below the threshold; it points at the autonomy and release-candidate procedures while those sections are not in use |
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
-| `rules:release-candidate` | core | ~294 tokens | no switch: below the threshold |
+| `rules:release-candidate` | core | ~294 tokens, emitted only while a release has no delivered marker | no switch: below the threshold; absent (not switched) while no release is open |
+| `rules:mission` | core | at most ~70 tokens (280 bytes), emitted only while a mission is recorded | no switch: it is recorded data, not a feature, and it is the line that bounds autonomous work |
+| `rules:boards` | boards | at most ~70 tokens (280 bytes; ~60 measured) | `set-boards off`, on by default |
+| `brief:boards` | boards | at most ~40 tokens (one line of at most 160 bytes; ~34 measured), counted out of `brief` | `set-boards off`, on by default |
 | `rules:feedback` | core | ~194 tokens | no switch: below the threshold |
 | `rules:re-read-the-source-before-an-epic-becomes-the-work` | core | ~411 tokens | no switch: below the threshold |
 | `brief` | core | ~339 to ~2,061 tokens (grows with the record, capped at 16,384 bytes) | no switch: its size is the rules-block budget's to bound |
@@ -1824,6 +1873,11 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `spend-marker` | spendTracking | ~15 tokens per dispatched sub-agent, while tracking is on | `set-spend-tracking on`, off by default |
 | `rules:spend-guard` | spendGuard | ~202 tokens | `set-spend-guard --max-failed-rounds <n>`, off until a limit is set |
 | `listing:*` | listings | ~1,923 tokens for the 41 command, skill and agent descriptions | no switch: the host reads the plugin's files, the engine cannot hide them |
+
+The project boards (`rules:boards`, `brief:boards`) are the one **default-on** switch: an absent setting reads as on, `init` never writes it,
+`set-boards off` records it and `set-boards on` removes it again. `board --json` is a read and works whichever way the switch is set.
+`set-project --name "<name>" --key <KEY>` records the project name and the two- or three-letter key the boards show on every epic (`PM-256`); it writes
+`state.json` only, so it adds no always-loaded bytes, and `--unset name|key` removes either.
 
 Features that inject nothing of their own: `reviewMode` (`set-review-mode`), `laneRouting` (`set-lane-routing`),
 `activityLog` (`set-activity-log`) and the developer session log (`set-dev-log on`, off by default, needs spend
@@ -1996,7 +2050,7 @@ pm/ (this repo)
 ├── commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync
 │                                 /pm:epic /pm:hierarchy /pm:tracker /pm:feedback /pm:lane-routing
 │                                 /pm:review-mode /pm:profile /pm:gate-guard /pm:changelog /pm:upgrade
-│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs
+│                                 /pm:verify-state /pm:verify-worktrees /pm:verify-specs /pm:boards
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md
 ├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PostToolUseFailure · PreToolUse

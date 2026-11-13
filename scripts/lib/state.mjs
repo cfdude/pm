@@ -19,6 +19,7 @@
 import fs from "node:fs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
+import { assignEpicNumber } from "./epic-number.mjs";
 import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
 import { stdinSource } from "./invocation.mjs";
 import {
@@ -134,7 +135,7 @@ export function loadState() {
  *  scan in conductor-13 allows the raw push only within a few lines of this signature. */
 export function pushEpic(state, epic) {
   if (!STORABLE_EPIC_ID(epic.id)) throw new InvalidEpicIdError(epic.id);
-  seedCreationFields(epic);
+  seedCreationFields(state, epic);
   claimArtifacts(state, epic);
   state.epics.push(epic);
   return epic;
@@ -155,13 +156,17 @@ export function pushEpic(state, epic) {
  *  Both guards are ABSENCE guards, so anything already carrying the key is left exactly as given —
  *  which is what lets the recovery, or a caller replaying a record, route through here without
  *  being re-dated. */
-function seedCreationFields(epic) {
+function seedCreationFields(state, epic) {
   if (!Object.prototype.hasOwnProperty.call(epic, "attributedCommits") && !isArchiveBackfilled(epic)) {
     epic.attributedCommits = [];
   }
   if (!Object.prototype.hasOwnProperty.call(epic, "createdAt")) {
     epic.createdAt = new Date().toISOString();
   }
+  // The number (project-boards 8.1) binds here for the same reason: this is the one sink, so no creation path can skip it. Unlike
+  // the two guards above it is not an absence guard on the key alone: assignEpicNumber() keeps a VALID number the epic already
+  // carries and replaces an invalid or duplicate one, and it advances the counter either way.
+  assignEpicNumber(state, epic);
 }
 
 /** pushEpic()'s refusal of an id no NEW epic may carry — one failing EPIC_ID_FORMAT. Carries the

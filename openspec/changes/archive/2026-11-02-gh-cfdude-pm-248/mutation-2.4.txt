@@ -1,0 +1,14 @@
+mutation evidence — 2.4 emission follows the usage answers (2.2-2.3, plus the 4.1 hypothetical)
+tests: scripts/test/unit/rules-usage-emission.test.mjs scripts/test/assert/rules-usage-write.test.mjs scripts/test/unit/overhead-usage.test.mjs
+
+baseline: exit 0 (must be 0)
+M1 emit autonomy unconditionally: KILLED (exit 1) e.g. ✖ 2.3 a fresh init writes neither usage-conditioned section and does write the pointer | ✖ 2.3 --sections lists the same sections the written block carries (fresh repo) | ✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section
+M2 emit release candidate unconditionally: KILLED (exit 1) e.g. ✖ 2.3 a fresh init writes neither usage-conditioned section and does write the pointer | ✖ 2.3 --sections lists the same sections the written block carries (fresh repo) | ✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section
+M3 leave the tracker paragraph ungated: KILLED (exit 1) e.g. ✖ 2.2 an outward tracker's autonomy paragraph follows usage.autonomy, and nothing else in the tracker section moves | ✖ 2.2 no line emitted while the autonomy section is absent points at it | ✖ 2.2 an outward tracker's autonomy paragraph follows usage.autonomy, and nothing else in the tracker section moves
+M4 emit the pointer always: KILLED (exit 1) e.g. ✖ 2.3 write-rules for a state holding a record and an open release writes both sections and no pointer | ✖ 4.1 the real report reads the repo's usage: a record and an open release bring the sections and drop the pointer | ✖ 4.1 --all-features counts both sections under the hypothetical and lists no pointer
+M5 pointer names the preflight scan even when autonomy is present: KILLED (exit 1) e.g. ✖ 2.2 the pointer names only the absent procedures | ✖ 2.2 the pointer names only the absent procedures
+M6 writeRules passes no usage: KILLED (exit 1) e.g. ✖ 2.3 a fresh init writes neither usage-conditioned section and does write the pointer | ✖ 2.3 `rules` and `write-rules` agree for the same state: fresh and in use | ✖ 2.3 a fresh init writes neither usage-conditioned section and does write the pointer
+M7 the rules verb passes no usage: KILLED (exit 1) e.g. ✖ 2.3 `rules` and `write-rules` agree for the same state: fresh and in use | ✖ 2.3 --sections lists the same sections the written block carries (fresh repo) | ✖ 2.3 `rules` and `write-rules` agree for the same state: fresh and in use
+M8 rulesBlockFor ignores its usage: KILLED (exit 1) e.g. ✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section | ✖ 4.1 rulesBlockFor takes the usage as a parameter; the default is the state's own answers | ✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section
+
+killed 8, survived 0

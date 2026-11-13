@@ -1,0 +1,225 @@
+RED for task 2.1: fails before 2.2 (no --summary/--why-now rows, no warning).
+Command: node --test scripts/test/unit/epic-summary.test.mjs
+
+✖ summary: add-epic, update-epic and add-many all persist summary and whyNow, read back through board --json (2.114917ms)
+✖ summary: setting either never touches description or notes (0.666583ms)
+✖ summary: empty, multi-line and over-limit values are refused on every surface, naming the field and its limit, writing nothing (0.634375ms)
+✖ summary: the limits are inclusive (200 and 300 characters are accepted) (0.29675ms)
+✖ summary: --clear summary and --clear why-now are the inverses, and leave description alone (1.661667ms)
+✖ summary: the nullable-field registry declares both fields (1.921709ms)
+✖ warning: moving an epic out of untriaged without them warns on stderr, exits 0 and still writes (6.673417ms)
+✖ warning: names only the missing field (2.183667ms)
+✔ warning: a complete epic does not warn (2.05925ms)
+✖ warning: registering an epic at a status other than untriaged or archived warns; at untriaged it does not (2.4725ms)
+✖ warning: every other write that leaves untriaged warns too (set-active) (2.380166ms)
+✔ warning: archiving never warns, nor does a write that leaves the status unchanged (8.982667ms)
+✔ warning: an epic already queued, re-sent --status queued, does not warn (status unchanged) (1.807875ms)
+✔ warning: an unknown flag is still refused (the new flags did not open the surface) (0.316875ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 4
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 183.6895
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ summary: add-epic, update-epic and add-many all persist summary and whyNow, read back through board --json (2.114917ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  Error: conductor: unknown flag --summary for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --review-mode, --verbosity, --model, --add-story, --session, --force
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:21:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --summary for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --review-mode, --verbosity, --model, --add-story, --session, --force\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ summary: setting either never touches description or notes (0.666583ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  Error: conductor: unknown flag --summary for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --spec-deltas-waived, --gate1-waived, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --verbosity, --model, --clear-model, --add-story, --story, --done, --wont-do, --session, --force
+  usage: conductor.mjs update-epic <id> [flags]
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:31:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --summary for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --spec-deltas-waived, --gate1-waived, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --verbosity, --model, --clear-model, --add-story, --story, --done, --wont-do, --session, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ summary: empty, multi-line and over-limit values are refused on every surface, naming the field and its limit, writing nothing (0.634375ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--summary.*200/. Input:
+  
+  'conductor: unknown flag --summary for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --spec-deltas-waived, --gate1-waived, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --verbosity, --model, --clear-model, --add-story, --story, --done, --wont-do, --session, --force\n' +
+    'usage: conductor.mjs update-epic <id> [flags]\n' +
+    'Nothing was written.\n'
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:51:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: unknown flag --summary for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --spec-deltas-waived, --gate1-waived, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --verbosity, --model, --clear-model, --add-story, --story, --done, --wont-do, --session, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n',
+    expected: /--summary.*200/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ summary: the limits are inclusive (200 and 300 characters are accepted) (0.29675ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  Error: conductor: unknown flag --summary for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --spec-deltas-waived, --gate1-waived, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --verbosity, --model, --clear-model, --add-story, --story, --done, --wont-do, --session, --force
+  usage: conductor.mjs update-epic <id> [flags]
+  Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:67:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: 'conductor: unknown flag --summary for update-epic — it accepts: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --spec-deltas-waived, --gate1-waived, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --verbosity, --model, --clear-model, --add-story, --story, --done, --wont-do, --session, --force\nusage: conductor.mjs update-epic <id> [flags]\nNothing was written.\n'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ summary: --clear summary and --clear why-now are the inverses, and leave description alone (1.661667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  Error: conductor: --clear summary: 'summary' is not a field this command can unset. Clearable fields: parent (parent), external-id (externalId), external-url (externalUrl), plan (planPath), spec (specPath), description (description), spec-deltas-waived (specDeltasWaived), gate1-waived (gate1Waived), external-updated-at (externalUpdatedAt), review-mode (reviewMode), verbosity (verbosity), model (model), created-at (createdAt). Name the FLAG, not the state key — they are two namespaces. Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:74:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: "conductor: --clear summary: 'summary' is not a field this command can unset. Clearable fields: parent (parent), external-id (externalId), external-url (externalUrl), plan (planPath), spec (specPath), description (description), spec-deltas-waived (specDeltasWaived), gate1-waived (gate1Waived), external-updated-at (externalUpdatedAt), review-mode (reviewMode), verbosity (verbosity), model (model), created-at (createdAt). Name the FLAG, not the state key — they are two namespaces. Nothing was written.\n"
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ summary: the nullable-field registry declares both fields (1.921709ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(flags.includes("summary") && flags.includes("why-now"))
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:84:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ warning: moving an epic out of untriaged without them warns on stderr, exits 0 and still writes (6.673417ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--summary/. Input:
+  
+  "conductor: rendered PROJECT.md\nconductor: updated 'a'\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:92:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: updated 'a'\n",
+    expected: /--summary/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ warning: names only the missing field (2.183667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--why-now/. Input:
+  
+  "conductor: rendered PROJECT.md\nconductor: updated 'a'\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:102:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: updated 'a'\n",
+    expected: /--why-now/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ warning: registering an epic at a status other than untriaged or archived warns; at untriaged it does not (2.4725ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--summary/. Input:
+  
+  'conductor: rendered PROJECT.md\n' +
+    "conductor: added epic 'q' (claude-code, queued)\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:115:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: added epic 'q' (claude-code, queued)\n",
+    expected: /--summary/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ warning: every other write that leaves untriaged warns too (set-active) (2.380166ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs]
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--summary/. Input:
+  
+  "conductor: rendered PROJECT.md\nconductor: active is now 'a'\n"
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-summary.test.mjs:124:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered PROJECT.md\nconductor: active is now 'a'\n",
+    expected: /--summary/,
+    operator: 'match',
+    diff: 'simple'
+  }

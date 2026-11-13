@@ -1,0 +1,117 @@
+✔ plan fields: set on create and amend, read back through release show and board --json (12.055042ms)
+✔ plan fields: bad values are refused with the accepted values named, writing nothing (1.923708ms)
+✔ plan fields: 400 characters is accepted (1.887583ms)
+✔ plan fields: --clear removes each field and leaves the others; clearing an absent field is a reported no-op (5.177375ms)
+✔ plan fields: --clear naming another field is refused naming the clearable ones (0.79575ms)
+✔ plan fields: --status is an unknown flag (0.310583ms)
+✔ status: derived from delivery and members, never stored (1.917917ms)
+✔ status: --undeliver returns it to what the members imply (5.277ms)
+✔ here: sets the marker and the two lines, and --clear-here (valueless) removes all three (9.562042ms)
+✔ here: setting it again replaces the marker, and a --text line goes when the marker moves without one (3.557542ms)
+✔ here: an unknown release id is refused, and `here` cannot be created as a release (1.669291ms)
+✔ here: a marker naming a removed release reads null and is reported (0.307ms)
+✔ show: one release prints theme, order, the derived status and (here) (0.265583ms)
+✔ show: critical-path marks appear on one release and in the list, only when a milestone gives them meaning (0.825125ms)
+✔ status verb: prints here: and the critical-path marks from its own output, and neither is in PROJECT.md (2.531125ms)
+✔ status verb: a milestone release with no order marks nothing (2.190458ms)
+✔ status verb: no marker and no milestone prints neither (2.0675ms)
+✔ here: the brief's release lines carry neither mark (1.475ms)
+✔ here: no existing release is named here, and the flag surface is unchanged for release show (0.252584ms)
+✔ here: --text, --next and --clear-here are refused on a plain release amendment, naming `release here` (0.822916ms)
+✖ discoverability: `release --help` names `release here`, the plan fields and the clear inverse (0.674667ms)
+✖ discoverability: the missing-id usage names `release here` and the plan flags (0.262917ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 20
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 208.128833
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ discoverability: `release --help` names `release here`, the plan fields and the clear inverse (0.674667ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-plan.test.mjs]
+  AssertionError [ERR_ASSERTION]: release --help names release here <id>
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-plan.test.mjs:206:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ discoverability: the missing-id usage names `release here` and the plan flags (0.262917ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-plan.test.mjs]
+  AssertionError [ERR_ASSERTION]: the usage names release here <id>
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-plan.test.mjs:216:12
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+✔ plan fields: set on create and amend, read back through release show and board --json (11.577625ms)
+✔ plan fields: bad values are refused with the accepted values named, writing nothing (2.26375ms)
+✔ plan fields: 400 characters is accepted (2.250625ms)
+✔ plan fields: --clear removes each field and leaves the others; clearing an absent field is a reported no-op (7.665334ms)
+✔ plan fields: --clear naming another field is refused naming the clearable ones (1.048375ms)
+✔ plan fields: --status is an unknown flag (0.460375ms)
+✔ status: derived from delivery and members, never stored (2.15375ms)
+✔ status: --undeliver returns it to what the members imply (5.808ms)
+✔ here: sets the marker and the two lines, and --clear-here (valueless) removes all three (10.404708ms)
+✔ here: setting it again replaces the marker, and a --text line goes when the marker moves without one (5.22625ms)
+✔ here: an unknown release id is refused, and `here` cannot be created as a release (2.247084ms)
+✔ here: a marker naming a removed release reads null and is reported (2.751833ms)
+✔ show: one release prints theme, order, the derived status and (here) (0.676709ms)
+✔ show: critical-path marks appear on one release and in the list, only when a milestone gives them meaning (1.0915ms)
+✔ status verb: prints here: and the critical-path marks from its own output, and neither is in PROJECT.md (3.38075ms)
+✔ status verb: a milestone release with no order marks nothing (3.393042ms)
+✔ status verb: no marker and no milestone prints neither (2.654209ms)
+✔ here: the brief's release lines carry neither mark (1.938208ms)
+✔ here: no existing release is named here, and the flag surface is unchanged for release show (0.353208ms)
+✔ here: --text, --next and --clear-here are refused on a plain release amendment, naming `release here` (0.874833ms)
+✔ discoverability: `release --help` names `release here`, the plan fields and the clear inverse (0.416041ms)
+✔ discoverability: the missing-id usage names `release here` and the plan flags (0.226209ms)
+✖ target: `--clear target` is the inverse of `--target`, refuses to contradict it, and says when there was nothing to clear (0.40875ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 22
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.992875
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ target: `--clear target` is the inverse of `--target`, refuses to contradict it, and says when there was nothing to clear (0.40875ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-plan.test.mjs]
+  Error: conductor: --clear target: 'target' is not a release field this command can unset. Clearable fields: theme, rationale, exit, order, size. Nothing was written.
+  
+      at run (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:74:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/release-plan.test.mjs:222:3
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25) {
+    status: 1,
+    stdout: '',
+    stderr: "conductor: --clear target: 'target' is not a release field this command can unset. Clearable fields: theme, rationale, exit, order, size. Nothing was written.\n"
+  }

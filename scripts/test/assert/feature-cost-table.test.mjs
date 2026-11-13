@@ -111,3 +111,11 @@ test("a new repo pays nothing for developer features: spend tracking, spend guar
   const after = JSON.parse(run(["overhead", "--json"], { cwd }));
   for (const id of ["spendTracking", "spendGuard", "devLog"]) assert.equal(after.features[id].on, false, `upgrade left ${id} off`);
 });
+
+test("4.1 the pointer row carries a token estimate and says its figure is from a fresh repo, not from --all-features", () => {
+  const row = tableRows(README).find((r) => r.id === "rules:procedures-emitted-on-use");
+  assert.ok(row, "the pointer has a row");
+  assert.match(row.text, /~\d+ tokens/);
+  assert.match(row.text, /freshly initialised repo/);
+  assert.match(row.text, /not by `overhead --all-features`/);
+});

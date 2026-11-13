@@ -20,6 +20,8 @@ test("2.1: the Release candidate section is byte-pinned by the current-version f
 
 test("2.2: after write-rules, CLAUDE.md carries the section once, inside the managed markers", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
+  // The section is emitted only while a release has no delivered marker (gh-cfdude-pm-248).
+  run(["release", "1.0.0", "--intent", "x"], { cwd });
   run(["write-rules"], { cwd });
   const text = claudeMd(cwd);
   const begin = text.indexOf("<!-- BEGIN pm-conductor rules");

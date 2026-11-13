@@ -20,10 +20,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { rulesBlock } from "./rules.mjs";
+import { missionSectionText, rulesBlock } from "./rules.mjs";
+import { boardsBriefLine, boardsSectionText } from "./boards-switch.mjs";
 import { profileContext } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { guardConfigured } from "./spend-guard.mjs";
+import { FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 import { OPT_INS } from "./opt-ins.mjs";
 import { BRIEF_BYTE_CAP, byteSize, estimateTokens, fitBrief, rulesBlockSections } from "./session-cost.mjs";
 import { buildBriefParts } from "./briefing.mjs";
@@ -53,11 +55,20 @@ export const SURFACE_FEATURES = {
   "rules:intake": CORE,
   "rules:reporting": CORE,
   "rules:epic-level-autonomy": CORE,
+  // Emitted while either usage-conditioned section is absent (gh-cfdude-pm-248 D3). --all-features never
+  // produces it (its hypothetical is rendered at full usage), so its README cost is a fresh repo's `overhead`.
+  "rules:procedures-emitted-on-use": CORE,
   // Emitted whatever the profile holds; only reviewMode changes a VALUE inside it (design D2a).
   "rules:execution-profile": CORE,
   "rules:spend-tracking": "spendTracking",
   "rules:spend-guard": "spendGuard",
   "rules:release-candidate": CORE,
+  // project-boards: recorded data, not a switchable feature, so it is core (managed-rules-block). Absent with no mission.
+  "rules:mission": CORE,
+  // project-boards: a default-on switch (`set-boards`). The rules section and the brief's one line are separate surfaces, so
+  // neither byte is counted twice; `brief` is measured without the line.
+  "rules:boards": "boards",
+  "brief:boards": "boards",
   "rules:feedback": CORE,
   "rules:re-read-the-source-before-an-epic-becomes-the-work": CORE,
   "rules:sync-after-completing-tracker-linked-work": "tracker",
@@ -109,6 +120,8 @@ export function hypotheticalState(state) {
   s.spendTracking = { ...(s.spendTracking || {}), enabled: true };
   // developer-session-log: owns no injected surface (a developer file nothing injects), but is an opt-in and so is on here.
   s.devLog = { ...(s.devLog || {}), enabled: true };
+  // project-boards: default on, so on here means the setting is absent.
+  delete s.boards;
   if (!guardConfigured(s)) s.spendGuard = { ...(s.spendGuard || {}), maxFailedRounds: 2 };
   return s;
 }
@@ -160,19 +173,19 @@ export function hookVerbs(root = pluginRoot()) {
 }
 
 /** The managed rules block for `state`, built from the record alone (no reads). */
-export function rulesBlockFor(state, platform = "claude-code") {
+export function rulesBlockFor(state, platform = "claude-code", usage = rulesUsage(state)) {
   const s = state || {};
   const tracker = s.tracker && s.tracker.system ? s.tracker : null;
   const mode = typeof s.reviewMode === "string" && s.reviewMode ? s.reviewMode : "standard";
   const secondary = Array.isArray(s.secondaryTrackers) ? s.secondaryTrackers : [];
-  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s));
+  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage, missionSectionText(s), boardsSectionText(s));
 }
 
 /** Every surface for `state`. PURE over its inputs: `listings`, `hooks` and `lessons` are handed in. */
-export function collectSurfaces(state, { platform = "claude-code", listings = [], hooks = [], lessons = [] } = {}) {
+export function collectSurfaces(state, { platform = "claude-code", listings = [], hooks = [], lessons = [], usage = rulesUsage(state) } = {}) {
   const out = [];
   const seen = new Map();
-  for (const sec of rulesBlockSections(rulesBlockFor(state, platform))) {
+  for (const sec of rulesBlockSections(rulesBlockFor(state, platform, usage))) {
     const base = `rules:${slug(sec.heading)}`;
     const n = (seen.get(base) || 0) + 1;
     seen.set(base, n);
@@ -181,7 +194,13 @@ export function collectSurfaces(state, { platform = "claude-code", listings = []
   }
   // The brief: capped, consume false and no spec-sync (a git read), exactly as `upgrade` measures it.
   const { plain, parts } = buildBriefParts(state, { consume: false, specSync: false });
-  out.push(surface("brief", fitBrief(parts, { plain, cap: BRIEF_BYTE_CAP }).bytes));
+  // project-boards: the boards line is its own surface and is subtracted from `brief`, so no byte is counted twice. Measured AFTER
+  // fitting: the line is a plain obligation string the fitter never shortens, so the fitted text carries it whole. 0 while off.
+  const fitted = fitBrief(parts, { plain, cap: BRIEF_BYTE_CAP }).bytes;
+  const boardsLine = boardsBriefLine(state);
+  const boardsBytes = boardsLine ? byteSize(boardsLine + "\n") : 0;
+  out.push(surface("brief", fitted - boardsBytes));
+  out.push(surface("brief:boards", boardsBytes));
   // The snapshot is WRITTEN to .conductor/brief.txt on PreCompact and read by nothing: it is not injected.
   out.push(surface("snapshot", byteSize(plain + "\n"), {
     conditional: true, note: "written to .conductor/brief.txt on PreCompact; not injected into the context",
@@ -246,7 +265,9 @@ export function buildReport(state, inputs = {}) {
 /** `--all-features`: the same report over the hypothetical, plus each feature's delta against the real state. */
 export function buildHypotheticalReport(state, inputs = {}) {
   const real = buildReport(state, inputs);
-  const hyp = buildReport(hypotheticalState(state), inputs);
+  // gh-cfdude-pm-248 D6: the hypothetical counts the usage-conditioned sections at FULL usage WITHOUT seeding an
+  // epic or a release (which would also add RELEASES lines to the brief and move its bytes).
+  const hyp = buildReport(hypotheticalState(state), { ...inputs, usage: FULL_USAGE });
   hyp.hypothetical = { ...HYPOTHETICAL };
   for (const [id, f] of Object.entries(hyp.features)) {
     const r = real.features[id];

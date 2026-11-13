@@ -71,6 +71,9 @@ const ADD_EPIC_EXERCISE = {
   "spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
   "link": { args: ["--link", "blocks:other:because"], check: (e) => assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "because" }]) },
   "description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
+  // project-boards: the one-line fields, honoured and not merely accepted.
+  "summary": { args: ["--summary", "what it is"], check: (e) => assert.equal(e.summary, "what it is") },
+  "why-now": { args: ["--why-now", "why it matters now"], check: (e) => assert.equal(e.whyNow, "why it matters now") },
   // THE regression this file is named for. A note reads back as an ENTRY — {at, actor, text} —
   // so asserting on the text alone would pass against an implementation that stored the raw
   // string and lost the append-only trail.

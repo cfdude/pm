@@ -22,12 +22,12 @@ stop at this skill's steps alone.
 
 ## The procedure
 
-1. **Checkout a fresh editing session.** Always check out fresh per logical change — a stale
-   session (e.g. one whose branch was already merged and deleted) fails with
-   `no_editor_metadata` or `Editor navtree doesn't exist`; re-checkout rather than debugging a
-   dead session:
+1. **Create a fresh branch.** Always branch fresh per logical change — a branch that was
+   already merged and deleted fails on every later call; create a new one rather than debugging
+   it. The result's `branchName` is passed as `branch` on every later call (nothing is
+   remembered between calls):
    ```
-   mcp__Mintlify__checkout({ subdomain: "onvex-ai", slug: "<kebab-case-slug>" })
+   mcp__Mintlify__create_branch({ subdomain: "onvex-ai", title: "<short PR title>" })
    ```
 
 2. **Find every affected page.** Use `search` for the old wording (not just the obvious page) —
@@ -58,21 +58,23 @@ stop at this skill's steps alone.
    **Read the page back before saving when it took more than one edit.** Measured on 0.43.0: two
    `edit_page` calls on one page in one session each returned `replacementsMade: 1`, and the first
    was absent from the merged file — a second PR had to restore it. `read` the page and confirm
-   every edit is present before `save`.
+   every edit is present before `publish`.
 
-   **`edit_page` can rewrite the WHOLE page, not just the matched string — `diff` before `save`.**
+   **`edit_page` can rewrite the WHOLE page, not just the matched string — `diff` before `publish`.**
    Measured on 0.49.0: one `edit_page` on `changelog` re-serialized the entire page. It mangled an
    older entry's `` `$` ``/`` `$&` `` code-span line and joined several multi-line list items into one
-   line. Run the session's `diff` and confirm it touches ONLY the lines you meant to change. If it
-   touches anything else, `discard_session` and make the edit as a plain git PR on `cfdude/pm-docs`
+   line. Run `diff` on the branch and confirm it touches ONLY the lines you meant to change. If it
+   touches anything else, `discard` the branch and make the edit as a plain git PR on `cfdude/pm-docs`
    instead: clone, edit the `.mdx`, commit, `gh pr create`, then this step's merge. The branch
    cleanup in step 7 still applies. That route is what shipped 0.49.0's sync.
 
 5. **Save as a PR, merge it live in the same pass — never leave it open for later review:**
    ```bash
-   # mcp__Mintlify__save({ title, mode: "pr", body })  →  returns prUrl
-   gh pr checks <n> --repo cfdude/pm-docs            # wait for the Mintlify Deployment check
-   gh pr merge <n> --repo cfdude/pm-docs --squash --delete-branch=false
+   # mcp__Mintlify__publish({ title, branch, merge: true })  →  returns prUrl, commitSha, merged
+   # then mcp__Mintlify__deployment_status({ commitSha }) until live: true
+   # `publish` with merge: true opens the PR and merges it in one call; no `gh pr merge` needed.
+   # If it returns `merge_not_allowed`, the PR is left open: merge it with
+   #   gh pr merge <n> --repo cfdude/pm-docs --squash --delete-branch=false
    ```
 
 6. **Verify the actual content is live**, not just that the merge succeeded — Mintlify's own
@@ -82,8 +84,8 @@ stop at this skill's steps alone.
    curl -s "https://pm-plugin.dev/<page>" | grep -i "<new content marker>"
    ```
 
-7. **Delete the merged session branch.** Each `checkout` creates an `admin-mcp/<slug>-<sha>`
-   branch on `pm-docs`; a squash-merge with `--delete-branch=false` (required — see
+7. **Delete the merged branch.** Each `create_branch` makes a branch on `pm-docs`;
+   a squash-merge with `--delete-branch=false` (required — see
    `pr-workflow`'s reasoning about persistent branches, though `pm-docs`' branches ARE
    throwaway here) leaves it behind, showing up as an unpublished-looking "branch draft" in
    the Mintlify dashboard even though the content is live:

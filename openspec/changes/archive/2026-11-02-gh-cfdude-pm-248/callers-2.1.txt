@@ -1,0 +1,102 @@
+callers-2.1 — every test and fixture touching a block rendered FROM STATE (gh-cfdude-pm-248 task 2.1)
+derived 2026-11-02 with the commands below; classification from reading each hit and from a throwaway implementation spike (reverted) run over the assertion half
+
+$ rg -c "rulesBlock\(" scripts/test   (direct calls: default usage = FULL, byte-identical by D1)
+scripts/test/assert/execution-profile-emission.test.mjs:1
+scripts/test/assert/release-candidate-emission.test.mjs:1
+scripts/test/assert/spend-rules-emission.test.mjs:1
+scripts/test/fixtures/helpers.mjs:1
+scripts/test/fixtures/state-pre-disposition-walk.json:2
+scripts/test/functional/emitted-invocations.test.mjs:14
+scripts/test/sweeps/output-interpolations.judged.mjs:12
+scripts/test/unit/conductor-10.test.mjs:1
+scripts/test/unit/execution-profile-defaults.test.mjs:5
+scripts/test/unit/execution-profile-emission.test.mjs:4
+scripts/test/unit/release-candidate-emission.test.mjs:3
+scripts/test/unit/shipped-change-root.test.mjs:2
+scripts/test/unit/spend-guard-emission.test.mjs:5
+scripts/test/unit/spend-rules.test.mjs:7
+scripts/test/unit/theme-b3.test.mjs:2
+total: 61 calls in 15 files  (matches the 61 in 15 of 2026-11-02)
+
+$ rg -l "Epic-level autonomy|Release candidate|rules --sections|write-rules" scripts/test
+scripts/test/assert/conductor-05.test.mjs
+scripts/test/assert/execution-profile-emission.test.mjs
+scripts/test/assert/managed-rules-block.test.mjs
+scripts/test/assert/platform.test.mjs
+scripts/test/assert/release-candidate-emission.test.mjs
+scripts/test/assert/session-cost.test.mjs
+scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs
+scripts/test/assert/spend-guard.test.mjs
+scripts/test/assert/spend-rules-emission.test.mjs
+scripts/test/fixtures/helpers.mjs
+scripts/test/fixtures/rules-0.26.0-github-scoped.txt
+scripts/test/fixtures/rules-0.26.0-github-scopeless.txt
+scripts/test/fixtures/rules-0.26.0-jira-scoped.txt
+scripts/test/fixtures/rules-0.51.0-release-candidate.txt
+scripts/test/fixtures/state-pre-disposition-walk.json
+scripts/test/functional/conductor-09.test.mjs
+scripts/test/functional/conductor-31.test.mjs
+scripts/test/functional/conformance.test.mjs
+scripts/test/functional/output-text-integrity.test.mjs
+scripts/test/functional/verb-surface.test.mjs
+scripts/test/sweeps/output-interpolations.judged.mjs
+scripts/test/unit/conductor-02.test.mjs
+scripts/test/unit/epic-session-trail.test.mjs
+scripts/test/unit/managed-rules-block.test.mjs
+scripts/test/unit/overhead.test.mjs
+scripts/test/unit/platform.test.mjs
+scripts/test/unit/release-candidate-emission.test.mjs
+scripts/test/unit/spend-guard-emission.test.mjs
+scripts/test/unit/spend-rules.test.mjs
+
+CLASSIFICATION (file -> verdict -> reason)
+
+unchanged (default full) — direct rulesBlock( callers, no usage argument, so the FULL block:
+  scripts/test/assert/execution-profile-emission.test.mjs, assert/release-candidate-emission.test.mjs (its
+  rulesBlock( call only; see "changes" below for its write-rules test), assert/spend-rules-emission.test.mjs,
+  fixtures/helpers.mjs, functional/emitted-invocations.test.mjs (renderedRulesBlocks; 2.5 adds usage-off renders),
+  sweeps/output-interpolations.judged.mjs (2.5 adds judged entries), unit/conductor-10, unit/execution-profile-defaults,
+  unit/execution-profile-emission, unit/release-candidate-emission, unit/shipped-change-root, unit/spend-guard-emission,
+  unit/spend-rules, unit/theme-b3, fixtures/state-pre-disposition-walk.json (text mentions only).
+unchanged — other hits that do not render a block from state:
+  unit/overhead.test.mjs 1.1 (rulesBlockFor on the state it passes: both sides read the same predicate),
+  unit/session-cost.test.mjs (splits a hand-written block), unit/platform.test.mjs, unit/epic-session-trail.test.mjs,
+  functional/conductor-09 (verb inventory text), functional/verb-surface, functional/conformance (write-rules invocation,
+  no section assertion), fixtures/rules-0.26.0-*.txt and rules-0.51.0-release-candidate.txt (frozen golden text, read as data).
+
+changes (measured: throwaway spike of D1-D2 wiring, assertion half: 2554 run, 12 red, 9 distinct tests):
+  unit/conductor-02.test.mjs "rules block always includes the epic-level autonomy section" and
+  assert/conductor-05.test.mjs "tracker-linked autonomy addendum appears only when a tracker is configured": the `rules`
+      verb over a fresh state now omits the section and the addendum -> seed an autonomy record, and add the converse.
+  unit/autonomy-revocation.test.mjs 1.10: reads the decision rule from the `rules` output of a fresh state -> seed an
+      autonomy record.
+  assert/release-candidate-emission.test.mjs 2.2 "after write-rules, CLAUDE.md carries the section once": fresh repo now
+      carries no Release candidate section -> create an undelivered release first.
+  assert/spend-guard.test.mjs 5.3 (two tests, "CLAUDE.md gains the Spend guard section..." and "With tracking on the section
+      follows ## Spend tracking..."): assert section order "Spend guard" relative to
+      "Release candidate", which is absent on a fresh repo -> seed an undelivered release or assert relative to the next
+      present heading.
+  Overhead map tests (assert/feature-cost-table.test.mjs, unit/overhead.test.mjs, assert/overhead.test.mjs: "every surface has
+      a feature", "README table covers exactly the surface ids", 1.2 x6): the real report on a fresh repo now lists
+      rules:procedures-emitted-on-use -> SURFACE_FEATURES row + README row (task 4.1; forced into the same commit by the
+      README-table test — see the report's deviation note: that row lands with the commit that first emits the pointer).
+  functional (certified, not in the assertion half; found by reading, confirmed by certify at 2.3):
+      fixtures/helpers.mjs ALWAYS_ON_HEADINGS is the strip list used by functional/conductor-14 and conductor-15 to compare
+      `rules` output with the frozen 0.26.0 fixtures; a fresh state now lacks "## Epic-level autonomy" / "## Release
+      candidate" and carries "## Procedures emitted on use" -> add "## Epic-level autonomy" and the pointer heading to
+      ALWAYS_ON_HEADINGS.
+      functional/output-text-integrity, functional/conductor-31: run the verbs; assertions are on shape not section presence
+      (verified by certify).
+
+D7 EVIDENCE — the upgrade invariant
+$ rg -n "autonomy|status|releases" scripts/lib/migrations.mjs
+164:    if (e.status !== "archived" || e.disposition) continue;
+Only line 164 matches: stampArchivedOutcomes READS `e.status` (to find archived epics) and writes `e.disposition`. No MIGRATIONS
+entry writes epic.autonomy, epic.status or state.releases. (upgrade also runs reconcileArchived(), migrations.mjs:235, which can
+set status = "archived": that moves the STATE, so the block follows the state; it is the refresh doing its job, not a migration
+altering what anyone reads — design D7.)
+
+CONDUCTOR-15 FIXTURE (scripts/test/fixtures/state-0.26.0.json), read with python json: 3 epics, 0 carry an `autonomy` record, 'releases' key present: False; archived epics: 2 (['shipped-change', 'abandoned-plan']).
+reconcileArchived() only flips epics that have an openspec change archived on disk; none of the fixture's epics holds an autonomy record, so the
+heal cannot move the autonomy predicate in that fixture, and no releases exist: the upgrade leaves the block's usage answers unchanged (both false).

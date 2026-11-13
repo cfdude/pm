@@ -1,0 +1,8 @@
+mutation evidence — 4.2 overhead counts what the hypothetical uses
+tests: scripts/test/unit/rules-usage-emission.test.mjs scripts/test/assert/rules-usage-write.test.mjs scripts/test/unit/overhead-usage.test.mjs
+
+baseline: exit 0 (must be 0)
+M9 pass the real usage to the hypothetical: KILLED (exit 1) e.g. ✖ 4.1 --all-features counts both sections under the hypothetical and lists no pointer | ✖ 4.1 the hypothetical ignores the real state's usage: a repo already using both reports the same two sections | ✖ 4.1 --all-features counts both sections under the hypothetical and lists no pointer
+M10 drop the map row: KILLED (exit 1) e.g. ✖ 4.1 the pointer is a core surface in the map | ✖ 4.1 the real report on a fresh repo lists the pointer and neither usage-conditioned section | ✖ 4.1 the pointer is a core surface in the map
+
+killed 2, survived 0

@@ -226,7 +226,7 @@ test("every add-many key the registry declares round-trips through a batch entry
       id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
       planPath: "docs/superpowers/plans/x.md", specPath: "docs/superpowers/specs/x-design.md",
-      links: [], description: "why this epic exists",
+      links: [], description: "why this epic exists", summary: "what it is", whyNow: "why it matters now",
       externalUpdatedAt: "2026-08-23T09:30:00Z",
       stories: ["a milestone", { title: "one already behind us", done: true }],
       reviewMode: "thorough", verbosity: "verbose", model: ["implement=opus:medium", "test=haiku"],
@@ -341,6 +341,9 @@ const EXERCISE = {
   }, args: ["--gate1-waived", "doc-only change, no spec to review"], check: (e) => assert.equal(e.gate1Waived, "doc-only change, no spec to review") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
+  // project-boards: the one-line fields, documented in commands/epic.md and read back from state.
+  "--summary": { args: ["--summary", "what it is"], check: (e) => assert.equal(e.summary, "what it is") },
+  "--why-now": { args: ["--why-now", "why it matters now"], check: (e) => assert.equal(e.whyNow, "why it matters now") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
   // alone would pass against an implementation that stored the raw string and lost the trail.
   "--notes": { args: ["--notes", "an activity note"], check: (e) => assert.equal(e.notes.at(-1).text, "an activity note") },
@@ -1009,12 +1012,25 @@ test("a pass with no recorded range is refused, naming the missing evidence", ()
     "a refused verdict writes nothing");
 });
 
-test("a fail verdict may omit the range — there is no shipped work to have covered", () => {
+test("a gate 2 fail verdict requires the range it covered, naming the missing flag; gate 1 fail is unchanged", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
-  assert.equal(readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2.verdict, "fail");
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  for (const [flags, missing] of [[[], "--base-sha and --head-sha"], [["--base-sha", base], "--head-sha"], [["--head-sha", head], "--base-sha"]]) {
+    const err = expectFail(() => run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", ...flags], { cwd }));
+    assert.match(String(err.stderr || err.message), new RegExp(`a gate 2 'fail' requires the commit range.*missing ${missing}`));
+    assert.match(String(err.stderr || err.message), /Gate 2 fail carries a range/);
+  }
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "a refused verdict writes nothing");
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", "--base-sha", base, "--head-sha", head], { cwd });
+  const g2 = readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2;
+  assert.equal(g2.verdict, "fail");
+  assert.equal(g2.baseSha, base);
+  assert.equal(g2.headSha, head);
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "fail"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate1.verdict, "fail");
 });
 
 // A verdict recorded before the evidence fields existed carries a free-text note. It stays
@@ -1131,7 +1147,7 @@ test("supersession preserves ANY prior entry and never nests a second level", ()
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
   const [a, b, c] = fixtureCommits(cwd, ["a", "b", "c"]);
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", "--base-sha", a, "--head-sha", a], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
     "--base-sha", a, "--head-sha", b], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",

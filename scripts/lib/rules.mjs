@@ -24,14 +24,16 @@ import path from "node:path";
 import {
   DEFAULT_ROLE_MODELS, KNOWN_JOB_ROLES, KNOWN_SPEND_PHASES,
   KNOWN_REVIEW_MODES, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, engineRoot,
-  PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
+  PLATFORM_COMMAND_PREFIX, PLATFORM_RULES_CHAIN, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
   itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
+import { BOARDS_SECTION, boardsSectionText } from "./boards-switch.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
+import { CONDITIONAL_SECTIONS, FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -116,6 +118,50 @@ export function currentSpendTracking() {
  *  unreadable file for the same reason they do. */
 export function currentSpendGuard() {
   try { return guardConfigured(loadState()); } catch (e) { rethrowUnreadable(e); return false; }
+}
+
+/** The most the `## Mission` section may weigh, heading included (managed-rules-block). */
+export const MISSION_SECTION_MAX_BYTES = 280;
+
+/** The `## Mission` section's text for `state`, or "" while no current mission exists. The statement is cut with an
+ *  ellipsis so the whole section, heading included, stays within MISSION_SECTION_MAX_BYTES. Pure over the record, and
+ *  read straight from `state.mission` so this module never imports mission.mjs (which imports this one). A VERB-REFRESHED
+ *  section (design D15): `mission` rewrites the block when this text changes, and it is outside CONDITIONAL_SECTIONS. */
+export function missionSectionText(state) {
+  const m = state && state.mission && typeof state.mission === "object" ? state.mission : null;
+  const cur = m && m.current && typeof m.current.statement === "string" ? m.current.statement : null;
+  if (!cur) return "";
+  const bytes = (s) => Buffer.byteLength(s, "utf8");
+  const milestone = typeof m.milestoneRelease === "string" && m.milestoneRelease ? m.milestoneRelease : "none";
+  const shown = [...escapeControls(milestone)].length > 40 ? [...escapeControls(milestone)].slice(0, 40).join("") + "…" : escapeControls(milestone);
+  const head = "## Mission\n\nMission: ";
+  const tail = ` Mission milestone: ${shown}. Work that does not serve it needs a stated reason.`;
+  const room = MISSION_SECTION_MAX_BYTES - bytes(head) - bytes(tail);
+  let statement = escapeControls(cur);
+  if (bytes(statement) > room) {
+    const cps = [...statement];
+    while (cps.length && bytes(cps.join("")) + 3 > room) cps.pop();
+    statement = cps.join("").trimEnd() + "…";
+  }
+  return head + statement + tail;
+}
+
+/** The `## Mission` text for the loaded record; "" when state cannot be consulted, like the other readers. */
+export function currentMissionSection() {
+  try { return missionSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return ""; }
+}
+
+/** The `## Boards` text for the loaded record; the default-on text when state cannot be consulted, like the other readers
+ *  (over-emitting a pointer never drops a rule). */
+export function currentBoardsSection() {
+  try { return boardsSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return BOARDS_SECTION; }
+}
+
+/** The usage answers the rules block is rendered with: `rulesUsage()` over the loaded record. Falls back
+ *  to the FULL block (both true) when state cannot be consulted, the safe failure: over-emitting never
+ *  drops a rule. Rethrows an unreadable file for the same reason the other readers do. */
+export function currentRulesUsage() {
+  try { return rulesUsage(loadState()); } catch (e) { rethrowUnreadable(e); return FULL_USAGE; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -404,6 +450,23 @@ export const GATE_PROCEDURE_ITEMS = [
       "   never gets built, and a product gap written down as a lesson never gets fixed.",
     ],
   },
+  {
+    title: "Prove every guard can fail.",
+    // mutation-pass-is-a-required-task-item (+ #211). The first five claims are the obligation, its
+    // durable committed artifact and the no-guard outcome; the next two are the RED-note rule, which a
+    // mirror is likeliest to drop because it reads like style advice; the last names the skill.
+    mustSay: ["MUTATE it", "mutation-evidence.txt", "Save and commit the run",
+      "A SURVIVING mutant is a finding to fix", "No guard added", "task-relative", "fails after 2.4",
+      "when its own task starts", "mutation-pass"],
+    lines: [
+      "For each guard this change adds, MUTATE it — remove or invert its",
+      "   condition — and run the tests: one must fail. Save and commit the run as",
+      "   `mutation-evidence.txt` beside the change or plan. A SURVIVING mutant is a finding to fix,",
+      "   not a test to delete. No guard added: say so, and why, instead. Write every RED note",
+      "   task-relative (\"fails after 2.4\"), never a bare \"fails today\"; re-run it when its own task",
+      "   starts. The `mutation-pass` skill carries the method.",
+    ],
+  },
 ];
 
 /** The items, rendered as a numbered markdown list, in the PLATFORM's command form.
@@ -429,50 +492,47 @@ export const gateProcedureLines = (platform = "claude-code") => {
  *  The split it encodes is the one this capability exists to draw: `triage` is MECHANICAL and
  *  produces a candidate set; every decision in steps 2-4 is JUDGMENT and is the agent's. The
  *  engine never claims two asks are the same ask, and the section says so out loud so a reader
- *  does not mistake a lexical surface for an answer. */
+ *  does not mistake a lexical surface for an answer.
+ *
+ *  SIZE. Held under 900 estimated tokens (3,600 bytes) on every platform by a unit test in
+ *  `unit/overhead.test.mjs`, so the section stays below the 1,000-token line at which
+ *  `docs/measurement/2026-10-feature-switch-audit.md` would call for a switch. The measured
+ *  evidence for the lane rule lives in the conductor skill (Intake), not here: this text is
+ *  paid for on every session. */
 export const intakeLines = (platform = "claude-code") => [
   "## Intake — triage an ask against the whole backlog BEFORE registering it",
   "",
-  "The ask is the ONLY moment the whole backlog is cheap to consider: after registration nothing",
-  "ever re-reads it as a set, so an ask that duplicates existing work in another shape becomes a",
-  "permanent second epic. The dedup that already exists is IDENTITY-based — same id, or the same",
-  "`externalUrl` — which catches a re-run of sync and nothing else. Measured in this plugin's own",
-  "repository: four live pairs are one change registered twice under different lanes and",
-  "different names, and identity dedup found none of them.",
+  "The ask is the ONLY moment the whole backlog is cheap to consider: afterwards nothing re-reads it",
+  "as a set, so an ask that duplicates existing work in another shape becomes a permanent second",
+  "epic. The dedup that exists is IDENTITY-based (same id, or the same `externalUrl`) and catches a",
+  "re-run of sync and nothing else. (Evidence: the conductor skill, Intake.)",
   "",
   "1. **Get the candidate set mechanically.** Before any `add-epic`, run",
-  `   \`${pmCmd(platform, "triage")} "<the ask, in its own words>"\`. It returns the existing epics that share`,
-  "   distinctive vocabulary with the ask (each with the shared tokens that put it there), the",
-  "   lane this repo's routing picks, and the backlog's current shape. It returns",
-  "   `verdict: null` and that is not a placeholder: the engine computes what is WORTH READING",
-  "   and never decides. Nothing about a lexical overlap is a claim that two asks are the same.",
+  `   \`${pmCmd(platform, "triage")} "<the ask, in its own words>"\` (\`--ask=<ask>\` if it starts with \`-\`). It returns the epics that share`,
+  "   distinctive vocabulary with the ask (with the shared tokens), the open `releases[]`, the lane",
+  "   this repo's routing picks, and the backlog's shape. Its `verdict: null` is not a placeholder: the engine computes",
+  "   what is WORTH READING and never decides. A lexical overlap is not a claim that two asks are one.",
   "2. **READ the candidates — do not skim the scores.** Open each one that could plausibly be",
   "   the same work. A high score with unrelated intent is a miss; a low score on an epic whose",
-  "   description turns out to cover the ask is a hit. This is the judgment the surface exists",
-  "   to make cheap, and it is yours.",
+  "   description covers the ask is a hit. That judgment is yours.",
   "3. **Record the relationship you found**, rather than leaving it in the conversation:",
   "   `add-epic … --link \"relates-to:<id>:<why>\"` where the two asks inform each other;",
   "   `--link \"supersedes:<id>:<why>\"` where this ask REPLACES an existing epic — then end the",
   "   superseded one with its own disposition (`--outcome superseded --reason \"<what replaced",
-  "   it>\"`), because a consolidation that leaves both epics open has consolidated nothing.",
-  "   A candidate `triage` marks `superseded: true` is already dead — do not consolidate into it.",
-  "4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you and",
-  "   its answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and",
-  "   nothing else. It cannot ask what a person would ask, whether this work SERVES something",
-  "   already committed to, because pm holds no milestone or product context to weigh and the",
-  "   engine will not invent one. The suggestion is an input; the lane is your call.",
-  "   THE TIE-BREAK IS ASYMMETRIC, and it is not a matter of taste. `claude-code` means no spec,",
-  "   no plan, no gate and no stories — right for a genuine sub-2-hour tweak, and the reason a",
-  "   misrouted epic leaves no record of what it was FOR. Over-processing costs hours;",
-  "   under-processing costs the record permanently, and nothing later can reconstruct it. So an",
-  "   unresolved routing question resolves AWAY from `claude-code`, never into it.",
+  "   it>\"`): a consolidation that leaves both epics open has consolidated nothing. A candidate",
+  "   `triage` marks `superseded: true` is already dead — do not consolidate into it.",
+  "4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane`; its answer",
+  "   reads THE ASK (the words, the size, this repo's `laneRouting` overrides) and nothing else. It",
+  "   cannot ask whether this work SERVES something already committed to: pm holds no milestone or product context to weigh beyond the release records `triage` lists. The suggestion is an input;",
+  "   the lane is your call. THE TIE-BREAK IS ASYMMETRIC: `claude-code` means no spec,",
+  "   no plan, no gate and no stories — right for a sub-2-hour tweak, and a misrouted epic leaves",
+  "   no record of what it was FOR. Over-processing costs hours; under-processing costs the record",
+  "   permanently. So an unresolved routing question resolves AWAY from `claude-code`, never into it.",
   "   Whenever you register in a lane other than the one routing suggested, say why on the epic:",
-  "   `update-epic <id> --notes \"lane: <chosen> not <routed> — <why>\"`. The tracker-sync",
-  "   procedures below already demand that line; it binds every path that registers an epic,",
-  "   this one included. Measured in pm's OWN repository, not necessarily yours: 83% of epics sat",
-  "   in `claude-code`, 51 of them already archived, none carrying an artifact link.",
-  "5. **Say no out loud when the answer is no.** Not every ask should be taken on, and declining",
-  "   by never registering it destroys the record that anybody considered it. Register it, then",
+  "   `update-epic <id> --notes \"lane: <chosen> not <routed> — <why>\"`. It binds every path",
+  "   that registers an epic, the tracker-sync procedures below included.",
+  "5. **Say no out loud when the answer is no.** Declining by never registering destroys the",
+  "   record that anybody considered it. Register it, then",
   "   `update-epic <id> --status archived --outcome declined --reason \"<why not>\" --no-deferrals`.",
   "   Two commands, deliberately: creating an epic directly at `archived` stamps an engine record",
   "   carrying no reason, which is the silence this step removes.",
@@ -618,7 +678,10 @@ function registrationStep(platform, tracker) {
     "   Never use double quotes: `$(…)`, backticks and `\"` inside them change the command. Keep",
     "   `--title=` and `--ask=` attached to their values: that is what lets a title that starts with",
     "   `-` reach the engine as a title.",
-    `   \`add-epic --id ${prefix}-${idPart} --title=<issue-title> --status untriaged --external-id ${keyPart} --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2\``,
+    `   \`add-epic --id ${prefix}-${idPart} --title=<issue-title> --status untriaged --external-id ${keyPart} --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2 --summary=<one-line summary>\``,
+    "   Write `<one-line summary>` from the item's body: one line, at most 200 characters, in your own",
+    "   words and never the raw body, as ONE single-quoted word like the other placeholders. When the",
+    "   body gives nothing to summarise, leave `--summary=` off rather than invent one.",
     ...(numeric ? [] : [
       "   `<issue-key-slug>` is the item's key lowercased with every run of characters outside `a-z0-9`",
       "   replaced by `-` (`ABC-123` → `abc-123`), so distinct keys derive distinct ids.",
@@ -693,7 +756,27 @@ function spendTrackingLines() {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false) {
+export const PROCEDURES_HEADING = "## Procedures emitted on use";
+
+/** The always-on pointer that stands in for an absent usage-conditioned section (gh-cfdude-pm-248 D3):
+ *  one line per ABSENT procedure, naming the skill to load before its first use, so a rule that governs
+ *  the first write ("before flipping the switch") is never first met after it. Empty while both
+ *  sections are carried. At most 400 bytes, held by a test. The command spans are written as the
+ *  runnable forms the emitted-invocation sweep accepts. */
+export function proceduresEmittedOnUseLines(usage = FULL_USAGE) {
+  if (usage.autonomy && usage.releaseCandidate) return [];
+  return [
+    PROCEDURES_HEADING,
+    "",
+    ...(usage.autonomy ? [] : ["- Before `set-autonomy <id> --context \"<note>\"`, load the `conductor` skill's \"Epic-level autonomy — the preflight scan\"."]),
+    ...(usage.releaseCandidate ? [] : ["- Before `release <id> --intent \"<why>\"`, load the `release-candidate` skill."]),
+    "",
+    "The omitted section joins this block once its feature is in use.",
+    "",
+  ];
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "", boardsSection = BOARDS_SECTION) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -813,6 +896,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...reportingLines(platform),
     "",
+    ...(usage.autonomy ? [
     "## Epic-level autonomy",
     "",
     "An epic's `autonomy` block (`.conductor/state.json`) can grant it broad execution trust —",
@@ -854,6 +938,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   from that log, not from memory), with an explicit \"are you OK with these?\" checkpoint, THEN",
     "   run tests. Leave room to iterate — including rewriting code — if the user is not satisfied.",
     "",
+    ] : []),
+    ...proceduresEmittedOnUseLines(usage),
     "## Execution profile",
     "",
     "How intensely to review, which model and effort each job role runs on, and how often you report.",
@@ -889,6 +975,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     ...(spend ? spendTrackingLines() : []),
     ...(guard ? spendGuardLines() : []),
+    ...(missionSection ? [...missionSection.split("\n"), ""] : []),
+    ...(usage.releaseCandidate ? [
     "## Release candidate",
     "",
     "Building a release from several changes? Do not run a Gate 2 round per change: batch the work by",
@@ -908,6 +996,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "the last fix has merged. A verdict recorded before a fix is stale. `release show` reads whether the",
     "members converged.",
     "",
+    ] : []),
     "## Feedback — don't let friction stay silent",
     "",
     "If you hit a bug, a missing CLI verb, an unexpected limitation, or repeated friction",
@@ -951,6 +1040,10 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         `- A parent epic → create it as a ${sys} epic and link its children.`,
         "The SessionStart brief lists epics not yet mirrored under `TRACKER SYNC`. Status-transition",
         "sync is your responsibility on every status change (the brief does not fabricate it).",
+      );
+      // The paragraph cites the autonomy decision rule's item (d), so it is emitted only while that
+      // section is (gh-cfdude-pm-248 D1): no line may point at an absent section.
+      if (usage.autonomy) lines.push(
         "",
         "**Epic-level autonomy on tracker-linked epics:** before running the preflight scan on a",
         `tracker-linked epic, pull the ${sys} issue + its child stories/subtasks with your own`,
@@ -1062,6 +1155,13 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   // The refresh gate — instruction, always, whether or not any tracker is configured. It keys on
   // PROVENANCE, so it has something to say for every epic: the tracker-linked case records a
   // verdict, the local-origin case records nothing at all.
+  // The boards pointer (project-boards): default ON, so a caller that passes nothing gets it. It sits after the Feedback and tracker
+  // sections and BEFORE the closing one on purpose: the sections the byte-pinned fixtures slice up to a neighbour (Spend tracking,
+  // Release candidate, Execution profile) never gain it, and it is not the last section, which carries the END marker's bytes into
+  // its own overhead figure. Verb-refreshed (`set-boards`), outside CONDITIONAL_SECTIONS.
+  if (boardsSection) {
+    lines.push("", ...boardsSection.replace(/\{\{pm:([a-z-]+)\}\}/g, (_, name) => pmCmd(platform, name)).split("\n"));
+  }
   lines.push(
     "",
     "## Re-read the source before an epic becomes the work",
@@ -1188,15 +1288,26 @@ export function assertRulesBlockWritable(platform = "claude-code") {
   }
 }
 
-/** Does the managed rules block ON DISK carry a `## Spend guard` section? `null` when there is no block to
- *  judge (no file, no markers, or an ambiguous arrangement): the wrapper that asks never creates a block,
- *  and never throws on a file the user is mid-way through fixing. */
-export function rulesBlockShowsSpendGuard(platform = "claude-code") {
+/** The heading texts (the text after `## `) of a managed block's lines. A `### ` line is not a heading here. */
+function headingsOfLines(lines) {
+  const out = new Set();
+  for (const l of lines) {
+    const m = /^## (.*?)\s*$/.exec(l.replace(/\r?\n$/, ""));
+    if (m) out.add(m[1]);
+  }
+  return out;
+}
+
+/** The set of `## ` headings inside the ONE managed rules block ON DISK, as heading texts, or `null` when there
+ *  is no block to judge (no file, no markers, or an ambiguous arrangement): the refresh that asks never creates
+ *  a block, and never throws on a file the user is mid-way through fixing. It answers for EVERY conditional
+ *  section at once (gh-cfdude-pm-248 D4); it replaced the Spend-guard-only reader. */
+export function rulesBlockHeadings(platform = "claude-code") {
   let existing;
   try { existing = fs.readFileSync(rulesTarget(platform, engineRoot()), "utf8"); } catch { return null; }
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind !== "one") return null;
-  return arrangement.lines.slice(arrangement.i, arrangement.j + 1).some((l) => l.replace(/\r?\n$/, "") === "## Spend guard");
+  return headingsOfLines(arrangement.lines.slice(arrangement.i, arrangement.j + 1));
 }
 
 /** Write (or refresh) the managed rules block into whichever file `platform`'s precedence
@@ -1220,15 +1331,30 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection());
   let next;
+  // What this write says about itself, printed only AFTER the file is written: a write that fails must not
+  // have claimed it refreshed the block or announced a section (gh-cfdude-pm-248 Gate 2 M2).
+  const said = [];
   if (arrangement.kind === "one") {
     // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and
     // the block takes the BEGIN line's terminator so a CRLF file never becomes mixed.
     const { i, j, lines } = arrangement;
     const body = lines[i].endsWith("\r\n") ? block.split("\n").join("\r\n") : block;
     next = lines.slice(0, i).join("") + body + lines.slice(j + 1).join("");
-    errStream().write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
+    said.push(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
+    // gh-cfdude-pm-248 D5: a conditional section that APPEARS in an existing block is announced, here and not
+    // in the dispatch wrapper's refresh, because several verbs call writeRules() themselves and would otherwise
+    // find disk and state already agreeing. Only the conditional-sections table is announced: not the pointer,
+    // a tracker heading or anything an upgrade adds. A removal prints nothing new. Create and append never
+    // reach this branch, so `init` does not list every section.
+    const was = headingsOfLines(lines.slice(i, j + 1));
+    const now = headingsOfLines(block.split(/(?<=\n)/));
+    for (const row of CONDITIONAL_SECTIONS) {
+      if (now.has(row.heading) && !was.has(row.heading)) {
+        said.push(`conductor: "## ${row.heading}" is now carried by the managed block in ${name} — a session or agent that loaded it earlier does not have it; run \`rules\` to print the block.\n`);
+      }
+    }
   } else if (existing.trim()) {
     // Append with the file's own line ending: its first terminator, LF when it has none.
     const firstLf = existing.indexOf("\n");
@@ -1239,11 +1365,50 @@ export function writeRules(platform = "claude-code") {
     } else {
       next = existing.replace(/\n*$/, "\n\n") + block;
     }
-    errStream().write(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
+    said.push(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
   } else {
     next = `# ${name}\n\n` + block;
-    errStream().write(`conductor: created ${name} with rules block (platform: ${platform})\n`);
+    said.push(`conductor: created ${name} with rules block (platform: ${platform})\n`);
   }
   fs.writeFileSync(target, next);
+  for (const line of said) errStream().write(line);
+  retireOrphanedRulesBlocks(target);
   return target;
+}
+
+/** The INVERSE of writeRules()'s write: when the platform moves, the previous platform's file still
+ *  carries a managed block nothing will ever refresh again -- stale instructions an agent may still
+ *  read. After the new target is written, every OTHER file named in any platform's chain is searched
+ *  for exactly one well-formed block, and that block (only) is removed: every byte outside the marker
+ *  lines is kept, the one blank separator writeRules() added before it goes with it, and a file left
+ *  holding nothing but pm's own `# <name>` header is deleted. An ambiguous or absent arrangement is
+ *  never touched (no guessing, no throw -- the target was already written). The target itself is
+ *  never a candidate, so platforms that share a file (hermes -> CLAUDE.md) leave it alone. */
+function retireOrphanedRulesBlocks(target) {
+  /** The same file under another name: equal realpath (symlink) or equal device+inode (hard link). */
+  const sameFile = (a, b) => {
+    try {
+      if (fs.realpathSync(a) === fs.realpathSync(b)) return true;
+      const sa = fs.statSync(a), sb = fs.statSync(b);
+      return sa.dev === sb.dev && sa.ino === sb.ino;
+    } catch { return false; }
+  };
+  const root = path.dirname(target);
+  const names = [...new Set(Object.values(PLATFORM_RULES_CHAIN).flat())];
+  for (const name of names) {
+    const file = path.join(root, name);
+    if (file === target || sameFile(file, target)) continue;
+    let text;
+    try { text = fs.readFileSync(file, "utf8"); } catch { continue; }
+    const arrangement = rulesBlockArrangement(text);
+    if (arrangement.kind !== "one") continue;
+    const { i, j, lines } = arrangement;
+    const before = lines.slice(0, i);
+    if (before.length && before[before.length - 1].trim() === "") before.pop();
+    const rest = before.join("") + lines.slice(j + 1).join("");
+    const bare = rest.trim();
+    if (bare === "" || (bare.startsWith("# ") && bare.slice(2) === name)) fs.unlinkSync(file);
+    else fs.writeFileSync(file, rest);
+    errStream().write(`conductor: removed the orphaned rules block from ${escapeControls(name)} (platform moved to ${escapeControls(path.basename(target))})\n`);
+  }
 }

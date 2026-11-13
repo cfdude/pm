@@ -111,6 +111,9 @@ test("34.2 the emitted lane rule states the judgment half, the asymmetry, and th
     // 2. The judgment half is named as ABSENT, not as something pm supplies.
     assert.ok(t.includes(norm("no milestone or product context")),
       `${name} must say outright that pm holds no milestone or product context to weigh`);
+    //    ...but not as ABSENT outright: pm keeps release records, and `triage` surfaces them.
+    assert.ok(t.includes(norm("beyond the release records")),
+      `${name} must not claim pm holds no release context: it keeps release records, which triage lists`);
     // 3. The asymmetry, with its direction. A tie-break stated without a direction is not one.
     assert.ok(t.includes(norm("away from `claude-code`")),
       `${name} must state the DIRECTION an unresolved routing question resolves in — a tie-break ` +

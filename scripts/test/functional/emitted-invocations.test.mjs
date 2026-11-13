@@ -543,6 +543,16 @@ export async function renderedRulesBlocks() {
     // spend-budget-and-stuck-loop-guard: the Spend guard section, so `spend-guard <epic>` and the override
     // invocation are checked like every other shipped instruction.
     out.push({ label: `rules[${platform} · spend guard on]`, text: rulesBlock(null, "standard", [], platform, null, false, true) });
+    // gh-cfdude-pm-248: the usage-off renders, so the always-on pointer's code spans are checked
+    // "runnable as written" like every other shipped instruction. The default argument above is the full
+    // block; each of these omits one usage-conditioned section (or both) and carries the pointer instead.
+    for (const [name, usage] of [
+      ["autonomy off", { autonomy: false, releaseCandidate: true }],
+      ["release candidate off", { autonomy: true, releaseCandidate: false }],
+      ["both usage answers off", { autonomy: false, releaseCandidate: false }],
+    ]) {
+      out.push({ label: `rules[${platform} · ${name}]`, text: rulesBlock(null, "standard", [], platform, null, false, false, usage) });
+    }
   }
   return out;
 }
@@ -1273,7 +1283,11 @@ const INTEGRITY_BUILDERS = {
       setup() {
         const repo = remedyRepo();
         openspecEpic(repo, "lf", 1);
-        repo.ok(["record-gate-review", "lf", "--gate", "2", "--verdict", "fail", "--reviewer", "audit"]);
+        // The verb no longer records a range-less Gate 2 fail (record-gate-review-fail-requires-shas), but
+        // records written before that rule still hold one, and this finding exists to report them: install it.
+        const st = repo.state();
+        st.epics.find(e => e.id === "lf").gateReview = { gate2: { verdict: "fail", reviewedAt: new Date().toISOString(), reviewer: "audit" } };
+        repo.write(st);
         return { repo, epicId: "lf" };
       },
       produce: integrityProducer("late-failing-gate-review"),
@@ -2372,7 +2386,9 @@ function fillRecipe(section, line, item) {
     .replace(/<issue-key-slug>/g, item.key.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
     .replace(/<issue-key>/g, () => itemValue(item.key))
     .replace(/<issue-number>/g, item.key)
-    .replace(/<lane>/g, "claude-code");
+    .replace(/<lane>/g, "claude-code")
+    // project-boards: the agent writes this one itself, from the item's body, so it is a fixed sentence quoted like the others.
+    .replace(/<one-line summary>/g, () => itemValue("what the item asks for, in one line"));
   if (listingFetchesUpdated(section)) out = out.replace(/<issue-updated-at>/g, AT);
   return out;
 }
@@ -3143,6 +3159,22 @@ const PRINTER_FIXTURES = {
       [repo.run(["release", "show"]), /release show <id>/],
       [repo.run(["release", "nope"]), /release nope --intent/],
       [repo.run(["record-cross-spec-review", "nope", "--verdict", "pass", "--reviewer", "r"]), /release nope --intent/],
+    ];
+  },
+  "release here with nothing to set or clear, and mission with no operation or an unknown mission milestone (project-boards)"() {
+    const repo = remedyRepo();
+    repo.ok(["release", "r1", "--intent", "the first"]);
+    return [
+      [repo.run(["release", "here"]), /release here <id>/],
+      [repo.run(["mission"]), /mission show/],
+      [repo.run(["mission", "--milestone", "nope"]), /release <id> --intent/],
+      [repo.run(["mission", "--history"]), /mission show --history/],
+    ];
+  },
+  "set-boards off names the command that undoes it (project-boards)"() {
+    const repo = remedyRepo();
+    return [
+      [repo.run(["set-boards", "off"]), /set-boards on/],
     ];
   },
   "a release write on a detached checkout"() {

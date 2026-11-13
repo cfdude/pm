@@ -284,6 +284,8 @@ unitTest("REGRESSION GUARD: the pre-existing empty-CATEGORY refusal still fires 
 
 unitTest("1.10: the emitted decision rule says a revoked grant and a grant naming nothing cover nothing", () => {
   const engine = repoWithEpic();
+  // The section is emitted only while a non-archived epic holds an autonomy record (gh-cfdude-pm-248).
+  engine(["set-autonomy", "a", "--context", "x"]);
   // THE RULES BLOCK ONLY, and that scope is derived rather than assumed: `rg "Already
   // pre-authorized"` finds the decision rule on exactly one emitted surface plus this repo's own
   // managed CLAUDE.md, which the block generates. SKILL.md carries the PREFLIGHT scan and defers

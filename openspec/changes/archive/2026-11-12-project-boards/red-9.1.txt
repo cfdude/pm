@@ -1,0 +1,9 @@
+RED for task 9.1 (board-export unshipped): fails before 9.1 (scripts/lib/board.mjs at its prior state). 37 pass, 8 fail:
+✖ board: releases are listed in plan order with their plan fields, absent fields null
+✖ release unshipped: a deferral that is not a member is a row; one that is a member is not doubled
+✖ release unshipped: a long reason is capped at 300 characters ending in an ellipsis; control characters are escaped
+✖ release unshipped: a superseded member is a row with its recorded reason and progress is unchanged
+✖ release unshipped: killed, declined and abandoned members carry their outcome and reason
+✖ release unshipped: no recorded reason is null, never invented
+✖ release unshipped: read over every member, not only the ended-epic window; an empty release has none
+✖ release unshipped: supersededBy comes from a structured supersedes link, never from prose

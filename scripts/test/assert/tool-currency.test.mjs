@@ -54,9 +54,11 @@ test("gh#128: no engine source runs `openspec` with anything but a read-only fla
   // file that spelled the call it looks for would be refused by the very guard it exists beside.
   const SPAWN_SITE = new RegExp("(?<![.\\w$])" + "exec" + "(FileSync|Sync)\\s*\\(");
   const spawn = src.split("\n").filter(l => SPAWN_SITE.test(l));
-  assert.equal(spawn.length, 1, "tool-currency holds exactly one spawn site and it is the openspec read");
-  assert.match(spawn[0], /openspec/);
-  assert.doesNotMatch(spawn[0], /update|--write|install/i, "a read-only probe, never the mutating verb");
+  assert.equal(spawn.length, 2, "tool-currency holds exactly two spawn sites: the openspec version read and the validate read (gh#243)");
+  for (const line of spawn) {
+    assert.match(line, /openspec/);
+    assert.doesNotMatch(line, /update|--write|install|archive/i, "read-only probes, never a mutating verb");
+  }
 });
 
 test("gh#128: the generated-artifact set is declared once, as a list of pathspecs", () => {

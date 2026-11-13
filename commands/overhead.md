@@ -18,7 +18,7 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 | Flag | Effect |
 | --- | --- |
-| `--all-features` | compute the same report over a named in-memory hypothetical in which every opt-in is on, and say so; each feature that is off in this repo also shows the bytes it would add. Nothing is written |
+| `--all-features` | compute the same report over a named in-memory hypothetical in which every opt-in is on, and say so; each feature that is off in this repo also shows the bytes it would add. Nothing is written. The hypothetical counts the rules block's `Epic-level autonomy` and `Release candidate` sections at full usage; the `Procedures emitted on use` pointer appears only in a real report, never here |
 | `--json` | machine-readable: `surfaces` (`id`, `feature`, `bytes`, `estimatedTokens`, `method`, `conditional`), `features` (`on`, `bytes`, `estimatedTokens`, `surfaces`), and the session `total` |
 
 ## How to read the numbers

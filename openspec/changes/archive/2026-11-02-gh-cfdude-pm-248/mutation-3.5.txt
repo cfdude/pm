@@ -1,0 +1,19 @@
+mutation evidence — 3.5 one refresh and one notice for every conditional section (3.1-3.4)
+tests: scripts/test/assert/rules-headings.test.mjs scripts/test/assert/rules-conditional-refresh.test.mjs scripts/test/unit/rules-conditional-coverage.test.mjs scripts/test/assert/spend-guard-rules-follows-liveness.test.mjs
+
+baseline: exit 0 (must be 0)
+M1 compare before/after instead of disk/state: KILLED (exit 1) e.g. ✖ 3.2 a hand-edit of state is corrected by the NEXT engine write (disk against state, not before against after) | ✖ 3.2 a hook does no comparison (including a commit-nudge archive self-heal); the next non-hook write catches up | ✖ 3.2 a hook that WRITES state (snapshot's archive self-heal) does no comparison; the next non-hook write catches up
+M2 drop one table row (Release candidate): KILLED (exit 1) e.g. ✖ 3.2 the first release adds the Release candidate section; --deliver retires it; --undeliver restores it | ✖ 3.3 two sections added by one write are two lines, and no other heading is announced | ✖ 3.4 every heading that varies across the 16 combinations is a CONDITIONAL_SECTIONS row or the pointer
+M2b drop one table row (Epic-level autonomy): KILLED (exit 1) e.g. ✖ 3.2 the first autonomy record adds the section | ✖ 3.2 level off keeps the section | ✖ 3.2 archiving the last holder retires the section, and un-archiving restores it
+M3 skip the hook exclusion: KILLED (exit 1) e.g. ✖ 3.2 a hook that WRITES state (snapshot's archive self-heal) does no comparison; the next non-hook write catches up | ✖ 3.2 a hook that WRITES state (snapshot's archive self-heal) does no comparison; the next non-hook write catches up
+M4 print the notice on removal as well: KILLED (exit 1) e.g. ✖ 3.3 a retirement is silent, even when the pointer appears | ✖ 3.3 a removal-only refresh prints no appearance line | ✖ 3.3 a retirement is silent, even when the pointer appears
+M5 move the notice into the refresh only (delete it from writeRules): KILLED (exit 1) e.g. ✖ 3.3 the first autonomy grant announces the section: one line naming it and `rules` | ✖ 3.3 a verb that writes the block itself announces too (set-spend-guard) | ✖ 3.3 two sections added by one write are two lines, and no other heading is announced
+M6 announce the pointer too: KILLED (exit 1) e.g. ✖ 3.3 a retirement is silent, even when the pointer appears | ✖ 3.3 a retirement is silent, even when the pointer appears
+M7 announce every added heading (tracker sections): KILLED (exit 1) e.g. ✖ 3.3 a retirement is silent, even when the pointer appears | ✖ 3.3 a tracker heading is not announced | ✖ 3.3 a retirement is silent, even when the pointer appears
+M8 refresh ignores a disagreement on the last row only (off-by-one in the filter): KILLED (exit 1) e.g. ✖ 3.2 the first release adds the Release candidate section; --deliver retires it; --undeliver restores it | ✖ 3.3 a retirement is silent, even when the pointer appears | ✖ 3.2 the first release adds the Release candidate section; --deliver retires it; --undeliver restores it
+M9 headings reader counts ### lines: KILLED (exit 1) e.g. ✖ 3.1 headings outside the markers and `###` lines are not counted | ✖ 3.1 headings outside the markers and `###` lines are not counted
+
+killed 10, survived 0
+
+NOTE: the first run of this batch had M3 (skip the hook exclusion) SURVIVE: the hook test used verbs that never write state, so the exclusion was
+never exercised. Fixed by adding a test where a hook WRITES state (the snapshot hook's archive self-heal), after which M3 dies. No test was deleted.

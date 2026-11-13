@@ -1,0 +1,178 @@
+✔ 1.1 FULL_USAGE is both answers true (0.648917ms)
+✔ 1.1 no epics and no releases: both false (0.084875ms)
+✔ 1.1 an epic with no autonomy record does not count (0.06975ms)
+✖ 1.1 a non-archived epic at level autonomous counts (0.421042ms)
+✖ 1.1 level off still counts: presence, not level (re-arming restores kept grants) (0.12025ms)
+✔ 1.1 an autonomy record on an archived epic alone does not count (0.059167ms)
+✖ 1.1 an archived holder beside a non-archived one: the live one counts (0.092792ms)
+✖ 1.1 a removed holder stops counting (0.068458ms)
+✔ 1.1 a null or non-object autonomy value is not a record (0.061291ms)
+✔ 1.1 no releases: releaseCandidate false (0.074125ms)
+✖ 1.1 one release with no delivered marker: true (0.081833ms)
+✔ 1.1 one release carrying a delivered marker: false (0.040333ms)
+✖ 1.1 one delivered and one undelivered release: true (0.0585ms)
+✔ 1.1 state.releases absent or not an array: false, never a throw (0.042209ms)
+✔ 1.1 non-object entries in releases are ignored (0.031584ms)
+✖ 1.1 the two answers are independent (0.25325ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 9
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 150.955833
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 a non-archived epic at level autonomous counts (0.421042ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:28:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 level off still counts: presence, not level (re-arming restores kept grants) (0.12025ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:32:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 an archived holder beside a non-archived one: the live one counts (0.092792ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:42:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 a removed holder stops counting (0.068458ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:47:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 one release with no delivered marker: true (0.081833ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:62:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 one delivered and one undelivered release: true (0.0585ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:71:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ 1.1 the two answers are independent (0.25325ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs]
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   autonomy: false,
+  -   autonomy: true,
+      releaseCandidate: false
+    }
+  
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/rules-usage.test.mjs:87:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { autonomy: false, releaseCandidate: false },
+    expected: { autonomy: true, releaseCandidate: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

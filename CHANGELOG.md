@@ -6,6 +6,145 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.55.0] — 2026-11-12
+
+Project boards, and a record that is harder to get wrong. This release adds the boards (a read-only `board --json`
+snapshot, a mission and release plan, a project name and key with a number on every epic, and two published pages
+that draw the backlog and the release plan, on by default with one switch to remove them), plus a run of fixes to
+what the engine refuses, announces and carries in the rules block. 0.54.0 was never released: it was planned, then
+retired, and its delivered work is included here, so there is no 0.54.0 version and no 0.54.0 entry. Run
+`/reload-plugins` after updating, then `/pm:upgrade` in each repo: the managed rules block changes, `upgrade`
+numbers every epic that has no `number` (the one `MIGRATIONS` entry in this release, keyed to 0.55.0), and the
+boards are on by default, so tell your user.
+
+### Added
+
+* **`board --json`: one read-only snapshot for anything that draws the backlog.** The new verb prints a versioned
+  object (`schemaVersion` 1) with the counts, the mission and its milestone, the releases in plan order with a
+  derived `status` and `criticalPath`, the open epics in the order `PROJECT.md` renders them (effective priority,
+  merit priority, rank, lane, id), a window of recently ended epics (`--archived <n>|all`, 50 by default), and a
+  three-state `delivered` (`true`, `false`, `null` for "ended, outcome unknown"; an engine stamp is never `true`
+  unless it records `delivered`). `dependsOn` is resolved. An id that fails `/^[A-Za-z0-9._-]+$/` or an
+  `externalUrl` that is not http or https is left out and named in `rejected[]`, and the verb still exits 0.
+  It writes nothing, runs no git and makes no network call. Plain `board` prints a three-line summary.
+* **`--summary` and `--why-now`: one line per epic, for the boards.** `add-epic`, `update-epic` and `add-many` (keys
+  `summary`, `whyNow`) take a one-line `summary` (at most 200 characters) and `whyNow` (at most 300). An empty,
+  multi-line or over-long value is refused and nothing is written. `update-epic <id> --clear summary` and
+  `--clear why-now` unset them, and `description` and `notes` are never touched. When an epic leaves `untriaged`
+  (or is registered) into a live status without them, the command prints one stderr warning naming the epic, each
+  missing field and the flag that sets it. It is a warning only: the write happens and the exit code is 0.
+* **Release plan fields and a "we are here" marker.** `release <id>` takes `--theme`, `--rationale`, `--exit` (one line,
+  at most 400 characters), `--order <n>` (a non-negative integer) and `--size major|minor|patch`, each cleared with
+  `--clear <field>`. A release's status (`planned`, `in-progress`, `shipped`) is derived from `--deliver` and its
+  members and never stored, so `--status` is not a flag. `release here <id> [--text] [--next]` records where the project
+  is and `release here --clear-here` removes it; `here` is now a reserved release id like `show`. `release show` prints
+  the plan fields and marks `(here)`, and the `render` verb (`/pm:status`) prints `here:` and, once a mission milestone
+  exists, the `(critical path)` marks. `PROJECT.md` and the brief carry neither.
+* **`mission`: the project's mission, its mission milestone and exit criteria.** `mission --statement "<line>" --reason "<why>"`
+  records the mission (a replaced statement moves into an append-only history, stamped with when and why), `--end --reason`
+  ends it and keeps the record, `--milestone <releaseId>` / `--clear-milestone` name the release that meets it, and
+  `--add-criterion` / `--remove-criterion` keep numbered exit criteria whose ids are never reused. `mission show [--history]`
+  reads it back. The mission shows in `/pm:status`, as one brief line (at most 200 bytes) and as a `## Mission` section of the
+  managed rules block (at most 280 bytes, absent while no mission is recorded). Releases at or before the mission milestone,
+  by `--order`, are marked critical path. The engine never writes a statement it was not given.
+* **`set-boards on|off`: the boards are on by default, and one switch removes them.** `set-boards off` records
+  `state.boards = {enabled: false}` and removes the `## Boards` section of the managed rules block (at most 280 bytes: it names the
+  `project-boards` skill and `/pm:boards` and says when to refresh) and the brief's boards line (at most 160 bytes). `set-boards on`
+  removes the setting again, so each undoes the other and a repeat writes no state. An absent setting reads as on and `init` writes
+  nothing. `board --json` keeps working whichever way it is set. `overhead` reports `rules:boards` and `brief:boards` under the
+  `boards` feature (0 bytes while off), measures `brief` without that line, and the README cost table has a row for each. `upgrade`
+  prints `boards: on (default)`, and once, on the upgrade that crosses 0.55.0, a line telling the agent to tell the user the boards are on.
+* **The inward tracker recipe carries `--summary=<one-line summary>`.** The registration line the rules block emits for a tracker now
+  ends `--summary=<one-line summary>`, with the instruction to write it from the item's body: one line, at most 200 characters, in the
+  agent's own words, single-quoted like the other placeholders, and to leave the flag off when the body gives nothing to summarise.
+* **`project-boards`: a skill, two page templates and `/pm:boards` draw the backlog and the release plan.** The skill
+  `skills/project-boards/SKILL.md` is the one home of the procedure: it publishes `templates/backlog.html` and
+  `templates/release-plan.html` with the Artifact tool, seeds them from `board --json` (the only state source, in writes of at
+  most 50), refreshes them after `/pm:sync`, a status change, a `release` or `mission` write and a gate record, and registers
+  each page in `docs/artifacts/artifacts.md`. The pages declare database rules: everything is `admin`-writable except
+  `answers` and `backlogMeta`, which are `interact`. The backlog bands open epics by merit priority and a drag writes a whole-band
+  proposal to `proposals/rank`; the agent applies it with `reorder`, then deletes it, and one bad id refuses the whole proposal.
+  Every value the templates draw is escaped, priority is allowlisted to `P0`..`P3` or `P?`, ids must match `/^[A-Za-z0-9._-]+$/`,
+  only http and https URLs become links, each render step has its own error boundary, and a host with no Artifact tool gets a
+  read-only standalone file whose inlined JSON escapes `<` as `\u003c`. `/pm:boards` loads the skill and stops while boards are off.
+* **`set-project`: the project's name and key, and a number on every epic.** `set-project --name "<name>" --key <KEY>` records the project name
+  (at most 60 characters, no `<`, no control character) and a two- or three-letter key; either alone, and `--unset name|key` removes one. The
+  engine never invents either. Every epic now carries an integer `number`, assigned when it is registered (`add-epic`, `add-many` and `sync`):
+  a tracker issue number when the epic's `externalId` is a plain positive integer below 1000 that no other epic holds, otherwise the next number from a
+  counter that starts at 1000 and only moves forward (so a local epic can never collide with an issue number below 1000). A number is never reassigned or freed by a plain registration. The key a board shows is `<KEY>-<number>` (`PM-256`),
+  computed on read, so changing the key renames them all. `upgrade` (a `MIGRATIONS` entry keyed to 0.55.0, also run on every `upgrade`) numbers the
+  epics that have none by the same rule: tracker-linked ones by their issue number first, then the rest from the counter in registration order. A backfilled number is not a touch.
+* **`board --json` carries the project, each epic's key and each release's progress.** A top-level `project: {name, key}` (`null` while unset),
+  each epic's `number` and `key` (`null` while the project key is unset), and each release's `progress: {done, total}` (members delivered over members
+  not declined, over every member, not only the ended window). An invalid stored name or key is nulled and named in `rejected[]` as `project format`.
+  `schemaVersion` stays 1.
+* **`release --clear target`, and `release --help` names every plan verb.** `--clear` now accepts `target` (the inverse of `--target`), and the
+  `release` help text and its missing-id usage name `release here`, the plan fields and the clearable fields.
+* **The boards redrawn: project-named titles, keys as ids, human timestamps and a guided card for every missing field.** Both
+  pages now take their title from `set-project`'s name ("PM Plugin Backlog", "PM Plugin Release Plan"), set at render time from
+  `page/info.project`, which the refresh now writes; the skill publishes each page with that title, replacing the old rule against
+  a project name in a title. Every id shown is the engine key (`PM-256`), with the slug as small secondary text and "no key" where
+  there is none. Every timestamp reads "Nov 11, 2:10 PM" in the viewer's locale and time zone, plus "3 days ago" past a day; no
+  raw ISO remains. The backlog follows the Enterprise Portal layout: priority spine and band breaks, count pills, a P0-P3 legend,
+  a Find/Priority/Status/Release/Lane filter grid (drag is off while filtering), an "Epics" table whose text column is "Summary"
+  (the title, marked, while an epic has no summary), compact detail cards only for epics with a why-now or description, and
+  Delivered and Not pursuing tables. The release plan follows the Ivy layout: a Last updated pill, the mission, a plan bar, a dark
+  "We are here" banner with a two-day stale warning, collapsible release cards with progress bars and a WE ARE HERE rule, the
+  milestone's exit criteria and the decisions for the owner. Each field a page needs that is still null shows a card naming what is
+  missing, the command that sets it and whether to ask the user. The skill gains "First population: what to fill and what to ask
+  the user" (every verb, who supplies each field, one batched question set, never invent a mission) and a refresh-time stale check.
+  First population now opens with "Derive, then confirm": the agent drafts the mission, why-now, where things stand, release
+  themes and epic summaries from the README, CLAUDE.md or AGENTS.md, `board --json`, the records and `git log`, marks anything it
+  could not ground as UNGROUNDED, and asks the user only about the gaps and for confirmation.
+  Each release in `board --json` now carries `unshipped`: one `{epic, title, outcome, reason, supersededBy}` row per member that
+  did not ship and per deferral, with the recorded reason (capped at 300 characters, `null` when none is recorded). The release plan
+  keeps only in-progress and planned releases in its roadmap, reads the mission and "we are here" as one header, and lists shipped
+  releases in a Shipped table at the bottom that explains, for a release that did not ship everything, what did not ship and why.
+* **`/pm:backlog-grooming`: a repeatable pass that reads the open backlog as a set.** A new skill and command
+  re-read the open epics (one `list --status <s> --json` per open status), run `triage` on suspects, and PROPOSE
+  merges, declines and dead-premise findings, naming the epics it left alone. Nothing is written before you
+  confirm, and every confirmed consolidation records a disposition (`--outcome superseded|declined`, a
+  `supersedes` link on the survivor, a note on the survivor first), never `remove-epic`. Findings cite epic ids,
+  verb output and shas, never line numbers. No new verb and no new flag.
+* **`list` rows gain `release`, `createdAt`, `description` and `outcome`.** Copies of the epic's own fields,
+  `null` when absent or not a string (never inferred; a null `createdAt` means age unknown), except `outcome`: `null` with no disposition, `"unknown"` when the recorded outcome is outside the known vocabulary or not a string. `{count, epics}`
+  and the text form are unchanged, and there is still no `--release` or `--priority` flag: filter the `--json`.
+* **The gate procedure gains an eighth required item: "Prove every guard can fail."** For each guard a change adds, the agent MUTATES it (removes or inverts the condition), confirms a test goes red, and saves and commits the run as `mutation-evidence.txt` beside the change or plan; a SURVIVING mutant is a finding to fix, never a test to delete. The same item makes RED notes task-relative (`fails after 2.4`, never a bare "fails today") and has the agent re-run a RED note when its own task starts; a change that adds no guard says so and why instead (#211). A new `mutation-pass` skill carries the method, the evidence-file shape and a worked example. Items 1-7 keep their numbers; run `/pm:upgrade` to refresh the block (514 bytes added to a fresh repo's rules block).
+* **`triage` shows the open releases and which release each candidate belongs to.** Output gains `releases[]` (id, intent, memberCount, and the words the release shares with the ask) for every open release (no delivered marker, and not one whose members are all archived), and each candidate gains `release` (its release id, or null). `verdict` is still always null: the engine shows what is worth reading and never decides.
+* **`triage --ask=<text>` takes an ask that starts with a dash**, the same form `suggest-lane` already had. Giving both `--ask` and a positional text is refused. The intake step in the rules block names the form (+38 bytes).
+
+### Changed
+
+* **`record-gate-review --gate 1 --verdict pass` now refuses while the change it names fails `openspec validate --strict`.** Two sessions piped `openspec validate <id> --strict | tail -1`, which exits 0 whatever validate returned and keeps only a summary line, and recorded a Gate 1 pass against a spec that did not validate. When an `--artifact` (absolute paths are read relative to the repo) lies inside a live `openspec/changes/<id>/`, or a Gate 1 pass names no artifact and the epic has its own live change, (and the project has `openspec/config.yaml`), the engine now runs validate itself, unpiped, and reads its exit status. A non-zero exit refuses the verdict, shows validate's output (capped, control characters escaped) and writes nothing. Where validate cannot be answered (no `openspec` on PATH, a timeout, a signal) the check is skipped, never counted as a failure. A Gate 1 `fail`, a Gate 2 verdict and artifacts outside a live change are unchanged. The run is local and read-only (argv is exactly `validate <id> --strict`), and validate is spawned with OpenSpec's telemetry disabled (`OPENSPEC_TELEMETRY=0`, `DO_NOT_TRACK=1`, overriding the caller's environment), so the engine opens no network connection.
+* **`record-gate-review --gate 2 --verdict fail` now requires `--base-sha` and `--head-sha`.** A failing review of
+  shipped work still reviewed a range, and a Gate 2 fail with none could not say which work it covered. The refusal
+  names the missing flag(s) and says a Gate 2 fail carries a range, and writes nothing. A Gate 1 fail is unchanged
+  (`--artifact`, no range needed), and so is a pass on either gate. A Gate 2 fail recorded without a range by an
+  earlier version still loads and is still reported by `integrity` as `late-failing-gate-review`.
+* **The rules block carries `Epic-level autonomy` and `Release candidate` only while they are in use.** A fresh repo's block drops from 34,094 to 30,083 bytes, a saving of 4,011 bytes (about 1,000 tokens) in every session and every dispatched agent. `## Epic-level autonomy` is present while a non-archived epic has an autonomy record (any level); `## Release candidate` while a release has no delivered marker. The outward-tracker paragraph about autonomy follows the first. A repo that already uses either keeps it, and a repo whose old releases were never marked delivered keeps `Release candidate` until it runs `release <id> --deliver`.
+* **A 299-byte `## Procedures emitted on use` section points at what is absent.** While either section is missing it names the skill to load before the first use (the `conductor` skill's preflight scan before the first `set-autonomy`, the `release-candidate` skill before the first `release`). With both present it is gone.
+* **Existing repos lose unused sections at their next `upgrade` or state write.** `upgrade` and every verb that writes state compare each conditional section (Spend tracking, Spend guard, Epic-level autonomy, Release candidate) with the record and rewrite the block only on a disagreement; a hook never does, and the next non-hook write catches up.
+* **A section that appears in an existing block is announced.** The first `set-autonomy`, the first `release`, or the first spend limit prints one line saying the block now carries the section, that a session which loaded it earlier does not have it, and that `rules` prints it. Retirements and `init` stay silent. `rules` and `write-rules` agree for any state.
+* **`overhead --all-features` counts both sections at full usage**, and a real `overhead` reads the repo's own usage; the pointer has its own `core` row in the README cost table, measured on a fresh repo.
+* **Moving the active pointer between two epics is now said out loud.** `update-epic <id> --status active`, `set-active`, and `add-epic`/`add-many` creating an epic at active used to demote the previously active epic to queued without a word. They now print `moved active from 'a' (now queued) to 'b'` on stderr, with the `set-active` call that undoes it. The move is not refused.
+* **The brief warns when no epic is active while spend tracking is on.** Every orchestrator token is then unattributed (`no-active-epic`). The line appears only with spend tracking on.
+* **The rules block's Intake section is 685 bytes smaller, and a test holds it under 900 tokens.** `rules:intake`
+  sat at 4,021 bytes (~1,006 tokens), 6 over the 1,000-token line the feature-switch audit uses, so the audit
+  left it as an open candidate for a switch. The two measured-evidence sentences moved out to the conductor
+  skill's Intake section, where that evidence already lived, and the rest was tightened: now 3,336 bytes (~834
+  tokens). Every command in the section is unchanged and still runs as written, apart from the added `--ask=` hint on the triage command. No switch is built, because
+  nothing unconditional is at the line any more. Run `/pm:upgrade` to refresh a repository's managed block.
+* **`commands/lane-routing.md` no longer says pm holds no release context.** It does hold releases; `suggest-lane` just does not read them.
+* **The routing prose no longer says pm holds no release context.** The rules block (intake step 4), the conductor skill and the README now say pm holds no milestone or product context to weigh beyond the release records `triage` lists (+55 bytes in the rules block).
+
+### Fixed
+
+* **NEXT UP lists a queued openspec epic whose change is not on disk yet.** The brief used to drop it, so a P1 that PROJECT.md showed with "no change on disk" was missing from the one list re-injected every session. It now appears in priority order, marked `⚠ no change on disk — needs /opsx:propose`. The lanes rollup still counts only epics whose change exists, and is not printed when it would be empty.
+* **`record-gate-review --artifact <directory>` now records a digest, so a Gate 1 over an OpenSpec change directory can go stale.** A directory used to record nothing and every such verdict read `⚠ unverifiable` for good. The engine now digests a directory recursively over its files in sorted order (a change's top-level `tasks.md` progress ledger stays exempt, `.DS_Store` is ignored, symlinks are not followed), so adding, removing, renaming or editing any file under it reads `⚠ stale`. A directory with no digestable file still records no digest and says so. The archive move of a directory artifact is still not staleness. File artifacts are unchanged, and a verdict recorded before this release still loads and still reads `unverifiable`.
+* **A platform switch now removes the previous platform's managed rules block.** `writeRules()` used to write only the new platform's file, leaving the old file's block live but never refreshed again -- stale instructions an agent could still read. After writing the new target, the engine now removes the one well-formed block from any other file in a platform's rules chain (`CLAUDE.md`, `AGENTS.md`, `HERMES.md`), keeps every byte outside the marker lines, deletes a file left holding only pm's own header, and says so on stderr. A file with an ambiguous marker arrangement is never touched, and platforms that share a file (Hermes resolving to `CLAUDE.md`) leave it alone.
+
+---
+
 ## [0.53.0] — 2026-10-21
 
 Know where the tokens went, and keep the record honest. This release adds the read side of spend tracking (a

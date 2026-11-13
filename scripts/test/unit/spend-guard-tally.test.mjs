@@ -41,7 +41,9 @@ unitTest("1.1 a pass ends the streak, keeps the lifetime counts and stamps lastP
 unitTest("1.1 the two gates are counted apart", () => {
   const engine = repo();
   fail(engine, 1); fail(engine, 1);
-  fail(engine, 2);
+  // A Gate 2 fail needs a resolvable commit range, which this rung's double cannot give: seed its tally
+  // with the engine's own fold, then record the real Gate 1 verdicts above against it.
+  tallyVerdict(epicOf(engine), "2", "fail", "2026-10-09T00:00:00.000Z");
   const r = epicOf(engine).gateRounds;
   assert.equal(r.gate1.failStreak, 2);
   assert.equal(r.gate2.failStreak, 1);

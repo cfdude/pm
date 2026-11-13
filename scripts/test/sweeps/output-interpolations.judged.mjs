@@ -40,6 +40,37 @@ x("render.mjs", "writeRenderStampLocked", {
 x("state.mjs", "seedCreationFields", {
   "EPIC_ID_FORMAT.source": 1,
 }, "engine", "InvalidEpicIdError's message (the scanner attributes the class to the declaration before it): the engine's own id regex source; the id itself is escaped");
+x("project-identity.mjs", "projectNameError", {
+  "[...name].length": 1,
+}, "engine", "a character count in the refusal text (project-boards 8.3), a number");
+x("set-project.mjs", "applyProject", {
+  "message": 1,
+}, "passthrough", "refuse()'s `${message} Nothing was written.`: every caller passes a literal or text it escaped where it built it (the unknown --unset value goes through escapeControls(JSON.stringify(u)))");
+x("set-project.mjs", "applyProject", {
+  "field": 4,
+}, "engine", "a registry field name from FIELDS (`name` or `key`), never caller text");
+x("set-project.mjs", "applyProject", {
+  "err": 2,
+}, "engine", "projectNameError()/projectKeyError()'s own fixed refusal text; it embeds only a character count");
+x("set-project.mjs", "applyProject", {
+  "u": 1,
+}, "engine", "an --unset value already checked against FIELDS (Object.hasOwn) before the loop that prints it, so it is `name` or `key`");
+x("set-project.mjs", "setProject", {
+  "r.message": 1,
+}, "passthrough", "applyProject()'s refusal text, composed and escaped where it was built, printed through die()");
+x("set-project.mjs", "setProject", {
+  "state.projectKey": 1,
+}, "engine", "the stored project key, which applyProject() validated against /^[A-Z]{2,3}$/ before saving");
+x("set-project.mjs", "setProject", {
+  "now": 2,
+}, "escaped", "`now` is built from escapeControls(JSON.stringify(name)) and the validated key");
+x("set-project.mjs", "setProject", {
+  "r.notes.length ? r.notes.map(escapeControls).join(\"; \") + \" — \" : \"\"": 1,
+}, "escaped", "each note through escapeControls");
+x("epic-number.mjs", "epicKey", {
+  "key": 1,
+  "epic.number": 1,
+}, "engine", "the display key `PM-256` (project-boards 8.1): `key` is a validated project key (/^[A-Z]{2,3}$/, tested on the line above) and `epic.number` a positive safe integer (tested by validNumber on the same return), so neither can carry a control character");
 x("state.mjs", "recordEngineSave", {
   "JSON.stringify(stamp, null, 2)": 1,
 }, "not-output", "the same render-stamp file body writeRenderStamp writes, with `lastSave: {revision, mtimeMs}` added — numbers and the stamp's own fields, written through the store, never printed");
@@ -75,12 +106,16 @@ x("rules.mjs", "secondaryTrackerKey", {
   "entry.projectKey": 1,
 }, "not-output", "a match key for upsert/remove; never printed");
 x("rules.mjs", "writeRules", {
-  "name": 4,
+  "name": 5,
+  "row.heading": 1,
   "platform": 3,
   "existing.slice(0, end)": 1,
   "block.split(\"\\n\").join(\"\\r\\n\")": 1,
   "block": 1,
-}, "engine", "`name` is the rules file basename from PLATFORM_RULES_CHAIN, `platform` a validated vocabulary value; `block` is rulesBlock()'s sink-joined text written to the file; `existing.slice(0, end)` is the rules file's own text outside the managed block, written back as it was");
+}, "engine", "`name` is the rules file basename from PLATFORM_RULES_CHAIN, `platform` a validated vocabulary value; `block` is rulesBlock()'s sink-joined text written to the file; `existing.slice(0, end)` is the rules file's own text outside the managed block, written back as it was; `row.heading` is a CONDITIONAL_SECTIONS heading, the engine's own section vocabulary, printed by the appearance notice (gh-cfdude-pm-248 D5)");
+x("spend-guard-verbs.mjs", "refreshConditionalSections", {
+  "noun": 1,
+}, "engine", "the literal 'section' or 'sections' (gh-cfdude-pm-248 D4); the section names beside it go through escapeControls");
 x("rules.mjs", "rulesBlockAmbiguousMessage", {
   "shown": 2,
   "m.line": 1,
@@ -167,6 +202,9 @@ x("spend-tracking.mjs", "setSpendTracking", {
 x("dev-log.mjs", "setDevLog", {
   "arg": 4,
 }, "engine", "arg is validated on|off before these lines (the same shape as setSpendTracking above); the main tree's path in the refusals is escaped");
+x("set-boards.mjs", "setBoards", {
+  "arg": 1,
+}, "engine", "arg is validated on|off before this line (project-boards; the same shape as setSpendTracking above)");
 x("dev-log-capture.mjs", "keyOf", {
   "e.messageId": 1,
   "e.sessionId": 1,
@@ -563,7 +601,8 @@ x("overhead.mjs", "collectSurfaces", {
   "l.name": 1,
   "l.description": 1,
   "plain": 1,
-}, "sink-flow", "surface ids and sizes: they reach output only through overheadText's L.map(escapeControls) join or jsonText(); `plain` is concatenated to measure its byte length and never printed");
+  "boardsLine": 1,
+}, "sink-flow", "surface ids and sizes: they reach output only through overheadText's L.map(escapeControls) join or jsonText(); `plain` is concatenated to measure its byte length and never printed; `boardsLine` (project-boards) is the brief's boards-line literal, concatenated with a newline only to measure its byte length");
 x("overhead.mjs", "overhead", {
   "jsonText(report, null, 2)": 1,
 }, "json", "one JSON document through jsonText()");
@@ -620,6 +659,12 @@ x("help.mjs", "verbHelp", {
   "out.join(\"\\n\")": 1,
 }, "engine", "flag and positional registries, POSITIONAL_USAGE, epicBatchKeys()");
 j("lane-routing.mjs", "suggestLane", ALL, "json", "one JSON document");
+j("board.mjs", "board", ALL, "json", "one JSON document (jsonText) or boardText()'s three lines, each value through escapeControls");
+j("rules.mjs", "missionSectionText", ALL, "sink-flow", "the `## Mission` section: its only consumer is rulesBlock()'s lines (split on \\n and joined through lines.map(escapeControls)); the statement and milestone are escapeControls'd before truncation");
+j("mission.mjs", "lineError", ALL, "sink-flow", "a refusal fragment returned to applyMission(), whose caller mission() prints it only through die(`conductor: ${escapeControls(r.message)}`); the interpolated values are the flag name and a number, never stored text");
+j("mission.mjs", "applyMission", ALL, "sink-flow", "every message it returns is printed only through mission()'s escapeControls (the refusal through die(), each note through errStream().write(escapeControls(n))); stored text (a release id, a criterion id) is escaped where it is interpolated");
+j("mission.mjs", "missionShowLines", ALL, "sink-flow", "`mission show`'s lines, written only through mission()'s `.map(escapeControls).join(\"\\n\")`");
+j("mission-record.mjs", "missionBriefLine", ALL, "sink-flow", "the brief's one mission line, pushed onto buildBriefParts's L and escaped where `plain` and `parts` are assembled; the statement and milestone are escapeControls'd before truncation");
 j("triage.mjs", "triage", ALL, "json", "one JSON document");
 j("unconsidered.mjs", "unconsideredOutcomesReport", ALL, "json", "one JSON document");
 j("worktree-hygiene.mjs", "changesets", ALL, "json", "one JSON document");
@@ -791,6 +836,9 @@ x("opt-ins.mjs", "optInLines", {
   "o.command": 1,
 }, "engine", "OPT_INS registry literals, and describe() output whose every state-derived value (reviewMode, tracker.system) goes through escapeControls inside the registry row; the override count is a number");
 x("migrations.mjs", "upgrade", {
+  "boardsNote": 1,
+}, "engine", "boardsAnnouncement()'s one line (project-boards): an engine literal and the BOARDS_RELEASE constant, built from no stored text; empty when upgrade does not cross that release");
+x("migrations.mjs", "upgrade", {
   "u": 1,
 }, "engine", "untrackInstruction()'s lines: built only from ENGINE_IGNORED constants and a count, never from ls-files output (brief-txt-tracked-in-fleet-repos)");
 x("subcommands.mjs", "init", {
@@ -918,7 +966,7 @@ x("subcommands.mjs", "honchoMemory", {
   "note": 1,
 }, "escaped", "deferralNote() escapes the detour ids (Gate 2 T-I5)");
 x("gate-review-writeback.mjs", "recordGateReview", {
-  "missingEvidence.join(\" and \")": 1,
+  "missingEvidence.join(\" and \")": 2,
   "baseSha": 1,
   "headSha": 1,
   "gate": 4,

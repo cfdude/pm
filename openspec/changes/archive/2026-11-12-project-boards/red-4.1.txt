@@ -1,0 +1,65 @@
+RED for task 4.1: fails before 4.2. NOTE: this task's implementation was written before its tests, so this RED was taken by
+moving scripts/lib/mission.mjs and scripts/lib/mission-record.mjs aside (the verb and the readers did not exist); the other 4.2 edits
+(rules.mjs section reader, flag rows, dispatch) were in place. It proves the tests need the 4.2 modules, not each assertion in isolation.
+Command: node --test scripts/test/unit/mission.test.mjs scripts/test/assert/mission-write.test.mjs
+
+node:internal/modules/esm/resolve:241
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/mission-record.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/lib/briefing.mjs
+    at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+    at moduleResolve (node:internal/modules/esm/resolve:846:10)
+    at defaultResolve (node:internal/modules/esm/resolve:973:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+    at #resolve (node:internal/modules/esm/loader:690:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:389:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/mission-record.mjs'
+}
+
+Node.js v26.13.0
+✖ scripts/test/assert/mission-write.test.mjs (105.0005ms)
+node:internal/modules/esm/resolve:241
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/mission-record.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/lib/briefing.mjs
+    at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+    at moduleResolve (node:internal/modules/esm/resolve:846:10)
+    at defaultResolve (node:internal/modules/esm/resolve:973:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+    at #resolve (node:internal/modules/esm/loader:690:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:389:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/mission-record.mjs'
+}
+
+Node.js v26.13.0
+✖ scripts/test/unit/mission.test.mjs (103.288084ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 109.337209
+
+✖ failing tests:
+
+test at scripts/test/assert/mission-write.test.mjs:1:1
+✖ scripts/test/assert/mission-write.test.mjs (105.0005ms)
+  'test failed'
+
+test at scripts/test/unit/mission.test.mjs:1:1
+✖ scripts/test/unit/mission.test.mjs (103.288084ms)
+  'test failed'

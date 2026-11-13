@@ -37,7 +37,7 @@ embeds the plain, unbounded text. Out of scope and unchanged: the PreCompact sna
 | 1 | The gate procedure: required task items | 11,963 | 29.8% |
 | 2 | PM Conductor: operating rules (items 1-3 and the preamble) | 5,939 | 14.8% |
 | 3 | GitHub issue sync (cfdude/pm) | 5,498 | 13.7% |
-| 4 | Intake: triage an ask against the whole backlog | 4,021 | 10.0% |
+| 4 | Intake: triage an ask against the whole backlog | 3,336 (4,021 when this table was taken; shrunk after 0.53.0) | 10.0% when taken |
 | 5 | Epic-level autonomy | 3,137 | 7.8% |
 | 6 | Reporting | 2,853 | 7.1% |
 | 7 | Execution profile | 1,958 | 4.9% |
@@ -49,7 +49,7 @@ embeds the plain, unbounded text. Out of scope and unchanged: the PreCompact sna
 
 ## Candidates to move to on-demand skills (a later epic's call)
 
-Constraint, from the adoption evidence: the gate procedure's numbered items 1-7 stay in the block. A rule
+Constraint, from the adoption evidence: the gate procedure's numbered items (1-8 today) stay in the block. A rule
 carried by a required task item reached 14/14 changes; the same rule as a prose bullet reached 3/15. That
 section (29.8%) and the operating rules (14.8%) are not candidates.
 
@@ -58,7 +58,7 @@ What is left is guidance an agent needs only when it is doing one specific thing
 | Section | Bytes | Needed when | Notes |
 | --- | --- | --- | --- |
 | GitHub issue sync (cfdude/pm) | 5,498 | running `/pm:sync` against a tracker | Tracker-specific text emitted per configured tracker; already absent in a repo with no tracker. Strongest candidate: needed only at sync time, and the procedure is a verb-adjacent recipe. |
-| Intake | 4,021 | registering a new epic | Only at the moment of `add-epic`. `/pm:triage` already exists to carry it. |
+| Intake | 3,336 | registering a new epic | Only at the moment of `add-epic`. `/pm:triage` already exists to carry it. |
 | Epic-level autonomy | 3,137 | an epic is flipped to autonomous | Rare; the `conductor` skill already holds the preflight scan. |
 | Reporting | 2,853 | the end of a hierarchy or autonomy run | Mostly a statement of precedence over the user's own contract. |
 | Execution profile | 1,958 | dispatching a job | Has live per-repo values in it (project and lane settings), so it is data as well as prose. |
@@ -79,3 +79,11 @@ Does: measures both costs, reports them in `/pm:upgrade` and `/pm:status` output
 fit 16,384 bytes with a visible marker and never cuts an obligation block, and prints the ranked table with `rules --sections`.
 
 Does not: change a byte of the rules block.
+
+## Update, gh-cfdude-pm-248: two sections now follow usage
+
+The tables above are dated measurements and are left as taken. Since this change the block emits `Epic-level
+autonomy` only while a non-archived epic has an autonomy record, and `Release candidate` only while a release has
+no delivered marker; `Procedures emitted on use` (at most 400 bytes) names the skill to load while either is
+absent. A repository using neither pays for neither section. The measurement is in
+`openspec/changes/gh-cfdude-pm-248/measure-6.1.txt`.

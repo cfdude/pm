@@ -19,6 +19,44 @@
       "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync, /pm:triage, /pm:list)" }
     },
     {
+      "id": "backlog-grooming",
+      "artifacts": [
+        "commands/backlog-grooming.md",
+        "skills/backlog-grooming/SKILL.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:backlog-grooming) entering a skill-carried pass that reads the open backlog via `list` and `triage` and proposes dispositions" }
+    },
+    {
+      "id": "board-export",
+      "artifacts": [
+        "commands/boards.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:boards) documenting the read-only `board --json` snapshot" }
+    },
+    {
+      "id": "project-boards",
+      "artifacts": [
+        "skills/project-boards/SKILL.md",
+        "skills/project-boards/templates/backlog.html",
+        "skills/project-boards/templates/release-plan.html"
+      ],
+      "platforms": { "claude-code": "skill loaded by name or by /pm:boards; publishes the backlog and release-plan pages with the Artifact tool and refreshes them through ArtifactData from `board --json`" }
+    },
+    {
+      "id": "project-mission",
+      "artifacts": [
+        "commands/mission.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:mission) recording the mission, its mission milestone and exit criteria" }
+    },
+    {
+      "id": "project-identity",
+      "artifacts": [
+        "commands/set-project.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:set-project) recording the project name and the two- or three-letter key the boards show on every epic" }
+    },
+    {
       "id": "disposition-audit",
       "artifacts": [
         "commands/unconsidered-outcomes.md"
@@ -72,9 +110,14 @@
       "platforms": { "claude-code": "slash command (/pm:cross-spec-review) driving the release-scope review, recorded via `record-cross-spec-review`" }
     },
     {
+      "id": "guard-mutation-pass",
+      "artifacts": ["skills/mutation-pass/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name; the method behind required gate-procedure item 8 (mutate every guard the change adds, keep mutation-evidence.txt, write RED notes task-relative), whose obligation is also emitted into the managed rules block" }
+    },
+    {
       "id": "release-candidate-procedure",
       "artifacts": ["skills/release-candidate/SKILL.md"],
-      "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block" }
+      "platforms": { "claude-code": "skill loaded by name; the converged release-candidate procedure, whose two must-not-miss rules (budget = highest member review, one capped round) are also emitted into the managed rules block while an undelivered release exists (with none, the block's always-on pointer names the skill)" }
     },
     {
       "id": "process-lessons",

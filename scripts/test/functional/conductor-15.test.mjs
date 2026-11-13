@@ -60,6 +60,12 @@ test("7.5: the checked-in 0.26.0 state carries none of this release's fields", (
 
 test("7.5: an un-upgraded 0.26.0 state emits byte-identically to 0.26.0 for a jira primary", () => {
   const cwd = repoAt0260();
+  // The outward section's autonomy paragraph is emitted only while a non-archived epic holds an autonomy
+  // record (gh-cfdude-pm-248); the 0.26.0 baseline carries it, so the comparison needs one.
+  const file = path.join(cwd, ".conductor", "state.json");
+  const state = JSON.parse(fs.readFileSync(file, "utf8"));
+  state.epics.find((e) => e.status !== "archived").autonomy = { level: "off" };
+  fs.writeFileSync(file, JSON.stringify(state, null, 2));
   const block = run(["rules"], { cwd });
   // BOTH sides through the same strip — see conductor-14's `baseline()`.
   const before = stripAlwaysOn(fs.readFileSync(path.join(FIXTURES, "rules-0.26.0-jira-scoped.txt"), "utf8"));
@@ -108,21 +114,22 @@ function upgradeAt(cwd, version) {
 
 test("7.1: a 0.26.0 state applies the entries above it, and the second run is a byte-identical no-op", () => {
   const cwd = repoAt0260();
-  // FOUR entries now sit above 0.26.0 — the 0.27.0 stamp, the 0.32.0 lift of archive-backfill
-  // registration provenance onto the epic (#133), the 0.40.0 registration-date recovery, and the
-  // 0.44.0 reconcile arming stamp (gates-bind-to-verified-evidence). The
+  // FIVE entries now sit above 0.26.0 — the 0.27.0 stamp, the 0.32.0 lift of archive-backfill
+  // registration provenance onto the epic (#133), the 0.40.0 registration-date recovery, the
+  // 0.44.0 reconcile arming stamp (gates-bind-to-verified-evidence) and the 0.55.0 epic numbering
+  // (project-boards 8.2). The
   // count is release-specific and moves with every appended entry; what this test pins is that
   // the missing entries apply, apply ONCE, and that a second run is byte-identical.
   //
   // The pinned version tracks the NEWEST entry rather than sitting below it, or the second run
   // would replay whatever is above it and "a stamped repo replays nothing" would stop being the
   // property under test. (The harsher below-the-entry case is the next test, deliberately.)
-  const first = upgradeAt(cwd, "0.44.0");
-  assert.match(first, /upgraded \(4 migration\(s\)\)/,
-    "a 0.26.0-stamped repo is missing exactly the 0.27.0, 0.32.0, 0.40.0 and 0.44.0 entries");
-  assert.equal(readState(cwd).pmVersion, "0.44.0");
+  const first = upgradeAt(cwd, "0.55.0");
+  assert.match(first, /upgraded \(5 migration\(s\)\)/,
+    "a 0.26.0-stamped repo is missing exactly the 0.27.0, 0.32.0, 0.40.0, 0.44.0 and 0.55.0 entries");
+  assert.equal(readState(cwd).pmVersion, "0.55.0");
   const after = stateBytes(cwd);
-  const second = upgradeAt(cwd, "0.44.0");
+  const second = upgradeAt(cwd, "0.55.0");
   assert.match(second, /upgraded \(0 migration\(s\)\)/, "a stamped repo replays nothing");
   assert.equal(stateBytes(cwd), after,
     "the second upgrade must be byte-identical — the no-op-save rule means even `revision` " +

@@ -87,6 +87,9 @@ test("rules block gains an External tracker sync section only when a tracker is 
 test("tracker-linked autonomy addendum appears only when a tracker is configured", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
+  // The addendum cites the autonomy section's decision rule, so it needs a non-archived autonomy record too.
+  run(["add-epic", "--id", "e1", "--title", "e1", "--lane", "claude-code"], { cwd });
+  run(["set-autonomy", "e1", "--context", "x"], { cwd });
   const noTracker = run(["rules"], { cwd });
   assert.doesNotMatch(noTracker, /Epic-level autonomy on tracker-linked epics/);
 

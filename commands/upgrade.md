@@ -137,6 +137,13 @@ standalone — `/pm:init` and `/pm:upgrade` are how it is reached. Three verbs s
 | `rules-target` | prints the absolute path of the file that block belongs in | no |
 | `rules` | prints the block to stdout, writing nothing (`--epic <id>` renders it at that epic's review mode; `--sections` prints its per-section sizes, ranked, instead) | no |
 
+The block's conditional sections follow the record, not the version: `## Spend tracking` while tracking is on,
+`## Spend guard` while a limit is configured, `## Epic-level autonomy` while a non-archived epic has an
+autonomy record, and `## Release candidate` while a release has no delivered marker. While either of the last
+two is absent, `## Procedures emitted on use` names the skill to load before its first use. `write-rules` and
+`upgrade` render with the record's own answers, so an existing repo drops sections it never used at its next
+upgrade or state write; `rules` prints exactly what `write-rules` would write.
+
 `--platform <claude-code|hermes|codex>` **declares** which host agent this invocation is running
 under. Declared, never detected: pm is only ever invoked by a host agent through a hook whose
 command string pm itself authored, so the platform is knowable at the call site — no markers to

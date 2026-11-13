@@ -1,0 +1,22 @@
+RED for project-boards 6.1 (taken after the test file and before 6.3 writes skills/project-boards/ and its ledger claim; it fails after 6.1 and before 6.3)
+Command: node --test scripts/test/assert/project-boards-skill.test.mjs
+Method: the tests were written first; skills/project-boards/ did not exist, so every test fails on the missing file.
+
+  10   Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/skills/project-boards/SKILL.md'
+  10     code: 'ENOENT',
+   2 ✖ 6.1 the skill, both templates and the command docs exist; the ledger claims each exactly once; no commands/board.md (0.603083ms)
+   2 ✖ 6.1 the skill states that page checks are UI gating, that the rules decide, and that by is not attribution (0.044375ms)
+   2 ✖ 6.1 the skill names every collection of the contract and the page each belongs to (0.08275ms)
+   2 ✖ 6.1 the re-seed rule: update, or set with if_version for existing docs; set for new ones; retry once, then report (0.035083ms)
+   2 ✖ 6.1 the fallback: no Artifact tool means a read-only standalone file with the snapshot inlined and < escaped (0.069208ms)
+   2 ✖ 6.1 the export is the only state source, head comes from git, and writes go in batches of at most 50 (0.041166ms)
+   2 ✖ 6.1 the declared rules: every collection a page uses has one, and only answers and backlogMeta are open at interact (0.088583ms)
+   2 ✖ 6.1 the apply order is read, check, reorder, delete, re-export; one bad id refuses the whole proposal (0.046292ms)
+   2 ✖ 6.1 registration row, the five refresh triggers, and the skill never deletes an artifact (0.048041ms)
+   2 ✖ 6.1 decisions come from the agent and are deleted when answered; answers are untrusted and never deleted (0.04825ms)
+   2 ✖ 6.1 commands/boards.md names the skill, gates on boardsEnabled, and restates none of the procedure (0.275375ms)
+   2 ✖ 6.1 backlogMeta is never written by the refresh, and the seed refuses a bad id, naming it (0.044042ms)
+   1 ℹ tests 12
+   1 ℹ pass 0
+   1 ✖ failing tests:
+   1 ℹ fail 12

@@ -225,7 +225,8 @@ test("update-epic blocks archiving an openspec-lane epic without a passing gate2
 test("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdict", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail", "--base-sha", a, "--head-sha", b], { cwd });
   assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd })));
 });
 

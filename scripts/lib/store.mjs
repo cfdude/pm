@@ -271,10 +271,17 @@ function normalizeRecord(s) {
  *  that enforces that has to derive its population from here rather than transcribe one. */
 export const TIMEKEEPING_FIELDS = ["createdAt", "touchedAt"];
 
-/** A record's comparable content: everything except the two timekeeping fields. */
+/** A record's comparable content: everything except the two timekeeping fields and the epic `number`.
+ *
+ *  `number` (project-boards 8.1) is excluded for the reason the timekeeping pair is: the 0.55.0 migration and every `upgrade` fill
+ *  it across the whole archive in ONE save, and a record whose only delta is a backfilled number is a RECOVERY, not a touch, so
+ *  every epic would otherwise read as last touched on upgrade day. It is not in TIMEKEEPING_FIELDS because that export is the
+ *  population of fields a caller can CLEAR, and a number is never cleared or reassigned. A NEW epic has no pre-image and is stamped
+ *  either way, so excluding it hides no real change: nothing rewrites a number after registration. */
 function comparableEpic(epic) {
   const rest = { ...epic };
   for (const k of TIMEKEEPING_FIELDS) delete rest[k];
+  delete rest.number;
   return JSON.stringify(rest);
 }
 

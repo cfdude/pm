@@ -6,7 +6,7 @@ allowed-tools: Bash, Read
 Register an epic in a non-OpenSpec lane (superpowers, claude-code, decision, external) —
 for work that is correctly routed away from OpenSpec but still belongs in the system of record.
 
-Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|later|blocked|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"]`
+Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|later|blocked|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"] [--summary "<one line>"] [--why-now "<one line>"]`
 
 Use `--status planned` for roadmap work you intend to do but haven't proposed/scaffolded yet
 (default status is `queued`). Use `--parent <id>` to nest this epic under an existing parent
@@ -68,6 +68,14 @@ argument as `--add-story` below: register the rationale the triage you just did 
 because nothing ever comes back to add it. It REPLACES wholesale on each set, and it is not
 `--notes` — the two are distinct and neither substitutes for the other; see the paragraph under
 `update-epic`.
+
+`--summary` and `--why-now` are the **one-line** companions to `--description`, for a board that has room for one line
+per epic: `--summary` says what the epic is in plain words (at most 200 characters), `--why-now` why it matters now (at
+most 300). Both are on `add-epic`, `add-many` and `update-epic`, and neither touches `description` or `notes`. When a
+command moves an epic out of `untriaged` (or registers one) into any status other than `untriaged` or `archived`, and the
+epic still lacks either, it prints one stderr line naming the epic, each missing field and the flag that sets it. That is
+a **warning only**: the write still happens and the exit code is 0. Archiving, and a write that leaves the status
+unchanged, never warn.
 
 **Registration and last-touched dates are stamped for you; no flag sets either.** From 0.40.0 on,
 every epic carries `createdAt`, written by `pushEpic()` — the single sink every creation surface
@@ -215,6 +223,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   `external-id`. A bulk-registered epic is the one that needs it most: a batch entry's title is
   usually a ticket line or a chunk number, and the reason that chunk exists lives in a design
   document nobody re-reads before triaging the next ask against it.
+- **`summary`** and **`whyNow`** are the one-line fields, in state-key spelling, with the same limits (200 and 300
+  characters) and the same refusal, in the same up-front pass.
 - **`stories`** is an array of plain titles, or `{"title": "...", "done": true}` objects where a
   milestone is already behind you. Validated in the same up-front pass as everything else — a
   blank title or a non-boolean `done` refuses the whole batch and creates nothing.
@@ -269,8 +279,10 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--parent <id>` | `parent` | no self-parent, no cycle |
 | `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
 | `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically. **Refused** on an epic that owes a reconcile and holds an armed (or pre-0.44.0) `may-invalidate` link — the clear-and-re-supply repair included — until `record-reconcile` answers it |
-| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `spec-deltas-waived`, `gate1-waived`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `summary`, `why-now`, `external-updated-at`, `spec-deltas-waived`, `gate1-waived`, `review-mode`, `verbosity`, `model`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
+| `--summary "<one line>"` | `summary` | what the epic is, in plain words. One line, at most 200 characters; an empty, multi-line or longer value is refused and nothing is written. Replaces on each set; `--clear summary` is the inverse. Never touches `description` or `notes`. The boards show it |
+| `--why-now "<one line>"` | `whyNow` | why the epic matters now. One line, at most 300 characters, validated and cleared like `--summary` (`--clear why-now`) |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
 | `--external-url <url>` | `externalUrl` | the globally unique dedup key — one tracker item, one epic: setting a URL another epic holds (archived included) is refused naming it; `--clear external-url` on the holder frees it. Compared exactly after trimming surrounding whitespace — a trailing `/`, the host's case or a query string make a different URL, so record the tracker's canonical URL |
@@ -846,6 +858,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-autonomy <id> \
 APPENDS, it never clobbers prior entries. `--level` replaces (default `"off"` — today's
 behavior, unchanged). `PROJECT.md` and the session brief mark an autonomous epic with 🤖.
 
+The rules block carries its `## Epic-level autonomy` section (the decision rule) only while a non-archived
+epic has an autonomy record, at any level. The FIRST `set-autonomy` adds the section to the managed block and
+prints one line saying so; a session that loaded the block earlier does not have it, and `rules` prints it.
+Archiving or removing the last holder retires the section, and un-archiving restores it.
+
 ## Record a gate verdict — `record-gate-review`
 
 A gate review is recorded against the epic with the evidence a later reader can
@@ -865,6 +882,19 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
 ```
 
 `<changeRoot>` is the change's directory as OpenSpec resolves it (its `changeRoot`; by default `openspec/changes/<id>`).
+
+`--artifact` takes a file OR a directory. A directory (e.g. `--artifact "<changeRoot>"`) is digested recursively over
+its files in sorted order, so adding, removing or editing any of them reads the verdict `⚠ stale`; the change's top-level
+`tasks.md` is a progress ledger and stays exempt. A directory with no digestable file records no digest and reads
+`unverifiable`.
+
+**A Gate 1 `pass` is refused while the change it names fails OpenSpec's strict validation.** When an `--artifact` lies inside
+a live change directory (an absolute path is read relative to the repo), or a range-only pass names no artifact and the epic has a
+live change of its own (a change directory named for the epic id), and the project has `openspec/config.yaml`, the engine runs that validate itself, unpiped, and
+reads its EXIT STATUS: a non-zero exit refuses the verdict, prints validate's output (capped) and writes nothing. (Piping validate (`... | tail -1`) reports `tail`'s status and hides the failure; that is how a Gate 1 was once recorded against a
+spec that did not validate.) Where validate cannot be run or answered (no `openspec` on PATH, a timeout, a signal) the check is
+skipped, never treated as a failure. A Gate 1 `fail`, a Gate 2 verdict and artifacts outside a live change are not checked. The
+run is local and read-only, and validate is spawned with telemetry disabled (`OPENSPEC_TELEMETRY=0`, `DO_NOT_TRACK=1`), so pm opens no network connection of its own.
 
 `--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
 records who (or what) performed it. A review of `a..b` on an epic that later shipped `b..c` used
@@ -903,7 +933,7 @@ shas. Gate 1 requires `--artifact <path>` (repeatable) instead: Gate 1 is the sp
 *before* `/opsx:apply`, so at the moment its verdict is truthful there is no implementation range
 in existence — demanding one produced a required field satisfiable only with a value of the wrong
 kind, and the artifact commits that got typed into it then read as an implementation range to
-every consumer that treats the field as one. A `fail` may omit both.
+every consumer that treats the field as one. A Gate 2 `fail` requires both too (a failing retrospective review still covered a range; the refusal names the missing flag), while a Gate 1 `fail` may omit them. A Gate 2 `fail` recorded without a range before this rule still loads unchanged.
 
 The sha pair is still ACCEPTED on Gate 1, so every invocation that worked before still works and
 every verdict already recorded still loads — but a Gate 1 pass carrying a range and no artifacts
@@ -1067,3 +1097,13 @@ bullet reached 3/15.
    precisely stays retrieval-only.
    Name which of the three it is out loud. A process lesson filed as a feature request never
    gets built, and a product gap written down as a lesson never gets fixed.
+8. **Prove every guard can fail.** A green test distinguishes nothing unless it can go red, and both
+   gates read a diff, so neither can see a test that cannot fail. For each guard this change adds,
+   MUTATE it — remove or invert its condition — and run the tests: one must fail. Save and commit the
+   run as `mutation-evidence.txt` beside the change or plan, so the gate can read it rather than
+   trust a sentence. A SURVIVING mutant is a finding to fix, not a test to delete. No guard added:
+   say so, and why, instead of an evidence file, exactly as an unguarded call site must be
+   justified; a docs-only change and a skipped pass must not look alike. Write every RED note
+   task-relative ("fails after 2.4"), never a bare "fails today"; re-run it when its own task
+   starts, because a RED note written against the release baseline goes stale as its own change
+   lands. The `mutation-pass` skill carries the method and a worked example.

@@ -12,7 +12,8 @@ requires.
 Every engine invocation pm emits or ships SHALL pass the engine's own pre-dispatch command-line
 check once its documented placeholders are filled. The population SHALL be derived from the
 sources at test time, never typed as a list: the rules block rendered for every supported platform
-and every tracker role, system class and direction; the brief; `integrity`; the archive gate's
+and every tracker role, system class and direction, and under every usage answer of the managed
+rules block (autonomy off, release candidate off, both off); the brief; `integrity`; the archive gate's
 refusals; `unconsidered-outcomes`; `init`'s output; the commit nudge; and every shipped document an
 agent reads (`commands/*.md`, `skills/**/SKILL.md`, `agents/*.md`, `README.md`). An invocation
 written as alternatives (`(--a | --b)`, or whole forms separated by `|`) SHALL be checked once per
@@ -70,6 +71,10 @@ command or skill pm ships; this check reads the name only, not the words after i
 - **WHEN** a command document instructs the agent to run an engine verb
 - **THEN** the invocation goes through the installed engine, and `node scripts/conductor.mjs` in
   `commands/cross-spec-review.md` fails the sweep
+
+#### Scenario: The usage-off renders are swept
+- **WHEN** the rules block is rendered with autonomy off, with release candidate off, and with both off
+- **THEN** every invocation in the `## Procedures emitted on use` section passes the check, alongside the full render's
 
 ### Requirement: A remedy the engine prints clears the condition that printed it
 Wherever the engine prints a command as the way to resolve what it just reported or refused — an

@@ -90,7 +90,10 @@ neither prints the usage.
 **`suggest-lane` is an input, not an answer.** It reads THE ASK and nothing else: the words, the
 size, the overrides recorded here. It cannot ask what a person would ask — whether this work
 SERVES something the project already committed to — because pm holds no milestone or product
-context to weigh, and the engine will not invent one.
+context beyond the release records it keeps (a release's intent and its member epics). `suggest-lane`
+does not read those; `triage` does: it lists the open releases with their intents and shows each
+candidate's release, as information for you to weigh. The engine will not decide that the work
+belongs to one, and will not invent context.
 
 **The tie-break is asymmetric.** `claude-code` means no spec, no plan, no gate and no stories —
 right for a genuine sub-2-hour tweak, and the reason a misrouted epic leaves no record of what it

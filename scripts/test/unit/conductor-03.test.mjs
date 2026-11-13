@@ -228,3 +228,35 @@ unitTest("brief displays the recomputed truth but stays read-only, even for the 
 // which is precisely what the assertion half's world does not have (design D5). It is covered
 // where it belongs — scripts/test/functional/conductor-03.test.mjs — and the unverifiable rung
 // above is the half of that pair this half CAN prove.
+
+// gh-cfdude-pm-249 -- the active pointer moving between two epics is said out loud, and a null pointer
+// while spend tracking is on is warned about in the brief.
+const twoEpics = (extra = {}) => {
+  const engine = memoryEngine({ ...emptyRecord(), ...extra });
+  engine(["add-epic", "--id", "a", "--lane", "claude-code"]);
+  engine(["add-epic", "--id", "b", "--lane", "claude-code"]);
+  engine(["set-active", "a"]);
+  return engine;
+};
+unitTest("249: update-epic --status active on another epic says it moved the pointer and demoted the old one", () => {
+  const engine = twoEpics();
+  const out = engine.combined(["update-epic", "b", "--status", "active"]);
+  assert.match(out, /moved active from 'a' \(now queued\) to 'b'/);
+  assert.equal(readState(engine).active, "b");
+});
+unitTest("249: set-active onto another epic says the same", () => {
+  const out = twoEpics().combined(["set-active", "b"]);
+  assert.match(out, /moved active from 'a' \(now queued\) to 'b'/);
+});
+unitTest("249: no notice when the pointer did not move, or there was no previous active", () => {
+  const engine = twoEpics();
+  assert.doesNotMatch(engine.combined(["update-epic", "a", "--status", "active"]), /moved active/);
+  const fresh = memoryEngine(emptyRecord());
+  fresh(["add-epic", "--id", "a", "--lane", "claude-code"]);
+  assert.doesNotMatch(fresh.combined(["set-active", "a"]), /moved active/);
+});
+unitTest("249: the brief warns about a null active pointer only while spend tracking is on", () => {
+  const on = memoryEngine({ ...emptyRecord(), spendTracking: { enabled: true, enabledAt: "2026-10-09T00:00:00.000Z" } });
+  assert.match(parseBrief(on), /spend tracking is on and no epic is active — orchestrator tokens go unattributed/);
+  assert.doesNotMatch(parseBrief(memoryEngine(emptyRecord())), /orchestrator tokens go unattributed/);
+});

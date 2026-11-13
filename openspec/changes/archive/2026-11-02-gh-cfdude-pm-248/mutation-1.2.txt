@@ -1,0 +1,9 @@
+mutation evidence — 1.2 rulesUsage
+tests: scripts/test/unit/rules-usage.test.mjs
+
+baseline: exit 0 (must be 0)
+M1 drop the archived filter: KILLED (exit 1) e.g. ✖ 1.1 an autonomy record on an archived epic alone does not count | ✖ 1.1 an autonomy record on an archived epic alone does not count
+M2 presence swapped for level === autonomous: KILLED (exit 1) e.g. ✖ 1.1 level off still counts: presence, not level (re-arming restores kept grants) | ✖ 1.1 an archived holder beside a non-archived one: the live one counts | ✖ 1.1 the two answers are independent
+M3 drop the delivered check: KILLED (exit 1) e.g. ✖ 1.1 one release carrying a delivered marker: false | ✖ 1.1 the two answers are independent | ✖ 1.1 one release carrying a delivered marker: false
+
+killed 3, survived 0

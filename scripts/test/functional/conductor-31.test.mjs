@@ -85,6 +85,11 @@ const VERB_BASELINE = {
   owners: () => ["owners"],
   // gh-204 / gh-239: `list` is read-only; `log-detour` joined VERB_FLAGS with `--sha`.
   list: () => ["list"],
+  // project-boards: `board` is read-only and `--archived` takes a bound; the bare form is its working baseline.
+  board: () => ["board"],
+  mission: () => ["mission", "--statement", "ship it", "--reason", "baseline"],
+  // project-boards 8.3: the project key alone is a working baseline; `--unset` and `--name` take values.
+  "set-project": () => ["set-project", "--key", "PM"],
   overhead: () => ["overhead"],
   // developer-session-log: with the log off `dev-log` reads nothing, so the valueless sweep reaches its flags cheaply.
   "dev-log": () => ["dev-log"],
@@ -341,10 +346,16 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // `--rebuild` (the ledger's two inverses), `--timeline` (qualifies --clear) and `--no-ingest`.
     // pm-overhead-baseline: `overhead --all-features` computes the report over the every-opt-in-on hypothetical in
     // memory; a genuine boolean (a mode), like --json.
+    // project-boards: `mission`'s four booleans — the two inverses (`--end` ends the mission and keeps it in history,
+    // `--clear-milestone` removes the mission milestone), the criterion's `--needs-human` marker and the read form's `--history`.
+    "mission --clear-milestone",
+    "mission --end",
+    "mission --history",
+    "mission --needs-human",
     "overhead --all-features",
     "override-spend-guard --revoke",
     // gh-204: `list` shares --json (the same genuine boolean: a rendering).
-    "owners/activity/spend/spend-guard/list/overhead/dev-log/spend-analysis/decisions --json",
+    "owners/activity/spend/spend-guard/list/board/overhead/dev-log/spend-analysis/decisions --json",
     "purge-logs --dry-run",
     "purge-logs/spend/dev-log --yes",
     "push-detour --no-reconcile",

@@ -11,6 +11,7 @@ import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream } from "./invocation.mjs";
 import { recordArtifactDigests } from "./gate-artifact-evidence.mjs";
+import { gate1ValidateRefusal } from "./openspec-validate.mjs";
 import { recordedStopLines, tallyVerdict } from "./spend-guard.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
@@ -64,8 +65,7 @@ export function recordGateReview() {
   // A `pass` MUST carry the range it covered. Without it, `record-gate-review <id> --gate 2
   // --verdict pass` is one command with no evidence requirement at all, and a review of `a..b`
   // on an epic that later ships `b..c` is byte-identical in the record to one that covered
-  // everything. A `fail` may omit the range: there is no shipped work for it to have covered,
-  // and demanding a range would make recording a failed review harder than recording a pass.
+  // everything. (A Gate 2 `fail` carries its range too — refused below; only a Gate 1 `fail` may omit it.)
   // gh#177 — WHICH evidence a pass requires depends on WHICH GATE it is, because the two gates
   // review different things. Gate 2 reads an implementation range and must record it. Gate 1 is
   // the SPEC review and runs before `/opsx:apply`, so at the moment its verdict is truthful there
@@ -78,6 +78,19 @@ export function recordGateReview() {
   // there so that every invocation that worked before still works, and every verdict already
   // recorded still loads.
   let rangeOnGate1 = false;
+  // A Gate 2 `fail` carries its range too (record-gate-review-fail-requires-shas). A failing
+  // retrospective review still reviewed a range, and a fail with none was unqueryable: nothing could say
+  // which work the verdict covered, or read it stale. Gate 1 fail keeps `--artifact` and is unchanged.
+  // Verdicts already recorded without a range still load: this reads only the invocation, never the record.
+  if (verdict === "fail" && gate === "2" && !gateHasEvidence({ baseSha, headSha })) {
+    const missingEvidence = [];
+    if (baseSha === undefined) missingEvidence.push("--base-sha");
+    if (headSha === undefined) missingEvidence.push("--head-sha");
+    die(
+      `conductor: a gate 2 'fail' requires the commit range it covered — missing ` +
+      `${missingEvidence.join(" and ")}. Gate 2 fail carries a range: record the range the reviewer ` +
+      `actually read (a gate 1 'fail' may omit it).\n`);
+  }
   if (verdict === "pass") {
     const hasRange = gateHasEvidence({ baseSha, headSha });
     if (gate === "2" && !hasRange) {
@@ -86,8 +99,7 @@ export function recordGateReview() {
       if (headSha === undefined) missingEvidence.push("--head-sha");
       die(
         `conductor: a gate 2 'pass' requires the commit range it covered — missing ` +
-        `${missingEvidence.join(" and ")}. Record the range the reviewer actually read ` +
-        `(a 'fail' may omit it).\n`);
+        `${missingEvidence.join(" and ")}. Record the range the reviewer actually read.\n`);
     }
     if (gate === "1" && !hasRange && !artifacts.length) {
       die(
@@ -124,6 +136,14 @@ export function recordGateReview() {
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
+  // gh#243 — a Gate 1 PASS is refused while the change it names fails `openspec validate --strict`. Two sessions
+  // piped validate through `tail -1` (exit status = tail's, failure hidden) and recorded a pass against a spec that
+  // did not validate. The engine asks, unpiped, and reads the exit status. A `fail` is never refused (it is evidence
+  // of a failed review), and where validate cannot be run the question is not asked (see openspec-validate.mjs).
+  if (gate === "1" && verdict === "pass") {
+    const invalid = gate1ValidateRefusal(artifacts, id);
+    if (invalid !== null) { die(invalid); }
+  }
   // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and
   // refusing it a verdict here would leave it permanently unable to satisfy the archive
   // gate that (also normalizing) binds it.

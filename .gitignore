@@ -23,3 +23,7 @@ node_modules/
 .test-flakes.log
 .conductor/write-conflicts.log.prev
 .conductor/honcho-memories.log
+
+# overhead-survey: per-session rows name project directories, so they are never committed
+# (pm-overhead-calibration-and-feature-switches).
+docs/measurement/.raw/

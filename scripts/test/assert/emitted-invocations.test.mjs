@@ -103,6 +103,24 @@ test("1.3 a known invocation passes the engine's pre-dispatch check", () => {
   }
 });
 
+test("2.5 the usage-off rules blocks (gh-cfdude-pm-248): every verb the always-on pointer names is dispatched and answers --help", async () => {
+  const { rulesBlock } = await import(new URL("../../lib/rules.mjs", import.meta.url).href);
+  const cwd = tmpRepo();
+  const named = new Set();
+  for (const usage of [{ autonomy: false, releaseCandidate: true }, { autonomy: true, releaseCandidate: false }, { autonomy: false, releaseCandidate: false }]) {
+    const block = rulesBlock(null, "standard", [], "claude-code", null, false, false, usage);
+    const pointer = block.slice(block.indexOf("## Procedures emitted on use"), block.indexOf("## Execution profile"));
+    assert.ok(pointer.length > 0 && block.includes("## Procedures emitted on use"), "the usage-off render carries the pointer");
+    for (const m of pointer.matchAll(/`([a-z][a-z-]*) [^`\n]*`/g)) named.add(m[1]);
+  }
+  assert.deepEqual([...named].sort(), ["release", "set-autonomy"]);
+  for (const verb of named) {
+    assert.ok(VERBS.has(verb), `${verb} is a dispatched verb`);
+    const r = invokeEngine([verb, "--help"], { cwd });
+    assert.equal(r.status, 0, `${verb} --help must succeed`);
+  }
+});
+
 test("6.3 the hand-edit scanner: the emitted text never tells a reader to edit state.json by hand", () => {
   const offenders = [];
   for (const rel of shippedDocs()) {
