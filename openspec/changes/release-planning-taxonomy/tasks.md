@@ -20,10 +20,10 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 **Re-read the source.** The epic has no `externalId`: read its notes in `.conductor/state.json` in full, this change,
+- [x] 0.1 **Re-read the source.** The epic has no `externalId`: read its notes in `.conductor/state.json` in full, this change,
       and `openspec/changes/project-boards/` (or its archive) in full. Confirm `project-boards` is archived, so
       `openspec/specs/release-planning/spec.md` exists and this change's ADDED requirements land on it.
-- [ ] 0.1a **The owed `board-export` amendment** (design, "Amendments owed"), run right after 0.1 and BEFORE 0.2 and 0.4, so
+- [x] 0.1a **The owed `board-export` amendment** (design, "Amendments owed"), run right after 0.1 and BEFORE 0.2 and 0.4, so
       neither gate is recorded on text this task replaces. It needs `project-boards` archived (0.1 confirms it), because a
       MODIFIED delta needs `openspec/specs/board-export/spec.md` to exist and amending the unarchived `project-boards` would
       make 0.55.0 contradict its built code. Add `specs/board-export/spec.md` with two MODIFIED requirements: "rejected
@@ -58,7 +58,7 @@
       `planningBaseline: null`, `addedSincePlanning: null`, `unknownJoinTime: null`, `nonGoals: []` and the zero `split`
       (`initiativeWork`, `health`, `unaligned`); every epic entry carries `initiative`, `initiativeJoinedAt`,
       `secondaryInitiatives: []`, `kind`, `effectiveKind`, `releaseJoinedAt`, both reasons and `nonGoals: []`; a populated
-      fixture reads each back; an initiative with a malformed id is omitted; a reference naming no initiative reads `null`;
+      fixture reads each back; an initiative with a malformed id is omitted and listed in `rejected` (kind `initiative`, reason `id format`); a reference naming no initiative reads `null`;
       removed initiative milestones and non-goals are absent; `schemaVersion` is 1. Save `red-1.1.txt`.
 - [ ] 1.2 GREEN: extend `scripts/lib/board.mjs` (no change to `REJECTED_REASONS`); update the JSON shape in
       `commands/boards.md`. Changeset.
@@ -81,8 +81,7 @@
       both events and refuse the wrong state. RED: `red-2.3.txt` (fails before 2.3).
 - [ ] 2.4 RED then GREEN (UNIT): the reference rule: every initiative-naming flag refuses an unknown id; `runIntegrity`
       reports a hand-edited `epic.initiative`, `epic.secondaryInitiatives[]` entry and `release.initiative` naming no
-      initiative, and a hand-edited initiative id failing the id format (named by `integrity`, skipped by the export, no
-      `rejected` entry until 0.1a's amendment). Edit `scripts/lib/integrity.mjs`. RED: `red-2.4.txt` covers all four reports.
+      initiative, and a hand-edited initiative id failing the id format (named by `integrity`, omitted by the export, and a `rejected` entry of kind `initiative`, per 0.1a). Edit `scripts/lib/integrity.mjs`. RED: `red-2.4.txt` covers all four reports.
 
 ## 3. Non-goals (spec: non-goals)
 
