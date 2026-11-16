@@ -17083,11 +17083,13 @@
       ],
       "attributedCommits": [
         "c18102c43c1ff6d93fb7cdc3a32119b648fefa23",
-        "21634c977711adff95a509d6c09e56a890f39699"
+        "21634c977711adff95a509d6c09e56a890f39699",
+        "97fc1f97426f5e1ca46c6acb536d75abb2d7e12a",
+        "49df17bb4de7a3db7b59488f1f40c4385caf683a"
       ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-16T18:11:20.409Z",
+      "touchedAt": "2026-11-16T19:42:42.088Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
@@ -17243,7 +17245,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2476,
+  "revision": 2478,
   "reviewMode": "standard",
   "releases": [
     {
