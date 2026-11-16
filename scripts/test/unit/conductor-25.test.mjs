@@ -74,6 +74,13 @@ const ADD_EPIC_EXERCISE = {
   // project-boards: the one-line fields, honoured and not merely accepted.
   "summary": { args: ["--summary", "what it is"], check: (e) => assert.equal(e.summary, "what it is") },
   "why-now": { args: ["--why-now", "why it matters now"], check: (e) => assert.equal(e.whyNow, "why it matters now") },
+  // release-planning-taxonomy: the planning fields. The initiatives they name are seeded into the record below.
+  "initiative": { args: ["--initiative", "boards"], check: (e) => assert.deepEqual([e.initiative, typeof e.initiativeJoinedAt], ["boards", "string"]) },
+  "secondary-initiative": { args: ["--secondary-initiative", "reporting"], check: (e) => assert.deepEqual(e.secondaryInitiatives, ["reporting"]) },
+  "kind": { args: ["--kind", "health"], check: (e) => assert.equal(e.kind, "health") },
+  "off-mission-reason": { args: ["--off-mission-reason", "tooling"], check: (e) => assert.equal(e.offMissionReason, "tooling") },
+  "off-initiative-reason": { args: ["--off-initiative-reason", "security fix"], check: (e) => assert.equal(e.offInitiativeReason, "security fix") },
+  "add-non-goal": { args: ["--add-non-goal", "No CSV export"], check: (e) => assert.deepEqual(e.nonGoals.map(g => [g.id, g.text]), [["n1", "No CSV export"]]) },
   // THE regression this file is named for. A note reads back as an ENTRY — {at, actor, text} —
   // so asserting on the text alone would pass against an implementation that stored the raw
   // string and lost the append-only trail.
@@ -110,7 +117,8 @@ unitTest("gh-136: every EPIC_FLAGS row registered on add-epic is HONOURED, not m
       "a registered flag must be invoked and read back, never skipped for being unknown here " +
       "(#136: --notes parsed, matched the registry, exited 0 and wrote nothing)");
 
-    const engine = memoryEngine(emptyRecord());
+    const init = (id) => ({ id, title: id, capability: "c", status: "open", outcome: null, endedAt: null, createdAt: "2026-11-01T00:00:00Z", history: [], milestones: [], nextMilestone: 1, nonGoals: [], nextNonGoal: 1 });
+    const engine = memoryEngine({ ...emptyRecord(), initiatives: [init("boards"), init("reporting")] });
     engine(["add-epic", "--id", "other", "--lane", "claude-code"]);
     const err = expectFail(() =>
       engine(["add-epic", "--id", "subject", "--lane", "claude-code", ...spec.args]));

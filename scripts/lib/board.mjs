@@ -23,7 +23,11 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { outcomeOf } from "./disposition.mjs";
 import { resolveEpics } from "./epic-progress.mjs";
-import { criticalPathOf, orderOfRelease, releaseStatus } from "./release-plan.mjs";
+import {
+  criticalPathOf, effectiveKindOf, EPIC_KINDS, orderOfRelease, primaryServedOf, releaseScope, releaseSplit, releaseStatus,
+} from "./release-plan.mjs";
+import { activeMilestones, initiativesOf } from "./initiative-record.mjs";
+import { activeNonGoals } from "./non-goals.mjs";
 import { pluginVersion } from "./plugin-meta.mjs";
 import { boardsEnabled } from "./boards-switch.mjs";
 import { epicKey } from "./epic-number.mjs";
@@ -139,6 +143,31 @@ export function boardSnapshot(state, resolved, opts = {}) {
   const releaseIds = new Set(releases.map(r => r.id).filter(isId));
   const list = Array.isArray(resolved) ? resolved : [];
 
+  // ── initiatives (release-planning-taxonomy): ids are validated on write, so a failing one is a hand edit and is omitted and
+  //    rejected here (and reported by `integrity`). A reference naming NO initiative reads null: that report is integrity's. ──
+  const initiatives = [];
+  for (const i of initiativesOf(state)) {
+    if (!isId(i.id)) { reject("initiative", i.id, "id", i.id, "id format"); continue; }
+    const milestones = [];
+    for (const m of activeMilestones(i)) {
+      if (!isId(m.id)) { reject("initiative", i.id, "milestones.id", m.id, "id format"); continue; }
+      milestones.push({ id: m.id, text: str(m.text), reachedAt: str(m.reachedAt), evidence: str(m.evidence) });
+    }
+    const ended = i.status === "ended";
+    const { outcome: endedOutcome, endedAt } = i;   // an initiative's work disposition, not an epic's: outcomeOf() reads epics only
+    initiatives.push({
+      id: i.id, title: str(i.title), capability: str(i.capability), status: ended ? "ended" : "open",
+      outcome: ended ? str(endedOutcome) : null, endedAt: ended ? str(endedAt) : null,
+      source: str(i.source), offMissionReason: str(i.offMissionReason), nonGoals: activeNonGoals(i), milestones,
+    });
+  }
+  const initiativeIds = new Set(initiatives.map(i => i.id));
+  /** An initiative reference: the id when it names a listed initiative, else null (a bad format is also rejected). */
+  const initiativeRef = (v, kind, owner, field) => {
+    const id = idRef(v, kind, owner, field);
+    return id !== null && initiativeIds.has(id) ? id : null;
+  };
+
   // ── epics ──
   let unregisteredChanges = 0;
   const registered = [];
@@ -166,6 +195,22 @@ export function boardSnapshot(state, resolved, opts = {}) {
 
   /** id -> the outcome entryOf() read for that epic through outcomeOf(), so progressOf() never reads an outcome off anything itself. */
   const outcomeById = new Map();
+  /** The epic's planning fields (release-planning-taxonomy): the initiative references, the kind and its effective reading, the
+   *  join times, both challenge reasons and the active non-goals. Each null or [] when absent. */
+  const planningFieldsOf = (e) => {
+    const initiative = initiativeRef(e.initiative, "epic", e.id, "initiative");
+    const secondaryInitiatives = [];
+    for (const v of Array.isArray(e.secondaryInitiatives) ? e.secondaryInitiatives : []) {
+      const id = initiativeRef(v, "epic", e.id, "secondaryInitiatives");
+      if (id !== null && !secondaryInitiatives.includes(id)) secondaryInitiatives.push(id);
+    }
+    return {
+      initiative, initiativeJoinedAt: str(e.initiativeJoinedAt), secondaryInitiatives,
+      kind: EPIC_KINDS.includes(e.kind) ? e.kind : null, effectiveKind: effectiveKindOf(e, initiative !== null),
+      releaseJoinedAt: str(e.releaseJoinedAt), offMissionReason: str(e.offMissionReason), offInitiativeReason: str(e.offInitiativeReason),
+      nonGoals: activeNonGoals(e),
+    };
+  };
   const entryOf = (e) => {
     const archivedNow = e.status === "archived";
     const outcome = e.disposition ? outcomeOf(e) : null;
@@ -204,6 +249,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
       rank: Number.isInteger(e.rank) ? e.rank : null,
       position: null,
       release: idRef(e.release, "epic", e.id, "release"),
+      ...planningFieldsOf(e),
       externalUrl,
       dependsOn,
       delivered,
@@ -233,6 +279,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
   const m = state && state.mission && typeof state.mission === "object" ? state.mission : null;
   const cur = m && m.current && typeof m.current === "object" ? m.current : null;
   const mission = cur ? { statement: str(cur.statement), setAt: str(cur.setAt), reason: str(cur.reason) } : null;
+  const missionNonGoals = activeNonGoals(m);
 
   let milestone = null;
   let milestoneRelease = null;
@@ -292,12 +339,21 @@ export function boardSnapshot(state, resolved, opts = {}) {
     const memberStatuses = memberRecords.map(e => statusOf.get(e.id) || e.status);
     const status = releaseStatus(r, memberStatuses);
     const order = orderOfRelease(r);
+    // The split counts EVERY member record (killed and declined included, design D32), not the window or `progress`'s denominator.
+    const primary = initiativeRef(r.initiative, "release", r.id, "initiative");
+    const scopeFields = {
+      primaryServed: primaryServedOf(primary, memberRecords), ...releaseScope(memberRecords),
+      split: releaseSplit(memberRecords, initiativeIds),
+    };
     relEntries.push({
       id: r.id, intent: str(r.intent), target: str(r.target), theme: str(r.theme), rationale: str(r.rationale),
       exit: str(r.exit), order, size: str(r.size), status, delivered,
+      initiative: initiativeRef(r.initiative, "release", r.id, "initiative"), maintenance: r.maintenance === true,
+      splitReason: str(r.splitReason), nonGoals: activeNonGoals(r),
       criticalPath: milestoneRelease === null ? null : criticalPathOf(r, state),
       progress: progressOf(members.map(id => entryById.get(id)).filter(Boolean), outcomeById),
       members, deferred, unshipped: unshippedOf(members, deferred, entryById, superseder, outcomeById),
+      ...scopeFields,
     });
   }
   relEntries.sort((a, b) => {
@@ -328,6 +384,8 @@ export function boardSnapshot(state, resolved, opts = {}) {
     project,
     counts,
     mission,
+    missionNonGoals,
+    initiatives,
     milestone,
     plan,
     releases: relEntries,

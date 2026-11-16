@@ -8,6 +8,8 @@ import {
 } from "./constants.mjs";
 import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
 import { SUMMARY_FIELDS, lineFieldError, warnSummary } from "./epic-summary.mjs";
+import { applyPlanning, planningError, planningFromFlags } from "./epic-planning.mjs";
+import { activeNonGoals, addNonGoals, flagValues, nonGoalsError, parseRemoval, removeNonGoal } from "./non-goals.mjs";
 import { applyEpicModel, checkRole, parseEpicProfileFlags } from "./execution-profile.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
@@ -592,6 +594,29 @@ export function updateEpic() {
     if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
     lineFields[field.key] = v;
   }
+  // release-planning-taxonomy: non-goals. Every value is checked HERE, before any write: one bad value refuses the whole invocation.
+  const addedNonGoals = flagValues(f["add-non-goal"]);
+  {
+    const err = nonGoalsError(addedNonGoals);
+    if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
+  }
+  let nonGoalRemoval = null;
+  if (f["remove-non-goal"] !== undefined) {
+    if (Array.isArray(f["remove-non-goal"]) && f["remove-non-goal"].length > 1) {
+      die("conductor: --remove-non-goal is not repeatable: one reason, one record. Nothing was written.\n");
+    }
+    nonGoalRemoval = parseRemoval([].concat(f["remove-non-goal"]).filter(v => typeof v === "string").pop(), "remove-non-goal");
+    if (nonGoalRemoval.error) die(`conductor: ${escapeControls(nonGoalRemoval.error)}. Nothing was written.\n`);
+    if (!activeNonGoals(epic).some(g => g.id === nonGoalRemoval.id)) {
+      die(`conductor: --remove-non-goal names '${escapeControls(nonGoalRemoval.id)}', which is not an active non-goal of '${escapeControls(id)}'. Nothing was written.\n`);
+    }
+  }
+  // release-planning-taxonomy: the planning fields, validated against the record before any write.
+  const planning = planningFromFlags(f);
+  {
+    const err = planningError(state, planning, epic);
+    if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
+  }
   const note = str(f.notes);
   // spec-sync-waive-for-skip-specs: the reason a delivered change's archived spec deltas were deliberately
   // not applied. Blank is refused by requireFlagValues() above; `--clear spec-deltas-waived` is the inverse.
@@ -1004,6 +1029,9 @@ export function updateEpic() {
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.
   if (description !== undefined) epic.description = description;
   for (const [key, v] of Object.entries(lineFields)) epic[key] = v;
+  applyPlanning(epic, planning, new Date().toISOString());
+  if (addedNonGoals.length) addNonGoals(epic, addedNonGoals, new Date().toISOString());
+  if (nonGoalRemoval) removeNonGoal(epic, nonGoalRemoval.id, nonGoalRemoval.reason, new Date().toISOString());
   if (specDeltasWaived !== undefined) epic.specDeltasWaived = specDeltasWaived;
   if (gate1WaivedFlag !== undefined) epic.gate1Waived = gate1WaivedFlag;
   if (note !== undefined) {
@@ -1046,6 +1074,8 @@ export function updateEpic() {
   for (const row of clearedRows) {
     const had = row.key in epic;
     delete epic[row.key];
+    // release-planning-taxonomy: the join time belongs to the primary initiative and leaves with it.
+    if (row.key === "initiative") delete epic.initiativeJoinedAt;
     if (had && row.clearNote) {
       announcements.push(`conductor: cleared \`${escapeControls(id)}\`'s ${row.flag} — ${row.clearNote}\n`);
     }
@@ -1192,7 +1222,7 @@ export function updateEpic() {
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
   movedActiveNotice(state, previousActive);
-  warnSummary(epic, statusBefore);
+  warnSummary(epic, statusBefore, state);
   render();
 
   // The success message is printed only after the record on disk is READ BACK and confirmed to

@@ -36,6 +36,8 @@ import { die } from "./command-exit.mjs";
 import { outStream } from "./invocation.mjs";
 import { engineRoot } from "./constants.mjs";
 import { specSyncDetail, specSyncFindings } from "./spec-sync.mjs";
+import { initiativesOf } from "./initiative-record.mjs";
+import { BOARD_ID_FORMAT } from "./board.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -1304,6 +1306,43 @@ export const CHECKS = [
             "mid-epic looks exactly like this. Take it over with " +
             orNoRemedy(() => "`claim " + printedId(e.id) + " --session <you>`") + " — no --steal is needed once expired." });
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "dangling-initiative-reference",
+    title: "a reference to an initiative the record does not hold, or an initiative id the board cannot emit",
+    run(state) {
+      // release-planning-taxonomy D7. No verb deletes an initiative and every flag that names one refuses an unknown id, so a
+      // dangling reference or a malformed initiative id can only come from a hand edit. `board --json` reads the reference as
+      // `null` (and lists a malformed id under `rejected`); this check is where the damage is NAMED.
+      const held = new Set(initiativesOf(state).map(i => i.id));
+      const out = [];
+      for (const i of initiativesOf(state)) {
+        if (!BOARD_ID_FORMAT.test(i.id)) {
+          out.push({ detail: `initiative \`${escapeControls(i.id)}\` has an id the board cannot emit (it must match ${BOARD_ID_FORMAT.source}), ` +
+            "so `board --json` omits it and lists it under `rejected`. Initiative ids are validated on write, so this was hand-edited: restore the id." });
+        }
+        for (const m of Array.isArray(i.milestones) ? i.milestones : []) {
+          if (m && typeof m.id === "string" && !/^m[1-9][0-9]*$/.test(m.id)) {
+            out.push({ detail: `initiative \`${escapeControls(i.id)}\` holds a milestone whose id \`${escapeControls(m.id)}\` is not of the form mN. Restore it.` });
+          }
+        }
+      }
+      const ref = (holder, where, id) => {
+        if (typeof id === "string" && !held.has(id)) {
+          out.push({ epic: holder, detail: `${where} names initiative \`${escapeControls(id)}\`, which is not an initiative in this record — ` +
+            "no verb deletes an initiative, so this was hand-edited. Re-create it with the initiative verb (--title and --capability), or clear the reference." });
+        }
+      };
+      for (const e of state.epics || []) {
+        if (!e) continue;
+        ref(e.id, `epic \`${escapeControls(e.id)}\`'s initiative`, e.initiative);
+        for (const sec of Array.isArray(e.secondaryInitiatives) ? e.secondaryInitiatives : []) ref(e.id, `epic \`${escapeControls(e.id)}\`'s secondary initiatives`, sec);
+      }
+      for (const r of Array.isArray(state.releases) ? state.releases : []) {
+        if (r) ref(undefined, `release \`${escapeControls(r.id)}\`'s initiative`, r.initiative);
       }
       return out;
     },

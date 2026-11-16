@@ -1,0 +1,64 @@
+Mutation evidence, release-planning-taxonomy (task R.8), run 2026-11-16 by scratchpad mutate.py: each line replaces one condition or text in the engine, runs the named test files, and restores the file.
+
+KILLED  [initiative] create needs --capability: 1 test(s) fail, e.g. ✖ create: needs --title and --capability; amend replaces either; the record reads back through board
+KILLED  [initiative] capability length limit: 1 test(s) fail, e.g. ✖ create: one line within the limit, the escaped echo, reserved show and a malformed id (1.517875ms)
+KILLED  [initiative] reserved show: 1 test(s) fail, e.g. ✖ create: one line within the limit, the escaped echo, reserved show and a malformed id (64.385708ms
+KILLED  [initiative] id format: 1 test(s) fail, e.g. ✖ create: one line within the limit, the escaped echo, reserved show and a malformed id (0.76275ms)
+KILLED  [initiative] end refused when already ended: 1 test(s) fail, e.g. ✖ end then reopen: both events kept, the status and outcome follow, and the wrong state is refused (
+KILLED  [initiative] reopen refused when not ended: 1 test(s) fail, e.g. ✖ end then reopen: both events kept, the status and outcome follow, and the wrong state is refused (
+KILLED  [initiative] empty reason refused: 1 test(s) fail, e.g. ✖ end then reopen: both events kept, the status and outcome follow, and the wrong state is refused (
+KILLED  [initiative] outcome allowlist (killed refused): 1 test(s) fail, e.g. ✖ end then reopen: both events kept, the status and outcome follow, and the wrong state is refused (
+KILLED  [initiative] --clear field list: 1 test(s) fail, e.g. ✖ --clear refuses any field but source and off-mission-reason, and a set beside its own clear (2.189
+KILLED  [initiative milestones] milestone id never reused: 2 test(s) fail, e.g. ✖ milestones: stable mN ids, never reused after a removal (11.067041ms)
+KILLED  [initiative milestones] remove needs a reason: 3 test(s) fail, e.g. ✖ milestones: removal marks with time and reason, keeps the record, and refuses unknown, removed and
+KILLED  [initiative milestones] reach refused when already reached: 1 test(s) fail, e.g. ✖ reach then unreach: both events kept, the mark follows, and the wrong state is refused (2.158584ms
+KILLED  [initiative milestones] unreach refused when not reached: 1 test(s) fail, e.g. ✖ reach then unreach: both events kept, the mark follows, and the wrong state is refused (0.590541ms
+KILLED  [references] integrity reports a dangling reference: 2 test(s) fail, e.g. ✖ integrity: a hand-edited epic initiative, secondary and release initiative are each reported (1.53
+KILLED  [references] export reads a dangling reference as null: 1 test(s) fail, e.g. ✖ board export: a reference naming no initiative reads null and a secondary leaves its list (61.6090
+KILLED  [references] unknown initiative refused on release: 1 test(s) fail, e.g. ✖ both at once, a contradiction with the clear, and an unknown initiative are refused (3.777917ms)
+KILLED  [references] unknown initiative refused on epic: 1 test(s) fail, e.g. ✖ every initiative-naming flag refuses an unknown id and writes nothing (49.902041ms)
+KILLED  [non-goals] per-record counter: 2 test(s) fail, e.g. ✖ remove: refuses unknown, already removed, reasonless and repeated (12.071958ms)
+KILLED  [non-goals] whole-invocation refusal: 3 test(s) fail, e.g. ✖ a bad value writes nothing: empty, a newline, 301 characters (3.924292ms)
+KILLED  [non-goals] marked removal: 3 test(s) fail, e.g. ✖ remove: marks with time and reason, split at the first colon, on mission, initiative, release and 
+SURVIVED [non-goals] removal of an unknown id refused
+KILLED  [release] --initiative/--maintenance exclusion: 1 test(s) fail, e.g. ✖ both at once, a contradiction with the clear, and an unknown initiative are refused (2.522041ms)
+KILLED  [release] release here refuses the purpose flags: 1 test(s) fail, e.g. ✖ the plan marker takes none of the three (4.219875ms)
+KILLED  [release] three-way split (unaligned): 5 test(s) fail, e.g. ✖ a dangling initiative reference does not count as naming one (0.128292ms)
+KILLED  [release] claude-code effective kind: 2 test(s) fail, e.g. ✖ board export: the claude-code effective kind defaults from the initiative, and a recorded kind win
+KILLED  [release] null share with no members: 1 test(s) fail, e.g. ✖ healthShare over all members, null with none, and the fixed target (1.050417ms)
+KILLED  [release] lower band edge inclusive: 1 test(s) fail, e.g. ✖ drift: 0 and 4 of 10 drift; 1, 2 and 3 of 10 do not (the edges are inside the band) (1.062083ms)
+KILLED  [release] upper band edge inclusive: 1 test(s) fail, e.g. ✖ drift: 0 and 4 of 10 drift; 1, 2 and 3 of 10 do not (the edges are inside the band) (1.5545ms)
+KILLED  [release] primaryServed: 1 test(s) fail, e.g. ✖ primaryServed: true, false and null (0.967958ms)
+KILLED  [release] baseline is the earliest startedAt: 1 test(s) fail, e.g. ✖ planningBaseline is the earliest startedAt among started members, null with none; the counts follo
+KILLED  [release] join time written on a join: 3 test(s) fail, e.g. ✖ --member writes releaseJoinedAt on a join; a repeat for the same release keeps it; a move replaces
+KILLED  [release] repeat --member keeps the join time: 1 test(s) fail, e.g. ✖ --member writes releaseJoinedAt on a join; a repeat for the same release keeps it; a move replaces
+KILLED  [release] --unmember removes the join time: 1 test(s) fail, e.g. ✖ both removers delete it: --unmember and --defer on that release (92.364542ms)
+KILLED  [release] --defer removes the join time: 1 test(s) fail, e.g. ✖ both removers delete it: --unmember and --defer on that release (79.740917ms)
+KILLED  [release] split-reason length limit: 1 test(s) fail, e.g. ✖ --split-reason: one line of at most 400 characters, cleared by --clear-split-reason, and it change
+KILLED  [nudge] release-member condition: 1 test(s) fail, e.g. ✖ untied nudge, the active epic is in no release: the 0.55.0 text, unchanged (1.0675ms)
+KILLED  [epic] secondary equal to primary refused: 1 test(s) fail, e.g. ✖ a secondary is repeatable, a repeat is ignored, and one equal to the primary is refused naming it 
+KILLED  [epic] kind allowlist: 2 test(s) fail, e.g. ✖ --kind accepts initiative-work and health only, and --clear kind is its inverse (4.266584ms)
+KILLED  [epic] warning: open-initiative condition: 1 test(s) fail, e.g. ✖ a recorded off-initiative reason silences it, as do kind health, a full set, the claude-code lane 
+KILLED  [epic] warning: claude-code exemption: 2 test(s) fail, e.g. ✖ a recorded off-initiative reason silences it, as do kind health, a full set, the claude-code lane 
+KILLED  [epic] warning: recorded reason silences it: 1 test(s) fail, e.g. ✖ a recorded off-initiative reason silences it, as do kind health, a full set, the claude-code lane 
+KILLED  [epic] warning: health needs no initiative: 1 test(s) fail, e.g. ✖ a recorded off-initiative reason silences it, as do kind health, a full set, the claude-code lane 
+KILLED  [epic] member warning: maintenance release: 2 test(s) fail, e.g. ✖ scripts/test/unit/epic-planning-fields.test.mjs (341.591542ms)
+KILLED  [epic] member warning: recorded reason: 1 test(s) fail, e.g. ✖ the member warning is silent for health, claude-code, a recorded reason, and an epic serving the p
+KILLED  [rules block] Mission non-goals cap (200): 1 test(s) fail, e.g. ✖ 6.1 ## Mission non-goals is present while the mission has an active non-goal, within 200 bytes wit
+KILLED  [rules block] Initiatives cap (280): 2 test(s) fail, e.g. ✖ 6.1 ## Initiatives is present while an initiative is open, within 280 bytes, naming both reason fl
+KILLED  [rules block] Initiatives absent when none open: 2 test(s) fail, e.g. ✖ 6.1 ## Initiatives is present while an initiative is open, within 280 bytes, naming both reason fl
+KILLED  [rules block] Mission non-goals absent when none: 2 test(s) fail, e.g. ✖ 6.1 ## Mission non-goals is present while the mission has an active non-goal, within 200 bytes wit
+KILLED  [template] escaping of non-goal text: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [template] escaping of the split reason: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [template] escaping of the initiative title: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [template] guided empty state for initiatives: 1 test(s) fail, e.g. ✖ 7.2 no initiatives: a guided empty state naming the verb and that the agent derives candidates, ne
+KILLED  [template] guided empty state for the release purpose: 1 test(s) fail, e.g. ✖ 7.2 a release card shows its primary initiative's title, 'Maintenance', or a guided empty state na
+survivors/errors: 1 of 53
+
+Survivor, explained: [non-goals] "removal of an unknown id refused" is an EQUIVALENT mutant. removeNonGoal()'s own unknown-id refusal is defence in depth:
+every caller (mission.mjs, initiative.mjs, releases.mjs, update-epic.mjs) already refuses an id that is not an active non-goal BEFORE calling it, and the
+callers' refusals are the killed mutations above (non-goals tests refuse unknown, removed and reasonless in each of the four verbs). No test can reach the inner check.
+
+Not mutated, with the reason: (1) "a milestone carries no non-goals" holds by construction (no flag or reader touches milestone non-goals; the test that plants a
+nonGoals key on a milestone passes only because no reader looks); (2) "a split reason does not change drift" has no code to mutate: releaseSplit() does not take the reason;
+(3) the "no switch" registry scan is itself the guard, and fails if a flag, positional or OPT_INS row matching it is added.

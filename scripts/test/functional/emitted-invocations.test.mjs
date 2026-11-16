@@ -628,6 +628,20 @@ export function commitNudgeVariants(only = null) {
     assert.ok((o.context.match(/^- `update-epic /gm) || []).length >= 2, `fixture: several candidate epics. ${o.context}`);
     variants.push({ label: "nudge[detour commit · several candidates]", text: o.context, repo });
   }
+  // release-planning-taxonomy 4.5: an untied commit while the active epic is a release member names the two destinations, with runnable
+  // commands (the maintenance epic's add-epic, release --member and --attribute-commit), each of which Layer A runs.
+  if (want("nudge[untied · release member]")) {
+    const repo = observationRepo();
+    ok(repo, ["release", "0.56.0", "--intent", "the release under test", "--member", "epic-a"]);
+    repo.git("add", "-A");
+    repo.git("commit", "-q", "-m", "chore: record the release");
+    repo.observe();
+    repo.commit({ "src/tweak.txt": "1" }, "docs: an unrelated tweak");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.match(o.context, /maintenance-0\.56\.0/, `fixture: the untied branch names the maintenance epic. ${o.stdout}`);
+    assert.match(o.context, /add-epic --id maintenance-0\.56\.0 /, "fixture: the add-epic command is printed");
+    variants.push({ label: "nudge[untied · release member]", text: o.context, repo });
+  }
   if (want("nudge[amend]")) {
     const repo = observationRepo();
     repo.observe();
@@ -1234,6 +1248,18 @@ const INTEGRITY_BUILDERS = {
       reported: (out) => out.includes("`gone`"),
     },
   ],
+  // release-planning-taxonomy D7: no verb deletes an initiative and every flag naming one refuses an unknown id, so a dangling
+  // reference is a hand edit; the report names it and prints no invocation (the repair is a re-record of what it meant).
+  "dangling-initiative-reference": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "e", title: "e", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [], initiative: "gone" }] });
+      return { repo };
+    },
+    produce: integrityProducer("dangling-initiative-reference"),
+    reported: (out) => out.includes("`gone`"),
+  },
   // The three shapes a stored value can take that cannot be true. All three PRINT NO INVOCATION:
   // the two reference checks describe a repair that is a re-record of whatever the reference meant
   // (which no single command can be written for without guessing the intent), and the grant check

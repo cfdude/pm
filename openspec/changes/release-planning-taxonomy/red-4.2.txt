@@ -1,0 +1,8 @@
+RED for task 4.2 (fails before 4.2)
+command: node --test scripts/test/unit/release-split.test.mjs
+✖ primaryServed: true, false and null
+✖ release show prints the split line with its band, DRIFT and the recorded reason
+✖ --split-reason: one line of at most 400 characters, cleared by --clear-split-reason, and it changes neither drift nor the split
+ℹ tests 11
+ℹ pass 8
+ℹ fail 3

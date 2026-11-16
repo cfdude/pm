@@ -27,6 +27,12 @@ every surface says "mission milestone".
 | `--milestone <releaseId>` | the release that meets the mission. Refused when the release does not exist | `--clear-milestone` |
 | `--add-criterion "<text>" [--check "<how to check it>" \| --needs-human]` | appends an exit criterion with the next stable id (`c1`, `c2`, ...). Ids are never reused or renumbered. `--needs-human` marks one that needs a human-supplied number. `--check` and `--needs-human` apply only here, and not together | `--remove-criterion` |
 | `--remove-criterion <cN> --reason "<why>"` | marks the criterion removed, with the time and the reason. It stays in `mission show --history` and is absent from the board | (the record is kept, by design) |
+| `--add-non-goal "<line>"` (repeatable) | records something the mission will NOT do: `{id, text, addedAt}` with a per-record id `n1`, `n2`, ..., never reused. One line of at most 300 characters; one bad value refuses the whole invocation | `--remove-non-goal "nN:<why>"` |
+| `--remove-non-goal "nN:<why>"` | marks the non-goal removed, with the time and the reason (split at the FIRST colon). It is **not repeatable**, so one reason never covers two records. Removed ones stay in `mission show --history` and are absent from `board --json` `missionNonGoals` | (the record is kept, by design) |
+
+Non-goals are one shape on four records (the mission, an initiative, a release, an epic) and never on a milestone or a criterion.
+While the mission has at least one active non-goal, the managed rules block carries a one-line `## Mission non-goals` section
+(at most 200 bytes, cut with an ellipsis). `mission show` lists the active ones.
 
 `--reason` serves exactly one of `--statement`, `--end` and `--remove-criterion`: giving two of them in one call is refused, and
 each of the three requires it. Every refusal writes nothing. `show` is a reserved word: `mission show` reads the mission, the

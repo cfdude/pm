@@ -1,0 +1,14 @@
+RED for task 5.1 (fails before 5.1)
+command: node --test scripts/test/unit/epic-planning-fields.test.mjs
+✖ primary and secondary initiatives are recorded and read back
+✖ a secondary is repeatable, a repeat is ignored, and one equal to the primary is refused naming it
+✖ --remove-secondary-initiative is the inverse and leaves the primary; an absent one is refused
+✖ every initiative-naming flag refuses an unknown id and writes nothing
+✖ initiativeJoinedAt: written when the primary changes, kept on a same-value re-set, removed by --clear initiative
+✖ --kind accepts initiative-work and health only, and --clear kind is its inverse
+✖ the two reasons are one line of at most 300, recorded and cleared
+✖ add-epic and add-many carry the same fields
+✖ the nullable registry: every new scalar row is clearable and the clear path removes it
+ℹ tests 11
+ℹ pass 2
+ℹ fail 9

@@ -1,0 +1,9 @@
+RED for task 4.4 (fails before 4.4)
+command: node --test scripts/test/unit/release-scope.test.mjs
+✖ --member writes releaseJoinedAt on a join; a repeat for the same release keeps it; a move replaces it
+✖ both removers delete it: --unmember and --defer on that release
+✖ through the verbs: scope added after the first member started is reported by board and release show
+✖ a singular count reads `1 epic added`
+ℹ tests 7
+ℹ pass 3
+ℹ fail 4

@@ -1,0 +1,9 @@
+RED for task 7.1 (fails before 7.3)
+command: node --test scripts/test/assert/taxonomy-skills.test.mjs
+✖ 7.1 project-boards First population: cluster the backlog, --source and UNGROUNDED, 'Does this make sense?', never ask the user to name one, nothing unconfirmed is written
+✖ 7.1 project-boards documents the initiatives collection and the mission non-goals the release plan draws
+✖ 7.1 conductor Intake: both reason flags, once, initiatives as well as epics, the recorded reason first, the claude-code exemption, the orchestrating agent first
+✖ 7.1 conductor Intake: the two destinations for a tweak, with the maintenance epic's lane, kind, membership, attribution and end
+ℹ tests 4
+ℹ pass 0
+ℹ fail 4

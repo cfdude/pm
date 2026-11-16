@@ -119,6 +119,7 @@ export const VERB_EFFECTS = {
   "clear-active": { effect: "mutates", epicWriting: true, writes: "state.json (the active pointer), plus render()'s writes" },
   "set-tracker": { effect: "mutates", writes: "state.json (tracker config), CLAUDE.md (the rules block)" },
   // project-boards. `mission show` is a pure read under this verb, like `release show`; the classification is the verb's.
+  initiative: { effect: "mutates", writes: "state.json (initiatives: the record, its initiative milestones and non-goals, and its ending history), CLAUDE.md (the `## Initiatives` rules-block section, only when its text changed), plus render()'s writes — except initiative show, which writes nothing at all" },
   mission: { effect: "mutates", writes: "state.json (the mission, its history, the mission milestone and the exit criteria), CLAUDE.md (the `## Mission` rules-block section, only when its text changed), plus render()'s writes — except `mission show`, which writes nothing at all" },
   "set-lane-routing": { effect: "mutates", writes: "state.json (lane-routing overrides)" },
   "set-autonomy": { effect: "mutates", epicWriting: true, writes: "state.json (an epic's autonomy block and notifications)" },

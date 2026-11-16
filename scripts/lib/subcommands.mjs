@@ -644,6 +644,25 @@ export function subjectNamesEpic(subject, id) {
  *  and the statement that choosing is the agent's. Every command names every reported live commit,
  *  oldest first, as ONE invocation. NOISE BUDGET: one short paragraph per real commit, on a message
  *  that already prints; what it must never do is fire when no commit landed, or name a wrong sha. */
+/** release-planning-taxonomy D21c: what the untied nudge says in place of "If it is not, attribute nothing." Only when the active
+ *  epic is a member of a release does it name the two destinations; otherwise the 0.55.0 sentence, unchanged. Every command is
+ *  built through orNoRemedy, so a control character in an id prints the no-remedy text and never a command. */
+function untiedOutlet(state, epic, shas, cmd) {
+  const plain = "If it is not, attribute nothing.";
+  const rid = epic && typeof epic.release === "string" && epic.release ? epic.release : null;
+  if (rid === null) return plain;
+  const mid = `maintenance-${rid}`;
+  if (!STORABLE_EPIC_ID(mid)) return plain;
+  const exists = (state.epics || []).some(e => e && e.id === mid);
+  const attribute = orNoRemedy(() => `update-epic ${printedId(mid)} ${shas.map(s => `--attribute-commit ${s}`).join(" ")}`);
+  const addEpic = orNoRemedy(() => `add-epic --id ${printedId(mid)} --lane claude-code --kind health --status queued`);
+  const member = orNoRemedy(() => `release ${printedId(rid, "release")} --member ${printedId(mid)}`);
+  const create = exists ? "" : `${asCode(addEpic)}, then ${asCode(member)}, then `;
+  return `If it is not \`${escapeControls(epic.id)}\`'s work, it is either a tweak too small for an epic — record it against the release's maintenance epic: ` +
+    `${create}${asCode(attribute)} — or work that moves an initiative, which belongs in a small \`claude-code\` epic naming that initiative ` +
+    "(register it with add-epic and name the initiative with --initiative).";
+}
+
 /** The module's abbreviator under a second name, so `attributionNudge` can shadow `shortSha` locally with an injected one. */
 const gitShortSha_ = shortSha;
 export function attributionNudge(state, ctx, commits, { short } = {}) {
@@ -711,7 +730,7 @@ export function attributionNudge(state, ctx, commits, { short } = {}) {
     return `ATTRIBUTION — the engine cannot tell whether this commit is \`${id}\`'s work: its subject and paths do not ` +
       `name it, and \`${id}\` is only the active epic. If this commit is \`${id}\`'s work, record it` +
       (first ? ", after every commit of that epic's work that already landed, IN THE ORDER THEY LANDED (it has attributed none yet)" : "") +
-      ` — ${asCode(cmd(epic))}. If it is not, attribute nothing. ${exclusion}${trailer}`;
+      ` — ${asCode(cmd(epic))}. ${untiedOutlet(state, epic, list, cmd)} ${exclusion}${trailer}`;
   }
   if (first) {
     return `ATTRIBUTION — \`${id}\` has attributed no commits yet: ` +

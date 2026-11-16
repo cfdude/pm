@@ -133,7 +133,7 @@ export function setActive() {
   const saved = saveState(state);
   owedReconcileNotice(state, previous);
   movedActiveNotice(state, previous);
-  warnSummary(t, statusBefore);
+  warnSummary(t, statusBefore, state);
   render();
   reportSave(saved, {
     changed: `conductor: active is now '${escapeControls(id)}'`,

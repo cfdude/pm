@@ -20,12 +20,13 @@
 
 import { escapeControls, findRelease } from "./constants.mjs";
 import { activeCriteria, missionOf } from "./mission-record.mjs";
+import { activeNonGoals, addNonGoals, flagValues, nonGoalError, parseRemoval, removeNonGoal, removedNonGoals } from "./non-goals.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { writeRules, missionSectionText } from "./rules.mjs";
+import { writeRules, missionNonGoalsSectionText, missionSectionText } from "./rules.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { die } from "./command-exit.mjs";
 import { currentArgv, errStream, outStream } from "./invocation.mjs";
@@ -58,13 +59,14 @@ export function applyMission(state, f, now = new Date().toISOString()) {
   const statement = str(f.statement);
   const reason = str(f.reason);
   const reasoned = ["statement", "end", "remove-criterion"].filter(has);
-  const operations = [...reasoned, ...["milestone", "clear-milestone", "add-criterion"].filter(has)];
+  const operations = [...reasoned, ...["milestone", "clear-milestone", "add-criterion", "add-non-goal", "remove-non-goal"].filter(has)];
   if ((has("check") || has("needs-human")) && !has("add-criterion")) {
     return refuse("--check and --needs-human apply only to --add-criterion.");
   }
   if (!operations.length) {
     return refuse("mission needs an operation: --statement \"<text>\" --reason \"<why>\", --end --reason \"<why>\", " +
       "--milestone <releaseId>, --clear-milestone, --add-criterion \"<text>\" [--check \"<how>\" | --needs-human], " +
+      "--add-non-goal \"<line>\", --remove-non-goal \"nN:<why>\", " +
       "or --remove-criterion <cN> --reason \"<why>\" (or `mission show [--history]` to read it).");
   }
   if (reasoned.length > 1) {
@@ -89,6 +91,23 @@ export function applyMission(state, f, now = new Date().toISOString()) {
   }
   if (has("reason") && lineError("reason", reason, 400)) return refuse(`${lineError("reason", reason, 400)}.`);
 
+  // Non-goals (release-planning-taxonomy): every value is checked before any write, so one bad value refuses the whole call. The mission's
+  // non-goals reach the managed rules block, where a comment marker would break the block, so they carry the same check statements do.
+  const addedNonGoals = flagValues(f["add-non-goal"]);
+  for (const v of addedNonGoals) {
+    const err = nonGoalError(v) || (typeof v === "string" && (v.includes("<!--") || v.includes("-->"))
+      ? "--add-non-goal must not contain `<!--` or `-->` (it is written into CLAUDE.md's managed block, where a comment marker would break it)" : null);
+    if (err) return refuse(`${err}.`);
+  }
+  let removal = null;
+  if (has("remove-non-goal")) {
+    if (Array.isArray(f["remove-non-goal"]) && f["remove-non-goal"].length > 1) return refuse("--remove-non-goal is not repeatable: one reason, one record.");
+    removal = parseRemoval(str(f["remove-non-goal"]), "remove-non-goal");
+    if (removal.error) return refuse(`${removal.error}.`);
+    if (!activeNonGoals(missionOf(state)).some(g => g.id === removal.id)) {
+      return refuse(`--remove-non-goal names '${escapeControls(removal.id)}', which is not an active non-goal of the mission.`);
+    }
+  }
   const m = missionOf(state);
   const notes = [];
   let changed = false;
@@ -144,6 +163,8 @@ export function applyMission(state, f, now = new Date().toISOString()) {
     c.removeReason = reason.trim();
     changed = true;
   }
+  if (addedNonGoals.length) { addNonGoals(m, addedNonGoals, now); changed = true; }
+  if (removal) { removeNonGoal(m, removal.id, removal.reason, now); changed = true; }
   if (changed) state.mission = m;
   return { ok: true, changed, notes };
 }
@@ -151,7 +172,7 @@ export function applyMission(state, f, now = new Date().toISOString()) {
 /** The lines `mission show` prints, and `--history` extends. Pure. */
 export function missionShowLines(state, { history = false } = {}) {
   const m = missionOf(state);
-  if (!m.current && !m.history.length && !m.criteria.length && m.milestoneRelease === null) return ["no mission"];
+  if (!m.current && !m.history.length && !m.criteria.length && m.milestoneRelease === null && !m.nonGoals.length) return ["no mission"];
   const L = [];
   L.push(m.current ? `mission: ${m.current.statement}` : "mission: none (ended or never set)");
   if (m.current) L.push(`  set ${m.current.setAt} — ${m.current.reason}`);
@@ -162,10 +183,15 @@ export function missionShowLines(state, { history = false } = {}) {
   for (const c of active) {
     L.push(`  ${c.id} — ${c.text}${c.check ? ` [check: ${c.check}]` : ""}${c.needsHuman ? " [needs a human]" : ""}`);
   }
+  const goals = activeNonGoals(m);
+  L.push(`non-goals (${goals.length} active):`);
+  if (!goals.length) L.push("  (none)");
+  for (const g of goals) L.push(`  ${g.id} — ${g.text}`);
   L.push(`history: ${m.history.length} earlier statement${m.history.length === 1 ? "" : "s"}`);
   if (history) {
     for (const h of m.history) L.push(`  ${h.endedAt} — "${h.statement}" ended: ${h.endReason}`);
     for (const c of m.criteria.filter(x => x && x.removedAt)) L.push(`  ${c.removedAt} — criterion ${c.id} removed: ${c.removeReason} (${c.text})`);
+    for (const g of removedNonGoals(m)) L.push(`  ${g.removedAt} — non-goal ${g.id} removed: ${g.removeReason} (${g.text})`);
   }
   return L;
 }
@@ -193,7 +219,7 @@ export function mission() {
   }
   if (f.history !== undefined) { die("conductor: --history belongs to `mission show --history`. Nothing was written.\n"); }
   const state = loadState();
-  const before = missionSectionText(state);
+  const before = missionSectionText(state) + "\u0000" + missionNonGoalsSectionText(state);
   const r = applyMission(state, f);
   if (!r.ok) { die(`conductor: ${escapeControls(r.message)}\n`); }
   for (const n of r.notes) errStream().write(`conductor: ${escapeControls(n)}\n`);
@@ -203,7 +229,7 @@ export function mission() {
   }
   const saved = saveState(state);
   // The `## Mission` section follows the record: rewrite the block when its text changed (design D15).
-  if (missionSectionText(state) !== before) writeRules(resolvePlatform({}, state));
+  if (missionSectionText(state) + "\u0000" + missionNonGoalsSectionText(state) !== before) writeRules(resolvePlatform({}, state));
   render();
   reportSave(saved, {
     changed: "conductor: mission recorded",

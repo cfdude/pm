@@ -48,7 +48,7 @@ function combined(engine, args) {
 /** An initialized conductor with two epics: `subject` (the one under test) and `other` (a real
  *  target for `--parent` and `--link`, both of which validate against the known epic ids). */
 function repo() {
-  const engine = memoryEngine(emptyRecord());
+  const engine = memoryEngine({ ...emptyRecord(), initiatives: [{ id: "boards", title: "t", capability: "c", status: "open", outcome: null, endedAt: null, createdAt: "2026-11-01T00:00:00Z", history: [], milestones: [], nextMilestone: 1, nonGoals: [], nextNonGoal: 1 }, { ...{ id: "boards", title: "t", capability: "c", status: "open", outcome: null, endedAt: null, createdAt: "2026-11-01T00:00:00Z", history: [], milestones: [], nextMilestone: 1, nonGoals: [], nextNonGoal: 1 }, id: "reporting" }] });
   engine(["add-epic", "--id", "other", "--lane", "claude-code"]);
   engine(["add-epic", "--id", "subject", "--lane", "claude-code"]);
   return engine;
@@ -69,6 +69,9 @@ const SET_VALUE = {
   "external-updated-at": "2026-08-23T09:30:00Z",
   plan: "docs/superpowers/plans/p.md",
   spec: "docs/superpowers/specs/d.md",
+  // release-planning-taxonomy: `initiative` must name a recorded one (repo() seeds `boards`), `kind` one of two values.
+  initiative: "boards",
+  kind: "health",
 };
 const setArgs = (flag) => ["--" + flag, SET_VALUE[flag] || `value-for-${flag}`];
 

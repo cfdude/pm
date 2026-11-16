@@ -1,0 +1,6 @@
+RED for task 5.2 (fails before 5.2 and 5.3)
+command: node --test scripts/test/unit/epic-planning-warning.test.mjs
+✖ scripts/test/unit/epic-planning-warning.test.mjs
+ℹ tests 1
+ℹ pass 0
+ℹ fail 1

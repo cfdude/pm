@@ -88,6 +88,7 @@ const VERB_BASELINE = {
   // project-boards: `board` is read-only and `--archived` takes a bound; the bare form is its working baseline.
   board: () => ["board"],
   mission: () => ["mission", "--statement", "ship it", "--reason", "baseline"],
+  initiative: () => ["initiative", "boards", "--title", "Boards", "--capability", "baseline"],
   // project-boards 8.3: the project key alone is a working baseline; `--unset` and `--name` take values.
   "set-project": () => ["set-project", "--key", "PM"],
   overhead: () => ["overhead"],
@@ -348,10 +349,12 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
     // memory; a genuine boolean (a mode), like --json.
     // project-boards: `mission`'s four booleans — the two inverses (`--end` ends the mission and keeps it in history,
     // `--clear-milestone` removes the mission milestone), the criterion's `--needs-human` marker and the read form's `--history`.
+    // release-planning-taxonomy: `initiative` shares `--end` and `--history` and adds `--reopen`, the inverse of `--end`.
+    "initiative --reopen",
     "mission --clear-milestone",
-    "mission --end",
-    "mission --history",
     "mission --needs-human",
+    "mission/initiative --end",
+    "mission/initiative --history",
     "overhead --all-features",
     "override-spend-guard --revoke",
     // gh-204: `list` shares --json (the same genuine boolean: a rendering).

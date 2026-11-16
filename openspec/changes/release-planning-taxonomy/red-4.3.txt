@@ -1,0 +1,4 @@
+RED for task 4.3 (--split-reason, no switch): the failing tests are in red-4.2.txt (fails before 4.2/4.3's GREEN), because 4.2 and 4.3
+share scripts/test/unit/release-split.test.mjs:
+  - "--split-reason: one line of at most 400 characters, cleared by --clear-split-reason, and it changes neither drift nor the split"
+The registry-scan test ("nothing turns the report off or changes the target") passes before and after: it guards against a future flag.

@@ -415,11 +415,13 @@ for (const name of [BACKLOG, PLAN]) {
   test(`8.10 ${name}: a fully populated board shows no guided card, no raw ISO timestamp and no "not set"`, () => {
     const { renderBacklog, renderPlan } = load(name, ["renderBacklog", "renderPlan"].filter(f => (name === BACKLOG) === (f === "renderBacklog")));
     const epics = [full("project-boards", 256, { summary: "Draw the boards", release: "r1", whyNow: "Rob asked" }), full("ended", 12, { status: "archived", delivered: true, outcome: "delivered", endedAt: "2026-11-01T10:00:00Z", release: "r1" })];
-    const releases = [R("r1", { target: "2026-12-01", progress: { done: 1, total: 2 } })];
+    // release-planning-taxonomy: a fully populated release also names its primary initiative, which the board lists.
+    const releases = [R("r1", { target: "2026-12-01", progress: { done: 1, total: 2 }, initiative: "boards" })];
+    const initiatives = [{ id: "boards", title: "Live boards", capability: "See the plan", status: "open", source: "docs/plan.md", nonGoals: [], milestones: [] }];
     const info = { lastUpdated: "2026-11-11T14:10:00Z", asOf: "2026-11-11T14:09:00Z", head: "abc1234", project: PROJ };
     const out = name === BACKLOG
       ? renderBacklog({ epics, releases, meta: {}, info, project: PROJ, admin: true, canWrite: true, ...TS })
-      : renderPlan(pInput({ epics, releases, project: PROJ, info, ...TS,
+      : renderPlan(pInput({ epics, releases, initiatives, project: PROJ, info, ...TS,
         plan: { here: "r1", hereText: "Building", nextText: "Ship", head: "abc1234", asOf: "2026-11-11T14:09:00Z" },
         mission: { statement: "Ship boards", reason: "users", setAt: "2026-11-01T10:00:00Z", milestoneRelease: "r1" },
         criteria: [{ id: "c1", text: "works", check: "run it", needsHuman: true }],

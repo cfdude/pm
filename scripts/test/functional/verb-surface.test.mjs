@@ -111,8 +111,8 @@ test("release carries two forms keyed by its first positional", async () => {
   validArity(rel.byFirst.show, "release show");
   assert.equal(rel.byFirst.show.max, 2, "`release show [<id>]` reads the keyword and at most one id");
   assert.match(rel.byFirst.show.form, /^show /);
-  const others = Object.entries(VERB_POSITIONALS).filter(([v, r]) => v !== "release" && r.byFirst);
-  assert.deepEqual(others, [], "release is the one verb whose surface branches on a positional");
+  const others = Object.entries(VERB_POSITIONALS).filter(([v, r]) => !["release", "initiative"].includes(v) && r.byFirst).map(([v]) => v);
+  assert.deepEqual(others, [], "release and initiative (its reserved `show` read form) are the only verbs whose surface branches on a positional");
 });
 
 test("freeText is carried by exactly triage, suggest-lane, log-detour and honcho-memory", async () => {
@@ -472,6 +472,7 @@ const DISPATCH_BASELINE = {
   "set-boards": { args: ["set-boards", "off"] },
   "set-project": { args: ["set-project", "--key", "PM"] },
   mission: { args: ["mission", "--statement", "ship it", "--reason", "baseline"] },
+  initiative: { args: ["initiative", "boards", "--title", "Boards", "--capability", "baseline"] },
   overhead: { args: ["overhead"] },
   upgrade: { args: ["upgrade"] },
   changelog: { args: ["changelog", "--since", "0.0.1"] },
@@ -698,7 +699,7 @@ const lastDetourText = (cwd) => {
 const POSITIONAL_COUNTS = {
   "log-detour": 1, "retract-detour": 1, "push-detour": 1, "drop-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
-  "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
+  "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1, initiative: 1,
   "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1, "set-spend-tracking": 1, "set-dev-log": 1, "set-boards": 1,
   "spend-guard": 1, "override-spend-guard": 1, "record-decision": 1, decisions: 1,
 };

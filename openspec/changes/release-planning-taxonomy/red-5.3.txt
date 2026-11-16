@@ -1,0 +1,5 @@
+RED for task 5.3 (release --member warns for an epic not serving the primary): the tests are in
+scripts/test/unit/epic-planning-warning.test.mjs, written with 5.2's. red-5.2.txt records that whole file failing to load before 5.2's
+GREEN (it imports planningWarning from epic-summary.mjs, which did not exist), which covers the two 5.3 tests in it:
+  - "release --member warns for an epic not serving the release's primary, still writes, and never for maintenance or no primary"
+  - "the member warning is silent for health, claude-code, a recorded reason, and an epic serving the primary"

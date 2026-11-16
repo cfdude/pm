@@ -115,6 +115,12 @@ code,.mono{font:500 13px var(--mono)}
 a{color:var(--accent)}
 :is(button,a,textarea,summary):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .empty{color:var(--muted);font-style:italic;padding:6px 0}
+.nd{margin:8px 0 0}.nd ul{margin:2px 0 0;padding-left:20px}.nd li{margin:1px 0;overflow-wrap:anywhere}
+.purpose,.split,.scope{margin:6px 0;font-size:14px;overflow-wrap:anywhere}
+.inits{display:grid;gap:8px}.cap{margin:0 0 6px;overflow-wrap:anywhere}
+.ims{list-style:none;margin:2px 0 8px;padding:0;display:grid;gap:3px}.ims li{overflow-wrap:anywhere}
+.mk{font-size:12px;font-weight:650;border-radius:999px;padding:1px 9px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.mk--done{background:var(--accent);color:var(--accent-fg)}
 .notice{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;font-size:13.5px}
 .msg{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;color:var(--muted)}
 .shipped{display:flex;flex-direction:column;gap:6px}
@@ -214,10 +220,31 @@ function normUnshipped(d){
   const o=typeof d.outcome==="string"&&Object.prototype.hasOwnProperty.call(OUTCOME_LABEL,d.outcome)?d.outcome:"unknown";
   return {epic:d.epic,title:str(d.title),outcome:o,reason:[...str(d.reason)].slice(0,300).join(""),by:okId(d.supersededBy)?d.supersededBy:""};
 }
+/** Non-goals of one record (release-planning-taxonomy): `[{id, text}]`, a bad id or empty text dropped, the text capped again at 300. */
+const normGoals=x=>arr(x).filter(g=>g&&typeof g==="object"&&!Array.isArray(g)&&okId(g.id)&&str(g.text)).map(g=>({id:g.id,text:[...str(g.text)].slice(0,300).join("")}));
+const notDoing=list=>list.length?`<div class="nd"><span class="lbl">Not doing</span><ul>${H(list.map(g=>`<li data-nongoal="${esc(g.id)}">${esc(g.text)}</li>`).join(""))}</ul></div>`:"";
+/** One initiative doc (an `initiatives/<id>` doc, or an entry of the snapshot's `initiatives`): a bad id drops it, every list is re-validated. */
+function normInit(d){
+  try{
+    if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.id))return null;
+    return {id:d.id,title:str(d.title),capability:str(d.capability),status:d.status==="ended"?"ended":"open",outcome:str(d.outcome),source:str(d.source),
+      nonGoals:normGoals(d.nonGoals),
+      milestones:arr(d.milestones).filter(m=>m&&typeof m==="object"&&!Array.isArray(m)&&okId(m.id)).map(m=>({id:m.id,text:str(m.text),reached:str(m.reachedAt)!=="",evidence:str(m.evidence)}))};
+  }catch(_){return null;}
+}
+/** A release's split, kept only when its counts are non-negative numbers: `{iw, h, u, share, target, drift}` or null. */
+function normSplit(d){
+  const okN=v=>typeof v==="number"&&isFinite(v)&&v>=0;
+  if(!d||typeof d!=="object"||Array.isArray(d)||!okN(d.initiativeWork)||!okN(d.health)||!okN(d.unaligned))return null;
+  return {iw:d.initiativeWork,h:d.health,u:d.unaligned,share:okN(d.healthShare)?d.healthShare:null,target:okN(d.target)?d.target:0.2,drift:d.drift===true};
+}
 function normRel(d){
   if(!d||typeof d!=="object"||Array.isArray(d)||!okId(d.id))return null;
   const p=d.progress,okN=v=>typeof v==="number"&&isFinite(v)&&v>=0;
-  return {id:d.id,intent:str(d.intent),theme:str(d.theme),rationale:str(d.rationale),exit:str(d.exit),size:str(d.size),target:str(d.target),
+  return {initiative:okId(d.initiative)?d.initiative:"",maintenance:d.maintenance===true,splitReason:[...str(d.splitReason)].slice(0,400).join(""),
+    primaryServed:d.primaryServed===true?true:(d.primaryServed===false?false:null),added:okN(d.addedSincePlanning)?d.addedSincePlanning:null,
+    split:normSplit(d.split),nonGoals:normGoals(d.nonGoals),
+    id:d.id,intent:str(d.intent),theme:str(d.theme),rationale:str(d.rationale),exit:str(d.exit),size:str(d.size),target:str(d.target),
     order:(typeof d.order==="number"&&isFinite(d.order))?d.order:null,status:str(d.status),critical:d.criticalPath===true,
     progress:(p&&typeof p==="object"&&okN(p.done)&&okN(p.total)&&p.done<=p.total)?{done:p.done,total:p.total}:null,
     memberCount:arr(d.members).filter(okId).length,unshipped:arr(d.unshipped).map(normUnshipped).filter(Boolean)};
@@ -238,6 +265,8 @@ function renderPlan(inp){
   const rels=[];let relErr=false;
   safe(()=>{arr(I.releases).forEach(d=>{let r;try{r=normRel(d);}catch(_){relErr=true;return;}if(r)rels.push(r);else skipped++;});},0);
   rels.sort((a,b)=>{const x=a.order==null?1e15:a.order,y=b.order==null?1e15:b.order;return x-y||String(a.id).localeCompare(String(b.id));});
+  const inits=[];safe(()=>{arr(I.initiatives).forEach(d=>{const i=normInit(d);if(i)inits.push(i);else skipped++;});},0);
+  const initTitle=id=>{const i=inits.find(x=>x.id===id);return i&&i.title?i.title:id;};
   const answered=new Map();safe(()=>{arr(I.answers).forEach(a=>{if(a&&typeof a==="object"&&okId(a.id))answered.set(a.id,a);});},0);
   const decs=[];safe(()=>{arr(I.decisions).forEach(d=>{if(d&&typeof d==="object"&&okId(d.id))decs.push(d);else skipped++;});},0);
   decs.sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
@@ -251,8 +280,15 @@ function renderPlan(inp){
     if(!proj.key)n.push(need("project-key","No project key: epic chips show \"no key\" instead of a key such as PM-256","set-project --key <2 or 3 capital letters>",ASK_USER));
     return n.length?`<div class="needs" aria-label="Still to fill in">${H(n.join(""))}</div>`:"";});
   parts.mission=step("The mission",()=>{const m=(I.mission&&typeof I.mission==="object")?I.mission:null;
-    if(!m||!str(m.statement))return `<section class="mission"><span class="lbl">Mission</span>${H(need("mission","No mission recorded: what the project is for right now, in one line","mission --statement \"<one line>\" --reason \"<why this is the mission now>\"",ASK_USER))}</section>`;
-    return `<section class="mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p></section>`;});
+    const goals=notDoing(m?normGoals(m.nonGoals):[]);
+    if(!m||!str(m.statement))return `<section class="mission"><span class="lbl">Mission</span>${H(need("mission","No mission recorded: what the project is for right now, in one line","mission --statement \"<one line>\" --reason \"<why this is the mission now>\"",ASK_USER))}${H(goals)}</section>`;
+    return `<section class="mission"><span class="lbl">Mission</span><p class="st">${esc(str(m.statement))}</p>${H(goals)}</section>`;});
+  parts.initiatives=step("The initiatives",()=>{
+    if(!inits.length)return need("initiatives","No initiatives recorded: the multi-release efforts this project is made of","initiative <id> --title \"<line>\" --capability \"<line>\"",AGENT_DRAFTS+" It derives candidates from the backlog, docs and issues, asks \"Does this make sense?\" and records only what you confirm.");
+    return `<div class="inits">${H(inits.map(i=>{
+      const ms=i.milestones.map(m=>`<li data-milestone="${esc(m.id)}" data-reached="${H(m.reached?"true":"false")}"><span class="mk ${H(m.reached?"mk--done":"")}">${H(m.reached?"reached":"not yet")}</span> ${esc(m.text)}${H(m.reached&&m.evidence?` <span class="s">${esc(m.evidence)}</span>`:"")}</li>`).join("");
+      const src=i.source==="UNGROUNDED"?'<span class="tag tag--crit">UNGROUNDED</span> <span class="s">the agent could not ground this in the backlog, docs or issues</span>':(i.source?`<span class="s">Source: ${esc(i.source)}</span>`:'<span class="s">No source recorded</span>');
+      return `<details class="g init" data-initiative="${esc(i.id)}" open><summary><span class="gid">${esc(i.id)}</span><span class="gth"><b>${esc(i.title||i.id)}</b></span><span class="pill rs-${H(i.status==="ended"?"shipped":"in-progress")}">${H(i.status==="ended"?`ended (${esc(i.outcome||"no outcome")})`:"open")}</span></summary><div class="gb"><p class="cap">${esc(i.capability)}</p><p>${H(src)}</p>${H(ms?`<h3>Initiative milestones</h3><ul class="ims">${H(ms)}</ul>`:"")}${H(notDoing(i.nonGoals))}</div></details>`;}).join(""))}</div>`;});
   parts.planbar=step("The plan bar",()=>{
     const shipped=rels.filter(r=>r.status==="shipped").length,active=rels.some(r=>r.status==="in-progress");
     const open=eps.filter(e=>e.status!=="archived").length;
@@ -276,9 +312,16 @@ function renderPlan(inp){
       const pct=pr.total>0?Math.max(0,Math.min(100,Math.round(100*pr.done/pr.total))):0;
       const cur=r.id===here,isOpen=Object.prototype.hasOwnProperty.call(openMap,r.id)?openMap[r.id]===true:cur;
       const miss=[];if(r.status!=="shipped"){if(!theme)miss.push("--theme \"<one line>\"");if(!r.exit)miss.push("--exit \"<the runnable exit check>\"");if(!r.rationale)miss.push("--rationale \"<why this release, why now>\"");if(!r.target)miss.push("--target \"<date>\" (remove one with --clear target)");}
-      const kv=[["Intent",r.intent],["Exit",r.exit],["Rationale",r.rationale],["Size",r.size],["Target",r.target]].filter(x=>x[1]).map(x=>`<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join("");
+      const kv=[["Goal",theme],["Intent",r.intent],["Exit",r.exit],["Rationale",r.rationale],["Size",r.size],["Target",r.target]].filter(x=>x[1]).map(x=>`<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join("");
+      const purpose=r.maintenance?`<div class="purpose" data-purpose="${esc(r.id)}"><span class="lbl">Purpose</span> <b>Maintenance</b> <span class="s">serves no initiative</span></div>`
+        :(r.initiative?`<div class="purpose" data-purpose="${esc(r.id)}"><span class="lbl">Initiative</span> <b>${esc(initTitle(r.initiative))}</b></div>`
+        :(r.status!=="shipped"?need("purpose-"+r.id,"Release "+esc(r.id)+" has no primary initiative and is not marked maintenance","release "+esc(r.id)+" --initiative <id>  (or: release "+esc(r.id)+" --maintenance)",AGENT_DRAFTS):""));
+      const sp=r.split&&(r.split.iw+r.split.h+r.split.u)>0?r.split:null;
+      const splitHtml=sp?`<div class="split" data-split="${esc(r.id)}"><span class="lbl">Split</span> ${num(sp.iw)} initiative work · ${num(sp.h)} health · ${num(sp.u)} unaligned <span class="s">(by epic count)</span>; health ${esc(sp.share===null?"n/a":Math.round(sp.share*100)+"%")} (target ${num(Math.round(sp.target*100))}%)${H(sp.drift?' <span class="tag tag--crit">DRIFT</span>':"")}${H(r.splitReason?` <span class="s">Reason: ${esc(r.splitReason)}</span>`:"")}</div>`:"";
+      const warn=r.primaryServed===false?`<div class="notice" data-warn="unserved-${esc(r.id)}">No member serves this release's primary initiative${H(r.initiative?` (${esc(initTitle(r.initiative))})`:"")}.</div>`:"";
+      const scope=r.added!==null?`<div class="scope" data-scope="${esc(r.id)}">${num(r.added)} epic${H(r.added===1?"":"s")} added since the first member started</div>`:"";
       return `${H(cur?`<div class="hereline"><span>We are here · ${esc(r.id)}</span></div>`:"")}<details class="g${H(cur?" cur":"")}" data-release="${esc(r.id)}"${H(isOpen?" open":"")}><summary><span class="gid">${esc(r.id)}</span><span class="gth">${H(theme?`<b>${esc(theme)}</b>`:"<i>No theme yet</i>")}${H(r.critical?' <span class="tag tag--crit">critical path</span>':"")}</span><span class="prog"><span class="bar"><i style="width:${num(pct)}%"></i></span>${num(pr.done)}/${num(pr.total)}</span><span class="pill rs-${esc(oneOf(r.status,RSTATUS))}">${esc(RELSTAT_LABEL[oneOf(r.status,RSTATUS)]||r.status)}</span></summary>
-<div class="gb">${H(kv?`<dl class="kv">${H(kv)}</dl>`:"")}${H(miss.length?need("release-"+r.id,"Release "+r.id+" has no "+miss.map(m=>m.split(" ")[0].slice(2)).join(", "),"release "+r.id+" "+miss.join(" "),"Ask the user. The agent may propose wording first."):"")}
+<div class="gb">${H(purpose)}${H(kv?`<dl class="kv">${H(kv)}</dl>`:"")}${H(splitHtml)}${H(warn)}${H(scope)}${H(notDoing(r.nonGoals))}${H(miss.length?need("release-"+r.id,"Release "+r.id+" has no "+miss.map(m=>m.split(" ")[0].slice(2)).join(", "),"release "+r.id+" "+miss.join(" "),"Ask the user. The agent may propose wording first."):"")}
 <h3>Epics in ${esc(r.id)} (${num(ms.length)})</h3>${H(ms.length?`<div class="chips">${H(ms.map(chip).join(""))}</div>`:(pr.total>0?`<p class="empty">${num(pr.total)} member epic${H(pr.total===1?"":"s")}, all ended before the export's recent window, so none is listed here.</p>`:'<p class="empty">No epics in this release yet.</p>'))}</div></details>`;};
     const loose=eps.filter(e=>!known.has(e.release)&&e.status!=="archived").sort(byPos);
     if(!rels.length&&!loose.length)return '<p class="empty">No releases recorded yet. The agent creates one with release &lt;id&gt; --intent "&lt;what it is for&gt;".</p>';
@@ -309,6 +352,7 @@ function renderPlan(inp){
     return `<div class="shipped"><div class="sh-head" aria-hidden="true"><span>Release</span><span>Theme</span><span>Result</span></div>${H(done.map(one).join(""))}</div>`;});
   parts.skipped=skippedNote(skipped);
   const html=[parts.skipped,'<div class="top"><div>'+parts.info+'</div></div>',parts.needs,'<header class="hd">'+parts.mission+parts.planbar+parts.planline+'</header>',parts.counts,
+    '<section class="box"><h2>Initiatives</h2><p class="sub">The multi-release efforts the mission is made of. A milestone here is an initiative milestone: it lives inside its initiative and outside any single release.</p>'+parts.initiatives+'</section>',
     '<section class="box"><h2>Roadmap</h2><p class="sub">Open a release to see its scope, exit check and epics. The current release starts open.</p><div class="rm">'+parts.roadmap+'</div></section>',
     '<section class="box"><h2>Exit criteria</h2>'+parts.criteria+'</section>','<section class="box"><h2>Decisions for the owner</h2>'+parts.decisions+'</section>',
     '<section class="box"><h2>Shipped</h2><p class="sub">Releases already delivered, newest first. Open one to see what shipped and, for anything that did not, the reason on record.</p>'+parts.shipped+'</section>'].join("");
@@ -318,7 +362,8 @@ function fromSnapshot(s){
   const o=(s&&typeof s==="object")?s:{},pl=(o.plan&&typeof o.plan==="object")?o.plan:{},ms=(o.milestone&&typeof o.milestone==="object")?o.milestone:null,mi=(o.mission&&typeof o.mission==="object")?o.mission:null;
   return {epics:arr(o.epics),releases:arr(o.releases),project:(o.project&&typeof o.project==="object")?o.project:null,
     plan:{here:pl.here,hereText:pl.hereText,nextText:pl.nextText,head:str(o.head),asOf:str(o.asOf)},
-    mission:mi?{statement:mi.statement,setAt:mi.setAt,reason:mi.reason,milestoneRelease:ms?ms.release:null}:null,
+    initiatives:arr(o.initiatives),
+    mission:mi?{statement:mi.statement,setAt:mi.setAt,reason:mi.reason,milestoneRelease:ms?ms.release:null,nonGoals:arr(o.missionNonGoals)}:null,
     criteria:ms?arr(ms.criteria):[],decisions:[],answers:[],info:{lastUpdated:str(o.asOf)},admin:false,canWrite:false};
 }
 /* pm:render-end */
@@ -326,7 +371,7 @@ const app=document.getElementById("app");
 app.innerHTML='<div class="wrap"><div class="top"><div><h1 id="ttl">Release Plan</h1><p class="lede">Where the project stands against its mission, release by release. The agent refreshes this board from the engine export.</p></div><div class="live" id="live" data-s="busy" role="status"><i></i><span>Connecting…</span></div></div><div id="body"></div></div>';
 const liveEl=document.getElementById("live"),bodyEl=document.getElementById("body"),ttlEl=document.getElementById("ttl");
 const setLive=(s,t)=>{liveEl.dataset.s=s;liveEl.querySelector("span").textContent=t;};
-const C=["epics","releases","plan","mission","criteria","decisions","answers","page"];
+const C=["epics","releases","plan","mission","criteria","decisions","answers","page","initiatives"];
 const S={ready:false,standalone:false,snap:null};
 C.forEach(k=>{S[k]=[];});
 const OPEN={};
@@ -340,7 +385,7 @@ function paint(){
   pending=false;
   const notes={};bodyEl.querySelectorAll("textarea[id^='ans-']").forEach(t=>{notes[t.id]=t.value;});
   const info=docOf(S.page,"info")||{};
-  const input=S.standalone?fromSnapshot(S.snap):{epics:S.epics,releases:S.releases,plan:docOf(S.plan,"state")||{},mission:docOf(S.mission,"current"),criteria:S.criteria,decisions:S.decisions,answers:S.answers,info:info,project:info.project,canWrite:canWrite};
+  const input=S.standalone?fromSnapshot(S.snap):{epics:S.epics,releases:S.releases,plan:docOf(S.plan,"state")||{},mission:docOf(S.mission,"current"),initiatives:S.initiatives,criteria:S.criteria,decisions:S.decisions,answers:S.answers,info:info,project:info.project,canWrite:canWrite};
   input.open=OPEN;
   const out=renderPlan(input);
   bodyEl.innerHTML=out.html;ttlEl.textContent=out.title;document.title=out.title;

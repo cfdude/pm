@@ -15,6 +15,8 @@ export function missionOf(state) {
     milestoneRelease: typeof m.milestoneRelease === "string" ? m.milestoneRelease : null,
     criteria: Array.isArray(m.criteria) ? m.criteria : [],
     nextCriterion: Number.isInteger(m.nextCriterion) && m.nextCriterion >= 1 ? m.nextCriterion : 1,
+    nonGoals: Array.isArray(m.nonGoals) ? m.nonGoals : [],
+    nextNonGoal: Number.isInteger(m.nextNonGoal) && m.nextNonGoal >= 1 ? m.nextNonGoal : 1,
   };
 }
 

@@ -50,6 +50,13 @@
       "platforms": { "claude-code": "slash command (/pm:mission) recording the mission, its mission milestone and exit criteria" }
     },
     {
+      "id": "initiative-record",
+      "artifacts": [
+        "commands/initiative.md"
+      ],
+      "platforms": { "claude-code": "slash command (/pm:initiative) recording an initiative, its initiative milestones and non-goals" }
+    },
+    {
       "id": "project-identity",
       "artifacts": [
         "commands/set-project.md"

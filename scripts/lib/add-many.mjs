@@ -12,6 +12,8 @@ import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./stat
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { SUMMARY_FIELDS, lineFieldError, warnSummary } from "./epic-summary.mjs";
+import { addNonGoals, nonGoalsError } from "./non-goals.mjs";
+import { PLANNING_BATCH_KEYS, applyPlanning, planningError, planningFromBatch } from "./epic-planning.mjs";
 import { EPIC_ID_FORMAT, STORABLE_EPIC_ID, engineRoot, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls, priorityValueError, timestampValueError } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
@@ -148,8 +150,26 @@ export function addMany() {
       const err = e[field.key] === undefined ? null : lineFieldError(field, e[field.key], `epic '${escapeControls(id)}': ${escapeControls(field.key)}`);
       if (err) refuse(err);
     }
+    // release-planning-taxonomy: the planning keys. Every string key must be a non-empty string, `secondaryInitiatives` an array of ids; the
+    // initiative must be recorded, and a bad one refuses the whole batch (this runs before any epic is constructed).
+    for (const k of ["initiative", "kind", "offMissionReason", "offInitiativeReason"]) {
+      if (e[k] !== undefined && (typeof e[k] !== "string" || !e[k].trim())) refuse(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
+    }
+    if (e.secondaryInitiatives !== undefined && (!Array.isArray(e.secondaryInitiatives) || e.secondaryInitiatives.some(v => typeof v !== "string"))) {
+      refuse(`epic '${escapeControls(id)}': secondaryInitiatives must be an array of initiative id strings (got ${escapeControls(JSON.stringify(e.secondaryInitiatives))})`);
+    }
+    {
+      const err = planningError(state, planningFromBatch(e), null, `epic '${escapeControls(id)}': `);
+      if (err) refuse(err);
+    }
+    // release-planning-taxonomy: `nonGoals` is an array of one-line strings, checked here so a bad one creates nothing.
+    if (e.nonGoals !== undefined) {
+      if (!Array.isArray(e.nonGoals)) refuse(`epic '${escapeControls(id)}': nonGoals must be an array of strings (got ${escapeControls(JSON.stringify(e.nonGoals))})`);
+      const err = nonGoalsError(e.nonGoals, `epic '${escapeControls(id)}': nonGoals entry`);
+      if (err) refuse(err);
+    }
     for (const k of Object.keys(e)) {
-      if (!allowedKeys.includes(k) || k === "links" || k === "stories" || k === "model") continue;
+      if (!allowedKeys.includes(k) || k === "links" || k === "stories" || k === "model" || k === "nonGoals" || PLANNING_BATCH_KEYS.includes(k)) continue;
       if (typeof e[k] !== "string" || !e[k].trim()) {
         refuse(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
       }
@@ -240,8 +260,11 @@ export function addMany() {
         continue;
       }
       if (key === "model") { epic.model = v; continue; }   // normalised in the validation pass
+      if (key === "nonGoals") { addNonGoals(epic, v, new Date().toISOString()); continue; }
+      if (PLANNING_BATCH_KEYS.includes(key)) continue;   // written below through applyPlanning(), which stamps initiativeJoinedAt
       if (typeof v === "string") epic[key] = v;
     }
+    applyPlanning(epic, planningFromBatch(e), new Date().toISOString());
     // The second archived-at-creation path, carrying its OWN token so a rule applied to one
     // command is visibly absent from the other. Read the RESOLVED status — `status` is an
     // add-many key, so the copy loop above may or may not have set it — exactly as the
@@ -263,7 +286,7 @@ export function addMany() {
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
   movedActiveNotice(state, previousActive);
-  for (const e of registeredForWarning) warnSummary(e, null);
+  for (const e of registeredForWarning) warnSummary(e, null, state);
   render();
   reportSave(saved, {
     changed: `conductor: add-many added ${incoming.length} epic(s)`,

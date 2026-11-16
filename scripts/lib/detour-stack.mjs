@@ -176,8 +176,8 @@ export function pushDetour() {
   if (gate1Notice) errStream().write(gate1Notice);
 
   const saved = saveState(state, { verb: "push-detour" });
-  warnSummary(paused, pausedBefore);
-  warnSummary(detour, detourBefore);
+  warnSummary(paused, pausedBefore, state);
+  warnSummary(detour, detourBefore, state);
   render();
 
   // "NO reconcile on resume" only where NOTHING is owed: a --no-reconcile push on an epic that still

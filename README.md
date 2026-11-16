@@ -982,6 +982,7 @@ and removes the `## Boards` rules section and the brief's boards line; `set-boar
 |------|--------------|
 | `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit. Plain `board` prints three lines |
 | `mission --statement "<line>" --reason "<why>"` | records the mission; `--end`, `--milestone <releaseId>` / `--clear-milestone`, `--add-criterion` / `--remove-criterion` and `mission show [--history]` complete it. Releases at or before the milestone, by `--order`, are marked critical path. See `commands/mission.md` |
+| `initiative <id> --title "<line>" --capability "<line>"` | records an initiative, a multi-release effort delivering a capability: `--source` (or `UNGROUNDED`), `--off-mission-reason`, initiative milestones (`--add-milestone`, `--reach-milestone "mN:<evidence>"`), `--end --outcome delivered\|abandoned\|superseded --reason`, `--reopen`, and `initiative show [<id>] [--history]`. Never deleted. See `commands/initiative.md` |
 | `set-project --name "<name>" --key <KEY>` | the project name (at most 60 characters) and a two- or three-letter key; `--unset name\|key` removes one. Every epic carries an integer `number` assigned at registration, and the key shown is `<KEY>-<number>`. See `commands/set-project.md` |
 | `set-boards on\|off` | the switch above |
 | `release <id> --theme --rationale --exit --order --size` | a release's plan fields (each text field one line of at most 400 characters); `--clear <field>` removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`release --clear target` is the inverse of `--target`) |
@@ -1857,6 +1858,8 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
 | `rules:release-candidate` | core | ~294 tokens, emitted only while a release has no delivered marker | no switch: below the threshold; absent (not switched) while no release is open |
 | `rules:mission` | core | at most ~70 tokens (280 bytes), emitted only while a mission is recorded | no switch: it is recorded data, not a feature, and it is the line that bounds autonomous work |
+| `rules:initiatives` | core | at most ~70 tokens (280 bytes cap; 254 measured, 255 with its separator), emitted only while an initiative is open | no switch: it is recorded data, not a feature, and it carries the challenge-once rule |
+| `rules:mission-non-goals` | core | at most ~50 tokens (200 bytes cap, cut with an ellipsis), emitted only while the mission has an active non-goal | no switch: it is recorded data, and it is the one line that says what the mission will not do |
 | `rules:boards` | boards | at most ~70 tokens (280 bytes; ~60 measured) | `set-boards off`, on by default |
 | `brief:boards` | boards | at most ~40 tokens (one line of at most 160 bytes; ~34 measured), counted out of `brief` | `set-boards off`, on by default |
 | `rules:feedback` | core | ~194 tokens | no switch: below the threshold |

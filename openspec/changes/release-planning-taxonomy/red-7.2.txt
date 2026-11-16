@@ -1,0 +1,16 @@
+RED for task 7.2 (fails before 7.3)
+command: node --test scripts/test/assert/release-plan-taxonomy-template.test.mjs
+✖ 7.2 the Initiatives section: title, capability, status, source, milestones with reached marks, every value escaped
+✖ 7.2 UNGROUNDED is marked, and a recorded source is not
+✖ 7.2 no initiatives: a guided empty state naming the verb and that the agent derives candidates, never a bare 'not set'
+✖ 7.2 a release card shows its primary initiative's title, 'Maintenance', or a guided empty state naming both verbs
+✖ 7.2 the release's theme is labelled Goal on the card
+✖ 7.2 the split with the unaligned count, the drift mark and the recorded reason
+✖ 7.2 the unserved-primary warning and the scope-added line
+✖ 7.2 'Not doing' lists for the mission, an initiative and a release, and no empty heading
+✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays inert
+✖ 7.2 a malformed id, a non-array and a wrong type in the new fields draw nothing and never throw
+✖ 7.2 the standalone snapshot path carries the initiatives and the mission non-goals
+ℹ tests 11
+ℹ pass 0
+ℹ fail 11

@@ -10,6 +10,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { activate, movedActiveNotice, owedReconcileNotice } from "./active-pointer.mjs";
 import { SUMMARY_FIELDS, lineFieldError, warnSummary } from "./epic-summary.mjs";
+import { addNonGoals, flagValues, nonGoalsError } from "./non-goals.mjs";
+import { applyPlanning, planningError, planningFromFlags } from "./epic-planning.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -496,6 +498,20 @@ export function addEpic() {
     if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
     epic[field.key] = str(f[field.flag]);
   }
+  // release-planning-taxonomy: non-goals, every value checked before the epic is written.
+  const nonGoals = flagValues(f["add-non-goal"]);
+  {
+    const err = nonGoalsError(nonGoals);
+    if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
+    if (nonGoals.length) addNonGoals(epic, nonGoals, new Date().toISOString());
+  }
+  // release-planning-taxonomy: the planning fields, through the one module every epic-writing surface shares.
+  {
+    const planning = planningFromFlags(f);
+    const err = planningError(state, planning, null);
+    if (err) die(`conductor: ${escapeControls(err)}. Nothing was written.\n`);
+    applyPlanning(epic, planning, new Date().toISOString());
+  }
   if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
   if (profileFlags.review !== undefined) epic.reviewMode = profileFlags.review;
@@ -519,7 +535,7 @@ export function addEpic() {
   const saved = saveState(state);
   owedReconcileNotice(state, previousActive);
   movedActiveNotice(state, previousActive);
-  warnSummary(epic, null);
+  warnSummary(epic, null, state);
   render();
   reportSave(saved, {
     changed: `conductor: added epic '${escapeControls(id)}' (${lane}, ${status})`,

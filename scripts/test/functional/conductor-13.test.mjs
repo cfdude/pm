@@ -220,10 +220,14 @@ test("every add-many key the registry declares round-trips through a batch entry
   const { EPIC_FLAGS } = await import(CONSTANTS);
   const cwd = tmpRepo();
   run(["init"], { cwd });
+  run(["initiative", "boards", "--title", "Boards", "--capability", "c"], { cwd });
+  run(["initiative", "reporting", "--title", "Reporting", "--capability", "c"], { cwd });
   const batch = writeBatch(cwd, {
     parent: { id: "p", lane: "claude-code" },
     epics: [{
       id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
+      nonGoals: ["No CSV export"], initiative: "boards", secondaryInitiatives: ["reporting"], kind: "initiative-work",
+      offMissionReason: "tooling", offInitiativeReason: "security fix",
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
       planPath: "docs/superpowers/plans/x.md", specPath: "docs/superpowers/specs/x-design.md",
       links: [], description: "why this epic exists", summary: "what it is", whyNow: "why it matters now",
@@ -407,6 +411,32 @@ const EXERCISE = {
       assert.equal(e.withdrawnGateReviews.at(-1).reason, "recorded on the wrong epic");
     },
   },
+  // release-planning-taxonomy: the planning fields and non-goals. `pre` records the initiatives the flags name.
+  "--add-non-goal": { args: ["--add-non-goal", "No CSV export"], check: (e) => assert.equal(e.nonGoals.at(-1).text, "No CSV export") },
+  "--remove-non-goal": {
+    setup: ["--add-non-goal", "No CSV export"],
+    args: ["--remove-non-goal", "n1:now in scope"],
+    check: (e) => assert.equal(e.nonGoals[0].removeReason, "now in scope"),
+  },
+  "--initiative": {
+    pre: [["initiative", "boards", "--title", "Boards", "--capability", "c"]],
+    args: ["--initiative", "boards"],
+    check: (e) => assert.deepEqual([e.initiative, typeof e.initiativeJoinedAt], ["boards", "string"]),
+  },
+  "--secondary-initiative": {
+    pre: [["initiative", "reporting", "--title", "Reporting", "--capability", "c"]],
+    args: ["--secondary-initiative", "reporting"],
+    check: (e) => assert.deepEqual(e.secondaryInitiatives, ["reporting"]),
+  },
+  "--remove-secondary-initiative": {
+    pre: [["initiative", "reporting", "--title", "Reporting", "--capability", "c"]],
+    setup: ["--secondary-initiative", "reporting"],
+    args: ["--remove-secondary-initiative", "reporting"],
+    check: (e) => assert.equal(e.secondaryInitiatives, undefined),
+  },
+  "--kind": { args: ["--kind", "health"], check: (e) => assert.equal(e.kind, "health") },
+  "--off-mission-reason": { args: ["--off-mission-reason", "tooling"], check: (e) => assert.equal(e.offMissionReason, "tooling") },
+  "--off-initiative-reason": { args: ["--off-initiative-reason", "security fix"], check: (e) => assert.equal(e.offInitiativeReason, "security fix") },
   "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
   // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
   // by the same invocation and each asserts the half it is responsible for.
