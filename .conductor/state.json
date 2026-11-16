@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "release-planning-taxonomy",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -17045,7 +17045,7 @@
       "id": "release-planning-taxonomy",
       "title": "Release planning taxonomy: mission, initiative, milestone, release goal, non-goals",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -17070,10 +17070,13 @@
           "text": "lane: openspec not <none routed> — new capability across state, verbs, rules block and boards. Phasing: 0.56.0 minimum = initiative record, milestone tied to an initiative, release goal and primary initiative, off-mission/off-initiative challenge once with a recorded reason, non-goals on mission/initiative/release/epic (not milestone), epic kind (initiative-work or health) with an 80/20 report; human override is a recorded reason. Next: Now/Next/Later roadmap, derived progress attribution (never asserted), definition of done at three levels. Later: dependency-graph validation as a view of depends-on links (no second file), risk register (holds off-mission false positives), deprecation record, decision-log expansion, appetite, successSignal plus reviewDue (orchestrating agent answers first, human only if it lacks authority). Health = bugs, security, dependency/stack upgrades, deprecation, test/tooling debt; not new internal capability. Principle: the agent attests facts, the human decides preferences. Agent derives and never invents; ungrounded is marked. Engine stays an instruction layer."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c18102c43c1ff6d93fb7cdc3a32119b648fefa23",
+        "21634c977711adff95a509d6c09e56a890f39699"
+      ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-12T23:21:09.654Z",
+      "touchedAt": "2026-11-16T18:09:09.382Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
@@ -17125,7 +17128,8 @@
           "lastVerdictAt": "2026-11-12T23:21:01.987Z",
           "lastPassAt": "2026-11-12T23:21:01.987Z"
         }
-      }
+      },
+      "startedAt": "2026-11-16T15:36:44.340Z"
     },
     {
       "id": "stop-and-escalate-floor",
@@ -17228,7 +17232,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2468,
+  "revision": 2471,
   "reviewMode": "standard",
   "releases": [
     {

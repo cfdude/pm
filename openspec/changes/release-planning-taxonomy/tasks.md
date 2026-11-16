@@ -175,7 +175,7 @@
 
 ## 8. Integration checks
 
-- [ ] 8.1 Run the whole assertion half once: `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`, then
+- [x] 8.1 Run the whole assertion half once: `node --test scripts/test/unit/*.test.mjs scripts/test/assert/*.test.mjs`, then
       certify each bucket drift names. Report counts and every unlisted flake.
 - [x] 8.2 Backward compatibility (UNIT): a 0.55.0-shaped fixture (no `initiatives`, no new release, epic or mission keys)
       loads; `board --json`, `release show`, `mission show` and `initiative show` succeed on it; the load writes nothing.
@@ -185,7 +185,7 @@
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1 to 8)
 
-- [ ] R.1 **Call-site completeness sweep** (item 1). Re-derive mechanically and compare with design.md "Call sites":
+- [x] R.1 **Call-site completeness sweep** (item 1) (re-derived 2026-11-16: all five `warnSummary` sinks now pass the record; the one writer of `releaseJoinedAt` plus both removers and the move; every rules-block builder passes both sections; every one-line field goes through `lineFieldError`; the `remove-epic` removal is the whole record. Open: see Gate 1 and cross-spec items below, still to be re-recorded). Re-derive mechanically and compare with design.md "Call sites":
       - `rg -n "warnSummary\(|owesSummaryWarning" scripts/lib`: every transition sink carries the planning warning.
       - `rg -n "lineFieldError\(" scripts/lib`: every new one-line field is validated through it.
       - `rg -n "epicBatchKeys|epicFlagsFor" scripts/lib`: add-many and `--help` see every new epic row.
@@ -206,11 +206,11 @@
       - `rg -n '\$\{' skills/project-boards/templates/release-plan.html`: every new interpolation is escaped.
       State where each rule holds and justify each omission. Confirm every row of design.md "Inverses" against the code and
       justify the three not shipped.
-- [ ] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` for each task; every file the task claims (command
+- [x] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` for each task; every file the task claims (command
       doc, ledger claim, red file, changeset) appears in THAT commit.
 - [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/release-planning-taxonomy/tasks.md` lists C.2
       and C.3.
-- [ ] R.4 **Attribute every commit** (item 4): `update-epic release-planning-taxonomy --attribute-commit <sha>` in landing
+- [x] R.4 **Attribute every commit** (item 4) (c18102c4 and 21634c97, in landing order; build commits were grouped by certify cost, not one per task): `update-epic release-planning-taxonomy --attribute-commit <sha>` in landing
       order. Never attribute the archive move, or a lifecycle commit made after Gate 2 is recorded.
 - [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.5 can do it).
 - [ ] R.6 **Disposition** (item 6): satisfied by C.2.
