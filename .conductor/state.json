@@ -17092,12 +17092,12 @@
       ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-16T20:07:45.498Z",
+      "touchedAt": "2026-11-16T23:47:19.510Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-16T20:07:43.185Z",
+          "reviewedAt": "2026-11-16T23:47:19.502Z",
           "artifacts": [
             "openspec/changes/release-planning-taxonomy/proposal.md",
             "openspec/changes/release-planning-taxonomy/design.md",
@@ -17138,10 +17138,10 @@
               "sha256": "3518fc0b2354b264bc1f3218bd451d0706d6bcabc6dae17b4a112f0f978870a6"
             }
           ],
-          "reviewer": "opus fresh-context, 3 rounds 2026-11-16 (r1: 4 BLOCKS, r2: 2 BLOCKS, r3: 1 BLOCK, the dropped 'control characters escaped' clause, restored in 2d164548 and verified by orchestrator against main spec line 204; lengths 475/474)",
+          "reviewer": "opus fresh-context, 3 rounds 2026-11-16 (r1: 4 BLOCKS, r2: 2 BLOCKS, r3: 1 BLOCK, the dropped 'control characters escaped' clause, restored in 2d164548 and verified by orchestrator against main spec line 204; lengths 475/474). RE-RECORDED 2026-11-16T23:47Z over unchanged artifacts: the original verdict was recorded 2 s before Gate 2 in one batch, which integrity flagged as gate-recorded-as-bookkeeping; the reviews themselves ran hours apart.",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-11-12T23:21:01.987Z",
+            "reviewedAt": "2026-11-16T20:07:43.185Z",
             "artifacts": [
               "openspec/changes/release-planning-taxonomy/proposal.md",
               "openspec/changes/release-planning-taxonomy/design.md",
@@ -17149,20 +17149,21 @@
               "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
               "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
               "openspec/changes/release-planning-taxonomy/specs/release-planning/spec.md",
-              "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md"
+              "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
+              "openspec/changes/release-planning-taxonomy/specs/board-export/spec.md"
             ],
             "artifactDigests": [
               {
                 "path": "openspec/changes/release-planning-taxonomy/proposal.md",
-                "sha256": "e1e50e2f641346a80b86dae16df4ca7463a6273a829122387b9f7e7a5c6be003"
+                "sha256": "719b4bb6dce25ac8f76e4cfe62f06f0d73e0de5dc8c0a60bce816e48cf2ce85f"
               },
               {
                 "path": "openspec/changes/release-planning-taxonomy/design.md",
-                "sha256": "157b4ed9ae17eef907863bf23c1a23dc3308e9ead3127cc1df073008e3359d09"
+                "sha256": "22b293266af3765c18bd2547ef13bf6f8365e78fa52fe1f35f9b76c2a5569631"
               },
               {
                 "path": "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
-                "sha256": "39b4e5fa5cc82684a8e3e94c8a9c686ce33af7d24940bcac782ebbc34147e6c4"
+                "sha256": "aed611e261119dcda195b4580f8b1b0d4b3934175ed363adfec9d3fb912aaeb2"
               },
               {
                 "path": "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
@@ -17175,9 +17176,13 @@
               {
                 "path": "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
                 "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/specs/board-export/spec.md",
+                "sha256": "3518fc0b2354b264bc1f3218bd451d0706d6bcabc6dae17b4a112f0f978870a6"
               }
             ],
-            "reviewer": "opus fresh-context 2026-11-12, two rounds: round 1 (1 Critical, 5 Important) and round 2 (2 Important, no Critical), all fixed and re-validated; Minors fixed or logged in design D32"
+            "reviewer": "opus fresh-context, 3 rounds 2026-11-16 (r1: 4 BLOCKS, r2: 2 BLOCKS, r3: 1 BLOCK, the dropped 'control characters escaped' clause, restored in 2d164548 and verified by orchestrator against main spec line 204; lengths 475/474)"
           }
         },
         "gate2": {
@@ -17191,10 +17196,10 @@
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 2,
+          "passes": 3,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-16T20:07:43.185Z",
-          "lastPassAt": "2026-11-16T20:07:43.185Z"
+          "lastVerdictAt": "2026-11-16T23:47:19.502Z",
+          "lastPassAt": "2026-11-16T23:47:19.502Z"
         },
         "gate2": {
           "fails": 0,
@@ -17307,7 +17312,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2484,
+  "revision": 2485,
   "reviewMode": "standard",
   "releases": [
     {
