@@ -129,6 +129,12 @@ export function boardSnapshot(state, resolved, opts = {}) {
     seen.add(key);
     rejected.push(entry);
   };
+  /** A record's active non-goals; one whose id fails the board id format is omitted and rejected under the owner's kind. */
+  const nonGoalsOf = (rec, kind, owner, field) => activeNonGoals(rec).filter((g) => {
+    if (isId(g.id)) return true;
+    reject(kind, owner, field, g.id, "id format");
+    return false;
+  });
   /** An id reference: the id itself, or null and a rejection when it fails the format. */
   const idRef = (v, kind, owner, field) => {
     if (v === null || v === undefined) return null;
@@ -158,7 +164,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
     initiatives.push({
       id: i.id, title: str(i.title), capability: str(i.capability), status: ended ? "ended" : "open",
       outcome: ended ? str(endedOutcome) : null, endedAt: ended ? str(endedAt) : null,
-      source: str(i.source), offMissionReason: str(i.offMissionReason), nonGoals: activeNonGoals(i), milestones,
+      source: str(i.source), offMissionReason: str(i.offMissionReason), nonGoals: nonGoalsOf(i, "initiative", i.id, "nonGoals.id"), milestones,
     });
   }
   const initiativeIds = new Set(initiatives.map(i => i.id));
@@ -208,7 +214,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
       initiative, initiativeJoinedAt: str(e.initiativeJoinedAt), secondaryInitiatives,
       kind: EPIC_KINDS.includes(e.kind) ? e.kind : null, effectiveKind: effectiveKindOf(e, initiative !== null),
       releaseJoinedAt: str(e.releaseJoinedAt), offMissionReason: str(e.offMissionReason), offInitiativeReason: str(e.offInitiativeReason),
-      nonGoals: activeNonGoals(e),
+      nonGoals: nonGoalsOf(e, "epic", e.id, "nonGoals.id"),
     };
   };
   const entryOf = (e) => {
@@ -279,7 +285,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
   const m = state && state.mission && typeof state.mission === "object" ? state.mission : null;
   const cur = m && m.current && typeof m.current === "object" ? m.current : null;
   const mission = cur ? { statement: str(cur.statement), setAt: str(cur.setAt), reason: str(cur.reason) } : null;
-  const missionNonGoals = activeNonGoals(m);
+  const missionNonGoals = nonGoalsOf(m, "mission", null, "missionNonGoals.id");
 
   let milestone = null;
   let milestoneRelease = null;
@@ -349,7 +355,7 @@ export function boardSnapshot(state, resolved, opts = {}) {
       id: r.id, intent: str(r.intent), target: str(r.target), theme: str(r.theme), rationale: str(r.rationale),
       exit: str(r.exit), order, size: str(r.size), status, delivered,
       initiative: initiativeRef(r.initiative, "release", r.id, "initiative"), maintenance: r.maintenance === true,
-      splitReason: str(r.splitReason), nonGoals: activeNonGoals(r),
+      splitReason: str(r.splitReason), nonGoals: nonGoalsOf(r, "release", r.id, "nonGoals.id"),
       criticalPath: milestoneRelease === null ? null : criticalPathOf(r, state),
       progress: progressOf(members.map(id => entryById.get(id)).filter(Boolean), outcomeById),
       members, deferred, unshipped: unshippedOf(members, deferred, entryById, superseder, outcomeById),

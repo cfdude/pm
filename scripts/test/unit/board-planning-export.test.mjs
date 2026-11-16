@@ -128,6 +128,26 @@ unitTest("board export: a malformed initiative id is omitted and rejected with t
   assert.ok(s.rejected.every(r => Object.keys(r).sort().join() === "field,id,kind,reason,value"));
 });
 
+unitTest("board export: a malformed non-goal id is omitted and rejected under its owner's kind", () => {
+  const bad = { id: "n 1", text: "bad", addedAt: "t" };
+  const good = { id: "n2", text: "kept", addedAt: "t" };
+  const s = snap(record([epic("a", { nonGoals: [bad, good] })], {
+    initiatives: [initiative("ok", { nonGoals: [bad, good] })],
+    releases: [{ id: "r1", intent: "i", deferred: [], nonGoals: [bad, good] }],
+    mission: { current: { statement: "m", setAt: "t" }, nonGoals: [bad, good] },
+  }));
+  assert.deepEqual(s.initiatives[0].nonGoals, [{ id: "n2", text: "kept" }]);
+  assert.deepEqual(rel(s, "r1").nonGoals, [{ id: "n2", text: "kept" }]);
+  assert.deepEqual(byId(s, "a").nonGoals, [{ id: "n2", text: "kept" }]);
+  assert.deepEqual(s.missionNonGoals, [{ id: "n2", text: "kept" }]);
+  const got = s.rejected.map(r => [r.kind, r.id, r.field, r.reason]).sort((x, y) => String(x[0]).localeCompare(String(y[0])));
+  assert.deepEqual(got, [
+    ["epic", "a", "nonGoals.id", "id format"], ["initiative", "ok", "nonGoals.id", "id format"],
+    ["mission", null, "missionNonGoals.id", "id format"], ["release", "r1", "nonGoals.id", "id format"],
+  ]);
+  assert.ok(s.rejected.every(r => Object.keys(r).sort().join() === "field,id,kind,reason,value"));
+});
+
 unitTest("board export: a reference naming no initiative reads null and a secondary leaves its list", () => {
   const s = snap(record([epic("a", { initiative: "gone", secondaryInitiatives: ["gone", "ok"], release: "r1" })], {
     releases: [{ id: "r1", intent: "i", deferred: [], initiative: "gone" }], initiatives: [initiative("ok")],

@@ -98,3 +98,11 @@ second pass survivors/errors: 0 of 23
 
 Correction to the first pass: the "removal of an unknown id refused" survivor above is still an equivalent mutant for removeNonGoal()'s own check, and
 the four CALLER checks it names are now each mutated and killed individually (lines "caller check before removeNonGoal: mission|release|epic|initiative").
+
+Third pass (non-goal id validation in board.mjs nonGoalsOf, run 2026-11-16): each owner path replaced by the unchecked activeNonGoals() call, plus the check inverted.
+KILLED  [board-export] non-goal id check, initiative owner: 1 test(s) fail, e.g. ✖ board export: a malformed non-goal id is omitted and rejected under its owner's kind
+KILLED  [board-export] non-goal id check, epic owner: 1 test(s) fail, e.g. ✖ board export: a malformed non-goal id is omitted and rejected under its owner's kind
+KILLED  [board-export] non-goal id check, release owner: 1 test(s) fail, e.g. ✖ board export: a malformed non-goal id is omitted and rejected under its owner's kind
+KILLED  [board-export] non-goal id check, mission owner: 1 test(s) fail, e.g. ✖ board export: a malformed non-goal id is omitted and rejected under its owner's kind
+KILLED  [board-export] non-goal id check inverted (isId -> !isId): 3 test(s) fail, e.g. ✖ board export: a populated record reads every field back
+third pass survivors/errors: 0 of 5

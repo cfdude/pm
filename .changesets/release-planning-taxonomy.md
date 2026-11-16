@@ -4,7 +4,7 @@
   fixed 20% target, and drift below 10% or above 30%); each epic entry gains `initiative`, `initiativeJoinedAt`,
   `secondaryInitiatives`, `kind`, `effectiveKind`, `releaseJoinedAt`, both challenge reasons and `nonGoals`. Every key is additive, so
   `schemaVersion` stays 1, and a 0.55.0 state file reads them as `null` or `[]`. A hand-edited initiative id that fails the id format
-  is omitted and listed in `rejected` (kind `initiative`).
+  is omitted and listed in `rejected` (kind `initiative`); so is a hand-edited non-goal id on an initiative, release, epic or the mission (kind `mission`).
 * **New verb `initiative`, and a non-goal on four records.** `initiative <id> --title --capability` records a multi-release effort
   (`--source`, `--off-mission-reason`, initiative milestones with `--reach-milestone "mN:<evidence>"`, `--end --outcome
   delivered|abandoned|superseded --reason`, `--reopen`, `initiative show [<id>] [--history]`); it is never deleted. `integrity`

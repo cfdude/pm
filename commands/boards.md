@@ -61,7 +61,7 @@ Each entry in `epics` carries `id`, `number` (its integer, or `null` on a record
 - **Unregistered changes** (a change directory with no registered epic) are counted in `counts.unregisteredChanges` and not listed.
 - **`dependsOn`** lists the registered targets of the epic's `depends-on` links, in order, without duplicates. A target that names
   no epic is reported in `rejected`.
-- **`rejected` and its reasons.** `kind` is `epic`, `release`, `link`, `url`, `plan`, `milestone`, `initiative` or `project`. `reason` is `id format`,
+- **`rejected` and its reasons.** `kind` is `epic`, `release`, `link`, `url`, `plan`, `milestone`, `initiative`, `mission` or `project`. `reason` is `id format`,
   `dangling depends-on`, `url scheme`, `here names no release`, `milestone names no release` or `project format`. Every emitted id must match
   `/^[A-Za-z0-9._-]+$/` and `externalUrl` is emitted only when it is an absolute http or https URL, so a page can interpolate
   either without a second check of its own. `value` has its control characters escaped.
