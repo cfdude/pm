@@ -21,7 +21,7 @@ Every `rejected` entry SHALL be `{kind, id, field, value, reason}`. `kind` is on
 
 ### Requirement: Every emitted id passes the board id format
 
-Every id and id reference the snapshot emits SHALL match `/^[A-Za-z0-9._-]+$/`: epic, release, member, criterion, initiative, initiative milestone and non-goal ids (`nonGoals[].id`, `missionNonGoals[].id`), `dependsOn` targets, `epic.release`, `plan.here`, `milestone.release` and the initiative references. A failing record SHALL be omitted and a failing reference SHALL become `null` or leave its list; each SHALL appear in `rejected` with reason `id format`, and the verb SHALL exit 0.
+Every id and id reference the snapshot emits SHALL match `/^[A-Za-z0-9._-]+$/`: epic, release, member, criterion, initiative, initiative milestone and non-goal ids, `dependsOn` targets, `epic.release`, `plan.here`, `milestone.release` and the initiative references. A failing record SHALL be omitted and a failing reference SHALL become `null` or leave its list; each SHALL appear in `rejected` with reason `id format`, control characters escaped, and the verb SHALL exit 0.
 
 #### Scenario: A malformed epic id is excluded and named
 

@@ -29,7 +29,8 @@
       make 0.55.0 contradict its built code. Add `specs/board-export/spec.md` with two MODIFIED requirements: "rejected
       entries have one shape and a closed reason list" gains kind `initiative`, and "Every emitted id passes the board id
       format" gains initiative ids, initiative milestone ids and the three initiative references (`epic.initiative`,
-      `epic.secondaryInitiatives[]`, `release.initiative`). Amend the initiative-record export requirement so a bad
+      `epic.secondaryInitiatives[]`, `release.initiative`). The delta was later widened (second fix pass) to add kind
+      `mission` and non-goal ids (`nonGoals[].id`, `missionNonGoals[].id`) to the same two requirements. Amend the initiative-record export requirement so a bad
       initiative id becomes a `rejected` entry (reason `id format`) instead of a skip, and add its RED test to 1.1.
       Re-validate; a fifth spec file joins the set that 0.2 and 0.4 review.
 - [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the five spec files (four capabilities plus `board-export`, delivered by 0.1a) and this file. Fix every Critical
@@ -209,7 +210,7 @@
 - [x] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` for each task; every file the task claims (command
       doc, ledger claim, red file, changeset) appears in THAT commit.
 - [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/release-planning-taxonomy/tasks.md` lists R.6, C.2
-      and C.3.
+      and C.3 (no other task carries it).
 - [x] R.4 **Attribute every commit** (item 4) (c18102c4 and 21634c97, in landing order; build commits were grouped by certify cost, not one per task): `update-epic release-planning-taxonomy --attribute-commit <sha>` in landing
       order. Never attribute the archive move, or a lifecycle commit made after Gate 2 is recorded.
 - [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.4 can do it).
