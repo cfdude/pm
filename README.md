@@ -1918,13 +1918,21 @@ can never disagree. Three things about how it behaves:
   binary an argv other than `--version`.
 - **It holds rather than suppressing itself mid-change.** `openspec update` rewrites the
   instruction files an in-flight change is being authored against, so with an active change the
-  drift is still reported but the imperative becomes *hold until `<change>` is archived*.
+  drift is still reported but the imperative becomes *review before running it*: update on a branch and
+  read the diff, or archive the change first.
   Suppressing outright would silence it permanently in any repo that usually has a change open —
   which is precisely how the drift above accumulated unseen.
 - **It tells you whether a diff will exist.** Where the generated files are git-tracked,
-  `git diff` after the run *is* your review; where they are not, it says to copy them aside
-  first, because the rewrite destroys local edits to `.claude/skills/openspec-…` with no diff and
-  no trace.
+  `git diff` after the run *is* your review; where they are not, it says to run
+  `openspec update --dry-run` first, because the rewrite destroys local edits to
+  `.claude/skills/openspec-…` with no diff and no trace. Run `openspec update` first and `/pm:upgrade`
+  second.
+- **pm's own clause lives in the managed block, never in a generated file.** In a repo with `openspec/`,
+  the managed rules block carries an `## OpenSpec addenda` section (about 260 bytes, plus a bullet per
+  generated skill that exists for the `/opsx:onboard`, `/opsx:verify` and `/opsx:bulk-archive` guardrails;
+  0 bytes without `openspec/`). The brief and `/pm:upgrade` report `OpenSpec addenda RESIDUAL` when pm text
+  is found inside a generated file and `OpenSpec addenda MISSING` when the block lacks the section; both
+  are read-only, and the engine never writes a generated file.
 
 Either version being undeterminable is reported as *cannot tell*, never as stale, and nothing is
 spawned at all unless the repo has an `openspec/` directory and a readable generated stamp.
