@@ -33,12 +33,12 @@
       `mission` and non-goal ids (`nonGoals[].id`, `missionNonGoals[].id`) to the same two requirements. Amend the initiative-record export requirement so a bad
       initiative id becomes a `rejected` entry (reason `id format`) instead of a skip, and add its RED test to 1.1.
       Re-validate; a fifth spec file joins the set that 0.2 and 0.4 review.
-- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the five spec files (four capabilities plus `board-export`, delivered by 0.1a) and this file. Fix every Critical
+- [x] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the five spec files (four capabilities plus `board-export`, delivered by 0.1a) and this file. Fix every Critical
       and Important finding, re-run `openspec validate release-planning-taxonomy --strict` (it must print "is valid"), then
       `record-gate-review release-planning-taxonomy --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
 - [x] 0.3 **Release membership.** `release show 0.56.0` lists `release-planning-taxonomy`; if not, `release 0.56.0 --member
       release-planning-taxonomy`.
-- [ ] 0.4 **Cross-spec review** (gate item 5). Five spec files, so invoke the `cross-spec-review` skill over the whole 0.56.0
+- [x] 0.4 **Cross-spec review** (gate item 5). Five spec files, so invoke the `cross-spec-review` skill over the whole 0.56.0
       set AND the 0.55.0 specs it extends (`release-planning`, `board-export`, `project-mission`, `project-boards`,
       `epic-annotation`), testing design.md's "Amendments owed" section (one amendment, delivered by 0.1a, and none other). Record
       `record-cross-spec-review 0.56.0 --verdict pass|fail --reviewer "<identity>"`. Shared chokepoints:
@@ -213,7 +213,7 @@
       and C.3 (no other task carries it).
 - [x] R.4 **Attribute every commit** (item 4) (c18102c4 and 21634c97, in landing order; build commits were grouped by certify cost, not one per task): `update-epic release-planning-taxonomy --attribute-commit <sha>` in landing
       order. Never attribute the archive move, or a lifecycle commit made after Gate 2 is recorded.
-- [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.4 can do it).
+- [x] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.4 can do it).
 - [ ] R.6 <!-- pm:lifecycle --> **Disposition** (item 6): satisfied by C.2.
 - [ ] R.7 **Route what the work taught you** (item 7), naming each as a practice, tooling friction or process failure, with
       evidence. Candidates: register the proposal's twelve Later/Next epics not already registered (run `/pm:triage` per
@@ -244,7 +244,7 @@
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (review `standard`): spec alignment for the five specs, no network or git in the engine,
+- [x] G.1 **Gate 2** over `BASE..HEAD` (review `standard`): spec alignment for the five specs, no network or git in the engine,
       zero runtime dependencies, the closed lists of design D5 intact, the template security rules, the Inverses table,
       release discipline. Record it with `--base-sha`/`--head-sha` reaching every attributed commit.
 
