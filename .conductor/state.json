@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "release-planning-taxonomy",
+  "active": "gh-cfdude-pm-262",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -16580,7 +16580,7 @@
       "id": "gh-cfdude-pm-262",
       "title": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases the edit",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -16590,7 +16590,7 @@
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
       "attributedCommits": [],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-12T23:45:36.565Z",
+      "touchedAt": "2026-11-16T18:11:20.409Z",
       "number": 262,
       "notes": [
         {
@@ -16601,7 +16601,14 @@
       ],
       "release": "0.57.0",
       "summary": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases those edits.",
-      "planPath": "docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits.md"
+      "planPath": "docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits.md",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-16T18:11:19.262Z",
+        "externalUpdatedAt": "2026-10-30T00:55:53Z"
+      },
+      "startedAt": "2026-11-16T18:11:20.404Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-261",
@@ -17045,7 +17052,7 @@
       "id": "release-planning-taxonomy",
       "title": "Release planning taxonomy: mission, initiative, milestone, release goal, non-goals",
       "priority": "P1",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -17076,7 +17083,7 @@
       ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-16T18:09:09.382Z",
+      "touchedAt": "2026-11-16T18:11:20.409Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
@@ -17232,7 +17239,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2471,
+  "revision": 2473,
   "reviewMode": "standard",
   "releases": [
     {
