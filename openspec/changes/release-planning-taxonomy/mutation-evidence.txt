@@ -62,3 +62,39 @@ callers' refusals are the killed mutations above (non-goals tests refuse unknown
 Not mutated, with the reason: (1) "a milestone carries no non-goals" holds by construction (no flag or reader touches milestone non-goals; the test that plants a
 nonGoals key on a milestone passes only because no reader looks); (2) "a split reason does not change drift" has no code to mutate: releaseSplit() does not take the reason;
 (3) the "no switch" registry scan is itself the guard, and fails if a flag, positional or OPT_INS row matching it is added.
+
+== Second pass, 2026-11-16 (fix pass after Gate 1, cross-spec and Gate 2): the guards the first pass did not mutate ==
+Same method (scratchpad mutate2.py: one condition replaced, the named unit and assert test files run, the file restored). The first run left
+three survivors, each a real gap and not an equivalent mutant: the integrity check's milestone-id branch, and the epic and initiative callers'
+own refusal before removeNonGoal() (only mission and release were driven). Tests added to kill them: scripts/test/unit/initiative-references.test.mjs
+("an initiative milestone id not of the form mN is named") and scripts/test/unit/non-goals.test.mjs ("the epic and initiative callers refuse an unknown and
+an already removed id"). The last mutant covers the Minor fixed in this pass: release --member warned again on a repeat for the same release
+(RED: red-fix-member-warning.txt; fixed by computing `joining` before the warning in scripts/lib/releases.mjs).
+
+KILLED  [initiative] create needs --title: 1 test(s) fail, e.g. ✖ create: needs --title and --capability; amend replaces either; the record reads back through board
+KILLED  [initiative] one-line check: newline half: 9 test(s) fail, e.g. ✖ a bad value writes nothing: empty, a newline, 301 characters (5.471292ms)
+KILLED  [epic] initiativeJoinedAt stamped on a primary change: 2 test(s) fail, e.g. ✖ add-epic and add-many carry the same fields (2.684042ms)
+KILLED  [epic] initiativeJoinedAt kept on same-value re-set: 1 test(s) fail, e.g. ✖ initiativeJoinedAt: written when the primary changes, kept on a same-value re-set, removed by --cl
+KILLED  [epic] initiativeJoinedAt removed by --clear initiative: 1 test(s) fail, e.g. ✖ initiativeJoinedAt: written when the primary changes, kept on a same-value re-set, removed by --cl
+KILLED  [release] releaseJoinedAt replaced on a move: 1 test(s) fail, e.g. ✖ --member writes releaseJoinedAt on a join; a repeat for the same release keeps it; a move replaces
+KILLED  [release] planning baseline null when no member started: 2 test(s) fail, e.g. ✖ board export: a release with nothing recorded carries every new key at its zero value (1.093583ms)
+KILLED  [references] unknown initiative refused via add-many: 2 test(s) fail, e.g. ✖ add-many refuses a bad planning field and creates nothing (3.116ms)
+KILLED  [references] unknown initiative refused via add-epic: 1 test(s) fail, e.g. ✖ every initiative-naming flag refuses an unknown id and writes nothing (5.155ms)
+KILLED  [references] unknown initiative refused via update-epic: 5 test(s) fail, e.g. ✖ --kind accepts initiative-work and health only, and --clear kind is its inverse (12.839375ms)
+KILLED  [references] unknown --secondary-initiative refused: 2 test(s) fail, e.g. ✖ add-many refuses a bad planning field and creates nothing (55.418042ms)
+KILLED  [references] integrity: id-format branch: 1 test(s) fail, e.g. ✖ integrity: a hand-edited initiative id that fails the id format is named (2.173583ms)
+KILLED  [references] integrity: milestone id-form branch: 1 test(s) fail, e.g. ✖ integrity: an initiative milestone id not of the form mN is named, a well-formed one is not (1.454
+KILLED  [non-goals] caller check before removeNonGoal: mission: 1 test(s) fail, e.g. ✖ remove: refuses unknown, already removed, reasonless and repeated (16.2995ms)
+KILLED  [non-goals] caller check before removeNonGoal: release: 1 test(s) fail, e.g. ✖ remove: refuses unknown, already removed, reasonless and repeated (73.930792ms)
+KILLED  [non-goals] caller check before removeNonGoal: epic: 1 test(s) fail, e.g. ✖ remove: the epic and initiative callers refuse an unknown and an already removed id before removeN
+KILLED  [non-goals] caller check before removeNonGoal: initiative: 1 test(s) fail, e.g. ✖ remove: the epic and initiative callers refuse an unknown and an already removed id before removeN
+KILLED  [template] escaping of capability: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [template] escaping of milestone text: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [template] escaping of evidence: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [template] escaping of source: 1 test(s) fail, e.g. ✖ 7.2 hostile title, capability, milestone, non-goal, evidence, source and split-reason text stays i
+KILLED  [epic] member warning: join only (repeat --member silent): 1 test(s) fail, e.g. ✖ the member warning fires on a join only: a repeat --member for the same release is silent, a move 
+KILLED  [release] one-line check (releases.mjs oneLineError, --split-reason): newline half: 3 test(s) fail, e.g. --split-reason: one line of at most 400 characters, cleared by --clear-split-reason
+second pass survivors/errors: 0 of 23
+
+Correction to the first pass: the "removal of an unknown id refused" survivor above is still an equivalent mutant for removeNonGoal()'s own check, and
+the four CALLER checks it names are now each mutated and killed individually (lines "caller check before removeNonGoal: mission|release|epic|initiative").

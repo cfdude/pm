@@ -1,0 +1,38 @@
+✔ leaving untriaged with nothing recorded warns once, naming --kind and --initiative; exit 0 and the write lands (10.819625ms)
+✔ a decline never warns: untriaged to archived (2.433041ms)
+✔ a recorded off-initiative reason silences it, as do kind health, a full set, the claude-code lane and no open initiative (14.077834ms)
+✔ what it names depends on what is missing (8.277042ms)
+✔ registration into a live status warns through add-epic and add-many; an untriaged registration does not (4.948125ms)
+✔ the pure planningWarning: only on the transition, never for archive, never for claude-code (0.081584ms)
+✔ every sink that warns about a missing summary passes the record, so the planning warning reaches it (1.733833ms)
+✔ release --member warns for an epic not serving the release's primary, still writes, and never for maintenance or no primary (5.53725ms)
+✖ the member warning fires on a join only: a repeat --member for the same release is silent, a move to another such release warns (3.615791ms)
+✔ the member warning is silent for health, claude-code, a recorded reason, and an epic serving the primary (8.072459ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 208.485167
+
+✖ failing tests:
+
+test at scripts/test/fixtures/unit-harness.mjs:127:3
+✖ the member warning fires on a join only: a repeat --member for the same release is silent, a move to another such release warns (3.615791ms)
+  [unit-test-file: /Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-planning-warning.test.mjs]
+  AssertionError [ERR_ASSERTION]: a repeat for the same release is not a join
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/unit/epic-planning-warning.test.mjs:95:10
+      at unitBody (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:147:13)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/fixtures/unit-harness.mjs:129:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: `conductor: 'E' does not serve release 'r1's primary initiative 'boards' — name it with --initiative boards or --secondary-initiative, or record why with --off-initiative-reason "<why>" on update-epic (a warning only; the membership was written)\nconductor: PROJECT.md unchanged (skipped rewrite)\nconductor: release 'r1' already held exactly what this invocation supplied — nothing was written to .conductor/state.json\n`,
+    expected: /--off-initiative-reason/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

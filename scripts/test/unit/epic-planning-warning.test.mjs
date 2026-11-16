@@ -88,6 +88,14 @@ unitTest("release --member warns for an epic not serving the release's primary, 
   assert.doesNotMatch(warns(memoryEngine(base()), ["release", "n1", "--member", "E"]), /--off-initiative-reason/);
 });
 
+unitTest("the member warning fires on a join only: a repeat --member for the same release is silent, a move to another such release warns", () => {
+  const e = memoryEngine(record([epic("E", { status: "queued", kind: "initiative-work", initiative: "reporting" })],
+    { releases: [{ id: "r1", intent: "i", deferred: [], initiative: "boards" }, { id: "r2", intent: "j", deferred: [], initiative: "boards" }] }));
+  assert.match(warns(e, ["release", "r1", "--member", "E"]), /--off-initiative-reason/, "the join warns");
+  assert.doesNotMatch(warns(e, ["release", "r1", "--member", "E"]), /--off-initiative-reason/, "a repeat for the same release is not a join");
+  assert.match(warns(e, ["release", "r2", "--member", "E"]), /--off-initiative-reason/, "a move is a join of the new release");
+});
+
 unitTest("the member warning is silent for health, claude-code, a recorded reason, and an epic serving the primary", () => {
   for (const over of [{ kind: "health" }, { lane: "claude-code" }, { offInitiativeReason: "security" }, { initiative: "boards" }, { secondaryInitiatives: ["boards"], initiative: "reporting" }]) {
     const e = memoryEngine(record([epic("E", { status: "queued", ...over })], { releases: [{ id: "r1", intent: "i", deferred: [], initiative: "boards" }] }));

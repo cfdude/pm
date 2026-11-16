@@ -34,6 +34,14 @@ unitTest("integrity: a hand-edited initiative id that fails the id format is nam
   assert.match(f[0].detail, /rejected/);
 });
 
+unitTest("integrity: an initiative milestone id not of the form mN is named, a well-formed one is not", () => {
+  const withMilestones = (ids) => ({ ...initiative("boards"), milestones: ids.map(id => ({ id, text: "t" })) });
+  assert.deepEqual(findings(record([], { initiatives: [withMilestones(["m1", "m12"])] })), []);
+  const f = findings(record([], { initiatives: [withMilestones(["m1", "x1", "m0"])] }));
+  assert.equal(f.length, 2);
+  assert.ok(f.every(x => /milestone whose id .* is not of the form mN/.test(x.detail)));
+});
+
 unitTest("integrity: a hostile id in a finding is escaped, never raw", () => {
   const f = findings(record([epic("e", { initiative: "x\nINJECTED" })]));
   assert.ok(!f[0].detail.includes("\nINJECTED"));

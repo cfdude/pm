@@ -128,6 +128,29 @@ unitTest("remove: refuses unknown, already removed, reasonless and repeated", ()
   assert.equal(applyMission(m, { "remove-non-goal": "n1:x" }, T(1)).ok, false);
 });
 
+unitTest("remove: the epic and initiative callers refuse an unknown and an already removed id before removeNonGoal runs, writing nothing", () => {
+  const e = memoryEngine(record());
+  e(["update-epic", "e", "--add-non-goal", "x"]);
+  e(["update-epic", "e", "--remove-non-goal", "n1:dropped"]);
+  for (const id of ["n9", "n1"]) {
+    const before = JSON.stringify(stateOf(e));
+    const r = e.result(["update-epic", "e", "--remove-non-goal", `${id}:again`]);
+    assert.notEqual(r.status, 0, id);
+    assert.match(r.stderr, /not an active non-goal of 'e'/);
+    assert.equal(JSON.stringify(stateOf(e)), before, "nothing written");
+  }
+  const s = record();
+  assert.equal(applyInitiative(s, "boards", { title: "t", capability: "c", "add-non-goal": ["x"] }, T(1)).ok, true);
+  assert.equal(applyInitiative(s, "boards", { "remove-non-goal": "n1:dropped" }, T(2)).ok, true);
+  for (const id of ["n9", "n1"]) {
+    const before = JSON.stringify(s);
+    const r = applyInitiative(s, "boards", { "remove-non-goal": `${id}:again` }, T(3));
+    assert.equal(r.ok, false, id);
+    assert.match(r.message, /not an active non-goal of 'boards'/);
+    assert.equal(JSON.stringify(s), before, "nothing written");
+  }
+});
+
 unitTest("an initiative non-goal beside --add-milestone lands on the initiative; a milestone carries no non-goals", () => {
   const s = record();
   assert.equal(applyInitiative(s, "boards", { title: "t", capability: "c" }, T(1)).ok, true);

@@ -185,7 +185,7 @@
 
 ## R. Required task items (CLAUDE.md "The gate procedure", items 1 to 8)
 
-- [x] R.1 **Call-site completeness sweep** (item 1) (re-derived 2026-11-16: all five `warnSummary` sinks now pass the record; the one writer of `releaseJoinedAt` plus both removers and the move; every rules-block builder passes both sections; every one-line field goes through `lineFieldError`; the `remove-epic` removal is the whole record. Open: see Gate 1 and cross-spec items below, still to be re-recorded). Re-derive mechanically and compare with design.md "Call sites":
+- [x] R.1 **Call-site completeness sweep** (item 1) (re-derived 2026-11-16: all five `warnSummary` sinks now pass the record; the one writer of `releaseJoinedAt` plus both removers and the move; every rules-block builder passes both sections; every one-line field goes through `lineFieldError`; the `remove-epic` removal is the whole record. re-derived again at the fix pass after the reviews; the result, with the data references and the inverses, is `call-site-sweep.md` in this directory). Re-derive mechanically and compare with design.md "Call sites":
       - `rg -n "warnSummary\(|owesSummaryWarning" scripts/lib`: every transition sink carries the planning warning.
       - `rg -n "lineFieldError\(" scripts/lib`: every new one-line field is validated through it.
       - `rg -n "epicBatchKeys|epicFlagsFor" scripts/lib`: add-many and `--help` see every new epic row.
@@ -232,6 +232,12 @@
         recorded-reason conditions, the member warning's maintenance condition
       - rules block: both caps (280, 200) and both absent-when-empty rules
       - template: escaping of each new field, and the guided empty states
+      - second pass (fix pass 2026-11-16, see the second section of the evidence file): create needs `--title`, the newline half of the one-line
+        check, `initiativeJoinedAt` (written on a primary change, kept on a same-value re-set, removed by `--clear initiative`),
+        `releaseJoinedAt` replaced on a move, the planning baseline's `null`, the unknown-initiative refusal through add-many, add-epic,
+        update-epic and `--secondary-initiative`, both integrity branches (initiative id format, milestone id form), the four callers'
+        own id checks before `removeNonGoal`, template escaping of capability, milestone text, evidence and source, and the member
+        warning's join-only condition
       Save and commit the run as `openspec/changes/release-planning-taxonomy/mutation-evidence.txt`. A surviving mutant is a
       finding to fix.
 

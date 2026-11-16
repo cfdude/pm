@@ -430,14 +430,15 @@ export function release() {
     // THE ONE WRITER of membership (release-planning-taxonomy D27): the join time is written only on a JOIN. A repeat for the same
     // release keeps it, a move replaces it, and both removers below delete it.
     const memberEpic = knownEpic(epicId);
+    const joining = memberEpic.release !== id;
     const primary = typeof rel.initiative === "string" && rel.maintenance !== true ? rel.initiative : null;
-    if (primary !== null && memberEpic.lane !== "claude-code" && memberEpic.kind !== "health" &&
+    // The warning belongs to a JOIN (epic-annotation: "adding an epic"); a repeat for the same release has nothing new to say.
+    if (joining && primary !== null && memberEpic.lane !== "claude-code" && memberEpic.kind !== "health" &&
         !(typeof memberEpic.offInitiativeReason === "string" && memberEpic.offInitiativeReason.trim()) &&
         memberEpic.initiative !== primary && !(Array.isArray(memberEpic.secondaryInitiatives) && memberEpic.secondaryInitiatives.includes(primary))) {
       errStream().write(escapeControls(`conductor: '${epicId}' does not serve release '${id}'s primary initiative '${primary}' — name it with --initiative ${primary} or ` +
         "--secondary-initiative, or record why with --off-initiative-reason \"<why>\" on update-epic (a warning only; the membership was written)") + "\n");
     }
-    const joining = knownEpic(epicId).release !== id;
     knownEpic(epicId).release = id;
     if (joining) knownEpic(epicId).releaseJoinedAt = new Date().toISOString();
   }
