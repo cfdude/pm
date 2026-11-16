@@ -978,11 +978,28 @@ The boards are on by default (an absent setting reads as on). `set-boards off` r
 and removes the `## Boards` rules section and the brief's boards line; `set-boards on` removes the setting again.
 `board --json` keeps working whichever way it is set, and `upgrade` prints `boards: on (default)`.
 
+**Initiatives, release purpose and the 80/20 report.** An initiative is a multi-release effort delivering one capability. A
+release names its primary initiative (`release <id> --initiative <id>`) or declares itself `--maintenance`. Every member in any lane is counted
+once as `health` (bugs, security, dependency and stack upgrades, deprecations, test and tooling debt), `initiative-work` or
+`unaligned`; the health share is checked against a fixed 20% target and flagged as drift below 10% or above 30%, with
+`--split-reason` recording why. `release show` prints the purpose, the split, a warning when no member serves the primary, and how many epics
+joined after the first member started. Vocabulary: the MISSION milestone is a release id on the mission (`mission --milestone`, the critical path); an INITIATIVE
+milestone is a stable `mN` step inside one initiative, reached with evidence, and has no release field.
+
+**The off-mission challenge.** While an initiative is open, an epic leaving `untriaged` with no `--kind`, no `--initiative` and no recorded
+reason gets one stderr warning (never a refusal; `claude-code` epics are exempt), and `release --member` warns once for an epic not serving the release's primary.
+Answer it once with `--off-mission-reason` or `--off-initiative-reason` and it stays quiet. Two rules-block sections carry this to every
+session: `## Initiatives` (while an initiative is open) and `## Mission non-goals` (while the mission has a non-goal).
+
 | Verb | What it does |
 |------|--------------|
-| `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit. Plain `board` prints three lines |
+| `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit; it also carries `initiatives`, `missionNonGoals`, and per release and epic the planning fields below (all additive, `schemaVersion` stays 1). Plain `board` prints three lines |
 | `mission --statement "<line>" --reason "<why>"` | records the mission; `--end`, `--milestone <releaseId>` / `--clear-milestone`, `--add-criterion` / `--remove-criterion` and `mission show [--history]` complete it. Releases at or before the milestone, by `--order`, are marked critical path. See `commands/mission.md` |
 | `initiative <id> --title "<line>" --capability "<line>"` | records an initiative, a multi-release effort delivering a capability: `--source` (or `UNGROUNDED`), `--off-mission-reason`, initiative milestones (`--add-milestone`, `--reach-milestone "mN:<evidence>"`), `--end --outcome delivered\|abandoned\|superseded --reason`, `--reopen`, and `initiative show [<id>] [--history]`. Never deleted. See `commands/initiative.md` |
+| `--add-non-goal "<line>"` / `--remove-non-goal "nN:<why>"` | what a record will NOT do, on `mission`, `initiative`, `release`, `add-epic` and `update-epic` (`add-many` reads a `nonGoals` array). Repeatable, one line of at most 300 characters; ids are per record (`n1`, `n2`, ...) and never reused. Removal marks the entry with its reason and keeps it (`show --history` lists it). A milestone carries none |
+| `release <id> --initiative <id>` / `--maintenance` / `--clear-initiative` | a release's purpose: its primary initiative, or `--maintenance` to declare it serves none (each replaces the other; `--clear-initiative` removes either; `release here` refuses all three). The release goal is the existing `--theme`. `release show` prints the purpose |
+| `release <id> --split-reason "<line>"` / `--clear-split-reason` | why a release departs from the 80/20 split (one line, at most 400 characters). It changes neither the split nor `drift` |
+| `add-epic` / `update-epic` / `add-many` `--initiative`, `--secondary-initiative`, `--kind`, `--off-mission-reason`, `--off-initiative-reason` | epic planning fields: one primary initiative (stamps `initiativeJoinedAt`), repeatable secondaries (inverse `--remove-secondary-initiative`), `--kind initiative-work\|health`, and the two recorded answers to the challenge below. `update-epic <id> --clear <field>` unsets each scalar. See `commands/epic.md` |
 | `set-project --name "<name>" --key <KEY>` | the project name (at most 60 characters) and a two- or three-letter key; `--unset name\|key` removes one. Every epic carries an integer `number` assigned at registration, and the key shown is `<KEY>-<number>`. See `commands/set-project.md` |
 | `set-boards on\|off` | the switch above |
 | `release <id> --theme --rationale --exit --order --size` | a release's plan fields (each text field one line of at most 400 characters); `--clear <field>` removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`release --clear target` is the inverse of `--target`) |
