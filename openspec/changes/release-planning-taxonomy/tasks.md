@@ -212,7 +212,7 @@
       and C.3.
 - [x] R.4 **Attribute every commit** (item 4) (c18102c4 and 21634c97, in landing order; build commits were grouped by certify cost, not one per task): `update-epic release-planning-taxonomy --attribute-commit <sha>` in landing
       order. Never attribute the archive move, or a lifecycle commit made after Gate 2 is recorded.
-- [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.5 can do it).
+- [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.4 can do it).
 - [ ] R.6 <!-- pm:lifecycle --> **Disposition** (item 6): satisfied by C.2.
 - [ ] R.7 **Route what the work taught you** (item 7), naming each as a practice, tooling friction or process failure, with
       evidence. Candidates: register the proposal's twelve Later/Next epics not already registered (run `/pm:triage` per

@@ -78,14 +78,14 @@ and never spans releases. The agent attests facts, the human decides preferences
 
 ### Modified Capabilities
 
-- `release-planning` (ADDED requirements; the base spec lands when `project-boards` archives): the release's primary
+- `release-planning` (ADDED requirements): the release's primary
   initiative or maintenance purpose, the goal label, the all-lanes split with `unaligned`, the drift band and recorded override,
   the unserved-primary flag, join times and the planning baseline, the maintenance-epic convention and the commit-nudge
   destinations, and their `release show`, `board --json` and release plan board surfaces.
 - `epic-annotation` (ADDED requirements): the epic's primary and secondary initiatives and `initiativeJoinedAt`, `kind`, the
   two recorded challenge answers, the once-only challenge warning, and their `board --json` fields (with `effectiveKind`).
-- `board-export` (MODIFIED requirements; the base spec lands when `project-boards` archives): the `rejected` kinds gain `initiative`,
-  and the emitted-id rule gains initiative ids, initiative milestone ids and the three initiative references.
+- `board-export` (MODIFIED requirements): the `rejected` kinds gain `initiative` and `mission`,
+  and the emitted-id rule gains initiative ids, initiative milestone ids, non-goal ids and the three initiative references.
 
 ## Impact
 
@@ -101,4 +101,4 @@ and never spans releases. The agent attests facts, the human decides preferences
 - State: new optional top-level `initiatives` array; optional release keys `initiative`, `maintenance`, `splitReason`,
   `nonGoals`; optional epic keys `initiative`, `initiativeJoinedAt`, `secondaryInitiatives`, `kind`,
   `releaseJoinedAt`, `offMissionReason`, `offInitiativeReason`, `nonGoals`; optional `mission.nonGoals`. All additive: a 0.55.0 state file loads unchanged and no MIGRATIONS entry is needed.
-- Release: the sole member of 0.56.0. Archives after `project-boards` (0.55.0), whose specs it extends.
+- Release: the sole member of 0.56.0. `project-boards` (0.55.0) has archived; this extends its specs.

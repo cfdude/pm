@@ -7,9 +7,10 @@ D30), and the `project-boards` change (`openspec/changes/project-boards/`), whic
 dependencies, opens no network connection and runs no git for this change; `state.json` is the only record and the engine its
 only writer; every field is machine-checkable; a 0.55.0 state file must still load.
 
-**Ordering.** `project-boards` (0.55.0) archives first. Its specs (`release-planning`, `board-export`, `project-mission`,
-`project-boards`) are not in `openspec/specs/` yet, so this change uses ADDED requirements only, and never MODIFIED, for
-those capabilities. `epic-annotation` exists in `openspec/specs/` and also receives ADDED requirements only.
+**Ordering.** `project-boards` (0.55.0) has archived, so its specs are in `openspec/specs/`. This change uses ADDED
+requirements for them, with ONE sanctioned MODIFIED amendment: the `board-export` delta (kind `initiative`, kind `mission`
+and non-goal ids in the emitted-id rule), see "Amendments owed to 0.55.0 specs". `epic-annotation` also receives ADDED
+requirements only.
 
 ## Goals / Non-Goals
 
@@ -46,7 +47,8 @@ secondaries live on epics only (`secondaryInitiatives`) and the attribution is c
 - `mission`'s `--reason` serves exactly `--statement`, `--end` and `--remove-criterion`, so every non-goal and initiative
   milestone operation carries its text inline, `nN:<why>` / `mN:<why>` / `mN:<evidence>`, split at the first colon: the
   gh#179 `--unmember` precedent (`constants.mjs`). Not repeatable, for the same reason `--unmember` is not.
-- `board-export`'s `rejected` kinds and reasons are closed and its `mission` object is a fixed `{statement, setAt, reason}`.
+- `board-export`'s `rejected` reasons are closed, its kinds are closed except for the one sanctioned MODIFIED amendment
+  (`initiative` and `mission`), and its `mission` object is a fixed `{statement, setAt, reason}`.
   So mission non-goals are a top-level `missionNonGoals` key, and a dangling initiative reference reads `null` with the report
   left to `integrity` (D7). Adding top-level keys contradicts nothing.
 - The `## Mission` section's 280-byte cap is a 0.55.0 requirement, so mission non-goals get their own section (D29).
@@ -254,12 +256,15 @@ An initiative is never removed, so none of these can dangle through a verb; a ha
 
 ## Amendments owed to 0.55.0 specs
 
-One, owed AFTER `project-boards` archives. `board-export`'s "Every emitted id passes the board id format" requires each
-failing id to appear in `rejected` with reason `id format`, and its `rejected` kind list is closed with no `initiative`. This
-change cannot amend `project-boards` (it is built and unarchived; editing it would make 0.55.0 contradict its own code), and a
-MODIFIED delta needs the base spec in `openspec/specs/`, which exists only after that archive. Task 0.1a (delivered 2026-11-16, after project-boards archived) adds the MODIFIED `board-export` delta (kind
-`initiative`, and initiative ids and references in the emitted-id list): a hand-edited bad initiative id is omitted and listed in `rejected`, and also reported by `integrity`. Everything else: D5 keeps the closed lists intact, and the nudge
-amendment changes a branch no 0.55.0 spec fixes. The cross-spec review (task 0.4) checks both claims.
+One. `board-export`'s "Every emitted id passes the board id format" requires each failing id to appear in `rejected` with
+reason `id format`, and its `rejected` kind list was closed with no `initiative` and no `mission`. This change cannot amend
+`project-boards` while it is unarchived, so the amendment is a MODIFIED delta, possible since `project-boards` archived in
+f02578c7. Task 0.1a adds it: kinds `initiative` and `mission`, and initiative ids, initiative milestone ids, non-goal ids
+(`nonGoals[].id` on initiatives, releases and epics, `missionNonGoals[].id`) and initiative references in the emitted-id list.
+A hand-edited bad id of any of those is omitted and listed in `rejected`, and initiatives are also reported by `integrity`.
+Non-goal ids are validated, not exempt: a hand-edited `state.json` is input, and the rule covers every emitted id. Everything
+else: D5 keeps the closed reason lists intact, and the nudge amendment changes a branch no 0.55.0 spec fixes. The cross-spec
+review (task 0.4) checks both claims.
 
 ## Risks / Trade-offs
 
