@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpRepo, run, parseBrief } from "../fixtures/assert-harness.mjs";
+import { tmpRepo, run, runCombined, parseBrief } from "../fixtures/assert-harness.mjs";
+import { engineCode } from "../fixtures/source-code.mjs";
 import { OPENSPEC_ADDENDA_MAX_BYTES, PM_OPENSPEC_ADDENDA } from "../../lib/openspec-addenda.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -84,4 +85,24 @@ test("brief: a repo with openspec/ whose block lacks the section reports MISSING
   assert.match(parseBrief(cwd), /OpenSpec addenda MISSING/);
   run(["write-rules"], { cwd });
   assert.doesNotMatch(parseBrief(cwd), /OpenSpec addenda MISSING/);
+});
+
+test("5.1 THIS repo's generated archive skill and command do not carry pm's clause", () => {
+  for (const rel of [".claude/skills/openspec-archive-change/SKILL.md", ".claude/commands/opsx/archive.md"]) {
+    assert.ok(!fs.readFileSync(path.join(ROOT, rel), "utf8").includes(NEEDLE), rel);
+  }
+});
+
+test("12.10 the addenda module never spawns a process or imports the child_process module (the engine only READS; pm instructs)", () => {
+  const src = engineCode("scripts/lib/openspec-addenda.mjs");
+  assert.doesNotMatch(src, new RegExp("child" + "_process"));
+  assert.doesNotMatch(src, new RegExp("(?<![.\\w$])" + "(exec|spawn)" + "(File|Sync)?(Sync)?\\s*\\("));
+});
+
+test("upgrade prints the RESIDUAL line too (the second surface of the shared emitter)", () => {
+  const cwd = repo({ openspec: true });
+  const skill = path.join(cwd, ".claude", "skills", "openspec-archive-change", "SKILL.md");
+  fs.mkdirSync(path.dirname(skill), { recursive: true });
+  fs.writeFileSync(skill, `step 6; ${NEEDLE}\n`);
+  assert.match(runCombined(["upgrade"], { cwd }), /OpenSpec addenda RESIDUAL/);
 });
