@@ -32,12 +32,12 @@
       `epic.secondaryInitiatives[]`, `release.initiative`). Amend the initiative-record export requirement so a bad
       initiative id becomes a `rejected` entry (reason `id format`) instead of a skip, and add its RED test to 1.1.
       Re-validate; a fifth spec file joins the set that 0.2 and 0.4 review.
-- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the spec files (four, plus `board-export` once 0.1a lands) and this file. Fix every Critical
+- [ ] 0.2 **Gate 1** (review `standard`) over `proposal.md`, `design.md`, the five spec files (four capabilities plus `board-export`, delivered by 0.1a) and this file. Fix every Critical
       and Important finding, re-run `openspec validate release-planning-taxonomy --strict` (it must print "is valid"), then
       `record-gate-review release-planning-taxonomy --gate 1 --verdict pass --artifact <path>… --reviewer "<identity>"`.
 - [x] 0.3 **Release membership.** `release show 0.56.0` lists `release-planning-taxonomy`; if not, `release 0.56.0 --member
       release-planning-taxonomy`.
-- [ ] 0.4 **Cross-spec review** (gate item 5). Four spec files, so invoke the `cross-spec-review` skill over the whole 0.56.0
+- [ ] 0.4 **Cross-spec review** (gate item 5). Five spec files, so invoke the `cross-spec-review` skill over the whole 0.56.0
       set AND the 0.55.0 specs it extends (`release-planning`, `board-export`, `project-mission`, `project-boards`,
       `epic-annotation`), testing design.md's "Amendments owed" section (one amendment, delivered by 0.1a, and none other). Record
       `record-cross-spec-review 0.56.0 --verdict pass|fail --reviewer "<identity>"`. Shared chokepoints:
@@ -50,7 +50,7 @@
 - [x] 0.5 **Owner answers.** Q1 to Q13 answered on 2026-11-12 and folded in as design D17 to D30 (Q5 revised by the owner).
       Q14 answered the same day as design D31 (an automatic planning baseline, no flag).
 
-## 1. The export reads the new fields (specs: all four, their `board --json` requirements)
+## 1. The export reads the new fields (specs: all five, their `board --json` requirements)
 
 - [x] 1.1 RED (UNIT, `boardSnapshot` over fixtures): `initiatives` is `[]` and `missionNonGoals` is `[]` on an empty record;
       every initiative entry carries `outcome`, `source`, `offMissionReason`, `nonGoals` and initiative milestones with `reachedAt` and `evidence`;
@@ -208,12 +208,12 @@
       justify the three not shipped.
 - [x] R.2 **Verify against the commit** (item 2): `git show --stat <sha>` for each task; every file the task claims (command
       doc, ledger claim, red file, changeset) appears in THAT commit.
-- [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/release-planning-taxonomy/tasks.md` lists C.2
+- [x] R.3 **Lifecycle marker** (item 3): `rg -n "pm:lifecycle" openspec/changes/release-planning-taxonomy/tasks.md` lists R.6, C.2
       and C.3.
 - [x] R.4 **Attribute every commit** (item 4) (c18102c4 and 21634c97, in landing order; build commits were grouped by certify cost, not one per task): `update-epic release-planning-taxonomy --attribute-commit <sha>` in landing
       order. Never attribute the archive move, or a lifecycle commit made after Gate 2 is recorded.
 - [ ] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.5 can do it).
-- [ ] R.6 **Disposition** (item 6): satisfied by C.2.
+- [ ] R.6 <!-- pm:lifecycle --> **Disposition** (item 6): satisfied by C.2.
 - [ ] R.7 **Route what the work taught you** (item 7), naming each as a practice, tooling friction or process failure, with
       evidence. Candidates: register the proposal's twelve Later/Next epics not already registered (run `/pm:triage` per
       ask first); file `/pm:feedback` for any emitted instruction that did not run as written; a lesson if the closed-list
@@ -237,7 +237,7 @@
 
 ## G. Gate 2
 
-- [ ] G.1 **Gate 2** over `BASE..HEAD` (review `standard`): spec alignment for the four specs, no network or git in the engine,
+- [ ] G.1 **Gate 2** over `BASE..HEAD` (review `standard`): spec alignment for the five specs, no network or git in the engine,
       zero runtime dependencies, the closed lists of design D5 intact, the template security rules, the Inverses table,
       release discipline. Record it with `--base-sha`/`--head-sha` reaching every attributed commit.
 

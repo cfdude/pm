@@ -84,6 +84,8 @@ and never spans releases. The agent attests facts, the human decides preferences
   destinations, and their `release show`, `board --json` and release plan board surfaces.
 - `epic-annotation` (ADDED requirements): the epic's primary and secondary initiatives and `initiativeJoinedAt`, `kind`, the
   two recorded challenge answers, the once-only challenge warning, and their `board --json` fields (with `effectiveKind`).
+- `board-export` (MODIFIED requirements; the base spec lands when `project-boards` archives): the `rejected` kinds gain `initiative`,
+  and the emitted-id rule gains initiative ids, initiative milestone ids and the three initiative references.
 
 ## Impact
 
