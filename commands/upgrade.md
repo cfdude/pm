@@ -84,19 +84,26 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    `openspec update` for you** — pm instructs, it does not integrate. That is a fact about the
    engine, NOT a permission boundary: you may run `openspec update` yourself right now, and unlike
    `openspec init` there is nothing here reserved to a human. The safety requirement is reviewing
-   the diff, not who typed the command. What to do with the line:
+   the diff, not who typed the command.
 
-   - **It names a change in flight ("HOLD until …").** Do not run `openspec update` yet. It
-     rewrites the instruction files that change is being authored against. Finish and archive the
-     change first, then come back.
-   - **It says the generated files are git-tracked here.** Run `openspec update`, then read
-     `git diff` before committing. That diff is the review — the update rewrites files
-     in place, so any local edit to `.claude/skills/openspec-*` or `.claude/commands/opsx/` is
-     overwritten.
-   - **It says they are NOT tracked (or that it could not tell).** Copy `.claude/skills/openspec-*`
-     and `.claude/commands/opsx/` aside FIRST, then run `openspec update` and compare against the
-     copy. With those paths untracked or git-ignored there is no diff afterwards, so local edits
+   **Run `openspec update` FIRST, then `/pm:upgrade`.** The order stops mattering once pm's own
+   text lives in the managed rules block, because nothing pm wrote is left in the generated files
+   for the update to erase. Preview with `openspec update --dry-run` (read-only), read the diff
+   after the real run, and only then run this command. What to do with the line:
+
+   - **It names a change in flight ("HOLD").** Update on a branch and review the diff; hold only
+     if you cannot review it. The update rewrites the instruction files that change is being
+     authored against.
+   - **It says the generated files are git-tracked here.** `git diff` after the run IS the
+     review — the update rewrites `.claude/skills/openspec-*` and `.claude/commands/opsx/` in
+     place, so any local edit there is overwritten.
+   - **It says they are NOT tracked (or that it could not tell).** Run `openspec update --dry-run`
+     first: with those paths untracked or git-ignored there is no diff afterwards, so local edits
      disappear with no trace.
+   - **It reads `OpenSpec addenda RESIDUAL`.** pm text sits inside a generated file. Delete it
+     there; the clause belongs in the managed block's OpenSpec addenda section.
+   - **It reads `OpenSpec addenda MISSING`.** The repo uses OpenSpec but the managed block has no
+     OpenSpec addenda section. `write-rules` (run by this command) refreshes the block.
 
    Nothing is printed when the project is current, when the CLI is not installed, or when this
    repo carries no `generatedBy` stamp to compare against — an undeterminable version is reported

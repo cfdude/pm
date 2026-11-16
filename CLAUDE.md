@@ -611,6 +611,14 @@ tracker or several (primary + secondary) configured.
 The `project-boards` skill and `/pm:boards` draw the backlog and release boards from `board --json`. Refresh them after
 `/pm:sync`, a status change, a release or mission write, or a gate record. `set-boards off` turns them off.
 
+## OpenSpec addenda
+
+`openspec update` rewrites `.claude/skills/openspec-*` and `.claude/commands/opsx/*`; keep any pm clause here, never there.
+- Archive: in the generated archive skill's step 6, a spec the sync deliberately kept and reported is also a match.
+- Never run `/opsx:onboard`: it archives with no gate or disposition.
+- `/opsx:verify` flags `<!-- pm:lifecycle -->` tasks as CRITICAL: a false positive (#261). Never tick or unmark one.
+- `/opsx:bulk-archive` records no dispositions: afterwards run `update-epic <id> --status archived --outcome … --no-deferrals` per member.
+
 ## Re-read the source before an epic becomes the work
 
 An epic becoming active is the moment specs or a plan get drawn for it. Before that, re-read
@@ -635,21 +643,9 @@ invocation for it, because how to check belongs to the OpenSpec you have install
 
 ### ⛔ OpenSpec 1.15 workflows that fight pm's gates
 
-These guardrails live HERE, outside the managed block above and outside the generated
-`.claude/` files, because `openspec update` rewrites those in place and loses local edits
-silently. A conflict between OpenSpec's generated files and pm's rules is fixed in this file,
-never by editing a generated one.
-
-- **Never run `/opsx:onboard` in this repo.** It is a tutorial that ends in
-  `openspec archive "<name>" --yes`: propose, apply and archive with no prompt, no Gate 1, no
-  Gate 2 and no disposition.
-- **`/opsx:verify` raises one CRITICAL per incomplete task**, so it flags every correctly marked
-  `<!-- pm:lifecycle -->` task. That is a FALSE POSITIVE (the collision gate item 3 documents for
-  `openspec validate --archived`, in a second command; filed as #261). Never tick the task or
-  drop the marker to silence it.
-- **`/opsx:bulk-archive` archives N changes under ONE confirmation and records no dispositions.**
-  Afterwards run one `update-epic <id> --status archived --outcome … --reason … --no-deferrals`
-  per member. `/opsx:ff` is not a bypass: it stops at "Run /opsx:apply".
+These guardrails now ship in the managed block's "OpenSpec addenda" section above (gh#262), gated
+on the generated skills being present. A conflict between OpenSpec's generated files and pm's
+rules is fixed there, never by editing a generated file: `openspec update` rewrites them.
 
 ### 🔗 Cross-spec review — now a shipped gate, not a repo practice
 

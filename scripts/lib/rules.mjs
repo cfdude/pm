@@ -32,6 +32,7 @@ import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { BOARDS_SECTION, boardsSectionText } from "./boards-switch.mjs";
+import { currentOpenspecAddendaSection } from "./openspec-addenda.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
 import { CONDITIONAL_SECTIONS, FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 
@@ -776,7 +777,7 @@ export function proceduresEmittedOnUseLines(usage = FULL_USAGE) {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "", boardsSection = BOARDS_SECTION, initiativesSection = "", missionNonGoalsSection = "") {
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "", boardsSection = BOARDS_SECTION, initiativesSection = "", missionNonGoalsSection = "", openspecSection = "") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -1164,6 +1165,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   if (boardsSection) {
     lines.push("", ...boardsSection.replace(/\{\{pm:([a-z-]+)\}\}/g, (_, name) => pmCmd(platform, name)).split("\n"));
   }
+  // The OpenSpec addenda (gh#262): pm's clause for the OpenSpec workflows, carried HERE because `openspec update` rewrites the generated
+  // files. Verb-refreshed (init, write-rules, upgrade), outside CONDITIONAL_SECTIONS: its gate is the filesystem (`openspec/` present),
+  // not a state.json input. Default empty, so a caller that passes nothing renders the block it always did.
+  if (openspecSection) {
+    lines.push("", ...openspecSection.split("\n"));
+  }
   lines.push(
     "",
     "## Re-read the source before an epic becomes the work",
@@ -1333,7 +1340,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection(), currentInitiativesSection(), currentMissionNonGoalsSection());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection(), currentInitiativesSection(), currentMissionNonGoalsSection(), currentOpenspecAddendaSection());
   let next;
   // What this write says about itself, printed only AFTER the file is written: a write that fails must not
   // have claimed it refreshed the block or announced a section (gh-cfdude-pm-248 Gate 2 M2).

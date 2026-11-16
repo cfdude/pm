@@ -1283,3 +1283,6 @@ x("subcommands.mjs", "untiedOutlet", {
   "rid": 1, "s": 1, "create": 1, "asCode(attribute)": 1, "asCode(addEpic)": 1, "asCode(member)": 1,
 }, "engine", "rid is a release id that must make `maintenance-<rid>` pass STORABLE_EPIC_ID (a safe id) before anything is built; s is a full sha read from a reflog line; `create` and `attribute` are built through orNoRemedy()/printedId(), which print the no-remedy text for an id holding a control character");
 x("subcommands.mjs", "attributionNudge", { "untiedOutlet(state, epic, list, cmd)": 1 }, "passthrough", "untiedOutlet()'s text, composed and escaped where it was built (see its judgment)");
+
+// ── gh#262: the OpenSpec addenda check
+j("openspec-addenda.mjs", "readGeneratedFiles", ALL, "sink-flow", "the directory-entry names it joins into repo-relative paths reach only openspecAddendaFindingLines, whose every line is returned through L.map(escapeControls); file CONTENT is never interpolated");

@@ -21,6 +21,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { initiativesSectionText, missionNonGoalsSectionText, missionSectionText, rulesBlock } from "./rules.mjs";
+import { currentOpenspecAddendaSection } from "./openspec-addenda.mjs";
 import { boardsBriefLine, boardsSectionText } from "./boards-switch.mjs";
 import { profileContext } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
@@ -182,7 +183,7 @@ export function rulesBlockFor(state, platform = "claude-code", usage = rulesUsag
   const tracker = s.tracker && s.tracker.system ? s.tracker : null;
   const mode = typeof s.reviewMode === "string" && s.reviewMode ? s.reviewMode : "standard";
   const secondary = Array.isArray(s.secondaryTrackers) ? s.secondaryTrackers : [];
-  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage, missionSectionText(s), boardsSectionText(s), initiativesSectionText(s), missionNonGoalsSectionText(s));
+  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage, missionSectionText(s), boardsSectionText(s), initiativesSectionText(s), missionNonGoalsSectionText(s), currentOpenspecAddendaSection());
 }
 
 /** Every surface for `state`. PURE over its inputs: `listings`, `hooks` and `lessons` are handed in. */

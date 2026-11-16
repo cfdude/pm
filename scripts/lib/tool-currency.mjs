@@ -289,7 +289,7 @@ export function openspecCurrency() {
  *  the repository that raised this issue nearly always has a change open, so a nudge suppressed
  *  by an active change is a nudge that never fires — which is precisely how four minor versions
  *  of drift accumulated unseen. So the drift is always reported; only the imperative changes,
- *  becoming "hold until `<change>` is archived". */
+ *  becoming "review before running it" (softened by gh#262: pm's own clause no longer lives in those files). */
 export function openspecCurrencyLines() {
   const c = openspecCurrency();
   if (!c) return [];
@@ -310,16 +310,16 @@ export function openspecCurrencyLines() {
   if (c.tracked === true) {
     L.push("   Those files are git-tracked here, so `git diff` after the run IS the review — read it before committing.");
   } else if (c.tracked === false) {
-    L.push("   Those files are NOT git-tracked here, so the run leaves no diff to review — copy them " +
-      "aside first, then compare afterwards.");
+    L.push("   Those files are NOT git-tracked here, so the run leaves no diff to review — run " +
+      "`openspec update --dry-run` first to see what it would rewrite.");
   } else {
-    L.push("   Could not tell whether those files are git-tracked here — copy them aside first, or the " +
-      "run may leave nothing to compare against.");
+    L.push("   Could not tell whether those files are git-tracked here — run `openspec update --dry-run` " +
+      "first, or the run may leave nothing to compare against.");
   }
   if (c.changes.length) {
-    L.push(`   ⏸ HOLD until ${c.changes.map(id => `\`${id}\``).join(", ")} ` +
-      `${c.changes.length === 1 ? "is" : "are"} archived — \`openspec update\` rewrites the very ` +
-      "instruction files that change is being authored against.");
+    L.push(`   ⏸ HOLD — ${c.changes.map(id => `\`${id}\``).join(", ")} ` +
+      `${c.changes.length === 1 ? "is" : "are"} in flight: review before running \`openspec update\`, which rewrites the very ` +
+      "instruction files that change is being authored against. Update on a branch and read the diff, or archive the change first.");
   }
   // Escaped HERE, not only at a caller's line sink: `upgrade` writes these lines straight to stderr, and
   // the versions and change ids come from the workspace (user-text-never-forges-output, Gate 2 T-S2).

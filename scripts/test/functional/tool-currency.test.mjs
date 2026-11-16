@@ -45,6 +45,9 @@ function withOpenspecArtifacts(cwd, { stamps = ["1.6.0"], changes = [], commands
     fs.mkdirSync(path.join(cwd, ".claude", "commands", "opsx"), { recursive: true });
     fs.writeFileSync(path.join(cwd, ".claude", "commands", "opsx", "apply.md"), "# apply\n");
   }
+  // The repo was initialised before openspec/ existed, so its managed block predates the addenda section: refresh it, or the
+  // brief reports MISSING (gh#262) in a fixture meant to be current.
+  run(["write-rules"], { cwd });
 }
 
 const OPENSPEC_NUDGE = /OpenSpec/;
@@ -109,6 +112,7 @@ test("gh#128: an undeterminable project version is CANNOT-TELL, never stale", ()
   run(["init"], { cwd });
   fs.mkdirSync(path.join(cwd, "openspec"), { recursive: true });
   fs.writeFileSync(path.join(cwd, "openspec", "config.yaml"), "schema: spec-driven\n");
+  run(["write-rules"], { cwd });   // a CURRENT block: the addenda section exists, so gh#262's MISSING stays silent
   assertAbsentThenReachable(cwd, { PM_OPENSPEC_VERSION: "1.10.0" }, () => {
     withOpenspecArtifacts(cwd, { stamps: ["1.6.0"] });
     return parseBrief(cwd, { env: { PM_OPENSPEC_VERSION: "1.10.0" } });
@@ -186,7 +190,7 @@ test("gh#128: untracked artifacts get COPY-ASIDE, because there is no diff to re
   withOpenspecArtifacts(cwd, { stamps: ["1.6.0"] });
   const brief = parseBrief(cwd, { env: { PM_OPENSPEC_VERSION: "1.10.0" } });
   assert.match(brief, OPENSPEC_NUDGE);
-  assert.match(brief, /copy .*aside|aside/i);
+  assert.match(brief, /--dry-run/);
   assert.doesNotMatch(brief, /`git diff` after/);
 });
 
@@ -236,7 +240,7 @@ test("gh#128: tracked-ness is scoped to THIS project, not to an enclosing reposi
   withOpenspecArtifacts(ignored, { stamps: ["1.6.0"] });
   fs.appendFileSync(path.join(parent, ".gitignore"), "ignored-project/\n");
   const brief = parseBrief(ignored, { env: { PM_OPENSPEC_VERSION: "1.10.0" } });
-  assert.match(brief, /aside/i);
+  assert.match(brief, /--dry-run/);
   assert.doesNotMatch(brief, /git diff/);
 });
 
@@ -289,7 +293,7 @@ test("user-text-never-forges-output (Gate 2 U2-I2): a change id holding a contro
   withOpenspecArtifacts(cwd, { stamps: ["1.6.0"], changes: [id] });
   const out = runCombined(["upgrade"], { cwd, env: { PM_OPENSPEC_VERSION: "1.10.0" } });
   // Non-vacuity: the HOLD line was printed, and it names the change.
-  assert.match(out, /HOLD until .*held/);
+  assert.match(out, /HOLD .*held/);
   const lineBreak = new RegExp("\\r\\n|[" + [10, 13, 0x85, 0x2028, 0x2029].map(ch).join("") + "]");
   assert.deepEqual(out.split(lineBreak).filter(l => /^\s*FORGED/.test(l)), [], "no line begins with a value's tail");
   for (const c of [13, 0x85, 0x2028]) assert.ok(!out.includes(ch(c)), `no raw U+${c.toString(16).padStart(4, "0")}`);
