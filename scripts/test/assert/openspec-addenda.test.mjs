@@ -106,3 +106,15 @@ test("upgrade prints the RESIDUAL line too (the second surface of the shared emi
   fs.writeFileSync(skill, `step 6; ${NEEDLE}\n`);
   assert.match(runCombined(["upgrade"], { cwd }), /OpenSpec addenda RESIDUAL/);
 });
+
+test("11.3 the brief reads the block from the RECORDED platform's rules file, as upgrade does (codex: AGENTS.md, not an unrelated CLAUDE.md)", () => {
+  const cwd = tmpRepo();
+  fs.mkdirSync(path.join(cwd, "openspec"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "CLAUDE.md"), "# CLAUDE.md\n\nproject notes with no pm block\n");
+  run(["init", "--platform", "codex"], { cwd });
+  assert.ok(fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8").includes(HEADING), "the codex block carries the section");
+  assert.doesNotMatch(parseBrief(cwd), /OpenSpec addenda MISSING/, "a block that HAS the section must not read as missing because CLAUDE.md lacks it");
+  const agents = path.join(cwd, "AGENTS.md");
+  fs.writeFileSync(agents, fs.readFileSync(agents, "utf8").replace(/## OpenSpec addenda[\s\S]*?(?=\n## )/, ""));
+  assert.match(parseBrief(cwd), /OpenSpec addenda MISSING/, "and a codex block that lacks it is reported");
+});
