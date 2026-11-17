@@ -1,4 +1,4 @@
-# Pending tooling feedback (awaiting approval to file; nothing here has been filed)
+# Tooling feedback — FILED 2026-11-17 (Rob granted standing permission to file pm feedback)
 
 Source: the release-planning-taxonomy build, 2026-11-16. Each item is TOOLING FRICTION worked around
 by hand, to be filed with `/pm:feedback` against `cfdude/pm` once Rob approves.
@@ -27,3 +27,7 @@ by hand, to be filed with `/pm:feedback` against `cfdude/pm` once Rob approves.
    away in 2.0** (`openspec config set delivery skills`). pm's `OPENSPEC_GENERATED_PATHS`, its stamp read and the
    RESIDUAL scan name that directory; the scan simply finds nothing once it is gone, but the HOLD text and
    `commands/upgrade.md` still mention it. Revisit when 2.0 ships.
+
+## Filed 2026-11-17
+- Item 1 → comment on #264 (same root cause). Item 2 → #278. Item 3 → #279. Item 4 → #280. Item 5 → #281.
+- Item 6 is #266 (tracked). Item 7 stays a watch for OpenSpec 2.0.
