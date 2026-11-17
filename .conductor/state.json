@@ -17079,7 +17079,7 @@
       "id": "release-planning-taxonomy",
       "title": "Release planning taxonomy: mission, initiative, milestone, release goal, non-goals",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -17117,7 +17117,7 @@
       ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-17T00:00:03.898Z",
+      "touchedAt": "2026-11-17T20:54:16.894Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
@@ -17241,7 +17241,76 @@
           "lastPassAt": "2026-11-17T00:00:03.892Z"
         }
       },
-      "startedAt": "2026-11-16T15:36:44.340Z"
+      "startedAt": "2026-11-16T15:36:44.340Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-17T20:54:16.888Z",
+        "reason": "shipped in 0.56.0: initiative level, milestone and release goal tied to it, non-goals, off-mission challenge, 80/20 health report, board --json initiatives and the nine rejected kinds; Gates 1, cross-spec and 2 recorded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-17T20:54:16.872Z",
+        "deferrals": [
+          {
+            "epic": "stop-and-escalate-floor",
+            "section": "proposal.md Non-goals of this change"
+          },
+          {
+            "epic": "project-assessment-skill",
+            "section": "proposal.md Non-goals of this change"
+          },
+          {
+            "epic": "pm-folder-consolidation",
+            "section": "proposal.md Non-goals of this change"
+          }
+        ],
+        "declined": [
+          {
+            "what": "Now/Next/Later roadmap view and folding the mission milestone into initiative milestones",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Derived progress attribution beyond the recorded fields",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Epic sizing with one default scale",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Definition of done at three levels",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Dependency-graph validation",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Risk register",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Deprecation record",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Decision-log expansion",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Appetite budgets",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Outcome review, successSignal and reviewDue",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Integrity check for commits in a release range no epic attributes",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-17T20:54:16.888Z"
     },
     {
       "id": "stop-and-escalate-floor",
@@ -17344,7 +17413,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2493,
+  "revision": 2494,
   "reviewMode": "standard",
   "releases": [
     {
