@@ -27,7 +27,7 @@ spawns nothing, and `assert/tool-currency.test.mjs:57` that the engine passes th
 generic "no write reaches a path matching X" guard would need the path at every one of the roughly 40 call sites; the writers are enumerated
 above and a new one is a review item, the same way the routing for `.conductor/` is.
 
-## 11.2 The new `rulesBlock` input (11th parameter, `openspecSection`)
+## 11.2 The new `rulesBlock` input (13th parameter, `openspecSection`)
 
 `rg -n "rulesBlock\(" scripts --glob '!scripts/test/**'` returns exactly three call sites and `rg -n "rulesBlock\b" scripts hooks commands skills`
 finds no alias or re-export:
@@ -91,7 +91,7 @@ removal, and no MIGRATIONS entry.
 | RESIDUAL / MISSING report | none | read-only, writes nothing |
 | Delete the clause from the two `.claude/` files | re-add | deliberately none; re-adding is the practice this epic ends (`assert 5.1` pins it) |
 | `upgrade.md` step-4 order, HOLD wording | none | doc/text only; the old text is replaced, not left beside the new (`assert upgrade-order-doc 7.1`) |
-| `rulesBlock` 11th parameter | pass `""` | yes: the default (`unit 2.7`) |
+| `rulesBlock` 13th parameter | pass `""` | yes: the default (`unit 2.7`) |
 | `briefing.mjs` passes the resolved platform (this sweep's fix) | pass nothing (default `claude-code`) | the default stays for a claude-code repo; `assert 11.3` pins the codex case |
 
 ## Plan tasks 1.4 and 1.5 (read-only findings, 2026-11-16, `openspec` 1.17.0)

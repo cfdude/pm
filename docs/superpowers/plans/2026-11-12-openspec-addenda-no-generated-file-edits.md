@@ -81,7 +81,7 @@ UNVERIFIED, carried forward (no task builds on any of them):
 **Rules block section.** `openspecAddendaSectionText({ hasOpenspec, present: { onboard, verify, bulkArchive } })` returns "" when `!hasOpenspec`, else:
 heading `## OpenSpec addenda`; the archive clause as an instruction that overrides step 6's check in the generated archive skill; the practice sentence
 ("`openspec update` rewrites `.claude/skills/openspec-*` and `.claude/commands/opsx/*`; carry any pm clause here, never there"). Task 6 adds up to three guardrail
-bullets, each only when its generated skill directory exists. `rulesBlock` gains an 11th parameter `openspecSection = ""` (default empty, so every existing
+bullets, each only when its generated skill directory exists. `rulesBlock` gains an 13th parameter `openspecSection = ""` (default empty, so every existing
 byte-pinned fixture is unchanged), placed after the Boards section and before "Re-read the source" like Boards. It is VERB-REFRESHED (written at `init`,
 `write-rules`, `upgrade`), outside `CONDITIONAL_SECTIONS`, because its gate is the filesystem (`openspec/` present), not a `state.json` input; the coverage guard
 at `scripts/test/unit/rules-conditional-coverage.test.mjs` varies only the four state inputs and must stay green, which is why the default is empty.
@@ -104,14 +104,14 @@ three guardrail bullets, total cap 1,200 B (about 300 tokens). Both only in repo
 | Delete the clause from the two `.claude/` files | Re-add it | Deliberately none: re-adding is the practice this epic ends. A file is restored to pristine by `openspec update`, which is outside pm. |
 | Step 4 order flip in `commands/upgrade.md` | None | Doc-only; the HOLD bullet is replaced, not left beside it. |
 | HOLD wording softening | None | Doc/text only. |
-| `rulesBlock` 11th parameter | Passing "" | Yes: the default is the inverse and every legacy caller keeps it. |
+| `rulesBlock` 13th parameter | Passing "" | Yes: the default is the inverse and every legacy caller keeps it. |
 
 ## File map
 
 | File | Change |
 |---|---|
 | `scripts/lib/openspec-addenda.mjs` | NEW: registry, pure findings, section text, fs wrapper, `openspecAddendaLines()`, `currentOpenspecAddendaSection()` |
-| `scripts/lib/rules.mjs` | `rulesBlock` 11th param + emission; `writeRules` passes the reader (line 1334) |
+| `scripts/lib/rules.mjs` | `rulesBlock` 13th param + emission; `writeRules` passes the reader (line 1334) |
 | `scripts/conductor.mjs` | line 529 `rulesBlock(` call passes the reader |
 | `scripts/lib/overhead.mjs` | line 181 `rulesBlock(` call passes the reader |
 | `scripts/lib/briefing.mjs`, `scripts/lib/migrations.mjs` | call `openspecAddendaLines()` beside the currency lines (178, 288) |
@@ -169,7 +169,7 @@ each task below is independently committable and revertible. Agents do not run s
 
 - [ ] **4. The rules block section (RED already written in 2.6-2.7; add the assert half here).**
   - [ ] 4.1 RED: `scripts/test/assert/openspec-addenda.test.mjs` (tmp repo from `../fixtures/assert-harness.mjs`): (a) repo with `openspec/`: after `init` then `write-rules` the CLAUDE.md block contains `## OpenSpec addenda` exactly once and the needle sentence; (b) repo without `openspec/`: absent; (c) `rm -r openspec` then `write-rules`: the heading is gone (the inverse); (d) `write-rules` twice: second run leaves the file byte-identical; (e) `rules --sections` lists the heading with a byte size at most 400; (f) `overhead` output for the same repo includes the section (proves overhead.mjs:181 passes it).
-  - [ ] 4.2 GREEN: `rulesBlock` 11th parameter `openspecSection = ""`, emitted after the Boards section (`rules.mjs` near the `boardsSection` push) via the same `{{pm:...}}` replace path; `writeRules` (rules.mjs:1334), `scripts/conductor.mjs:529`, `scripts/lib/overhead.mjs:181` pass `currentOpenspecAddendaSection()`.
+  - [ ] 4.2 GREEN: `rulesBlock` 13th parameter `openspecSection = ""`, emitted after the Boards section (`rules.mjs` near the `boardsSection` push) via the same `{{pm:...}}` replace path; `writeRules` (rules.mjs:1334), `scripts/conductor.mjs:529`, `scripts/lib/overhead.mjs:181` pass `currentOpenspecAddendaSection()`.
   - [ ] 4.3 Update only the pinned tests found in 1.7 whose numbers the new default-empty parameter does not already preserve (expect none, since the default is empty); report any you change.
   - [ ] 4.4 Run the rules unit files (`rg -l "rulesBlock" scripts/test/unit | xargs node --test`) and the new assert file. `rules-conditional-coverage.test.mjs` must pass unmodified.
   - [ ] 4.5 Regenerate this repo's block: `node scripts/conductor.mjs write-rules` (this repo has `openspec/`, so the block gains the section). Review `git diff CLAUDE.md`: the ONLY change is the new section inside the markers. Do not edit CLAUDE.md while certify or a hook is running.

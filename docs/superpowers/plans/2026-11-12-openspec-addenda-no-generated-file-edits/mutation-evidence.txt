@@ -66,12 +66,26 @@ restored: git diff empty
 
 mutant 13 drop the section emission in rulesBlock (scripts/lib/rules.mjs)
 run:    node --test (the five addenda/tool-currency/upgrade-doc files)
-result: KILLED (8 failing: 4.1a a repo with openspec/ carries the section exactly once,; 4.1c removing openspec/ and refreshing drops the section; 4.1e `rules --sections` lists the heading with a size within; 4.1f `overhead` counts the section for the same repo; brief: pm text left inside a generated file is RESIDUAL; a c; brief: a repo with openspec/ whose block lacks the section r)
+result: KILLED (6 failing: 4.1a a repo with openspec/ carries the section exactly once,; 4.1c removing openspec/ and refreshing drops the section; 4.1e `rules --sections` lists the heading with a size within; 4.1f `overhead` counts the section for the same repo; brief: pm text left inside a generated file is RESIDUAL; a c; brief: a repo with openspec/ whose block lacks the section r)
 restored: git diff empty
 
 mutant 14 omit currentOpenspecAddendaSection() in writeRules (scripts/lib/rules.mjs)
 run:    node --test (the five addenda/tool-currency/upgrade-doc files)
 result: KILLED (5 failing: 4.1a a repo with openspec/ carries the section exactly once,; 4.1c removing openspec/ and refreshing drops the section; brief: pm text left inside a generated file is RESIDUAL; a c; brief: a repo with openspec/ whose block lacks the section r; gh#196: a CLI that is present but whose version cannot be re)
+restored: git diff empty
+
+mutant 15 revert the upgrade's openspecAddendaLines(resolvePlatform({}, state)) to no platform (scripts/lib/migrations.mjs:289) (fix pass for Gate 2 I1)
+run:    node --test scripts/test/assert/openspec-addenda.test.mjs
+result: KILLED (1 failing: 11.4 upgrade reads the RECORDED platform's rules file too; RED before the fix pass: the suite had no codex-repo upgrade test, so this mutant survived)
+restored: git diff empty
+
+mutant 16 revert the brief's openspecAddendaLines(resolvePlatform({}, state)) to no platform (scripts/lib/briefing.mjs:181; the 4044476a fix)
+run:    node --test scripts/test/assert/openspec-addenda.test.mjs
+result: KILLED (1 failing: 11.3 the brief reads the block from the RECORDED platform's rules file)
+restored: git diff empty
+
+mutant 17 make MISSING read the whole file instead of the managed block (managedBlockBody) (scripts/lib/openspec-addenda.mjs) -- RED test 2.7 written first, failing on the old whole-file check
+result: KILLED by 2.7 (RED against the pre-fix code)
 restored: git diff empty
 
 No guard survived. The 12.10 scan did not exist before this change (tool-currency.test.mjs:57 covers only tool-currency.mjs); it was added to assert/openspec-addenda.test.mjs.
