@@ -263,6 +263,6 @@
 
 ## C. Close
 
-- [ ] C.1 Re-record Gate 2 after the docs if the docs added commits. Re-record, never withdraw.
+- [x] C.1 Re-record Gate 2 after the docs if the docs added commits. Re-record, never withdraw.
 - [ ] C.2 <!-- pm:lifecycle --> **Disposition.** `update-epic release-planning-taxonomy --status archived --outcome delivered --reason "<why>"` with one `--deferral "<epicId>:proposal.md Non-goals of this change"` per registered Later/Next epic and one `--declined-deferral "<what>::<why not>"` per Later/Next item deliberately not registered (`--no-deferrals` only if the list is empty). Then `/pm:status`.
 - [ ] C.3 <!-- pm:lifecycle --> **Archive.** `/opsx:archive release-planning-taxonomy`. Do NOT attribute the archive-move commit.
