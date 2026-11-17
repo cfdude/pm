@@ -256,9 +256,9 @@
 ## V. Release discipline (0.56.0, at the cut, per the `release-checklist` skill)
 
 - [x] V.1 Confirm `.changesets/release-planning-taxonomy.md` covers every user-facing change above.
-- [ ] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.56.0` at the release cut, not in this change.
-- [ ] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.56.0 entry.
-- [ ] V.4 MIGRATIONS: none, because every key is additive (evidence: 8.2). If an Open question's answer added a transform,
+- [x] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.56.0` at the release cut, not in this change.
+- [x] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.56.0 entry.
+- [x] V.4 MIGRATIONS: none, because every key is additive (evidence: 8.2). If an Open question's answer added a transform,
       its entry is keyed to 0.56.0, additive and idempotent, and a state file written by 0.55.0 still loads.
 
 ## C. Close
