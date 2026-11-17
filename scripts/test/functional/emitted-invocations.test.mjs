@@ -3048,6 +3048,13 @@ export function printedTemplates(verbs = dispatchedVerbs(), dir = path.join(REPO
  *  Layer A over it and asserts every template in the source was reached. `expect` is the fixture's
  *  own sanity check that it produced the printer it is named for. */
 const PRINTER_FIXTURES = {
+  "the OpenSpec addenda bullet for /opsx:bulk-archive names the per-member disposition call (openspec-addenda-no-generated-file-edits)"() {
+    // Printed by openspec-addenda.mjs into the managed block, only when openspec/ and the generated bulk-archive skill exist.
+    const repo = remedyRepo();
+    repo.file("openspec/.keep", "");
+    repo.file(".claude/skills/openspec-bulk-archive-change/SKILL.md", "x");
+    return [[repo.run(["rules"]), /update-epic <id> --status archived --outcome <outcome> --reason "<why>"/]];
+  },
   "record-decision while spend tracking is off (decision-cost-log)"() {
     // The refusal names the epic-note alternative as a runnable invocation.
     const repo = remedyRepo();

@@ -118,3 +118,11 @@ test("11.3 the brief reads the block from the RECORDED platform's rules file, as
   fs.writeFileSync(agents, fs.readFileSync(agents, "utf8").replace(/## OpenSpec addenda[\s\S]*?(?=\n## )/, ""));
   assert.match(parseBrief(cwd), /OpenSpec addenda MISSING/, "and a codex block that lacks it is reported");
 });
+
+test("11.4 upgrade reads the RECORDED platform's rules file too (codex repo, unrelated CLAUDE.md: no false MISSING; upgrade refreshes the block first, so the section is present in AGENTS.md)", () => {
+  const cwd = tmpRepo();
+  fs.mkdirSync(path.join(cwd, "openspec"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "CLAUDE.md"), "# CLAUDE.md\n\nproject notes with no pm block\n");
+  run(["init", "--platform", "codex"], { cwd });
+  assert.doesNotMatch(runCombined(["upgrade"], { cwd }), /OpenSpec addenda MISSING/, "upgrade must read AGENTS.md, not the unrelated CLAUDE.md");
+});

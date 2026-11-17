@@ -22,7 +22,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { engineRoot, escapeControls } from "./constants.mjs";
+import { RULES_BEGIN_PREFIX, RULES_END, engineRoot, escapeControls } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
 /** The pm-authored clauses once hand-edited into generated files. `needle` is the exact text the edit added. */
@@ -43,7 +43,7 @@ export const OPENSPEC_ADDENDA_BULLET_MAX_BYTES = 260;
 const GUARDRAILS = [
   { flag: "onboard", text: "- Never run `/opsx:onboard`: it archives with no gate or disposition." },
   { flag: "verify", text: "- `/opsx:verify` flags `<!-- pm:lifecycle -->` tasks as CRITICAL: a false positive (#261). Never tick or unmark one." },
-  { flag: "bulkArchive", text: "- `/opsx:bulk-archive` records no dispositions: afterwards record each member's disposition with update-epic, one call per member." },
+  { flag: "bulkArchive", text: "- `/opsx:bulk-archive` records no dispositions: afterwards run `update-epic <id> --status archived --outcome <outcome> --reason \"<why>\"` per member, with a deferral assertion (`--no-deferrals` only if there are none)." },
 ];
 
 /** The section for the managed block, or "" when the repo does not use OpenSpec. PURE: `present` says which generated
@@ -60,6 +60,14 @@ export function openspecAddendaSectionText({ hasOpenspec, present = {} } = {}) {
   return lines.join("\n");
 }
 
+/** The text between the managed-block markers, or "" when the file carries no complete block. */
+function managedBlockBody(text) {
+  const start = text.indexOf(RULES_BEGIN_PREFIX);
+  if (start < 0) return "";
+  const end = text.indexOf(RULES_END, start);
+  return end < 0 ? "" : text.slice(start, end);
+}
+
 /** PURE findings over what was read. Sorted by path so two runs agree. */
 export function openspecAddendaFindings({ hasOpenspec, generatedFiles = [], blockText = null } = {}) {
   const out = { residual: [], missing: [] };
@@ -71,7 +79,9 @@ export function openspecAddendaFindings({ hasOpenspec, generatedFiles = [], bloc
     }
   }
   // `null` means no rules target exists yet: nothing to compare against, so say nothing.
-  if (blockText !== null && !blockText.includes(OPENSPEC_ADDENDA_HEADING)) {
+  // Only the text BETWEEN the managed-block markers counts: the user's own "## OpenSpec addenda" heading outside the block is
+  // not pm's section and must not hide a real MISSING. No markers at all is no block.
+  if (blockText !== null && !managedBlockBody(blockText).includes(OPENSPEC_ADDENDA_HEADING)) {
     for (const a of PM_OPENSPEC_ADDENDA) out.missing.push({ id: a.id });
   }
   return out;

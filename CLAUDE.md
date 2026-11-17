@@ -617,7 +617,7 @@ The `project-boards` skill and `/pm:boards` draw the backlog and release boards 
 - Archive: in the generated archive skill's step 6, a spec the sync deliberately kept and reported is also a match.
 - Never run `/opsx:onboard`: it archives with no gate or disposition.
 - `/opsx:verify` flags `<!-- pm:lifecycle -->` tasks as CRITICAL: a false positive (#261). Never tick or unmark one.
-- `/opsx:bulk-archive` records no dispositions: afterwards run `update-epic <id> --status archived --outcome … --no-deferrals` per member.
+- `/opsx:bulk-archive` records no dispositions: afterwards run `update-epic <id> --status archived --outcome <outcome> --reason "<why>"` per member, with a deferral assertion (`--no-deferrals` only if there are none).
 
 ## Re-read the source before an epic becomes the work
 

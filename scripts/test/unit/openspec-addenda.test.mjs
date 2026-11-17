@@ -4,13 +4,15 @@
 
 import assert from "node:assert/strict";
 import { unitTest } from "../fixtures/unit-harness.mjs";
+import { RULES_BEGIN, RULES_END } from "../../lib/constants.mjs";
 import {
   OPENSPEC_ADDENDA_BULLET_MAX_BYTES, OPENSPEC_ADDENDA_HEADING, OPENSPEC_ADDENDA_MAX_BYTES, OPENSPEC_ADDENDA_MAX_BYTES_FULL,
   PM_OPENSPEC_ADDENDA, openspecAddendaFindingLines, openspecAddendaFindings, openspecAddendaSectionText,
 } from "../../lib/openspec-addenda.mjs";
 
 const NEEDLE = PM_OPENSPEC_ADDENDA[0].needle;
-const WITH_HEADING = `${OPENSPEC_ADDENDA_HEADING}\n\nbody`;
+const inBlock = (body) => `# CLAUDE.md\n\n${RULES_BEGIN}\n${body}\n${RULES_END}\n`;
+const WITH_HEADING = inBlock(`${OPENSPEC_ADDENDA_HEADING}\n\nbody`);
 const bytes = (s) => Buffer.byteLength(s, "utf8");
 
 unitTest("2.1 a needle inside a generated file is RESIDUAL, naming the id and the path; two files give two entries sorted by path", () => {
@@ -26,7 +28,7 @@ unitTest("2.1 a needle inside a generated file is RESIDUAL, naming the id and th
 
 unitTest("2.2 no needle anywhere: MISSING exactly when the block lacks the heading", () => {
   const files = [{ path: ".claude/commands/opsx/archive.md", text: "pristine" }];
-  assert.deepEqual(openspecAddendaFindings({ hasOpenspec: true, generatedFiles: files, blockText: "## Boards" }).missing, [{ id: "archive-sync-kept-allowance" }]);
+  assert.deepEqual(openspecAddendaFindings({ hasOpenspec: true, generatedFiles: files, blockText: inBlock("## Boards") }).missing, [{ id: "archive-sync-kept-allowance" }]);
   assert.deepEqual(openspecAddendaFindings({ hasOpenspec: true, generatedFiles: files, blockText: WITH_HEADING }), { residual: [], missing: [] });
 });
 
@@ -77,4 +79,17 @@ unitTest("6.1 each guardrail bullet appears iff its flag is true, within its cap
     assert.ok(bytes(t) <= OPENSPEC_ADDENDA_MAX_BYTES_FULL);
     if (!mask) assert.equal(t, base);
   }
+});
+
+unitTest("2.7 MISSING reads only the text between the managed-block markers: a user's own heading OUTSIDE the block does not hide it", () => {
+  const files = [{ path: ".claude/commands/opsx/archive.md", text: "pristine" }];
+  const outside = `${OPENSPEC_ADDENDA_HEADING}\n\nmy own notes\n\n${inBlock("## Boards")}`;
+  assert.deepEqual(openspecAddendaFindings({ hasOpenspec: true, generatedFiles: files, blockText: outside }).missing, [{ id: "archive-sync-kept-allowance" }]);
+  assert.deepEqual(openspecAddendaFindings({ hasOpenspec: true, generatedFiles: files, blockText: OPENSPEC_ADDENDA_HEADING }).missing, [{ id: "archive-sync-kept-allowance" }], "no markers at all is no block");
+});
+
+unitTest("6.2 the bulk-archive bullet tells the agent the full disposition call: --status archived --outcome, a reason, and a deferral claim that is never the default", () => {
+  const t = openspecAddendaSectionText({ hasOpenspec: true, present: { bulkArchive: true } });
+  assert.ok(t.includes("`update-epic <id> --status archived --outcome <outcome> --reason \"<why>\"`"), t);
+  assert.ok(t.includes("(`--no-deferrals` only if there are none)"), "the deferral flag is named as a claim, not a default");
 });
