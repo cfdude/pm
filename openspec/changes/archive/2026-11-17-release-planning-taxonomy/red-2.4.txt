@@ -1,0 +1,7 @@
+RED for task 2.4 (references, integrity): NO FAILING RUN WAS CAPTURED, stated plainly.
+The `dangling-initiative-reference` integrity check was written in scripts/lib/integrity.mjs before
+scripts/test/unit/initiative-references.test.mjs, so that file passed on its first run. What did fail first, and was fixed, were the
+suites that enumerate every check: assert/emitted-invocations.test.mjs "every integrity CHECKS id has a builder" and
+functional/conductor-15.test.mjs 9.14 (the day-one record must name every check). The unknown-id refusal on release and the epic
+verbs is asserted where each flag landed: release-initiative.test.mjs (4.1) and epic-planning-fields.test.mjs (5.1), both with RED files.
+Mutation evidence for the integrity report and the export's null read: mutation-evidence.txt, section "references".

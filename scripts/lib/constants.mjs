@@ -487,6 +487,34 @@ export const EPIC_FLAGS = [
     requires: "one line of at most 200 characters" },
   { flag: "why-now", key: "whyNow", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
     requires: "one line of at most 300 characters" },
+  // release-planning-taxonomy (spec non-goals): ONE non-goal shape on four records, added by `--add-non-goal` (repeatable; on an epic the
+  // batch key is the `nonGoals` array of strings) and removed by `--remove-non-goal "nN:<why>"` (inline reason, split at the first
+  // colon, NOT repeatable: one reason never covers two records — design D5). `release` is listed because the row is the release's
+  // too; `mission` and `initiative` carry their own rows in VERB_FLAGS.
+  { flag: "add-non-goal", key: "nonGoals", commands: ["add-epic", "update-epic", "add-many", "release"], repeats: true, write: "append",
+    requires: "one line of at most 300 characters",
+    setOnly: "non-goals are a RECORD of what was ruled out — a removal is marked with `--remove-non-goal \"nN:<why>\"` and kept, and a bulk clear would erase the record that marking exists to keep" },
+  // `repeats: true` so a repeat ARRIVES as an array and is refused by name ("not repeatable") rather than keeping the last value silently.
+  { flag: "remove-non-goal", key: null, commands: ["update-epic", "release"], write: "custom", repeats: true,
+    requires: "\"nN:<why>\" (a non-goal id and the reason it is removed)", placeholder: "nN:<why>" },
+  // release-planning-taxonomy (spec epic-annotation): the planning fields, through lib/epic-planning.mjs on all three surfaces. Each scalar is
+  // nullable (`--clear <flag>`; clearing `initiative` also removes `initiativeJoinedAt`). The secondary list is appended by
+  // `--secondary-initiative` (repeatable) and shortened by its own inverse, `--remove-secondary-initiative`.
+  // `release` shares the row: `release <id> --initiative <id>` names the release's primary, written by the verb itself (key `initiative` on the RELEASE).
+  { flag: "initiative", key: "initiative", commands: ["add-epic", "update-epic", "add-many", "release"], nullable: true, requires: "a recorded initiative id",
+    clearNote: "it no longer counts as serving that initiative (it reads as `unaligned` in a release's split unless it is `health`), its `initiativeJoinedAt` is removed, and the challenge warning applies again when it next leaves `untriaged`. Re-attach with --initiative <id>" },
+  { flag: "secondary-initiative", key: "secondaryInitiatives", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
+    requires: "a recorded initiative id",
+    setOnly: "the secondary list is shortened one entry at a time with `--remove-secondary-initiative <id>`, never cleared in bulk" },
+  { flag: "remove-secondary-initiative", key: null, commands: ["update-epic"], repeats: true, write: "custom", requires: "a secondary initiative id of this epic" },
+  { flag: "kind", key: "kind", commands: ["add-epic", "update-epic", "add-many"], nullable: true, placeholder: "initiative-work|health",
+    clearNote: "it counts by its effective kind again: a `claude-code` epic reads `initiative-work` when it names an initiative and `health` otherwise, any other epic reads as unaligned unless it names an initiative. Re-set with --kind initiative-work|health" },
+  { flag: "off-mission-reason", key: "offMissionReason", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    requires: "one line of at most 300 characters",
+    clearNote: "the recorded answer to \"does this serve the mission?\" is gone, so the agent may challenge the epic again. Re-record with --off-mission-reason \"<why>\"" },
+  { flag: "off-initiative-reason", key: "offInitiativeReason", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    requires: "one line of at most 300 characters",
+    clearNote: "the recorded answer to \"does this serve its release's initiative?\" is gone, so the challenge warning applies again when it next leaves `untriaged`. Re-record with --off-initiative-reason \"<why>\"" },
   // spec-sync-waive-for-skip-specs. The ONE record that a delivered change's archived spec deltas were
   // INTENTIONALLY not applied to the main specs (an archive taken with `openspec archive --skip-specs`).
   // The value IS the reason, so a waiver cannot be recorded without one. `delivered-epic-spec-deltas-absent`
@@ -711,6 +739,14 @@ export const EPIC_FLAGS = [
   { flag: "text", key: null, commands: ["release"], write: "custom", requires: "one line of at most 200 characters" },
   { flag: "next", key: null, commands: ["release"], write: "custom", requires: "one line of at most 200 characters" },
   { flag: "clear-here", key: null, commands: ["release"], write: "custom", valueless: true },
+  // release-planning-taxonomy (spec release-planning). A release names ONE primary initiative OR declares it serves none; each replaces the
+  // other and `--clear-initiative` removes either. The valueless `--clear-<thing>` spelling is design D5's: `--clear <field>` names a closed
+  // list (theme, rationale, exit, order, size, target) and these are not on it. `--split-reason` is the 80/20 override as a recorded
+  // reason, never a switch. The release's goal is its `theme`: there is no `--goal`.
+  { flag: "maintenance", key: null, commands: ["release"], write: "custom", valueless: true },
+  { flag: "clear-initiative", key: null, commands: ["release"], write: "custom", valueless: true },
+  { flag: "split-reason", key: null, commands: ["release"], write: "custom", requires: "one line of at most 400 characters (why this release departs from 80/20)" },
+  { flag: "clear-split-reason", key: null, commands: ["release"], write: "custom", valueless: true },
   { flag: "deliver", key: null, commands: ["release"], write: "custom", valueless: true },
   { flag: "undeliver", key: null, commands: ["release"], write: "custom", valueless: true },
   // THE EPIC LAYER OF THE EXECUTION PROFILE (execution-profile-layered-settings D3/D4). Three fields,
@@ -1021,14 +1057,29 @@ export const VERB_FLAGS = [
   { flag: "linked-to", commands: ["list"], requires: "an epic id" },
   // `mission` (project-boards). `--reason` is the shared epic-flags row (it lists `mission`); the rest are scoped here.
   { flag: "statement", commands: ["mission"], requires: "one line of at most 300 characters" },
-  { flag: "end", commands: ["mission"], valueless: true },
+  { flag: "end", commands: ["mission", "initiative"], valueless: true },
   { flag: "milestone", commands: ["mission"], requires: "a release id" },
   { flag: "clear-milestone", commands: ["mission"], valueless: true },
   { flag: "add-criterion", commands: ["mission"], requires: "one line of at most 300 characters" },
   { flag: "remove-criterion", commands: ["mission"], requires: "a criterion id (cN)" },
   { flag: "check", commands: ["mission"], requires: "one line of at most 300 characters (how to check it)" },
   { flag: "needs-human", commands: ["mission"], valueless: true },
-  { flag: "history", commands: ["mission"], valueless: true },
+  { flag: "history", commands: ["mission", "initiative"], valueless: true },
+  // `initiative` (release-planning-taxonomy). `--reason` is the shared row above and serves only `--end` and `--reopen` here; every
+  // other operation carries its reason INLINE (`mN:<why>`, split at the first colon: design D5), so `--reason` never covers two records.
+  { flag: "title", commands: ["initiative"], requires: "one line of at most 200 characters" },
+  { flag: "capability", commands: ["initiative"], requires: "one line of at most 400 characters (the valuable capability it delivers)" },
+  { flag: "source", commands: ["initiative"], requires: "one line of at most 300 characters (where it was derived from; UNGROUNDED is accepted)" },
+  { flag: "off-mission-reason", commands: ["initiative"], requires: "one line of at most 300 characters" },
+  { flag: "clear", commands: ["initiative"], repeats: true, requires: "the FLAG NAME of a field to unset: source or off-mission-reason", placeholder: "source|off-mission-reason" },
+  { flag: "reopen", commands: ["initiative"], valueless: true },
+  { flag: "outcome", commands: ["initiative"], placeholder: "delivered|abandoned|superseded" },
+  { flag: "add-milestone", commands: ["initiative"], requires: "one line of at most 300 characters (an initiative milestone)" },
+  { flag: "remove-milestone", commands: ["initiative"], repeats: true, requires: "\"mN:<why>\" (an initiative milestone id and the reason it is removed)", placeholder: "mN:<why>" },
+  { flag: "reach-milestone", commands: ["initiative"], repeats: true, requires: "\"mN:<evidence>\" (an initiative milestone id and one line of evidence)", placeholder: "mN:<evidence>" },
+  { flag: "add-non-goal", commands: ["mission", "initiative"], repeats: true, requires: "one line of at most 300 characters" },
+  { flag: "remove-non-goal", commands: ["mission", "initiative"], repeats: true, requires: "\"nN:<why>\" (a non-goal id and the reason it is removed)", placeholder: "nN:<why>" },
+  { flag: "unreach-milestone", commands: ["initiative"], repeats: true, requires: "\"mN:<why>\" (the human override of a reached mark)", placeholder: "mN:<why>" },
   // `set-project` (project-boards 8.3): the project name and key, each removed by `--unset`.
   { flag: "name", commands: ["set-project"], requires: "a project name of at most 60 characters" },
   { flag: "key", commands: ["set-project"], requires: "two or three uppercase letters, such as PM" },
@@ -1078,7 +1129,7 @@ export const VERB_FLAGS = [
   { flag: "unset", commands: ["set-spend-guard"], repeats: true, placeholder: "max-failed-rounds|tokens|token-basis|warn-at|all" },
   { flag: "signal", commands: ["override-spend-guard"], placeholder: "rounds|tokens" },
   { flag: "escalated-to", commands: ["override-spend-guard"], placeholder: "user|fable|opus|sonnet|haiku" },
-  { flag: "reason", commands: ["override-spend-guard", "record-decision", "mission"], requires: REASON_REQUIRES },
+  { flag: "reason", commands: ["override-spend-guard", "record-decision", "mission", "initiative"], requires: REASON_REQUIRES },
   { flag: "revoke", commands: ["override-spend-guard"], valueless: true },
   { flag: "clear", commands: ["spend", "dev-log"], valueless: true },
   { flag: "rebuild", commands: ["spend"], valueless: true },
@@ -1153,6 +1204,11 @@ export const VERB_POSITIONALS = {
   integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0, list: P0, board: P0, overhead: P0,
   // `mission` takes the reserved read keyword `show` or nothing (every other argument is a flag).
   mission: { min: 0, max: 1, form: "[show]", idFirst: false, freeText: false }, "dev-log": P0, "spend-analysis": P0,
+  // `initiative <id> …` writes, `initiative show [<id>]` reads; `show` is reserved. The first positional is an initiative id, not an epic id.
+  initiative: {
+    min: 1, max: 1, form: "<id>", idFirst: false, freeText: false,
+    byFirst: { show: { min: 1, max: 2, form: "show [<id>]" } },
+  },
   changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,

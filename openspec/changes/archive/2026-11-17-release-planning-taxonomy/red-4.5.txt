@@ -1,0 +1,7 @@
+RED for task 4.5 (fails before 4.5)
+command: node --test scripts/test/unit/attribution-nudge.test.mjs
+✖ untied nudge, active epic in a release, no maintenance epic yet: it names maintenance-<releaseId> with runnable commands
+✖ untied nudge, the maintenance epic exists: only the attribute command, no add-epic
+ℹ tests 17
+ℹ pass 15
+ℹ fail 2

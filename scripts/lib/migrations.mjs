@@ -16,6 +16,7 @@ import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore, untrackInstruction } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { openspecAddendaLines } from "./openspec-addenda.mjs";
 import { sessionCostReport } from "./session-cost-report.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
@@ -285,7 +286,7 @@ export function upgrade() {
   // tree, reported. A migration that consulted disk would produce different results on machines
   // whose checkouts sit at different commits, which is the one property a one-shot,
   // never-replayed transformation may not have.
-  const openspecLines = openspecCurrencyLines();
+  const openspecLines = [...openspecCurrencyLines(), ...openspecAddendaLines(resolvePlatform({}, state))];
   for (const l of openspecLines) errStream().write(l + "\n");
 
   // rules-block-session-cost — what this repo's pm now costs every session: the managed block just

@@ -19,6 +19,8 @@ import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { openspecAddendaLines } from "./openspec-addenda.mjs";
+import { resolvePlatform } from "./platform.mjs";
 import { briefProfileLines, resolveProfile } from "./execution-profile.mjs";
 import { briefGuardLines } from "./spend-guard.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
@@ -175,7 +177,8 @@ export function buildBriefParts(state, { consume = false, specSync = false, less
   // because a reader who scrolls past the top of a brief never sees a currency warning at all.
   // Emits nothing (and spawns nothing) unless this repo has an `openspec/` directory AND a
   // readable generated stamp — see tool-currency.mjs's guard-ordering note.
-  const openspecLines = openspecCurrencyLines();
+  // gh#262 — the same class of finding, same sink: pm text left inside a generated file, or no addenda section in the block.
+  const openspecLines = [...openspecCurrencyLines(), ...openspecAddendaLines(resolvePlatform({}, state))];
   if (openspecLines.length) {
     for (const l of openspecLines) L.push(l);
     L.push("");

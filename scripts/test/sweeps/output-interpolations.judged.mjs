@@ -392,8 +392,8 @@ x("constants.mjs", "flagInValuePositionMessage", {
 x("add-many.mjs", "addMany", {
   "EPIC_ID_FORMAT.source": 1,
   "allowedKeys.join(\", \")": 1,
-  "k": 1,
-}, "engine", "the id-format source and the batch key allowlist; k is filtered to allowedKeys before");
+  "k": 2,
+}, "engine", "the id-format source and the batch key allowlist; k is filtered to allowedKeys before, and in the release-planning-taxonomy check it walks a fixed list of planning key names");
 x("add-many.mjs", "addMany", {
   "trackerKeyRefusal(hit, candidate, { inBatch: claimed.includes(hit.holder) })": 1,
 }, "passthrough", "tracker-dedup.mjs's refusal: every value it quotes is escaped (or printedId'd) where it is built");
@@ -1263,3 +1263,26 @@ x("spend-guard-verbs.mjs", "withdrawnNotices", {
 x("spend-guard.mjs", "stopBlock", {
   "t.source": 1,
 }, "passthrough", "a resolver source layer name (epic, lane:<lane>, project, default); the whole block leaves through lines.map(escapeControls)");
+
+// ── release-planning-taxonomy: the initiative verb, non-goals, the planning fields and the release plan lines
+j("initiative.mjs", "applyInitiative", ALL, "sink-flow", "every refusal message and note leaves through initiative(): die(`conductor: ${escapeControls(r.message)}`) and errStream().write(escapeControls(n)); the ids and caller text in it are escaped where built or are registry vocabulary");
+j("initiative.mjs", "initiativeShowLines", ALL, "sink-flow", "every line is pushed onto L (or mapped into `lines`) and initiative() prints them through shown.lines.map(escapeControls).join");
+j("releases.mjs", "purposeLine", ALL, "sink-flow", "one line pushed onto releaseShow's `out`, printed through out.map(escapeControls).join");
+j("releases.mjs", "purposeSuffix", ALL, "sink-flow", "a suffix on a line pushed onto releaseShow's `out`, printed through out.map(escapeControls).join");
+j("releases.mjs", "splitLines", ALL, "sink-flow", "its lines are pushed onto releaseShow's `out`, printed through out.map(escapeControls).join; the counts and percentages are numbers the engine computed");
+x("non-goals.mjs", "addNonGoals", { "n": 1 }, "engine", "the per-record counter, a positive integer the engine computed (`n1`, `n2`, ...)");
+x("non-goals.mjs", "parseRemoval", {
+  "flag": 3, "prefix": 1, "what": 1, "shape": 4, "need": 3, "noun": 1,
+}, "engine", "the flag name, id prefix, noun and `why`/`evidence` word are literals passed by the five call sites (initiative, mission, release, update-epic); `shape` and `need` are built from them. No caller-supplied text is interpolated");
+x("epic-planning.mjs", "planningError", { "where": 1, "flag": 1 }, "passthrough", "w(flag)'s prefix and flag name: `where` is the caller's escaped batch-entry label (or empty), `flag` a literal flag spelling; every refusal returned from planningError() is wrapped in escapeControls where built, and lineFieldError escapes its own");
+x("mission.mjs", "mission", {
+  "missionSectionText(state)": 2, "missionNonGoalsSectionText(state)": 2,
+}, "not-output", "string concatenation of two rules-block section texts to compare them before and after a write; never printed");
+j("rules.mjs", "missionNonGoalsSectionText", ALL, "sink-flow", "the `## Mission non-goals` section: its only consumer is rulesBlock()'s lines (split on \\n and joined through lines.map(escapeControls)); the joined non-goal text is escapeControls'd before truncation");
+x("subcommands.mjs", "untiedOutlet", {
+  "rid": 1, "s": 1, "create": 1, "asCode(attribute)": 1, "asCode(addEpic)": 1, "asCode(member)": 1,
+}, "engine", "rid is a release id that must make `maintenance-<rid>` pass STORABLE_EPIC_ID (a safe id) before anything is built; s is a full sha read from a reflog line; `create` and `attribute` are built through orNoRemedy()/printedId(), which print the no-remedy text for an id holding a control character");
+x("subcommands.mjs", "attributionNudge", { "untiedOutlet(state, epic, list, cmd)": 1 }, "passthrough", "untiedOutlet()'s text, composed and escaped where it was built (see its judgment)");
+
+// ── gh#262: the OpenSpec addenda check
+j("openspec-addenda.mjs", "readGeneratedFiles", ALL, "sink-flow", "the directory-entry names it joins into repo-relative paths reach only openspecAddendaFindingLines, whose every line is returned through L.map(escapeControls); file CONTENT is never interpolated");

@@ -179,7 +179,7 @@ repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --re
 sets a single epic's own review (it may raise OR lower the repo dial) · `set-profile` / `profile` write and read the
 execution profile (review, model per job role — `plan`, `implement`, `test`, `review`, `mechanical`, `rudimentary`, each with a built-in default pair that is never stored — and verbosity) at the project and lane layers — resolved
 most-specific-wins per field (epic, then lane, then project, then default; an epic may LOWER review), an
-epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · the release plan fields (`--theme`, `--rationale`, `--exit`, `--order`, `--size`, each cleared with `--clear <field>`; the status is derived, never stored) and `release here <id>` the plan marker (`release here --clear-here` removes it) · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
+epic's own values set through `update-epic` (flags `--review-mode`, `--model`, `--verbosity`; see `/pm:profile`) · `release show <id>` prints a derived `candidate review:` line (converged only on one shared base AND head, no member without a verdict or with a `fail`); the `release-candidate` skill is the one-round candidate review procedure · the release plan fields (`--theme`, `--rationale`, `--exit`, `--order`, `--size`, each cleared with `--clear <field>`; the status is derived, never stored) and `release here <id>` the plan marker (`release here --clear-here` removes it) · `--add-non-goal "<line>"` / `--remove-non-goal "nN:<why>"` record what a release (or the mission, an initiative, an epic) will not do · `release <id> --deliver` records that a release shipped and `--undeliver` takes it back (`integrity`'s `delivered-release-epic-left-open` reads the marker) · `update-epic <id> --spec-deltas-waived "<why>"` takes a change archived without applying its specs out of the spec-deltas report (`--clear spec-deltas-waived` is the inverse) · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
@@ -861,6 +861,9 @@ it waits on.
   milestone and the active exit criteria; `mission --statement "<one line>" --reason "<why>"`, `--end`, `--milestone <releaseId>`
   / `--clear-milestone` and `--add-criterion` / `--remove-criterion` write it. Releases at or before the mission milestone are
   critical path. See `commands/mission.md`.
+- What multi-release efforts is the project made of? `initiative show [<id>] [--history]` (read-only) reads the recorded initiatives;
+  `initiative <id> --title "<line>" --capability "<line>"` records one, with initiative milestones, `--end` and `--reopen`. An
+  initiative is never deleted. See `commands/initiative.md`.
 - What is the project called, and what key do its epics carry (`PM-256`)? `set-project --name "<name>" --key <KEY>` (two or three
   uppercase letters; either alone; `--unset name|key` removes one). Every epic has an integer `number` assigned at registration (a
   tracker issue number where free, else a counter that never goes back), and the key shown is `<KEY>-<number>`, so changing the key
@@ -1102,6 +1105,32 @@ a terminal **outcome**, not a status — `archived` already means terminal, so n
 behavior changes. It requires a reason like every non-`delivered` outcome, and because it is not
 `delivered` the archive gate's Gate 2 demand and handoff demand both pass it by (no code was
 written, so there is nothing to review and nothing to hand over).
+
+### Challenge off-mission and off-initiative work — once
+
+While an initiative is open, challenge each initiative against the mission, and each off-initiative epic against its release's
+initiative, **once**. The engine checks only that an answer is present (it warns when an epic leaves `untriaged` with no kind,
+no initiative and no recorded reason); whether the work serves the initiative is your judgment.
+
+- Read the record's `board --json` entry first. When it already carries a recorded reason, the question is answered: never
+  re-flag it. Record a new answer with `--off-mission-reason "<line>"` (an initiative or an epic) or `--off-initiative-reason
+  "<line>"` (an epic), so it is asked once and kept.
+- `claude-code`-lane epics are exempt: they are not challenged one by one. They still count in a release's split, by their
+  kind (a `claude-code` epic with no kind reads as initiative work when it names an initiative, else as health).
+- Ask the orchestrating agent first: it holds the context. Only when no agent has the authority to answer does the human get the
+  question, in your one batched question set, with your recommendation.
+
+### A tweak too small for an epic: two destinations
+
+Every piece of work is accounted for in its release's split, at the cost of at most one attribution line per tweak:
+
+- A tweak that moves no initiative goes to the release's floating epic `maintenance-<releaseId>`: register it with `add-epic
+  --id maintenance-<releaseId> --lane claude-code --kind health --status queued` on the first such tweak, make it a member with
+  `release <releaseId> --member maintenance-<releaseId>`, record each commit with `update-epic maintenance-<releaseId>
+  --attribute-commit <sha>`, and end it with the release by the normal disposition. The commit nudge names this destination, with
+  runnable commands, when a commit is not the active epic's work and the active epic is a release member.
+- A tweak that moves an initiative is a small `claude-code` epic naming that initiative (register it with `add-epic --lane
+  claude-code --initiative <id>`), not the maintenance epic.
 
 Triage and the tracker-sync `externalUrl` check are **not substitutes for each other**: the URL
 match answers *"have I already mirrored THIS item"*, triage answers *"is this ask already in the

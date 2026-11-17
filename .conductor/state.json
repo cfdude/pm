@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "gh-cfdude-pm-262",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -16580,7 +16580,7 @@
       "id": "gh-cfdude-pm-262",
       "title": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases the edit",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -16588,9 +16588,18 @@
       "externalId": "262",
       "externalUrl": "https://github.com/cfdude/pm/issues/262",
       "externalUpdatedAt": "2026-10-30T00:55:53Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "b36a37cc64ada18510be1cabdb4215cea41925b6",
+        "c30e59e42829f2591ea08c9cd48a4bb78dffbc56",
+        "77d3869b6cd02630eea8a3d61565f79cf7a53f3c",
+        "4044476aa87d5c733538a291eb7d1aad5a7e5cd5",
+        "4f2039ec0061c6a91ef62be489740c5d6ffd3093",
+        "e18a7d35db0b0a25d131e62e85a5b99c8b68c409",
+        "bd7cc1da23307113ad93b477e63fd830c9026f0b",
+        "5108da7ece11607fb9552698ad130e6da9952fce"
+      ],
       "createdAt": "2026-11-03T16:08:19.430Z",
-      "touchedAt": "2026-11-12T23:45:36.565Z",
+      "touchedAt": "2026-11-17T01:31:45.994Z",
       "number": 262,
       "notes": [
         {
@@ -16601,7 +16610,32 @@
       ],
       "release": "0.57.0",
       "summary": "pm hand-edits OpenSpec's generated instruction files, and openspec update silently erases those edits.",
-      "planPath": "docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits.md"
+      "planPath": "docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits.md",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-11-16T18:11:19.262Z",
+        "externalUpdatedAt": "2026-10-30T00:55:53Z"
+      },
+      "startedAt": "2026-11-16T18:11:20.404Z",
+      "trackerRefreshNeeded": true,
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-17T01:31:45.988Z",
+          "baseSha": "41e67c1154d18f7c7ab8fb6217fb368a908731b4",
+          "headSha": "5108da7ece11607fb9552698ad130e6da9952fce",
+          "reviewer": "fresh-context Opus Gate 2 review: 0 Critical, 3 Important (upgrade platform argument untested, CLAUDE.md bulk-archive bullet out of sync with engine text, false lesson cost line) fixed and re-tested in bd7cc1da and 5108da7e; remaining Minors noted not fixed (no per-repo opt-out, .claude/ paths only, step-6 number); 0 Twin-Unchanged trailers audited beyond the one in bd7cc1da"
+        }
+      },
+      "gateRounds": {
+        "gate2": {
+          "fails": 0,
+          "passes": 1,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-17T01:31:45.988Z",
+          "lastPassAt": "2026-11-17T01:31:45.988Z"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-261",
@@ -17045,7 +17079,7 @@
       "id": "release-planning-taxonomy",
       "title": "Release planning taxonomy: mission, initiative, milestone, release goal, non-goals",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -17070,15 +17104,25 @@
           "text": "lane: openspec not <none routed> — new capability across state, verbs, rules block and boards. Phasing: 0.56.0 minimum = initiative record, milestone tied to an initiative, release goal and primary initiative, off-mission/off-initiative challenge once with a recorded reason, non-goals on mission/initiative/release/epic (not milestone), epic kind (initiative-work or health) with an 80/20 report; human override is a recorded reason. Next: Now/Next/Later roadmap, derived progress attribution (never asserted), definition of done at three levels. Later: dependency-graph validation as a view of depends-on links (no second file), risk register (holds off-mission false positives), deprecation record, decision-log expansion, appetite, successSignal plus reviewDue (orchestrating agent answers first, human only if it lacks authority). Health = bugs, security, dependency/stack upgrades, deprecation, test/tooling debt; not new internal capability. Principle: the agent attests facts, the human decides preferences. Agent derives and never invents; ungrounded is marked. Engine stays an instruction layer."
         }
       ],
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c18102c43c1ff6d93fb7cdc3a32119b648fefa23",
+        "21634c977711adff95a509d6c09e56a890f39699",
+        "97fc1f97426f5e1ca46c6acb536d75abb2d7e12a",
+        "49df17bb4de7a3db7b59488f1f40c4385caf683a",
+        "f3c5488c0229fdc63334abcb5f25548e866f0fef",
+        "0831f653c0cde776a589a17d476fde29324536e1",
+        "2d164548e42b8c2819bb3df4fdf53350e1198110",
+        "cbc47cbca92e194631850414278e7b49c5fa2b33",
+        "6fdef7967d62916e1cb4bb2b64bd892b64045771"
+      ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-12T23:21:09.654Z",
+      "touchedAt": "2026-11-17T20:54:16.894Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-12T23:21:01.987Z",
+          "reviewedAt": "2026-11-16T23:47:19.502Z",
           "artifacts": [
             "openspec/changes/release-planning-taxonomy/proposal.md",
             "openspec/changes/release-planning-taxonomy/design.md",
@@ -17086,20 +17130,21 @@
             "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
             "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
             "openspec/changes/release-planning-taxonomy/specs/release-planning/spec.md",
-            "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md"
+            "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
+            "openspec/changes/release-planning-taxonomy/specs/board-export/spec.md"
           ],
           "artifactDigests": [
             {
               "path": "openspec/changes/release-planning-taxonomy/proposal.md",
-              "sha256": "e1e50e2f641346a80b86dae16df4ca7463a6273a829122387b9f7e7a5c6be003"
+              "sha256": "719b4bb6dce25ac8f76e4cfe62f06f0d73e0de5dc8c0a60bce816e48cf2ce85f"
             },
             {
               "path": "openspec/changes/release-planning-taxonomy/design.md",
-              "sha256": "157b4ed9ae17eef907863bf23c1a23dc3308e9ead3127cc1df073008e3359d09"
+              "sha256": "22b293266af3765c18bd2547ef13bf6f8365e78fa52fe1f35f9b76c2a5569631"
             },
             {
               "path": "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
-              "sha256": "39b4e5fa5cc82684a8e3e94c8a9c686ce33af7d24940bcac782ebbc34147e6c4"
+              "sha256": "aed611e261119dcda195b4580f8b1b0d4b3934175ed363adfec9d3fb912aaeb2"
             },
             {
               "path": "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
@@ -17112,20 +17157,160 @@
             {
               "path": "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
               "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
+            },
+            {
+              "path": "openspec/changes/release-planning-taxonomy/specs/board-export/spec.md",
+              "sha256": "3518fc0b2354b264bc1f3218bd451d0706d6bcabc6dae17b4a112f0f978870a6"
             }
           ],
-          "reviewer": "opus fresh-context 2026-11-12, two rounds: round 1 (1 Critical, 5 Important) and round 2 (2 Important, no Critical), all fixed and re-validated; Minors fixed or logged in design D32"
+          "reviewer": "opus fresh-context, 3 rounds 2026-11-16 (r1: 4 BLOCKS, r2: 2 BLOCKS, r3: 1 BLOCK, the dropped 'control characters escaped' clause, restored in 2d164548 and verified by orchestrator against main spec line 204; lengths 475/474). RE-RECORDED 2026-11-16T23:47Z over unchanged artifacts: the original verdict was recorded 2 s before Gate 2 in one batch, which integrity flagged as gate-recorded-as-bookkeeping; the reviews themselves ran hours apart.",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-11-16T20:07:43.185Z",
+            "artifacts": [
+              "openspec/changes/release-planning-taxonomy/proposal.md",
+              "openspec/changes/release-planning-taxonomy/design.md",
+              "openspec/changes/release-planning-taxonomy/tasks.md",
+              "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
+              "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
+              "openspec/changes/release-planning-taxonomy/specs/release-planning/spec.md",
+              "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
+              "openspec/changes/release-planning-taxonomy/specs/board-export/spec.md"
+            ],
+            "artifactDigests": [
+              {
+                "path": "openspec/changes/release-planning-taxonomy/proposal.md",
+                "sha256": "719b4bb6dce25ac8f76e4cfe62f06f0d73e0de5dc8c0a60bce816e48cf2ce85f"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/design.md",
+                "sha256": "22b293266af3765c18bd2547ef13bf6f8365e78fa52fe1f35f9b76c2a5569631"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/specs/initiative-record/spec.md",
+                "sha256": "aed611e261119dcda195b4580f8b1b0d4b3934175ed363adfec9d3fb912aaeb2"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/specs/non-goals/spec.md",
+                "sha256": "4882ea26df6b8815b845505a82c43f7b25f15140bd2ead2f2a2f65584d94e6d6"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/specs/release-planning/spec.md",
+                "sha256": "ea1b0aca94c887a379fa824c31ab0ff7ac7e0d24e5e6ac408bee118109b0ff0d"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/specs/epic-annotation/spec.md",
+                "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
+              },
+              {
+                "path": "openspec/changes/release-planning-taxonomy/specs/board-export/spec.md",
+                "sha256": "3518fc0b2354b264bc1f3218bd451d0706d6bcabc6dae17b4a112f0f978870a6"
+              }
+            ],
+            "reviewer": "opus fresh-context, 3 rounds 2026-11-16 (r1: 4 BLOCKS, r2: 2 BLOCKS, r3: 1 BLOCK, the dropped 'control characters escaped' clause, restored in 2d164548 and verified by orchestrator against main spec line 204; lengths 475/474)"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-17T00:00:03.892Z",
+          "baseSha": "b418096b120aaab348a6a91e7fa0cbedf967fb9e",
+          "headSha": "6fdef7967d62916e1cb4bb2b64bd892b64045771",
+          "reviewer": "opus fresh-context 2026-11-16 over b418096b..21634c97 (0 Critical, 2 Important both fixed: gates re-run, 23+5 mutants added); fix commits 97fc1f97 49df17bb f3c5488c 0831f653 2d164548 verified by certify (functional 1366/1366, sweeps 25/25) and mutation evidence, not re-reviewed line by line; 6 Twin-Unchanged trailers audited, none false. RE-RECORDED 2026-11-16 at head 6fdef796: the delta since 2d164548 is docs only (cbc47cbc README, 6fdef796 two lesson files, lessons index rows and pending-feedback.md), read by the orchestrator, certify functional 1366/1366 on cbc47cbc; no engine or spec change",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-11-16T20:07:45.492Z",
+            "baseSha": "b418096b120aaab348a6a91e7fa0cbedf967fb9e",
+            "headSha": "2d164548e42b8c2819bb3df4fdf53350e1198110",
+            "reviewer": "opus fresh-context 2026-11-16 over b418096b..21634c97 (0 Critical, 2 Important both fixed: gates re-run, 23+5 mutants added); fix commits 97fc1f97 49df17bb f3c5488c 0831f653 2d164548 verified by certify (functional 1366/1366, sweeps 25/25) and mutation evidence, not re-reviewed line by line; 6 Twin-Unchanged trailers audited, none false"
+          }
         }
       },
       "gateRounds": {
         "gate1": {
           "fails": 0,
-          "passes": 1,
+          "passes": 3,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-12T23:21:01.987Z",
-          "lastPassAt": "2026-11-12T23:21:01.987Z"
+          "lastVerdictAt": "2026-11-16T23:47:19.502Z",
+          "lastPassAt": "2026-11-16T23:47:19.502Z"
+        },
+        "gate2": {
+          "fails": 0,
+          "passes": 2,
+          "failStreak": 0,
+          "lastVerdictAt": "2026-11-17T00:00:03.892Z",
+          "lastPassAt": "2026-11-17T00:00:03.892Z"
         }
-      }
+      },
+      "startedAt": "2026-11-16T15:36:44.340Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-11-17T20:54:16.888Z",
+        "reason": "shipped in 0.56.0: initiative level, milestone and release goal tied to it, non-goals, off-mission challenge, 80/20 health report, board --json initiatives and the nine rejected kinds; Gates 1, cross-spec and 2 recorded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-17T20:54:16.872Z",
+        "deferrals": [
+          {
+            "epic": "stop-and-escalate-floor",
+            "section": "proposal.md Non-goals of this change"
+          },
+          {
+            "epic": "project-assessment-skill",
+            "section": "proposal.md Non-goals of this change"
+          },
+          {
+            "epic": "pm-folder-consolidation",
+            "section": "proposal.md Non-goals of this change"
+          }
+        ],
+        "declined": [
+          {
+            "what": "Now/Next/Later roadmap view and folding the mission milestone into initiative milestones",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Derived progress attribution beyond the recorded fields",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Epic sizing with one default scale",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Definition of done at three levels",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Dependency-graph validation",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Risk register",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Deprecation record",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Decision-log expansion",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Appetite budgets",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Outcome review, successSignal and reviewDue",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          },
+          {
+            "what": "Integrity check for commits in a release range no epic attributes",
+            "reason": "not registered at close; unscoped, revisit at the next release planning pass"
+          }
+        ]
+      },
+      "completedAt": "2026-11-17T20:54:16.888Z"
     },
     {
       "id": "stop-and-escalate-floor",
@@ -17228,7 +17413,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2467,
+  "revision": 2494,
   "reviewMode": "standard",
   "releases": [
     {
@@ -18285,7 +18470,10 @@
       "theme": "Release planning and project boards (mission, milestone, release plan fields, board export, two default-on boards), plus the work built since 0.53.0: backlog grooming, mutation pass as a required task item, overhead calibration, triage of open releases.",
       "rationale": "Without a stated mission and a plan marker, the backlog is a flat list; boards make what is in flight and what comes next visible without reading state.json.",
       "exit": "plugin.json 0.55.0; CHANGELOG 0.55.0 entry covers all 12 changesets and a MIGRATIONS entry exists; project-boards archived delivered; all three test buckets green; docs site live; CI test green on the release PR.",
-      "size": "minor"
+      "size": "minor",
+      "delivered": {
+        "recordedAt": "2026-11-13T00:56:58.770Z"
+      }
     },
     {
       "id": "0.56.0",
@@ -18294,15 +18482,19 @@
       "size": "minor",
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-11-12T23:21:03.129Z",
+        "reviewedAt": "2026-11-16T20:07:44.346Z",
         "specs": [
+          {
+            "key": "release-planning-taxonomy/specs/board-export/spec.md",
+            "sha256": "3518fc0b2354b264bc1f3218bd451d0706d6bcabc6dae17b4a112f0f978870a6"
+          },
           {
             "key": "release-planning-taxonomy/specs/epic-annotation/spec.md",
             "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
           },
           {
             "key": "release-planning-taxonomy/specs/initiative-record/spec.md",
-            "sha256": "39b4e5fa5cc82684a8e3e94c8a9c686ce33af7d24940bcac782ebbc34147e6c4"
+            "sha256": "aed611e261119dcda195b4580f8b1b0d4b3934175ed363adfec9d3fb912aaeb2"
           },
           {
             "key": "release-planning-taxonomy/specs/non-goals/spec.md",
@@ -18313,7 +18505,30 @@
             "sha256": "ea1b0aca94c887a379fa824c31ab0ff7ac7e0d24e5e6ac408bee118109b0ff0d"
           }
         ],
-        "reviewer": "opus fresh-context 2026-11-12, round 2 over this change's 4 specs and the 9 project-boards specs; one Critical (round 1) and all Important fixed, no unresolved contradiction"
+        "reviewer": "opus fresh-context, round 3 of 3 on 5 specs 2026-11-16 (r1 B1 and r2 B1 both on board-export non-goal ids, fixed by validating them; r3 PASS at 9bc8f703; 2d164548 only restores one escaped-control-characters clause)",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-11-12T23:21:03.129Z",
+          "specs": [
+            {
+              "key": "release-planning-taxonomy/specs/epic-annotation/spec.md",
+              "sha256": "7875c96f57b7bb08d73539db3fe14e9c8c91ace4a4e8697636253b90997cd20f"
+            },
+            {
+              "key": "release-planning-taxonomy/specs/initiative-record/spec.md",
+              "sha256": "39b4e5fa5cc82684a8e3e94c8a9c686ce33af7d24940bcac782ebbc34147e6c4"
+            },
+            {
+              "key": "release-planning-taxonomy/specs/non-goals/spec.md",
+              "sha256": "4882ea26df6b8815b845505a82c43f7b25f15140bd2ead2f2a2f65584d94e6d6"
+            },
+            {
+              "key": "release-planning-taxonomy/specs/release-planning/spec.md",
+              "sha256": "ea1b0aca94c887a379fa824c31ab0ff7ac7e0d24e5e6ac408bee118109b0ff0d"
+            }
+          ],
+          "reviewer": "opus fresh-context 2026-11-12, round 2 over this change's 4 specs and the 9 project-boards specs; one Critical (round 1) and all Important fixed, no unresolved contradiction"
+        }
       }
     },
     {

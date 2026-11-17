@@ -84,6 +84,8 @@ function openspecProject(stamp) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "SKILL.md"),
     `---\nname: openspec-fixture\nmetadata:\n  generatedBy: "${stamp}"\n---\n\nbody\n`);
+  // The block was written before openspec/ existed; refresh it so the fixture is a CURRENT repo (gh#262: a stale block reports MISSING).
+  run(["write-rules"], { cwd });
   return cwd;
 }
 const briefOf = (cwd, env) => JSON.parse(run(["brief"], { cwd, env })).hookSpecificOutput.additionalContext;

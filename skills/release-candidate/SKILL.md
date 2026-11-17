@@ -109,6 +109,7 @@ its members, and each member missing a Gate 2 verdict. It stores nothing.
 records a release's plan, each text field one line of at most 400 characters. `--clear <field>` (repeatable) removes
 `theme`, `rationale`, `exit`, `order`, `size` or `target`. The release's status is never stored: `planned`, `in-progress` or
 `shipped` is derived from `--deliver` and the members, and `release show` prints it with the order and size.
+`release <id> --add-non-goal "<line>"` (repeatable) records what the release will NOT do, and `--remove-non-goal "nN:<why>"` marks one removed (kept in the record; not repeatable).
 `release here <id> [--text "<line>"] [--next "<line>"]` records where the project is (`here` is a reserved release id), and
 `release here --clear-here` removes it. `release show` marks the `here` release `(here)`, and, once a mission milestone
 is set, each release `(critical path)` or `(off critical path)`. The `render` verb (`/pm:status`) prints the same marker and marks.

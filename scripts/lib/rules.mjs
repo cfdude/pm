@@ -32,6 +32,7 @@ import { errStream } from "./invocation.mjs";
 import { modelText, profileBlockLines, profileContext, resolveProfile } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
 import { BOARDS_SECTION, boardsSectionText } from "./boards-switch.mjs";
+import { currentOpenspecAddendaSection } from "./openspec-addenda.mjs";
 import { guardConfigured, spendGuardLines } from "./spend-guard.mjs";
 import { CONDITIONAL_SECTIONS, FULL_USAGE, rulesUsage } from "./rules-usage.mjs";
 
@@ -776,7 +777,7 @@ export function proceduresEmittedOnUseLines(usage = FULL_USAGE) {
   ];
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "", boardsSection = BOARDS_SECTION) {
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code", profile = null, spend = false, guard = false, usage = FULL_USAGE, missionSection = "", boardsSection = BOARDS_SECTION, initiativesSection = "", missionNonGoalsSection = "", openspecSection = "") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
   //
@@ -976,6 +977,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     ...(spend ? spendTrackingLines() : []),
     ...(guard ? spendGuardLines() : []),
     ...(missionSection ? [...missionSection.split("\n"), ""] : []),
+    ...(missionNonGoalsSection ? [...missionNonGoalsSection.split("\n"), ""] : []),
+    ...(initiativesSection ? [...initiativesSection.split("\n"), ""] : []),
     ...(usage.releaseCandidate ? [
     "## Release candidate",
     "",
@@ -1162,6 +1165,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   if (boardsSection) {
     lines.push("", ...boardsSection.replace(/\{\{pm:([a-z-]+)\}\}/g, (_, name) => pmCmd(platform, name)).split("\n"));
   }
+  // The OpenSpec addenda (gh#262): pm's clause for the OpenSpec workflows, carried HERE because `openspec update` rewrites the generated
+  // files. Verb-refreshed (init, write-rules, upgrade), outside CONDITIONAL_SECTIONS: its gate is the filesystem (`openspec/` present),
+  // not a state.json input. Default empty, so a caller that passes nothing renders the block it always did.
+  if (openspecSection) {
+    lines.push("", ...openspecSection.split("\n"));
+  }
   lines.push(
     "",
     "## Re-read the source before an epic becomes the work",
@@ -1331,7 +1340,7 @@ export function writeRules(platform = "claude-code") {
   const arrangement = rulesBlockArrangement(existing);
   if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform, currentProfileContext(), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection(), currentInitiativesSection(), currentMissionNonGoalsSection(), currentOpenspecAddendaSection());
   let next;
   // What this write says about itself, printed only AFTER the file is written: a write that fails must not
   // have claimed it refreshed the block or announced a section (gh-cfdude-pm-248 Gate 2 M2).
@@ -1411,4 +1420,52 @@ function retireOrphanedRulesBlocks(target) {
     else fs.writeFileSync(file, rest);
     errStream().write(`conductor: removed the orphaned rules block from ${escapeControls(name)} (platform moved to ${escapeControls(path.basename(target))})\n`);
   }
+}
+
+/** The most the `## Initiatives` section may weigh, heading included (release-planning-taxonomy D13). */
+export const INITIATIVES_SECTION_MAX_BYTES = 280;
+/** The most the `## Mission non-goals` section may weigh, heading included (D29). */
+export const MISSION_NON_GOALS_SECTION_MAX_BYTES = 200;
+
+const INITIATIVES_SECTION = [
+  "## Initiatives",
+  "",
+  "Challenge each initiative against the mission, and each off-initiative epic, ONCE: read its recorded reason first and never re-flag one. " +
+  "Record the answer with --off-mission-reason or --off-initiative-reason. claude-code epics are exempt.",
+].join("\n");
+
+/** The `## Initiatives` section's text for `state`: present while at least one initiative is open, "" otherwise. Pure over the record, read straight
+ *  from `state.initiatives` so this module never imports initiative.mjs (which imports this one). A VERB-REFRESHED section: `initiative` rewrites the
+ *  block when this text changes, and it is outside CONDITIONAL_SECTIONS. The text carries no record data, so it changes only when the first
+ *  initiative opens or the last one ends. */
+export function initiativesSectionText(state) {
+  const open = (state && Array.isArray(state.initiatives) ? state.initiatives : []).some(i => i && typeof i.id === "string" && i.status !== "ended");
+  return open ? INITIATIVES_SECTION : "";
+}
+
+/** The `## Mission non-goals` section's text for `state`: the active mission non-goals joined into ONE line, cut with an ellipsis so the whole
+ *  section (heading included) stays within MISSION_NON_GOALS_SECTION_MAX_BYTES; "" with none. A VERB-REFRESHED section: `mission` rewrites the
+ *  block when this text changes. Kept apart from `## Mission`, whose own 280-byte cap is a 0.55.0 requirement. */
+export function missionNonGoalsSectionText(state) {
+  const goals = (state && state.mission && Array.isArray(state.mission.nonGoals) ? state.mission.nonGoals : [])
+    .filter(g => g && typeof g.text === "string" && !g.removedAt);
+  if (!goals.length) return "";
+  const bytes = (s) => Buffer.byteLength(s, "utf8");
+  const head = "## Mission non-goals\n\nNot doing: ";
+  const room = MISSION_NON_GOALS_SECTION_MAX_BYTES - bytes(head);
+  let line = escapeControls(goals.map(g => g.text.trim()).join("; "));
+  if (bytes(line) > room) {
+    const cps = [...line];
+    while (cps.length && bytes(cps.join("")) + 3 > room) cps.pop();
+    line = cps.join("").trimEnd() + "…";
+  }
+  return head + line;
+}
+
+/** The two sections for the loaded record; "" when state cannot be consulted, like the other readers. */
+export function currentInitiativesSection() {
+  try { return initiativesSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return ""; }
+}
+export function currentMissionNonGoalsSection() {
+  try { return missionNonGoalsSectionText(loadState()); } catch (e) { rethrowUnreadable(e); return ""; }
 }

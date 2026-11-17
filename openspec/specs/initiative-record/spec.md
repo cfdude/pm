@@ -1,4 +1,9 @@
-## ADDED Requirements
+# initiative-record Specification
+
+## Purpose
+TBD - created by archiving change release-planning-taxonomy. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: The initiative verb records an initiative
 
@@ -150,18 +155,17 @@ each one, and `board --json` SHALL read it as `null`.
 
 `board --json` SHALL carry a top-level `initiatives` array in creation order, `[]` when none. Each entry SHALL be
 `{id, title, capability, status, outcome, endedAt, source, offMissionReason, nonGoals, milestones: [{id, text, reachedAt,
-evidence}]}` with active milestones only, in id order. Ids are validated on write, so a failing id is a hand edit: the export SHALL
-skip it and `integrity` report it, NOT a `rejected` entry (0.55.0 closes that kind list). `schemaVersion` stays 1.
+evidence}]}` with active milestones only, in id order. Ids are validated on write, so a failing id is a hand edit: the export SHALL omit it and list it in `rejected` (kind `initiative`, reason `id format`), and `integrity` SHALL report it. `schemaVersion` stays 1.
 
 #### Scenario: Empty record
 
 - **WHEN** `board --json` runs over a freshly initialised state
 - **THEN** `initiatives` is `[]` and `schemaVersion` is `1`
 
-#### Scenario: A hand-edited bad id is skipped, not rejected
+#### Scenario: A hand-edited bad id is omitted and rejected
 
 - **WHEN** state.json is hand-edited so an initiative's id is `Bad Id`, and `board --json` then `integrity` run
-- **THEN** the export omits it, `rejected` holds no entry for it, exit is 0, and integrity names it
+- **THEN** the export omits it, `rejected` holds one `initiative` entry with reason `id format`, exit is 0, and integrity names it
 
 ### Requirement: The release plan board shows the initiatives
 

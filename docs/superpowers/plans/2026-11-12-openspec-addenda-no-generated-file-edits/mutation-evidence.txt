@@ -1,0 +1,92 @@
+openspec-addenda-no-generated-file-edits (gh-cfdude-pm-262): mutation run of the guards this change adds
+tests under mutation: scripts/test/unit/openspec-addenda.test.mjs + scripts/test/unit/openspec-addenda-rules.test.mjs + scripts/test/assert/openspec-addenda.test.mjs + scripts/test/assert/upgrade-order-doc.test.mjs + scripts/test/assert/tool-currency.test.mjs
+baseline (no mutant): exit 0, no failures
+
+mutant 1 invert the needle match in openspecAddendaFindings (residual when ABSENT) (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (6 failing: brief: pm text left inside a generated file is RESIDUAL; a c; upgrade prints the RESIDUAL line too; gh#196: a CLI that is present but whose version cannot be re; 2.1 a needle inside a generated file is RESIDUAL, naming the; 2.2 no needle anywhere: MISSING exactly when the block lacks; 2.4 rendering escapes control characters in a path, and file)
+restored: git diff empty
+
+mutant 2 drop the hasOpenspec guard in openspecAddendaSectionText (emit always) (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: 2.6 the section text: heading, clause, practice sentence, wi)
+restored: git diff empty
+
+mutant 3 drop escapeControls from openspecAddendaFindingLines (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: 2.4 rendering escapes control characters in a path, and file)
+restored: git diff empty
+
+mutant 4 report a constant line on a clean state (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: 2.5 a clean state renders nothing)
+restored: git diff empty
+
+mutant 5 drop the block-heading check so MISSING never fires (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (3 failing: brief: a repo with openspec/ whose block lacks the section r; 2.2 no needle anywhere: MISSING exactly when the block lacks; 2.4 rendering escapes control characters in a path, and file)
+restored: git diff empty
+
+mutant 6 raise the section above OPENSPEC_ADDENDA_MAX_BYTES (pad the practice sentence) (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (2 failing: 4.1e `rules --sections` lists the heading with a size within; 2.6 the section text: heading, clause, practice sentence, wi)
+restored: git diff empty
+
+mutant 7 omit currentOpenspecAddendaSection() at the overhead.mjs rulesBlock call (scripts/lib/overhead.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: 4.1f `overhead` counts the section for the same repo)
+restored: git diff empty
+
+mutant 8 emit a guardrail bullet regardless of its flag (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (3 failing: 4.1e `rules --sections` lists the heading with a size within; 2.6 the section text: heading, clause, practice sentence, wi; 6.1 each guardrail bullet appears iff its flag is true, with)
+restored: git diff empty
+
+mutant 9 restore "Do not run `openspec update` yet" in commands/upgrade.md (commands/upgrade.md)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: 7.1 step 4 keeps the engine-never-runs-it fact, and drops th)
+restored: git diff empty
+
+mutant 10 add a spawn (with its import) to the addenda module; harmless echo stands in for `openspec update` (scripts/lib/openspec-addenda.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: 12.10 the addenda module never spawns a process or imports t)
+restored: git diff empty
+
+(the first run of mutant 10 lacked the import and died on a ReferenceError, 15 failing: the wrong reason, so it was redone above)
+
+mutant 11 drop openspecAddendaLines from the briefing (scripts/lib/briefing.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (2 failing: brief: pm text left inside a generated file is RESIDUAL; a c; brief: a repo with openspec/ whose block lacks the section r)
+restored: git diff empty
+
+mutant 12 drop openspecAddendaLines from the upgrade (migrations) (scripts/lib/migrations.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (1 failing: upgrade prints the RESIDUAL line too)
+restored: git diff empty
+
+mutant 13 drop the section emission in rulesBlock (scripts/lib/rules.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (6 failing: 4.1a a repo with openspec/ carries the section exactly once,; 4.1c removing openspec/ and refreshing drops the section; 4.1e `rules --sections` lists the heading with a size within; 4.1f `overhead` counts the section for the same repo; brief: pm text left inside a generated file is RESIDUAL; a c; brief: a repo with openspec/ whose block lacks the section r)
+restored: git diff empty
+
+mutant 14 omit currentOpenspecAddendaSection() in writeRules (scripts/lib/rules.mjs)
+run:    node --test (the five addenda/tool-currency/upgrade-doc files)
+result: KILLED (5 failing: 4.1a a repo with openspec/ carries the section exactly once,; 4.1c removing openspec/ and refreshing drops the section; brief: pm text left inside a generated file is RESIDUAL; a c; brief: a repo with openspec/ whose block lacks the section r; gh#196: a CLI that is present but whose version cannot be re)
+restored: git diff empty
+
+mutant 15 revert the upgrade's openspecAddendaLines(resolvePlatform({}, state)) to no platform (scripts/lib/migrations.mjs:289) (fix pass for Gate 2 I1)
+run:    node --test scripts/test/assert/openspec-addenda.test.mjs
+result: KILLED (1 failing: 11.4 upgrade reads the RECORDED platform's rules file too; RED before the fix pass: the suite had no codex-repo upgrade test, so this mutant survived)
+restored: git diff empty
+
+mutant 16 revert the brief's openspecAddendaLines(resolvePlatform({}, state)) to no platform (scripts/lib/briefing.mjs:181; the 4044476a fix)
+run:    node --test scripts/test/assert/openspec-addenda.test.mjs
+result: KILLED (1 failing: 11.3 the brief reads the block from the RECORDED platform's rules file)
+restored: git diff empty
+
+mutant 17 make MISSING read the whole file instead of the managed block (managedBlockBody) (scripts/lib/openspec-addenda.mjs) -- RED test 2.7 written first, failing on the old whole-file check
+result: KILLED by 2.7 (RED against the pre-fix code)
+restored: git diff empty
+
+No guard survived. The 12.10 scan did not exist before this change (tool-currency.test.mjs:57 covers only tool-currency.mjs); it was added to assert/openspec-addenda.test.mjs.
+No guard added elsewhere: the registry retirement criterion is prose in the module header.

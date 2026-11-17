@@ -28,8 +28,10 @@ import {
 } from "./cross-spec-review.mjs";
 import {
   PLAN_FIELDS, PLAN_LINE_MAX, PLAN_SIZES, PLAN_TEXT_FIELDS, PLAN_TEXT_MAX,
-  planOf, planStatusLines, releaseMarks, releaseStatus,
+  initiativeIdSet, planOf, planStatusLines, primaryServedOf, releaseMarks, releaseScope, releaseSplit, releaseStatus,
 } from "./release-plan.mjs";
+import { findInitiative } from "./initiative-record.mjs";
+import { activeNonGoals, addNonGoals, flagValues, nonGoalsError, parseRemoval, removeNonGoal } from "./non-goals.mjs";
 import { currentArgv, errStream, outStream } from "./invocation.mjs";
 
 const str = (v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined);
@@ -158,6 +160,26 @@ export function release() {
     }
     planSet.size = v;
   }
+  // PURPOSE (release-planning-taxonomy): `--initiative <id>` and `--maintenance` are exclusive, each replaces the other, and
+  // `--clear-initiative` removes either. The initiative must exist, which needs the record, so that half runs after loadState().
+  const setsInitiative = f.initiative !== undefined;
+  const setsMaintenance = f.maintenance !== undefined;
+  const clearsInitiative = f["clear-initiative"] !== undefined;
+  if (setsInitiative && setsMaintenance) {
+    refuse("--initiative and --maintenance are exclusive: a release names ONE primary initiative or declares it serves none, not both. Nothing was written.");
+  }
+  if (clearsInitiative && (setsInitiative || setsMaintenance)) {
+    refuse(`--clear-initiative contradicts --${setsInitiative ? "initiative" : "maintenance"} in the same invocation — set the purpose or remove it, not both. Nothing was written.`);
+  }
+  const initiativeId = setsInitiative ? lastStr(f.initiative) : undefined;
+  if (setsInitiative && initiativeId === undefined) refuse("--initiative requires a recorded initiative id. Nothing was written.");
+  let splitReason;
+  if (f["split-reason"] !== undefined) {
+    splitReason = lastStr(f["split-reason"]);
+    const err = oneLineError("split-reason", splitReason, 400);
+    if (err) refuse(`${escapeControls(err)}. Nothing was written.`);
+    if (f["clear-split-reason"] !== undefined) refuse("--clear-split-reason contradicts --split-reason in the same invocation — set the reason or remove it, not both. Nothing was written.");
+  }
   const planClear = [].concat(f.clear === undefined ? [] : f.clear).filter(v => typeof v === "string").map(v => v.trim());
   for (const name of planClear) {
     if (!PLAN_FIELDS.includes(name)) {
@@ -167,6 +189,21 @@ export function release() {
     if ((name === "target" ? f.target : planSet[name]) !== undefined) {
       refuse(`--clear ${escapeControls(name)} contradicts --${escapeControls(name)} in the same invocation — set it or unset it, not both. Nothing was written.`);
     }
+  }
+
+  // NON-GOALS (release-planning-taxonomy): every value is checked HERE, before any write, so one bad value refuses the whole call.
+  const addedNonGoals = flagValues(f["add-non-goal"]);
+  {
+    const err = nonGoalsError(addedNonGoals);
+    if (err) refuse(`${escapeControls(err)}. Nothing was written.`);
+  }
+  let removal = null;
+  if (f["remove-non-goal"] !== undefined) {
+    if (Array.isArray(f["remove-non-goal"]) && f["remove-non-goal"].length > 1) {
+      refuse("--remove-non-goal is not repeatable: one reason, one record. Nothing was written.");
+    }
+    removal = parseRemoval(lastStr(f["remove-non-goal"]), "remove-non-goal");
+    if (removal.error) refuse(`${escapeControls(removal.error)}. Nothing was written.`);
   }
 
   const state = loadState();
@@ -205,6 +242,32 @@ export function release() {
     if (name in rel) delete rel[name];
     else errStream().write(`conductor: release '${escapeControls(id)}' has no ${escapeControls(name)} set — there was nothing to clear\n`);
   }
+
+  if (setsInitiative) {
+    if (!findInitiative(state, initiativeId)) {
+      refuse(`--initiative names '${escapeControls(initiativeId)}', which is not a recorded initiative. Record it first with the initiative verb (an id, --title and --capability). Nothing was written.`);
+    }
+    rel.initiative = initiativeId;
+    delete rel.maintenance;
+  }
+  if (setsMaintenance) { rel.maintenance = true; delete rel.initiative; }
+  if (clearsInitiative) {
+    if (rel.initiative === undefined && rel.maintenance === undefined) {
+      errStream().write(`conductor: release '${escapeControls(id)}' has no initiative or maintenance purpose set — there was nothing to clear\n`);
+    }
+    delete rel.initiative;
+    delete rel.maintenance;
+  }
+  if (splitReason !== undefined) rel.splitReason = splitReason;
+  if (f["clear-split-reason"] !== undefined) {
+    if (rel.splitReason === undefined) errStream().write(`conductor: release '${escapeControls(id)}' has no split reason set — there was nothing to clear\n`);
+    delete rel.splitReason;
+  }
+  if (removal && !activeNonGoals(rel).some(g => g.id === removal.id)) {
+    refuse(`--remove-non-goal names '${escapeControls(removal.id)}', which is not an active non-goal of release '${escapeControls(id)}'. Nothing was written.`);
+  }
+  if (addedNonGoals.length) addNonGoals(rel, addedNonGoals, new Date().toISOString());
+  if (removal) removeNonGoal(rel, removal.id, removal.reason, new Date().toISOString());
 
   const knownEpic = (epicId) => state.epics.find(e => e.id === epicId) || null;
 
@@ -364,7 +427,20 @@ export function release() {
           `the pointer now names '${escapeControls(id)}'\n`);
       }
     }
+    // THE ONE WRITER of membership (release-planning-taxonomy D27): the join time is written only on a JOIN. A repeat for the same
+    // release keeps it, a move replaces it, and both removers below delete it.
+    const memberEpic = knownEpic(epicId);
+    const joining = memberEpic.release !== id;
+    const primary = typeof rel.initiative === "string" && rel.maintenance !== true ? rel.initiative : null;
+    // The warning belongs to a JOIN (epic-annotation: "adding an epic"); a repeat for the same release has nothing new to say.
+    if (joining && primary !== null && memberEpic.lane !== "claude-code" && memberEpic.kind !== "health" &&
+        !(typeof memberEpic.offInitiativeReason === "string" && memberEpic.offInitiativeReason.trim()) &&
+        memberEpic.initiative !== primary && !(Array.isArray(memberEpic.secondaryInitiatives) && memberEpic.secondaryInitiatives.includes(primary))) {
+      errStream().write(escapeControls(`conductor: '${epicId}' does not serve release '${id}'s primary initiative '${primary}' — name it with --initiative ${primary} or ` +
+        "--secondary-initiative, or record why with --off-initiative-reason \"<why>\" on update-epic (a warning only; the membership was written)") + "\n");
+    }
     knownEpic(epicId).release = id;
+    if (joining) knownEpic(epicId).releaseJoinedAt = new Date().toISOString();
   }
 
   if (deferred) {
@@ -372,7 +448,7 @@ export function release() {
     // never an ending: nothing here touches the epic's status or writes it a disposition. What
     // it does clear is membership — an epic cannot be in a release it was cut from.
     const epic = knownEpic(deferred.epic);
-    if (epic.release === id) delete epic.release;
+    if (epic.release === id) { delete epic.release; delete epic.releaseJoinedAt; }
     const record = releaseDeferral({ epic: deferred.epic, reason: deferred.reason });
     const at = rel.deferred.findIndex(d => d && d.epic === deferred.epic);
     if (at === -1) {
@@ -397,6 +473,7 @@ export function release() {
 
   if (unmember) {
     delete knownEpic(unmember.epic).release;
+    delete knownEpic(unmember.epic).releaseJoinedAt;
     amend(rel, { op: "unmember", epic: unmember.epic, reason: unmember.reason });
     errStream().write(
       `conductor: '${escapeControls(unmember.epic)}' is no longer a member of '${escapeControls(id)}' — ${escapeControls(unmember.reason)}. ` +
@@ -541,6 +618,41 @@ export function candidateReview(epics, releaseId) {
   return { count: members.length, heads, missing, failed, converged: !missing.length && !failed.length && heads.size === 1 };
 }
 
+/** `initiative: <id> (<title>)`, `initiative: maintenance`, or "" when the release records neither. Pure. */
+function purposeLine(state, rel) {
+  if (rel.maintenance === true) return "initiative: maintenance";
+  if (typeof rel.initiative !== "string") return "";
+  const init = findInitiative(state, rel.initiative);
+  return `initiative: ${rel.initiative}${init && init.title ? ` (${init.title})` : ""}`;
+}
+
+/** ` [initiative <id>]` / ` [maintenance]` appended to the `release show` list line, or "". */
+function purposeSuffix(state, rel) {
+  if (rel.maintenance === true) return " [maintenance]";
+  return typeof rel.initiative === "string" ? ` [initiative ${rel.initiative}]` : "";
+}
+
+/** The `release show <id>` lines for the 80/20 split, the unserved-primary warning and the scope movement. Pure, derived on read. */
+function splitLines(state, rel, members) {
+  const out = [];
+  const ids = initiativeIdSet(state);
+  const primary = typeof rel.initiative === "string" && ids.has(rel.initiative) ? rel.initiative : null;
+  if (members.length) {
+    const s = releaseSplit(members, ids);
+    const pct = s.healthShare === null ? "n/a" : `${Math.round(s.healthShare * 100)}%`;
+    out.push(`split: ${s.initiativeWork} initiative work, ${s.health} health, ${s.unaligned} unaligned; health ${pct} ` +
+      `(target ${Math.round(s.target * 100)}%, band 10-30%)${s.drift ? ", DRIFT" : ""}` +
+      `${typeof rel.splitReason === "string" ? ` — reason: ${rel.splitReason}` : ""}`);
+  }
+  if (primaryServedOf(primary, members) === false) out.push(`warning: no member serves initiative ${primary} (this release's primary)`);
+  const scope = releaseScope(members);
+  if (scope.planningBaseline !== null) {
+    out.push(`scope: ${scope.addedSincePlanning} epic${scope.addedSincePlanning === 1 ? "" : "s"} added since the first member started` +
+      `${scope.unknownJoinTime ? ` (${scope.unknownJoinTime} with no recorded join time)` : ""}`);
+  }
+  return out;
+}
+
 /** `release show [<id>]` — render a release back, or list them all.
  *
  *  WHY THIS EXISTS. `release` was a write verb with no reader, so the only way to inspect what a
@@ -587,7 +699,7 @@ export function releaseShow(rest) {
       const full = findRelease(state, r.id);
       const plan = planSuffix(full, epics);
       out.push(`  • ${releaseLine(r)}${crossSpecLine(state, epics, r.id)}` +
-        `${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}${plan}${releaseMarks(full, state)}`);
+        `${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}${plan}${releaseMarks(full, state)}${purposeSuffix(state, full)}`);
     }
     out.push("  Read one back with `release show <id>`.");
     // One entry per line: escaping each is what keeps a stored id, intent or target on its line.
@@ -610,11 +722,19 @@ export function releaseShow(rest) {
   const amendments = Array.isArray(rel.amendments) ? rel.amendments : [];
   const out = [`conductor: release \`${rel.id}\`${rel.intent ? ` — ${rel.intent}` : ""}${escapeControls(releaseMarks(rel, state))}`];
   out.push(`  target: ${rel.target || "—"}`);
+  const purpose = purposeLine(state, rel);
+  if (purpose) out.push(`  ${purpose}`);
+  for (const line of splitLines(state, rel, members)) out.push(`  ${line}`);
   // The plan fields, printed only when one is set so a release that does not plan reads exactly as before.
   const planned = ["theme", "rationale", "exit", "order", "size"].some(k => rel[k] !== undefined);
   if (planned) {
     for (const k of ["theme", "rationale", "exit"]) if (rel[k] !== undefined) out.push(`  ${k}: ${rel[k]}`);
     out.push(`  plan:${planSuffix(rel, epics).replace(/^ \[/, " ").replace(/\]$/, "")}`);
+  }
+  const goals = activeNonGoals(rel);
+  if (goals.length) {
+    out.push(`  non-goals (${goals.length}):`);
+    for (const g of goals) out.push(`    ${g.id} — ${g.text}`);
   }
   out.push(rel.delivered
     ? `  delivered: yes — marked${rel.delivered.recordedAt ? ` ${rel.delivered.recordedAt}` : ""} (\`integrity\` reads this marker)`

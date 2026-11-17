@@ -212,3 +212,10 @@ written before that, or by hand. Measured 2026-10-20 against the live record: `g
 and `certification-record-redesign`. The gates read the set, so none of the seven is blocked by it; no verb removes
 one entry from the append-only array, so the report prints no remedy. Reported so the overstatement is visible,
 not so someone hand-edits `state.json`.
+
+## `dangling-initiative-reference` — 0 findings
+
+Added 2026-11-16 by release-planning-taxonomy. An epic or a release names an initiative the record does not hold, or an initiative's
+id fails the board id format. No verb deletes an initiative and every flag naming one refuses an unknown id, so a finding can only
+come from a hand edit; `board --json` reads the reference as `null` and lists a malformed id under `rejected`. Zero here, measured
+2026-11-16 against the live record, which holds no initiative. The check RAN.

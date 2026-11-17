@@ -20,7 +20,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { missionSectionText, rulesBlock } from "./rules.mjs";
+import { initiativesSectionText, missionNonGoalsSectionText, missionSectionText, rulesBlock } from "./rules.mjs";
+import { currentOpenspecAddendaSection } from "./openspec-addenda.mjs";
 import { boardsBriefLine, boardsSectionText } from "./boards-switch.mjs";
 import { profileContext } from "./execution-profile.mjs";
 import { spendEnabled } from "./spend-switch.mjs";
@@ -65,6 +66,10 @@ export const SURFACE_FEATURES = {
   "rules:release-candidate": CORE,
   // project-boards: recorded data, not a switchable feature, so it is core (managed-rules-block). Absent with no mission.
   "rules:mission": CORE,
+  // release-planning-taxonomy: recorded data like the mission, so core. `## Initiatives` is present while an initiative is open;
+  // `## Mission non-goals` while the mission has an active non-goal. Neither is a switchable feature.
+  "rules:initiatives": CORE,
+  "rules:mission-non-goals": CORE,
   // project-boards: a default-on switch (`set-boards`). The rules section and the brief's one line are separate surfaces, so
   // neither byte is counted twice; `brief` is measured without the line.
   "rules:boards": "boards",
@@ -178,7 +183,7 @@ export function rulesBlockFor(state, platform = "claude-code", usage = rulesUsag
   const tracker = s.tracker && s.tracker.system ? s.tracker : null;
   const mode = typeof s.reviewMode === "string" && s.reviewMode ? s.reviewMode : "standard";
   const secondary = Array.isArray(s.secondaryTrackers) ? s.secondaryTrackers : [];
-  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage, missionSectionText(s), boardsSectionText(s));
+  return rulesBlock(tracker, mode, secondary, platform, profileContext(s, undefined), spendEnabled(s), guardConfigured(s), usage, missionSectionText(s), boardsSectionText(s), initiativesSectionText(s), missionNonGoalsSectionText(s), currentOpenspecAddendaSection());
 }
 
 /** Every surface for `state`. PURE over its inputs: `listings`, `hooks` and `lessons` are handed in. */

@@ -40,7 +40,8 @@ that is intended, and `--archived all` is the one-off full mirror.
 | `releases/<releaseId>` | both | one `board --json` release entry, unchanged: it carries `progress` and `unshipped`, the rows (`{epic, title, outcome, reason, supersededBy}`) the release plan's Shipped table explains a partly shipped release with. Copy `unshipped` as the export gives it; never write a reason of your own into it |
 | `page/info` | both | `lastUpdated` (now, ISO), `asOf` (the export's `asOf`), `head`, and `project` (the export's `project`, `{name, key}`); there is no headline |
 | `plan/state` | release plan | `here`, `hereText`, `nextText` from the export's `plan`, plus `head` and `asOf`; the page draws only `here` (the roadmap's We are here rule) and `asOf`, and keeps `hereText`, `nextText` and `head` for agents |
-| `mission/current` | release plan | the export's `mission` plus `milestoneRelease` (the milestone's release, or null) |
+| `mission/current` | release plan | the export's `mission` plus `milestoneRelease` (the milestone's release, or null) and `nonGoals` (the export's `missionNonGoals`, which the page draws as "Not doing" under the mission) |
+| `initiatives/<id>` | release plan | one `board --json` initiative entry, unchanged: `title`, `capability`, `status`, `outcome`, `source` (`UNGROUNDED` is drawn as a warning mark), `milestones` (initiative milestones with their reached marks) and `nonGoals` |
 | `criteria/<cN>` | release plan | one active milestone criterion: `id`, `text`, `check`, `needsHuman` |
 | `decisions/<n>` | release plan | `question`, `recommendation`, `askedAt`: an open question the AGENT is putting to the user now |
 | `answers/<n>` | release plan | the viewer's `agree` or `disagree` plus a note, keyed like the decision; `answers/_submitted` is written by "Send my answers" |
@@ -54,6 +55,15 @@ at the bottom, newest first, which reads `progress` for "N of M shipped" and `un
 that did not ship, with its outcome and the reason on record, or "no reason recorded" when there is none. A release with
 no members reads "no members recorded". The page never works a reason out for itself, so a stale `unshipped` array on a
 `releases/<id>` doc is a stale explanation: refresh the doc from a fresh export.
+
+### What the release plan draws from the initiative docs and the new release keys
+
+Each release card shows its primary initiative's title (or "Maintenance" for a release that serves none), its "Goal" (the
+release's `theme`), its split (initiative work, health and unaligned, by epic count, with the drift mark and the recorded
+`splitReason`), a warning when no member serves its primary initiative, the "N epics added since the first member started" line, and
+its "Not doing" list. A release with neither a primary initiative nor `maintenance` shows a guided card naming
+`release <id> --initiative <id>` and `--maintenance`. Copy these keys from the export as it gives them; the page never works one out.
+
 
 ## Access: the declared rules decide
 
@@ -71,6 +81,7 @@ Release plan, passed as the Artifact tool's `capabilities`:
   {"path":"releases","read":"view","write":"admin"},
   {"path":"plan","read":"view","write":"admin"},
   {"path":"mission","read":"view","write":"admin"},
+  {"path":"initiatives","read":"view","write":"admin"},
   {"path":"criteria","read":"view","write":"admin"},
   {"path":"decisions","read":"view","write":"admin"},
   {"path":"page","read":"view","write":"admin"},
@@ -149,8 +160,8 @@ Drag never changes an epic's priority. A priority change goes through you, as an
   not exist yet. A plain `set` on an existing doc overwrites a concurrent write. A write refused for a version mismatch:
   retry once after re-reading, and report a second refusal; never force it.
 - Write `epics/<id>` and `releases/<id>` from the export, then `page/info` (with `project` copied from the export). For the release plan also write `plan/state`,
-  `mission/current` and each `criteria/<cN>`.
-- When the export stops listing an epic, release or criterion, delete that doc. When the mission is gone, delete `mission/current`.
+  `mission/current` (with `nonGoals` from the export's `missionNonGoals`), each `initiatives/<id>` and each `criteria/<cN>`.
+- When the export stops listing an epic, release, initiative or criterion, delete that doc. When the mission is gone, delete `mission/current`.
 - The refresh never writes, overwrites or deletes `backlogMeta`. It is the viewer's own mark, and a page Restore undoes it.
   A mark for an epic the export no longer lists is left in place.
 - `decisions` docs come from the agent, never from pm: pm records decisions already made, not open questions. Write
@@ -181,6 +192,10 @@ field null and the card stays. After the answers, run the verbs below, then re-r
 | `plan.here` (the page's guided card covers `here` only; `hereText` and `nextText` are agent-only data, not drawn) | `release here <releaseId>` (optionally `--text "<where things stand>" --next "<what comes next>"` for agents) | you draft it from `board --json`; the user confirms |
 | an open release's `theme`, `rationale`, `exit`, `order`, `size`, `target` | `release <releaseId> --theme "<line>" --rationale "<line>" --exit "<check>" --order <n> --size <major or minor or patch> --target "<date>"` | the user; you propose wording |
 | epic `summary` | `update-epic <id> --summary "<one line>"` | you draft one line per epic; the user confirms or edits them as a batch |
+| `initiatives` (empty), and each initiative's `source` | `initiative <id> --title "<line>" --capability "<line>" --source "<where it came from, or UNGROUNDED>"` | you derive the candidates; the user confirms each |
+| initiative milestones | `initiative <id> --add-milestone "<line>"` | you derive them; the user confirms |
+| a release's primary initiative | `release <releaseId> --initiative <id>`, or `--maintenance` for a release that serves none | you propose it from the release's epics; the user confirms |
+| epic `kind` (and `initiative`) | `update-epic <id> --kind initiative-work|health --initiative <id>` | you propose per epic; the user confirms as a batch |
 | open questions for the release plan | `decisions/<n>` docs (see Seed) | you write each question with your recommendation |
 
 **Derive, then confirm.** Do not open by asking blank questions. First draft, from what the project already holds, the
@@ -192,6 +207,15 @@ about the gaps and for confirmation, in the one batch. Write what the user confi
 `release`, `release here`, `update-epic --summary`); never invent a fact; unset stays unset. The question list below is the
 fallback for gaps.
 
+**Initiatives: cluster, then ask "Does this make sense?"** Never ask the user to name an initiative or an initiative
+milestone: they would have to invent the vocabulary, and the project already holds the evidence. Cluster the existing backlog
+(the open epics, their summaries and releases), the docs and the issues into candidate initiatives (multi-release efforts that
+each deliver a valuable capability) and candidate initiative milestones (notable achievements inside one), and propose each
+release's primary initiative and each epic's kind. Record where each candidate came from with `initiative <id> --source "<doc,
+issue or epic ids>"`, and write `--source UNGROUNDED` for one you could not ground. Show the clusters and ask "Does this make
+sense?" once, with the whole batch. Write only what the user confirms; nothing unconfirmed is written, and a candidate the
+user rejects is dropped, not recorded.
+
 Ask in this order, in the one batch:
 
 1. What is the project called, and which two or three letters should its epic keys carry (for example PM)?
@@ -201,6 +225,7 @@ Ask in this order, in the one batch:
 5. For each open release: theme, rationale, exit check, size and target date (leave the target unset when there is none), with your proposal.
 6. The one-line summaries you drafted for epics with none: confirm or edit.
 7. Any decision the user wants on the release plan now, with your recommendation.
+8. The initiative clusters you derived (see above): "Does this make sense?", with each one's source or UNGROUNDED.
 
 ## No Artifact tool: the standalone file
 

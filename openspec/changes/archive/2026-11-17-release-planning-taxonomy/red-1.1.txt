@@ -1,0 +1,14 @@
+RED for task 1.1 (fails before 1.2)
+command: node --test scripts/test/unit/board-planning-export.test.mjs
+✖ board export: an empty record reads initiatives and missionNonGoals as []
+✖ board export: a release with nothing recorded carries every new key at its zero value
+✖ board export: an epic with none of the planning fields reads them all null or []
+✖ board export: a populated record reads every field back
+✖ board export: an ended initiative reports its outcome and endedAt
+✖ board export: removed initiative milestones and non-goals are absent
+✖ board export: a malformed initiative id is omitted and rejected with the format reason
+✖ board export: a reference naming no initiative reads null and a secondary leaves its list
+✖ board export: the claude-code effective kind defaults from the initiative, and a recorded kind wins
+ℹ tests 9
+ℹ pass 0
+ℹ fail 9

@@ -38,6 +38,7 @@ Fire on any of these:
 - You invented a convention the tool should have supplied — an id format, a slug, a link type.
 - You did something **twice by hand** that the tool could have done once.
 - You caught yourself thinking *"I'll just…"* about a tool that is supposed to do it for you.
+- A pm clause must reach an OpenSpec workflow. It goes in the managed block's OpenSpec addenda section; never edit `.claude/skills/openspec-*` or `.claude/commands/opsx/*`, because `openspec update` overwrites them.
 
 For friction in `pm` itself, that is what `/pm:feedback [bug|feature] "<summary>"` is for. For
 friction in anything else, file it wherever that thing is tracked — the point is that it leaves

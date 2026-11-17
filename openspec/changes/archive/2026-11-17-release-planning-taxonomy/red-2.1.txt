@@ -1,0 +1,9 @@
+RED for task 2.1 (fails before 2.2)
+command: node --test scripts/test/unit/initiative-verb.test.mjs
+✖ no verb deletes an initiative: no registered initiative flag is a delete or a bare remove
+✖ show: lists, reads one back, --history, `no initiatives`, and writes nothing
+✖ the verb refuses on the command line: no id, an unknown flag, --history outside show, a reserved id
+✖ VERB_EFFECTS declares initiative as mutating and the registry carries no delete spelling
+ℹ tests 11
+ℹ pass 7
+ℹ fail 4

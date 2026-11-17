@@ -1,0 +1,10 @@
+RED for task 4.1 (fails before 4.1)
+command: node --test scripts/test/unit/release-initiative.test.mjs
+✖ set, switch and clear: --initiative, --maintenance, --clear-initiative
+✖ both at once, a contradiction with the clear, and an unknown initiative are refused
+✖ the plan marker takes none of the three
+✖ release show keeps its theme label and prints the purpose
+✖ release show with a hostile initiative title escapes it
+ℹ tests 7
+ℹ pass 2
+ℹ fail 5

@@ -23,7 +23,8 @@ const archivedEpic = (id, over = {}) => epic(id, { status: "archived", dispositi
 unitTest("board: an empty record has every top-level key, null mission/milestone/plan.here and empty lists", () => {
   const s = snap(record());
   assert.deepEqual(Object.keys(s).sort(), [
-    "asOf", "boardsEnabled", "counts", "epics", "milestone", "mission", "plan", "pmVersion", "project", "rejected", "releases", "schemaVersion",
+    "asOf", "boardsEnabled", "counts", "epics", "initiatives", "milestone", "mission", "missionNonGoals", "plan", "pmVersion", "project",
+    "rejected", "releases", "schemaVersion",
   ]);
   assert.equal(s.schemaVersion, 1);
   assert.equal(s.mission, null);
@@ -109,8 +110,9 @@ unitTest("board: time fields come from the record, each null when absent", () =>
 unitTest("board: every field is carried and a non-string where a string is expected reads null", () => {
   const e = byId(snap(record([epic("a", { summary: "s", whyNow: "w", description: "d", title: 7 })])), "a");
   assert.deepEqual(Object.keys(e).sort(), [
-    "createdAt", "delivered", "dependsOn", "description", "endedAt", "externalUrl", "id", "key", "lane", "meritPriority", "number",
-    "outcome", "outcomeReason", "position", "priority", "rank", "release", "status", "summary", "title", "updatedAt", "whyNow",
+    "createdAt", "delivered", "dependsOn", "description", "effectiveKind", "endedAt", "externalUrl", "id", "initiative", "initiativeJoinedAt",
+    "key", "kind", "lane", "meritPriority", "nonGoals", "number", "offInitiativeReason", "offMissionReason", "outcome", "outcomeReason",
+    "position", "priority", "rank", "release", "releaseJoinedAt", "secondaryInitiatives", "status", "summary", "title", "updatedAt", "whyNow",
   ]);
   assert.equal(e.summary, "s");
   assert.equal(e.whyNow, "w");
@@ -262,7 +264,9 @@ unitTest("board: releases are listed in plan order with their plan fields, absen
     { id: "rx", deferred: [] },
   ] }));
   assert.deepEqual(s.releases.map(r => r.id), ["r1", "r2", "rx"]);
-  assert.deepEqual(s.releases[1], {
+  // The release-planning-taxonomy keys are additive and have their own file (board-planning-export.test.mjs); stripped here.
+  const { initiative, maintenance, splitReason, nonGoals, primaryServed, planningBaseline, addedSincePlanning, unknownJoinTime, split, ...plain } = s.releases[1];
+  assert.deepEqual(plain, {
     id: "r2", intent: "two", target: null, theme: "t", rationale: "why", exit: "e", order: 2, size: "minor",
     status: "planned", delivered: false, criticalPath: null, progress: { done: 0, total: 1 }, members: ["m"],
     deferred: [{ epic: "m", reason: "cut" }],

@@ -1,0 +1,12 @@
+RED for task 3.1 (fails before 3.2)
+command: node --test scripts/test/unit/non-goals.test.mjs
+✖ ids are per record: a mission non-goal and a release non-goal are both n1, each listed only under its own record
+✖ a bad value writes nothing: empty, a newline, 301 characters
+✖ add: repeatable, appended in order on update-epic and release
+✖ add-epic registers an epic with non-goals, and add-many reads a nonGoals array per entry
+✖ remove: marks with time and reason, split at the first colon, on mission, initiative, release and update-epic
+✖ remove: refuses unknown, already removed, reasonless and repeated
+✖ show --history lists the removed ones, and the plain show lists only the active
+ℹ tests 12
+ℹ pass 5
+ℹ fail 7

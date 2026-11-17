@@ -81,7 +81,7 @@ UNVERIFIED, carried forward (no task builds on any of them):
 **Rules block section.** `openspecAddendaSectionText({ hasOpenspec, present: { onboard, verify, bulkArchive } })` returns "" when `!hasOpenspec`, else:
 heading `## OpenSpec addenda`; the archive clause as an instruction that overrides step 6's check in the generated archive skill; the practice sentence
 ("`openspec update` rewrites `.claude/skills/openspec-*` and `.claude/commands/opsx/*`; carry any pm clause here, never there"). Task 6 adds up to three guardrail
-bullets, each only when its generated skill directory exists. `rulesBlock` gains an 11th parameter `openspecSection = ""` (default empty, so every existing
+bullets, each only when its generated skill directory exists. `rulesBlock` gains an 13th parameter `openspecSection = ""` (default empty, so every existing
 byte-pinned fixture is unchanged), placed after the Boards section and before "Re-read the source" like Boards. It is VERB-REFRESHED (written at `init`,
 `write-rules`, `upgrade`), outside `CONDITIONAL_SECTIONS`, because its gate is the filesystem (`openspec/` present), not a `state.json` input; the coverage guard
 at `scripts/test/unit/rules-conditional-coverage.test.mjs` varies only the four state inputs and must stay green, which is why the default is empty.
@@ -104,14 +104,14 @@ three guardrail bullets, total cap 1,200 B (about 300 tokens). Both only in repo
 | Delete the clause from the two `.claude/` files | Re-add it | Deliberately none: re-adding is the practice this epic ends. A file is restored to pristine by `openspec update`, which is outside pm. |
 | Step 4 order flip in `commands/upgrade.md` | None | Doc-only; the HOLD bullet is replaced, not left beside it. |
 | HOLD wording softening | None | Doc/text only. |
-| `rulesBlock` 11th parameter | Passing "" | Yes: the default is the inverse and every legacy caller keeps it. |
+| `rulesBlock` 13th parameter | Passing "" | Yes: the default is the inverse and every legacy caller keeps it. |
 
 ## File map
 
 | File | Change |
 |---|---|
 | `scripts/lib/openspec-addenda.mjs` | NEW: registry, pure findings, section text, fs wrapper, `openspecAddendaLines()`, `currentOpenspecAddendaSection()` |
-| `scripts/lib/rules.mjs` | `rulesBlock` 11th param + emission; `writeRules` passes the reader (line 1334) |
+| `scripts/lib/rules.mjs` | `rulesBlock` 13th param + emission; `writeRules` passes the reader (line 1334) |
 | `scripts/conductor.mjs` | line 529 `rulesBlock(` call passes the reader |
 | `scripts/lib/overhead.mjs` | line 181 `rulesBlock(` call passes the reader |
 | `scripts/lib/briefing.mjs`, `scripts/lib/migrations.mjs` | call `openspecAddendaLines()` beside the currency lines (178, 288) |
@@ -140,11 +140,11 @@ each task below is independently committable and revertible. Agents do not run s
   - [ ] 1.2 Baseline size: `node scripts/conductor.mjs rules --sections > "$SCRATCH/sections-before.txt"` and `node scripts/conductor.mjs overhead > "$SCRATCH/overhead-before.txt"`. Expect total 40109 bytes unless dev moved.
   - [ ] 1.3 Writers to generated paths (expect zero engine hits):
     `rg -n "\.claude/skills/openspec|\.claude/commands/opsx|OPENSPEC_GENERATED_PATHS" scripts/lib scripts/conductor.mjs commands skills hooks --glob '!scripts/test/**'`
-  - [ ] 1.4 Other pm-authored passages in the 24 tracked generated files: `git ls-files .claude | rg "openspec|opsx"`, then in a THROWAWAY COPY outside the repo
+  - [x] 1.4 Other pm-authored passages in the 24 tracked generated files: `git ls-files .claude | rg "openspec|opsx"`, then in a THROWAWAY COPY outside the repo
     (`cp -R` to the scratchpad; never run `openspec update` inside `~/Documents/Repos/pm`, which has `project-boards` in flight) run `openspec update`, then
     `diff -r` the copy's `.claude/skills/openspec-* .claude/commands/opsx` against the repo's. Expected: the only non-stamp differences besides the 1.15 -> 1.17 changes are the two clause lines.
     Record any other pm-authored passage found; it becomes an additional registry entry in task 3.
-  - [ ] 1.5 Cheap check of the CLAUDE.md suspicion: `git log --oneline -S"OpenSpec 1.15 workflows that fight" -- CLAUDE.md` (history shows the section was added in 418f5751 and no commit removed it).
+  - [x] 1.5 Cheap check of the CLAUDE.md suspicion: `git log --oneline -S"OpenSpec 1.15 workflows that fight" -- CLAUDE.md` (history shows the section was added in 418f5751 and no commit removed it).
     Report the result against the UNVERIFIED claim; do not conclude beyond it.
   - [ ] 1.6 Name the three `rulesBlock(` non-test call sites: `rg -n "rulesBlock\(" scripts --glob '!scripts/test/**'` (expect `rules.mjs:1334`, `conductor.mjs:529`, `overhead.mjs:181`).
   - [ ] 1.7 Find tests that pin block size or section counts so task 4 knows what to update: `rg -n "MAX_BYTES|budget|40[0-9]{3}|Object.keys\(.*sections" scripts/test/unit/managed-rules-block.test.mjs scripts/test/assert/managed-rules-block.test.mjs scripts/test/unit/overhead*.test.mjs scripts/test/assert/overhead*.test.mjs`.
@@ -169,7 +169,7 @@ each task below is independently committable and revertible. Agents do not run s
 
 - [ ] **4. The rules block section (RED already written in 2.6-2.7; add the assert half here).**
   - [ ] 4.1 RED: `scripts/test/assert/openspec-addenda.test.mjs` (tmp repo from `../fixtures/assert-harness.mjs`): (a) repo with `openspec/`: after `init` then `write-rules` the CLAUDE.md block contains `## OpenSpec addenda` exactly once and the needle sentence; (b) repo without `openspec/`: absent; (c) `rm -r openspec` then `write-rules`: the heading is gone (the inverse); (d) `write-rules` twice: second run leaves the file byte-identical; (e) `rules --sections` lists the heading with a byte size at most 400; (f) `overhead` output for the same repo includes the section (proves overhead.mjs:181 passes it).
-  - [ ] 4.2 GREEN: `rulesBlock` 11th parameter `openspecSection = ""`, emitted after the Boards section (`rules.mjs` near the `boardsSection` push) via the same `{{pm:...}}` replace path; `writeRules` (rules.mjs:1334), `scripts/conductor.mjs:529`, `scripts/lib/overhead.mjs:181` pass `currentOpenspecAddendaSection()`.
+  - [ ] 4.2 GREEN: `rulesBlock` 13th parameter `openspecSection = ""`, emitted after the Boards section (`rules.mjs` near the `boardsSection` push) via the same `{{pm:...}}` replace path; `writeRules` (rules.mjs:1334), `scripts/conductor.mjs:529`, `scripts/lib/overhead.mjs:181` pass `currentOpenspecAddendaSection()`.
   - [ ] 4.3 Update only the pinned tests found in 1.7 whose numbers the new default-empty parameter does not already preserve (expect none, since the default is empty); report any you change.
   - [ ] 4.4 Run the rules unit files (`rg -l "rulesBlock" scripts/test/unit | xargs node --test`) and the new assert file. `rules-conditional-coverage.test.mjs` must pass unmodified.
   - [ ] 4.5 Regenerate this repo's block: `node scripts/conductor.mjs write-rules` (this repo has `openspec/`, so the block gains the section). Review `git diff CLAUDE.md`: the ONLY change is the new section inside the markers. Do not edit CLAUDE.md while certify or a hook is running.
@@ -209,14 +209,14 @@ each task below is independently committable and revertible. Agents do not run s
   - [ ] 10.2 Pass criteria: section (clause + practice) at most 400 B, target about 330 B (about 80 tokens); with guardrails at most 1,200 B (about 300 tokens); every other section's byte count identical to the before file; a fresh repo WITHOUT `openspec/` (`init` in an empty git repo) shows 0 bytes added. Report the numbers, noting they are bytes/4 estimates, not model tokens.
   - [ ] 10.3 If the clause alone exceeds 330 B, tighten the wording; if the owner's 80-token figure cannot hold with the practice sentence, report it instead of silently raising the cap (open question 4).
 
-- [ ] **11. REQUIRED GATE ITEM 1: call-site completeness and inverse sweep (derive mechanically, never type the list).** Run and attach the output; state where each rule holds and justify each omission.
-  - [ ] 11.1 Every writer to the generated surfaces (rule: pm never writes them): `rg -n "writeFileSync|appendFileSync|copyFileSync|renameSync|rmSync|unlinkSync|mkdirSync" scripts/lib scripts/conductor.mjs --glob '!scripts/test/**'`; each hit's target is a pm-owned path (`rules.mjs:1373/1411` rules target, `store.mjs` conductor files, `subcommands.mjs:118` .gitignore, etc.). Zero hits may resolve to `.claude/skills/openspec-*` or `.claude/commands/opsx/`. Also `rg -n "\.claude/(skills/openspec|commands/opsx)" scripts/lib commands skills` returns only the registry, `OPENSPEC_GENERATED_PATHS` and prose.
-  - [ ] 11.2 Every caller of the new rulesBlock input: `rg -n "rulesBlock\(" scripts --glob '!scripts/test/**'` shows exactly the three sites, all passing `currentOpenspecAddendaSection()`; `rg -n "currentOpenspecAddendaSection" scripts | rg -v test` lists all three plus the definition.
-  - [ ] 11.3 Every caller of the emitter: `rg -n "openspecCurrencyLines|openspecAddendaLines" scripts --glob '!scripts/test/**'`: both called at the brief and at `upgrade`; justify that `status`/`/pm:status` renders the brief and needs no third call.
-  - [ ] 11.4 Every place that restates the HOLD or the step-4 order: `rg -n "HOLD until|Do not run .openspec update|copy .* aside|openspec update" commands README.md skills scripts/lib docs/*.md --glob '!docs/superpowers/**' --glob '!CHANGELOG.md'`; each hit is either changed in tasks 7/9 or justified (historical changelog prose stays).
-  - [ ] 11.5 Every place that lists the block's headings and could need the new one: `rg -n "Boards|CONDITIONAL_SECTIONS" scripts/lib scripts/test --glob '!scripts/test/fixtures/**' -l`; `rules --sections`, `overhead` and the coverage guard each checked.
-  - [ ] 11.6 Data references: this plan adds no field holding another record's id and no `state.json` field; say so.
-  - [ ] 11.7 Inverses: the table above, each row with its test id or its justification.
+- [x] **11. REQUIRED GATE ITEM 1: call-site completeness and inverse sweep (derive mechanically, never type the list).** Output and verdicts: `2026-11-12-openspec-addenda-no-generated-file-edits/call-site-sweep.md`; it found and fixed one gap (briefing.mjs did not pass the resolved platform). Run and attach the output; state where each rule holds and justify each omission.
+  - [x] 11.1 Every writer to the generated surfaces (rule: pm never writes them): `rg -n "writeFileSync|appendFileSync|copyFileSync|renameSync|rmSync|unlinkSync|mkdirSync" scripts/lib scripts/conductor.mjs --glob '!scripts/test/**'`; each hit's target is a pm-owned path (`rules.mjs:1373/1411` rules target, `store.mjs` conductor files, `subcommands.mjs:118` .gitignore, etc.). Zero hits may resolve to `.claude/skills/openspec-*` or `.claude/commands/opsx/`. Also `rg -n "\.claude/(skills/openspec|commands/opsx)" scripts/lib commands skills` returns only the registry, `OPENSPEC_GENERATED_PATHS` and prose.
+  - [x] 11.2 Every caller of the new rulesBlock input: `rg -n "rulesBlock\(" scripts --glob '!scripts/test/**'` shows exactly the three sites, all passing `currentOpenspecAddendaSection()`; `rg -n "currentOpenspecAddendaSection" scripts | rg -v test` lists all three plus the definition.
+  - [x] 11.3 Every caller of the emitter: `rg -n "openspecCurrencyLines|openspecAddendaLines" scripts --glob '!scripts/test/**'`: both called at the brief and at `upgrade`; justify that `status`/`/pm:status` renders the brief and needs no third call.
+  - [x] 11.4 Every place that restates the HOLD or the step-4 order: `rg -n "HOLD until|Do not run .openspec update|copy .* aside|openspec update" commands README.md skills scripts/lib docs/*.md --glob '!docs/superpowers/**' --glob '!CHANGELOG.md'`; each hit is either changed in tasks 7/9 or justified (historical changelog prose stays).
+  - [x] 11.5 Every place that lists the block's headings and could need the new one: `rg -n "Boards|CONDITIONAL_SECTIONS" scripts/lib scripts/test --glob '!scripts/test/fixtures/**' -l`; `rules --sections`, `overhead` and the coverage guard each checked.
+  - [x] 11.6 Data references: this plan adds no field holding another record's id and no `state.json` field; say so.
+  - [x] 11.7 Inverses: the table above, each row with its test id or its justification.
 
 - [ ] **12. REQUIRED GATE ITEM 8: prove every guard can fail (mutation evidence).** Method: `skills/mutation-pass/SKILL.md`. For each mutant, edit, run the named files, require at least one failure, then revert with `git checkout -- <file>` (verify with `git diff --stat` empty). Save as
   `docs/superpowers/plans/2026-11-12-openspec-addenda-no-generated-file-edits/mutation-evidence.txt` in the format of `docs/superpowers/plans/2026-11-02-mutation-pass-required-item/mutation-evidence.txt` (header, baseline exit 0, one block per mutant with run and KILLED count). Mutants:

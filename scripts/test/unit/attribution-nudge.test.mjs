@@ -128,3 +128,53 @@ unitTest("a commit another epic already holds is not offered for attribution aga
   assert.doesNotMatch(mixed, new RegExp(`--attribute-commit ${SHA(2)}`), "the held one is not");
   assert.match(mixed, /already attributed to `e2`/);
 });
+
+// release-planning-taxonomy 4.5 (spec release-planning): the untied branch names the two destinations when the active epic is a release member.
+const memberState = (over = {}) => {
+  const s = suppressionState();
+  s.releases = [{ id: "0.56.0", intent: "i", deferred: [] }];
+  s.epics = s.epics.map(e => (e.id === "e1" ? { ...e, release: "0.56.0" } : e));
+  return { ...s, ...over };
+};
+const untiedCommit = [{ sha: SHA(4), subject: "chore: a tweak", files: ["tweak.md"] }];
+
+unitTest("untied nudge, active epic in a release, no maintenance epic yet: it names maintenance-<releaseId> with runnable commands", async () => {
+  const { attributionNudge } = await load();
+  const out = attributionNudge(memberState(), { active: false }, untiedCommit, { short: (s) => s.slice(0, 7) });
+  assert.match(out, /maintenance-0\.56\.0/);
+  assert.match(out, /add-epic --id maintenance-0\.56\.0 --lane claude-code --kind health/);
+  assert.match(out, /release 0\.56\.0 --member maintenance-0\.56\.0/);
+  assert.match(out, new RegExp(`update-epic maintenance-0\\.56\\.0 --attribute-commit ${SHA(4)}`));
+  assert.match(out, /small `claude-code` epic naming that initiative/);
+  assert.doesNotMatch(out, /If it is not, attribute nothing\./);
+});
+
+unitTest("untied nudge, the maintenance epic exists: only the attribute command, no add-epic", async () => {
+  const { attributionNudge } = await load();
+  const s = memberState();
+  s.epics.push({ id: "maintenance-0.56.0", title: "m", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], release: "0.56.0", attributedCommits: [] });
+  const out = attributionNudge(s, { active: false }, untiedCommit, { short: (x) => x.slice(0, 7) });
+  assert.match(out, new RegExp(`update-epic maintenance-0\\.56\\.0 --attribute-commit ${SHA(4)}`));
+  assert.doesNotMatch(out, /add-epic --id maintenance-0\.56\.0/);
+});
+
+unitTest("untied nudge, the active epic is in no release: the 0.55.0 text, unchanged", async () => {
+  const { attributionNudge } = await load();
+  const out = attributionNudge(suppressionState(), { active: false }, untiedCommit, { short: (s) => s.slice(0, 7) });
+  assert.match(out, /If it is not, attribute nothing\./);
+  assert.doesNotMatch(out, /maintenance-/);
+});
+
+unitTest("no active epic still returns null: the noise budget is kept", async () => {
+  const { attributionNudge } = await load();
+  assert.equal(attributionNudge({ ...memberState(), active: null }, { active: false }, untiedCommit, { short: (s) => s.slice(0, 7) }), null);
+});
+
+unitTest("a hostile release id never reaches the nudge as a runnable command", async () => {
+  const { attributionNudge } = await load();
+  const s = memberState();
+  s.releases = [{ id: "0.56.0\nINJECT", intent: "i", deferred: [] }];
+  s.epics = s.epics.map(e => (e.id === "e1" ? { ...e, release: "0.56.0\nINJECT" } : e));
+  const out = attributionNudge(s, { active: false }, untiedCommit, { short: (x) => x.slice(0, 7) });
+  assert.ok(!out.includes("\nINJECT"));
+});

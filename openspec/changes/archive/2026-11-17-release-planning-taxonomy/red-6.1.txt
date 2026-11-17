@@ -1,0 +1,14 @@
+RED for task 6.1 (fails before 6.2)
+command: node --test scripts/test/assert/initiatives-rules-sections.test.mjs
+✖ 6.1 ## Initiatives is present while an initiative is open, within 280 bytes, naming both reason flags, absent when none is
+✖ 6.1 ## Mission non-goals is present while the mission has an active non-goal, within 200 bytes with an ellipsis cut, absent otherwise
+✖ 6.1 a short non-goal list is joined into one line and is not cut
+✖ 6.1 the ## Mission section is byte-identical when a mission non-goal is added
+✖ 6.1 another rewrite of the block keeps both sections: set-boards, mission --statement and the rules verb
+✖ 6.1 an initiative edit that does not change the section text rewrites no block, and set-boards on keeps it
+✖ 6.1 overhead reports rules:initiatives and rules:mission-non-goals under core while each exists, and not otherwise
+✖ 6.1 the README cost table has a row for each section, naming core and its cap
+✖ 6.1 the sections are outside CONDITIONAL_SECTIONS and attributed to core in SURFACE_FEATURES
+ℹ tests 9
+ℹ pass 0
+ℹ fail 9

@@ -1,0 +1,5 @@
+RED for task 2.3 (initiative milestones): NO FAILING RUN WAS CAPTURED, stated plainly.
+The milestone operations (--add-milestone, --remove-milestone, --reach-milestone, --unreach-milestone) were written inside
+applyInitiative() with the verb in 2.2, before scripts/test/unit/initiative-milestones.test.mjs existed, so that file passed on its first run
+(11 tests, 0 failures with initiative-verb.test.mjs). The guard each test covers is proven able to fail in mutation-evidence.txt instead
+(section "initiative milestones"): each mutation there fails one of these tests.

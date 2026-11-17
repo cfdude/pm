@@ -79,3 +79,73 @@ export function planStatusLines(state) {
   }
   return lines;
 }
+
+// ─────────────── the 80/20 split and scope movement (change release-planning-taxonomy, spec release-planning) ───────────────
+// Every value below is DERIVED on read and none is stored (design D9, D21, D31): a stored split disagrees with the members the
+// moment one is added, and a stored baseline needs an inverse the owner declined.
+
+/** The fixed health-share target (D30): the same for every project, with no setting. */
+export const HEALTH_SHARE_TARGET = 0.2;
+/** The drift band (D10, D19): a share BELOW the minimum or ABOVE the maximum drifts; the edges are inside. Engine constants, not settings. */
+export const HEALTH_SHARE_MIN = 0.1;
+export const HEALTH_SHARE_MAX = 0.3;
+/** The two epic kinds. */
+export const EPIC_KINDS = ["initiative-work", "health"];
+
+/** An epic's EFFECTIVE kind (D21a): the recorded kind; a `claude-code`-lane epic with none reads `initiative-work` when it names
+ *  an initiative (`names`, true when it names a recorded one), else `health`; anything else with none reads null. Never stored. */
+export function effectiveKindOf(epic, names) {
+  if (epic && EPIC_KINDS.includes(epic.kind)) return epic.kind;
+  if (epic && epic.lane === "claude-code") return names ? "initiative-work" : "health";
+  return null;
+}
+
+/** The set of recorded initiative ids. */
+export const initiativeIdSet = (state) =>
+  new Set((state && Array.isArray(state.initiatives) ? state.initiatives : []).filter(i => i && typeof i.id === "string").map(i => i.id));
+
+/** A release's split over ALL its members, in any lane, each counted once (D21, D32): `health` when its effective kind is health,
+ *  else `initiativeWork` when it names a recorded primary initiative, else `unaligned`. `healthShare` is health over every member,
+ *  null with none. `drift` is null with no share, else true below the minimum or above the maximum. Compared in integers so 1/10
+ *  and 3/10 sit on the edge exactly. */
+export function releaseSplit(memberRecords, initiativeIds) {
+  const split = { initiativeWork: 0, health: 0, unaligned: 0 };
+  for (const e of memberRecords) {
+    const names = typeof e.initiative === "string" && initiativeIds.has(e.initiative);
+    if (effectiveKindOf(e, names) === "health") split.health++;
+    else if (names) split.initiativeWork++;
+    else split.unaligned++;
+  }
+  const n = memberRecords.length;
+  const share = n === 0 ? null : split.health / n;
+  const lo = Math.round(HEALTH_SHARE_MIN * 100), hi = Math.round(HEALTH_SHARE_MAX * 100);
+  const drift = n === 0 ? null : (split.health * 100 < lo * n || split.health * 100 > hi * n);
+  return { ...split, healthShare: share, target: HEALTH_SHARE_TARGET, drift };
+}
+
+/** `true` when a member names the release's primary initiative (as primary or secondary), `false` when it has members and none does,
+ *  null with no members or no primary (D24). */
+export function primaryServedOf(primary, memberRecords) {
+  if (typeof primary !== "string" || !memberRecords.length) return null;
+  return memberRecords.some(e => e.initiative === primary || (Array.isArray(e.secondaryInitiatives) && e.secondaryInitiatives.includes(primary)));
+}
+
+const ms = (v) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? Date.parse(v) : null);
+
+/** The derived planning baseline (D31): the earliest `startedAt` among the members that have one, as the member recorded it, or null.
+ *  `addedSincePlanning` counts members whose `releaseJoinedAt` is later; `unknownJoinTime` those with none. Both null with no baseline. */
+export function releaseScope(memberRecords) {
+  let base = null, baseAt = null;
+  for (const e of memberRecords) {
+    const t = ms(e.startedAt);
+    if (t !== null && (baseAt === null || t < baseAt)) { base = e.startedAt; baseAt = t; }
+  }
+  if (baseAt === null) return { planningBaseline: null, addedSincePlanning: null, unknownJoinTime: null };
+  let added = 0, unknown = 0;
+  for (const e of memberRecords) {
+    const j = ms(e.releaseJoinedAt);
+    if (j === null) unknown++;
+    else if (j > baseAt) added++;
+  }
+  return { planningBaseline: base, addedSincePlanning: added, unknownJoinTime: unknown };
+}

@@ -92,8 +92,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, currentSpendTracking, currentSpendGuard, currentRulesUsage, currentMissionSection, currentBoardsSection, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, currentProfileContext, currentSpendTracking, currentSpendGuard, currentRulesUsage, currentMissionSection, currentBoardsSection, currentInitiativesSection, currentMissionNonGoalsSection, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
+import { currentOpenspecAddendaSection } from "./lib/openspec-addenda.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
 import { refusalFor } from "./lib/refusal.mjs";
@@ -146,6 +147,7 @@ import { list } from "./lib/list.mjs";
 import { board } from "./lib/board.mjs";
 import { setBoards } from "./lib/set-boards.mjs";
 import { mission } from "./lib/mission.mjs";
+import { initiative } from "./lib/initiative.mjs";
 import { setProject } from "./lib/set-project.mjs";
 import { overhead } from "./lib/overhead.mjs";
 import { setDevLog } from "./lib/dev-log.mjs";
@@ -261,7 +263,7 @@ function runInvocation(argv, io = {}) {
 
   const cmd = currentArgv()[2];
 
-  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|board|set-boards|set-project|mission|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+  const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|list|board|set-boards|set-project|mission|initiative|overhead|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|set-profile|profile|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|set-spend-tracking|set-dev-log|dev-log|spend|spend-analysis|record-decision|decisions|set-spend-guard|spend-guard|override-spend-guard|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
   // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
   //
@@ -480,6 +482,7 @@ function runInvocation(argv, io = {}) {
     "set-boards": setBoards,
     "set-project": setProject,
     mission,
+    initiative,
     overhead,
     "set-autonomy": setAutonomy,
     "record-reconcile": recordReconcile,
@@ -526,7 +529,7 @@ function runInvocation(argv, io = {}) {
       const declared = platformFlag(currentArgv().slice(3));
       if (declared) assertKnownPlatform(declared);
       const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
-      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection());
+      const block = rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform, currentProfileContext(epicId), currentSpendTracking(), currentSpendGuard(), currentRulesUsage(), currentMissionSection(), currentBoardsSection(), currentInitiativesSection(), currentMissionNonGoalsSection(), currentOpenspecAddendaSection());
       // `--sections`: instead of the block, the ranked per-section sizes of the block that WOULD be written
       // (rules-block-session-cost). Read-only like the verb itself.
       if (f.sections) outStream().write(sectionTableLines(measureRulesBlock(block)).join("\n") + "\n");

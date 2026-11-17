@@ -978,10 +978,28 @@ The boards are on by default (an absent setting reads as on). `set-boards off` r
 and removes the `## Boards` rules section and the brief's boards line; `set-boards on` removes the setting again.
 `board --json` keeps working whichever way it is set, and `upgrade` prints `boards: on (default)`.
 
+**Initiatives, release purpose and the 80/20 report.** An initiative is a multi-release effort delivering one capability. A
+release names its primary initiative (`release <id> --initiative <id>`) or declares itself `--maintenance`. Every member in any lane is counted
+once as `health` (bugs, security, dependency and stack upgrades, deprecations, test and tooling debt), `initiative-work` or
+`unaligned`; the health share is checked against a fixed 20% target and flagged as drift below 10% or above 30%, with
+`--split-reason` recording why. `release show` prints the purpose, the split, a warning when no member serves the primary, and how many epics
+joined after the first member started. Vocabulary: the MISSION milestone is a release id on the mission (`mission --milestone`, the critical path); an INITIATIVE
+milestone is a stable `mN` step inside one initiative, reached with evidence, and has no release field.
+
+**The off-mission challenge.** While an initiative is open, an epic leaving `untriaged` with no `--kind`, no `--initiative` and no recorded
+reason gets one stderr warning (never a refusal; `claude-code` epics are exempt), and `release --member` warns once for an epic not serving the release's primary.
+Answer it once with `--off-mission-reason` or `--off-initiative-reason` and it stays quiet. Two rules-block sections carry this to every
+session: `## Initiatives` (while an initiative is open) and `## Mission non-goals` (while the mission has a non-goal).
+
 | Verb | What it does |
 |------|--------------|
-| `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit. Plain `board` prints three lines |
+| `board [--json] [--archived <n>\|all]` | a read-only, versioned (`schemaVersion` 1) snapshot: counts, mission and milestone, releases with a derived `status`, `criticalPath`, `progress` and `unshipped`, the open epics in `PROJECT.md`'s order, a window of ended epics, and `rejected[]` for any id or URL it would not emit; it also carries `initiatives`, `missionNonGoals`, and per release and epic the planning fields below (all additive, `schemaVersion` stays 1). Plain `board` prints three lines |
 | `mission --statement "<line>" --reason "<why>"` | records the mission; `--end`, `--milestone <releaseId>` / `--clear-milestone`, `--add-criterion` / `--remove-criterion` and `mission show [--history]` complete it. Releases at or before the milestone, by `--order`, are marked critical path. See `commands/mission.md` |
+| `initiative <id> --title "<line>" --capability "<line>"` | records an initiative, a multi-release effort delivering a capability: `--source` (or `UNGROUNDED`), `--off-mission-reason`, initiative milestones (`--add-milestone`, `--reach-milestone "mN:<evidence>"`), `--end --outcome delivered\|abandoned\|superseded --reason`, `--reopen`, and `initiative show [<id>] [--history]`. Never deleted. See `commands/initiative.md` |
+| `--add-non-goal "<line>"` / `--remove-non-goal "nN:<why>"` | what a record will NOT do, on `mission`, `initiative`, `release`, `add-epic` and `update-epic` (`add-many` reads a `nonGoals` array). Repeatable, one line of at most 300 characters; ids are per record (`n1`, `n2`, ...) and never reused. Removal marks the entry with its reason and keeps it (`show --history` lists it). A milestone carries none |
+| `release <id> --initiative <id>` / `--maintenance` / `--clear-initiative` | a release's purpose: its primary initiative, or `--maintenance` to declare it serves none (each replaces the other; `--clear-initiative` removes either; `release here` refuses all three). The release goal is the existing `--theme`. `release show` prints the purpose |
+| `release <id> --split-reason "<line>"` / `--clear-split-reason` | why a release departs from the 80/20 split (one line, at most 400 characters). It changes neither the split nor `drift` |
+| `add-epic` / `update-epic` / `add-many` `--initiative`, `--secondary-initiative`, `--kind`, `--off-mission-reason`, `--off-initiative-reason` | epic planning fields: one primary initiative (stamps `initiativeJoinedAt`), repeatable secondaries (inverse `--remove-secondary-initiative`), `--kind initiative-work\|health`, and the two recorded answers to the challenge below. `update-epic <id> --clear <field>` unsets each scalar. See `commands/epic.md` |
 | `set-project --name "<name>" --key <KEY>` | the project name (at most 60 characters) and a two- or three-letter key; `--unset name\|key` removes one. Every epic carries an integer `number` assigned at registration, and the key shown is `<KEY>-<number>`. See `commands/set-project.md` |
 | `set-boards on\|off` | the switch above |
 | `release <id> --theme --rationale --exit --order --size` | a release's plan fields (each text field one line of at most 400 characters); `--clear <field>` removes `theme`, `rationale`, `exit`, `order`, `size` or `target` (`release --clear target` is the inverse of `--target`) |
@@ -1857,6 +1875,8 @@ turn them on. Spend tracking adds its own cost, listed below: `set-spend-trackin
 | `rules:execution-profile` | core | ~607 tokens | no switch: below the threshold |
 | `rules:release-candidate` | core | ~294 tokens, emitted only while a release has no delivered marker | no switch: below the threshold; absent (not switched) while no release is open |
 | `rules:mission` | core | at most ~70 tokens (280 bytes), emitted only while a mission is recorded | no switch: it is recorded data, not a feature, and it is the line that bounds autonomous work |
+| `rules:initiatives` | core | at most ~70 tokens (280 bytes cap; 254 measured, 255 with its separator), emitted only while an initiative is open | no switch: it is recorded data, not a feature, and it carries the challenge-once rule |
+| `rules:mission-non-goals` | core | at most ~50 tokens (200 bytes cap, cut with an ellipsis), emitted only while the mission has an active non-goal | no switch: it is recorded data, and it is the one line that says what the mission will not do |
 | `rules:boards` | boards | at most ~70 tokens (280 bytes; ~60 measured) | `set-boards off`, on by default |
 | `brief:boards` | boards | at most ~40 tokens (one line of at most 160 bytes; ~34 measured), counted out of `brief` | `set-boards off`, on by default |
 | `rules:feedback` | core | ~194 tokens | no switch: below the threshold |
@@ -1915,13 +1935,21 @@ can never disagree. Three things about how it behaves:
   binary an argv other than `--version`.
 - **It holds rather than suppressing itself mid-change.** `openspec update` rewrites the
   instruction files an in-flight change is being authored against, so with an active change the
-  drift is still reported but the imperative becomes *hold until `<change>` is archived*.
+  drift is still reported but the imperative becomes *review before running it*: update on a branch and
+  read the diff, or archive the change first.
   Suppressing outright would silence it permanently in any repo that usually has a change open —
   which is precisely how the drift above accumulated unseen.
 - **It tells you whether a diff will exist.** Where the generated files are git-tracked,
-  `git diff` after the run *is* your review; where they are not, it says to copy them aside
-  first, because the rewrite destroys local edits to `.claude/skills/openspec-…` with no diff and
-  no trace.
+  `git diff` after the run *is* your review; where they are not, it says to run
+  `openspec update --dry-run` first, because the rewrite destroys local edits to
+  `.claude/skills/openspec-…` with no diff and no trace. Run `openspec update` first and `/pm:upgrade`
+  second.
+- **pm's own clause lives in the managed block, never in a generated file.** In a repo with `openspec/`,
+  the managed rules block carries an `## OpenSpec addenda` section (about 260 bytes, plus a bullet per
+  generated skill that exists for the `/opsx:onboard`, `/opsx:verify` and `/opsx:bulk-archive` guardrails;
+  0 bytes without `openspec/`). The brief and `/pm:upgrade` report `OpenSpec addenda RESIDUAL` when pm text
+  is found inside a generated file and `OpenSpec addenda MISSING` when the block lacks the section; both
+  are read-only, and the engine never writes a generated file.
 
 Either version being undeterminable is reported as *cannot tell*, never as stale, and nothing is
 spawned at all unless the repo has an `openspec/` directory and a readable generated stamp.

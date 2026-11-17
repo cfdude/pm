@@ -41,6 +41,7 @@ const NO_EPIC_CHANGE = {
   "set-review-mode": "the review-mode dial", "set-profile": "project or lane profile layer",
   "set-gate-guard": "the gate-guard toggle", "record-cross-spec-review": "a release-scope verdict",
   mission: "the mission record (state.mission) and the rules block",
+  initiative: "the initiatives record (state.initiatives) and the rules block",
   "set-boards": "the boards switch (state.boards) and the rules block",
   "set-project": "the project name and key (state.projectName, state.projectKey)",
   "set-activity-log": "the activityLog switch", "dev-log": "the dev log under .conductor/spend/",

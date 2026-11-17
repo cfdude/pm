@@ -31,7 +31,7 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 ## The JSON shape (`schemaVersion` 1)
 
-An unknown value is `null` or `[]`, never omitted. A change to the meaning of an existing key increments `schemaVersion`; keys added since (`project`, an epic's `number` and `key`, a release's `progress` and `unshipped`) are additive and did not.
+An unknown value is `null` or `[]`, never omitted. A change to the meaning of an existing key increments `schemaVersion`; keys added since (`project`, an epic's `number` and `key`, a release's `progress` and `unshipped`, and the planning keys below: `initiatives`, `missionNonGoals`, and the per-release and per-epic planning fields) are additive and did not.
 
 | Key | Holds |
 | --- | --- |
@@ -40,15 +40,17 @@ An unknown value is `null` or `[]`, never omitted. A change to the meaning of an
 | `project` | `{name, key}` from `set-project`, each `null` while unset (nothing is derived: an unset project is a prompt to ask the user, never a guess) |
 | `counts` | `open`, `unregisteredChanges`, `unassigned`, `byPriority` (`P0`..`P3`, `P?`, by effective priority), and `delivered` / `notPursued` / `unknownOutcome` over the whole record, never only the window |
 | `mission` | `null` or `{statement, setAt, reason}` |
+| `missionNonGoals` | the mission's active non-goals, `[{id, text}]` in id order, `[]` when none |
+| `initiatives` | every recorded initiative in creation order, `[]` when none: `{id, title, capability, status, outcome, endedAt, source, offMissionReason, nonGoals, milestones: [{id, text, reachedAt, evidence}]}`, active initiative milestones and non-goals only. `outcome` and `endedAt` are `null` while it is open |
 | `milestone` | `null` or `{release, criteria: [{id, text, check, needsHuman}]}`, active criteria only, in id order |
 | `plan` | `{here, hereText, nextText}`, each `null` when unset; the release plan page draws `here` only (as the roadmap's We are here rule) |
-| `releases` | every release by `order` then id, unordered last: `id`, `intent`, `target`, `theme`, `rationale`, `exit`, `order`, `size`, `status` (`planned`, `in-progress` or `shipped`, derived), `delivered`, `criticalPath` (`null` with no milestone), `progress` (`{done, total}`: members delivered over members not declined, over every member and not only the ended window), `members`, `deferred`, `unshipped` (one `{epic, title, outcome, reason, supersededBy}` row per member not delivered, then per deferral that is not a member: `outcome` is the recorded outcome, `open`, `unknown` or `deferred`; `reason` is the recorded text capped at 300 characters with control characters escaped, `null` when none is recorded; `supersededBy` is set only from a structured `supersedes` link, never from prose) |
+| `releases` | every release by `order` then id, unordered last: `id`, `intent`, `target`, `theme`, `rationale`, `exit`, `order`, `size`, `status` (`planned`, `in-progress` or `shipped`, derived), `delivered`, `criticalPath` (`null` with no milestone), `progress` (`{done, total}`: members delivered over members not declined, over every member and not only the ended window), `members`, `deferred`, `initiative` (its primary initiative id, `null` when none or when it names no recorded initiative), `maintenance`, `splitReason`, `nonGoals`, `primaryServed` (`true`, `false`, or `null` with no members or no primary), `planningBaseline`, `addedSincePlanning` and `unknownJoinTime` (derived: the earliest `startedAt` among the members, and how many joined later or carry no join time; all `null` with no member started), `split` (`{initiativeWork, health, unaligned, healthShare, target, drift}`, every member in every lane counted once; `target` is the fixed `0.2`, `drift` is true below 10% or above 30%), and `unshipped` (one `{epic, title, outcome, reason, supersededBy}` row per member not delivered, then per deferral that is not a member: `outcome` is the recorded outcome, `open`, `unknown` or `deferred`; `reason` is the recorded text capped at 300 characters with control characters escaped, `null` when none is recorded; `supersededBy` is set only from a structured `supersedes` link, never from prose) |
 | `epics` | open epics first, then the ended window |
 | `rejected` | what was left out, each `{kind, id, field, value, reason}` |
 
 Each entry in `epics` carries `id`, `number` (its integer, or `null` on a record not yet upgraded to 0.55.0), `key` (`<KEY>-<number>`, `null` while the project key is unset), `title`, `summary`, `whyNow`, `description`, `lane`, `status`, `priority` (effective),
 `meritPriority`, `rank`, `position`, `release`, `externalUrl`, `dependsOn`, `delivered`, `outcome`, `outcomeReason`,
-`createdAt`, `endedAt` and `updatedAt`.
+`createdAt`, `endedAt` and `updatedAt`, and the planning fields `initiative`, `initiativeJoinedAt`, `secondaryInitiatives`, `kind` (as recorded), `effectiveKind` (a `claude-code` epic with no kind reads `initiative-work` when it names an initiative, else `health`), `releaseJoinedAt`, `offMissionReason`, `offInitiativeReason` and `nonGoals`. A reference naming no recorded initiative reads `null`; `integrity` reports it.
 
 - **Order.** Open epics come in the order `resolveEpics()` gives `PROJECT.md`: effective priority, merit priority, rank, lane, id,
   with no dependency pass. That is not the brief's NEXT UP order. `position` is the index in that order (`null` for an ended epic).
@@ -59,7 +61,7 @@ Each entry in `epics` carries `id`, `number` (its integer, or `null` on a record
 - **Unregistered changes** (a change directory with no registered epic) are counted in `counts.unregisteredChanges` and not listed.
 - **`dependsOn`** lists the registered targets of the epic's `depends-on` links, in order, without duplicates. A target that names
   no epic is reported in `rejected`.
-- **`rejected` and its reasons.** `kind` is `epic`, `release`, `link`, `url`, `plan`, `milestone` or `project`. `reason` is `id format`,
+- **`rejected` and its reasons.** `kind` is `epic`, `release`, `link`, `url`, `plan`, `milestone`, `initiative`, `mission` or `project`. `reason` is `id format`,
   `dangling depends-on`, `url scheme`, `here names no release`, `milestone names no release` or `project format`. Every emitted id must match
   `/^[A-Za-z0-9._-]+$/` and `externalUrl` is emitted only when it is an absolute http or https URL, so a page can interpolate
   either without a second check of its own. `value` has its control characters escaped.
