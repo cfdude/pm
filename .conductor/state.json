@@ -17088,11 +17088,13 @@
         "49df17bb4de7a3db7b59488f1f40c4385caf683a",
         "f3c5488c0229fdc63334abcb5f25548e866f0fef",
         "0831f653c0cde776a589a17d476fde29324536e1",
-        "2d164548e42b8c2819bb3df4fdf53350e1198110"
+        "2d164548e42b8c2819bb3df4fdf53350e1198110",
+        "cbc47cbca92e194631850414278e7b49c5fa2b33",
+        "6fdef7967d62916e1cb4bb2b64bd892b64045771"
       ],
       "createdAt": "2026-11-12T19:07:33.588Z",
       "number": 1205,
-      "touchedAt": "2026-11-16T23:47:19.510Z",
+      "touchedAt": "2026-11-17T00:00:03.898Z",
       "release": "0.56.0",
       "gateReview": {
         "gate1": {
@@ -17187,10 +17189,17 @@
         },
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-11-16T20:07:45.492Z",
+          "reviewedAt": "2026-11-17T00:00:03.892Z",
           "baseSha": "b418096b120aaab348a6a91e7fa0cbedf967fb9e",
-          "headSha": "2d164548e42b8c2819bb3df4fdf53350e1198110",
-          "reviewer": "opus fresh-context 2026-11-16 over b418096b..21634c97 (0 Critical, 2 Important both fixed: gates re-run, 23+5 mutants added); fix commits 97fc1f97 49df17bb f3c5488c 0831f653 2d164548 verified by certify (functional 1366/1366, sweeps 25/25) and mutation evidence, not re-reviewed line by line; 6 Twin-Unchanged trailers audited, none false"
+          "headSha": "6fdef7967d62916e1cb4bb2b64bd892b64045771",
+          "reviewer": "opus fresh-context 2026-11-16 over b418096b..21634c97 (0 Critical, 2 Important both fixed: gates re-run, 23+5 mutants added); fix commits 97fc1f97 49df17bb f3c5488c 0831f653 2d164548 verified by certify (functional 1366/1366, sweeps 25/25) and mutation evidence, not re-reviewed line by line; 6 Twin-Unchanged trailers audited, none false. RE-RECORDED 2026-11-16 at head 6fdef796: the delta since 2d164548 is docs only (cbc47cbc README, 6fdef796 two lesson files, lessons index rows and pending-feedback.md), read by the orchestrator, certify functional 1366/1366 on cbc47cbc; no engine or spec change",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-11-16T20:07:45.492Z",
+            "baseSha": "b418096b120aaab348a6a91e7fa0cbedf967fb9e",
+            "headSha": "2d164548e42b8c2819bb3df4fdf53350e1198110",
+            "reviewer": "opus fresh-context 2026-11-16 over b418096b..21634c97 (0 Critical, 2 Important both fixed: gates re-run, 23+5 mutants added); fix commits 97fc1f97 49df17bb f3c5488c 0831f653 2d164548 verified by certify (functional 1366/1366, sweeps 25/25) and mutation evidence, not re-reviewed line by line; 6 Twin-Unchanged trailers audited, none false"
+          }
         }
       },
       "gateRounds": {
@@ -17203,10 +17212,10 @@
         },
         "gate2": {
           "fails": 0,
-          "passes": 1,
+          "passes": 2,
           "failStreak": 0,
-          "lastVerdictAt": "2026-11-16T20:07:45.492Z",
-          "lastPassAt": "2026-11-16T20:07:45.492Z"
+          "lastVerdictAt": "2026-11-17T00:00:03.892Z",
+          "lastPassAt": "2026-11-17T00:00:03.892Z"
         }
       },
       "startedAt": "2026-11-16T15:36:44.340Z"
@@ -17312,7 +17321,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2485,
+  "revision": 2488,
   "reviewMode": "standard",
   "releases": [
     {

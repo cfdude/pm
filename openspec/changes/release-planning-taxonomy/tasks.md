@@ -215,7 +215,7 @@
       order. Never attribute the archive move, or a lifecycle commit made after Gate 2 is recorded.
 - [x] R.5 **Cross-spec review** (item 5): satisfied by 0.4; re-run if any 0.56.0 spec changes after the verdict (0.4 can do it).
 - [ ] R.6 <!-- pm:lifecycle --> **Disposition** (item 6): satisfied by C.2.
-- [ ] R.7 **Route what the work taught you** (item 7), naming each as a practice, tooling friction or process failure, with
+- [x] R.7 **Route what the work taught you** (item 7), naming each as a practice, tooling friction or process failure, with
       evidence. Candidates: register the proposal's twelve Later/Next epics not already registered (run `/pm:triage` per
       ask first); file `/pm:feedback` for any emitted instruction that did not run as written; a lesson if the closed-list
       collisions of design D5 recur in a later change.
@@ -250,12 +250,12 @@
 
 ## D. Docs (after Gate 2 only)
 
-- [ ] D.1 Update `README.md` (the `initiative` verb, the epic and release flags, the 80/20 report; the cost row landed in 6.2).
+- [x] D.1 Update `README.md` (the `initiative` verb, the epic and release flags, the 80/20 report; the cost row landed in 6.2).
       The Mintlify pass is separate and later, per the `mintlify-doc-sync` skill, or carried to the release cut.
 
 ## V. Release discipline (0.56.0, at the cut, per the `release-checklist` skill)
 
-- [ ] V.1 Confirm `.changesets/release-planning-taxonomy.md` covers every user-facing change above.
+- [x] V.1 Confirm `.changesets/release-planning-taxonomy.md` covers every user-facing change above.
 - [ ] V.2 Bump `.claude-plugin/plugin.json` `version` to `0.56.0` at the release cut, not in this change.
 - [ ] V.3 Consolidate the changeset into the `CHANGELOG.md` 0.56.0 entry.
 - [ ] V.4 MIGRATIONS: none, because every key is additive (evidence: 8.2). If an Open question's answer added a transform,
