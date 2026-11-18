@@ -16695,7 +16695,7 @@
       "id": "mission-anti-spawn-rule",
       "title": "Mission anti-spawn rule",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -16709,7 +16709,7 @@
       "description": "Follow-up to project-boards: use the project mission to refuse or flag epics that serve no mission (the epic -> new epics -> close epic spawn cycle).",
       "attributedCommits": [],
       "createdAt": "2026-11-11T05:33:23.603Z",
-      "touchedAt": "2026-11-12T19:09:20.736Z",
+      "touchedAt": "2026-11-17T21:42:13.877Z",
       "sessions": [
         {
           "session": "pm-dev",
@@ -16718,7 +16718,18 @@
         }
       ],
       "number": 1200,
-      "summary": "Follow-up to project-boards: use the mission to flag epics that serve no mission, breaking the epic spawns epic cycle."
+      "summary": "Follow-up to project-boards: use the mission to flag epics that serve no mission, breaking the epic spawns epic cycle.",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-11-17T21:42:13.873Z",
+        "reason": "replaced by release-planning-taxonomy, shipped in 0.56.0: initiatives and the off-mission challenge (derive-and-confirm, with the mission and initiative records) cover the anti-spawn intent"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-11-17T21:42:13.873Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-11-17T21:42:13.873Z"
     },
     {
       "id": "backlog-trend-view",
@@ -17406,14 +17417,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.55.0",
+  "pmVersion": "0.56.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 2494,
+  "revision": 2496,
   "reviewMode": "standard",
   "releases": [
     {
